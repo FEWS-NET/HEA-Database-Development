@@ -1,0 +1,137 @@
+# Python bytecode:
+*.py[co]
+
+# Packaging files:
+*.egg*
+
+# Cache files:
+__pycache__
+.mypy_cache
+
+# Editor temp files:
+*.swp
+*~
+.history/
+
+# Compiled Language Files
+*.mo
+
+# Sphinx docs:
+_build/
+
+# SQLite3 database files:
+*.db
+
+# Performance Tests
+/test_perf_results.csv
+
+# Docker volumes
+volumes/
+
+# Backups
+*.backup
+*.lst
+
+# Logs:
+log/
+*.log
+*.log.*
+logfile*
+
+# PIDs:
+*.pid
+
+# Build Reports
+reports/
+
+# KCacheGrind profile files
+*.prof
+*.pyprof
+
+# BIRT Report Settings
+*.rptconfig
+
+# Compiled Assets and Media
+assets/
+!apps/viz/dash/*/assets/
+media/
+static/dojo/
+docs/_build/html/
+
+# any node or bower installation folders
+*node_modules/*
+*bower_components/*
+
+# External components
+vendor/
+
+# virtualenv
+env/
+
+# django-environ
+.env
+
+# Gitlab CI Builds
+builds/
+
+# Eclipse Settings
+.buildpath
+.project
+.settings
+.pydevproject
+
+# Elastic Beanstalk configuration
+.elasticbeanstalk/
+
+# Vagrant virtual machines
+.vagrant/
+vagrant_ansible_inventory*
+
+# OSX Folder Attributes
+.DS_Store
+
+# Elastic Beanstalk Files
+.ebextensions/
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
+
+# PyCharm Settings
+.idea/
+
+# Jupyter Notebooks
+*.ipynb
+
+# Jupyter Notebook Checkpoints
+.ipynb_checkpoints/
+
+# Nose Files
+nosetests.xml
+.nose-stopwatch*
+.coverage
+
+tmp/
+Vagrantfile
+ansible
+
+*.mo
+/env/
+/env3/
+/venv/
+/start.sh
+/start3.sh
+/package-lock.json
+/test3.sh
+/rtest3.sh
+
+# VS Code settings
+.vscode/
+*.code-workspace
+
+# Direnv
+.direnv
+.envrc
+.dccache
+
+# Ruff cache
+.ruff_cache/

@@ -1,0 +1,54 @@
+# Additional ECS-specific parameters passed to ECS by ecs-cli along with the docker-compose.ecs.yml file to launch review apps
+version: 1
+task_definition:
+  ecs_network_mode: awsvpc
+  task_execution_role: arn:aws:iam::888016039450:role/fdwTaskExecutionRole
+  task_size:
+    cpu_limit: "2048"
+    mem_limit: "16384"
+  services:
+    db:
+      repository_credentials:
+        credentials_parameter: arn:aws:secretsmanager:us-east-1:888016039450:secret:registry.gitlab.com-LoqOad
+      mem_limit: 4g
+      mem_reservation: 1g
+    redis:
+      mem_limit: 2g
+      mem_reservation: 1g
+    app:
+      repository_credentials:
+        credentials_parameter: arn:aws:secretsmanager:us-east-1:888016039450:secret:registry.gitlab.com-LoqOad
+      mem_limit: 4g
+      mem_reservation: 1g
+    celery_luigi:
+      repository_credentials:
+        credentials_parameter: arn:aws:secretsmanager:us-east-1:888016039450:secret:registry.gitlab.com-LoqOad
+      mem_limit: 2g
+    celery_medium:
+      repository_credentials:
+        credentials_parameter: arn:aws:secretsmanager:us-east-1:888016039450:secret:registry.gitlab.com-LoqOad
+      mem_limit: 1g
+    luigid:
+      repository_credentials:
+        credentials_parameter: arn:aws:secretsmanager:us-east-1:888016039450:secret:registry.gitlab.com-LoqOad
+      mem_limit: 2g
+    beat:
+      repository_credentials:
+        credentials_parameter: arn:aws:secretsmanager:us-east-1:888016039450:secret:registry.gitlab.com-LoqOad
+      mem_limit: 1g
+    nginx:
+      repository_credentials:
+        credentials_parameter: arn:aws:secretsmanager:us-east-1:888016039450:secret:registry.gitlab.com-LoqOad
+      mem_limit: 1g
+run_params:
+  network_configuration:
+    awsvpc_configuration:
+      subnets:
+        - subnet-04088de90e0c05ad8
+      security_groups:
+        # datadog
+        - sg-0bb8675a38365a8df
+        - sg-03d7e7666bc7b552d
+        # http_server
+        - sg-0fc18cf83bb8c5829
+      assign_public_ip: ENABLED

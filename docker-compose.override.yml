@@ -1,0 +1,80 @@
+version: '3.7'
+services:
+  db:
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./:/usr/src/app
+
+  redis:
+    ports:
+      - "6379:6379"
+
+  app:
+    restart: "no"
+    build:
+      target: dev
+    ports:
+      - 8000:8000
+      - 8889:8888
+    volumes:
+      - ./:/usr/src/app
+      # Ensure we have separate volumes for writable directories inside the container
+      - /usr/src/app/assets
+      - /usr/src/app/cache
+      - /usr/src/app/data-explorer/build
+      - /usr/src/app/fde2/build
+      - /usr/src/app/fdm/build
+      - /usr/src/app/docs/_build
+      - /usr/src/app/log
+      - /usr/src/app/media
+    environment:
+      DJANGO_SETTINGS_MODULE: fdw.settings.debug
+      # Put .coverage in a writable directory
+      COVERAGE_FILE: log/.coverage
+    command:
+      - --timeout=3600
+      - --workers=12
+      - --reload
+      - --reload-extra-file data-explorer/build
+      - --reload-extra-file fde2/build
+      - --reload-extra-file fdm/build
+
+  celery_medium:
+    restart: "no"
+    volumes:
+      - ./:/usr/src/app
+      # Ensure we have separate volumes for writable directories inside the container
+      - /usr/src/app/cache
+      - /usr/src/app/log
+      - /usr/src/app/media
+    environment:
+      DJANGO_SETTINGS_MODULE: fdw.settings.debug
+
+  beat:
+    restart: "no"
+    volumes:
+      - ./:/usr/src/app
+      # Ensure we have separate volumes for writable directories inside the container
+      - /usr/src/app/log
+      - /usr/src/app/run
+    environment:
+      DJANGO_SETTINGS_MODULE: fdw.settings.debug
+
+  events:
+    restart: "no"
+    volumes:
+      - ./:/usr/src/app
+      # Ensure we have separate volumes for writable directories inside the container
+      - /usr/src/app/log
+      - /usr/src/app/run
+    environment:
+      DJANGO_SETTINGS_MODULE: fdw.settings.debug
+
+  luigid:
+    ports:
+      - 8082:8082
+
+  nginx:
+    ports:
+      - 80:80

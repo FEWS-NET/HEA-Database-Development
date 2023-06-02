@@ -1,0 +1,60 @@
+version: "3.7"
+services:
+  db:
+    deploy:
+      resources:
+        limits:
+          memory: 2000M
+    logging:
+      driver: fluentd
+      options:
+        tag: docker.fdw.dev.db.{{.ID}}
+
+  redis:
+    deploy:
+      resources:
+        limits:
+          memory: 8000M
+
+  app:
+    restart: "no"
+    deploy:
+      resources:
+        limits:
+          memory: 10000M
+    volumes:
+      - ./:/usr/src/app
+    env_file: .env
+    user: ${UID}
+    logging:
+      driver: fluentd
+      options:
+        tag: docker.fdw.dev.app.{{.ID}}
+
+  celery_luigi:
+    restart: unless-stopped
+    image: fdw-app
+    depends_on:
+      - db
+      - redis
+    deploy:
+      resources:
+        limits:
+          memory: 10000M
+
+  celery_medium:
+    restart: unless-stopped
+    image: fdw-app
+    depends_on:
+      - db
+      - redis
+    deploy:
+      resources:
+        limits:
+          memory: 10000M
+
+  flower:
+    deploy:
+      resources:
+        limits:
+          memory: 200M

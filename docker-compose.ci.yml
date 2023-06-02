@@ -1,0 +1,104 @@
+version: "3.7"
+services:
+  db:
+    restart: "no"
+    build:
+      cache_from:
+        - $CI_REGISTRY_IMAGE/db:latest
+        - $CI_REGISTRY_IMAGE/db:edge
+    command:
+      # See https://wiki.postgresql.org/wiki/Tuning_Your_PostgreSQL_Server
+      # and https://www.postgresql.org/docs/10/static/runtime-config-resource.html
+      # and https://dev.to/pythonmeister/basic-postgresql-tuning-parameters-281
+      # and https://pgtune.leopard.in.ua/#/
+      # and https://sudonull.com/post/31544-How-One-PostgreSQL-Configuration-Change-Improves-Slow-Query-Performance-50-Times
+      - -c
+      - max_locks_per_transaction=2048
+      # Set shared buffers to 25% of allowable memory for the container
+      - -c
+      - shared_buffers=500MB
+      # Set effective_cache_size to 75% of allowable memory for the container
+      # i.e. 3 * shared_buffers
+      - -c
+      - effective_cache_size=1500MB
+      - -c
+      - work_mem=150MB
+      - -c
+      - maintenance_work_mem=200MB
+      - -c
+      - max_stack_depth=4096
+      - -c
+      - checkpoint_timeout=60min
+      - -c
+      - checkpoint_completion_target=0.9
+      - -c
+      - wal_buffers=16MB
+      - -c
+      - max_wal_size=10GB
+      # Set effective_io_concurrency to 200 for SSDs, or 1 for HDD
+      - -c
+      - effective_io_concurrency=200
+      # Set seq_page_cost to 0.1 for SSDs, or 1 for HDD
+      - -c
+      - seq_page_cost=0.1
+      # Set random_page_cost to 0.11 for SSDs, or 4 for HDD
+      - -c
+      - random_page_cost=0.11
+      # Set various additional parameters that improve speed at the risk of data corruption,
+      # which is fine for CI test databases, but should never be set in production.
+      - -c
+      - fsync=off
+      - -c
+      - synchronous_commit=off
+      - -c
+      - full_page_writes=off
+
+  app:
+    restart: "no"
+    build:
+      target: test
+      cache_from:
+        - $CI_REGISTRY_IMAGE/app:latest
+        - $CI_REGISTRY_IMAGE/app:edge
+    entrypoint:
+      - "/usr/src/app/docker/app/run_tests.sh"
+    command: ""
+    environment:
+      DJANGO_SETTINGS_MODULE: fdw.settings.ci
+      # Put .coverage in a writable directory
+      COVERAGE_FILE: log/.coverage
+    depends_on:
+      - celery_medium
+      - db
+      - redis
+
+  celery_luigi:
+    image: ci-${APP}-${CI_PIPELINE_ID}-app
+    environment:
+      DJANGO_SETTINGS_MODULE: fdw.settings.ci_celery
+    depends_on:
+      - db
+      - redis
+
+  celery_medium:
+    image: ci-${APP}-${CI_PIPELINE_ID}-app
+    environment:
+      DJANGO_SETTINGS_MODULE: fdw.settings.ci_celery
+    depends_on:
+      - db
+      - redis
+
+  luigid:
+    image: ci-${APP}-${CI_PIPELINE_ID}-app
+    environment:
+      DJANGO_SETTINGS_MODULE: fdw.settings.ci_celery
+    depends_on:
+      - db
+      - redis
+
+  nginx:
+    restart: "no"
+    build:
+      cache_from:
+        - $CI_REGISTRY_IMAGE/nginx:latest
+        - $CI_REGISTRY_IMAGE/nginx:edge

@@ -1,0 +1,35 @@
+
+
+name: 01 Mirror to a GITLAB Repository
+
+on: workflow_dispatch
+
+env:
+  GITLAB_MAIN_REPO: "git@gitlab.com:fewsnet/data/fdw.git"
+  ECR_REGISTRY: '888016039450.dkr.ecr.us-east-1.amazonaws.com'
+  AWS_REGION: 'us-east-1'
+
+jobs:
+  ecr_login:
+    runs-on: self-hosted
+    steps:
+      - name: Generate the ECR credentials
+        run: |
+          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
+  mirror_to_main_gitlab:
+    runs-on: self-hosted
+    needs: [ecr_login]
+    container:
+      image: 888016039450.dkr.ecr.us-east-1.amazonaws.com/inf/docker:latest
+    steps:
+    - uses: rtCamp/action-cleanup@master
+    - name: Checkout the code
+      uses: actions/checkout@v3
+      with:
+        token: ${{ secrets.GIT_ACCESS_TOKEN }}
+        fetch-depth: 0
+    - name: Mirror repository to Gitlab
+      uses: pixta-dev/repository-mirroring-action@v1
+      with:
+        target_repo_url: ${{ env.GITLAB_MAIN_REPO }}
+        ssh_private_key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
