@@ -33,9 +33,7 @@ ALLOWED_HOSTS = env.list(
     ],
 )
 try:
-    EC2_PRIVATE_IP = requests.get(
-        "http://169.254.169.254/2018-09-24/meta-data/local-ipv4", timeout=0.01
-    ).text
+    EC2_PRIVATE_IP = requests.get("http://169.254.169.254/2018-09-24/meta-data/local-ipv4", timeout=0.01).text
     if EC2_PRIVATE_IP:
         ALLOWED_HOSTS.append(EC2_PRIVATE_IP)
     # If using ECS with the awsvpc network type, the call will be to the trunked ENI address
@@ -73,7 +71,7 @@ EXTERNAL_APPS = [
     "django.contrib.staticfiles",
     "django_extensions",
 ]
-PROJECT_APPS = ["common", "activity"]
+PROJECT_APPS = ["common", "metadata", "spatial", "baseline"]
 INSTALLED_APPS = EXTERNAL_APPS + PROJECT_APPS
 
 MIDDLEWARE = [

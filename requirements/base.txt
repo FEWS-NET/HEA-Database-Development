@@ -1,8 +1,6 @@
 # Do not pip freeze into this file. Add only the packages you need so pip can align dependencies.
-celery[redis]==5.2.7
 ddtrace==1.14.0
 Django==4.2.2
-django-celery-beat==2.5.0
 django-environ==0.10.0
 django-filter==23.2
 django-guardian==2.4.0
@@ -10,8 +8,8 @@ django-treebeard==4.7
 djangorestframework==3.14.0
 factory-boy==3.2.1
 json-logging-py==0.2
-psycopg2-binary==2.9.6
-redis==4.5.5
+numpy==1.24.3
+psycopg[binary]==3.1.9
 requests==2.31.0
 sqlparse==0.4.4
 whitenoise==6.4.0

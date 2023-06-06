@@ -55,27 +55,6 @@ services:
       - -c
       - random_page_cost=0.11
 
-  redis:
-    restart: unless-stopped
-    image: redis:5.0.7
-    volumes:
-      - redis_data:/data
-    command:
-      - redis-server
-      - --maxmemory
-      - 2000mb
-      - --maxmemory-policy
-      - allkeys-lru
-      - --tcp-backlog
-      - "128"
-      - --maxclients
-      - "150"
-      - --save
-      - "900"
-      - "1"
-      - --appendonly
-      - "no"
-
   app:
     restart: unless-stopped
     build:
@@ -85,9 +64,8 @@ services:
       args:
         - PIP_TRUSTED_HOST
         - PIP_INDEX_URL
-    depends_on:
-      - db
-      - redis
+#    depends_on:
+#      - db
     environment: &base_env
       CLIENT: ${CLIENT}
       APP: ${APP}
@@ -100,11 +78,7 @@ services:
       PGDATABASE: ${CLIENT}${APP}${ENV}
       PGPASSWORD: ${PGPASSWORD}
       DATABASE_URL: postgis://${CLIENT}${APP}${ENV}:${PGPASSWORD}@db:5432/${CLIENT}${APP}${ENV}
-      CELERY_REDIS_HOST: redis
-      CELERY_REDIS_PORT: 6379
-      CELERY_REDIS_DB: 0
       SUPPORT_EMAIL_ADDRESS: ${SUPPORT_EMAIL_ADDRESS}
-      HELPDESK_ADDRESS: ${HELPDESK_ADDRESS}
       DJANGO_MIGRATE: 1
       DD_TRACE_ENABLED: "false"
       DD_TRACE_AGENT_URL: http://localhost:8126
@@ -113,141 +87,11 @@ services:
       DD_ENV: ${ENV}
       DD_TAGS: app:${APP},env:{ENV}
       DD_DJANGO_CACHE_SERVICE_NAME: django.core.cache
-      LUIGI_SCHEDULER_URL: http://luigid:8082
-      KILUIGI_USER: ${CLIENT}klg${ENV}
-      KILUIGI_PASSWORD: ${PGPASSWORD}
-      KOBO_TOKEN: ${KOBO_TOKEN}
-      KILUIGI_INTERMEDIATETARGET_BACKEND_CLASS: ${KILUIGI_INTERMEDIATETARGET_BACKEND_CLASS}
-      KILUIGI_INTERMEDIATETARGET_ROOT_PATH: ${KILUIGI_INTERMEDIATETARGET_ROOT_PATH}
-      KILUIGI_FINALTARGET_BACKEND_CLASS: ${KILUIGI_FINALTARGET_BACKEND_CLASS}
-      KILUIGI_FINALTARGET_ROOT_PATH: ${KILUIGI_FINALTARGET_ROOT_PATH}
-      KILUIGI_REPORTTARGET_BACKEND_CLASS: ${KILUIGI_REPORTTARGET_BACKEND_CLASS}
-      KILUIGI_REPORTTARGET_ROOT_PATH: ${KILUIGI_REPORTTARGET_ROOT_PATH}
 
     command:
       - --timeout=3600
       - --workers=12
 
-  api:
-    restart: unless-stopped
-    image: ${APP}-app
-    depends_on:
-      - db
-      - redis
-    environment:
-      <<: *base_env
-      DJANGO_MIGRATE:
-      DD_SERVICE: api
-    command:
-      - --timeout=4500
-      - --workers=12
-
-  celery_luigi:
-    restart: unless-stopped
-    image: ${APP}-app
-    depends_on:
-      - db
-      - redis
-      - luigid
-    environment:
-      <<: *base_env
-      DJANGO_MIGRATE:
-      QUEUE: luigi
-      POOL: threads
-      DD_SERVICE: celery_luigi
-    entrypoint: docker/app/run_celery.sh
-
-  celery_medium:
-    restart: unless-stopped
-    image: ${APP}-app
-    depends_on:
-      - db
-      - redis
-    environment:
-      <<: *base_env
-      DJANGO_MIGRATE:
-      QUEUE: medium
-      DD_SERVICE: celery_medium
-    entrypoint: docker/app/run_celery.sh
-
-  luigid:
-    restart: unless-stopped
-    image: ${APP}-app
-    depends_on:
-      - db
-      - redis
-    environment:
-      <<: *base_env
-      DD_SERVICE: luigid
-    entrypoint: docker/app/run_luigid.sh
-
-  beat:
-    restart: unless-stopped
-    image: ${APP}-app
-    depends_on:
-      - db
-      - redis
-    environment:
-      <<: *base_env
-      DD_SERVICE: beat
-    entrypoint: docker/app/run_beat.sh
-
-  events:
-    restart: unless-stopped
-    image: ${APP}-app
-    depends_on:
-      - db
-      - redis
-    environment:
-      <<: *base_env
-      DD_SERVICE: events
-    entrypoint: docker/app/run_events.sh
-
-  nginx:
-    build:
-      context: docker/nginx
-      dockerfile: Dockerfile
-    depends_on:
-      - app
-      - api
-      - mayan
-    networks:
-      default:
-        aliases:
-          # Make sure that the other containers can resolve the name internally, particularly for OAuth to work
-          - ${APP}lcl.localdomain
-    environment:
-      API_BACKEND: http://api:8000
-      APP_BACKEND: http://app:8000
-      LUIGID_BACKEND: http://luigid:8082
-      MAYAN_BACKEND: http://mayan:8000
-      # The MAYAN_URL_PREFIX needs to match the value set for the App container and in the Mayan container
-      MAYAN_URL_PREFIX: /documents
-      NGINX_WORKER_PROCESSES: 2
-      NGINX_API_PROXY_READ_TIMEOUT: 4500
-      NGINX_APP_PROXY_READ_TIMEOUT: 3600
-
-  flower:
-    restart: unless-stopped
-    build:
-      context: .
-      dockerfile: ./docker/flower/Dockerfile
-      args:
-        - PIP_TRUSTED_HOST
-        - PIP_INDEX_URL
-        - http_proxy
-    depends_on:
-      - celery_slow
-      - celery_medium
-      - celery_fast
-      - redis
-    environment:
-      REDIS_HOST: redis
-
 volumes:
   db_data:
-    external: false
-  minio_data:
-    external: false
-  redis_data:
     external: false

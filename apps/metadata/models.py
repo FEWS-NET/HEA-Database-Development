@@ -1,6 +1,5 @@
 from common import models
 from django.utils.translation import gettext_lazy as _
-from treebeard.mp_tree import MP_Node
 
 
 class DimensionType(models.Model):
@@ -43,86 +42,6 @@ class Currency(UnitOfMeasure):
     """
 
 
-class Activity(Dimension):
-    """
-    The verb part of a Livelihood Strategy, eg, grow crops, transact, paid labor.
-    """
-
-
-class LivelihoodStrategy(models.Model):
-    activity = models.ForeignKey(Activity, on_delete=models.PROTECT)
-    start = models.DateField()
-    end = models.DateField()
-
-
-class Transfer(models.Model):
-    livelihood_strategy = models.ForeignKey(
-        LivelihoodStrategy, on_delete=models.PROTECT
-    )
-    start = models.DateField()
-    end = models.DateField()
-    item = models.ForeignKey(Item, on_delete=models.PROTECT)
-    unit = models.ForeignKey(UnitOfMeasure, on_delete=models.PROTECT)
-    quantity = models.PrecisionField()
-    quantity_usd = models.PrecisionField()
-    quantity_kcals = models.PrecisionField()
-
-
-class Country(Dimension):
-    """
-    Countries that have Baselines.
-
-    feature = models.ForeignKey(Feature, on_delete=models.PROTECT) ?
-    """
-
-
-class Baseline(models.Model):
-    """
-    A baseline is performed for each country once a decade.
-    """
-
-    country = models.ForeignKey(Country, on_delete=models.PROTECT)
-    year = models.PositiveSmallIntegerField()
-
-
-class Feature(models.Model):
-    code = models.CodeField()
-    name = models.NameField()
-    # geography = models.GeometryField(
-    #     geography=True, dim=2, blank=True, null=True, verbose_name=_("geography")
-    # )
-
-
-class Zone(MP_Node, models.Model):
-    """
-    The hierarchy of zones of interest to a Baseline study, from
-    LivelihoodZone, which one BSS covers and whose children share
-    a common set of WealthGroup definitions, to village at which
-    Household Economy is defined.
-    """
-
-    feature = models.ForeignKey(Feature, on_delete=models.PROTECT)
-
-
-class LivelihoodZone(Zone):
-    """
-    The top level Zone, each of which are covered in a single BSS.
-
-    This is split out from Zone so that the diagram can show that a
-    BSS and set of WealthGroups are defined for a LivelihoodZone.
-    """
-
-
-class Village(Zone):
-    """
-    The lowest level of the Zone hierarchy, at which the Household
-    Economy is defined.
-
-    This is separated from Zone so the diagram can show that a household is
-    defined at the lowest Village level.
-    """
-
-
 class WealthGroup(Dimension):
     """
     The local definitions of wealth group, common to all BSSes in an LHZ.
@@ -130,7 +49,7 @@ class WealthGroup(Dimension):
 
 
 class Household(models.Model):
-    village = models.ForeignKey(LivelihoodZone, on_delete=models.PROTECT)
+    village = models.ForeignKey("spatial.LivelihoodZone", on_delete=models.PROTECT)
     wealth_group = models.ForeignKey(WealthGroup, on_delete=models.PROTECT)
 
 
@@ -158,33 +77,21 @@ class AssetItemCharacteristic(models.Model):
     asset = models.ForeignKey(Asset, on_delete=models.PROTECT)
     # These fields property and value probably also a mixin or ABC
     property = models.ForeignKey(Dimension, on_delete=models.PROTECT)
-    value = models.JSONField(
-        help_text=_(
-            "A single property value, eg, a float, str or list, not a dict of props."
-        )
-    )
+    value = models.JSONField(help_text=_("A single property value, eg, a float, str or list, not a dict of props."))
 
 
 class TransferItemCharacteristic(models.Model):
-    transfer = models.ForeignKey(Transfer, on_delete=models.PROTECT)
+    transfer = models.ForeignKey("baseline.Transfer", on_delete=models.PROTECT)
     # These fields property and value probably also a mixin or ABC
     property = models.ForeignKey(Dimension, on_delete=models.PROTECT)
-    value = models.JSONField(
-        help_text=_(
-            "A single property value, eg, a float, str or list, not a dict of props."
-        )
-    )
+    value = models.JSONField(help_text=_("A single property value, eg, a float, str or list, not a dict of props."))
 
 
 class HouseholdCharacteristic(models.Model):
     household = models.ForeignKey(Household, on_delete=models.PROTECT)
     # These fields property and value probably also a mixin or ABC
     property = models.ForeignKey(Dimension, on_delete=models.PROTECT)
-    value = models.JSONField(
-        help_text=_(
-            "A single property value, eg, a float, str or list, not a dict of props."
-        )
-    )
+    value = models.JSONField(help_text=_("A single property value, eg, a float, str or list, not a dict of props."))
 
 
 class TranslationType(Dimension):
@@ -200,26 +107,16 @@ class TranslationType(Dimension):
 
 
 class Translation(models.Model):
-    from_dimension = models.ForeignKey(
-        Dimension, on_delete=models.PROTECT, related_name="translations_from"
-    )
+    from_dimension = models.ForeignKey(Dimension, on_delete=models.PROTECT, related_name="translations_from")
     text = models.CharField()
-    translation_type = models.ForeignKey(
-        Dimension, on_delete=models.PROTECT, related_name="translations_of_type"
-    )
+    translation_type = models.ForeignKey(Dimension, on_delete=models.PROTECT, related_name="translations_of_type")
 
 
 class Conversion(models.Model):
-    from_unit = models.ForeignKey(
-        Dimension, on_delete=models.PROTECT, related_name="from_conversions"
-    )
-    to_unit = models.ForeignKey(
-        Dimension, on_delete=models.PROTECT, related_name="to_conversions"
-    )
+    from_unit = models.ForeignKey(Dimension, on_delete=models.PROTECT, related_name="from_conversions")
+    to_unit = models.ForeignKey(Dimension, on_delete=models.PROTECT, related_name="to_conversions")
     multiplier = models.PrecisionField()
     offset = models.PrecisionField()
     start = models.DateField()
     end = models.DateField()
-    livelihood_zone = models.ForeignKey(
-        LivelihoodZone, null=True, on_delete=models.PROTECT
-    )
+    livelihood_zone = models.ForeignKey("spatial.LivelihoodZone", null=True, on_delete=models.PROTECT)

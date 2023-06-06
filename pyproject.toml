@@ -1,0 +1,51 @@
+[tool.ruff]
+line-length = 88
+target-version = 'py311'
+exclude = [
+  '.eggs',        # exclude a few common directories in the
+  '.git',         # root of the project
+  '.history',
+  '.hg',
+  '.mypy_cache',
+  '.tox',
+  '.venv',
+  '_build',
+  'migrations',
+  'node_modules',
+  'buck-out',
+  'build',
+  'builds',
+  'dist',
+]
+
+[tool.ruff.mccabe]
+# Unlike Flake8, default to a complexity level of 10.
+max-complexity = 10
+
+[tool.ruff.flake8-quotes]
+docstring-quotes = "double"
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+include = '\.pyi?$'
+exclude = '''
+
+(
+  /(
+      \.eggs         # exclude a few common directories in the
+    | \.git          # root of the project
+    | \.history
+    | \.hg
+    | \.mypy_cache
+    | .ruff_cache
+    | \.tox
+    | \.venv
+    | _build
+    | node_modules
+    | buck-out
+    | build
+    | dist
+  )/
+)
+'''

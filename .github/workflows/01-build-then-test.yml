@@ -5,55 +5,25 @@ on:
 
 env:
   CLIENT: "fnt"
-  APP: "fdw"
+  APP: "hea"
   ENV: "tst"
-  THEME: "fdw"
   SUPPORT_EMAIL_ADDRESS: "helpdesk@fews.net"
-  HELPDESK_ADDRESS: "https://fewsnet.atlassian.net/servicedesk/customer/portal/2/group/-1"
-  DATABASE_URL: "postgis://fntfdwtst:testpass@db:5432/fntfdwtst"
-  PGDATABASE: "fntfdwtst"
+  DATABASE_URL: "postgis://fntheatst:testpass@db:5432/fntheatst"
+  PGDATABASE: "fntheatst"
   PGHOST: "db"
   PGPASSWORD: "testpass"
   PGPORT: "5432"
-  PGUSER: "fdwtst"
-  MINIO_ACCESS_KEY: AKIAIOSFODNN7EXAMPLE
-  MINIO_SECRET_KEY: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+  PGUSER: "heatst"
   PIP_INDEX_URL: "https://pypi.python.org/simple/"
-  REDIS_HOST: "redis"
-  REDIS_PORT: "6379"
   SECRET_KEY: ${{ secrets.SECRET_KEY }}
   DATA_EXPLORER_MAPBOX_API_KEY: ${{ secrets.DATA_EXPLORER_MAPBOX_API_KEY }}
   DATA_EXPLORER_API_URL_ROOT: "http://localhost:8000/"
 
-  DRUPAL_BASE_URL: "https://fews.net"
-  DRUPAL_USER: "drupal_cms_user"
-  DRUPAL_PASSWORD: "drupal_cms_password"
-
-  KILUIGI_INTERMEDIATETARGET_BACKEND_CLASS: kiluigi.targets.ExpiringLocalTarget
-  KILUIGI_INTERMEDIATETARGET_ROOT_PATH: /usr/src/app/media/pipelines/intermediate_targets
-  KILUIGI_FINALTARGET_BACKEND_CLASS: kiluigi.targets.LocalTarget
-  KILUIGI_FINALTARGET_ROOT_PATH: /usr/src/app/media/pipelines/final_targets
-  KILUIGI_REPORTTARGET_BACKEND_CLASS: kiluigi.targets.LocalTarget
-  KILUIGI_REPORTTARGET_ROOT_PATH: /usr/src/app/media/pipelines/reports
-
-  # Avoid "variable is not set. Defaulting to a blank string." warnings
-  COMTRADE_TOKEN: ""
-  DATA_CENTER_URL: ""
-  DATA_CENTER_TOKEN: ""
-  HDX_URL: ""
-  HDX_TOKEN: ""
-  DATA_SUBMISSION_ROOT: ""
-  GOOGLE_ADMIN_EMAIL: ""
-  GOOGLE_CREDENTIALS: ""
-  KOBO_TOKEN: ""
-  MAGPI_USERNAME: ""
-  MAGPI_TOKEN: ""
-  ROOT_FOLDER_FOR_CKAN: ""
-
   # AWS Variables
   ECR_REGISTRY: "888016039450.dkr.ecr.us-east-1.amazonaws.com"
   AWS_REGION: "us-east-1"
-  AWS_S3_BUCKET: "fntgithub-ci-artifacts"
+  # @TODO: Create this bucket with the -hea suffix
+  AWS_S3_BUCKET: "fntgithub-ci-artifacts-hea"
 
 jobs:
   lint:
@@ -359,9 +329,9 @@ jobs:
       # in all places. The variable doesn't always work
       # @TODO: Check if we can use "CI_PIPELINE_ID" in COMPOSE_PROJECT_NAME, seems we cannot:
       CI_PIPELINE_ID: ${{ github.run_id }}
-      COMPOSE_PROJECT_NAME: ci-fdw-${{ github.run_id }}
+      COMPOSE_PROJECT_NAME: ci-hea-${{ github.run_id }}
       COMPOSE_FILE: docker-compose.yml:docker-compose.ci.yml:docker-compose.utils.yml
-      CI_REGISTRY_IMAGE: "888016039450.dkr.ecr.us-east-1.amazonaws.com/fdw"
+      CI_REGISTRY_IMAGE: "888016039450.dkr.ecr.us-east-1.amazonaws.com/hea"
       BUILD_IMAGES: "app db nginx flower"
 
     steps:
@@ -399,11 +369,11 @@ jobs:
       #     for SERVICE in ${{ env.BUILD_IMAGES }}; do docker tag ${{ env.COMPOSE_PROJECT_NAME }}-${SERVICE}:latest ${CI_REGISTRY_IMAGE}/${SERVICE}:edge; done
       #     for SERVICE in ${{ env.BUILD_IMAGES }}; do docker push ${{ env.CI_REGISTRY_IMAGE }}/${SERVICE}:edge | grep -i -e 'The push refers to' -e Digest -e Status -e Error; done
       - name: "Start the service containers"
-        run: docker compose up -d db minio redis celery_slow celery_medium celery_fast celery_luigi
+        run: docker compose up -d db minio
       - name: "Wait for containers to be ready"
         run: |
           echo $(date) Wait for containers to be ready
-          docker compose run -e TARGETS=db:5432,minio:9000,redis:6379 -e TIMEOUT=90 wait
+          docker compose run -e TARGETS=db:5432 -e TIMEOUT=90 wait
           echo $(date) Containers ready
           docker compose exec -T db pg_config --version
       - name: "Run test suite"
@@ -502,9 +472,9 @@ jobs:
       # in all places. The variable doesn't always work
       # @TODO: Check if we can use "CI_PIPELINE_ID" in COMPOSE_PROJECT_NAME
       CI_PIPELINE_ID: ${{ github.run_id }}
-      COMPOSE_PROJECT_NAME: ci-fdw-${{ github.run_id }}
+      COMPOSE_PROJECT_NAME: ci-hea-${{ github.run_id }}
       COMPOSE_FILE: docker-compose.yml:docker-compose.ci.yml:docker-compose.utils.yml
-      CI_REGISTRY_IMAGE: "888016039450.dkr.ecr.us-east-1.amazonaws.com/fdw"
+      CI_REGISTRY_IMAGE: "888016039450.dkr.ecr.us-east-1.amazonaws.com/hea"
       BUILD_IMAGES: "app db nginx flower"
 
     steps:
@@ -540,11 +510,11 @@ jobs:
           for SERVICE in ${{ env.BUILD_IMAGES }}; do docker tag ${{ env.COMPOSE_PROJECT_NAME }}-${SERVICE}:latest ${CI_REGISTRY_IMAGE}/${SERVICE}:edge; done
           for SERVICE in ${{ env.BUILD_IMAGES }}; do docker push ${{ env.CI_REGISTRY_IMAGE }}/${SERVICE}:edge | grep -i -e 'The push refers to' -e Digest -e Status -e Error; done
       - name: "Start the service containers"
-        run: docker compose up -d db minio redis celery_slow celery_medium celery_fast celery_luigi
+        run: docker compose up -d db minio
       - name: "Wait for containers to be ready"
         run: |
           echo $(date) Wait for containers to be ready
-          docker compose run -e TARGETS=db:5432,minio:9000,redis:6379 -e TIMEOUT=90 wait
+          docker compose run -e TARGETS=db:5432 -e TIMEOUT=90 wait
           echo $(date) Containers ready
           docker compose exec -T db pg_config --version
       - name: "Run test suite"
@@ -633,9 +603,9 @@ jobs:
       # in all places. The variable doesn't always work
       # @TODO: Check if we can use "CI_PIPELINE_ID" in COMPOSE_PROJECT_NAME
       CI_PIPELINE_ID: ${{ github.run_id }}
-      COMPOSE_PROJECT_NAME: ci-fdw-${{ github.run_id }}
+      COMPOSE_PROJECT_NAME: ci-hea-${{ github.run_id }}
       COMPOSE_FILE: docker-compose.yml:docker-compose.ci.yml:docker-compose.utils.yml
-      CI_REGISTRY_IMAGE: "888016039450.dkr.ecr.us-east-1.amazonaws.com/fdw"
+      CI_REGISTRY_IMAGE: "888016039450.dkr.ecr.us-east-1.amazonaws.com/hea"
       BUILD_IMAGES: "app db nginx flower"
 
     steps:
@@ -671,11 +641,11 @@ jobs:
           for SERVICE in ${{ env.BUILD_IMAGES }}; do docker tag ${{ env.COMPOSE_PROJECT_NAME }}-${SERVICE}:latest ${CI_REGISTRY_IMAGE}/${SERVICE}:edge; done
           for SERVICE in ${{ env.BUILD_IMAGES }}; do docker push ${{ env.CI_REGISTRY_IMAGE }}/${SERVICE}:edge | grep -i -e 'The push refers to' -e Digest -e Status -e Error; done
       - name: "Start the service containers"
-        run: docker compose up -d db minio redis celery_slow celery_medium celery_fast celery_luigi
+        run: docker compose up -d db minio
       - name: "Wait for containers to be ready"
         run: |
           echo $(date) Wait for containers to be ready
-          docker compose run -e TARGETS=db:5432,minio:9000,redis:6379 -e TIMEOUT=90 wait
+          docker compose run -e TARGETS=db:5432 -e TIMEOUT=90 wait
           echo $(date) Containers ready
           docker compose exec -T db pg_config --version
       - name: "Run test suite"
@@ -756,9 +726,9 @@ jobs:
       # in all places. The variable doesn't always work
       # @TODO: Check if we can use "CI_PIPELINE_ID" in COMPOSE_PROJECT_NAME
       CI_PIPELINE_ID: ${{ github.run_id }}
-      COMPOSE_PROJECT_NAME: ci-fdw-${{ github.run_id }}
+      COMPOSE_PROJECT_NAME: ci-hea-${{ github.run_id }}
       COMPOSE_FILE: docker-compose.yml:docker-compose.ci.yml:docker-compose.utils.yml
-      CI_REGISTRY_IMAGE: "888016039450.dkr.ecr.us-east-1.amazonaws.com/fdw"
+      CI_REGISTRY_IMAGE: "888016039450.dkr.ecr.us-east-1.amazonaws.com/hea"
       BUILD_IMAGES: "app db nginx flower"
 
     steps:
@@ -796,11 +766,11 @@ jobs:
           for SERVICE in ${{ env.BUILD_IMAGES }}; do docker tag ${{ env.COMPOSE_PROJECT_NAME }}-${SERVICE}:latest ${CI_REGISTRY_IMAGE}/${SERVICE}:edge; done
           for SERVICE in ${{ env.BUILD_IMAGES }}; do docker push ${{ env.CI_REGISTRY_IMAGE }}/${SERVICE}:edge | grep -i -e 'The push refers to' -e Digest -e Status -e Error; done
       - name: "Start the service containers"
-        run: docker compose up -d db minio redis celery_slow celery_medium celery_fast celery_luigi
+        run: docker compose up -d db minio
       - name: "Wait for containers to be ready"
         run: |
           echo $(date) Wait for containers to be ready
-          docker compose run -e TARGETS=db:5432,minio:9000,redis:6379 -e TIMEOUT=90 wait
+          docker compose run -e TARGETS=db:5432 -e TIMEOUT=90 wait
           echo $(date) Containers ready
           docker compose exec -T db pg_config --version
       - name: "Run test suite"
@@ -881,9 +851,9 @@ jobs:
       # in all places. The variable doesn't always work
       # @TODO: Check if we can use "CI_PIPELINE_ID" in COMPOSE_PROJECT_NAME
       CI_PIPELINE_ID: ${{ github.run_id }}
-      COMPOSE_PROJECT_NAME: ci-fdw-${{ github.run_id }}
+      COMPOSE_PROJECT_NAME: ci-hea-${{ github.run_id }}
       COMPOSE_FILE: docker-compose.yml:docker-compose.ci.yml:docker-compose.utils.yml
-      CI_REGISTRY_IMAGE: "888016039450.dkr.ecr.us-east-1.amazonaws.com/fdw"
+      CI_REGISTRY_IMAGE: "888016039450.dkr.ecr.us-east-1.amazonaws.com/hea"
       BUILD_IMAGES: "app db nginx flower"
 
     steps:
@@ -916,11 +886,11 @@ jobs:
           for SERVICE in ${{ env.BUILD_IMAGES }}; do docker tag ${{ env.COMPOSE_PROJECT_NAME }}-${SERVICE}:latest ${CI_REGISTRY_IMAGE}/${SERVICE}:edge; done
           for SERVICE in ${{ env.BUILD_IMAGES }}; do docker push ${{ env.CI_REGISTRY_IMAGE }}/${SERVICE}:edge | grep -i -e 'The push refers to' -e Digest -e Status -e Error; done
       - name: "Start the service containers"
-        run: docker compose up -d db minio redis celery_slow celery_medium celery_fast celery_luigi
+        run: docker compose up -d db minio
       - name: "Wait for containers to be ready"
         run: |
           echo $(date) Wait for containers to be ready
-          docker compose run -e TARGETS=db:5432,minio:9000,redis:6379 -e TIMEOUT=90 wait
+          docker compose run -e TARGETS=db:5432 -e TIMEOUT=90 wait
           echo $(date) Containers ready
           docker compose exec -T db pg_config --version
       - name: "Run test suite"
@@ -1002,9 +972,9 @@ jobs:
       # in all places. The variable doesn't always work
       # @TODO: Check if we can use "CI_PIPELINE_ID" in COMPOSE_PROJECT_NAME
       CI_PIPELINE_ID: ${{ github.run_id }}
-      COMPOSE_PROJECT_NAME: ci-fdw-${{ github.run_id }}
+      COMPOSE_PROJECT_NAME: ci-hea-${{ github.run_id }}
       COMPOSE_FILE: docker-compose.yml:docker-compose.ci.yml:docker-compose.utils.yml
-      CI_REGISTRY_IMAGE: "888016039450.dkr.ecr.us-east-1.amazonaws.com/fdw"
+      CI_REGISTRY_IMAGE: "888016039450.dkr.ecr.us-east-1.amazonaws.com/hea"
       BUILD_IMAGES: "app db nginx flower"
 
     steps:
@@ -1041,11 +1011,11 @@ jobs:
           for SERVICE in ${{ env.BUILD_IMAGES }}; do docker tag ${{ env.COMPOSE_PROJECT_NAME }}-${SERVICE}:latest ${CI_REGISTRY_IMAGE}/${SERVICE}:edge; done
           for SERVICE in ${{ env.BUILD_IMAGES }}; do docker push ${{ env.CI_REGISTRY_IMAGE }}/${SERVICE}:edge | grep -i -e 'The push refers to' -e Digest -e Status -e Error; done
       - name: "Start the service containers"
-        run: docker compose up -d db minio redis celery_slow celery_medium celery_fast celery_luigi
+        run: docker compose up -d db minio
       - name: "Wait for containers to be ready"
         run: |
           echo $`date` Wait for containers to be ready
-          docker compose run -e TARGETS=db:5432,minio:9000,redis:6379 -e TIMEOUT=90 wait
+          docker compose run -e TARGETS=db:5432 -e TIMEOUT=90 wait
           echo $`date` Containers ready
           docker compose exec -T db pg_config --version
       - name: "Run test suite"
@@ -1129,9 +1099,9 @@ jobs:
       # in all places. The variable doesn't always work
       # @TODO: Check if we can use "CI_PIPELINE_ID" in COMPOSE_PROJECT_NAME
       CI_PIPELINE_ID: ${{ github.run_id }}
-      COMPOSE_PROJECT_NAME: ci-fdw-${{ github.run_id }}
+      COMPOSE_PROJECT_NAME: ci-hea-${{ github.run_id }}
       COMPOSE_FILE: docker-compose.yml:docker-compose.ci.yml:docker-compose.utils.yml
-      CI_REGISTRY_IMAGE: "888016039450.dkr.ecr.us-east-1.amazonaws.com/fdw"
+      CI_REGISTRY_IMAGE: "888016039450.dkr.ecr.us-east-1.amazonaws.com/hea"
       BUILD_IMAGES: "app db nginx flower"
 
     steps:
@@ -1162,9 +1132,9 @@ jobs:
           for SERVICE in ${BUILD_IMAGES}; do docker tag ci-${APP}-${CI_PIPELINE_ID}-${SERVICE}:latest ${CI_REGISTRY_IMAGE}/${SERVICE}:edge; done
           for SERVICE in ${BUILD_IMAGES}; do docker push ${CI_REGISTRY_IMAGE}/${SERVICE}:edge | grep -i -e 'The push refers to' -e Digest -e Status -e Error; done
       - name: "Start the service containers"
-        run: docker compose up -d db minio redis celery_slow celery_medium celery_fast celery_luigi
+        run: docker compose up -d db minio
       - name: "Wait for containers to be ready"
-        run: docker compose run -e TARGETS=db:5432,minio:9000,redis:6379 -e TIMEOUT=60 wait
+        run: docker compose run -e TARGETS=db:5432 -e TIMEOUT=60 wait
       - name: "Run test suite"
         run: |
           # Use run instead of up because we want docker-compose to return the exit code

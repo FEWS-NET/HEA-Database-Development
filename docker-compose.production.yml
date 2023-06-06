@@ -8,13 +8,7 @@ services:
     logging:
       driver: fluentd
       options:
-        tag: docker.fdw.dev.db.{{.ID}}
-
-  redis:
-    deploy:
-      resources:
-        limits:
-          memory: 8000M
+        tag: docker.hea.dev.db.{{.ID}}
 
   app:
     restart: "no"
@@ -29,32 +23,4 @@ services:
     logging:
       driver: fluentd
       options:
-        tag: docker.fdw.dev.app.{{.ID}}
-
-  celery_luigi:
-    restart: unless-stopped
-    image: fdw-app
-    depends_on:
-      - db
-      - redis
-    deploy:
-      resources:
-        limits:
-          memory: 10000M
-
-  celery_medium:
-    restart: unless-stopped
-    image: fdw-app
-    depends_on:
-      - db
-      - redis
-    deploy:
-      resources:
-        limits:
-          memory: 10000M
-
-  flower:
-    deploy:
-      resources:
-        limits:
-          memory: 200M
+        tag: docker.hea.dev.app.{{.ID}}

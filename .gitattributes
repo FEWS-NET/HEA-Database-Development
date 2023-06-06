@@ -1,5 +1,1 @@
 CHANGELOG.md merge=union
-data-explorer/ binary -diff
-data-explorer/* binary -diff
-data-explorer/*/* binary -diff
-data-explorer/**/* binary -diff

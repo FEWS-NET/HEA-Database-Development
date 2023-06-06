@@ -64,41 +64,8 @@ services:
       - "/usr/src/app/docker/app/run_tests.sh"
     command: ""
     environment:
-      DJANGO_SETTINGS_MODULE: fdw.settings.ci
+      DJANGO_SETTINGS_MODULE: hea.settings.ci
       # Put .coverage in a writable directory
       COVERAGE_FILE: log/.coverage
     depends_on:
-      - celery_medium
       - db
-      - redis
-
-  celery_luigi:
-    image: ci-${APP}-${CI_PIPELINE_ID}-app
-    environment:
-      DJANGO_SETTINGS_MODULE: fdw.settings.ci_celery
-    depends_on:
-      - db
-      - redis
-
-  celery_medium:
-    image: ci-${APP}-${CI_PIPELINE_ID}-app
-    environment:
-      DJANGO_SETTINGS_MODULE: fdw.settings.ci_celery
-    depends_on:
-      - db
-      - redis
-
-  luigid:
-    image: ci-${APP}-${CI_PIPELINE_ID}-app
-    environment:
-      DJANGO_SETTINGS_MODULE: fdw.settings.ci_celery
-    depends_on:
-      - db
-      - redis
-
-  nginx:
-    restart: "no"
-    build:
-      cache_from:
-        - $CI_REGISTRY_IMAGE/nginx:latest
-        - $CI_REGISTRY_IMAGE/nginx:edge

@@ -11,7 +11,7 @@ on:
 
 env:
   CLIENT: "fnt"
-  APP: "fdw"
+  APP: "hea"
 
   # workflow_dispatch input variables
   ENV: ${{ inputs.environment }}
@@ -40,19 +40,13 @@ jobs:
           # Use jq to filter out meaningless event history - the events related to the re-deployment haven't happened yet
           apk --no-cache add jq=1.6-r2 aws-cli=1.25.97-r0
           aws ecs update-service --region ${AWS_REGION} --cluster ${ECS_CLUSTER} --service ${CLIENT}${APP}${ENV}_app --force-new-deployment --health-check-grace-period-seconds 3600 | jq "del(.[] | .events)"
-          aws ecs update-service --region ${AWS_REGION} --cluster ${ECS_CLUSTER} --service ${CLIENT}${APP}${ENV}_api --force-new-deployment --health-check-grace-period-seconds 3600 | jq "del(.[] | .events)"
-          aws ecs update-service --region ${AWS_REGION} --cluster ${ECS_CLUSTER} --service ${CLIENT}${APP}${ENV}_celery_luigi --force-new-deployment | jq "del(.[] | .events)"
-          aws ecs update-service --region ${AWS_REGION} --cluster ${ECS_CLUSTER} --service ${CLIENT}${APP}${ENV}_celery_slow --force-new-deployment | jq "del(.[] | .events)"
-          aws ecs update-service --region ${AWS_REGION} --cluster ${ECS_CLUSTER} --service ${CLIENT}${APP}${ENV}_celery_medium --force-new-deployment | jq "del(.[] | .events)"
-          aws ecs update-service --region ${AWS_REGION} --cluster ${ECS_CLUSTER} --service ${CLIENT}${APP}${ENV}_celery_fast --force-new-deployment | jq "del(.[] | .events)"
-          aws ecs update-service --region ${AWS_REGION} --cluster ${ECS_CLUSTER} --service ${CLIENT}${APP}${ENV}_beat --force-new-deployment | jq "del(.[] | .events)"
           echo -n "Initiated deployment to "
           case $ENV in
             dev)
-              echo -n '"https://fdwdev.fews.net/en/admin/"'
+              echo -n '"https://headev.fews.net/en/admin/"'
               ;;
 
             tst)
-              echo -n '"https://fdwstage.fews.net/en/admin/"'
+              echo -n '"https://heastage.fews.net/en/admin/"'
               ;;
           esac

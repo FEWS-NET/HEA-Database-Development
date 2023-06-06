@@ -11,11 +11,6 @@ if [ x"$DJANGO_MIGRATE" != x"" ]; then
     python manage.py migrate --noinput
 fi
 
-if [ x"$SPHINX_BUILD" != x"" ]; then
-    echo Building documentation
-    $(dirname $(realpath "$0"))/build_docs.sh > /dev/null 2>&1
-fi
-
 if [ ! -f assets/staticfiles.json ]; then
     echo Collecting static files
     python manage.py collectstatic --noinput
