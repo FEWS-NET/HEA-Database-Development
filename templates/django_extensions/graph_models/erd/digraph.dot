@@ -1,0 +1,19 @@
+{% block digraph %}@startuml
+
+' Dotfile by Django-Extensions graph_models
+' Created: {{ created_at }}
+{% if cli_options %}' CLI Options: {{ cli_options }}{% endif %}
+
+' hide the spot
+hide circle
+
+' avoid problems with angled crows feet
+skinparam linetype ortho
+
+' Labels
+{% block labels %}{% for graph in graphs %}{% include "django_extensions/graph_models/erd/label.dot" %}{% endfor %}{% endblock %}
+
+' Relations
+{% block relations %}{% for graph in graphs %}{% include "django_extensions/graph_models/erd/relation.dot" %}{% endfor %}{% endblock %}
+@enduml
+{% endblock %}

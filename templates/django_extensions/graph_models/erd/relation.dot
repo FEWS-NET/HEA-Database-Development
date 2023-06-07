@@ -1,0 +1,4 @@
+{% for model in graph.models %}{% for relation in model.relations %}{% if relation.needs_node %}entity "{{ relation.target }}" {
+}{% endif %}
+{{ relation.target }} {% if "arrowhead=none" in relation.arrows %}||{% else %}o{{ "}" }}{% endif %}--{% if "arrowtail=none" in relation.arrows %}||{% else %}o{{ "{" }}{% endif %} {{ model.name }}
+{% endfor %}{% endfor %}
