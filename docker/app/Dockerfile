@@ -33,11 +33,7 @@ ENV PYTHONIOENCODING UTF-8
 EXPOSE 8000 8888 8022
 ENTRYPOINT ["/usr/src/app/docker/app/run_django.sh"]
 
-# GDAL requires numpy for some extensions to build
-
-RUN pip install "setuptools<58.0.0" \
-                "numpy==1.24.3" && \
-    VERSION=$(gdal-config --version); CFLAGS=$(gdal-config --cflags) pip install GDAL==${VERSION}
+RUN VERSION=$(gdal-config --version); CFLAGS=$(gdal-config --cflags) pip install GDAL[numpy]==${VERSION}
 
 # Install the Python requirements
 COPY requirements /usr/src/app/requirements
@@ -45,6 +41,7 @@ ARG PIP_TRUSTED_HOST=127.0.0.1
 ARG PIP_INDEX_URL=https://pypi.python.org/simple/
 RUN pip install --quiet --no-cache-dir -r /usr/src/app/requirements/base.txt
 
+WORKDIR /usr/src/app
 # Create the user and required user-writable directories.
 # These directories should be listed in .dockerignore
 # - assets contains compiled staticfiles
@@ -65,11 +62,11 @@ RUN mkdir -p \
 # paths are required for them to still work when docker-compose.override.yml is
 # mounting the working directory into /usr/src/app
 VOLUME \
-    /usr/src/app/assets \
-    /usr/src/app/cache \
-    /usr/src/app/log \
-    /usr/src/app/media \
-    /usr/src/app/run
+    assets \
+    cache \
+    log \
+    media \
+    run
 
 ## Create a second build stage that adds the source code
 ## This allows the test and dev stages below to reuse the base stage
