@@ -46,7 +46,9 @@ class Command(BaseCommand):
         content = input_file.read()
 
         # Find the test output by finding all test between the --- markers after the "Running tests..." header
-        result = re.search(r"Running tests...\n-+\n(.+)\n-+", content, re.DOTALL | re.MULTILINE)
+        result = re.search(
+            r"System check identified no issues \(. silenced\)\.\n(.+)\n-+", content, re.DOTALL | re.MULTILINE
+        )
         if not result:
             raise CommandError("Cannot find test output")
         test_output = result.groups()[0]
