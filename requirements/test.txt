@@ -1,3 +1,4 @@
 -r base.txt
 coverage==7.2.7
+Pyrseas==0.10.0
 safety==2.3.5
