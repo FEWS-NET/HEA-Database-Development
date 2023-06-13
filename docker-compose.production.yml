@@ -1,0 +1,26 @@
+version: "3.7"
+services:
+  db:
+    deploy:
+      resources:
+        limits:
+          memory: 2000M
+    logging:
+      driver: fluentd
+      options:
+        tag: docker.hea.dev.db.{{.ID}}
+
+  app:
+    restart: "no"
+    deploy:
+      resources:
+        limits:
+          memory: 10000M
+    volumes:
+      - ./:/usr/src/app
+    env_file: .env
+    user: ${UID}
+    logging:
+      driver: fluentd
+      options:
+        tag: docker.hea.dev.app.{{.ID}}

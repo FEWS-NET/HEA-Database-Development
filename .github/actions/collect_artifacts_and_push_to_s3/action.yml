@@ -1,0 +1,40 @@
+name: "Upload artifacts to s3"
+description: "Collect test artifacts and upload to s3"
+
+inputs:
+  source-files-or-folders:
+    description: "Space separated list of files or folders to upload to s3"
+    required: true
+  aws-s3-bucket:
+    description: "Name of the s3 bucket"
+    required: true
+    default: "fntgithub-ci-artifacts"
+
+outputs:
+  presigned-url:
+    description: "Temporary s3 URL"
+    value: ${{ steps.s3-upload.outputs.presigned-url }}
+  aws-console-url:
+    description: "Link to file in AWS console"
+    value: ${{ steps.s3-upload.outputs.aws-console-url }}
+
+runs:
+  using: "composite"
+  steps:
+    - id: s3-upload
+      shell: ash --noprofile --norc -eo pipefail {0} # Fail on any non-zero exit code, even in piped commands
+      run: |
+        export S3_SOURCE_DIR=${{ github.repository }}/${{ env.CI_PIPELINE_ID }}
+        export ARTIFACTS_DIR=${{ github.job }}-artifacts
+        export AWS_S3_BUCKET=${{ inputs.aws-s3-bucket }}
+        mkdir -p ${S3_SOURCE_DIR}/${ARTIFACTS_DIR}
+        echo "Created artifact directory ${S3_SOURCE_DIR}/${ARTIFACTS_DIR}"
+        mv -v ${{ inputs.source-files-or-folders }} \
+          ${S3_SOURCE_DIR}/${ARTIFACTS_DIR} || true
+        cd ${S3_SOURCE_DIR}
+        tar cfz ${ARTIFACTS_DIR}.tar.gz ${ARTIFACTS_DIR}
+        rm -r ${ARTIFACTS_DIR}
+        cd -
+        aws s3 sync ${S3_SOURCE_DIR} s3://${AWS_S3_BUCKET}/${S3_SOURCE_DIR}
+        echo "presigned-url=$(aws s3 presign s3://${AWS_S3_BUCKET}/${S3_SOURCE_DIR}/${ARTIFACTS_DIR}.tar.gz --expires-in=604800)" >> $GITHUB_OUTPUT
+        echo "aws-console-url=https://s3.console.aws.amazon.com/s3/buckets/${AWS_S3_BUCKET}?prefix=${S3_SOURCE_DIR}/${ARTIFACTS_DIR}.tar.gz&region=us-east-1" >> $GITHUB_OUTPUT

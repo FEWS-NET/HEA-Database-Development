@@ -1,0 +1,52 @@
+name: Deploy to environment
+run-name: Deploy to ${{ inputs.environment }} triggered by @${{ github.actor }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment for deployment"
+        type: environment
+        required: true
+
+env:
+  CLIENT: "fnt"
+  APP: "hea"
+
+  # workflow_dispatch input variables
+  ENV: ${{ inputs.environment }}
+
+  # AWS Variables
+  ECS_CLUSTER: "fnt_ecs"
+  AWS_REGION: "us-east-1"
+
+jobs:
+  deploy_env:
+    # this will allow us to access secrets defined for this environment
+    environment: ${{ inputs.environment }}
+    runs-on: [self-hosted, ec2-runner]
+    container:
+      image: alpine:3.17
+    defaults:
+      run:
+        shell: ash --noprofile --norc -eo pipefail {0} # Fail on any non-zero exit code, even in piped commands
+
+    steps:
+      - name: Restart services
+        run: |
+          echo "using environment \"$ENV\""
+          # Force a re-deployment of the services. Allow a long health check grace period for the services
+          # behind load balancers, so that migrations have time to run, etc.
+          # Use jq to filter out meaningless event history - the events related to the re-deployment haven't happened yet
+          apk --no-cache add jq=1.6-r2 aws-cli=1.25.97-r0
+          aws ecs update-service --region ${AWS_REGION} --cluster ${ECS_CLUSTER} --service ${CLIENT}${APP}${ENV}_app --force-new-deployment --health-check-grace-period-seconds 3600 | jq "del(.[] | .events)"
+          echo -n "Initiated deployment to "
+          case $ENV in
+            dev)
+              echo -n '"https://headev.fews.net/en/admin/"'
+              ;;
+
+            tst)
+              echo -n '"https://heastage.fews.net/en/admin/"'
+              ;;
+          esac

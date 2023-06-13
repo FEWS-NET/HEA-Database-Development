@@ -1,0 +1,110 @@
+# Python bytecode:
+**/*.pyc
+**/*.pyo
+
+# Packaging files:
+**/*.egg*
+
+# Cache files:
+__pycache__
+.mypy_cache
+
+# Editor temp files:
+**/*.swp
+**/*~
+
+# Other tmp files:
+cache/
+tmp/
+
+# Git
+.git/
+.gitignore
+.gitmodules
+
+## Compiled language files
+*.mo
+
+## Sphinx docs:
+docs/_build/
+
+# SQLite3 database files:
+*.db
+
+# Docker volumes
+docker/*/volumes/
+
+# Backups
+*.backup
+
+# Logs:
+**/*.log
+**/*.log.*
+**/logfile*
+log/
+
+# PIDs:
+**/*.pid
+run/
+
+# Build Reports
+reports/
+
+# KCacheGrind profile files
+**/*.prof
+**/*.pyprof
+
+# BIRT Report Settings
+**/*.rptconfig
+
+# Compiled Assets and Media
+assets/
+!apps/viz/dash/*/assets/
+data-explorer/build/
+fde2/build/
+fdm/build/
+media/
+
+# External components
+vendor/
+pyrseas/
+
+# virtualenv
+env/
+
+# Gitlab CI Builds
+builds/
+
+# Visual Studio Code Settings
+.vscode
+
+# Eclipse Settings
+.buildpath
+.project
+.settings
+.pydevproject
+
+# Elastic Beanstalk configuration
+.elasticbeanstalk/
+.ebextensions/
+
+# Vagrant virtual machines
+.vagrant/
+vagrant_ansible_inventory*
+Vagrantfile
+Dockerfile
+DbDockerfile
+
+# OSX Folder Attributes
+.DS_Store
+
+# PyCharm Settings
+.idea/
+
+# Nose Stopwatch Files
+.nose-stopwatch*
+nosetests.xml
+.coverage
+
+# Ruff cache
+.ruff_cache/

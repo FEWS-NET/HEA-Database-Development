@@ -1,0 +1,5 @@
+-r base.txt
+coverage==7.2.7
+# Pyrseas==0.10.0 raises "KeyError: ('public', 'spatial_ref_sys')", --schema/--exclude-schema don't fix it.
+Pyrseas==0.9.1
+safety==2.3.5
