@@ -4,6 +4,7 @@ import sys
 from os.path import abspath, basename, dirname, join, normpath
 
 import environ
+import jsonlogging
 import requests
 
 env = environ.Env(LOG_FORMATTER=(str, "standard"))
@@ -146,3 +147,67 @@ STATIC_HOST = env.str("DJANGO_STATIC_HOST", "")
 STATIC_URL = STATIC_HOST + "/static/"
 STATIC_ROOT = normpath(join(SITE_ROOT, "assets"))
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+LOGGING = {
+    "version": 1,
+    # Don't disable existing loggers, because doing so
+    # will stop the Gunicorn loggers from working
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {"format": "%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s"},
+        "standard": {
+            "format": "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s",
+            "datefmt": "%d/%b/%Y %H:%M:%S",
+        },
+        "simple": {"format": "%(levelname)s %(message)s"},
+        "json": {
+            "()": jsonlogging.LogstashFormatterV1,
+            "tags": [
+                "client=%s" % env("CLIENT"),
+                "app=%s" % env("APP"),
+                "env=%s" % env("ENV"),
+                "app_version=%s" % APP_VERSION,
+            ],
+        },
+    },
+    "filters": {
+        "require_debug_false": {"()": "django.utils.log.RequireDebugFalse"},
+    },
+    "handlers": {
+        "logfile": {
+            "level": "INFO",
+            "class": "logging.handlers.TimedRotatingFileHandler",
+            "filename": SITE_ROOT + "/log/django.log",
+            "when": "midnight",
+            "interval": 1,
+            "backupCount": 7,
+            "formatter": "standard",
+        },
+        "console": {
+            "level": "INFO",
+            "stream": sys.stdout,
+            "class": "logging.StreamHandler",
+            "formatter": env.str("LOG_FORMATTER", "standard"),
+        },
+        "mail_admins": {
+            "level": "ERROR",
+            "class": "django.utils.log.AdminEmailHandler",
+            "filters": ["require_debug_false"],
+            "include_html": True,
+        },
+    },
+    "loggers": {
+        "ddtrace": {"handlers": ["logfile"], "level": "INFO"},
+        "django.request": {"handlers": ["console", "logfile"], "level": "INFO", "propagate": False},
+        "django.db.backends": {"handlers": ["console", "logfile"], "level": "INFO", "propagate": False},
+        "django.security": {"handlers": ["console", "logfile"], "level": "ERROR", "propagate": False},
+        "factory": {"handlers": ["console", "logfile"], "level": "INFO"},
+        "faker": {"handlers": ["console", "logfile"], "level": "INFO"},
+        "urllib3": {"handlers": ["console", "logfile"], "level": "INFO", "propagate": False},
+        "common.models": {"handlers": ["console", "logfile"], "level": "INFO", "propagate": False},
+        "common.signals": {"handlers": ["console", "logfile"], "level": "INFO", "propagate": False},
+    },
+    # Keep root at DEBUG and use the `level` on the handler to control logging output,
+    # so that additional handlers can be used to get additional detail, e.g. `common.resources.LoggingResourceMixin`
+    "root": {"handlers": ["console", "logfile"], "level": "DEBUG"},
+}
