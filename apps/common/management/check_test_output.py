@@ -29,9 +29,9 @@ class Command(BaseCommand):
         System check identified no issues (1 silenced).
           test_filter_access (apps.warehouse.tests.test_viewsets.DataPointViewSetTestCase) ... ok (3.777s)
           test_filter_access (apps.warehouse.tests.test_viewsets.DataSeriesViewSetTestCase) ... ok (1.683s)
-          test_list_filter_by_used_for (apps.warehouse.tests.test_viewsets.DataSourceDocumentViewSetTestCase) ... ok (2.088s)
-          test_save_of_marketprice_triggers_refresh (apps.price.tests.test_models.MarketPriceFactsCase) ... ok (22.536s)
-          test_writing_unicode_in_update_file (apps.common.tests.test_resources.LoggingResourceMixinTestCase) ... ok (0.020s)
+          test_list_filter_by_used_for (apps.warehouse.tests.test_viewsets.DataDocumentViewSetTestCase) ... ok (2.088s)
+          test_save_of_marketprice_triggers_refresh (apps.price.tests.test_models.MarketFactsCase) ... ok (22.536s)
+          test_writing_unicode_in_update_file (apps.common.tests.test_resources.LoggingMixinTestCase) ... ok (0.020s)
         ----------------------------------------------------------------------
         Ran 1262 tests in 2012.205s
     """
@@ -54,7 +54,8 @@ class Command(BaseCommand):
         # Prepare regex patterns for "acceptable" lines or output
         good_lines = [
             r"^System check identified no issues.*$",
-            r"^  test_\w+ \([\w\.]+\) \.\.\..*?\([\d\.]+s\)$",  # Verbose output, e.g.  test_weekly_facts (apps.price.tests.test_models.MarketPriceFactsCase) ... ok (32.194s)
+            # Verbose output, e.g.  test_weekly_facts (apps.price.tests.test_models.MarketFactsCase) ... ok (32.194s):
+            r"^  test_\w+ \([\w\.]+\) \.\.\..*?\([\d\.]+s\)$",
             r"^[\.s]+$",  # Simple output, e.g. .....................s.............................s..................
             r"^.*Saving combined file.*$",
             r"^.*Saved combined results.*$",
