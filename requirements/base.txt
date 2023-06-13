@@ -3,6 +3,7 @@ ddtrace==1.14.0
 Django==4.2.2
 django-database-files==0.1
 django-environ==0.10.0
+django-extensions==3.2.3
 django-filter==23.2
 django-guardian==2.4.0
 django-treebeard==4.7
