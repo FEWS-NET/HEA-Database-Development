@@ -11,7 +11,9 @@ factory-boy==3.2.1
 gunicorn==20.1.0
 json-logging-py==0.2
 numpy==1.24.3
-psycopg[binary]==3.1.9
+# Upgrade to psycopg>=3 once ddtrace supports it.
+# See https://github.com/DataDog/dd-trace-py/issues/4393
+psycopg2[binary]==2.9.6
 requests==2.31.0
 sqlparse==0.4.4
 whitenoise==6.4.0

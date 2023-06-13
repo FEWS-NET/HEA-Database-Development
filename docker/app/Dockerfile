@@ -28,11 +28,15 @@ RUN curl -s https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor |
     rm -f /var/cache/apt/archives/*.deb
 
 # Set up mostly static layers that don't change often
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1
+ENV PIP_ROOT_USER_ACTION=ignore
 ENV PYTHONIOENCODING UTF-8
 # Expose Gunicorn (8000), Jupyter (8888) and SSH (8022) ports
 EXPOSE 8000 8888 8022
 ENTRYPOINT ["/usr/src/app/docker/app/run_django.sh"]
 
+# See https://github.com/pypa/setuptools/issues/2781
+RUN pip --quiet --no-cache-dir install setuptools==57.5.0
 RUN VERSION=$(gdal-config --version); CFLAGS=$(gdal-config --cflags) pip install GDAL[numpy]==${VERSION}
 
 # Install the Python requirements
