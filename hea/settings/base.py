@@ -55,10 +55,10 @@ DATABASES = {
         "PASSWORD": env("PGPASSWORD"),
         "HOST": env("PGHOST"),
         "PORT": env.int("PGPORT", 5432),
-        "OPTIONS": {"sslmode": "prefer", "application_name": "hea"},
-        "SCHEMA": "hea_owner",
+        "OPTIONS": {"sslmode": "prefer", "application_name": SITE_NAME.lower()},
+        "SCHEMA": f"{SITE_NAME.lower()}_owner",
         "TEST": {
-            "TEMPLATE": "template_hea",
+            "TEMPLATE": f"template_{SITE_NAME.lower()}",
             "SERIALIZE": False,
         },
     }

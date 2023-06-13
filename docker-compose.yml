@@ -73,7 +73,7 @@ services:
       DJANGO_SETTINGS_MODULE: ${APP}.settings.insecure
       DOMAIN: ${APP}lcl.localdomain,${APP}lcl,localhost,127.0.0.1
       SECRET_KEY: ${SECRET_KEY}
-      PGHOST: db
+      PGHOST: ${PGHOST}
       PGUSER: ${CLIENT}${APP}${ENV}
       PGDATABASE: ${CLIENT}${APP}${ENV}
       PGPASSWORD: ${PGPASSWORD}
