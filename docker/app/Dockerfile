@@ -36,7 +36,7 @@ EXPOSE 8000 8888 8022
 ENTRYPOINT ["/usr/src/app/docker/app/run_django.sh"]
 
 # See https://github.com/pypa/setuptools/issues/2781
-RUN pip --quiet --no-cache-dir install setuptools==57.5.0
+RUN pip --quiet --no-cache-dir install "setuptools<58.0.0"
 RUN VERSION=$(gdal-config --version); CFLAGS=$(gdal-config --cflags) pip install GDAL[numpy]==${VERSION}
 
 # Install the Python requirements
