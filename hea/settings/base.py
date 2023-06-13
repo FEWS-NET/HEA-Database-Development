@@ -49,16 +49,16 @@ EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 POSTGIS_TEMPLATE = f"template_{SITE_NAME.lower()}"
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql",  # @TODO: Requires GDAL "django.contrib.gis.db.backends.postgis",
+        "ENGINE": "django.contrib.gis.db.backends.postgis",
         "NAME": env("PGDATABASE"),
         "USER": env("PGUSER"),
         "PASSWORD": env("PGPASSWORD"),
         "HOST": env("PGHOST"),
         "PORT": env.int("PGPORT", 5432),
-        "OPTIONS": {"sslmode": "prefer", "application_name": SITE_NAME.lower()},
-        "SCHEMA": f"{SITE_NAME.lower()}_owner",
+        "OPTIONS": {"sslmode": "prefer", "application_name": "hea"},
+        "SCHEMA": "hea_owner",
         "TEST": {
-            "TEMPLATE": f"template_{SITE_NAME.lower()}",
+            "TEMPLATE": "template_hea",
             "SERIALIZE": False,
         },
     }
