@@ -479,12 +479,13 @@ class Season(models.Model):
     )
 
 
-class SeasonalCalender(models.Model):
+class SeasonalCalendar(models.Model):
     """
     A graphical presentation of the months in which food and cash crop production and key food and income acquisition
-    strategies take place, also showing key seasonal periods such as the rains, periods of peak illness and the hunger season.
+    strategies take place, also showing key seasonal periods such as the rains, periods of peak illness and the hunger
+     season.
 
-    Form 3's SEASONAL CALENDER for a typical year is used for the interview and BSS's 'Seas Cal' captures the data
+    Form 3's SEASONAL CALENDAR for a typical year is used for the interview and BSS's 'Seas Cal' captures the data
     """
 
     ACTIVITY_DONE_BY = (
@@ -573,8 +574,10 @@ class MarketPrice(models.Model):
     community = models.ForeignKey(
         Community, on_delete=models.RESTRICT, verbose_name=_("Community or Village")
     )
-    # We need the item to reference it but the item can be Crop, Livestock, Other expenditure items e.g. tea, coffee, sugar ..
-    # do we need to have a) something similar to Classified Product or b) a reference model -
+    # We need the item to reference it but the item can be Crop, Livestock, Other expenditure items
+    # e.g. tea, coffee, sugar ..# do we need to have
+    # a) something similar to Classified Product or
+    # b) a reference model -
     # MarketItem with category as Main food, Cash crops Livestock ..
     crop_type = models.ForeignKey(
         CropType,
