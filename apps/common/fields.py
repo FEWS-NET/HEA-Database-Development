@@ -12,9 +12,7 @@ class CleaningCharField(models.CharField):
 
     """
 
-    def __init__(
-        self, strip=False, capitalize=False, lower=False, upper=False, *args, **kwargs
-    ):
+    def __init__(self, strip=False, capitalize=False, lower=False, upper=False, *args, **kwargs):
         self.strip = strip
         self.capitalize = capitalize
         self.lower = lower
@@ -86,9 +84,7 @@ class DescriptionField(models.TextField):
             "max_length": 2000,
             "verbose_name": _("description"),
             "blank": True,
-            "help_text": (
-                "Any extra information or detail that is relevant to the object."
-            ),
+            "help_text": ("Any extra information or detail that is relevant to the object."),
         }
         defaults.update(kwargs)
         super().__init__(*args, **defaults)
