@@ -85,6 +85,7 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
+            options={"verbose_name": "Market", "verbose_name_plural": "Markets"},
         ),
         migrations.CreateModel(
             name="SeasonalActivity",
@@ -159,9 +160,7 @@ class Migration(migrations.Migration):
                     models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to="metadata.dimensiontype"),
                 ),
             ],
-            options={
-                "abstract": False,
-            },
+            options={"verbose_name": "Seasonal Activity", "verbose_name_plural": "Seasonal Activities"},
         ),
         migrations.CreateModel(
             name="SourceOrganization",
@@ -383,6 +382,7 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
+            options={"verbose_name": "Seasonal Calendar", "verbose_name_plural": "Seasonal Calendars"},
         ),
         migrations.CreateModel(
             name="Season",
@@ -460,6 +460,7 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
+            options={"verbose_name": "Season", "verbose_name_plural": "Seasons"},
         ),
         migrations.CreateModel(
             name="MarketPrice",
@@ -552,6 +553,7 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
+            options={"verbose_name": "MarketPrice", "verbose_name_plural": "MarketPrices"},
         ),
         migrations.CreateModel(
             name="LivelihoodZoneBaseline",
@@ -682,6 +684,7 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
+            options={"verbose_name": "Hazard", "verbose_name_plural": "Hazards"},
         ),
         migrations.CreateModel(
             name="CommunityLivestock",
@@ -813,6 +816,7 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
+            options={"verbose_name": "Community Crop Production", "verbose_name_plural": "Community Crop Productions"},
         ),
         migrations.AddField(
             model_name="community",

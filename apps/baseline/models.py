@@ -393,6 +393,10 @@ class SeasonalActivity(Dimension):
         help_text=_("If the activity is a representation of the weather eg. rainy, dry"),
     )
 
+    class Meta:
+        verbose_name = _("Seasonal Activity")
+        verbose_name_plural = _("Seasonal Activities")
+
 
 class Season(models.Model):
 
@@ -432,6 +436,10 @@ class Season(models.Model):
     )
     rain_fall_record = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_("Rainfall record"))
 
+    class Meta:
+        verbose_name = _("Season")
+        verbose_name_plural = _("Seasons")
+
 
 class SeasonalCalendar(models.Model):
     """
@@ -463,6 +471,10 @@ class SeasonalCalendar(models.Model):
     # Who typically does the activity, Male, Female, Childern ... We can make this a choice field?
     who_does_the_activity = models.CharField(choices=ACTIVITY_DONE_BY, verbose_name=_("Activity done by"))
 
+    class Meta:
+        verbose_name = _("Seasonal Calendar")
+        verbose_name_plural = _("Seasonal Calendars")
+
 
 class CommunityCropProduction(models.Model):
     """
@@ -490,6 +502,10 @@ class CommunityCropProduction(models.Model):
     seed_requirement = common_models.PrecisionField(verbose_name=_("Seed requirement"))
     unit_of_land = models.ForeignKey(UnitOfMeasure, on_delete=models.RESTRICT, verbose_name=_("Unit of land"))
 
+    class Meta:
+        verbose_name = _("Community Crop Production")
+        verbose_name_plural = _("Community Crop Productions")
+
 
 class Market(models.Model):
     """
@@ -499,6 +515,10 @@ class Market(models.Model):
 
     name = common_models.NameField(verbose_name=_("Name"))
     community = models.ForeignKey(Community, on_delete=models.RESTRICT, verbose_name=_("Community or Village"))
+
+    class Meta:
+        verbose_name = _("Market")
+        verbose_name_plural = _("Markets")
 
 
 class MarketPrice(models.Model):
@@ -537,6 +557,10 @@ class MarketPrice(models.Model):
     high_price_month = models.SmallIntegerField(choices=list(MONTHS), verbose_name=_("High Price Month"))
     unit_of_measure = models.ForeignKey(UnitOfMeasure, on_delete=models.RESTRICT, verbose_name=_("Unit of measure"))
 
+    class Meta:
+        verbose_name = _("MarketPrice")
+        verbose_name_plural = _("MarketPrices")
+
 
 # LabourMarket?
 # LivestockMigration
@@ -571,3 +595,7 @@ class Hazard(models.Model):
     response = common_models.DescriptionField(
         max_length=255, null=True, blank=True, verbose_name=_("Description of event(s)")
     )
+
+    class Meta:
+        verbose_name = _("Hazard")
+        verbose_name_plural = _("Hazards")
