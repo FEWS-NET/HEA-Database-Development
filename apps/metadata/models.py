@@ -1,7 +1,7 @@
-from django.db import models
-from django.utils.translation import gettext_lazy as _
 
 import common.models as common_models
+from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 
 class DimensionType(common_models.TranslatableModel, models.Model):
@@ -153,3 +153,33 @@ class Translation(models.Model):
     text = models.CharField()
     translation_type = models.ForeignKey(Dimension, on_delete=models.PROTECT, related_name="translations_of_type")
 '''
+
+
+class CropType(Dimension):
+    """
+    A Crop Type, e.g. Maize, Sorghum, Sunflower ...
+    """
+
+    class Meta:
+        verbose_name = _("Crop Type")
+        verbose_name_plural = _("Crop Types")
+
+
+class SeasonalActivityCategory(Dimension):
+    """
+    Seasonal Activity Category can be Crops, Livestock, Gardening, Employment, Fishing
+    """
+
+    class Meta:
+        verbose_name = _("Seasonal Activity Category")
+        verbose_name_plural = _("Seasonal Activity Categories")
+
+
+class HazardCateogy(Dimension):
+    """
+    Category of Hazards like: Drought, Epidemic crop disease,	Wild Animals, Flood, Epidemic livestock disease	...
+    """
+
+    class Meta:
+        verbose_name = _("Hazard Category")
+        verbose_name_plural = _("Hazard Categories")
