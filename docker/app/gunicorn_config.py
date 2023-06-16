@@ -26,7 +26,9 @@ limit_request_line = 0
 access_handlers = ["logfile", "access_log"]
 if env("DD_TRACE_ENABLED"):
     access_handlers += ["console"]
-    statsd_host = env("DD_DOGSTATSD_URL").split("//")[1]  # Gunicorn doesn't recognize the udp:// scheme
+    statsd_host = env("DD_DOGSTATSD_URL").split("//")[
+        1
+    ]  # Gunicorn doesn't recognize the udp:// scheme
 # Set the access_log_format according to whether we are using a log processor like FluentD or DataDog
 if env("LOG_FORMATTER") == "json":
     access_log_format = '{ "time_local":"%(t)s", "remote_addr":"%(h)s", "request":"%(U)s", "query":"%(q)s", "request_method":"%(m)s", "status":%(s)s, "body_bytes_sent":%(B)d, "request_time":%(D)d, "http_user_agent":"%(a)s", "http_referrer":"%(f)s", "x_forwarded_for": "%({X-Forwarded-For}i)s"}'  # NOQA
@@ -36,8 +38,12 @@ logconfig_dict = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
-        "verbose": {"format": "%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s"},
-        "standard": {"format": "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s"},
+        "verbose": {
+            "format": "%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s"
+        },
+        "standard": {
+            "format": "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s"
+        },
         "simple": {"format": "%(levelname)s %(message)s"},
         "message_only": {"format": "%(message)s"},
         "json": {

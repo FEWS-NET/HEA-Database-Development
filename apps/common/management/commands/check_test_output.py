@@ -47,7 +47,9 @@ class Command(BaseCommand):
 
         # Find the test output by finding all test between the --- markers after the "Running tests..." header
         result = re.search(
-            r"System check identified no issues \(. silenced\)\.\n(.+)\n-+", content, re.DOTALL | re.MULTILINE
+            r"System check identified no issues \(. silenced\)\.\n(.+)\n-+",
+            content,
+            re.DOTALL | re.MULTILINE,
         )
         if not result:
             raise CommandError("Cannot find test output")

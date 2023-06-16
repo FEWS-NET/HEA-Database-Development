@@ -1,8 +1,7 @@
-from django.db import models
-from treebeard.mp_tree import MP_Node
-
 from common import models as common_models
+from django.db import models
 from metadata.models import Dimension
+from treebeard.mp_tree import MP_Node
 
 
 class Feature(models.Model):

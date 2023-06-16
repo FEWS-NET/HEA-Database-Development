@@ -34,7 +34,9 @@ ALLOWED_HOSTS = env.list(
     ],
 )
 try:
-    EC2_PRIVATE_IP = requests.get("http://169.254.169.254/2018-09-24/meta-data/local-ipv4", timeout=0.01).text
+    EC2_PRIVATE_IP = requests.get(
+        "http://169.254.169.254/2018-09-24/meta-data/local-ipv4", timeout=0.01
+    ).text
     if EC2_PRIVATE_IP:
         ALLOWED_HOSTS.append(EC2_PRIVATE_IP)
     # If using ECS with the awsvpc network type, the call will be to the trunked ENI address
@@ -156,7 +158,9 @@ LOGGING = {
     # will stop the Gunicorn loggers from working
     "disable_existing_loggers": False,
     "formatters": {
-        "verbose": {"format": "%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s"},
+        "verbose": {
+            "format": "%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s"
+        },
         "standard": {
             "format": "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s",
             "datefmt": "%d/%b/%Y %H:%M:%S",
@@ -200,14 +204,38 @@ LOGGING = {
     },
     "loggers": {
         "ddtrace": {"handlers": ["logfile"], "level": "INFO"},
-        "django.request": {"handlers": ["console", "logfile"], "level": "INFO", "propagate": False},
-        "django.db.backends": {"handlers": ["console", "logfile"], "level": "INFO", "propagate": False},
-        "django.security": {"handlers": ["console", "logfile"], "level": "ERROR", "propagate": False},
+        "django.request": {
+            "handlers": ["console", "logfile"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "django.db.backends": {
+            "handlers": ["console", "logfile"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "django.security": {
+            "handlers": ["console", "logfile"],
+            "level": "ERROR",
+            "propagate": False,
+        },
         "factory": {"handlers": ["console", "logfile"], "level": "INFO"},
         "faker": {"handlers": ["console", "logfile"], "level": "INFO"},
-        "urllib3": {"handlers": ["console", "logfile"], "level": "INFO", "propagate": False},
-        "common.models": {"handlers": ["console", "logfile"], "level": "INFO", "propagate": False},
-        "common.signals": {"handlers": ["console", "logfile"], "level": "INFO", "propagate": False},
+        "urllib3": {
+            "handlers": ["console", "logfile"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "common.models": {
+            "handlers": ["console", "logfile"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "common.signals": {
+            "handlers": ["console", "logfile"],
+            "level": "INFO",
+            "propagate": False,
+        },
     },
     # Keep root at DEBUG and use the `level` on the handler to control logging output,
     # so that additional handlers can be used to get additional detail, e.g. `common.resources.LoggingResourceMixin`
