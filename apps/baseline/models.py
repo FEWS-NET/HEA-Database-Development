@@ -1,12 +1,12 @@
-
 """
 Models for managing HEA Baseline Surveys
 """
-import common.models as common_models
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils.dates import MONTHS
 from django.utils.translation import gettext_lazy as _
+
+import common.models as common_models
 from metadata.models import (
     CropType,
     Dimension,
@@ -30,9 +30,7 @@ class SourceOrganization(models.Model):
     """
 
     name = common_models.NameField(max_length=200, unique=True)
-    full_name = common_models.NameField(
-        verbose_name=_("full name"), max_length=300, unique=True
-    )
+    full_name = common_models.NameField(verbose_name=_("full name"), max_length=300, unique=True)
     description = common_models.DescriptionField()
 
     class Meta:
@@ -91,9 +89,7 @@ class LivelihoodZoneBaseline(models.Model):
     June 2023 for the Sahel countries.
     """
 
-    livelihood_zone = models.ForeignKey(
-        LivelihoodZone, on_delete=models.RESTRICT, verbose_name=_("Livelihood Zone")
-    )
+    livelihood_zone = models.ForeignKey(LivelihoodZone, on_delete=models.RESTRICT, verbose_name=_("Livelihood Zone"))
     # @TODO according to Form 1 this is the Main Livelihood Category. Therefore
     # I think we should rename this to `main_livelihood_category`. Should we
     # also rename the reference table to `LivelihoodCategory` or `MainLivelihoodCategory`,
@@ -112,9 +108,7 @@ class LivelihoodZoneBaseline(models.Model):
     bss = models.FileField(upload_to="baseline/bss", verbose_name=_("BSS Excel file"))
     reference_year_start_date = models.DateField(
         verbose_name=_("Reference Year Start Date"),
-        help_text=_(
-            "The first day of the month of the start month in the reference year"
-        ),
+        help_text=_("The first day of the month of the start month in the reference year"),
     )
     reference_year_end_date = models.DateField(
         verbose_name=_("Reference Year End Date"),
@@ -170,9 +164,7 @@ class Community(models.Model):
     )
     interviewers = models.CharField(
         verbose_name=_("Interviewers"),
-        help_text=_(
-            "The names of interviewers who interviewed the Community, in case any clarification is neeeded."
-        ),
+        help_text=_("The names of interviewers who interviewed the Community, in case any clarification is neeeded."),
     )
     # @TODO is this valuable for doing cross-LHZ analysis even though it is not
     # in the BSS. Could be calculated from WorldPop or LandScan.
@@ -196,12 +188,8 @@ class CommunityLivestock(models.Model):
     This data is typically captured in Form 3 and stored in the Production sheet in the BSS.
     """
 
-    community = models.ForeignKey(
-        Community, on_delete=models.CASCADE, verbose_name=_("Wealth Group")
-    )
-    livestock_type = models.ForeignKey(
-        LivestockType, on_delete=models.RESTRICT, verbose_name=_("Livestock Type")
-    )
+    community = models.ForeignKey(Community, on_delete=models.CASCADE, verbose_name=_("Wealth Group"))
+    livestock_type = models.ForeignKey(LivestockType, on_delete=models.RESTRICT, verbose_name=_("Livestock Type"))
     birth_interval = models.PositiveSmallIntegerField(
         verbose_name=_("Birth Interval"), help_text=_("Number of months between Births")
     )
@@ -257,21 +245,13 @@ class WealthGroup(models.Model):
     """
 
     name = models.CharField(max_length=100, verbose_name=_("Name"))
-    community = models.ForeignKey(
-        Community, on_delete=models.CASCADE, verbose_name=_("Community")
-    )
-    wealth_category = models.ForeignKey(
-        WealthCategory, on_delete=models.CASCADE, verbose_name=_("Wealth Category")
-    )
+    community = models.ForeignKey(Community, on_delete=models.CASCADE, verbose_name=_("Community"))
+    wealth_category = models.ForeignKey(WealthCategory, on_delete=models.CASCADE, verbose_name=_("Wealth Category"))
     percentage_of_households = models.PositiveSmallIntegerField(
         verbose_name=_("Percentage of households"),
-        help_text=_(
-            "Percentage of households in the Community that are in this Wealth Group"
-        ),
+        help_text=_("Percentage of households in the Community that are in this Wealth Group"),
     )
-    average_household_size = models.PositiveSmallIntegerField(
-        verbose_name=_("Average household size")
-    )
+    average_household_size = models.PositiveSmallIntegerField(verbose_name=_("Average household size"))
 
     class Meta:
         verbose_name = _("Wealth Group")
@@ -283,9 +263,7 @@ class WealthGroupAttribute(models.Model):
     An attribute of a Wealth Group such as the number of school-age children.
     """
 
-    wealth_group = models.ForeignKey(
-        WealthGroup, on_delete=models.CASCADE, verbose_name=_("Wealth Group")
-    )
+    wealth_group = models.ForeignKey(WealthGroup, on_delete=models.CASCADE, verbose_name=_("Wealth Group"))
     attribute_type = models.ForeignKey(
         WealthGroupAttributeType,
         on_delete=models.RESTRICT,
@@ -309,15 +287,9 @@ class WealthGroupIncome(models.Model):
     the reference period.
     """
 
-    wealth_group = models.ForeignKey(
-        WealthGroup, on_delete=models.CASCADE, verbose_name=_("Wealth Group")
-    )
-    income_source = models.ForeignKey(
-        IncomeSource, on_delete=models.CASCADE, verbose_name=_("Income Source")
-    )
-    amount = models.DecimalField(
-        max_digits=9, decimal_places=2, verbose_name=_("Amount")
-    )  # in local currency
+    wealth_group = models.ForeignKey(WealthGroup, on_delete=models.CASCADE, verbose_name=_("Wealth Group"))
+    income_source = models.ForeignKey(IncomeSource, on_delete=models.CASCADE, verbose_name=_("Income Source"))
+    amount = models.DecimalField(max_digits=9, decimal_places=2, verbose_name=_("Amount"))  # in local currency
 
     class Meta:
         verbose_name = _("Wealth Group Income")
@@ -330,17 +302,13 @@ class WealthGroupExpenditure(models.Model):
     linked to specific sources of income and the amount sourced from each.
     """
 
-    wealth_group = models.ForeignKey(
-        WealthGroup, on_delete=models.CASCADE, verbose_name=_("Wealth Group")
-    )
+    wealth_group = models.ForeignKey(WealthGroup, on_delete=models.CASCADE, verbose_name=_("Wealth Group"))
     expenditure_category = models.ForeignKey(
         ExpenditureCategory,
         on_delete=models.CASCADE,
         verbose_name=_("Expenditure Category"),
     )
-    amount = models.DecimalField(
-        max_digits=9, decimal_places=2, verbose_name=_("Amount")
-    )  # in local currency
+    amount = models.DecimalField(max_digits=9, decimal_places=2, verbose_name=_("Amount"))  # in local currency
 
     class Meta:
         verbose_name = _("Wealth Group Income")
@@ -353,15 +321,9 @@ class WealthGroupFood(models.Model):
     linked to specific sources of food and the amount sourced from each.
     """
 
-    wealth_group = models.ForeignKey(
-        WealthGroup, on_delete=models.CASCADE, verbose_name=_("Wealth Group")
-    )
-    food_source = models.ForeignKey(
-        FoodSource, on_delete=models.CASCADE, verbose_name=_("Food Source")
-    )
-    amount = models.DecimalField(
-        max_digits=9, decimal_places=2, verbose_name=_("Amount")
-    )  # in local currency
+    wealth_group = models.ForeignKey(WealthGroup, on_delete=models.CASCADE, verbose_name=_("Wealth Group"))
+    food_source = models.ForeignKey(FoodSource, on_delete=models.CASCADE, verbose_name=_("Food Source"))
+    amount = models.DecimalField(max_digits=9, decimal_places=2, verbose_name=_("Amount"))  # in local currency
 
     class Meta:
         verbose_name = _("Wealth Group Food")
@@ -369,9 +331,7 @@ class WealthGroupFood(models.Model):
 
 
 class WealthGroupAsset(models.Model):
-    wealth_group = models.ForeignKey(
-        WealthGroup, on_delete=models.CASCADE, verbose_name=_("Wealth Group")
-    )
+    wealth_group = models.ForeignKey(WealthGroup, on_delete=models.CASCADE, verbose_name=_("Wealth Group"))
     # These fields item, unit, qty, qty_usd and qty_kcal to be refactored into a
     # common parent mixin or ABC `ItemInstance` (?)
     item = models.ForeignKey(Item, on_delete=models.PROTECT)
@@ -426,13 +386,11 @@ class SeasonalActivity(Dimension):
     """
 
     activity_category = models.ForeignKey(
-        SeasonalActivityCategory, verbose_name=_("Activity Category")
+        SeasonalActivityCategory, on_delete=models.RESTRICT, verbose_name=_("Activity Category")
     )
     is_weather_related = models.BooleanField(
         verbose_name=_("Weather related"),
-        help_text=_(
-            "If the activity is a representation of the weather eg. rainy, dry"
-        ),
+        help_text=_("If the activity is a representation of the weather eg. rainy, dry"),
     )
 
 
@@ -449,9 +407,7 @@ class Season(models.Model):
     END = "End"
     ALIGNMENT_CHOICES = ((START, _("Start")), (END, _("End")))
 
-    livelihood_zone = models.ForeignKey(
-        LivelihoodZone, verbose_name=_("livelihood zone"), on_delete=models.RESTRICT
-    )
+    livelihood_zone = models.ForeignKey(LivelihoodZone, verbose_name=_("livelihood zone"), on_delete=models.RESTRICT)
     name = models.CharField(max_length=50, verbose_name=_("Name"))
     description = models.TextField(max_length=255, verbose_name=_("Description"))
     start_month = models.IntegerField(
@@ -474,9 +430,7 @@ class Season(models.Model):
         verbose_name=_("Order"),
         help_text=_("The order of the Season with the Season Year"),
     )
-    rain_fall_record = models.DecimalField(
-        max_digits=10, decimal_places=2, verbose_name=_("Rainfall record")
-    )
+    rain_fall_record = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_("Rainfall record"))
 
 
 class SeasonalCalendar(models.Model):
@@ -495,12 +449,8 @@ class SeasonalCalendar(models.Model):
         ("all", "All"),
     )
 
-    community = models.ForeignKey(
-        Community, on_delete=models.RESTRICT, verbose_name=_("Community or Village")
-    )
-    activity = models.ForeignKey(
-        SeasonalActivity, on_delete=models.RESTRICT, verbose_name=_("Seasonal Activity")
-    )
+    community = models.ForeignKey(Community, on_delete=models.RESTRICT, verbose_name=_("Community or Village"))
+    activity = models.ForeignKey(SeasonalActivity, on_delete=models.RESTRICT, verbose_name=_("Seasonal Activity"))
 
     # Tracks when the activity occurs (the month when the activity typically occurs)
     # We can have a validator here, put the month no - eg. 9, 10, 11
@@ -511,9 +461,7 @@ class SeasonalCalendar(models.Model):
     # season = models.ForeignKey(Season, on_delete=RESTRICT, verbose_name=_("Season"))
 
     # Who typically does the activity, Male, Female, Childern ... We can make this a choice field?
-    who_does_the_activity = models.CharField(
-        choices=ACTIVITY_DONE_BY, verbose_name=_("Activity done by")
-    )
+    who_does_the_activity = models.CharField(choices=ACTIVITY_DONE_BY, verbose_name=_("Activity done by"))
 
 
 class CommunityCropProduction(models.Model):
@@ -527,18 +475,10 @@ class CommunityCropProduction(models.Model):
         ("main_crop", "Main Food Crop"),
         ("cash_crop", "Cash Crop"),
     )
-    community = models.ForeignKey(
-        Community, on_delete=models.RESTRICT, verbose_name=_("Community or Village")
-    )
-    crop_type = models.ForeignKey(
-        CropType, on_delete=models.RESTRICT, verbose_name=_("Crop Type")
-    )
-    crop_purpose = models.CharField(
-        max_length=20, choices=CROP_PURPOSE, verbose_name=_("Crop purpose")
-    )
-    season = models.ForeignKey(
-        Season, on_delete=models.RESTRICT, verbose_name=_("Season")
-    )
+    community = models.ForeignKey(Community, on_delete=models.RESTRICT, verbose_name=_("Community or Village"))
+    crop_type = models.ForeignKey(CropType, on_delete=models.RESTRICT, verbose_name=_("Crop Type"))
+    crop_purpose = models.CharField(max_length=20, choices=CROP_PURPOSE, verbose_name=_("Crop purpose"))
+    season = models.ForeignKey(Season, on_delete=models.RESTRICT, verbose_name=_("Season"))
     production_with_inputs = common_models.PrecisionField(
         verbose_name=_("Production with input"),
         help_text=_("Yield in reference period with input (seed and fertilizer)"),
@@ -548,9 +488,7 @@ class CommunityCropProduction(models.Model):
         help_text=_("Yield in reference period without input (seed and fertilizer)"),
     )
     seed_requirement = common_models.PrecisionField(verbose_name=_("Seed requirement"))
-    unit_of_land = models.ForeignKey(
-        UnitOfMeasure, on_delete=models.RESTRICT, verbose_name=_("Unit of land")
-    )
+    unit_of_land = models.ForeignKey(UnitOfMeasure, on_delete=models.RESTRICT, verbose_name=_("Unit of land"))
 
 
 class Market(models.Model):
@@ -560,9 +498,7 @@ class Market(models.Model):
     """
 
     name = common_models.NameField(verbose_name=_("Name"))
-    community = models.ForeignKey(
-        Community, on_delete=models.RESTRICT, verbose_name=_("Community or Village")
-    )
+    community = models.ForeignKey(Community, on_delete=models.RESTRICT, verbose_name=_("Community or Village"))
 
 
 class MarketPrice(models.Model):
@@ -571,9 +507,8 @@ class MarketPrice(models.Model):
     Data is captured in 'prices' sheet of the BSS
     """
 
-    community = models.ForeignKey(
-        Community, on_delete=models.RESTRICT, verbose_name=_("Community or Village")
-    )
+    MONTHS = MONTHS.items()
+    community = models.ForeignKey(Community, on_delete=models.RESTRICT, verbose_name=_("Community or Village"))
     # We need the item to reference it but the item can be Crop, Livestock, Other expenditure items
     # e.g. tea, coffee, sugar ..# do we need to have
     # a) something similar to Classified Product or
@@ -597,16 +532,10 @@ class MarketPrice(models.Model):
     # market should also be modeled as reference model
     market = models.ForeignKey(Market, on_delete=models.RESTRICT)
     low_price = common_models.PrecisionField("Low price")
-    low_price_month = models.SmallIntegerField(
-        choices=list(MONTHS), verbose_name=_("Low Price Month")
-    )
+    low_price_month = models.SmallIntegerField(choices=list(MONTHS), verbose_name=_("Low Price Month"))
     high_price = common_models.PrecisionField("High price")
-    high_price_month = models.SmallIntegerField(
-        choices=list(MONTHS), verbose_name=_("High Price Month")
-    )
-    unit_of_measure = models.ForeignKey(
-        UnitOfMeasure, on_delete=models.RESTRICT, verbose_name=_("Unit of measure")
-    )
+    high_price_month = models.SmallIntegerField(choices=list(MONTHS), verbose_name=_("High Price Month"))
+    unit_of_measure = models.ForeignKey(UnitOfMeasure, on_delete=models.RESTRICT, verbose_name=_("Unit of measure"))
 
 
 # LabourMarket?
@@ -621,18 +550,12 @@ class Hazard(models.Model):
     Form 3 interviews hazard information and the BSS has 'timeline' for capturing Cronic and Periodic Hazards
     """
 
-    community = models.ForeignKey(
-        Community, on_delete=models.RESTRICT, verbose_name=_("Community or Village")
-    )
-    hazard_category = models.ForeignKey(
-        HazardCateogy, on_delete=models.RESTRICT, verbose_name=_("Hazard Category")
-    )
+    community = models.ForeignKey(Community, on_delete=models.RESTRICT, verbose_name=_("Community or Village"))
+    hazard_category = models.ForeignKey(HazardCateogy, on_delete=models.RESTRICT, verbose_name=_("Hazard Category"))
     is_chronic = models.BooleanField(verbose_name=_("Is Chronic"))
     year = models.IntegerField(
         validators=[
-            MinValueValidator(
-                1900, message="Year must be greater than or equal to 1900."
-            ),
+            MinValueValidator(1900, message="Year must be greater than or equal to 1900."),
             MaxValueValidator(2100, message="Year must be less than or equal to 2100."),
         ]
     )

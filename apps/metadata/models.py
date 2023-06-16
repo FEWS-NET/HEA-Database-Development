@@ -1,7 +1,7 @@
-
-import common.models as common_models
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+
+import common.models as common_models
 
 
 class DimensionType(common_models.TranslatableModel, models.Model):
