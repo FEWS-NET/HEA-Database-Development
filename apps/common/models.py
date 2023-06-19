@@ -1,22 +1,21 @@
-# @TODO: Requires GDAL from django.contrib.gis.db.models import *
-# Proposed architecture for common, used by replacing, for example:
-# `from django.db import models` with `from common import models`
-# (like `django.contrib.gis.db.models` does).
-# Might encourage us to use common only for defaults, tweaks and
-# extensions to libraries?
-from django.db import models
+from django.contrib.gis.db import models
 from django.utils.translation import get_language
 from django.utils.translation import gettext_lazy as _
 
-from .fields import CodeField, DescriptionField, NameField, PrecisionField  # noqa: F401
+from . import CodeField, DescriptionField, NameField, PrecisionField  # noqa: F401
 
 
 class TranslatableModel(models.Model):
     """
-    Abstract base class that makes a model translatable, assuming that it
-    contains a `name` field.
+    Abstract base class that makes a model translatable.
+    In many cases en_name will be overridden with custom properties.
     """
 
+    en_name = NameField(
+        blank=True,
+        verbose_name=_("English name"),
+        help_text=_("English name"),
+    )
     es_name = NameField(
         blank=True,
         verbose_name=_("Spanish name"),
@@ -52,7 +51,7 @@ class TranslatableModel(models.Model):
         elif language == "ar" and self.ar_name:
             return self.ar_name
         else:
-            return _(self.name)
+            return _(self.en_name)
 
     local_name.short_description = _("local name")
 
