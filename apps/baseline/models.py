@@ -10,7 +10,7 @@ import common.models as common_models
 from metadata.models import (
     CropType,
     Dimension,
-    HazardCateogy,
+    HazardCategory,
     Item,
     LivelihoodCategory,
     LivestockType,
@@ -698,7 +698,7 @@ class Hazard(models.Model):
     """
 
     community = models.ForeignKey(Community, on_delete=models.RESTRICT, verbose_name=_("Community or Village"))
-    hazard_category = models.ForeignKey(HazardCateogy, on_delete=models.RESTRICT, verbose_name=_("Hazard Category"))
+    hazard_category = models.ForeignKey(HazardCategory, on_delete=models.RESTRICT, verbose_name=_("Hazard Category"))
     is_chronic = models.BooleanField(verbose_name=_("Is Chronic"))
     year = models.IntegerField(
         validators=[
