@@ -1,8 +1,9 @@
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 from treebeard.mp_tree import MP_Node
 
 from common import models as common_models
-from metadata.models import Dimension
+from metadata.models import Currency, Dimension
 
 
 class Feature(models.Model):
@@ -30,6 +31,8 @@ class Country(Dimension):
 
     feature = models.ForeignKey(Feature, on_delete=models.PROTECT) ?
     """
+
+    default_currency = models.ForeignKey(Currency, verbose_name=_("Default currency"), on_delete=models.PROTECT)
 
 
 class LivelihoodZone(Zone):
