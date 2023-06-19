@@ -4,8 +4,8 @@ Models for managing HEA Baseline Surveys
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.utils.dates import MONTHS
 from django.utils.translation import gettext_lazy as _
-
-from common import models
+from django.db import models
+import common.models as common_models
 from metadata.models import (
     CropType,
     Dimension,
@@ -25,9 +25,9 @@ class SourceOrganization(models.Model):
     An Organization that provides HEA Baselines.
     """
 
-    name = models.NameField(max_length=200, unique=True)
-    full_name = models.NameField(verbose_name=_("full name"), max_length=300, unique=True)
-    description = models.DescriptionField()
+    name = common_models.NameField(max_length=200, unique=True)
+    full_name = common_models.NameField(verbose_name=_("full name"), max_length=300, unique=True)
+    description = common_models.DescriptionField()
 
     class Meta:
         verbose_name = _("Source Organization")
@@ -50,8 +50,8 @@ class LivelihoodZone(models.Model):
         primary_key=True,
         help_text=_("Primary identifier for the Livelihood Zone"),
     )
-    name = models.NameField()
-    description = models.DescriptionField()
+    name = common_models.NameField()
+    description = common_models.DescriptionField()
 
     class Meta:
         verbose_name = _("Livelihood Zone")
@@ -157,7 +157,7 @@ class Community(models.Model):
     arrondissement.
     """
 
-    name = models.NameField()
+    name = common_models.NameField()
     livelihood_zone_baseline = models.ForeignKey(
         LivelihoodZoneBaseline, on_delete=models.CASCADE, verbose_name=_("Livelihood Zone")
     )
@@ -234,30 +234,34 @@ class WealthGroupCharacteristicValue(models.Model):
 
 
 class ProductionModel(models.Model):
-    wealth_group = models.ForeignKey(WealthGroup, on_delete=models.PROTECT, helptext=_("Wealth Group"))
-    season = models.PositiveSmallIntegerField(helptext=_("Season number 1 or 2"))
-    input_item = models.ForeignKey(Item, on_delete=models.PROTECT, helptext=_("Item Used, eg, milking cow"))
-    input_quantity = models.PrecisionField(helptext=_("Input Quantity, eg, number of milking cows"))
-    output_item = models.ForeignKey(Item, on_delete=models.PROTECT, helptext=_("Item Produced, eg, " "full fat milk"))
-    units_produced_per_period = models.PrecisionField(
-        helptext=_("Quantity Produced, eg, litres of milk per milking day")
+    wealth_group = models.ForeignKey(WealthGroup, on_delete=models.PROTECT, help_text=_("Wealth Group"))
+    season = models.PositiveSmallIntegerField(help_text=_("Season number 1 or 2"))
+    input_item = models.ForeignKey(
+        Item, on_delete=models.PROTECT, help_text=_("Item Used, eg, milking cow"), related_name="input_items"
+    )
+    input_quantity = common_models.PrecisionField(help_text=_("Input Quantity, eg, number of milking cows"))
+    output_item = models.ForeignKey(
+        Item, on_delete=models.PROTECT, help_text=_("Item Produced, eg, " "full fat milk"), related_name="output_items"
+    )
+    units_produced_per_period = common_models.PrecisionField(
+        help_text=_("Quantity Produced, eg, litres of milk per milking day")
     )
     production_unit_of_measure = models.ForeignKey(
-        UnitOfMeasure, on_delete=models.PROTECT, helptext=_("Production Unit of Measure, eg, litres")
+        UnitOfMeasure, on_delete=models.PROTECT, help_text=_("Production Unit of Measure, eg, litres")
     )
-    duration = models.PrecisionField(helptext=_("Duration"))
-    price = models.PrecisionField(helptext=_("Price"))
-    currency = models.PrecisionField(helptext=_("Price Currency"))
-    quantity_sold = models.PrecisionField(helptext=_("Quantity Sold"))
-    quantity_consumed = models.PrecisionField(helptext=_("Quantity Consumed"))
-    quantity_other_uses = models.PrecisionField(helptext=_("Quantity Other Uses"))
-    kcals_per_unit = models.PrecisionField(helptext=_("Kcals per Unit"))
-    total_quantity_produced = models.PrecisionField(helptext=_("Total Quantity Produced"))
-    income = models.PrecisionField(helptext=_("Income"))
-    income_usd = models.PrecisionField(helptext=_("Income (USD)"))
-    consumed_kcals = models.PrecisionField(helptext=_("Kilocalories Consumed"))
+    duration = common_models.PrecisionField(help_text=_("Duration"))
+    price = common_models.PrecisionField(help_text=_("Price"))
+    currency = common_models.PrecisionField(help_text=_("Price Currency"))
+    quantity_sold = common_models.PrecisionField(help_text=_("Quantity Sold"))
+    quantity_consumed = common_models.PrecisionField(help_text=_("Quantity Consumed"))
+    quantity_other_uses = common_models.PrecisionField(help_text=_("Quantity Other Uses"))
+    kcals_per_unit = common_models.PrecisionField(help_text=_("Kcals per Unit"))
+    total_quantity_produced = common_models.PrecisionField(help_text=_("Total Quantity Produced"))
+    income = common_models.PrecisionField(help_text=_("Income"))
+    income_usd = common_models.PrecisionField(help_text=_("Income (USD)"))
+    consumed_kcals = common_models.PrecisionField(help_text=_("Kilocalories Consumed"))
     # @TODO: if daily calory level varies by LZB then save consumed_kcal_percent here too
-    expandability_kcals = models.PrecisionField(helptext=_("Expandability in Kilocalories"))
+    expandability_kcals = common_models.PrecisionField(help_text=_("Expandability in Kilocalories"))
 
     def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
         self.calculate_fields()
@@ -580,15 +584,15 @@ class CommunityCropProduction(models.Model):
     crop_type = models.ForeignKey(CropType, on_delete=models.RESTRICT, verbose_name=_("Crop Type"))
     crop_purpose = models.CharField(max_length=20, choices=CROP_PURPOSE, verbose_name=_("Crop purpose"))
     season = models.ForeignKey(Season, on_delete=models.RESTRICT, verbose_name=_("Season"))
-    production_with_inputs = models.PrecisionField(
+    production_with_inputs = common_models.PrecisionField(
         verbose_name=_("Production with input"),
         help_text=_("Yield in reference period with input (seed and fertilizer)"),
     )
-    production_with_out_inputs = models.PrecisionField(
+    production_with_out_inputs = common_models.PrecisionField(
         verbose_name=_("Production with input"),
         help_text=_("Yield in reference period without input (seed and fertilizer)"),
     )
-    seed_requirement = models.PrecisionField(verbose_name=_("Seed requirement"))
+    seed_requirement = common_models.PrecisionField(verbose_name=_("Seed requirement"))
     unit_of_land = models.ForeignKey(UnitOfMeasure, on_delete=models.RESTRICT, verbose_name=_("Unit of land"))
 
     class Meta:
@@ -644,7 +648,7 @@ class Market(models.Model):
     TODO: should we make this spatial? and move it to spatial or metadata?
     """
 
-    name = models.NameField(verbose_name=_("Name"))
+    name = common_models.NameField(verbose_name=_("Name"))
     community = models.ForeignKey(Community, on_delete=models.RESTRICT, verbose_name=_("Community or Village"))
 
     class Meta:
@@ -669,9 +673,9 @@ class MarketPrice(models.Model):
         Item, on_delete=models.RESTRICT, help_text=_("Crop, livestock or other category of items")
     )
     market = models.ForeignKey(Market, on_delete=models.RESTRICT)
-    low_price = models.PrecisionField("Low price")
+    low_price = common_models.PrecisionField("Low price")
     low_price_month = models.SmallIntegerField(choices=list(MONTHS), verbose_name=_("Low Price Month"))
-    high_price = models.PrecisionField("High price")
+    high_price = common_models.PrecisionField("High price")
     high_price_month = models.SmallIntegerField(choices=list(MONTHS), verbose_name=_("High Price Month"))
     unit_of_measure = models.ForeignKey(UnitOfMeasure, on_delete=models.RESTRICT, verbose_name=_("Unit of measure"))
 
@@ -707,8 +711,10 @@ class Hazard(models.Model):
             MaxValueValidator(5, message="Performance rank must be at most 5."),
         ]
     )
-    event = models.DescriptionField(max_length=255, null=True, blank=True, verbose_name=_("Description of event(s)"))
-    response = models.DescriptionField(
+    event = common_models.DescriptionField(
+        max_length=255, null=True, blank=True, verbose_name=_("Description of event(s)")
+    )
+    response = common_models.DescriptionField(
         max_length=255, null=True, blank=True, verbose_name=_("Description of event(s)")
     )
 

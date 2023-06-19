@@ -2,14 +2,13 @@ import logging
 
 from django.utils.translation import gettext_lazy as _
 from treebeard.mp_tree import MP_Node
-
-from baseline.models import LivelihoodZoneBaseline
-from common import models
+from django.db import models
+import common.models as common_models
 
 logger = logging.getLogger(__name__)
 
 
-class DimensionType(models.TranslatableModel, models.Model):
+class DimensionType(common_models.TranslatableModel, models.Model):
     """
     Propose:
         Item
@@ -24,14 +23,14 @@ class DimensionType(models.TranslatableModel, models.Model):
     through Python lookups.
     """
 
-    code = models.CodeField()
-    description = models.DescriptionField()
+    code = common_models.CodeField()
+    description = common_models.DescriptionField()
 
 
 # @TODO Is LookupModel or ReferenceModel a better name than Dimension in the
 # context of a normalized relational schema for an application, rather than a
 # data warehouse.
-class Dimension(MP_Node, models.TranslatableModel):
+class Dimension(MP_Node, common_models.TranslatableModel):
     """
     Dimension provides shared functionality to serve reference data via API,
     filter, aggregate, group, map, ingest, render, search, translate, convert.
@@ -50,8 +49,8 @@ class Dimension(MP_Node, models.TranslatableModel):
 
     # @TODO not sure this is needed if we have an abstract base class
     dimension_type = models.ForeignKey(DimensionType, on_delete=models.PROTECT)
-    code = models.CodeField()
-    description = models.DescriptionField()
+    code = common_models.CodeField()
+    description = common_models.DescriptionField()
     default = models.BooleanField(default=False, help_text=_("The default value in a given sub-list."))
     # @TODO
     # Do we want to automatically add `aliases` to all Dimension subclasses.
@@ -92,8 +91,8 @@ class Dimension(MP_Node, models.TranslatableModel):
     # I therefore think non-abstract Dimension is less likely to cause surprise limitations or complexities.
     # I don't think we should use character primary keys unless there's a significant benefit - id and code are
     # more flexible, future-proof, and easier for developers not already immersed in the schema.
-    class Meta:
-        abstract = True
+    # class Meta:
+    #     abstract = True
 
 
 class SourceSystem(Dimension):
@@ -104,7 +103,7 @@ class SourceSystem(Dimension):
 
 class Alias(models.Model):
     dimension = models.ForeignKey(Dimension, on_delete=models.PROTECT)
-    synonym = models.NameField()
+    synonym = common_models.NameField()
     source = models.ForeignKey(
         SourceSystem,
         on_delete=models.PROTECT,
@@ -112,6 +111,7 @@ class Alias(models.Model):
         blank=True,
         help_text=_("Optional filter for aliases specific to a source."),
         verbose_name=_("Source"),
+        related_name="sources",
     )
 
 
@@ -246,8 +246,8 @@ class Conversion(models.Model):
     # eg, for weight: kg, area: acre?, energy: kcal, ccy: USD.
     # from_unit is a default unit for conversions between unit types,
     # eg, kg maize to kcal or USD price.
-    multiplier = models.PrecisionField(verbose_name=_("Multiplier"))
-    offset = models.PrecisionField(verbose_name=_("Offset"))
+    multiplier = common_models.PrecisionField(verbose_name=_("Multiplier"))
+    offset = common_models.PrecisionField(verbose_name=_("Offset"))
     # Optional conversion validity filters:
     from_date = models.DateField(
         null=True, blank=True, verbose_name=_("From Date"), help_text=_("The first date this conversion is valid.")
@@ -255,16 +255,17 @@ class Conversion(models.Model):
     to_date = models.DateField(
         null=True, blank=True, verbose_name=_("To Date"), help_text=_("The last date this conversion is valid.")
     )
-    livelihood_zone_baseline = models.ForeignKey(
-        LivelihoodZoneBaseline,
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-        verbose_name=_("Livelihood Zone Baseline"),
-        help_text=_(
-            "The Livelihood Zone Baseline for which this conversion is valid, if necessary, eg, local kcal %, price."
-        ),
-    )
+    # TODO: This creates circular dependency
+    # livelihood_zone_baseline = models.ForeignKey(
+    #     LivelihoodZoneBaseline,
+    #     on_delete=models.PROTECT,
+    #     null=True,
+    #     blank=True,
+    #     verbose_name=_("Livelihood Zone Baseline"),
+    #     help_text=_(
+    #         "The Livelihood Zone Baseline for which this conversion is valid, if necessary, eg, local kcal %, price."
+    #     ),
+    # )
     from_item = models.ForeignKey(
         Item,
         on_delete=models.PROTECT,
@@ -334,6 +335,16 @@ class Translation(models.Model):
     from_dimension = models.ForeignKey(Dimension, on_delete=models.PROTECT, related_name="translations_from")
     text = models.CharField()
     translation_type = models.ForeignKey(Dimension, on_delete=models.PROTECT, related_name="translations_of_type")
+
+
+class LivestockType(Dimension):
+    """
+    A type of Livestock, such as Goat, Cow, Camel, etc.
+    """
+
+    class Meta:
+        verbose_name = _("Livestock Type")
+        verbose_name_plural = _("Livestock Types")
 
 
 class CropType(Dimension):
