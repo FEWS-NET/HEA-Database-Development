@@ -182,12 +182,6 @@ class Community(models.Model):
         verbose_name_plural = _("Communities")
 
 
-class WealthGroupLivestock(models.Model):
-    class Meta:
-        verbose_name = _("Wealth Group Livestock")
-        verbose_name_plural = _("Wealth Group Livestock")
-
-
 # @TODO Should this be SocioEconomicGroup, or maybe PopulationGroup,
 # given female-headed households, etc.
 class WealthGroup(models.Model):
