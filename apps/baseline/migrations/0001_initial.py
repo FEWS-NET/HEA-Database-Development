@@ -271,16 +271,6 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
-            name="WealthGroupLivestock",
-            fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
-            ],
-            options={
-                "verbose_name": "Wealth Group Livestock",
-                "verbose_name_plural": "Wealth Group Livestock",
-            },
-        ),
-        migrations.CreateModel(
             name="CropProductionModel",
             fields=[
                 (
