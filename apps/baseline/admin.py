@@ -26,6 +26,9 @@ from .models import (
 )
 
 
+admin.site.site_header = "HEA Baseline Database Administration"
+admin.site.index_title = "HEA Baseline"
+
 @admin.register(SourceOrganization)
 class SourceOrganizationAdmin(admin.ModelAdmin):
     pass
