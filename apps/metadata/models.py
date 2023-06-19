@@ -368,7 +368,7 @@ class SeasonalActivityCategory(Dimension):
         verbose_name_plural = _("Seasonal Activity Categories")
 
 
-class HazardCateogy(Dimension):
+class HazardCategory(Dimension):
     """
     Category of Hazards like: Drought, Epidemic crop disease,	Wild Animals, Flood, Epidemic livestock disease	...
     """

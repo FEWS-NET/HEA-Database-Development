@@ -149,7 +149,7 @@ class Migration(migrations.Migration):
             bases=("metadata.dimension",),
         ),
         migrations.CreateModel(
-            name="HazardCateogy",
+            name="HazardCategory",
             fields=[
                 (
                     "dimension_ptr",

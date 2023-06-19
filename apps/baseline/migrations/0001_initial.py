@@ -763,7 +763,7 @@ class Migration(migrations.Migration):
                     "hazard_category",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.RESTRICT,
-                        to="metadata.hazardcateogy",
+                        to="metadata.hazardcategory",
                         verbose_name="Hazard Category",
                     ),
                 ),
