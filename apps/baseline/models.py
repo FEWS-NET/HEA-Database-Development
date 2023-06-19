@@ -2,9 +2,10 @@
 Models for managing HEA Baseline Surveys
 """
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db import models
 from django.utils.dates import MONTHS
 from django.utils.translation import gettext_lazy as _
-from django.db import models
+
 import common.models as common_models
 from metadata.models import (
     CropType,
