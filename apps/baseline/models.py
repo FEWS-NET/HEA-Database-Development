@@ -203,8 +203,8 @@ class CommunityLivestock(models.Model):
     additional_attributes = models.JSONField()
 
     class Meta:
-        verbose_name = _("Wealth Group Attribute")
-        verbose_name_plural = _("Wealth Group Attributes")
+        verbose_name = _("Community Livestock")
+        verbose_name_plural = _("Community Livestock")
 
 
 class WealthGroupLivestock(models.Model):
