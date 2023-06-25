@@ -8,6 +8,7 @@ django-filter==23.2
 django-guardian==2.4.0
 django-treebeard==4.7
 djangorestframework==3.14.0
+docutils==0.20.1
 factory-boy==3.2.1
 gunicorn==20.1.0
 json-logging-py==0.2
