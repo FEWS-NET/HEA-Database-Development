@@ -377,7 +377,8 @@ class ButterProduction(models.Model):
     """
 
     wealth_group = models.ForeignKey(WealthGroup, on_delete=models.PROTECT, verbose_name=_("Wealth Group"))
-    season = models.ForeignKey(Item, on_delete=models.PROTECT, verbose_name=_("Season"))
+    # @TODO this isn't seasonal, so we don't need Season
+    # season = models.ForeignKey(Item, on_delete=models.PROTECT, verbose_name=_("Season"))
     # @TODO do we need both input and output item, we can't produce cow butter from goat milk.
     input_item = models.ForeignKey(
         Item, on_delete=models.PROTECT, verbose_name=_("Type of Milk"), related_name="butter_production_input"
@@ -416,6 +417,8 @@ class ButterProduction(models.Model):
     # Calculated field, or method
     # E.g. MWMSK Data AI110: `=IF(AI105="","",(SUM(AI90)*640-SUM(AI91,AI95)*(640-300*(AI94=0))-SUM(AI106,AI107)*7865)/2100/365/AI$40)`  # NOQA: E501
     # total_milk_production * 640 - (milk_sold_or_exchanged + milk_other_uses) * (640 - (300 if sold_other_use == "skim" else 0)) - (ghee_sold_or_exchanged + ghee_other_uses)*7865  # NOQA: E501
+    # Doesn't reconcile with Ghee production, e.g. AI105 because that has:
+    # =IF(SUM(AI90,AI98)=0,"",SUM(AI90,-AI91*AI94,-AI95*AI94,AI98,-AI99*AI102,-AI103*AI102)*0.04)
     percentage_kcals = models.PositiveSmallIntegerField(verbose_name=_("Percentage of required kcals"))
 
     class Meta:
@@ -431,7 +434,8 @@ class MeatProduction(models.Model):
     """
 
     wealth_group = models.ForeignKey(WealthGroup, on_delete=models.PROTECT, verbose_name=_("Wealth Group"))
-    season = models.ForeignKey(Item, on_delete=models.PROTECT, verbose_name=_("Season"))
+    # @TODO is this ever seasonal.
+    # season = models.ForeignKey(Item, on_delete=models.PROTECT, verbose_name=_("Season"))
     # @TODO do we need both input and output item, we can't produce chicken meat from slaughtering cows.
     input_item = models.ForeignKey(
         Item, on_delete=models.PROTECT, verbose_name=_("Type of Animal"), related_name="animals_for_meat"
@@ -469,6 +473,11 @@ class MeatProduction(models.Model):
         verbose_name_plural = _("Meat Production")
 
 
+# @TODO LiveLivestockSales
+# Is this combined with Meat as LivestockProduction or separate?
+# In Somalia they track export/local sales separately - see SO18 Data:B178 and also B770
+
+
 class CropProduction(models.Model):
     """
     Production of crops by households in a Wealth Group for their own consumption, for sale and for other uses.
@@ -481,6 +490,8 @@ class CropProduction(models.Model):
     # @TODO See https://fewsnet.atlassian.net/browse/HEA-67
     # Are there other types than rainfed and irrigated?
     # Is it important as an attribute even if there is only one crop.
+    # @TODO Do we need to keep this as a separate field, or can we create a generic field in ProductionModel for
+    # `subtype` or similar, that we could also use for export/local animal sales or maybe even Season
     production_system = models.CharField(
         max_length=60,
         default="rainfed",
@@ -549,6 +560,8 @@ class FoodPurchase(models.Model):
     unit_of_measure = models.ForeignKey(UnitOfMeasure, on_delete=models.PROTECT, verbose_name=_("Unit of Measure"))
     # Not required for FoodPurchase, although could be repurposed for the unit_multiple
     # item_yield = models.PositiveSmallIntegerField(verbose_name=_("crop (kg) per land area (ha)"))
+    # Do we need this, or can we use combined units of measure like FDW, e.g. 5kg
+    # NIO93 Row B422 tia = 2.5kg
     unit_multiple = models.PositiveSmallIntegerField(
         verbose_name=_("Unit Multiple"), help_text=_("Multiple of the unit of measure in a single purchase")
     )
@@ -572,7 +585,7 @@ class FoodPurchase(models.Model):
     # @TODO should we share a field with quantity_sold and use negatives for one or other.
     # Users will expect to see positive numbers everywhere.
     # Can be calculated / validated as `quantity_purchased * price`
-    expenditure = common_models.PrecisionField(help_text=_("Income"))
+    expenditure = common_models.PrecisionField(verbose_name=_("Expenditure"))
     # Not required for Food Purchase
     # quantity_other_uses = models.PositiveSmallIntegerField(verbose_name=_("Quantity Other Uses"))
     # Not required for Food Purchase
