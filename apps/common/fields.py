@@ -56,7 +56,7 @@ class CodeField(models.CharField):
     """
 
     def __init__(self, *args, **kwargs):
-        defaults = {"max_length": 60, "verbose_name": _("code")}
+        defaults = {"max_length": 60, "verbose_name": _("Code")}
         defaults.update(kwargs)
         super().__init__(*args, **defaults)
 
@@ -68,7 +68,7 @@ class NameField(models.CharField):
     """
 
     def __init__(self, *args, **kwargs):
-        defaults = {"max_length": 60, "verbose_name": _("name")}
+        defaults = {"max_length": 60, "verbose_name": _("Name")}
         defaults.update(kwargs)
         super().__init__(*args, **defaults)
 
@@ -82,7 +82,7 @@ class DescriptionField(models.TextField):
     def __init__(self, *args, **kwargs):
         defaults = {
             "max_length": 2000,
-            "verbose_name": _("description"),
+            "verbose_name": _("Description"),
             "blank": True,
             "help_text": ("Any extra information or detail that is relevant to the object."),
         }
@@ -98,7 +98,7 @@ class LocationField(models.PointField):
 
     def __init__(self, *args, **kwargs):
         defaults = {
-            "verbose_name": _("location"),
+            "verbose_name": _("Location"),
             "blank": True,
             "null": True,
             "geography": True,
@@ -115,7 +115,7 @@ class BoundaryField(models.MultiPolygonField):
 
     def __init__(self, *args, **kwargs):
         defaults = {
-            "verbose_name": _("boundary"),
+            "verbose_name": _("Boundary"),
             "blank": True,
             "null": True,
             "geography": True,

@@ -1,10 +1,12 @@
 import logging
 
 from django.db import models
+from django.utils.dates import MONTHS
 from django.utils.translation import gettext_lazy as _
 from treebeard.mp_tree import MP_Node
 
 import common.models as common_models
+from common.models import Country
 
 logger = logging.getLogger(__name__)
 
@@ -381,3 +383,48 @@ class HazardCategory(Dimension):
     class Meta:
         verbose_name = _("Hazard Category")
         verbose_name_plural = _("Hazard Categories")
+
+
+class Season(models.Model):
+
+    """
+    A division of the year, marked by changes in weather, ecology, and associated livelihood zone
+     activities for income generation. Season's vary by :`LivelihoodZone`
+    """
+
+    MONTHS = MONTHS.items()
+    # Year Alignment
+    START = "Start"
+    END = "End"
+    ALIGNMENT_CHOICES = ((START, _("Start")), (END, _("End")))
+
+    country = models.ForeignKey(Country, verbose_name=_("Country"), db_column="country_code", on_delete=models.PROTECT)
+    # @TODO
+    # geographic_unit - models.ForeignKey(GeographicUnit, verbose_name=_("Geographic Unit"), on_delete=models.RESTRICT)
+    name = models.CharField(max_length=50, verbose_name=_("Name"))
+    description = models.TextField(max_length=255, verbose_name=_("Description"))
+    start_month = models.IntegerField(
+        choices=list(MONTHS),
+        verbose_name=_("Start Month"),
+        help_text=_("The typical first month of the Season"),
+    )
+    end_month = models.IntegerField(
+        choices=list(MONTHS),
+        verbose_name=_("End Month"),
+        help_text=_("The typical end month of the Season"),
+    )
+    alignment = models.CharField(
+        max_length=5,
+        choices=ALIGNMENT_CHOICES,
+        default=END,
+        verbose_name=_("Year alignment"),
+    )
+    order = models.IntegerField(
+        verbose_name=_("Order"),
+        help_text=_("The order of the Season with the Season Year"),
+    )
+    rain_fall_record = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_("Rainfall record"))
+
+    class Meta:
+        verbose_name = _("Season")
+        verbose_name_plural = _("Seasons")

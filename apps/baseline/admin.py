@@ -9,6 +9,7 @@ from .models import (
     Fishing,
     FoodPurchase,
     Hazard,
+    LivelihoodStrategy,
     LivelihoodZone,
     LivelihoodZoneBaseline,
     Market,
@@ -17,7 +18,6 @@ from .models import (
     MilkProduction,
     OtherCashIncome,
     PaymentInKind,
-    ProductionModel,
     Season,
     SeasonalActivity,
     SeasonalCalendar,
@@ -67,8 +67,8 @@ class WealthGroupCharacteristicValueAdmin(admin.ModelAdmin):
     pass
 
 
-@admin.register(ProductionModel)
-class ProductionModelAdmin(admin.ModelAdmin):
+@admin.register(LivelihoodStrategy)
+class LivelihoodStrategyAdmin(admin.ModelAdmin):
     pass
 
 
