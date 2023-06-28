@@ -2,7 +2,6 @@ from django.contrib import admin
 
 from .models import (
     Alias,
-    Conversion,
     CropType,
     Currency,
     Dimension,
@@ -16,6 +15,7 @@ from .models import (
     Translation,
     TranslationType,
     UnitOfMeasure,
+    UnitOfMeasureConversion,
     WealthGroupCharacteristic,
 )
 
@@ -65,8 +65,8 @@ class CurrencyAdmin(admin.ModelAdmin):
     pass
 
 
-@admin.register(Conversion)
-class ConversionAdmin(admin.ModelAdmin):
+@admin.register(UnitOfMeasureConversion)
+class UnitOfMeasureConversionAdmin(admin.ModelAdmin):
     pass
 
 

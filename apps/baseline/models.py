@@ -1,12 +1,13 @@
 """
 Models for managing HEA Baseline Surveys
 """
+from django.contrib.gis.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator
-from django.db import models
 from django.utils.dates import MONTHS
 from django.utils.translation import gettext_lazy as _
 
 import common.models as common_models
+from common.models import Country, Currency
 from metadata.models import (
     CropType,
     Dimension,
@@ -53,6 +54,17 @@ class LivelihoodZone(models.Model):
     )
     name = common_models.NameField()
     description = common_models.DescriptionField()
+    country = models.ForeignKey(Country, verbose_name=_("country"), db_column="country_code", on_delete=models.PROTECT)
+    geography = models.MultiPolygonField(geography=True, dim=2, blank=True, null=True, verbose_name=_("geography"))
+
+    # @TODO is this valuable for doing cross-LHZ analysis even though it is not
+    # in the BSS. Could be calculated from WorldPop or LandScan.
+    # @TODO does this need to be calibrated against an external data source
+    # @TODO do we need to be able to return the value for years other than the
+    # current one?
+    population_estimate = models.PositiveIntegerField(
+        verbose_name=_("Population Estimate"),
+    )
 
     class Meta:
         verbose_name = _("Livelihood Zone")
@@ -162,6 +174,7 @@ class Community(models.Model):
     livelihood_zone_baseline = models.ForeignKey(
         LivelihoodZoneBaseline, on_delete=models.CASCADE, verbose_name=_("Livelihood Zone")
     )
+    geography = models.GeometryField(geography=True, dim=2, blank=True, null=True, verbose_name=_("geography"))
     # @TODO Check if this need to be char.- Check Somalia
     interview_number = models.PositiveSmallIntegerField(
         verbose_name=_("Interview Number"),
@@ -170,11 +183,6 @@ class Community(models.Model):
     interviewers = models.CharField(
         verbose_name=_("Interviewers"),
         help_text=_("The names of interviewers who interviewed the Community, in case any clarification is neeeded."),
-    )
-    # @TODO is this valuable for doing cross-LHZ analysis even though it is not
-    # in the BSS. Could be calculated from WorldPop or LandScan.
-    population_estimate = models.PositiveIntegerField(
-        verbose_name=_("Population Estimate"),
     )
 
     class Meta:
@@ -221,6 +229,7 @@ class WealthGroupCharacteristicValue(models.Model):
     attribute_type = models.ForeignKey(
         WealthGroupCharacteristic, on_delete=models.RESTRICT, verbose_name=_("Attribute Type")
     )
+    # @TODO What are the examples of a non-numeric `value`?
     value = models.JSONField(verbose_name=_("A single property value, eg, a float, str or list, not a dict of props."))
 
     class Meta:
@@ -247,7 +256,7 @@ class ProductionModel(models.Model):
     duration = common_models.PrecisionField(help_text=_("Duration"))
     price = common_models.PrecisionField(help_text=_("Price"))
     currency = common_models.PrecisionField(help_text=_("Price Currency"))
-    quantity_sold = common_models.PrecisionField(help_text=_("Quantity Sold"))
+    quantity_sold = common_models.PrecisionField(help_text=_("Quantity Sold/Exchanged"))
     quantity_consumed = common_models.PrecisionField(help_text=_("Quantity Consumed"))
     quantity_other_uses = common_models.PrecisionField(help_text=_("Quantity Other Uses"))
     kcals_per_unit = common_models.PrecisionField(help_text=_("Kcals per Unit"))
@@ -293,171 +302,590 @@ class ProductionModel(models.Model):
         )
 
 
-class LivestockProductionModel(ProductionModel):
+class MilkProduction(models.Model):
     """
-    Production models for livestock.
+    Production of milk by households in a Wealth Group for their own consumption, for sale and for other uses.
 
-    Production models vary greatly in level of detail recorded. However they don't vary in level of detail by
-    production model type, so much as by prominence in local livelihoods. This isn't therefore a useful
-    distinction to make when implementing.
-
-    Example BSS for cow's milk for rural Niger:
-
-    BSS contains:
-        no. milking animals
-        season 1: lactation period (days)
-        daily milk production per animal (litres)
-        total production (litres)
-        sold/exchanged (litres)
-        price (cash)
-        income (cash)
-        type of milk sold/other use (skim=0, whole=1)
-        other use (liters)
-
-    Where ProductionModel values come from in the cows' milk BSS:
-        input_item = Milking cow
-        input_quantity = no. milking animals
-        output_item = full fat milk
-        units_produced_per_period = daily milk production
-        unit = Litres
-        season = 1
-        duration = number of lactation days (in season)
-        total_production = qty * duration * frequency (in BSS as total production (litres))
-        quantity_sold = sold/exchanged (litres)
-        price = price (cash)
-        income = total_production * quantity_sold * price (in BSS as 'income')
-        quantity_other_uses = Other use
-        quantity_consumed = total production - quantity sold - quantity other uses
-        kcals_consumed = quantity_consumed * kcals_per_unit
-
-        Note that the BSSes are confusing here, converting some milk into ghee, by factor 0.04 (does this 4%
-        include the proportion of the milk used for ghee?), then converted to kcals at 7,865, plus some
-        milk at 640 kcals, to derive kcal% aggregated for both seasons. We will probably need to store the
-        0.04 and 7865 once we understand where they come from.
-
-    Example BSS for cow meat for rural Niger:
-
-    BSS contains little detail, as this livelihood strategy (LS) is rarely employed:
-        Cow meat: no. animals slaughtered
-        carcass weight per animal (kg)
-        kcals (%)
-
-    ProductionModel values:
-        input_item = cow
-        input_quantity = no. animals slaughtered
-        output_item = cow meat
-        units_produced_per_period = carcass weight per animal (kg)
-        unit = kg
-        season = None
-        duration = 1 (annual figure given)
-        BSS only provides kcal%, and the cell formula assumes all cow meat is consumed, and provides 2350 kcal/kg, so:
-            quantity_sold = 0
-            quantity_other_uses = 0
-            price = None
-            total_production, income, etc. = as above
-
+    Stored on the BSS Data sheet in the Livestock Production section, typically starting around Row 60.
     """
 
+    SKIM = "skim"
+    WHOLE = "whole"
 
-class CropProductionModel(ProductionModel):
+    MILK_TYPE_CHOICES = (
+        (SKIM, _("skim")),
+        (WHOLE, _("whole")),
+    )
+    wealth_group = models.ForeignKey(WealthGroup, on_delete=models.PROTECT, verbose_name=_("Wealth Group"))
+    season = models.ForeignKey(Item, on_delete=models.PROTECT, verbose_name=_("Season"))
+    # @TODO do we need both input and output item, we can't produce goat milk from cows.
+    input_item = models.ForeignKey(
+        Item, on_delete=models.PROTECT, verbose_name=_("Type of Animal"), related_name="milked_animals"
+    )
+    # Not required for MilkProduction, unit of measure is always `ea`
+    # input_unit_of_measure = models.ForeignKey(
+    #    UnitOfMeasure, on_delete=models.PROTECT, verbose_name=_("Input Unit of Measure")
+    # )
+    input_quantity = models.PositiveSmallIntegerField(verbose_name=_("Number of milking animals"))
+    item = models.ForeignKey(
+        Item, on_delete=models.PROTECT, verbose_name=_("Type of Milk"), related_name="milk_production"
+    )
+    # Not required because it is always `l`
+    # unit_of_measure = models.ForeignKey(
+    #    UnitOfMeasure, on_delete=models.PROTECT, verbose_name=_("Unit of Measure")
+    # )
+    laction_days = models.PositiveSmallIntegerField(verbose_name=_("Average number or days of laction"))
+    daily_production = models.PositiveSmallIntegerField(verbose_name=_("Average daily milk production per animal"))
+    # Can be calcuated as lactation days * daily_production
+    # Exists logically but not a cell in the BSS
+    # item_yield = models.PositiveSmallIntegerField(verbose_name=_("Average seasonal milk production per animal"))
+    quantity_produced = models.PositiveSmallIntegerField(verbose_name=_("Quantity Produced"))
+    quantity_sold = models.PositiveSmallIntegerField(verbose_name=_("Quantity Sold/Exchanged"))
+    price = models.FloatField(verbose_name=_("Price"), help_text=_("Price per unit"))
+    # @TODO should we store this at the level of the BSS rather than in each production model?
+    currency = models.ForeignKey(Currency, verbose_name=_("currency"), db_column="iso4217a3", on_delete=models.PROTECT)
+    # Can be calculated / validated as `quantity_sold * price`
+    income = common_models.PrecisionField(help_text=_("Income"))
+    quantity_other_uses = models.PositiveSmallIntegerField(verbose_name=_("Quantity Other Uses"))
+    # Can be calculated / validated as `quantity_produced - quantity_sold - quantity_other_uses`
+    quantity_consumed = models.PositiveSmallIntegerField(verbose_name=_("Quantity Consumed"))
+
+    # @TODO is this required for scenario development? If we need it, then it seems to be specific to this
+    # model and not required for other Production model subclasses.
+    type_of_milk_sold_or_other_users = models.CharField(
+        choices=MILK_TYPE_CHOICES, verbose_name=_("Skim or whole milk sold or used")
+    )
+
+    # Calculated field, or method
+    # `quantity_consumed` * `kcals_per_unit`
+    total_kcals_consumed = models.PositiveSmallIntegerField(verbose_name=_("Total kcals consumed"))
+    # Calculated field, or method
+    # E.g. MWMSK Data AN177: `=IF(AN176="","",AN175*AN176*1450/2100/365/AN$40)`
+    # `input_quantity` * `item_yield` * `kcals_per_unit` / `DAILY_KCAL_REQUIRED` / `DAYS_PER_YEAR` / `self.wealth_group.average_household_size`  # NOQA: E501
+    percentage_kcals = models.PositiveSmallIntegerField(verbose_name=_("Percentage of required kcals"))
+
+    class Meta:
+        verbose_name = _("Milk Production")
+        verbose_name_plural = _("Milk Production")
+
+
+class ButterProduction(models.Model):
     """
-    Production models for crops.
+    Production of ghee/butter by households in a Wealth Group for their own consumption, for sale and for other uses.
 
-    BSS examples:
-        Green cons - rainfed: no of months = 1 for poorer groups, 1.5 for richer ones.
-        Proportion of months green consumption = 33% for all villages in LHZ
-        kcals (%)
-
-    There doesn't seem to be a unit here, the spreadsheet just calculates kcal% as:
-        no of months / 12 * Proportion of months green consumption
-
-    This suggests 'Proportion of months green consumption' is the amount of a person's diet this provides.
-    This is therefore a crude approximation of annual yield in kcals % per household member.
-
-    ProductionModel values:
-        output_item = Green cons rainfed
-        output_unit = kcal%
-        units_produced_per_period = Proportion of months green consumption (0.333% for all communities in LHZ)
-        duration = no of months, eg, 1
-        none sold, none other uses
-
-    Another BSS example with more detail:
-        Maize irrigated: kg produced
-        kcals per kg
-        sold/exchanged (kg)
-        price per kg (cash)
-        income (cash)
-        other use (kg)
-        kcals (%)
-
-    Another BSS example with different low detail:
-        Cotton: kg sold
-        price per kg (cash)
-        income (cash)
-    """
-
-
-class FoodPurchaseProductionModel(ProductionModel):
-    """
-    Production models for the purchase of food.
-
-    BSS example:
-        Maize grain: name of meas.	Kg
-        wt of measure	1
-        no. meas per month	60
-        no. months	4
-        kg	240
-        kcals/kg	3630  <- note this value is often just embedded in formulae so impossible to
-        automatically read
-        kcals (%)	19%
-        price (per kg)	100
-        expenditure	24,000
-    """
-
-
-class PaymentInKindProductionModel(ProductionModel):
-    """
-    Production models for payment in kind.
-
-    BSS example:
-        Labour: Weeding
-        no. people per HH
-        no. times per month
-        no. months
-        payment in kg per time (grain)
-        kcals (%)
+    Stored on the BSS Data sheet in the Livestock Production section, typically starting around Row 60.
     """
 
+    wealth_group = models.ForeignKey(WealthGroup, on_delete=models.PROTECT, verbose_name=_("Wealth Group"))
+    season = models.ForeignKey(Item, on_delete=models.PROTECT, verbose_name=_("Season"))
+    # @TODO do we need both input and output item, we can't produce cow butter from goat milk.
+    input_item = models.ForeignKey(
+        Item, on_delete=models.PROTECT, verbose_name=_("Type of Milk"), related_name="butter_production_input"
+    )
+    # Not required for ButterProduction, unit of measure is always `l`
+    # input_unit_of_measure = models.ForeignKey(
+    #    UnitOfMeasure, on_delete=models.PROTECT, verbose_name=_("Input Unit of Measure")
+    # )
+    input_quantity = models.PositiveSmallIntegerField(verbose_name=_("Quantity of milk (l)"))
+    item = models.ForeignKey(
+        Item, on_delete=models.PROTECT, verbose_name=_("Type of Ghee/Butter"), related_name="butter_production"
+    )
+    # Not required because it is always `l`
+    # unit_of_measure = models.ForeignKey(
+    #    UnitOfMeasure, on_delete=models.PROTECT, verbose_name=_("Unit of Measure")
+    # )
 
-class OtherCashIncomeSourcesProductionModel(ProductionModel):
+    item_yield = models.PositiveSmallIntegerField(verbose_name=_("butter (kg) per milk (l)"))
+    quantity_produced = models.PositiveSmallIntegerField(verbose_name=_("Quantity Produced"))
+    quantity_sold = models.PositiveSmallIntegerField(verbose_name=_("Quantity Sold/Exchanged"))
+    price = models.FloatField(verbose_name=_("Price"), help_text=_("Price per unit"))
+    currency = models.ForeignKey(Currency, verbose_name=_("currency"), db_column="iso4217a3", on_delete=models.PROTECT)
+    # Can be calculated / validated as `quantity_sold * price`
+    income = common_models.PrecisionField(help_text=_("Income"))
+    quantity_other_uses = models.PositiveSmallIntegerField(verbose_name=_("Quantity Other Uses"))
+    # Can be calculated / validated as `quantity_produced - quantity_sold - quantity_other_uses`
+    quantity_consumed = models.PositiveSmallIntegerField(verbose_name=_("Quantity Consumed"))
+
+    # @TODO see https://fewsnet.atlassian.net/browse/HEA-65
+    # Note that the formulae for butter don't follow the model of `input_quantity` * `item_yield` * `kcals_per_unit` / `DAILY_KCAL_REQUIRED` / `DAYS_PER_YEAR` / `self.wealth_group.average_household_size`  # NOQA: E501
+    # The calorie available approach gives a different result to the (butter produced - butter sold/exchanged - butter other uses) * kcal per kg. # NOQA: E501
+    # This might not matter if we are just storing the fields from the BSS and not calculating them
+    # Calculated field, or method
+    # `input_quantity` * `item_yield` * `kcals_per_unit`
+    total_kcals_consumed = models.PositiveSmallIntegerField(verbose_name=_("Total kcals consumed"))
+    # Calculated field, or method
+    # E.g. MWMSK Data AI110: `=IF(AI105="","",(SUM(AI90)*640-SUM(AI91,AI95)*(640-300*(AI94=0))-SUM(AI106,AI107)*7865)/2100/365/AI$40)`  # NOQA: E501
+    # total_milk_production * 640 - (milk_sold_or_exchanged + milk_other_uses) * (640 - (300 if sold_other_use == "skim" else 0)) - (ghee_sold_or_exchanged + ghee_other_uses)*7865  # NOQA: E501
+    percentage_kcals = models.PositiveSmallIntegerField(verbose_name=_("Percentage of required kcals"))
+
+    class Meta:
+        verbose_name = _("Butter Production")
+        verbose_name_plural = _("Butter Production")
+
+
+class MeatProduction(models.Model):
     """
-    Production models for other cash income sources, on sheet Data2. The level of detail is consistent across
-    production models.
+    Production of meat by households in a Wealth Group for their own consumption.
 
-    BSS example:
-        Land preparation
-        no. people per HH
-        no. times per month
-        no. months
-        price per unit
-        income
+    Stored on the BSS Data sheet in the Livestock Production section, typically starting around Row 60.
     """
 
+    wealth_group = models.ForeignKey(WealthGroup, on_delete=models.PROTECT, verbose_name=_("Wealth Group"))
+    season = models.ForeignKey(Item, on_delete=models.PROTECT, verbose_name=_("Season"))
+    # @TODO do we need both input and output item, we can't produce chicken meat from slaughtering cows.
+    input_item = models.ForeignKey(
+        Item, on_delete=models.PROTECT, verbose_name=_("Type of Animal"), related_name="animals_for_meat"
+    )
+    # Not required for MeatProduction, unit of measure is always `ea`
+    # input_unit_of_measure = models.ForeignKey(
+    #    UnitOfMeasure, on_delete=models.PROTECT, verbose_name=_("Input Unit of Measure")
+    # )
+    input_quantity = models.PositiveSmallIntegerField(verbose_name=_("Number of animals slaughtered"))
+    item = models.ForeignKey(
+        Item, on_delete=models.PROTECT, verbose_name=_("Type of Meat"), related_name="meat_production"
+    )
+    # Not required because it is always `kg`
+    # unit_of_measure = models.ForeignKey(
+    #    UnitOfMeasure, on_delete=models.PROTECT, verbose_name=_("Unit of Measure")
+    # )
+    item_yield = common_models.PrecisionField(verbose_name=_("Carcass weight per animal"))
+    quantity_produced = models.PositiveSmallIntegerField(verbose_name=_("Quantity Produced"))
+    # Do we have a BSS that shows meat sold/exchanged/other uses rather than live animal transfers
+    quantity_sold = models.PositiveSmallIntegerField(verbose_name=_("Quantity Sold/Exchanged"))
+    quantity_other_uses = models.PositiveSmallIntegerField(verbose_name=_("Quantity Other Uses"))
+    # Can be calculated / validated as `quantity_produced - quantity_sold - quantity_other_uses`
+    quantity_consumed = models.PositiveSmallIntegerField(verbose_name=_("Quantity Consumed"))
 
-class WildFoodsAndFishingProductionModel(ProductionModel):
-    """
-    Production models for wild foods and fishing, on sheet Data3. The level of detail is consistent across
-    production models.
+    # Calculated field, or method
+    # `input_quantity` * `item_yield` * `kcals_per_unit`
+    total_kcals_consumed = models.PositiveSmallIntegerField(verbose_name=_("Total kcals consumed"))
+    # Calculated field, or method
+    # E.g. MWMSK Data AN177: `=IF(AN176="","",AN175*AN176*1450/2100/365/AN$40)`
+    # `input_quantity` * `item_yield` * `kcals_per_unit` / `DAILY_KCAL_REQUIRED` / `DAYS_PER_YEAR` / `self.wealth_group.average_household_size`  # NOQA: E501
+    percentage_kcals = models.PositiveSmallIntegerField(verbose_name=_("Percentage of required kcals"))
 
-    BSS example:
-        Wild food type 1- Mphunga - kg gathered	8.6
-        kcals per kg	3540
-        sold/exchanged (kg)	0
-        price (cash)
-        income (cash)	0
-        other use (kg)	0
-        kcals (%)	1%
+    class Meta:
+        verbose_name = _("Meat Production")
+        verbose_name_plural = _("Meat Production")
+
+
+class CropProduction(models.Model):
     """
+    Production of crops by households in a Wealth Group for their own consumption, for sale and for other uses.
+
+    Stored on the BSS Data sheet in the Crop Production section, typically starting around Row 221.
+    """
+
+    wealth_group = models.ForeignKey(WealthGroup, on_delete=models.PROTECT, verbose_name=_("Wealth Group"))
+    season = models.ForeignKey(Item, on_delete=models.PROTECT, verbose_name=_("Season"))
+    # @TODO See https://fewsnet.atlassian.net/browse/HEA-67
+    # Are there other types than rainfed and irrigated?
+    # Is it important as an attribute even if there is only one crop.
+    production_system = models.CharField(
+        max_length=60,
+        default="rainfed",
+        verbose_name=_("Production System"),
+        help_text=_("Production system used to grow the crop, such as rainfed or irrigated"),
+    )
+    # Not required for CropProduction - logically it is Land in ha, but this isn't tracked AFAIK
+    # input_item = models.ForeignKey(
+    #    Item, on_delete=models.PROTECT, verbose_name=_("Type of Milk"), related_name="butter_production_milk"
+    # )
+    # input_unit_of_measure = models.ForeignKey(
+    #    UnitOfMeasure, on_delete=models.PROTECT, verbose_name=_("Input Unit of Measure")
+    # )
+    # input_quantity = models.PositiveSmallIntegerField(verbose_name=_("Quantity of milk (l)"))
+    item = models.ForeignKey(
+        Item, on_delete=models.PROTECT, verbose_name=_("Type of Crop"), related_name="crop_production"
+    )
+    # Not required for CropProduction, unit of measure is always `kg`
+    # unit_of_measure = models.ForeignKey(
+    #    UnitOfMeasure, on_delete=models.PROTECT, verbose_name=_("Unit of Measure")
+    # )
+    # item_yield = models.PositiveSmallIntegerField(verbose_name=_("crop (kg) per land area (ha)"))
+    quantity_produced = models.PositiveSmallIntegerField(verbose_name=_("Quantity Produced"))
+    quantity_sold = models.PositiveSmallIntegerField(verbose_name=_("Quantity Sold/Exchanged"))
+    price = models.FloatField(verbose_name=_("Price"), help_text=_("Price per unit"))
+    currency = models.ForeignKey(Currency, verbose_name=_("currency"), db_column="iso4217a3", on_delete=models.PROTECT)
+    # Can be calculated / validated as `quantity_sold * price`
+    income = common_models.PrecisionField(help_text=_("Income"))
+    quantity_other_uses = models.PositiveSmallIntegerField(verbose_name=_("Quantity Other Uses"))
+    # Can be calculated / validated as `quantity_produced - quantity_sold - quantity_other_uses`
+    quantity_consumed = models.PositiveSmallIntegerField(verbose_name=_("Quantity Consumed"))
+
+    # Calculated field, or method
+    # `quantity_consumed` * `kcals_per_unit`
+    total_kcals_consumed = models.PositiveSmallIntegerField(verbose_name=_("Total kcals consumed"))
+    # Calculated field, or method
+    percentage_kcals = models.PositiveSmallIntegerField(verbose_name=_("Percentage of required kcals"))
+
+    class Meta:
+        verbose_name = _("Crop Production")
+        verbose_name_plural = _("Crop Production")
+
+
+class FoodPurchase(models.Model):
+    """
+    Purchase of food items that contribute to nutrition by households in a Wealth Group.
+
+    Stored on the BSS Data sheet in the Food Purchase section, typically starting around Row 421.
+    """
+
+    wealth_group = models.ForeignKey(WealthGroup, on_delete=models.PROTECT, verbose_name=_("Wealth Group"))
+    # The BSS doesn't capture which season food purchases occur in, so we can't really store it, even though
+    # we know that 12 months means year round and 3-4 months probably means in the lean season.
+    # season = models.ForeignKey(Item, on_delete=models.PROTECT, verbose_name=_("Season"))
+    # Not required for FoodPurchase - in a transfer model approach it would be Money
+    # input_item = models.ForeignKey(
+    #    Item, on_delete=models.PROTECT, verbose_name=_("Type of Milk"), related_name="butter_production_milk"
+    # )
+    # input_unit_of_measure = models.ForeignKey(
+    #    UnitOfMeasure, on_delete=models.PROTECT, verbose_name=_("Input Unit of Measure")
+    # )
+    # input_quantity = models.PositiveSmallIntegerField(verbose_name=_("Quantity of milk (l)"))
+    item = models.ForeignKey(
+        Item, on_delete=models.PROTECT, verbose_name=_("Type of Food"), related_name="food_purchases"
+    )
+    unit_of_measure = models.ForeignKey(UnitOfMeasure, on_delete=models.PROTECT, verbose_name=_("Unit of Measure"))
+    # Not required for FoodPurchase, although could be repurposed for the unit_multiple
+    # item_yield = models.PositiveSmallIntegerField(verbose_name=_("crop (kg) per land area (ha)"))
+    unit_multiple = models.PositiveSmallIntegerField(
+        verbose_name=_("Unit Multiple"), help_text=_("Multiple of the unit of measure in a single purchase")
+    )
+    purchases_per_month = models.PositiveSmallIntegerField(verbose_name=_("Purchases per month"))
+    months_per_year = models.PositiveSmallIntegerField(
+        verbose_name=_("Months per year"), help_text=_("Number of months in a year that the product is purchased")
+    )
+    # Not required for FoodPurchase - we don't track traders
+    # quantity_produced = models.PositiveSmallIntegerField(verbose_name=_("Quantity Purchased"))
+    # Not required for FoodPurchase - we don't track traders
+    # quantity_sold = models.PositiveSmallIntegerField(verbose_name=_("Quantity Sold/Exchanged"))
+    # Can be calculated / validated as `unit_multiple * purchases_per_month * months_per_year`
+    # @TODO should we share a field with quantity_sold and use negatives for one or other.
+    # Alternatively, we could reuse quantity_consumed, because we assume all of the purchase is being consumed
+    # Users will expect to see positive numbers everywhere.
+    quantity_purchased = models.PositiveSmallIntegerField(verbose_name=_("Quantity Purchased"))
+    price = models.FloatField(verbose_name=_("Price"), help_text=_("Price per unit"))
+    currency = models.ForeignKey(Currency, verbose_name=_("currency"), db_column="iso4217a3", on_delete=models.PROTECT)
+    # Not required for Food Purchase
+    # income = common_models.PrecisionField(help_text=_("Income"))
+    # @TODO should we share a field with quantity_sold and use negatives for one or other.
+    # Users will expect to see positive numbers everywhere.
+    # Can be calculated / validated as `quantity_purchased * price`
+    expenditure = common_models.PrecisionField(help_text=_("Income"))
+    # Not required for Food Purchase
+    # quantity_other_uses = models.PositiveSmallIntegerField(verbose_name=_("Quantity Other Uses"))
+    # Not required for Food Purchase
+    # quantity_consumed = models.PositiveSmallIntegerField(verbose_name=_("Quantity Consumed"))
+
+    # Calculated field, or method
+    # `quantity_consumed` * `kcals_per_unit`
+    total_kcals_consumed = models.PositiveSmallIntegerField(verbose_name=_("Total kcals consumed"))
+    # Calculated field, or method
+    percentage_kcals = models.PositiveSmallIntegerField(verbose_name=_("Percentage of required kcals"))
+
+    class Meta:
+        verbose_name = _("Food Purchase")
+        verbose_name_plural = _("Food Purchases")
+
+
+class PaymentInKind(models.Model):
+    """
+    Food items that contribute to nutrition by households in a Wealth Group received in exchange for labor.
+
+    Stored on the BSS Data sheet in the Payment In Kind section, typically starting around Row 514.
+    """
+
+    wealth_group = models.ForeignKey(WealthGroup, on_delete=models.PROTECT, verbose_name=_("Wealth Group"))
+    # The BSS doesn't capture which season payment in kind occurs in, so we can't really store it.
+    # season = models.ForeignKey(Item, on_delete=models.PROTECT, verbose_name=_("Season"))
+    input_item = models.ForeignKey(
+        Item, on_delete=models.PROTECT, verbose_name=_("Type of Labor"), related_name="in_kind_labor"
+    )
+    # input_unit_of_measure = models.ForeignKey(
+    #    UnitOfMeasure, on_delete=models.PROTECT, verbose_name=_("Input Unit of Measure")
+    # )
+    # input_quantity = models.PositiveSmallIntegerField(verbose_name=_("Quantity of milk (l)"))
+    # The BSS doesn't show this explicitly but it is implicitly there because we need to look up the kcal/kg for the
+    # item received
+    item = models.ForeignKey(
+        Item, on_delete=models.PROTECT, verbose_name=_("Type of Food"), related_name="in_kind_payment"
+    )
+    unit_of_measure = models.ForeignKey(UnitOfMeasure, on_delete=models.PROTECT, verbose_name=_("Unit of Measure"))
+    # Not required for PaymentInKind, although could be repurposed for the unit_multiple
+    # item_yield = models.PositiveSmallIntegerField(verbose_name=_("crop (kg) per land area (ha)"))
+    people_per_hh = models.PositiveSmallIntegerField(
+        verbose_name=_("People per household"), help_text=_("Number of household members who perform the labor")
+    )
+    labor_per_month = models.PositiveSmallIntegerField(verbose_name=_("Labor per month"))
+    months_per_year = models.PositiveSmallIntegerField(
+        verbose_name=_("Months per year"), help_text=_("Number of months in a year that the labor is performed")
+    )
+    # Not required for PaymentInKind - we don't track traders
+    # quantity_produced = models.PositiveSmallIntegerField(verbose_name=_("Quantity Purchased"))
+    # Not required for PaymentInKind - we don't track traders
+    # quantity_sold = models.PositiveSmallIntegerField(verbose_name=_("Quantity Sold/Exchanged"))
+    # Can be calculated / validated as `unit_multiple * purchases_per_month * months_per_year`
+    # @TODO should we share a field with quantity_sold and use negatives for one or other.
+    # Alternatively, we could reuse quantity_consumed, because we assume all of the payment in kind is being consumed
+    # Users will expect to see positive numbers everywhere.
+    quantity_received = models.PositiveSmallIntegerField(verbose_name=_("Quantity Received"))
+    # Not required for PaymentInKind
+    # price = models.FloatField(verbose_name=_("Price"), help_text=_("Price per unit"))
+    # Not required for PaymentInKind
+    # currency = models.ForeignKey(Currency, verbose_name=_("currency"), db_column="iso4217a3", on_delete=models.PROTECT)  # NOQA: E501
+    # Not required for PaymentInKind
+    # income = common_models.PrecisionField(help_text=_("Income"))
+    # Not required for PaymentInKind
+    # quantity_other_uses = models.PositiveSmallIntegerField(verbose_name=_("Quantity Other Uses"))
+    # Not required for PaymentInKind
+    # quantity_consumed = models.PositiveSmallIntegerField(verbose_name=_("Quantity Consumed"))
+
+    # Calculated field, or method
+    # `quantity_consumed` * `kcals_per_unit`
+    total_kcals_consumed = models.PositiveSmallIntegerField(verbose_name=_("Total kcals consumed"))
+    # Calculated field, or method
+    percentage_kcals = models.PositiveSmallIntegerField(verbose_name=_("Percentage of required kcals"))
+
+    class Meta:
+        verbose_name = _("Payment in Kind")
+        verbose_name_plural = _("Payments in Kind")
+
+
+class ReliefGiftsOther(models.Model):
+    """
+    Food items that contribute to nutrition received by households in a Wealth Group as relief, gifts, etc.
+    and which are not bought or exchanged.
+
+    Stored on the BSS Data sheet in the Relief, Gifts and Other section, typically starting around Row 533.
+    """
+
+    wealth_group = models.ForeignKey(WealthGroup, on_delete=models.PROTECT, verbose_name=_("Wealth Group"))
+    # The BSS doesn't capture which season payment in kind occurs in, so we can't really store it.
+    # season = models.ForeignKey(Item, on_delete=models.PROTECT, verbose_name=_("Season"))
+    # Not required for ReliefGiftsOther
+    # input_item = models.ForeignKey(
+    #    Item, on_delete=models.PROTECT, verbose_name=_("Type of Labor"), related_name="in_kind_labor"
+    # )
+    # input_unit_of_measure = models.ForeignKey(
+    #    UnitOfMeasure, on_delete=models.PROTECT, verbose_name=_("Input Unit of Measure")
+    # )
+    # input_quantity = models.PositiveSmallIntegerField(verbose_name=_("Quantity of milk (l)"))
+    item = models.ForeignKey(Item, on_delete=models.PROTECT, verbose_name=_("Type of Food"), related_name="relief")
+    unit_of_measure = models.ForeignKey(UnitOfMeasure, on_delete=models.PROTECT, verbose_name=_("Unit of Measure"))
+    # Not required for ReliefGiftsOther, although could be repurposed for the unit_multiple
+    # item_yield = models.PositiveSmallIntegerField(verbose_name=_("crop (kg) per land area (ha)"))
+    unit_multiple = models.PositiveSmallIntegerField(
+        verbose_name=_("Unit Multiple"), help_text=_("Multiple of the unit of measure in a single gift")
+    )
+    gifts_per_year = models.PositiveSmallIntegerField(
+        verbose_name=_("Gifts per year"), help_text=_("Number of time in a year that the product is received")
+    )
+    # Not required for ReliefGiftsOther - we don't track traders
+    # quantity_produced = models.PositiveSmallIntegerField(verbose_name=_("Quantity Purchased"))
+    # Not required for ReliefGiftsOther - we don't track traders
+    # quantity_sold = models.PositiveSmallIntegerField(verbose_name=_("Quantity Sold/Exchanged"))
+    # Can be calculated / validated as `unit_multiple * purchases_per_month * months_per_year`
+    # @TODO should we share a field with quantity_sold and use negatives for one or other.
+    # Alternatively, we could reuse quantity_consumed, because we assume all of the gift is being consumed
+    # Users will expect to see positive numbers everywhere.
+    quantity_received = models.PositiveSmallIntegerField(verbose_name=_("Quantity Received"))
+    # Not required for ReliefGiftsOther
+    # price = models.FloatField(verbose_name=_("Price"), help_text=_("Price per unit"))
+    # Not required for ReliefGiftsOther
+    # currency = models.ForeignKey(Currency, verbose_name=_("currency"), db_column="iso4217a3", on_delete=models.PROTECT)  # NOQA: E501
+    # Not required for ReliefGiftsOther
+    # income = common_models.PrecisionField(help_text=_("Income"))
+    # Not required for ReliefGiftsOther
+    # quantity_other_uses = models.PositiveSmallIntegerField(verbose_name=_("Quantity Other Uses"))
+    # Not required for ReliefGiftsOther
+    # quantity_consumed = models.PositiveSmallIntegerField(verbose_name=_("Quantity Consumed"))
+
+    # Calculated field, or method
+    # `quantity_consumed` * `kcals_per_unit`
+    total_kcals_consumed = models.PositiveSmallIntegerField(verbose_name=_("Total kcals consumed"))
+    # Calculated field, or method
+    percentage_kcals = models.PositiveSmallIntegerField(verbose_name=_("Percentage of required kcals"))
+
+    class Meta:
+        verbose_name = _("Relief, Gifts and Other Food")
+        verbose_name_plural = _("Relief, Gifts and Other Food")
+
+
+class Fishing(models.Model):
+    """
+    Fishing by households in a Wealth Group for their own consumption, for sale and for other uses.
+
+    Stored on the BSS Data3 sheet in the Fishing section, typically starting around Row 48 and summarized in the
+    Data sheet in the Wild Foods section, typically starting around Row 550.
+    """
+
+    wealth_group = models.ForeignKey(WealthGroup, on_delete=models.PROTECT, verbose_name=_("Wealth Group"))
+    # The BSS doesn't capture which season fishing occurs in, so we can't really store it.
+    # season = models.ForeignKey(Item, on_delete=models.PROTECT, verbose_name=_("Season"))
+    # Not required for Fishing
+    # input_item = models.ForeignKey(
+    #    Item, on_delete=models.PROTECT, verbose_name=_("Type of Labor"), related_name="in_kind_labor"
+    # )
+    # input_unit_of_measure = models.ForeignKey(
+    #    UnitOfMeasure, on_delete=models.PROTECT, verbose_name=_("Input Unit of Measure")
+    # )
+    # input_quantity = models.PositiveSmallIntegerField(verbose_name=_("Quantity of milk (l)"))
+    item = models.ForeignKey(Item, on_delete=models.PROTECT, verbose_name=_("Type of Fish"), related_name="fishing")
+    # Not required for Fishing, unit of measure is always `kg`
+    # unit_of_measure = models.ForeignKey(
+    #    UnitOfMeasure, on_delete=models.PROTECT, verbose_name=_("Unit of Measure")
+    # )
+    # Not required for Fishing
+    # item_yield = models.PositiveSmallIntegerField(verbose_name=_("crop (kg) per land area (ha)"))
+    quantity_produced = models.PositiveSmallIntegerField(verbose_name=_("Quantity Caught"))
+    quantity_sold = models.PositiveSmallIntegerField(verbose_name=_("Quantity Sold/Exchanged"))
+    price = models.FloatField(verbose_name=_("Price"), help_text=_("Price per unit"))
+    currency = models.ForeignKey(Currency, verbose_name=_("currency"), db_column="iso4217a3", on_delete=models.PROTECT)
+    # Can be calculated / validated as `quantity_sold * price`
+    income = common_models.PrecisionField(help_text=_("Income"))
+    quantity_other_uses = models.PositiveSmallIntegerField(verbose_name=_("Quantity Other Uses"))
+    # Can be calculated / validated as `quantity_gathered - quantity_sold - quantity_other_uses`
+    quantity_consumed = models.PositiveSmallIntegerField(verbose_name=_("Quantity Consumed"))
+
+    # Calculated field, or method
+    # `quantity_consumed` * `kcals_per_unit`
+    total_kcals_consumed = models.PositiveSmallIntegerField(verbose_name=_("Total kcals consumed"))
+    # Calculated field, or method
+    percentage_kcals = models.PositiveSmallIntegerField(verbose_name=_("Percentage of required kcals"))
+
+    class Meta:
+        verbose_name = _("Fishing")
+        verbose_name_plural = _("Fishing")
+
+
+class WildFood(models.Model):
+    """
+    Gathering of wild food by households in a Wealth Group for their own consumption, for sale and for other uses.
+
+    Stored on the BSS Data3 sheet in the Wild Foods section, typically starting around Row 9 and summarized in the
+    Data sheet in the Wild Foods section, typically starting around Row 560.
+    """
+
+    wealth_group = models.ForeignKey(WealthGroup, on_delete=models.PROTECT, verbose_name=_("Wealth Group"))
+    # The BSS doesn't capture which season wild foods are gathered in, so we can't really store it.
+    # season = models.ForeignKey(Item, on_delete=models.PROTECT, verbose_name=_("Season"))
+    # Not required for WildFood
+    # input_item = models.ForeignKey(
+    #    Item, on_delete=models.PROTECT, verbose_name=_("Type of Labor"), related_name="in_kind_labor"
+    # )
+    # input_unit_of_measure = models.ForeignKey(
+    #    UnitOfMeasure, on_delete=models.PROTECT, verbose_name=_("Input Unit of Measure")
+    # )
+    # input_quantity = models.PositiveSmallIntegerField(verbose_name=_("Quantity of milk (l)"))
+    item = models.ForeignKey(
+        Item, on_delete=models.PROTECT, verbose_name=_("Type of Wild Food"), related_name="wild_food"
+    )
+    # Not required for WildFood, unit of measure is always `kg`
+    # unit_of_measure = models.ForeignKey(
+    #    UnitOfMeasure, on_delete=models.PROTECT, verbose_name=_("Unit of Measure")
+    # )
+    # Not required for WildFood
+    # item_yield = models.PositiveSmallIntegerField(verbose_name=_("crop (kg) per land area (ha)"))
+    quantity_produced = models.PositiveSmallIntegerField(verbose_name=_("Quantity Gathered"))
+    quantity_sold = models.PositiveSmallIntegerField(verbose_name=_("Quantity Sold/Exchanged"))
+    price = models.FloatField(verbose_name=_("Price"), help_text=_("Price per unit"))
+    currency = models.ForeignKey(Currency, verbose_name=_("currency"), db_column="iso4217a3", on_delete=models.PROTECT)
+    # Can be calculated / validated as `quantity_sold * price`
+    income = common_models.PrecisionField(help_text=_("Income"))
+    quantity_other_uses = models.PositiveSmallIntegerField(verbose_name=_("Quantity Other Uses"))
+    # Can be calculated / validated as `quantity_gathered - quantity_sold - quantity_other_uses`
+    quantity_consumed = models.PositiveSmallIntegerField(verbose_name=_("Quantity Consumed"))
+
+    # Calculated field, or method
+    # `quantity_consumed` * `kcals_per_unit`
+    total_kcals_consumed = models.PositiveSmallIntegerField(verbose_name=_("Total kcals consumed"))
+    # Calculated field, or method
+    percentage_kcals = models.PositiveSmallIntegerField(verbose_name=_("Percentage of required kcals"))
+
+    class Meta:
+        verbose_name = _("Wild Food")
+        verbose_name_plural = _("Wild Food")
+
+
+class OtherCashIncome(models.Model):
+    """
+    Income received by households in a Wealth Group as payment for labor or from self-employment, remittances, etc.
+
+    Stored on the BSS Data2 and summarized in the Data sheet in the Other Cash Income section, typically starting
+    around Row 580.
+    """
+
+    wealth_group = models.ForeignKey(WealthGroup, on_delete=models.PROTECT, verbose_name=_("Wealth Group"))
+    # The BSS doesn't capture which season income occurs in, so we can't really store it.
+    # season = models.ForeignKey(Item, on_delete=models.PROTECT, verbose_name=_("Season"))
+    # @TODO Cash Income has an output item of cash and and input item of the type of labor. If we only have one item
+    # for a Production model subclass, I think it would store the type of labor, so we wouldn't need the input_item
+    # input_item = models.ForeignKey(
+    #    Item, on_delete=models.PROTECT, verbose_name=_("Type of Labor"), related_name="in_kind_labor"
+    # )
+    # input_unit_of_measure = models.ForeignKey(
+    #    UnitOfMeasure, on_delete=models.PROTECT, verbose_name=_("Input Unit of Measure")
+    # )
+    # input_quantity = models.PositiveSmallIntegerField(verbose_name=_("Quantity of milk (l)"))
+    # The BSS doesn't show this explicitly but it is implicitly there because we need to look up the kcal/kg for the
+    # item received
+    item = models.ForeignKey(
+        Item, on_delete=models.PROTECT, verbose_name=_("Type of Labor"), related_name="paid_labor"
+    )
+    # Not required for OtherCashIncome
+    # unit_of_measure = models.ForeignKey(UnitOfMeasure, on_delete=models.PROTECT, verbose_name=_("Unit of Measure"))
+    # Not required for OtherCashIncome, although could be repurposed for the unit_multiple
+    # item_yield = models.PositiveSmallIntegerField(verbose_name=_("crop (kg) per land area (ha)"))
+    # Some other income (e.g. Remittances) just has a number of times per year and is not calculated from
+    # people_per_hh, etc. Therefore those fields must be nullable, and we must store the total number of times per year
+    # as a separate field
+    people_per_hh = models.PositiveSmallIntegerField(
+        verbose_name=_("People per household"),
+        blank=True,
+        null=True,
+        help_text=_("Number of household members who perform the labor"),
+    )
+    labor_per_month = models.PositiveSmallIntegerField(blank=True, null=True, verbose_name=_("Labor per month"))
+    months_per_year = models.PositiveSmallIntegerField(
+        blank=True,
+        null=True,
+        verbose_name=_("Months per year"),
+        help_text=_("Number of months in a year that the labor is performed"),
+    )
+    times_per_year = models.PositiveSmallIntegerField(
+        blank=True,
+        null=True,
+        verbose_name=_("Times per year"),
+        help_text=_("Number of time in a year that the income is received"),
+    )
+    # Not required for OtherCashIncome
+    # quantity_produced = models.PositiveSmallIntegerField(verbose_name=_("Quantity Purchased"))
+    # Not required for OtherCashIncome
+    # quantity_sold = models.PositiveSmallIntegerField(verbose_name=_("Quantity Sold/Exchanged"))
+    # Not required for OtherCashIncome
+    # quantity_received = models.PositiveSmallIntegerField(verbose_name=_("Quantity Received"))
+    price = models.FloatField(verbose_name=_("Price"), help_text=_("Price per unit"))
+    currency = models.ForeignKey(
+        Currency, verbose_name=_("currency"), db_column="iso4217a3", on_delete=models.PROTECT
+    )  # NOQA: E501
+    income = common_models.PrecisionField(help_text=_("Income"))
+    # Not required for OtherCashIncome
+    # quantity_other_uses = models.PositiveSmallIntegerField(verbose_name=_("Quantity Other Uses"))
+    # Not required for OtherCashIncome
+    # quantity_consumed = models.PositiveSmallIntegerField(verbose_name=_("Quantity Consumed"))
+
+    # Not required for OtherCashIncome
+    # Calculated field, or method
+    # `quantity_consumed` * `kcals_per_unit`
+    # total_kcals_consumed = models.PositiveSmallIntegerField(verbose_name=_("Total kcals consumed"))
+    # Not required for OtherCashIncome
+    # Calculated field, or method
+    # percentage_kcals = models.PositiveSmallIntegerField(verbose_name=_("Percentage of required kcals"))
+
+    class Meta:
+        verbose_name = _("Other Cash Income")
+        verbose_name_plural = _("Other Cash Income")
 
 
 class SeasonalActivity(Dimension):
@@ -626,7 +1054,7 @@ class CommunityLivestock(models.Model):
         help_text=_("Number of litres produced each day during the dry season"),
     )
     age_at_sale = models.PositiveSmallIntegerField(
-        verbose_name=_("Age at Sale"), help_text=_("Age in months at which the animal is typically sold")
+        verbose_name=_("Age at Sale"), help_text=_("Age in months at which the animal is typically sold/exchanged")
     )
     # @TODO At implementation we need to ensure consistency across records
     # that means we either need a EAV table or validation at data entry.

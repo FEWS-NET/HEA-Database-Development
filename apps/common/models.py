@@ -1,9 +1,4 @@
-# @TODO: Requires GDAL from django.contrib.gis.db.models import *
-# Proposed architecture for common, used by replacing, for example:
-# `from django.db import models` with `from common import models`
-# (like `django.contrib.gis.db.models` does).
-# Might encourage us to use common only for defaults, tweaks and
-# extensions to libraries?
+from django.core import validators
 from django.db import models
 from django.utils.translation import get_language
 from django.utils.translation import gettext_lazy as _
@@ -58,3 +53,78 @@ class TranslatableModel(models.Model):
 
     class Meta:
         abstract = True
+
+
+class Country(models.Model):
+    """
+    A Country (or dependent territory or special area of geographical interest) included in ISO 3166.
+    """
+
+    iso3166a2 = models.CharField(max_length=2, primary_key=True, verbose_name="ISO 3166-1 Alpha-2")
+    iso3166a3 = models.CharField(max_length=3, unique=True, verbose_name="ISO 3166-1 Alpha-3")
+    iso3166n3 = models.IntegerField(
+        unique=True,
+        blank=True,
+        null=True,
+        validators=[validators.MinValueValidator(1), validators.MaxValueValidator(999)],
+        verbose_name="ISO 3166-1 Numeric",
+    )
+    name = NameField(max_length=200, unique=True)
+    iso_en_name = models.CharField(
+        max_length=200,
+        unique=True,
+        verbose_name="ISO English ASCII name",
+        help_text=_(
+            "The name of the Country approved by the ISO 3166 Maintenance Agency with accented characters replaced by their ASCII equivalents"  # NOQA: E501
+        ),
+    )
+    iso_en_proper = models.CharField(
+        max_length=200,
+        verbose_name="ISO English ASCII full name",
+        help_text=_(
+            "The full formal name of the Country approved by the ISO 3166 Maintenance Agency with accented characters replaced by their ASCII equivalents"  # NOQA: E501
+        ),
+    )
+    iso_en_ro_name = models.CharField(
+        max_length=200,
+        unique=True,
+        verbose_name="ISO English name",
+        help_text=_("The name of the Country approved by the ISO 3166 Maintenance Agency"),
+    )
+    iso_en_ro_proper = models.CharField(
+        max_length=200,
+        verbose_name="ISO English full name",
+        help_text=_("The full formal name of the Country approved by the ISO 3166 Maintenance Agency"),
+    )
+    iso_fr_name = models.CharField(
+        max_length=200,
+        verbose_name=_("ISO French name"),
+        help_text=_("The name in French of the Country approved by the ISO 3166 Maintenance Agency"),
+    )
+    iso_fr_proper = models.CharField(
+        max_length=200,
+        verbose_name=_("ISO French full name"),
+        help_text=_("The full formal name in French of the Country approved by the ISO 3166 Maintenance Agency"),
+    )
+    iso_es_name = models.CharField(
+        max_length=200,
+        verbose_name=_("ISO Spanish name"),
+        help_text=_("The name in Spanish of the Country approved by the ISO 3166 Maintenance Agency"),
+    )
+
+
+class Currency(models.Model):
+    """
+    A monetary unit in common use and included in ISO 4217.
+    """
+
+    iso4217a3 = models.CharField(max_length=20, primary_key=True, verbose_name="ISO 4217 Alpha-3")
+    iso4217n3 = models.IntegerField(unique=True, verbose_name="ISO 4217 Numeric", blank=True, null=True)
+    iso_en_name = models.CharField(max_length=200, verbose_name=_("name"))
+
+    class Meta:
+        verbose_name = _("Currency")
+        verbose_name_plural = _("Currencies")
+
+    class ExtraMeta:
+        identifier = ["iso4217a3"]

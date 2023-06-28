@@ -139,6 +139,57 @@ class WealthGroupCharacteristic(Dimension):
         verbose_name_plural = _("Wealth Group Characteristics")
 
 
+class UnitOfMeasure(Dimension):
+    """
+    For example kilograms, hectares, hours, kcal% or USD.
+    """
+
+    def convert_from(self, value, to_unit_of_measure=None, date=None, livelihood_zone_baseline=None):
+        # @TODO: This should be replaced with two ORM joins in a custom model manager instead.
+        #   Conversions must never require n+1 queries, as this does.
+        conversion = self.conversions_from.all()
+        if date:
+            conversion = conversion.filter(to_date__gte=date, from_date__lte=date)
+        else:
+            conversion = conversion.filter(to_date__isnull=True, from_date__isnull=True)
+        if livelihood_zone_baseline:
+            conversion = conversion.filter(livelihood_zone_baseline=livelihood_zone_baseline)
+        else:
+            conversion = conversion.filter(livelihood_zone_baseline__isnull=True)
+        if len(conversion) == 1:
+            # Convert to the standard unit, eg, kg, USD:
+            value = conversion[0].convert(value)
+            # Then convert to to_unit if requested:
+            if to_unit_of_measure and not to_unit_of_measure.default:
+                conversion = UnitOfMeasureConversion.objects.filter(from_unit_of_measure=to_unit_of_measure)
+                if date:
+                    conversion = conversion.filter(to_date__gte=date, from_date__lte=date)
+                else:
+                    conversion = conversion.filter(to_date__isnull=True, from_date__isnull=True)
+                if livelihood_zone_baseline:
+                    conversion = conversion.filter(livelihood_zone_baseline=livelihood_zone_baseline)
+                else:
+                    conversion = conversion.filter(livelihood_zone_baseline__isnull=True)
+                if len(conversion) == 1:
+                    return conversion[0].convert(value, invert=True)
+            else:
+                return value
+        logger.warning(
+            f"{len(conversion) or 'No'} conversions found "
+            f"from {self.code}, "
+            f"to {to_unit_of_measure or 'std measure'}, "
+            f"date {date or 'not specified'}, "
+            f"livelihood zone baseline {livelihood_zone_baseline or 'not specified'}. "
+            f"({', '.join((str(c.pk) for c in conversion)) or 'None found'}.)"
+        )
+
+
+class Currency(UnitOfMeasure):
+    """
+    The sub-set of UnitOfMeasures that are Currencies, for diagram clarity.
+    """
+
+
 class Item(Dimension):
     """
     A local thing that is collected, produced, traded and/or owned, including labor.
@@ -184,59 +235,13 @@ class Item(Dimension):
     level category and is_staple.
     """
 
-
-class UnitOfMeasure(Dimension):
-    """
-    For example kilograms, hectares, hours, kcal% or USD.
-    """
-
-    def convert_from(self, value, to_unit_of_measure=None, date=None, livelihood_zone_baseline=None):
-        # @TODO: This should be replaced with two ORM joins in a custom model manager instead.
-        #   Conversions must never require n+1 queries, as this does.
-        conversion = self.conversions_from.all()
-        if date:
-            conversion = conversion.filter(to_date__gte=date, from_date__lte=date)
-        else:
-            conversion = conversion.filter(to_date__isnull=True, from_date__isnull=True)
-        if livelihood_zone_baseline:
-            conversion = conversion.filter(livelihood_zone_baseline=livelihood_zone_baseline)
-        else:
-            conversion = conversion.filter(livelihood_zone_baseline__isnull=True)
-        if len(conversion) == 1:
-            # Convert to the standard unit, eg, kg, USD:
-            value = conversion[0].convert(value)
-            # Then convert to to_unit if requested:
-            if to_unit_of_measure and not to_unit_of_measure.default:
-                conversion = Conversion.objects.filter(from_unit_of_measure=to_unit_of_measure)
-                if date:
-                    conversion = conversion.filter(to_date__gte=date, from_date__lte=date)
-                else:
-                    conversion = conversion.filter(to_date__isnull=True, from_date__isnull=True)
-                if livelihood_zone_baseline:
-                    conversion = conversion.filter(livelihood_zone_baseline=livelihood_zone_baseline)
-                else:
-                    conversion = conversion.filter(livelihood_zone_baseline__isnull=True)
-                if len(conversion) == 1:
-                    return conversion[0].convert(value, invert=True)
-            else:
-                return value
-        logger.warning(
-            f"{len(conversion) or 'No'} conversions found "
-            f"from {self.code}, "
-            f"to {to_unit_of_measure or 'std measure'}, "
-            f"date {date or 'not specified'}, "
-            f"livelihood zone baseline {livelihood_zone_baseline or 'not specified'}. "
-            f"({', '.join((str(c.pk) for c in conversion)) or 'None found'}.)"
-        )
+    input_unit_of_measure = models.ForeignKey(
+        UnitOfMeasure, on_delete=models.PROTECT, verbose_name=_("Input Unit of Measure")
+    )
+    kcals_per_unit = models.PositiveSmallIntegerField(blank=True, null=True, verbose_name=_("Kcals per kg"))
 
 
-class Currency(UnitOfMeasure):
-    """
-    The sub-set of UnitOfMeasures that are Currencies, for diagram clarity.
-    """
-
-
-class Conversion(models.Model):
+class UnitOfMeasureConversion(models.Model):
     from_unit_of_measure = models.ForeignKey(
         UnitOfMeasure,
         on_delete=models.PROTECT,

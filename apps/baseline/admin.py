@@ -1,19 +1,22 @@
 from django.contrib import admin
 
 from .models import (
+    ButterProduction,
     Community,
     CommunityCropProduction,
     CommunityLivestock,
-    CropProductionModel,
-    FoodPurchaseProductionModel,
+    CropProduction,
+    Fishing,
+    FoodPurchase,
     Hazard,
     LivelihoodZone,
     LivelihoodZoneBaseline,
-    LivestockProductionModel,
     Market,
     MarketPrice,
-    OtherCashIncomeSourcesProductionModel,
-    PaymentInKindProductionModel,
+    MeatProduction,
+    MilkProduction,
+    OtherCashIncome,
+    PaymentInKind,
     ProductionModel,
     Season,
     SeasonalActivity,
@@ -22,12 +25,12 @@ from .models import (
     Staple,
     WealthGroup,
     WealthGroupCharacteristicValue,
-    WildFoodsAndFishingProductionModel,
+    WildFood,
 )
-
 
 admin.site.site_header = "HEA Baseline Database Administration"
 admin.site.index_title = "HEA Baseline"
+
 
 @admin.register(SourceOrganization)
 class SourceOrganizationAdmin(admin.ModelAdmin):
@@ -69,33 +72,48 @@ class ProductionModelAdmin(admin.ModelAdmin):
     pass
 
 
-@admin.register(LivestockProductionModel)
-class LivestockProductionModelAdmin(admin.ModelAdmin):
+@admin.register(MilkProduction)
+class MilkProductionAdmin(admin.ModelAdmin):
     pass
 
 
-@admin.register(CropProductionModel)
+@admin.register(ButterProduction)
+class ButterProductionAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(MeatProduction)
+class MeatProductionAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(CropProduction)
 class CropProductionModelAdmin(admin.ModelAdmin):
     pass
 
 
-@admin.register(FoodPurchaseProductionModel)
+@admin.register(FoodPurchase)
 class FoodPurchaseProductionModelAdmin(admin.ModelAdmin):
     pass
 
 
-@admin.register(PaymentInKindProductionModel)
+@admin.register(PaymentInKind)
 class PaymentInKindProductionModelAdmin(admin.ModelAdmin):
     pass
 
 
-@admin.register(OtherCashIncomeSourcesProductionModel)
+@admin.register(OtherCashIncome)
 class OtherCashIncomeSourcesProductionModelAdmin(admin.ModelAdmin):
     pass
 
 
-@admin.register(WildFoodsAndFishingProductionModel)
-class WildFoodsAndFishingProductionModelAdmin(admin.ModelAdmin):
+@admin.register(Fishing)
+class FishingAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(WildFood)
+class WildFoodAdmin(admin.ModelAdmin):
     pass
 
 
