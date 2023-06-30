@@ -235,8 +235,16 @@ class WealthGroupCharacteristicValue(models.Model):
     attribute_type = models.ForeignKey(
         WealthGroupCharacteristic, on_delete=models.RESTRICT, verbose_name=_("Attribute Type")
     )
-    # @TODO What are the examples of a non-numeric `value`?
-    value = models.JSONField(verbose_name=_("A single property value, eg, a float, str or list, not a dict of props."))
+    # @TODO Are we better off with a `value = JSONField()` or `num_value`, `str_value`, `bool_value` as separate fields
+    # or a single `value=CharField()` that we just store the str representation of the value in.
+    # Examples of the characteristics we need to support:
+    # "has_motorcycle" (boolean)
+    # "type_water" (one from well, faucet, river, etc.)
+    # "main_cash_crops" (many from Item, e.g. maize,coffee)
+    # "land_area" (1 decimal point numeric value, maybe with a unit of measure, e.g. 10.3 acres)
+    value = models.JSONField(
+        verbose_name=_("value"), help_text=_("A single property value, eg, a float, str or list, not a dict of props.")
+    )
 
     class Meta:
         verbose_name = _("Wealth Group Characteristic")
@@ -258,6 +266,9 @@ class LivelihoodStrategy(models.Model):
         help_text=_("Item Produced, eg, full fat milk"),
         related_name="household_economy_items",
     )
+    additional_identifier = models.CharField(
+        blank=True, verbose_name=_("Additional text identifying the livelihood strategy")
+    )
     unit_of_measure = models.ForeignKey(UnitOfMeasure, on_delete=models.PROTECT, verbose_name=_("Unit of Measure"))
     quantity_produced = models.PositiveSmallIntegerField(verbose_name=_("Quantity Produced"))
     quantity_sold = models.PositiveSmallIntegerField(verbose_name=_("Quantity Sold/Exchanged"))
@@ -272,7 +283,7 @@ class LivelihoodStrategy(models.Model):
     income = models.FloatField(help_text=_("Income"))
     # Can be calculated / validated as `quantity_consumed * price` for livelihood strategies that involve the purchase
     # of external goods or services.
-    expenditure = models.FloatField(help_text=_("Income"))
+    expenditure = models.FloatField(help_text=_("Expenditure"))
 
     # Can normally be calculated  / validated as `quantity_consumed` * `kcals_per_unit`
     total_kcals_consumed = models.PositiveSmallIntegerField(
@@ -353,7 +364,8 @@ class MilkProduction(LivelihoodStrategy):
     season = models.ForeignKey(Season, on_delete=models.PROTECT, verbose_name=_("Season"))
 
     # Production calculation /validation is `lactation days * daily_production`
-    laction_days = models.PositiveSmallIntegerField(verbose_name=_("Average number or days of laction"))
+    milking_animals = models.PositiveSmallIntegerField(verbose_name=_("Number of milking animals"))
+    lactation_days = models.PositiveSmallIntegerField(verbose_name=_("Average number or days of lactation"))
     daily_production = models.PositiveSmallIntegerField(verbose_name=_("Average daily milk production per animal"))
 
     # @TODO see https://fewsnet.atlassian.net/browse/HEA-65

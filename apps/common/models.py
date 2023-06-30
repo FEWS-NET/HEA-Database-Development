@@ -55,6 +55,7 @@ class TranslatableModel(models.Model):
         abstract = True
 
 
+# @TODO Should this be in Metadata
 class Country(models.Model):
     """
     A Country (or dependent territory or special area of geographical interest) included in ISO 3166.
@@ -113,6 +114,10 @@ class Country(models.Model):
     )
 
 
+# @TODO Should this be in Metadata and if so, should it be a Unit of Measure
+# Roger: probably not because it has additional attributes (iso4217n3) and/or
+# because money isn't necessarily an item in the same way as maize or school fees
+# are, if we aren't using a Transfer-based model.
 class Currency(models.Model):
     """
     A monetary unit in common use and included in ISO 4217.
