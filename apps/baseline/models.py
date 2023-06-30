@@ -343,6 +343,9 @@ class LivelihoodStrategy(models.Model):
         verbose_name = _("Livelihood Strategy")
         verbose_name_plural = _("Livelihood Strategies")
 
+    class ExtraMeta:
+        identifier = ["wealth_group", "item", "additional_identifier"]
+
 
 class MilkProduction(LivelihoodStrategy):
     """
