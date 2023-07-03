@@ -7,17 +7,15 @@ from django.utils.dates import MONTHS
 from django.utils.translation import gettext_lazy as _
 
 import common.models as common_models
-from common.models import Country, Currency
+from common.models import ClassifiedProduct, Country, Currency, UnitOfMeasure
 from metadata.models import (
     CropType,
     Dimension,
     HazardCategory,
-    Item,
     LivelihoodCategory,
     LivestockType,
     Season,
     SeasonalActivityCategory,
-    UnitOfMeasure,
     WealthCategory,
     WealthGroupCharacteristic,
 )
@@ -56,16 +54,6 @@ class LivelihoodZone(models.Model):
     name = common_models.NameField()
     description = common_models.DescriptionField()
     country = models.ForeignKey(Country, verbose_name=_("Country"), db_column="country_code", on_delete=models.PROTECT)
-    geography = models.MultiPolygonField(geography=True, dim=2, blank=True, null=True, verbose_name=_("geography"))
-
-    # @TODO is this valuable for doing cross-LHZ analysis even though it is not
-    # in the BSS. Could be calculated from WorldPop or LandScan.
-    # @TODO does this need to be calibrated against an external data source
-    # @TODO do we need to be able to return the value for years other than the
-    # current one?
-    population_estimate = models.PositiveIntegerField(
-        verbose_name=_("Population Estimate"),
-    )
 
     class Meta:
         verbose_name = _("Livelihood Zone")
@@ -100,6 +88,8 @@ class LivelihoodZoneBaseline(models.Model):
     """
 
     livelihood_zone = models.ForeignKey(LivelihoodZone, on_delete=models.RESTRICT, verbose_name=_("Livelihood Zone"))
+    geography = models.MultiPolygonField(geography=True, dim=2, blank=True, null=True, verbose_name=_("geography"))
+
     # @TODO according to Form 1 this is the Main Livelihood Category. Therefore
     # I think we should rename this to `main_livelihood_category`. Should we
     # also rename the reference table to `LivelihoodCategory` or `MainLivelihoodCategory`,
@@ -128,6 +118,24 @@ class LivelihoodZoneBaseline(models.Model):
         verbose_name=_("Valid To Date"),
         help_text=_("The last day of the month that this baseline is valid until"),
     )
+    # Although different organizations may choose to use alternate sources of
+    # population data when conducting outcome analysis, it is common for the
+    # organization that conducts the baseline survey to provide a population
+    # estimate for the livelihood zone at the time of the baseline.
+    # Organizations using other sources for the current estimated population
+    # may prefer to use the estimate of the population from that source for the
+    # reference year rather than the value stored in the here.
+    population_source = models.CharField(
+        max_length=120,
+        blank=True,
+        verbose_name=_("Population Source"),
+        help_text=_("The data source for the Population Estimate, e.g. National Bureau of Statistics"),
+    )
+    population_estimate = models.PositiveIntegerField(
+        blank=True,
+        verbose_name=_("Population Estimate"),
+        help_text=_("The estimated population of the Livelihood Zone during the reference year"),
+    )
 
     class Meta:
         verbose_name = _("Livelihood Zone Baseline")
@@ -147,8 +155,10 @@ class Staple(models.Model):
     Does not store 'other' staples as I've not seen a need to, but could do with a CHOICE field.
     """
 
-    livelihood_zone = models.ForeignKey(LivelihoodZone, on_delete=models.RESTRICT, verbose_name=_("Livelihood Zone"))
-    item = models.ForeignKey(Item, on_delete=models.RESTRICT, verbose_name=_("Item"))
+    livelihood_zone_baseline = models.ForeignKey(
+        LivelihoodZoneBaseline, on_delete=models.RESTRICT, verbose_name=_("Livelihood Zone")
+    )
+    product = models.ForeignKey(ClassifiedProduct, on_delete=models.RESTRICT, verbose_name=_("Item"))
 
 
 # @TODO https://fewsnet.atlassian.net/browse/HEA-54
@@ -240,15 +250,15 @@ class WealthGroupCharacteristicValue(models.Model):
     # Examples of the characteristics we need to support:
     # "has_motorcycle" (boolean)
     # "type_water" (one from well, faucet, river, etc.)
-    # "main_cash_crops" (many from Item, e.g. maize,coffee)
+    # "main_cash_crops" (many from ClassifiedProduct, e.g. maize,coffee)
     # "land_area" (1 decimal point numeric value, maybe with a unit of measure, e.g. 10.3 acres)
     value = models.JSONField(
         verbose_name=_("value"), help_text=_("A single property value, eg, a float, str or list, not a dict of props.")
     )
 
     class Meta:
-        verbose_name = _("Wealth Group Characteristic")
-        verbose_name_plural = _("Wealth Group Characteristics")
+        verbose_name = _("Wealth Group Characteristic Value")
+        verbose_name_plural = _("Wealth Group Characteristic Values")
 
 
 class LivelihoodStrategy(models.Model):
@@ -259,15 +269,17 @@ class LivelihoodStrategy(models.Model):
     """
 
     wealth_group = models.ForeignKey(WealthGroup, on_delete=models.PROTECT, help_text=_("Wealth Group"))
-    item = models.ForeignKey(
-        Item,
+    product = models.ForeignKey(
+        ClassifiedProduct,
         on_delete=models.PROTECT,
         verbose_name=_("Item"),
         help_text=_("Item Produced, eg, full fat milk"),
         related_name="household_economy_items",
     )
     additional_identifier = models.CharField(
-        blank=True, verbose_name=_("Additional text identifying the livelihood strategy")
+        blank=True,
+        verbose_name=_("Additional Identifer"),
+        help_text=_("Additional text identifying the livelihood strategy"),
     )
     unit_of_measure = models.ForeignKey(UnitOfMeasure, on_delete=models.PROTECT, verbose_name=_("Unit of Measure"))
     quantity_produced = models.PositiveSmallIntegerField(verbose_name=_("Quantity Produced"))
@@ -441,10 +453,10 @@ class MeatProduction(LivelihoodStrategy):
     """
 
     # @TODO is this ever seasonal.
-    # season = models.ForeignKey(Item, on_delete=models.PROTECT, verbose_name=_("Season"))
+    # season = models.ForeignKey(Season, on_delete=models.PROTECT, verbose_name=_("Season"))
 
     # Production calculation /validation is `input_quantity` * `item_yield`
-    input_quantity = models.PositiveSmallIntegerField(verbose_name=_("Number of animals slaughtered"))
+    animals_slaughtered = models.PositiveSmallIntegerField(verbose_name=_("Number of animals slaughtered"))
     item_yield = models.FloatField(verbose_name=_("Carcass weight per animal"))
 
     class Meta:
@@ -458,7 +470,7 @@ class MeatProduction(LivelihoodStrategy):
 # generate cash income as quantity_sold * price, and both the quantity and
 # price are different for the different items, so I think they are two separate
 # Livelihood Strategies.
-class LivestockProduction(LivelihoodStrategy):
+class LivestockSales(LivelihoodStrategy):
     """
     Sale of livestock by households in a Wealth Group for cash income.
 
@@ -466,7 +478,7 @@ class LivestockProduction(LivelihoodStrategy):
     """
 
     # @TODO is this ever seasonal.
-    # season = models.ForeignKey(Item, on_delete=models.PROTECT, verbose_name=_("Season"))
+    # season = models.ForeignKey(Season, on_delete=models.PROTECT, verbose_name=_("Season"))
 
     # In Somalia they track export/local sales separately - see SO18 Data:B178 and also B770
     # @TODO Do we need to keep this as a separate field, or can we create a generic field in LivelihoodStrategy for
@@ -476,8 +488,7 @@ class LivestockProduction(LivelihoodStrategy):
     )
 
     # Production calculation /validation is `input_quantity` * `item_yield`
-    input_quantity = models.PositiveSmallIntegerField(verbose_name=_("Number of animals slaughtered"))
-    item_yield = models.FloatField(verbose_name=_("Carcass weight per animal"))
+    animals_sold = models.PositiveSmallIntegerField(verbose_name=_("Number of animals sold"))
 
     class Meta:
         verbose_name = _("Livestock Sales")
@@ -494,7 +505,7 @@ class CropProduction(LivelihoodStrategy):
     provided kcal_percentage and the kcal/kg.
     """
 
-    season = models.ForeignKey(Item, on_delete=models.PROTECT, verbose_name=_("Season"))
+    season = models.ForeignKey(Season, on_delete=models.PROTECT, verbose_name=_("Season"))
 
     # @TODO See https://fewsnet.atlassian.net/browse/HEA-67
     # Are there other types than rainfed and irrigated?
@@ -593,7 +604,7 @@ class Fishing(LivelihoodStrategy):
         proxy = True
 
 
-class WildFood(LivelihoodStrategy):
+class WildFoodGathering(LivelihoodStrategy):
     """
     Gathering of wild food by households in a Wealth Group for their own consumption, for sale and for other uses.
 
@@ -602,8 +613,8 @@ class WildFood(LivelihoodStrategy):
     """
 
     class Meta:
-        verbose_name = _("Wild Food")
-        verbose_name_plural = _("Wild Food")
+        verbose_name = _("Wild Food Gathering")
+        verbose_name_plural = _("Wild Food Gathering")
         proxy = True
 
 
@@ -838,8 +849,8 @@ class MarketPrice(models.Model):
     # a) something similar to Classified Product or
     # b) a reference model -
     # MarketItem with category as Main food, Cash crops Livestock ..
-    item = models.ForeignKey(
-        Item, on_delete=models.RESTRICT, help_text=_("Crop, livestock or other category of items")
+    product = models.ForeignKey(
+        ClassifiedProduct, on_delete=models.RESTRICT, help_text=_("Crop, livestock or other category of items")
     )
     market = models.ForeignKey(Market, on_delete=models.RESTRICT)
     low_price = models.FloatField("Low price")

@@ -12,6 +12,7 @@ from .models import (
     LivelihoodStrategy,
     LivelihoodZone,
     LivelihoodZoneBaseline,
+    LivestockSales,
     Market,
     MarketPrice,
     MeatProduction,
@@ -25,7 +26,7 @@ from .models import (
     Staple,
     WealthGroup,
     WealthGroupCharacteristicValue,
-    WildFood,
+    WildFoodGathering,
 )
 
 admin.site.site_header = "HEA Baseline Database Administration"
@@ -87,6 +88,11 @@ class MeatProductionAdmin(admin.ModelAdmin):
     pass
 
 
+@admin.register(LivestockSales)
+class LivestockSalesAdmin(admin.ModelAdmin):
+    pass
+
+
 @admin.register(CropProduction)
 class CropProductionModelAdmin(admin.ModelAdmin):
     pass
@@ -112,8 +118,8 @@ class FishingAdmin(admin.ModelAdmin):
     pass
 
 
-@admin.register(WildFood)
-class WildFoodAdmin(admin.ModelAdmin):
+@admin.register(WildFoodGathering)
+class WildFoodGatheringAdmin(admin.ModelAdmin):
     pass
 
 

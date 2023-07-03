@@ -125,6 +125,7 @@ class LivelihoodCategory(Dimension):
 
     # @TODO We need a parent category so we can store the detail of Rain Fed AgriPastoral,
     # but still filter for all AgroPastoral
+    # Roger: Is this true? Or is Rainfed a modifier for Crop rather than for LivelihoodCategory?
 
     class Meta:
         verbose_name = _("Livelihood Category")
@@ -195,7 +196,10 @@ class Currency(UnitOfMeasure):
 class Item(Dimension):
     """
     A local thing that is collected, produced, traded and/or owned, including labor.
+    """
 
+    # Additional non-docstring comments
+    """
     The top of the BSS Data sheet aggregates ProductionModels as follows:
         Food Summary: total (%)
             crops
@@ -242,6 +246,10 @@ class Item(Dimension):
     )
     kcals_per_unit = models.PositiveSmallIntegerField(blank=True, null=True, verbose_name=_("Kcals per kg"))
 
+    class Meta:
+        verbose_name = _("Item")
+        verbose_name_plural = _("Items")
+
 
 class UnitOfMeasureConversion(models.Model):
     from_unit_of_measure = models.ForeignKey(
@@ -284,8 +292,8 @@ class UnitOfMeasureConversion(models.Model):
     )
 
     class Meta:
-        verbose_name = "Conversion"
-        verbose_name_plural = "Conversions"
+        verbose_name = _("Unit of Measure Conversion")
+        verbose_name_plural = _("Unit of Measure Conversions")
 
     def convert(self, value, invert=False):
         if not invert:
