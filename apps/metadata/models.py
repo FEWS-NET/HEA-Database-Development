@@ -137,6 +137,20 @@ class WealthGroupCharacteristic(Dimension):
     A type of Wealth Group Characteristic, such as `Number of children at school`, etc.
     """
 
+    class VariableType(models.TextChoices):
+        NUM = "float", _("Numeric")
+        STR = "str", _("String")
+        BOOL = "bool", _("Boolean")
+
+    variable_type = models.CharField(
+        verbose_name=_(
+            "Variable Type",
+        ),
+        choices=VariableType.choices,
+        default=VariableType.STR,
+        help_text=_("Whether the field is numeric, character, boolean, etc."),
+    )
+
     class Meta:
         verbose_name = _("Wealth Group Characteristic")
         verbose_name_plural = _("Wealth Group Characteristics")
