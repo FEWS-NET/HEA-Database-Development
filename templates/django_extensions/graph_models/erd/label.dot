@@ -1,10 +1,7 @@
-{% load indent_text %}{% for model in graph.models %}
+{% load docstring split %}{% for model in graph.models %}
 entity "{{ model.label }}" as {{ model.name }} {
-  {% if model.abstracts %}{{ model.abstracts|join:"," }}
-  {% endif %}{% if not disable_fields %}{% for field in model.fields %}{% if disable_abstract_fields and field.abstract or disable_abstract_fields and field.type == "BigAutoField" %}
-  ' Skipping abstract field {{field.label}}
-  {% else %}{% if field.primary_key %}#{% elif not field.blank %}*{% endif %} {{ field.label }} : {% if field.primary_key and field.type == "BigAutoField" %}<< PK >>{% elif field.relation %}<< FK >>{% else %}{{ field.type }}{% endif %}{% endif %}
-  {% endfor %}
-  {% endif %}
-}
+{% autoescape off %}{% if model.model|docstring %}{% for line in model.model|docstring|split:"\n" %}{{ line.strip }}
+{% endfor %}{% endif %}{% endautoescape %}{% if not disable_fields %}----
+{% for field in model.fields %}{% if disable_abstract_fields and field.abstract or disable_abstract_fields and field.type == "BigAutoField" %}' Skipping abstract field {{field.label}}{% else %}{% if field.primary_key %}#{% elif not field.blank %}*{% endif %} {{ field.label }} : {% if field.primary_key and field.type == "BigAutoField" %}<< PK >>{% elif field.relation %}<< FK >>{% else %}{{ field.type }}{% endif %}{% endif %}
+{% endfor %}{% endif %}}
 {% endfor %}
