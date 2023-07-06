@@ -132,15 +132,16 @@ class LivelihoodCategory(Dimension):
         verbose_name_plural = _("Livelihood Category")
 
 
-class WealthGroupCharacteristic(Dimension):
+class WealthCharacteristic(Dimension):
     """
-    A type of Wealth Group Characteristic, such as `Number of children at school`, etc.
+    A Characteristic of a Wealth Group, such as `Number of children at school`, etc.
     """
 
     class VariableType(models.TextChoices):
         NUM = "float", _("Numeric")
         STR = "str", _("String")
         BOOL = "bool", _("Boolean")
+        # OTHER = "other", _("Other")
 
     variable_type = models.CharField(
         verbose_name=_(

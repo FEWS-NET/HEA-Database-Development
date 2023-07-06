@@ -17,7 +17,7 @@ from metadata.models import (
     Season,
     SeasonalActivityCategory,
     WealthCategory,
-    WealthGroupCharacteristic,
+    WealthCharacteristic,
 )
 
 
@@ -38,7 +38,6 @@ class SourceOrganization(models.Model):
         identifier = ["name"]
 
 
-# @TODO Is this still necessary at implementation?
 class LivelihoodZone(models.Model):
     """
     A geographical area within a Country in which people share broadly the same
@@ -90,11 +89,6 @@ class LivelihoodZoneBaseline(models.Model):
     livelihood_zone = models.ForeignKey(LivelihoodZone, on_delete=models.RESTRICT, verbose_name=_("Livelihood Zone"))
     geography = models.MultiPolygonField(geography=True, dim=2, blank=True, null=True, verbose_name=_("geography"))
 
-    # @TODO according to Form 1 this is the Main Livelihood Category. Therefore
-    # I think we should rename this to `main_livelihood_category`. Should we
-    # also rename the reference table to `LivelihoodCategory` or `MainLivelihoodCategory`,
-    # or leave it as `LivelihoodZoneType`, or shorten it to `LivelihoodType`?
-    # Or maybe Production System Category
     main_livelihood_category = models.ForeignKey(
         LivelihoodCategory, on_delete=models.RESTRICT, verbose_name=_("Livelihood Zone Type")
     )
@@ -171,6 +165,10 @@ class Staple(models.Model):
 # putting interview details in a different table, as they are not properties
 # of the Community/Village (although better still I think remove the fields to
 # simplify ingestion).
+# Dave: `Community(GeographicUnit)` would be the most FDW-like approach
+# Girum: We need to be able to link Community to Admin2, etc. LIAS uses the
+# Admin/LHZ intersect.
+# Chris: 1:1 Relationship to GeographicUnit
 class Community(models.Model):
     """
     A representative location within the Livelihood Zone whose population was
@@ -187,6 +185,7 @@ class Community(models.Model):
     )
     geography = models.GeometryField(geography=True, dim=2, blank=True, null=True, verbose_name=_("geography"))
     # @TODO Check if this need to be char.- Check Somalia
+    # Wait until Eliud can tell us?
     interview_number = models.PositiveSmallIntegerField(
         verbose_name=_("Interview Number"),
         help_text=_("The interview number from 1 - 12 assigned to the Community"),
@@ -203,6 +202,7 @@ class Community(models.Model):
 
 # @TODO Should this be SocioEconomicGroup, or maybe PopulationGroup,
 # given female-headed households, etc.
+# Jenny will check with P3 on preferred English naming. In French, it is something else anyway, I think.
 class WealthGroup(models.Model):
     """
     All the households within the same Community who share similar
@@ -242,8 +242,8 @@ class WealthGroupCharacteristicValue(models.Model):
     """
 
     wealth_group = models.ForeignKey(WealthGroup, on_delete=models.RESTRICT, verbose_name=_("Wealth Group"))
-    attribute_type = models.ForeignKey(
-        WealthGroupCharacteristic, on_delete=models.RESTRICT, verbose_name=_("Attribute Type")
+    wealth_characteristic = models.ForeignKey(
+        WealthCharacteristic, on_delete=models.RESTRICT, verbose_name=_("Wealth Characteristic")
     )
     # @TODO Are we better off with a `value = JSONField()` or `num_value`, `str_value`, `bool_value` as separate fields
     # or a single `value=CharField()` that we just store the str representation of the value in.
@@ -257,8 +257,8 @@ class WealthGroupCharacteristicValue(models.Model):
     )
 
     class Meta:
-        verbose_name = _("Wealth Group Characteristic Value")
-        verbose_name_plural = _("Wealth Group Characteristic Values")
+        verbose_name = _("Wealth Characteristic Value")
+        verbose_name_plural = _("Wealth Characteristic Values")
 
 
 class LivelihoodStrategy(models.Model):
@@ -269,6 +269,10 @@ class LivelihoodStrategy(models.Model):
     """
 
     wealth_group = models.ForeignKey(WealthGroup, on_delete=models.PROTECT, help_text=_("Wealth Group"))
+    # We will need a "Year Round" season to account for Livelihood Strategies
+    # that have equal distribution across the year, such as purchase of tea and
+    # sugar, or remittances.
+    season = models.ForeignKey(Season, on_delete=models.PROTECT, verbose_name=_("Season"))
     product = models.ForeignKey(
         ClassifiedProduct,
         on_delete=models.PROTECT,
@@ -308,8 +312,11 @@ class LivelihoodStrategy(models.Model):
         help_text=_("Percentage of annual household kcal requirement provided by this livelihood strategy"),
     )
 
-    # @TODO: if daily calory level varies by LZB then save consumed_kcal_percent here too
-    # Is this captured per Wealth Group
+    # @TODO: if daily calorie level varies by LZB then save consumed_kcal_percent here too
+    # We think that Daily KCal is fixed at 2100
+    # Is this captured per Livelihood Strategy or is it only calculated/stored at the LHZ level.
+    # It is stored in the Exp Factors sheet in the BSS, which references an external sheet.
+    # It is also present in the LIAS.
     # expandability_kcals = models.FloatField(help_text=_("Expandability in Kilocalories"))
 
     def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
@@ -319,6 +326,9 @@ class LivelihoodStrategy(models.Model):
     # @TODO I am not sure whether we calculate these values or just validate them. I.e. if they load a BSS where the
     # value exists but is incorrect, we actually want to raise an error rather than ignore their value and calculate
     # our own.
+    # @TODO To what extent do we need to validate? Or do we just accept.
+    # Dave: Do we use Django Forms as a separate validation layer, and load the data from the dataframe into a Form
+    # instance and then check whether it is valid.  See Two Scoops for an explanation.
     def calculate_fields(self):
         self.is_staple = self.wealth_group.community.livelihood_zone_baseline.staple_set(
             item=self.output_item
@@ -351,6 +361,26 @@ class LivelihoodStrategy(models.Model):
     #        * self.kcals_per_unit
     #    )
 
+    def clean(self):
+        """
+        Per model validation
+        """
+
+        # if self.web_service and self.source_type != self.WEB_SERVICE:
+        #    raise ValidationError(
+        #        "Source type should be set to 'Web Service' if a value is set for the web_service field."
+        #    )
+        super().clean()
+
+    def save(self, *args, **kwargs):
+        self.calculate_fields()
+        # No need to enforce foreign keys or uniqueness because database constraints will do it anyway
+        self.full_clean(
+            exclude=[field.name for field in self._meta.fields if isinstance(field, models.ForeignKey)],
+            validate_unique=False,
+        )
+        super().save(*args, **kwargs)
+
     class Meta:
         verbose_name = _("Livelihood Strategy")
         verbose_name_plural = _("Livelihood Strategies")
@@ -373,10 +403,6 @@ class MilkProduction(LivelihoodStrategy):
         (SKIM, _("skim")),
         (WHOLE, _("whole")),
     )
-
-    # Additional metadata
-    # @TODO is this a foreign key or a text description
-    season = models.ForeignKey(Season, on_delete=models.PROTECT, verbose_name=_("Season"))
 
     # Production calculation /validation is `lactation days * daily_production`
     milking_animals = models.PositiveSmallIntegerField(verbose_name=_("Number of milking animals"))
@@ -411,11 +437,12 @@ class ButterProduction(LivelihoodStrategy):
     Stored on the BSS Data sheet in the Livestock Production section, typically starting around Row 60.
     """
 
+    # Note that although ButterProduction is a separate livelihood strategy
+    # because it generates income (and other uses) at a different price to
+    # milk production, the total calories may be 0 because the BSS calculates
+    # combined consumption for all dairy products.
+
     # Additional metadata
-    # The current BSS assumes that all ghee/butter consumption, sale and other use happens in the first Season,
-    # but that production is based on excess milk from all Seasons!
-    # @TODO is this a foreign key or a text description
-    season = models.ForeignKey(Season, on_delete=models.PROTECT, verbose_name=_("Season"))
 
     # @TODO See https://fewsnet.atlassian.net/browse/HEA-65
     # Production calculation /validation is in Data:B105
@@ -452,9 +479,6 @@ class MeatProduction(LivelihoodStrategy):
     Stored on the BSS Data sheet in the Livestock Production section, typically starting around Row 172.
     """
 
-    # @TODO is this ever seasonal.
-    # season = models.ForeignKey(Season, on_delete=models.PROTECT, verbose_name=_("Season"))
-
     # Production calculation /validation is `input_quantity` * `item_yield`
     animals_slaughtered = models.PositiveSmallIntegerField(verbose_name=_("Number of animals slaughtered"))
     item_yield = models.FloatField(verbose_name=_("Carcass weight per animal"))
@@ -464,21 +488,12 @@ class MeatProduction(LivelihoodStrategy):
         verbose_name_plural = _("Meat Production")
 
 
-# @TODO LivestockSales
-# Is this combined with Meat as LivestockProduction or separate?
-# I think it is separate because the meat sales and the livestock sales both
-# generate cash income as quantity_sold * price, and both the quantity and
-# price are different for the different items, so I think they are two separate
-# Livelihood Strategies.
 class LivestockSales(LivelihoodStrategy):
     """
     Sale of livestock by households in a Wealth Group for cash income.
 
     Stored on the BSS Data sheet in the Livestock Production section, typically starting around Row 181.
     """
-
-    # @TODO is this ever seasonal.
-    # season = models.ForeignKey(Season, on_delete=models.PROTECT, verbose_name=_("Season"))
 
     # In Somalia they track export/local sales separately - see SO18 Data:B178 and also B770
     # @TODO Do we need to keep this as a separate field, or can we create a generic field in LivelihoodStrategy for
@@ -490,6 +505,8 @@ class LivestockSales(LivelihoodStrategy):
     # Production calculation /validation is `input_quantity` * `item_yield`
     animals_sold = models.PositiveSmallIntegerField(verbose_name=_("Number of animals sold"))
 
+    # @TODO Do we need validation around offtake (animals_sold) to make sure
+    # that they are selling and killing more animals than they own.
     class Meta:
         verbose_name = _("Livestock Sales")
         verbose_name_plural = _("Livestock Sales")
@@ -504,8 +521,6 @@ class CropProduction(LivelihoodStrategy):
     This includes consumption of Green Maize, where we need to reverse engineer the quantity produced from the
     provided kcal_percentage and the kcal/kg.
     """
-
-    season = models.ForeignKey(Season, on_delete=models.PROTECT, verbose_name=_("Season"))
 
     # @TODO See https://fewsnet.atlassian.net/browse/HEA-67
     # Are there other types than rainfed and irrigated?

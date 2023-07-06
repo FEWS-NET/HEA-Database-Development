@@ -16,7 +16,7 @@ from .models import (
     TranslationType,
     UnitOfMeasure,
     UnitOfMeasureConversion,
-    WealthGroupCharacteristic,
+    WealthCharacteristic,
 )
 
 
@@ -45,8 +45,8 @@ class LivelihoodCategoryAdmin(admin.ModelAdmin):
     pass
 
 
-@admin.register(WealthGroupCharacteristic)
-class WealthGroupCharacteristicAdmin(admin.ModelAdmin):
+@admin.register(WealthCharacteristic)
+class WealthCharacteristicAdmin(admin.ModelAdmin):
     pass
 
 
