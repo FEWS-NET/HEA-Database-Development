@@ -21,7 +21,7 @@ from .models import (
     PaymentInKind,
     Season,
     SeasonalActivity,
-    SeasonalCalendar,
+    SeasonalActivityType,
     SourceOrganization,
     Staple,
     WealthGroup,
@@ -123,8 +123,8 @@ class WildFoodGatheringAdmin(admin.ModelAdmin):
     pass
 
 
-@admin.register(SeasonalActivity)
-class SeasonalActivityAdmin(admin.ModelAdmin):
+@admin.register(SeasonalActivityType)
+class SeasonalActivityTypeAdmin(admin.ModelAdmin):
     pass
 
 
@@ -133,8 +133,8 @@ class SeasonAdmin(admin.ModelAdmin):
     pass
 
 
-@admin.register(SeasonalCalendar)
-class SeasonalCalendarAdmin(admin.ModelAdmin):
+@admin.register(SeasonalActivity)
+class SeasonalActivityAdmin(admin.ModelAdmin):
     pass
 
 

@@ -2,6 +2,8 @@
 Models for managing HEA Baseline Surveys
 """
 from django.contrib.gis.db import models
+from django.contrib.postgres.fields import ArrayField
+from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.utils.dates import MONTHS
 from django.utils.translation import gettext_lazy as _
@@ -150,7 +152,7 @@ class Staple(models.Model):
     """
 
     livelihood_zone_baseline = models.ForeignKey(
-        LivelihoodZoneBaseline, on_delete=models.RESTRICT, verbose_name=_("Livelihood Zone")
+        LivelihoodZoneBaseline, on_delete=models.RESTRICT, verbose_name=_("Livelihood Zone Baseline")
     )
     product = models.ForeignKey(ClassifiedProduct, on_delete=models.RESTRICT, verbose_name=_("Item"))
 
@@ -181,14 +183,15 @@ class Community(models.Model):
 
     name = common_models.NameField()
     livelihood_zone_baseline = models.ForeignKey(
-        LivelihoodZoneBaseline, on_delete=models.CASCADE, verbose_name=_("Livelihood Zone")
+        LivelihoodZoneBaseline, on_delete=models.CASCADE, verbose_name=_("Livelihood Zone Baseline")
     )
     geography = models.GeometryField(geography=True, dim=2, blank=True, null=True, verbose_name=_("geography"))
-    # @TODO Check if this need to be char.- Check Somalia
-    # Wait until Eliud can tell us?
-    interview_number = models.PositiveSmallIntegerField(
+    # Typicallly a number, but sometimes a code, e.g. SO03_NWA_26Nov15
+    # See https://docs.google.com/spreadsheets/d/1wuXjjmQXW9qG5AV8MRKHVadrFUhleUGN/
+    interview_number = models.CharField(
+        max_length=10,
         verbose_name=_("Interview Number"),
-        help_text=_("The interview number from 1 - 12 assigned to the Community"),
+        help_text=_("The interview number from 1 - 12 or interview code assigned to the Community"),
     )
     interviewers = models.CharField(
         verbose_name=_("Interviewers"),
@@ -198,6 +201,15 @@ class Community(models.Model):
     class Meta:
         verbose_name = _("Community")
         verbose_name_plural = _("Communities")
+        constraints = [
+            # Create a unique constraint on id and livelihood_zone_baseline, so that we can use it as a target for a
+            # composite foreign key from Seasonal Activity, which in turn allows us to ensure that the Community
+            # and the Baseline Seasonal Activity for a Seasonal Activity both have the same Livelihood Baseline.
+            models.UniqueConstraint(
+                fields=["id", "livelihood_zone_baseline"],
+                name="baseline_community_id_livelihood_zone_baseline_uniq",
+            )
+        ]
 
 
 # @TODO Should this be SocioEconomicGroup, or maybe PopulationGroup,
@@ -219,6 +231,12 @@ class WealthGroup(models.Model):
 
     name = models.CharField(max_length=100, verbose_name=_("Name"))
     community = models.ForeignKey(Community, on_delete=models.CASCADE, verbose_name=_("Community"))
+    # Inherited from Community, the denormalization is necessary to
+    # ensure that the Livelihood Strategy and the Wealth Group for a Livelihood
+    # Activity belong to the same Livelihood Zone Baseline.
+    livelihood_zone_baseline = models.ForeignKey(
+        LivelihoodZoneBaseline, on_delete=models.CASCADE, verbose_name=_("Livelihood Zone Baseline")
+    )
     wealth_category = models.ForeignKey(
         WealthCategory,
         on_delete=models.CASCADE,
@@ -231,9 +249,30 @@ class WealthGroup(models.Model):
     )
     average_household_size = models.PositiveSmallIntegerField(verbose_name=_("Average household size"))
 
+    def calculate_fields(self):
+        self.livelihood_zone_baseline = self.community.livelihood_zone_baseline
+
+    def save(self, *args, **kwargs):
+        self.calculate_fields()
+        # No need to enforce foreign keys or uniqueness because database constraints will do it anyway
+        self.full_clean(
+            exclude=[field.name for field in self._meta.fields if isinstance(field, models.ForeignKey)],
+            validate_unique=False,
+        )
+        super().save(*args, **kwargs)
+
     class Meta:
         verbose_name = _("Wealth Group")
         verbose_name_plural = _("Wealth Groups")
+        constraints = [
+            # Create a unique constraint on id and livelihood_zone_baseline, so that we can use it as a target for a
+            # composite foreign key from Livelhood Activity, which in turn allows us to ensure that the Wealth Group
+            # and the Livelihood Strategy for a Livelihood Activity both have the same Livelihood Baseline.
+            models.UniqueConstraint(
+                fields=["id", "livelihood_zone_baseline"],
+                name="baseline_wealthgroup_id_livelihood_zone_baseline_uniq",
+            ),
+        ]
 
 
 class WealthGroupCharacteristicValue(models.Model):
@@ -261,14 +300,46 @@ class WealthGroupCharacteristicValue(models.Model):
         verbose_name_plural = _("Wealth Characteristic Values")
 
 
+# @TODO Move to Metadata
+# Defined outside LivelihoodStrategy to make it easy to access from subclasses
+# This is a hard-coded list of choices because additions to the list require
+# matching custom subclasses of LivelihoodActivity anyway.
+class LivelihoodStrategyTypes(models.TextChoices):
+    MILK_PRODUCTION = "MilkProduction", _("Milk Production")
+    BUTTER_PRODUCTION = "ButterProduction", _("Butter Production")
+    MEAT_PRODUCTION = "MeatProduction", _("Meat Production")
+    LIVESTOCK_SALES = "LivestockSales", _("Livestock Sales")
+    CROP_PRODUCTION = "CropProduction", _("Crop Production")
+    FOOD_PURCHASE = "FoodPurchase", _("Food Purchase")
+    PAYMENT_IN_KIND = "PaymentInKind", _("Payment in Kind")
+    RELIEF_GIFTS_OTHER = "ReliefGiftsOther", _("Relief, Gifts and Other Food")
+    FISHING = "Fishing", _("Fishing")
+    WILD_FOOD_GATHERING = "WildFoodGathering", _("Wild Food Gathering")
+    OTHER_CASH_INCOME = "OtherCashIncome", _("Other Cash Income")
+    OTHER_PURCHASES = "OtherPurchases", _("Other Purchases")
+
+
+# @TODO Move to Metadata
 class LivelihoodStrategy(models.Model):
     """
-    An activity undertaken by households in a Wealth Group that produces food or income or requires expenditure.
+    An activity undertaken by households in a Livelihood Zone that produces food or income or requires expenditure.
 
-    Stored on the BSS Data sheet.
+    A Livelihood Strategy is not necessarily used by all Wealth Groups within the Livelihood Zone.
+
+    Implicit in the BSS 'Data' worksheet in Column A.
     """
 
-    wealth_group = models.ForeignKey(WealthGroup, on_delete=models.PROTECT, help_text=_("Wealth Group"))
+    livelihood_zone_baseline = models.ForeignKey(
+        LivelihoodZoneBaseline, on_delete=models.CASCADE, verbose_name=_("Livelihood Zone Baseline")
+    )
+    # This also acts as a discriminator column for LivelihoodActivity
+    strategy_type = models.CharField(
+        max_length=30,
+        choices=LivelihoodStrategyTypes.choices,
+        db_index=True,
+        verbose_name=_("Strategy Type"),
+        help_text=_("The type of livelihood strategy, such as crop production, or wild food gathering."),
+    )
     # We will need a "Year Round" season to account for Livelihood Strategies
     # that have equal distribution across the year, such as purchase of tea and
     # sugar, or remittances.
@@ -285,6 +356,58 @@ class LivelihoodStrategy(models.Model):
         verbose_name=_("Additional Identifer"),
         help_text=_("Additional text identifying the livelihood strategy"),
     )
+
+    class Meta:
+        verbose_name = _("Livelihood Strategy")
+        verbose_name_plural = _("Livelihood Strategies")
+        constraints = [
+            models.UniqueConstraint(
+                fields=["livelihood_zone_baseline", "strategy_type", "season", "product", "additional_identifier"],
+                name="baseline_livelihoodstrategy_uniq",
+            ),
+            # Create a unique constraint on id and livelihood_zone_baseline, so that we can use it as a target for a
+            # composite foreign key from Livelhood Activity, which in turn allows us to ensure that the Wealth Group
+            # and the Livelihood Strategy for a Livelihood Activity both have the same Livelihood Baseline.
+            models.UniqueConstraint(
+                fields=["id", "livelihood_zone_baseline"],
+                name="baseline_livelihoodstrategy_id_livelihood_zone_baseline_uniq",
+            ),
+            # Create a unique constraint on id and season, so that we can use it as a target for a
+            # composite foreign key from Seasonal Activity, which in turn allows us to ensure that the Livelihood
+            # Strategy and the Baseline Seasonal Activity for a Seasonal Activity both have the same Season.
+            models.UniqueConstraint(
+                fields=["id", "season"],
+                name="baseline_livelihoodstrategy_id_season_uniq",
+            ),
+        ]
+
+
+class LivelihoodActivity(models.Model):
+    """
+    An activity undertaken by households in a Wealth Group that produces food or income or requires expenditure.
+
+    Stored on the BSS 'Data' worksheet.
+    """
+
+    livelihood_strategy = models.ForeignKey(
+        LivelihoodStrategy, on_delete=models.PROTECT, help_text=_("Livelihood Strategy")
+    )
+    # Inherited from Livelihood Strategy, the denormalization is necessary to
+    # ensure that the Livelihood Strategy and the Wealth Group belong to the
+    # same Livelihood Zone Baseline.
+    livelihood_zone_baseline = models.ForeignKey(
+        LivelihoodZoneBaseline, on_delete=models.CASCADE, verbose_name=_("Livelihood Zone Baseline")
+    )
+    # Inherited from Livelihood Strategy to acts as a discriminator column.
+    strategy_type = models.CharField(
+        max_length=30,
+        choices=LivelihoodStrategyTypes.choices,
+        db_index=True,
+        verbose_name=_("Strategy Type"),
+        help_text=_("The type of livelihood strategy, such as crop production, or wild food gathering."),
+    )
+    wealth_group = models.ForeignKey(WealthGroup, on_delete=models.PROTECT, help_text=_("Wealth Group"))
+
     unit_of_measure = models.ForeignKey(UnitOfMeasure, on_delete=models.PROTECT, verbose_name=_("Unit of Measure"))
     quantity_produced = models.PositiveSmallIntegerField(verbose_name=_("Quantity Produced"))
     quantity_sold = models.PositiveSmallIntegerField(verbose_name=_("Quantity Sold/Exchanged"))
@@ -315,21 +438,20 @@ class LivelihoodStrategy(models.Model):
     # @TODO: if daily calorie level varies by LZB then save consumed_kcal_percent here too
     # We think that Daily KCal is fixed at 2100
     # Is this captured per Livelihood Strategy or is it only calculated/stored at the LHZ level.
-    # It is stored in the Exp Factors sheet in the BSS, which references an external sheet.
+    # It is stored in the Exp Factors worksheet in the BSS, which references an external worksheet.
     # It is also present in the LIAS.
     # expandability_kcals = models.FloatField(help_text=_("Expandability in Kilocalories"))
 
-    def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
-        self.calculate_fields()
-        return super().save(force_insert, force_update, using, update_fields)
-
-    # @TODO I am not sure whether we calculate these values or just validate them. I.e. if they load a BSS where the
-    # value exists but is incorrect, we actually want to raise an error rather than ignore their value and calculate
-    # our own.
-    # @TODO To what extent do we need to validate? Or do we just accept.
-    # Dave: Do we use Django Forms as a separate validation layer, and load the data from the dataframe into a Form
-    # instance and then check whether it is valid.  See Two Scoops for an explanation.
     def calculate_fields(self):
+        self.livelihood_zone_baseline = self.livelihood_strategy.livelihood_zone_baseline
+        self.strategy_type = self.livelihood_strategy.strategy_type
+
+        # @TODO Roger: Do we calculate these values or just validate them. I.e. if they load a BSS where the
+        # value exists but is incorrect, do we want to raise an error rather than ignore their value and calculate
+        # our own.
+        # @TODO To what extent do we need to validate? Or do we just accept.
+        # Dave: Do we use Django Forms as a separate validation layer, and load the data from the dataframe into a Form
+        # instance and then check whether it is valid.  See Two Scoops for an explanation.
         self.is_staple = self.wealth_group.community.livelihood_zone_baseline.staple_set(
             item=self.output_item
         ).exists()
@@ -362,14 +484,12 @@ class LivelihoodStrategy(models.Model):
     #    )
 
     def clean(self):
-        """
-        Per model validation
-        """
-
-        # if self.web_service and self.source_type != self.WEB_SERVICE:
-        #    raise ValidationError(
-        #        "Source type should be set to 'Web Service' if a value is set for the web_service field."
-        #    )
+        if self.wealth_group.livelihood_zone_baseline != self.livelihood_strategy.livelihood_zone_baseline:
+            raise ValidationError(
+                _(
+                    "Wealth Group and Livelihood Strategy for a Livelihood Activity must belong to the same Livelihood Zone Baseline"  # NOQA: E501
+                )
+            )
         super().clean()
 
     def save(self, *args, **kwargs):
@@ -384,16 +504,20 @@ class LivelihoodStrategy(models.Model):
     class Meta:
         verbose_name = _("Livelihood Strategy")
         verbose_name_plural = _("Livelihood Strategies")
+        constraints = [
+            # @TODO Add constraints either declared here or in a custom migration that target the composite foreign
+            # keys for Wealth Group and Livelihood Strategy that include the livelihood_zone_baseline.
+        ]
 
     class ExtraMeta:
         identifier = ["wealth_group", "item", "additional_identifier"]
 
 
-class MilkProduction(LivelihoodStrategy):
+class MilkProduction(LivelihoodActivity):
     """
     Production of milk by households in a Wealth Group for their own consumption, for sale and for other uses.
 
-    Stored on the BSS Data sheet in the Livestock Production section, typically starting around Row 60.
+    Stored on the BSS 'Data' worksheet in the 'Livestock Production' section, typically starting around Row 60.
     """
 
     SKIM = "skim"
@@ -426,15 +550,15 @@ class MilkProduction(LivelihoodStrategy):
     # LivelihoodStrategy can have 0 or many of each type. I.e. adopt the TransferModel approach that
     # Chris proposed early on.
     class Meta:
-        verbose_name = _("Milk Production")
-        verbose_name_plural = _("Milk Production")
+        verbose_name = LivelihoodStrategyTypes.MILK_PRODUCTION.label
+        verbose_name_plural = LivelihoodStrategyTypes.MILK_PRODUCTION.label
 
 
 class ButterProduction(LivelihoodStrategy):
     """
     Production of ghee/butter by households in a Wealth Group for their own consumption, for sale and for other uses.
 
-    Stored on the BSS Data sheet in the Livestock Production section, typically starting around Row 60.
+    Stored on the BSS 'Data' worksheet in the 'Livestock Production' section, typically starting around Row 60.
     """
 
     # Note that although ButterProduction is a separate livelihood strategy
@@ -468,15 +592,15 @@ class ButterProduction(LivelihoodStrategy):
     # =IF(SUM(AI90,AI98)=0,"",SUM(AI90,-AI91*AI94,-AI95*AI94,AI98,-AI99*AI102,-AI103*AI102)*0.04)
 
     class Meta:
-        verbose_name = _("Butter Production")
-        verbose_name_plural = _("Butter Production")
+        verbose_name = LivelihoodStrategyTypes.BUTTER_PRODUCTION.label
+        verbose_name_plural = LivelihoodStrategyTypes.BUTTER_PRODUCTION.label
 
 
 class MeatProduction(LivelihoodStrategy):
     """
     Production of meat by households in a Wealth Group for their own consumption.
 
-    Stored on the BSS Data sheet in the Livestock Production section, typically starting around Row 172.
+    Stored on the BSS 'Data' worksheet in the 'Livestock Production' section, typically starting around Row 172.
     """
 
     # Production calculation /validation is `input_quantity` * `item_yield`
@@ -484,15 +608,15 @@ class MeatProduction(LivelihoodStrategy):
     item_yield = models.FloatField(verbose_name=_("Carcass weight per animal"))
 
     class Meta:
-        verbose_name = _("Meat Production")
-        verbose_name_plural = _("Meat Production")
+        verbose_name = LivelihoodStrategyTypes.MEAT_PRODUCTION.label
+        verbose_name_plural = LivelihoodStrategyTypes.MEAT_PRODUCTION.label
 
 
 class LivestockSales(LivelihoodStrategy):
     """
     Sale of livestock by households in a Wealth Group for cash income.
 
-    Stored on the BSS Data sheet in the Livestock Production section, typically starting around Row 181.
+    Stored on the BSS 'Data' worksheet in the 'Livestock Production' section, typically starting around Row 181.
     """
 
     # In Somalia they track export/local sales separately - see SO18 Data:B178 and also B770
@@ -508,15 +632,15 @@ class LivestockSales(LivelihoodStrategy):
     # @TODO Do we need validation around offtake (animals_sold) to make sure
     # that they are selling and killing more animals than they own.
     class Meta:
-        verbose_name = _("Livestock Sales")
-        verbose_name_plural = _("Livestock Sales")
+        verbose_name = LivelihoodStrategyTypes.LIVESTOCK_SALES.label
+        verbose_name_plural = LivelihoodStrategyTypes.LIVESTOCK_SALES.label
 
 
 class CropProduction(LivelihoodStrategy):
     """
     Production of crops by households in a Wealth Group for their own consumption, for sale and for other uses.
 
-    Stored on the BSS Data sheet in the Crop Production section, typically starting around Row 221.
+    Stored on the BSS 'Data' worksheet in the 'Crop Production' section, typically starting around Row 221.
 
     This includes consumption of Green Maize, where we need to reverse engineer the quantity produced from the
     provided kcal_percentage and the kcal/kg.
@@ -536,15 +660,15 @@ class CropProduction(LivelihoodStrategy):
     )
 
     class Meta:
-        verbose_name = _("Crop Production")
-        verbose_name_plural = _("Crop Production")
+        verbose_name = LivelihoodStrategyTypes.CROP_PRODUCTION.label
+        verbose_name_plural = LivelihoodStrategyTypes.CROP_PRODUCTION.label
 
 
 class FoodPurchase(LivelihoodStrategy):
     """
     Purchase of food items that contribute to nutrition by households in a Wealth Group.
 
-    Stored on the BSS Data sheet in the Food Purchase section, typically starting around Row 421.
+    Stored on the BSS 'Data' worksheet in the 'Food Purchase' section, typically starting around Row 421.
     """
 
     # Production calculation/validation is `unit_of_measure * unit_multiple * purchases_per_month  * months_per_year`
@@ -559,7 +683,7 @@ class FoodPurchase(LivelihoodStrategy):
     )
 
     class Meta:
-        verbose_name = _("Food Purchase")
+        verbose_name = LivelihoodStrategyTypes.FOOD_PURCHASE.label
         verbose_name_plural = _("Food Purchases")
 
 
@@ -567,7 +691,7 @@ class PaymentInKind(LivelihoodStrategy):
     """
     Food items that contribute to nutrition by households in a Wealth Group received in exchange for labor.
 
-    Stored on the BSS Data sheet in the Payment In Kind section, typically starting around Row 514.
+    Stored on the BSS 'Data' worksheet in the 'Payment In Kind' section, typically starting around Row 514.
     """
 
     # Production calculation/validation is `people_per_hh * labor_per_month * months_per_year`
@@ -580,7 +704,7 @@ class PaymentInKind(LivelihoodStrategy):
     )
 
     class Meta:
-        verbose_name = _("Payment in Kind")
+        verbose_name = LivelihoodStrategyTypes.PAYMENT_IN_KIND.label
         verbose_name_plural = _("Payments in Kind")
 
 
@@ -589,7 +713,7 @@ class ReliefGiftsOther(LivelihoodStrategy):
     Food items that contribute to nutrition received by households in a Wealth Group as relief, gifts, etc.
     and which are not bought or exchanged.
 
-    Stored on the BSS Data sheet in the Relief, Gifts and Other section, typically starting around Row 533.
+    Stored on the BSS 'Data' worksheet in the 'Relief, Gifts and Other' section, typically starting around Row 533.
     """
 
     # Production calculation /validation is `unit_of_measure * unit_multiple * received_per_year`
@@ -601,21 +725,21 @@ class ReliefGiftsOther(LivelihoodStrategy):
     )
 
     class Meta:
-        verbose_name = _("Relief, Gifts and Other Food")
-        verbose_name_plural = _("Relief, Gifts and Other Food")
+        verbose_name = LivelihoodStrategyTypes.RELIEF_GIFTS_OTHER.label
+        verbose_name_plural = LivelihoodStrategyTypes.RELIEF_GIFTS_OTHER.label
 
 
 class Fishing(LivelihoodStrategy):
     """
     Fishing by households in a Wealth Group for their own consumption, for sale and for other uses.
 
-    Stored on the BSS Data3 sheet in the Fishing section, typically starting around Row 48 and summarized in the
-    Data sheet in the Wild Foods section, typically starting around Row 550.
+    Stored on the BSS 'Data3' worksheet in the 'Fishing' section, typically starting around Row 48
+    and summarized in the 'Data' worksheet in the 'Wild Foods' section, typically starting around Row 550.
     """
 
     class Meta:
-        verbose_name = _("Fishing")
-        verbose_name_plural = _("Fishing")
+        verbose_name = LivelihoodStrategyTypes.FISHING.label
+        verbose_name_plural = LivelihoodStrategyTypes.FISHING.label
         proxy = True
 
 
@@ -623,13 +747,13 @@ class WildFoodGathering(LivelihoodStrategy):
     """
     Gathering of wild food by households in a Wealth Group for their own consumption, for sale and for other uses.
 
-    Stored on the BSS Data3 sheet in the Wild Foods section, typically starting around Row 9 and summarized in the
-    Data sheet in the Wild Foods section, typically starting around Row 560.
+    Stored on the BSS 'Data3' worksheet in the Wild Foods section, typically starting around Row 9
+    and summarized in the 'Data' worksheet in the Wild Foods section, typically starting around Row 560.
     """
 
     class Meta:
-        verbose_name = _("Wild Food Gathering")
-        verbose_name_plural = _("Wild Food Gathering")
+        verbose_name = LivelihoodStrategyTypes.WILD_FOOD_GATHERING.label
+        verbose_name_plural = LivelihoodStrategyTypes.WILD_FOOD_GATHERING.label
         proxy = True
 
 
@@ -637,8 +761,8 @@ class OtherCashIncome(LivelihoodStrategy):
     """
     Income received by households in a Wealth Group as payment for labor or from self-employment, remittances, etc.
 
-    Stored on the BSS Data2 and summarized in the Data sheet in the Other Cash Income section, typically starting
-    around Row 580.
+    Stored on the BSS 'Data2' worksheet and summarized in the 'Data' worksheet in the 'Other Cash Income' section,
+    typically starting around Row 580.
     """
 
     # Production calculation/validation is `people_per_hh * labor_per_month * months_per_year`
@@ -664,15 +788,15 @@ class OtherCashIncome(LivelihoodStrategy):
     )
 
     class Meta:
-        verbose_name = _("Other Cash Income")
-        verbose_name_plural = _("Other Cash Income")
+        verbose_name = LivelihoodStrategyTypes.OTHER_CASH_INCOME.label
+        verbose_name_plural = LivelihoodStrategyTypes.OTHER_CASH_INCOME.label
 
 
 class OtherPurchases(LivelihoodStrategy):
     """
     Expenditure by households in a Wealth Group on items that don't contribute to nutrition.
 
-    Stored on the BSS Data sheet in the Other Purchases section, typically starting around Row 646.
+    Stored on the BSS 'Data' worksheet in the 'Other Purchases' section, typically starting around Row 646.
     """
 
     # Production calculation/validation is `unit_of_measure * unit_multiple * purchases_per_month  * months_per_year`
@@ -697,11 +821,12 @@ class OtherPurchases(LivelihoodStrategy):
     )
 
     class Meta:
-        verbose_name = _("Other Purchase")
-        verbose_name_plural = _("Other Purchases")
+        verbose_name = LivelihoodStrategyTypes.OTHER_PURCHASES.label
+        verbose_name_plural = LivelihoodStrategyTypes.OTHER_PURCHASES.label
 
 
-class SeasonalActivity(Dimension):
+# @TODO Should this be in metadata.
+class SeasonalActivityType(Dimension):
     """
     Seasonal activities for the various food source/ income activities
 
@@ -712,61 +837,250 @@ class SeasonalActivity(Dimension):
         Labor migration
     """
 
+    name = common_models.NameField()  # e.g. préparation de la terre,
+    # @TODO should this be a list of choices? How often do they add new ones?
+    # Maybe?
+    # What is the overlap with LivelihoodStrategyTypes? Can we reuse or share?
     activity_category = models.ForeignKey(
         SeasonalActivityCategory,
         on_delete=models.RESTRICT,
         verbose_name=_("Activity Category"),
-    )
+    )  # Crops, Livestock, Gardening, Employment,
+    # @TODO Where does this come from in the BSS
+    # Goes away because rainy/dry goes into Seasons
     is_weather_related = models.BooleanField(
         verbose_name=_("Weather related"),
         help_text=_("If the activity is a representation of the weather eg. rainy, dry"),
     )
 
     class Meta:
-        verbose_name = _("Seasonal Activity")
-        verbose_name_plural = _("Seasonal Activities")
+        verbose_name = _("Seasonal Activity Type")
+        verbose_name_plural = _("Seasonal Activity Types")
 
 
-class SeasonalCalendar(models.Model):
+class BaselineSeasonalActivity(models.Model):
     """
-    A graphical presentation of the months in which food and cash crop production and key food and income acquisition
-    strategies take place, also showing key seasonal periods such as the rains, periods of peak illness and the hunger
-     season.
+    An activity or event undertaken/experienced by households in a Livelihood Zone at specific periods during the year.
 
-    Form 3's SEASONAL CALENDAR for a typical year is used for the interview and BSS's 'Seas Cal' captures the data
+    Implicit in the BSS 'Seas Cal' or 'Seasonality' worksheet in Column A.
     """
 
-    ACTIVITY_DONE_BY = (
-        ("men", "Men"),
-        ("women", "Women"),
-        ("children", "Children"),
-        ("all", "All"),
+    # @TODO What's the correct name here?
+    # Where does this come from? The coding in Graphs in NBE01(BIL)
+    # (see https://docs.google.com/spreadsheets/d/1EOQwPLrZPTKPktcDYiyxHA225n_DE_RJ/edit#gid=2143776293)
+    # seems to be talking about who produces food - which suggests that the performer is an attribute of
+    # the LivelihoodStrategy. And could be called `producer`.
+    class Performers(models.TextChoices):
+        MEN = "men", _("Mainly Men")
+        WOMEN = "women", _("Mainly Women")
+        CHILDREN = "children", _("Mainly Children")
+        ALL = "all", _("All Together")
+
+    livelihood_zone_baseline = models.ForeignKey(
+        LivelihoodZoneBaseline, on_delete=models.RESTRICT, verbose_name=_("Livelihood Zone Baseline")
+    )
+    activity_type = models.ForeignKey(
+        SeasonalActivityType, on_delete=models.RESTRICT, verbose_name=_("Seasonal Activity Type")
+    )
+    season = models.ForeignKey(Season, on_delete=models.PROTECT, verbose_name=_("Season"))
+    product = models.ForeignKey(
+        ClassifiedProduct,
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        verbose_name=_("Item"),
+        help_text=_("Item Produced, eg, full fat milk"),
+        related_name="household_economy_items",
     )
 
+    # @TODO Does this add value because we can easily drill down from a Livelihood Strategy to the Seasonal Activities
+    # that support it, e.g. for visualizations.
+    # @TODO Does this remove the need for product in this model? Or are there any examples of a Seasonal Activity with
+    # a Product that doesn't tie back to a Livelihood Strategy.
+    livelihood_strategy = models.ForeignKey(
+        LivelihoodStrategy,
+        blank=True,
+        null=True,
+        on_delete=models.CASCADE,
+        verbose_name=_("Livelihood Strategy"),
+    )
+
+    # Who typically does the activity, Male, Female, Children ... We can make this a choice field?
+    # @TODO can we have a better name?
+    who_does_the_activity = models.CharField(choices=Performers.choices, verbose_name=_("Activity done by"))
+
+    class Meta:
+        verbose_name = _("Baseline Seasonal Activity")
+        verbose_name_plural = _("Baseline Seasonal Activities")
+        constraints = [
+            # Create a unique constraint on id and livelihood_zone_baseline, so that we can use it as a target for a
+            # composite foreign key from Seasonal Activity, which in turn allows us to ensure that the Community
+            # and the Baseline Seasonal Activity for a Seasonal Activity both have the same Livelihood Baseline.
+            models.UniqueConstraint(
+                fields=["id", "livelihood_zone_baseline"],
+                name="baseline_baselineseasonalactivity_id_livelihood_zone_baseline_uniq",
+            ),
+            # Create a unique constraint on id and season, so that we can use it as a target for a
+            # composite foreign key from Seasonal Activity, which in turn allows us to ensure that the Livelihood
+            # Strategy and the Baseline Seasonal Activity for a Seasonal Activity both have the same Season.
+            models.UniqueConstraint(
+                fields=["id", "season"],
+                name="baseline_baselineseasonalactivity_id_season_uniq",
+            ),
+        ]
+
+
+class SeasonalActivity(models.Model):
+    """
+    An activity undertaken by members of a Community at specific times during the year.
+
+    Stored in the BSS 'Seas Cal' or 'Seasonality' worksheet.
+    """
+
+    baseline_seasonal_activity = models.ForeignKey(
+        LivelihoodZoneBaseline, on_delete=models.RESTRICT, verbose_name=_("Livelihood Zone Baseline")
+    )
+    # Inherited from Baseline Seasonal Activity, the denormalization is necessary to
+    # ensure that the Baseline Seasonal Activity and the Community belong to the
+    # same Livelihood Zone Baseline.
+    livelihood_zone_baseline = models.ForeignKey(
+        LivelihoodZoneBaseline, on_delete=models.RESTRICT, verbose_name=_("Livelihood Zone Baseline")
+    )
+    # Inherited from Baseline Seasonal Activity, the denormalization is necessary to
+    # ensure that the Baseline Seasonal Activity and the Livelhood Strategy belong to the
+    # same Season.
+    season = models.ForeignKey(Season, on_delete=models.PROTECT, verbose_name=_("Season"))
     community = models.ForeignKey(Community, on_delete=models.RESTRICT, verbose_name=_("Community or Village"))
-    activity = models.ForeignKey(SeasonalActivity, on_delete=models.RESTRICT, verbose_name=_("Seasonal Activity"))
 
     # Tracks when the activity occurs (the month when the activity typically occurs)
     # We can have a validator here, put the month no - e.g. 9, 10, 11
-    activity_occurence = models.JSONField(verbose_name=_("Activity occurrence"))
+    # @TODO I don't think we want a single month here, I think this model represents the row on the Seasonal Calendar
+    # in Form 3 - it is an activity that occurs in multiple months.
+    # @TODO Do we store the activities as months or as a start and end day to allow more granularity
+    # See https://fewsnet.atlassian.net/browse/DATA-2709 for a discussion of day vs month for Crop Calendars in the
+    # FDW Crop Production domain.
+    # activity_occurence = models.JSONField(verbose_name=_("Activity occurrence"))
+    # One approach is a column per month.
+    # Pros: Easy to add up the  numbers by month required for the seasonal calendar summary, easy to explain
+    # Cons: It is a denormalization - the "correct" model is a table for ActivityMonth
+    january = models.BooleanField(
+        default=False, verbose_name=_("January"), help_text=_("Is the activity undertaken in January?")
+    )
+    february = models.BooleanField(
+        default=False, verbose_name=_("February"), help_text=_("Is the activity undertaken in February?")
+    )
+    march = models.BooleanField(
+        default=False, verbose_name=_("March"), help_text=_("Is the activity undertaken in March?")
+    )
+    april = models.BooleanField(
+        default=False, verbose_name=_("April"), help_text=_("Is the activity undertaken in April?")
+    )
+    may = models.BooleanField(default=False, verbose_name=_("May"), help_text=_("Is the activity undertaken in May?"))
+    june = models.BooleanField(
+        default=False, verbose_name=_("June"), help_text=_("Is the activity undertaken in June?")
+    )
+    july = models.BooleanField(
+        default=False, verbose_name=_("July"), help_text=_("Is the activity undertaken in July?")
+    )
+    august = models.BooleanField(
+        default=False, verbose_name=_("August"), help_text=_("Is the activity undertaken in August?")
+    )
+    september = models.BooleanField(
+        default=False, verbose_name=_("September"), help_text=_("Is the activity undertaken in September?")
+    )
+    october = models.BooleanField(
+        default=False, verbose_name=_("October"), help_text=_("Is the activity undertaken in October?")
+    )
+    november = models.BooleanField(
+        default=False, verbose_name=_("November"), help_text=_("Is the activity undertaken in November?")
+    )
+    december = models.BooleanField(
+        default=False, verbose_name=_("December"), help_text=_("Is the activity undertaken in December?")
+    )
+    # Another approach is a simple array field that contains the months:
+    # Pros - less wordy
+    # Cons - harder to validate, or aggregate, or display, and not database independent
+    months = ArrayField(
+        models.PositiveSmallIntegerField(validators=[MaxValueValidator(12), MinValueValidator(1)]),
+        verbose_name=_("Months"),
+        help_text=_("Months the activity is undertaken in"),
+    )
+    # Or using an array of booleans, same pros and cons, marginally easier to aggregate
+    months = ArrayField(
+        models.BooleanField(), size=12, verbose_name=_("Months"), help_text=_("Months the activity is undertaken in")
+    )
 
+    # @TODO Remove this, there is a link to Season via the LivelihoodStrategy
     # or as an alternative keep the Season model similar to FDW
     # if so, I think we need another Model with FK for SeasonalCalender and Season ?
     # season = models.ForeignKey(Season, on_delete=RESTRICT, verbose_name=_("Season"))
 
-    # Who typically does the activity, Male, Female, Children ... We can make this a choice field?
-    who_does_the_activity = models.CharField(choices=ACTIVITY_DONE_BY, verbose_name=_("Activity done by"))
+    def calculate_fields(self):
+        self.livelihood_zone_baseline = self.baseline_seasonal_activity.livelihood_zone_baseline
+        self.season = self.baseline_seasonal_activity.season
+
+    def clean(self):
+        if self.community.livelihood_zone_baseline != self.baseline_seasonal_activity.livelihood_zone_baseline:
+            raise ValidationError(
+                _(
+                    "Community and Baseline Seasonal Activity for a Seasonal Activity must belong to the same Livelihood Zone Baseline"  # NOQA: E501
+                )
+            )
+        if self.livelihood_strategy.season != self.baseline_seasonal_activity.season:
+            raise ValidationError(
+                _(
+                    "Livelihood Strategy and Baseline Seasonal Activity for a Seasonal Activity must belong to the same Season"  # NOQA: E501
+                )
+            )
+        super().clean()
+
+    def save(self, *args, **kwargs):
+        self.calculate_fields()
+        # No need to enforce foreign keys or uniqueness because database constraints will do it anyway
+        self.full_clean(
+            exclude=[field.name for field in self._meta.fields if isinstance(field, models.ForeignKey)],
+            validate_unique=False,
+        )
+        super().save(*args, **kwargs)
 
     class Meta:
-        verbose_name = _("Seasonal Calendar")
-        verbose_name_plural = _("Seasonal Calendars")
+        verbose_name = _("Seasonal Activity")
+        verbose_name_plural = _("Seasonal Activities")
+        constraints = [
+            # @TODO Add constraints either declared here or in a custom migration that target the composite foreign
+            # keys for Community and Baseline Seasonal Activity that include the livelihood_zone_baseline.
+            # @TODO Add constraints either declared here or in a custom migration that target the composite foreign
+            # keys for Livelihood Strategy and Baseline Seasonal Activity that include the season.
+        ]
+
+
+class SeasonalActivityMonth(models.Model):
+    """
+    A month in which a SeasonalActivity is undertaken.
+    """
+
+    # The other way to store months is in a child table.
+    # Pros: Easy to aggregate, normalized, can store additional attributes
+    seasonal_activity = models.ForeignKey(
+        SeasonalActivity, on_delete=models.CASCADE, verbose_name=_("Seasonal Activity")
+    )
+    month = models.PositiveSmallIntegerField(
+        choices=MONTHS.items(), validators=[MaxValueValidator(12), MinValueValidator(1)], verbose_name=_("Month")
+    )
+
+    class Meta:
+        verbose_name = _("Seasonal Activity Month")
+        verbose_name_plural = _("Seasonal Activity Months")
+        constraints = [
+            models.UniqueConstraint(fields=["seasonal_activity", "month"], name="baseline_seasonalactivitymonth_uniq")
+        ]
 
 
 class CommunityCropProduction(models.Model):
     """
     The community crop production data for a crop producing community
     Form 3's CROP PRODUCTION is used for community-level interviews
-    And the data goes to the BSS's 'Production' sheet
+    And the data goes to the BSS's 'Production' worksheet
     """
 
     CROP_PURPOSE = (
@@ -797,13 +1111,13 @@ class CommunityCropProduction(models.Model):
 
 # @TODO Are these fields from Form 3 required here on CommunityLivestock,
 # or are they on WealthGroupLivestock as a result of the repition on Form 4
-# These sheets are locked in the BSS. They are important reference data even
+# These worksheets are locked in the BSS. They are important reference data even
 # if the WealthGroup-level values are used for calculations.
 class CommunityLivestock(models.Model):
     """
     An animal typically raised by households in a Community, with revelant additional attributes.
 
-    This data is typically captured in Form 3 and stored in the Production sheet in the BSS.
+    This data is typically captured in Form 3 and stored in the Production worksheet in the BSS.
     """
 
     community = models.ForeignKey(Community, on_delete=models.CASCADE, verbose_name=_("Wealth Group"))
@@ -854,7 +1168,7 @@ class Market(models.Model):
 class MarketPrice(models.Model):
     """
     Prices for the reference year are interviewed in Form 3
-    Data is captured in 'prices' sheet of the BSS
+    Data is captured in 'prices' worksheet of the BSS
     """
 
     MONTHS = MONTHS.items()
