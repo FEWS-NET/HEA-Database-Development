@@ -29,6 +29,9 @@ class DimensionType(common_models.TranslatableModel, models.Model):
     code = common_models.CodeField()
     description = common_models.DescriptionField()
 
+    def __str__(self):
+        return f"{self.description}"
+
 
 # @TODO Is LookupModel or ReferenceModel a better name than Dimension in the
 # context of a normalized relational schema for an application, rather than a
@@ -96,6 +99,9 @@ class Dimension(MP_Node, common_models.TranslatableModel):
     # more flexible, future-proof, and easier for developers not already immersed in the schema.
     # class Meta:
     #     abstract = True
+
+    def __str__(self):
+        return f"{self.description}:{self.code}"
 
 
 class SourceSystem(Dimension):

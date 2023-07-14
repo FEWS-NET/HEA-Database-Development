@@ -16,6 +16,7 @@ from .models import (
     UnitOfMeasure,
     UnitOfMeasureConversion,
     WealthCharacteristic,
+    WealthCategory,
 )
 
 
@@ -41,6 +42,11 @@ class AliasAdmin(admin.ModelAdmin):
 
 @admin.register(LivelihoodCategory)
 class LivelihoodCategoryAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(WealthCategory)
+class WealthCategoryAdmin(admin.ModelAdmin):
     pass
 
 
