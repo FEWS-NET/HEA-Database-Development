@@ -7,6 +7,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.utils.dates import MONTHS
 from django.utils.translation import gettext_lazy as _
+from model_utils.managers import InheritanceManager
 
 import common.models as common_models
 from common.models import ClassifiedProduct, Country, Currency, UnitOfMeasure
@@ -212,6 +213,7 @@ class Community(models.Model):
             # Create a unique constraint on id and livelihood_zone_baseline, so that we can use it as a target for a
             # composite foreign key from Seasonal Activity, which in turn allows us to ensure that the Community
             # and the Baseline Seasonal Activity for a Seasonal Activity both have the same Livelihood Baseline.
+            # We also use it as a target from WealthGroup when the Community is specified.
             models.UniqueConstraint(
                 fields=["id", "livelihood_zone_baseline"],
                 name="baseline_community_id_livelihood_zone_baseline_uniq",
@@ -224,9 +226,7 @@ class Community(models.Model):
 # Jenny will check with P3 on preferred English naming. In French, it is something else anyway, I think.
 class WealthGroup(models.Model):
     """
-    All the households within the same Community who share similar
-    capacity to exploit the different food and income options within a
-    particular Livelihood Zone.
+    Households within a Livelihood Zone with similar capacity to exploit the available food and income options.
 
     Normally, Livelihood Zone contains Very Poor, Poor, Medium and Better Off
     Wealth Groups.
@@ -237,15 +237,18 @@ class WealthGroup(models.Model):
     """
 
     name = models.CharField(max_length=100, verbose_name=_("Name"))
-    community = models.ForeignKey(Community, on_delete=models.CASCADE, verbose_name=_("Community"))
-    # Inherited from Community, the denormalization is necessary to
-    # ensure that the Livelihood Strategy and the Wealth Group for a Livelihood
-    # Activity belong to the same Livelihood Zone Baseline.
     livelihood_zone_baseline = models.ForeignKey(
         LivelihoodZoneBaseline,
         on_delete=models.CASCADE,
         related_name="wealth_groups",
         verbose_name=_("Livelihood Zone Baseline"),
+    )
+    # If Community is specified then the Wealth Group represents the households
+    # within that Community in the specified Wealth Category. If the Community
+    # is null, then the Wealth Group represents the households with that
+    # Wealth Category for the whole Livelihood Zone Baseline.
+    community = models.ForeignKey(
+        Community, blank=True, null=True, on_delete=models.CASCADE, verbose_name=_("Community")
     )
     wealth_category = models.ForeignKey(
         WealthCategory,
@@ -255,12 +258,13 @@ class WealthGroup(models.Model):
     )
     percentage_of_households = models.PositiveSmallIntegerField(
         verbose_name=_("Percentage of households"),
-        help_text=_("Percentage of households in the Community that are in this Wealth Group"),
+        help_text=_("Percentage of households in the Community or Livelihood Zone that are in this Wealth Group"),
     )
     average_household_size = models.PositiveSmallIntegerField(verbose_name=_("Average household size"))
 
     def calculate_fields(self):
-        self.livelihood_zone_baseline = self.community.livelihood_zone_baseline
+        if self.community:
+            self.livelihood_zone_baseline = self.community.livelihood_zone_baseline
 
     def save(self, *args, **kwargs):
         self.calculate_fields()
@@ -285,6 +289,76 @@ class WealthGroup(models.Model):
         ]
 
 
+class BaselineWealthGroupManager(InheritanceManager):
+    def get_queryset(self):
+        return super().get_queryset().filter(community__isnull=True).select_subclasses()
+
+
+class BaselineWealthGroup(WealthGroup):
+    """
+    Households within a Livelihood Zone with similar capacity to exploit the available food and income options.
+    """
+
+    objects = BaselineWealthGroupManager()
+
+    def calculate_fields(self):
+        pass
+
+    def clean(self):
+        if self.community:
+            raise ValidationError(_("A Baseline Wealth Group cannot have a Community"))
+        super().clean()
+
+    def save(self, *args, **kwargs):
+        self.calculate_fields()
+        # No need to enforce foreign keys or uniqueness because database constraints will do it anyway
+        self.full_clean(
+            exclude=[field.name for field in self._meta.fields if isinstance(field, models.ForeignKey)],
+            validate_unique=False,
+        )
+        super().save(*args, **kwargs)
+
+    class Meta:
+        verbose_name = _("Baseline Wealth Group")
+        verbose_name_plural = _("Baseline Wealth Groups")
+        proxy = True
+
+
+class CommunityWealthGroupManager(InheritanceManager):
+    def get_queryset(self):
+        return super().get_queryset().exclude(community__isnull=True).select_subclasses()
+
+
+class CommunityWealthGroup(WealthGroup):
+    """
+    Households within a Community with similar capacity to exploit the available food and income options.
+    """
+
+    objects = CommunityWealthGroupManager()
+
+    def calculate_fields(self):
+        pass
+
+    def clean(self):
+        if not self.community:
+            raise ValidationError(_("A Community Wealth Group must have a Community"))
+        super().clean()
+
+    def save(self, *args, **kwargs):
+        self.calculate_fields()
+        # No need to enforce foreign keys or uniqueness because database constraints will do it anyway
+        self.full_clean(
+            exclude=[field.name for field in self._meta.fields if isinstance(field, models.ForeignKey)],
+            validate_unique=False,
+        )
+        super().save(*args, **kwargs)
+
+    class Meta:
+        verbose_name = _("Community Wealth Group")
+        verbose_name_plural = _("Community Wealth Groups")
+        proxy = True
+
+
 class WealthGroupCharacteristicValue(models.Model):
     """
     An attribute of a Wealth Group such as the number of school-age children.
@@ -304,6 +378,7 @@ class WealthGroupCharacteristicValue(models.Model):
     value = models.JSONField(
         verbose_name=_("value"), help_text=_("A single property value, eg, a float, str or list, not a dict of props.")
     )
+    # @TODO Do we need `low_value`` and `high_value`` to store the range for a Baseline Wealth Group.
 
     class Meta:
         verbose_name = _("Wealth Characteristic Value")
