@@ -10,7 +10,6 @@ from .models import (
     Item,
     LivelihoodCategory,
     LivestockType,
-    SeasonalActivityCategory,
     SourceSystem,
     Translation,
     TranslationType,
@@ -87,11 +86,6 @@ class LivestockTypeAdmin(admin.ModelAdmin):
 
 @admin.register(CropType)
 class CropTypeAdmin(admin.ModelAdmin):
-    pass
-
-
-@admin.register(SeasonalActivityCategory)
-class SeasonalActivityCategoryAdmin(admin.ModelAdmin):
     pass
 
 

@@ -388,16 +388,6 @@ class CropType(Dimension):
         verbose_name_plural = _("Crop Types")
 
 
-class SeasonalActivityCategory(Dimension):
-    """
-    Seasonal Activity Category can be Crops, Livestock, Gardening, Employment, Fishing
-    """
-
-    class Meta:
-        verbose_name = _("Seasonal Activity Category")
-        verbose_name_plural = _("Seasonal Activity Categories")
-
-
 class HazardCategory(Dimension):
     """
     Category of Hazards like: Drought, Epidemic crop disease,	Wild Animals, Flood, Epidemic livestock disease	...
