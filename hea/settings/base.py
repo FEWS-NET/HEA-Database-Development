@@ -74,6 +74,7 @@ CACHES = {
 }
 
 EXTERNAL_APPS = [
+    "treebeard",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -81,6 +82,7 @@ EXTERNAL_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django_extensions",
+    "django.contrib.gis",
 ]
 PROJECT_APPS = ["common", "metadata", "spatial", "baseline"]
 INSTALLED_APPS = EXTERNAL_APPS + PROJECT_APPS
