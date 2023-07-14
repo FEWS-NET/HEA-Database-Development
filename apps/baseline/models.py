@@ -17,7 +17,6 @@ from metadata.models import (
     LivelihoodCategory,
     LivestockType,
     Season,
-    SeasonalActivityCategory,
     WealthCategory,
     WealthCharacteristic,
 )
@@ -152,9 +151,14 @@ class Staple(models.Model):
     """
 
     livelihood_zone_baseline = models.ForeignKey(
-        LivelihoodZoneBaseline, on_delete=models.RESTRICT, verbose_name=_("Livelihood Zone Baseline")
+        LivelihoodZoneBaseline,
+        on_delete=models.RESTRICT,
+        related_name="staple_foods",
+        verbose_name=_("Livelihood Zone Baseline"),
     )
-    product = models.ForeignKey(ClassifiedProduct, on_delete=models.RESTRICT, verbose_name=_("Item"))
+    product = models.ForeignKey(
+        ClassifiedProduct, on_delete=models.RESTRICT, related_name="staple_foods", verbose_name=_("Item")
+    )
 
 
 # @TODO https://fewsnet.atlassian.net/browse/HEA-54
@@ -183,7 +187,10 @@ class Community(models.Model):
 
     name = common_models.NameField()
     livelihood_zone_baseline = models.ForeignKey(
-        LivelihoodZoneBaseline, on_delete=models.CASCADE, verbose_name=_("Livelihood Zone Baseline")
+        LivelihoodZoneBaseline,
+        on_delete=models.CASCADE,
+        related_name="communities",
+        verbose_name=_("Livelihood Zone Baseline"),
     )
     geography = models.GeometryField(geography=True, dim=2, blank=True, null=True, verbose_name=_("geography"))
     # Typicallly a number, but sometimes a code, e.g. SO03_NWA_26Nov15
@@ -235,7 +242,10 @@ class WealthGroup(models.Model):
     # ensure that the Livelihood Strategy and the Wealth Group for a Livelihood
     # Activity belong to the same Livelihood Zone Baseline.
     livelihood_zone_baseline = models.ForeignKey(
-        LivelihoodZoneBaseline, on_delete=models.CASCADE, verbose_name=_("Livelihood Zone Baseline")
+        LivelihoodZoneBaseline,
+        on_delete=models.CASCADE,
+        related_name="wealth_groups",
+        verbose_name=_("Livelihood Zone Baseline"),
     )
     wealth_category = models.ForeignKey(
         WealthCategory,
@@ -330,7 +340,10 @@ class LivelihoodStrategy(models.Model):
     """
 
     livelihood_zone_baseline = models.ForeignKey(
-        LivelihoodZoneBaseline, on_delete=models.CASCADE, verbose_name=_("Livelihood Zone Baseline")
+        LivelihoodZoneBaseline,
+        on_delete=models.CASCADE,
+        related_name="livelihood_strategies",
+        verbose_name=_("Livelihood Zone Baseline"),
     )
     # This also acts as a discriminator column for LivelihoodActivity
     strategy_type = models.CharField(
@@ -349,7 +362,7 @@ class LivelihoodStrategy(models.Model):
         on_delete=models.PROTECT,
         verbose_name=_("Item"),
         help_text=_("Item Produced, eg, full fat milk"),
-        related_name="household_economy_items",
+        related_name="livelihood_strategies",
     )
     additional_identifier = models.CharField(
         blank=True,
@@ -396,7 +409,10 @@ class LivelihoodActivity(models.Model):
     # ensure that the Livelihood Strategy and the Wealth Group belong to the
     # same Livelihood Zone Baseline.
     livelihood_zone_baseline = models.ForeignKey(
-        LivelihoodZoneBaseline, on_delete=models.CASCADE, verbose_name=_("Livelihood Zone Baseline")
+        LivelihoodZoneBaseline,
+        on_delete=models.CASCADE,
+        related_name="livelihood_activities",
+        verbose_name=_("Livelihood Zone Baseline"),
     )
     # Inherited from Livelihood Strategy to acts as a discriminator column.
     strategy_type = models.CharField(
@@ -837,20 +853,16 @@ class SeasonalActivityType(Dimension):
         Labor migration
     """
 
+    class SeasonalActivityCategories(models.TextChoices):
+        CROP = "crop", _("Crops")
+        LIVESTOCK = "livestock", _("Livestock")
+        GARDENING = "gardening", _("Gardening")
+        FISHING = "fishing", _("Fishing")
+
     name = common_models.NameField()  # e.g. préparation de la terre,
-    # @TODO should this be a list of choices? How often do they add new ones?
-    # Maybe?
-    # What is the overlap with LivelihoodStrategyTypes? Can we reuse or share?
-    activity_category = models.ForeignKey(
-        SeasonalActivityCategory,
-        on_delete=models.RESTRICT,
-        verbose_name=_("Activity Category"),
-    )  # Crops, Livestock, Gardening, Employment,
-    # @TODO Where does this come from in the BSS
-    # Goes away because rainy/dry goes into Seasons
-    is_weather_related = models.BooleanField(
-        verbose_name=_("Weather related"),
-        help_text=_("If the activity is a representation of the weather eg. rainy, dry"),
+    # @TODO What is the overlap with LivelihoodStrategyTypes? Can we reuse or share?
+    activity_category = models.CharField(
+        max_length=20, choices=SeasonalActivityCategories.choices, verbose_name=_("Activity Category")
     )
 
     class Meta:
@@ -877,7 +889,10 @@ class BaselineSeasonalActivity(models.Model):
         ALL = "all", _("All Together")
 
     livelihood_zone_baseline = models.ForeignKey(
-        LivelihoodZoneBaseline, on_delete=models.RESTRICT, verbose_name=_("Livelihood Zone Baseline")
+        LivelihoodZoneBaseline,
+        on_delete=models.RESTRICT,
+        related_name="baseline_seasonal_activities",
+        verbose_name=_("Livelihood Zone Baseline"),
     )
     activity_type = models.ForeignKey(
         SeasonalActivityType, on_delete=models.RESTRICT, verbose_name=_("Seasonal Activity Type")
@@ -890,7 +905,7 @@ class BaselineSeasonalActivity(models.Model):
         on_delete=models.PROTECT,
         verbose_name=_("Item"),
         help_text=_("Item Produced, eg, full fat milk"),
-        related_name="household_economy_items",
+        related_name="baseline_seasonal_activities",
     )
 
     # @TODO Does this add value because we can easily drill down from a Livelihood Strategy to the Seasonal Activities
@@ -944,7 +959,10 @@ class SeasonalActivity(models.Model):
     # ensure that the Baseline Seasonal Activity and the Community belong to the
     # same Livelihood Zone Baseline.
     livelihood_zone_baseline = models.ForeignKey(
-        LivelihoodZoneBaseline, on_delete=models.RESTRICT, verbose_name=_("Livelihood Zone Baseline")
+        LivelihoodZoneBaseline,
+        on_delete=models.RESTRICT,
+        related_name="seasonal_activities",
+        verbose_name=_("Livelihood Zone Baseline"),
     )
     # Inherited from Baseline Seasonal Activity, the denormalization is necessary to
     # ensure that the Baseline Seasonal Activity and the Livelhood Strategy belong to the
@@ -1179,7 +1197,10 @@ class MarketPrice(models.Model):
     # b) a reference model -
     # MarketItem with category as Main food, Cash crops Livestock ..
     product = models.ForeignKey(
-        ClassifiedProduct, on_delete=models.RESTRICT, help_text=_("Crop, livestock or other category of items")
+        ClassifiedProduct,
+        on_delete=models.RESTRICT,
+        related_name="market_prices",
+        help_text=_("Crop, livestock or other category of items"),
     )
     market = models.ForeignKey(Market, on_delete=models.RESTRICT)
     low_price = models.FloatField("Low price")
