@@ -12,11 +12,12 @@ import common.models as common_models
 from common.models import ClassifiedProduct, Country, Currency, UnitOfMeasure
 from metadata.models import (
     CropType,
-    Dimension,
     HazardCategory,
     LivelihoodCategory,
+    LivelihoodStrategyTypes,
     LivestockType,
     Season,
+    SeasonalActivityType,
     WealthCategory,
     WealthCharacteristic,
 )
@@ -227,12 +228,15 @@ class WealthGroup(models.Model):
     """
     Households within a Livelihood Zone with similar capacity to exploit the available food and income options.
 
-    Normally, Livelihood Zone contains Very Poor, Poor, Medium and Better Off
-    Wealth Groups.
+    Typically, rural Livelihood Zones contain Very Poor, Poor, Medium and
+    Better Off Wealth Groups.
 
     Note that although most Wealth Groups are based on income and assets,
     i.e. wealth, that is not always the case. For example female-headed
     households may be a surveyed Wealth Group.
+
+    Implicit in the BSS 'WB' worksheet in Column B and the 'Data' worksheet in
+    Row 3.
     """
 
     name = models.CharField(max_length=100, verbose_name=_("Name"))
@@ -339,6 +343,8 @@ class CommunityWealthGroup(WealthGroup):
 class WealthGroupCharacteristicValue(models.Model):
     """
     An attribute of a Wealth Group such as the number of school-age children.
+
+        Stored on the BSS 'WB' worksheet.
     """
 
     wealth_group = models.ForeignKey(WealthGroup, on_delete=models.RESTRICT, verbose_name=_("Wealth Group"))
@@ -362,26 +368,6 @@ class WealthGroupCharacteristicValue(models.Model):
         verbose_name_plural = _("Wealth Characteristic Values")
 
 
-# @TODO Move to Metadata
-# Defined outside LivelihoodStrategy to make it easy to access from subclasses
-# This is a hard-coded list of choices because additions to the list require
-# matching custom subclasses of LivelihoodActivity anyway.
-class LivelihoodStrategyTypes(models.TextChoices):
-    MILK_PRODUCTION = "MilkProduction", _("Milk Production")
-    BUTTER_PRODUCTION = "ButterProduction", _("Butter Production")
-    MEAT_PRODUCTION = "MeatProduction", _("Meat Production")
-    LIVESTOCK_SALES = "LivestockSales", _("Livestock Sales")
-    CROP_PRODUCTION = "CropProduction", _("Crop Production")
-    FOOD_PURCHASE = "FoodPurchase", _("Food Purchase")
-    PAYMENT_IN_KIND = "PaymentInKind", _("Payment in Kind")
-    RELIEF_GIFTS_OTHER = "ReliefGiftsOther", _("Relief, Gifts and Other Food")
-    FISHING = "Fishing", _("Fishing")
-    WILD_FOOD_GATHERING = "WildFoodGathering", _("Wild Food Gathering")
-    OTHER_CASH_INCOME = "OtherCashIncome", _("Other Cash Income")
-    OTHER_PURCHASES = "OtherPurchases", _("Other Purchases")
-
-
-# @TODO Move to Metadata
 class LivelihoodStrategy(models.Model):
     """
     An activity undertaken by households in a Livelihood Zone that produces food or income or requires expenditure.
@@ -425,6 +411,9 @@ class LivelihoodStrategy(models.Model):
         help_text=_("Item Produced, eg, full fat milk"),
         related_name="livelihood_strategies",
     )
+    # @TODO Moved from LivelihoodActivity to LivelihoodStrategy because it is
+    # defined in Column A and applies to all Wealth Groups in the BSS.
+    unit_of_measure = models.ForeignKey(UnitOfMeasure, on_delete=models.PROTECT, verbose_name=_("Unit of Measure"))
     additional_identifier = models.CharField(
         blank=True,
         verbose_name=_("Additional Identifer"),
@@ -465,6 +454,12 @@ class LivelihoodActivity(models.Model):
     """
     An activity undertaken by households in a Wealth Group that produces food or income or requires expenditure.
 
+    A Livelihood Activity contains the outputs of a Livelihood Strategy
+    employed by a Wealth Group in a Community in the reference year, or the
+    outputs of a Wealth Group representing the Baseline as a whole in either
+    the reference year (the Baseline scenario) or in response to a shock (the
+    Response scenario).
+
     Stored on the BSS 'Data' worksheet.
     """
 
@@ -503,7 +498,6 @@ class LivelihoodActivity(models.Model):
     )
     wealth_group = models.ForeignKey(WealthGroup, on_delete=models.PROTECT, help_text=_("Wealth Group"))
 
-    unit_of_measure = models.ForeignKey(UnitOfMeasure, on_delete=models.PROTECT, verbose_name=_("Unit of Measure"))
     quantity_produced = models.PositiveSmallIntegerField(verbose_name=_("Quantity Produced"))
     quantity_sold = models.PositiveSmallIntegerField(verbose_name=_("Quantity Sold/Exchanged"))
     quantity_other_uses = models.PositiveSmallIntegerField(verbose_name=_("Quantity Other Uses"))
@@ -597,8 +591,8 @@ class LivelihoodActivity(models.Model):
         super().save(*args, **kwargs)
 
     class Meta:
-        verbose_name = _("Livelihood Strategy")
-        verbose_name_plural = _("Livelihood Strategies")
+        verbose_name = _("Livelihood Activity")
+        verbose_name_plural = _("Livelihood Activities")
         constraints = [
             # @TODO Add constraints either declared here or in a custom migration that target the composite foreign
             # keys for Wealth Group and Livelihood Strategy that include the livelihood_zone_baseline.
@@ -649,7 +643,7 @@ class MilkProduction(LivelihoodActivity):
         verbose_name_plural = LivelihoodStrategyTypes.MILK_PRODUCTION.label
 
 
-class ButterProduction(LivelihoodStrategy):
+class ButterProduction(LivelihoodActivity):
     """
     Production of ghee/butter by households in a Wealth Group for their own consumption, for sale and for other uses.
 
@@ -691,7 +685,7 @@ class ButterProduction(LivelihoodStrategy):
         verbose_name_plural = LivelihoodStrategyTypes.BUTTER_PRODUCTION.label
 
 
-class MeatProduction(LivelihoodStrategy):
+class MeatProduction(LivelihoodActivity):
     """
     Production of meat by households in a Wealth Group for their own consumption.
 
@@ -707,7 +701,7 @@ class MeatProduction(LivelihoodStrategy):
         verbose_name_plural = LivelihoodStrategyTypes.MEAT_PRODUCTION.label
 
 
-class LivestockSales(LivelihoodStrategy):
+class LivestockSales(LivelihoodActivity):
     """
     Sale of livestock by households in a Wealth Group for cash income.
 
@@ -731,7 +725,7 @@ class LivestockSales(LivelihoodStrategy):
         verbose_name_plural = LivelihoodStrategyTypes.LIVESTOCK_SALES.label
 
 
-class CropProduction(LivelihoodStrategy):
+class CropProduction(LivelihoodActivity):
     """
     Production of crops by households in a Wealth Group for their own consumption, for sale and for other uses.
 
@@ -759,7 +753,7 @@ class CropProduction(LivelihoodStrategy):
         verbose_name_plural = LivelihoodStrategyTypes.CROP_PRODUCTION.label
 
 
-class FoodPurchase(LivelihoodStrategy):
+class FoodPurchase(LivelihoodActivity):
     """
     Purchase of food items that contribute to nutrition by households in a Wealth Group.
 
@@ -782,7 +776,7 @@ class FoodPurchase(LivelihoodStrategy):
         verbose_name_plural = _("Food Purchases")
 
 
-class PaymentInKind(LivelihoodStrategy):
+class PaymentInKind(LivelihoodActivity):
     """
     Food items that contribute to nutrition by households in a Wealth Group received in exchange for labor.
 
@@ -803,7 +797,7 @@ class PaymentInKind(LivelihoodStrategy):
         verbose_name_plural = _("Payments in Kind")
 
 
-class ReliefGiftsOther(LivelihoodStrategy):
+class ReliefGiftsOther(LivelihoodActivity):
     """
     Food items that contribute to nutrition received by households in a Wealth Group as relief, gifts, etc.
     and which are not bought or exchanged.
@@ -824,7 +818,7 @@ class ReliefGiftsOther(LivelihoodStrategy):
         verbose_name_plural = LivelihoodStrategyTypes.RELIEF_GIFTS_OTHER.label
 
 
-class Fishing(LivelihoodStrategy):
+class Fishing(LivelihoodActivity):
     """
     Fishing by households in a Wealth Group for their own consumption, for sale and for other uses.
 
@@ -838,7 +832,7 @@ class Fishing(LivelihoodStrategy):
         proxy = True
 
 
-class WildFoodGathering(LivelihoodStrategy):
+class WildFoodGathering(LivelihoodActivity):
     """
     Gathering of wild food by households in a Wealth Group for their own consumption, for sale and for other uses.
 
@@ -852,7 +846,7 @@ class WildFoodGathering(LivelihoodStrategy):
         proxy = True
 
 
-class OtherCashIncome(LivelihoodStrategy):
+class OtherCashIncome(LivelihoodActivity):
     """
     Income received by households in a Wealth Group as payment for labor or from self-employment, remittances, etc.
 
@@ -887,7 +881,7 @@ class OtherCashIncome(LivelihoodStrategy):
         verbose_name_plural = LivelihoodStrategyTypes.OTHER_CASH_INCOME.label
 
 
-class OtherPurchases(LivelihoodStrategy):
+class OtherPurchases(LivelihoodActivity):
     """
     Expenditure by households in a Wealth Group on items that don't contribute to nutrition.
 
@@ -918,35 +912,6 @@ class OtherPurchases(LivelihoodStrategy):
     class Meta:
         verbose_name = LivelihoodStrategyTypes.OTHER_PURCHASES.label
         verbose_name_plural = LivelihoodStrategyTypes.OTHER_PURCHASES.label
-
-
-# @TODO Should this be in metadata.
-class SeasonalActivityType(Dimension):
-    """
-    Seasonal activities for the various food source/ income activities
-
-    Activity Category can be Crops, Livestock, Gardening, Employment, Fishing
-    And the actual activity can be e.g. for Employment category:
-        On farm local labor
-        Brick making
-        Labor migration
-    """
-
-    class SeasonalActivityCategories(models.TextChoices):
-        CROP = "crop", _("Crops")
-        LIVESTOCK = "livestock", _("Livestock")
-        GARDENING = "gardening", _("Gardening")
-        FISHING = "fishing", _("Fishing")
-
-    name = common_models.NameField()  # e.g. préparation de la terre,
-    # @TODO What is the overlap with LivelihoodStrategyTypes? Can we reuse or share?
-    activity_category = models.CharField(
-        max_length=20, choices=SeasonalActivityCategories.choices, verbose_name=_("Activity Category")
-    )
-
-    class Meta:
-        verbose_name = _("Seasonal Activity Type")
-        verbose_name_plural = _("Seasonal Activity Types")
 
 
 class SeasonalActivity(models.Model):
@@ -1006,7 +971,7 @@ class SeasonalActivityOccurrence(models.Model):
     """
 
     seasonal_activity = models.ForeignKey(
-        LivelihoodZoneBaseline, on_delete=models.RESTRICT, verbose_name=_("Livelihood Zone Baseline")
+        SeasonalActivity, on_delete=models.RESTRICT, verbose_name=_("Seasonal Activity")
     )
     # Inherited from the Seasonal Activity, the denormalization is necessary to
     # ensure that the Seasonal Activity and the Community belong to the

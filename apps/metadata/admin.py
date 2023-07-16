@@ -3,7 +3,6 @@ from django.contrib import admin
 from .models import (
     Alias,
     CropType,
-    Currency,
     Dimension,
     DimensionType,
     HazardCategory,
@@ -13,8 +12,6 @@ from .models import (
     SourceSystem,
     Translation,
     TranslationType,
-    UnitOfMeasure,
-    UnitOfMeasureConversion,
     WealthCharacteristic,
 )
 
@@ -51,21 +48,6 @@ class WealthCharacteristicAdmin(admin.ModelAdmin):
 
 @admin.register(Item)
 class ItemAdmin(admin.ModelAdmin):
-    pass
-
-
-@admin.register(UnitOfMeasure)
-class UnitOfMeasureAdmin(admin.ModelAdmin):
-    pass
-
-
-@admin.register(Currency)
-class CurrencyAdmin(admin.ModelAdmin):
-    pass
-
-
-@admin.register(UnitOfMeasureConversion)
-class UnitOfMeasureConversionAdmin(admin.ModelAdmin):
     pass
 
 

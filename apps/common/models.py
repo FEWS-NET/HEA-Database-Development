@@ -633,118 +633,6 @@ class ClassifiedProductQuerySet(SearchQueryMixin, MP_NodeQuerySet):
         return super().search(search_term, **kwargs).distinct()
 
 
-class ClassifiedProduct(MP_Node, Model):
-    """
-    A product such as a commodity or service classified using UN CPC v2 codes.
-
-    See http://unstats.un.org/unsd/cr/registry/cpc-2.asp for more information
-
-    """
-
-    cpcv2 = models.CharField(
-        max_length=8,
-        primary_key=True,
-        verbose_name="CPC V2",
-        help_text="classification structure of products based on the UN’s Central Product Classification rules,"
-        " prefixed with R, L, P or S, a letter indicating whether the Product is Raw agricultural output,"
-        " Live animals, a Processed product or a Service.",
-    )
-    description = models.CharField(max_length=800, verbose_name=_("description"))
-    common_name = NameField(blank=True, verbose_name=_("common name"))
-
-    # @TODO Do we use this approach for compatibility with FDW and reuse of Lookups
-    # or do we use the Tranlsation approach with a separate table (and what will that do for country-specific aliases)
-    # or do we use a variation of FDW only with JSONField to maintain database independence.
-    # aliases = ArrayField(models.CharField(max_length=60), blank=True, null=True, verbose_name=_("Aliases"))
-    # Note that we store and look up HS2012 values as xxxx.yy, e.g. Durum Wheat is 1001.19 rather than 100119,
-    # because it avoids confusion between the CPCv2 and HS2012 codes.
-    # hs2012 = ArrayField(
-    #    models.CharField(max_length=60),
-    #    blank=True,
-    #    null=True,
-    #    verbose_name=_("HS2012"),
-    #    help_text=_(
-    #        "The 6-digit codes for the Product in the Harmonized Commodity Description and Coding System (HS), stored as XXXX.YY"  # NOQA: E501
-    #    ),
-    # )
-    scientific_name = models.CharField(max_length=100, verbose_name="scientific name", blank=True, null=True)
-
-    objects = IdentifierManager.from_queryset(ClassifiedProductQuerySet)()
-
-    def display_name(self):
-        """
-        Return the English display name for the Classified Product.
-        """
-        if self.common_name:
-            return self.common_name
-        elif len(self.description) < 60:
-            return self.description
-        else:
-            return self.description[:60] + "..."
-
-    display_name.short_description = _("name")
-
-    def delete(self):
-        """Removes a node and all it's descendants."""
-        # @TODO Check whether this is still necessary
-        # @TODO Remove once http://code.tabo.pe/django-treebeard/issue/67/treebeard-admin-cannot-work-with-custom-pk
-        # is fixed
-        self.__class__.objects.filter(pk=self.pk).delete()
-
-    def __str__(self):
-        return "%s / %s" % (self.cpcv2, self.display_name())
-
-    def calculate_fields(self):
-        """
-        Ensure that aliases & hs2012 are lowercase and don't contain duplicates
-        """
-        # @TODO Update once aliases approach is settled
-        # if self.aliases:
-        #    self.aliases = list(set([alias.lower() for alias in self.aliases if alias]))
-        # if self.hs2012:
-        #    self.hs2012 = list(set([code.lower() for code in self.hs2012 if code]))
-
-    def save(self, *args, **kwargs):
-        self.calculate_fields()
-        super().save(*args, **kwargs)
-
-    class Meta:
-        verbose_name = _("Product")
-        verbose_name_plural = _("Products")
-        ordering = ()  # Required for correct ordering of Treebeard subclasses
-
-    class ExtraMeta:
-        identifier = ["cpcv2", "description"]
-
-
-class CountryClassifiedProductAliases(Model):
-    """
-    Country-specific aliases for a :class:`.ClassifiedProduct`
-    """
-
-    country = models.ForeignKey(Country, db_column="country_code", verbose_name=_("country"), on_delete=CASCADE)
-    product = models.ForeignKey(
-        ClassifiedProduct,
-        db_column="product_code",
-        verbose_name=_("product"),
-        related_name="per_country_aliases",
-        on_delete=CASCADE,
-    )
-    # @TODO Do we use this approach for compatibility with FDW and reuse of Lookups
-    # or do we use the Tranlsation approach with a separate table (and what will that do for country-specific aliases)
-    # or do we use a variation of FDW only with JSONField to maintain database independence.
-    # aliases = ArrayField(models.CharField(max_length=60), verbose_name=_("aliases"))
-
-    class Meta:
-        verbose_name = _("Country Classified Product Alias")
-        verbose_name_plural = _("Country Classified Product Aliases")
-        constraints = [
-            models.UniqueConstraint(
-                fields=["country", "product"], name="common_countryclassified_country_code_product_code_uniq"
-            )
-        ]
-
-
 class UnitOfMeasureQuerySet(SearchQueryMixin, models.QuerySet):
     """
     Extends QuerySet with custom search method
@@ -761,7 +649,6 @@ class UnitOfMeasureQuerySet(SearchQueryMixin, models.QuerySet):
 class UnitOfMeasure(Model):
     """
     A Unit of Measure, such as kilogram, litre or metre.
-
     """
 
     # Unit Of Measure Types
@@ -954,3 +841,118 @@ class UnitOfMeasureConversion(Model):
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)
+
+
+class ClassifiedProduct(MP_Node, Model):
+    """
+    A product such as a commodity or service classified using UN CPC v2 codes.
+
+    See http://unstats.un.org/unsd/cr/registry/cpc-2.asp for more information
+
+    """
+
+    cpcv2 = models.CharField(
+        max_length=8,
+        primary_key=True,
+        verbose_name="CPC V2",
+        help_text="classification structure of products based on the UN’s Central Product Classification rules,"
+        " prefixed with R, L, P or S, a letter indicating whether the Product is Raw agricultural output,"
+        " Live animals, a Processed product or a Service.",
+    )
+    description = models.CharField(max_length=800, verbose_name=_("description"))
+    common_name = NameField(blank=True, verbose_name=_("common name"))
+
+    # @TODO Do we use this approach for compatibility with FDW and reuse of Lookups
+    # or do we use the Tranlsation approach with a separate table (and what will that do for country-specific aliases)
+    # or do we use a variation of FDW only with JSONField to maintain database independence.
+    # aliases = ArrayField(models.CharField(max_length=60), blank=True, null=True, verbose_name=_("Aliases"))
+    # Note that we store and look up HS2012 values as xxxx.yy, e.g. Durum Wheat is 1001.19 rather than 100119,
+    # because it avoids confusion between the CPCv2 and HS2012 codes.
+    # hs2012 = ArrayField(
+    #    models.CharField(max_length=60),
+    #    blank=True,
+    #    null=True,
+    #    verbose_name=_("HS2012"),
+    #    help_text=_(
+    #        "The 6-digit codes for the Product in the Harmonized Commodity Description and Coding System (HS), stored as XXXX.YY"  # NOQA: E501
+    #    ),
+    # )
+    scientific_name = models.CharField(max_length=100, verbose_name="scientific name", blank=True, null=True)
+
+    unit_of_measure = models.ForeignKey(UnitOfMeasure, on_delete=models.PROTECT, verbose_name=_("Unit of Measure"))
+    kcals_per_unit = models.PositiveSmallIntegerField(blank=True, null=True, verbose_name=_("Kcals per Unit"))
+
+    objects = IdentifierManager.from_queryset(ClassifiedProductQuerySet)()
+
+    def display_name(self):
+        """
+        Return the English display name for the Classified Product.
+        """
+        if self.common_name:
+            return self.common_name
+        elif len(self.description) < 60:
+            return self.description
+        else:
+            return self.description[:60] + "..."
+
+    display_name.short_description = _("name")
+
+    def delete(self):
+        """Removes a node and all it's descendants."""
+        # @TODO Check whether this is still necessary
+        # @TODO Remove once http://code.tabo.pe/django-treebeard/issue/67/treebeard-admin-cannot-work-with-custom-pk
+        # is fixed
+        self.__class__.objects.filter(pk=self.pk).delete()
+
+    def __str__(self):
+        return "%s / %s" % (self.cpcv2, self.display_name())
+
+    def calculate_fields(self):
+        """
+        Ensure that aliases & hs2012 are lowercase and don't contain duplicates
+        """
+        # @TODO Update once aliases approach is settled
+        # if self.aliases:
+        #    self.aliases = list(set([alias.lower() for alias in self.aliases if alias]))
+        # if self.hs2012:
+        #    self.hs2012 = list(set([code.lower() for code in self.hs2012 if code]))
+
+    def save(self, *args, **kwargs):
+        self.calculate_fields()
+        super().save(*args, **kwargs)
+
+    class Meta:
+        verbose_name = _("Product")
+        verbose_name_plural = _("Products")
+        ordering = ()  # Required for correct ordering of Treebeard subclasses
+
+    class ExtraMeta:
+        identifier = ["cpcv2", "description"]
+
+
+class CountryClassifiedProductAliases(Model):
+    """
+    Country-specific aliases for a :class:`.ClassifiedProduct`
+    """
+
+    country = models.ForeignKey(Country, db_column="country_code", verbose_name=_("country"), on_delete=CASCADE)
+    product = models.ForeignKey(
+        ClassifiedProduct,
+        db_column="product_code",
+        verbose_name=_("product"),
+        related_name="per_country_aliases",
+        on_delete=CASCADE,
+    )
+    # @TODO Do we use this approach for compatibility with FDW and reuse of Lookups
+    # or do we use the Tranlsation approach with a separate table (and what will that do for country-specific aliases)
+    # or do we use a variation of FDW only with JSONField to maintain database independence.
+    # aliases = ArrayField(models.CharField(max_length=60), verbose_name=_("aliases"))
+
+    class Meta:
+        verbose_name = _("Country Classified Product Alias")
+        verbose_name_plural = _("Country Classified Product Aliases")
+        constraints = [
+            models.UniqueConstraint(
+                fields=["country", "product"], name="common_countryclassified_country_code_product_code_uniq"
+            )
+        ]

@@ -3,7 +3,8 @@ from django.utils.translation import gettext_lazy as _
 from treebeard.mp_tree import MP_Node
 
 from common import models as common_models
-from metadata.models import Currency, Dimension
+from common.models import Currency
+from metadata.models import Dimension
 
 
 class Feature(models.Model):
