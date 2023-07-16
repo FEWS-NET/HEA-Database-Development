@@ -36,6 +36,9 @@ class SourceOrganization(models.Model):
         verbose_name = _("Source Organization")
         verbose_name_plural = _("Source Organizations")
 
+    def __str__(self):
+        return self.full_name
+
     class ExtraMeta:
         identifier = ["name"]
 
@@ -54,7 +57,15 @@ class LivelihoodZone(models.Model):
     )
     name = common_models.NameField()
     description = common_models.DescriptionField()
-    country = models.ForeignKey(Country, verbose_name=_("Country"), db_column="country_code", on_delete=models.PROTECT)
+    country = models.ForeignKey(
+        Country,
+        verbose_name=_("Country"),
+        db_column="country_code",
+        on_delete=models.PROTECT,
+    )
+
+    def __str__(self):
+        return f"{self.name}:{self.code}"
 
     class Meta:
         verbose_name = _("Livelihood Zone")
@@ -133,6 +144,9 @@ class LivelihoodZoneBaseline(models.Model):
         help_text=_("The estimated population of the Livelihood Zone during the reference year"),
     )
 
+    def __str__(self):
+        return f"Baseline for {self.livelihood_zone}: Reference Year - {self.reference_year_start_date.year}"
+
     class Meta:
         verbose_name = _("Livelihood Zone Baseline")
         verbose_name_plural = _("Livelihood Zone Baselines")
@@ -206,6 +220,9 @@ class Community(models.Model):
         help_text=_("The names of interviewers who interviewed the Community, in case any clarification is neeeded."),
     )
 
+    def __str__(self):
+        return f"{self.name}"
+
     class Meta:
         verbose_name = _("Community")
         verbose_name_plural = _("Communities")
@@ -261,6 +278,9 @@ class WealthGroup(models.Model):
         help_text=_("Percentage of households in the Community or Livelihood Zone that are in this Wealth Group"),
     )
     average_household_size = models.PositiveSmallIntegerField(verbose_name=_("Average household size"))
+
+    def __str__(self):
+        return f"{self.name}:{self.community.name}"
 
     def calculate_fields(self):
         if self.community:
@@ -445,6 +465,9 @@ class LivelihoodStrategy(models.Model):
         help_text=_("Additional text identifying the livelihood strategy"),
     )
 
+    def __str__(self):
+        return f"{self.strategy_type} for {self.livelihood_zone_baseline}"
+
     class Meta:
         verbose_name = _("Livelihood Strategy")
         verbose_name_plural = _("Livelihood Strategies")
@@ -518,12 +541,12 @@ class LivelihoodActivity(models.Model):
     # Can normally be calculated  / validated as `quantity_consumed` * `kcals_per_unit`
     total_kcals_consumed = models.PositiveSmallIntegerField(
         verbose_name=_("Total kcals consumed"),
-        help_text=_("Total kcals consumed by a household in the reference year from this livelihood strategy"),
+        help_text=_("Total kcals consumed by a household in the reference year from this livelihood activity"),
     )
     # Can be calculated / validated as `total_kcals_consumed / DAILY_KCAL_REQUIRED (2100) / DAYS_PER_YEAR (365) / self.wealth_group.average_household_size`  # NOQA: E501
     percentage_kcals = models.PositiveSmallIntegerField(
         verbose_name=_("Percentage of required kcals"),
-        help_text=_("Percentage of annual household kcal requirement provided by this livelihood strategy"),
+        help_text=_("Percentage of annual household kcal requirement provided by this livelihood activity"),
     )
 
     # @TODO: if daily calorie level varies by LZB then save consumed_kcal_percent here too
@@ -543,15 +566,15 @@ class LivelihoodActivity(models.Model):
         # @TODO To what extent do we need to validate? Or do we just accept.
         # Dave: Do we use Django Forms as a separate validation layer, and load the data from the dataframe into a Form
         # instance and then check whether it is valid.  See Two Scoops for an explanation.
-        self.is_staple = self.wealth_group.community.livelihood_zone_baseline.staple_set(
-            item=self.output_item
-        ).exists()
-        self.total_quantity_produced = self.calculate_total_quantity_produced()
-        self.income = self.calculate_income()
+        # self.is_staple = self.wealth_group.community.livelihood_zone_baseline.staple_set(
+        #     item=self.output_item
+        # ).exists()
+        # self.total_quantity_produced = self.calculate_total_quantity_produced()
+        # self.income = self.calculate_income()
         # We store in local currency and unit as well as USD, kg and kcal for transparency and traceability
-        self.income_usd = self.production_unit_of_measure.convert_from(self.income, self.currency)
-        self.kcals_consumed = self.calculate_kcals_consumed()
-        self.expandibility_kcals = self.calculate_expandibility_kcals()
+        # self.income_usd = self.production_unit_of_measure.convert_from(self.income, self.currency)
+        # self.kcals_consumed = self.calculate_kcals_consumed()
+        # self.expandibility_kcals = self.calculate_expandibility_kcals()
 
     # These formulae are copied directly from the BSS cells:
 
@@ -645,7 +668,7 @@ class MilkProduction(LivelihoodActivity):
         verbose_name_plural = LivelihoodStrategyTypes.MILK_PRODUCTION.label
 
 
-class ButterProduction(LivelihoodStrategy):
+class ButterProduction(LivelihoodActivity):
     """
     Production of ghee/butter by households in a Wealth Group for their own consumption, for sale and for other uses.
 
@@ -687,7 +710,7 @@ class ButterProduction(LivelihoodStrategy):
         verbose_name_plural = LivelihoodStrategyTypes.BUTTER_PRODUCTION.label
 
 
-class MeatProduction(LivelihoodStrategy):
+class MeatProduction(LivelihoodActivity):
     """
     Production of meat by households in a Wealth Group for their own consumption.
 
@@ -703,7 +726,7 @@ class MeatProduction(LivelihoodStrategy):
         verbose_name_plural = LivelihoodStrategyTypes.MEAT_PRODUCTION.label
 
 
-class LivestockSales(LivelihoodStrategy):
+class LivestockSales(LivelihoodActivity):
     """
     Sale of livestock by households in a Wealth Group for cash income.
 
@@ -727,7 +750,7 @@ class LivestockSales(LivelihoodStrategy):
         verbose_name_plural = LivelihoodStrategyTypes.LIVESTOCK_SALES.label
 
 
-class CropProduction(LivelihoodStrategy):
+class CropProduction(LivelihoodActivity):
     """
     Production of crops by households in a Wealth Group for their own consumption, for sale and for other uses.
 
@@ -755,7 +778,7 @@ class CropProduction(LivelihoodStrategy):
         verbose_name_plural = LivelihoodStrategyTypes.CROP_PRODUCTION.label
 
 
-class FoodPurchase(LivelihoodStrategy):
+class FoodPurchase(LivelihoodActivity):
     """
     Purchase of food items that contribute to nutrition by households in a Wealth Group.
 
@@ -778,7 +801,7 @@ class FoodPurchase(LivelihoodStrategy):
         verbose_name_plural = _("Food Purchases")
 
 
-class PaymentInKind(LivelihoodStrategy):
+class PaymentInKind(LivelihoodActivity):
     """
     Food items that contribute to nutrition by households in a Wealth Group received in exchange for labor.
 
@@ -799,7 +822,7 @@ class PaymentInKind(LivelihoodStrategy):
         verbose_name_plural = _("Payments in Kind")
 
 
-class ReliefGiftsOther(LivelihoodStrategy):
+class ReliefGiftsOther(LivelihoodActivity):
     """
     Food items that contribute to nutrition received by households in a Wealth Group as relief, gifts, etc.
     and which are not bought or exchanged.
@@ -820,7 +843,7 @@ class ReliefGiftsOther(LivelihoodStrategy):
         verbose_name_plural = LivelihoodStrategyTypes.RELIEF_GIFTS_OTHER.label
 
 
-class Fishing(LivelihoodStrategy):
+class Fishing(LivelihoodActivity):
     """
     Fishing by households in a Wealth Group for their own consumption, for sale and for other uses.
 
@@ -834,7 +857,7 @@ class Fishing(LivelihoodStrategy):
         proxy = True
 
 
-class WildFoodGathering(LivelihoodStrategy):
+class WildFoodGathering(LivelihoodActivity):
     """
     Gathering of wild food by households in a Wealth Group for their own consumption, for sale and for other uses.
 
@@ -848,7 +871,7 @@ class WildFoodGathering(LivelihoodStrategy):
         proxy = True
 
 
-class OtherCashIncome(LivelihoodStrategy):
+class OtherCashIncome(LivelihoodActivity):
     """
     Income received by households in a Wealth Group as payment for labor or from self-employment, remittances, etc.
 
@@ -883,7 +906,7 @@ class OtherCashIncome(LivelihoodStrategy):
         verbose_name_plural = LivelihoodStrategyTypes.OTHER_CASH_INCOME.label
 
 
-class OtherPurchases(LivelihoodStrategy):
+class OtherPurchases(LivelihoodActivity):
     """
     Expenditure by households in a Wealth Group on items that don't contribute to nutrition.
 
@@ -1189,7 +1212,7 @@ class CommunityCropProduction(models.Model):
         help_text=_("Yield in reference period with input (seed and fertilizer)"),
     )
     production_with_out_inputs = models.FloatField(
-        verbose_name=_("Production with input"),
+        verbose_name=_("Production with out input"),
         help_text=_("Yield in reference period without input (seed and fertilizer)"),
     )
     seed_requirement = models.FloatField(verbose_name=_("Seed requirement"))
