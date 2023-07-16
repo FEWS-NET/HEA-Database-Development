@@ -253,10 +253,10 @@ jobs:
           echo "$(git rev-parse --abbrev-ref HEAD)-$(git rev-parse HEAD | cut -c -8)" | tee VERSION.txt
       - name: "Build Docker images"
         run: docker compose build
-      # - name: "Save images to speed up future builds"
-      #   run: |
-      #     for SERVICE in ${{ env.BUILD_IMAGES }}; do docker tag ${{ env.COMPOSE_PROJECT_NAME }}-${SERVICE}:latest ${CI_REGISTRY_IMAGE}/${SERVICE}:edge; done
-      #     for SERVICE in ${{ env.BUILD_IMAGES }}; do docker push ${{ env.CI_REGISTRY_IMAGE }}/${SERVICE}:edge | grep -i -e 'The push refers to' -e Digest -e Status -e Error; done
+      - name: "Save images to speed up future builds"
+        run: |
+          for SERVICE in ${{ env.BUILD_IMAGES }}; do docker tag ${{ env.COMPOSE_PROJECT_NAME }}-${SERVICE}:latest ${CI_REGISTRY_IMAGE}/${SERVICE}:edge; done
+          for SERVICE in ${{ env.BUILD_IMAGES }}; do docker push ${{ env.CI_REGISTRY_IMAGE }}/${SERVICE}:edge | grep -i -e 'The push refers to' -e Digest -e Status -e Error; done
       - name: "Start the service containers"
         run: docker compose up -d db
       - name: "Wait for containers to be ready"
@@ -410,7 +410,7 @@ jobs:
           # Use run instead of up because we want docker-compose to return the exit code
           # Run a TransactionTestCase and retain the database. TransactionTestCase truncates all the tables after running the test.
           # This leaves a database with migrations already run, and tables existing, but without any data that might have been created by those migrations.
-          docker compose run --rm app --keepdb warehouse.tests.test_admin.DataUploadAdminTestCase
+          docker compose run --rm app --keepdb
       - name: Run tests again, to ensure they set up all required test data and consequently work correctly with a truncated database
         # @TODO: we do not run check_test_output here - is this on purpose? If yes, remove "tee" below. If not, add that step
         run: docker compose run --name ci-${APP}-${CI_PIPELINE_ID}-${{ github.job }} app --keepdb --exclude-tag=perf 2>&1 | tee test_output.log
