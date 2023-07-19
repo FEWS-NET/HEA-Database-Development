@@ -1,5 +1,7 @@
 from django.contrib import admin
 
+from common.admin import GeoModelAdmin
+
 from .forms import LivelihoodActivityForm
 from .models import (
     ButterProduction,
@@ -10,6 +12,7 @@ from .models import (
     Fishing,
     FoodPurchase,
     Hazard,
+    LivelihoodActivity,
     LivelihoodStrategy,
     LivelihoodZone,
     LivelihoodZoneBaseline,
@@ -19,20 +22,16 @@ from .models import (
     MeatProduction,
     MilkProduction,
     OtherCashIncome,
+    OtherPurchases,
     PaymentInKind,
+    ReliefGiftsOther,
     SeasonalActivity,
     SeasonalActivityOccurrence,
     SourceOrganization,
     WealthGroup,
     WealthGroupCharacteristicValue,
     WildFoodGathering,
-    ReliefGiftsOther,
-    OtherPurchases,
-    LivelihoodActivity,
 )
-from common.admin import GeoModelAdmin
-
-from metadata.models import SeasonalActivityType
 
 admin.site.site_header = "HEA Baseline Database Administration"
 admin.site.index_title = "HEA Baseline"

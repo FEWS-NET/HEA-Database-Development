@@ -1,5 +1,5 @@
-import logging
 import csv
+import logging
 
 from django.db.migrations.operations.base import Operation
 from django.forms.models import modelform_factory

@@ -12,8 +12,8 @@ from .models import (
     SourceSystem,
     Translation,
     TranslationType,
-    WealthCharacteristic,
     WealthCategory,
+    WealthCharacteristic,
 )
 
 

@@ -1,17 +1,17 @@
 # Register your models here.
 from django.contrib import admin
 from django.contrib.admin.options import InlineModelAdmin
-from treebeard.admin import TreeAdmin
 from django.contrib.gis.admin import OSMGeoAdmin
+from treebeard.admin import TreeAdmin
 
 from .forms import ClassifiedProductForm
 from .models import (
+    ClassifiedProduct,
+    Country,
     CountryClassifiedProductAliases,
     Currency,
-    Country,
-    ClassifiedProduct,
-    UnitOfMeasureConversion,
     UnitOfMeasure,
+    UnitOfMeasureConversion,
 )
 
 
