@@ -1,27 +1,26 @@
 """
 Models for managing HEA Baseline Surveys
 """
-import datetime
-
-import common.models as common_models
-import dateutil.utils
-from common.models import ClassifiedProduct, Country, Currency, UnitOfMeasure
 from django.contrib.gis.db import models
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.utils.dates import MONTHS
 from django.utils.translation import gettext_lazy as _
+from model_utils.managers import InheritanceManager
+
+import common.models as common_models
+from common.models import ClassifiedProduct, Country, Currency, UnitOfMeasure
 from metadata.models import (
     CropType,
-    Dimension,
     HazardCategory,
     LivelihoodCategory,
+    LivelihoodStrategyTypes,
     LivestockType,
     Season,
+    SeasonalActivityType,
     WealthCategory,
     WealthCharacteristic,
 )
-from model_utils.managers import InheritanceManager
 
 
 class SourceOrganization(models.Model):
@@ -36,9 +35,6 @@ class SourceOrganization(models.Model):
     class Meta:
         verbose_name = _("Source Organization")
         verbose_name_plural = _("Source Organizations")
-
-    def __str__(self):
-        return self.full_name
 
     class ExtraMeta:
         identifier = ["name"]
@@ -58,15 +54,7 @@ class LivelihoodZone(models.Model):
     )
     name = common_models.NameField()
     description = common_models.DescriptionField()
-    country = models.ForeignKey(
-        Country,
-        verbose_name=_("Country"),
-        db_column="country_code",
-        on_delete=models.PROTECT,
-    )
-
-    def __str__(self):
-        return f"{self.name}:{self.code}"
+    country = models.ForeignKey(Country, verbose_name=_("Country"), db_column="country_code", on_delete=models.PROTECT)
 
     class Meta:
         verbose_name = _("Livelihood Zone")
@@ -145,9 +133,6 @@ class LivelihoodZoneBaseline(models.Model):
         help_text=_("The estimated population of the Livelihood Zone during the reference year"),
     )
 
-    def __str__(self):
-        return f"Baseline for {self.livelihood_zone}: Reference Year - {self.reference_year_start_date.year}"
-
     class Meta:
         verbose_name = _("Livelihood Zone Baseline")
         verbose_name_plural = _("Livelihood Zone Baselines")
@@ -221,9 +206,6 @@ class Community(models.Model):
         help_text=_("The names of interviewers who interviewed the Community, in case any clarification is neeeded."),
     )
 
-    def __str__(self):
-        return f"{self.name}"
-
     class Meta:
         verbose_name = _("Community")
         verbose_name_plural = _("Communities")
@@ -246,12 +228,15 @@ class WealthGroup(models.Model):
     """
     Households within a Livelihood Zone with similar capacity to exploit the available food and income options.
 
-    Normally, Livelihood Zone contains Very Poor, Poor, Medium and Better Off
-    Wealth Groups.
+    Typically, rural Livelihood Zones contain Very Poor, Poor, Medium and
+    Better Off Wealth Groups.
 
     Note that although most Wealth Groups are based on income and assets,
     i.e. wealth, that is not always the case. For example female-headed
     households may be a surveyed Wealth Group.
+
+    Implicit in the BSS 'WB' worksheet in Column B and the 'Data' worksheet in
+    Row 3.
     """
 
     name = models.CharField(max_length=100, verbose_name=_("Name"))
@@ -265,6 +250,8 @@ class WealthGroup(models.Model):
     # within that Community in the specified Wealth Category. If the Community
     # is null, then the Wealth Group represents the households with that
     # Wealth Category for the whole Livelihood Zone Baseline.
+    # @TODO Or make this a mandatory geographic_unit
+    # In which case we move validation out of here and into the spatial hierarchy.
     community = models.ForeignKey(
         Community, blank=True, null=True, on_delete=models.CASCADE, verbose_name=_("Community")
     )
@@ -279,9 +266,6 @@ class WealthGroup(models.Model):
         help_text=_("Percentage of households in the Community or Livelihood Zone that are in this Wealth Group"),
     )
     average_household_size = models.PositiveSmallIntegerField(verbose_name=_("Average household size"))
-
-    def __str__(self):
-        return f"{self.name}:{self.community.name}"
 
     def calculate_fields(self):
         if self.community:
@@ -322,22 +306,10 @@ class BaselineWealthGroup(WealthGroup):
 
     objects = BaselineWealthGroupManager()
 
-    def calculate_fields(self):
-        pass
-
     def clean(self):
         if self.community:
             raise ValidationError(_("A Baseline Wealth Group cannot have a Community"))
         super().clean()
-
-    def save(self, *args, **kwargs):
-        self.calculate_fields()
-        # No need to enforce foreign keys or uniqueness because database constraints will do it anyway
-        self.full_clean(
-            exclude=[field.name for field in self._meta.fields if isinstance(field, models.ForeignKey)],
-            validate_unique=False,
-        )
-        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = _("Baseline Wealth Group")
@@ -357,22 +329,10 @@ class CommunityWealthGroup(WealthGroup):
 
     objects = CommunityWealthGroupManager()
 
-    def calculate_fields(self):
-        pass
-
     def clean(self):
         if not self.community:
             raise ValidationError(_("A Community Wealth Group must have a Community"))
         super().clean()
-
-    def save(self, *args, **kwargs):
-        self.calculate_fields()
-        # No need to enforce foreign keys or uniqueness because database constraints will do it anyway
-        self.full_clean(
-            exclude=[field.name for field in self._meta.fields if isinstance(field, models.ForeignKey)],
-            validate_unique=False,
-        )
-        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = _("Community Wealth Group")
@@ -383,6 +343,8 @@ class CommunityWealthGroup(WealthGroup):
 class WealthGroupCharacteristicValue(models.Model):
     """
     An attribute of a Wealth Group such as the number of school-age children.
+
+        Stored on the BSS 'WB' worksheet.
     """
 
     wealth_group = models.ForeignKey(WealthGroup, on_delete=models.RESTRICT, verbose_name=_("Wealth Group"))
@@ -401,34 +363,11 @@ class WealthGroupCharacteristicValue(models.Model):
     )
     # @TODO Do we need `low_value`` and `high_value`` to store the range for a Baseline Wealth Group.
 
-    def __str__(self):
-        return f"{self.wealth_characteristic}"
-
     class Meta:
         verbose_name = _("Wealth Characteristic Value")
         verbose_name_plural = _("Wealth Characteristic Values")
 
 
-# @TODO Move to Metadata
-# Defined outside LivelihoodStrategy to make it easy to access from subclasses
-# This is a hard-coded list of choices because additions to the list require
-# matching custom subclasses of LivelihoodActivity anyway.
-class LivelihoodStrategyTypes(models.TextChoices):
-    MILK_PRODUCTION = "MilkProduction", _("Milk Production")
-    BUTTER_PRODUCTION = "ButterProduction", _("Butter Production")
-    MEAT_PRODUCTION = "MeatProduction", _("Meat Production")
-    LIVESTOCK_SALES = "LivestockSales", _("Livestock Sales")
-    CROP_PRODUCTION = "CropProduction", _("Crop Production")
-    FOOD_PURCHASE = "FoodPurchase", _("Food Purchase")
-    PAYMENT_IN_KIND = "PaymentInKind", _("Payment in Kind")
-    RELIEF_GIFTS_OTHER = "ReliefGiftsOther", _("Relief, Gifts and Other Food")
-    FISHING = "Fishing", _("Fishing")
-    WILD_FOOD_GATHERING = "WildFoodGathering", _("Wild Food Gathering")
-    OTHER_CASH_INCOME = "OtherCashIncome", _("Other Cash Income")
-    OTHER_PURCHASES = "OtherPurchases", _("Other Purchases")
-
-
-# @TODO Move to Metadata
 class LivelihoodStrategy(models.Model):
     """
     An activity undertaken by households in a Livelihood Zone that produces food or income or requires expenditure.
@@ -485,9 +424,6 @@ class LivelihoodStrategy(models.Model):
     household_labor_provider = models.CharField(
         choices=HouseholdLaborProviders.choices, blank=True, verbose_name=_("Activity done by")
     )
-
-    def __str__(self):
-        return f"{self.strategy_type}: {self.season}: {self.product}: {self.unit_of_measure}"
 
     class Meta:
         verbose_name = _("Livelihood Strategy")
@@ -558,7 +494,6 @@ class LivelihoodActivity(models.Model):
         max_length=20,
         choices=LivelihoodActivityScenario.choices,
         verbose_name=_("Scenario"),
-        default=LivelihoodActivityScenario.BASELINE,
         help_text=_("The scenario in which the outputs of this Livelihood Activity apply, e.g. baseline or response."),
     )
     wealth_group = models.ForeignKey(WealthGroup, on_delete=models.PROTECT, help_text=_("Wealth Group"))
@@ -589,9 +524,6 @@ class LivelihoodActivity(models.Model):
         help_text=_("Percentage of annual household kcal requirement provided by this livelihood strategy"),
     )
 
-    def __str__(self):
-        return f"{self.livelihood_strategy}:{self.wealth_group}"
-
     # @TODO: if daily calorie level varies by LZB then save consumed_kcal_percent here too
     # We think that Daily KCal is fixed at 2100
     # Is this captured per Livelihood Strategy or is it only calculated/stored at the LHZ level.
@@ -609,15 +541,15 @@ class LivelihoodActivity(models.Model):
         # @TODO To what extent do we need to validate? Or do we just accept.
         # Dave: Do we use Django Forms as a separate validation layer, and load the data from the dataframe into a Form
         # instance and then check whether it is valid.  See Two Scoops for an explanation.
-        # self.is_staple = self.wealth_group.community.livelihood_zone_baseline.staple_set(
-        #     item=self.output_item
-        # ).exists()
-        # self.total_quantity_produced = self.calculate_total_quantity_produced()
-        # self.income = self.calculate_income()
-        # # We store in local currency and unit as well as USD, kg and kcal for transparency and traceability
-        # self.income_usd = self.production_unit_of_measure.convert_from(self.income, self.currency)
-        # self.kcals_consumed = self.calculate_kcals_consumed()
-        # self.expandibility_kcals = self.calculate_expandibility_kcals()
+        self.is_staple = self.wealth_group.community.livelihood_zone_baseline.staple_set(
+            item=self.output_item
+        ).exists()
+        self.total_quantity_produced = self.calculate_total_quantity_produced()
+        self.income = self.calculate_income()
+        # We store in local currency and unit as well as USD, kg and kcal for transparency and traceability
+        self.income_usd = self.production_unit_of_measure.convert_from(self.income, self.currency)
+        self.kcals_consumed = self.calculate_kcals_consumed()
+        self.expandibility_kcals = self.calculate_expandibility_kcals()
 
     # These formulae are copied directly from the BSS cells:
 
@@ -897,7 +829,7 @@ class Fishing(LivelihoodActivity):
     class Meta:
         verbose_name = LivelihoodStrategyTypes.FISHING.label
         verbose_name_plural = LivelihoodStrategyTypes.FISHING.label
-        # proxy = True
+        proxy = True
 
 
 class WildFoodGathering(LivelihoodActivity):
@@ -911,7 +843,7 @@ class WildFoodGathering(LivelihoodActivity):
     class Meta:
         verbose_name = LivelihoodStrategyTypes.WILD_FOOD_GATHERING.label
         verbose_name_plural = LivelihoodStrategyTypes.WILD_FOOD_GATHERING.label
-        # proxy = True
+        proxy = True
 
 
 class OtherCashIncome(LivelihoodActivity):
@@ -982,35 +914,6 @@ class OtherPurchases(LivelihoodActivity):
         verbose_name_plural = LivelihoodStrategyTypes.OTHER_PURCHASES.label
 
 
-# @TODO Should this be in metadata.
-class SeasonalActivityType(Dimension):
-    """
-    Seasonal activities for the various food source/ income activities
-
-    Activity Category can be Crops, Livestock, Gardening, Employment, Fishing
-    And the actual activity can be e.g. for Employment category:
-        On farm local labor
-        Brick making
-        Labor migration
-    """
-
-    class SeasonalActivityCategories(models.TextChoices):
-        CROP = "crop", _("Crops")
-        LIVESTOCK = "livestock", _("Livestock")
-        GARDENING = "gardening", _("Gardening")
-        FISHING = "fishing", _("Fishing")
-
-    name = common_models.NameField()  # e.g. préparation de la terre,
-    # @TODO What is the overlap with LivelihoodStrategyTypes? Can we reuse or share?
-    activity_category = models.CharField(
-        max_length=20, choices=SeasonalActivityCategories.choices, verbose_name=_("Activity Category")
-    )
-
-    class Meta:
-        verbose_name = _("Seasonal Activity Type")
-        verbose_name_plural = _("Seasonal Activity Types")
-
-
 class SeasonalActivity(models.Model):
     """
     An activity or event undertaken/experienced by households in a Livelihood Zone at specific periods during the year.
@@ -1038,9 +941,6 @@ class SeasonalActivity(models.Model):
         help_text=_("Item Produced, eg, full fat milk"),
         related_name="baseline_seasonal_activities",
     )
-
-    def __str__(self):
-        return f"{self.product}: {self.season}:{self.activity_type}"
 
     class Meta:
         verbose_name = _("Seasonal Activity")
@@ -1110,19 +1010,6 @@ class SeasonalActivityOccurrence(models.Model):
     end = models.PositiveSmallIntegerField(
         validators=[MaxValueValidator(365), MinValueValidator(1)], verbose_name=_("End Day")
     )
-
-    def start_month(self):
-        return self.get_month_from_day_number(self.start)
-
-    def end_month(self):
-        return self.get_month_from_day_number(self.end)
-
-    def get_month_from_day_number(self, day_number):
-        _date = datetime.date(dateutil.utils.today().year, 1, 1).fromordinal(day_number)
-        return _date.month
-
-    def __str__(self):
-        return f"{self.seasonal_activity.product}: {self.seasonal_activity.activity_type}: Start Month {self.get_month_from_day_number(self.start)}, End Month {self.get_month_from_day_number(self.end)}"
 
     # @TODO Do any of these offer advantages, that aren't easily achieved
     # using calculated fields or queryset or serializer methods?
@@ -1255,15 +1142,13 @@ class CommunityCropProduction(models.Model):
         help_text=_("Yield in reference period with input (seed and fertilizer)"),
     )
     production_with_out_inputs = models.FloatField(
-        verbose_name=_("Production with out input"),
+        verbose_name=_("Production with input"),
         help_text=_("Yield in reference period without input (seed and fertilizer)"),
     )
     seed_requirement = models.FloatField(verbose_name=_("Seed requirement"))
     unit_of_land = models.ForeignKey(UnitOfMeasure, on_delete=models.RESTRICT, verbose_name=_("Unit of land"))
     # @TODO We need to store the harvest month for each crop, because it is needed
     # to calculate the per month food, income and expenditure shown in Table 4 of the LIAS Sheet S
-    def __str__(self):
-        return f"{self.community}: {self.crop_type}: {self.season}"
 
     class Meta:
         verbose_name = _("Community Crop Production")
@@ -1281,7 +1166,7 @@ class CommunityLivestock(models.Model):
     This data is typically captured in Form 3 and stored in the Production worksheet in the BSS.
     """
 
-    community = models.ForeignKey(Community, on_delete=models.CASCADE, verbose_name=_("Community"))
+    community = models.ForeignKey(Community, on_delete=models.CASCADE, verbose_name=_("Wealth Group"))
     livestock_type = models.ForeignKey(LivestockType, on_delete=models.RESTRICT, verbose_name=_("Livestock Type"))
     birth_interval = models.PositiveSmallIntegerField(
         verbose_name=_("Birth Interval"), help_text=_("Number of months between Births")
@@ -1307,12 +1192,9 @@ class CommunityLivestock(models.Model):
     # that means we either need a EAV table or validation at data entry.
     additional_attributes = models.JSONField()
 
-    def __str__(self):
-        return f"{self.community}: {self.livestock_type}"
-
     class Meta:
-        verbose_name = _("Community Livestock Production")
-        verbose_name_plural = _("Community Livestock Productions")
+        verbose_name = _("Wealth Group Attribute")
+        verbose_name_plural = _("Wealth Group Attributes")
 
 
 class Market(models.Model):
@@ -1323,9 +1205,6 @@ class Market(models.Model):
 
     name = common_models.NameField(verbose_name=_("Name"))
     community = models.ForeignKey(Community, on_delete=models.RESTRICT, verbose_name=_("Community or Village"))
-
-    def __str__(self):
-        return self.name
 
     class Meta:
         verbose_name = _("Market")
@@ -1357,9 +1236,6 @@ class MarketPrice(models.Model):
     high_price = models.FloatField("High price")
     high_price_month = models.SmallIntegerField(choices=list(MONTHS), verbose_name=_("High Price Month"))
     unit_of_measure = models.ForeignKey(UnitOfMeasure, on_delete=models.RESTRICT, verbose_name=_("Unit of measure"))
-
-    def __str__(self):
-        return f"{self.community}: {self.product}: {self.market}"
 
     class Meta:
         verbose_name = _("MarketPrice")
@@ -1399,9 +1275,6 @@ class Hazard(models.Model):
     response = common_models.DescriptionField(
         max_length=255, null=True, blank=True, verbose_name=_("Description of event(s)")
     )
-
-    def __str__(self):
-        return f"{self.hazard_category} : {self.community}"
 
     class Meta:
         verbose_name = _("Hazard")

@@ -6,7 +6,7 @@ from django.utils.translation import gettext_lazy as _
 from treebeard.mp_tree import MP_Node
 
 import common.models as common_models
-from common.models import Country
+from common.models import Country, UnitOfMeasure
 
 logger = logging.getLogger(__name__)
 
@@ -141,6 +141,9 @@ class LivelihoodCategory(Dimension):
 class WealthCharacteristic(Dimension):
     """
     A Characteristic of a Wealth Group, such as `Number of children at school`, etc.
+
+    Standardized from descriptions in the BSS 'WB' worksheet in Column A,
+    so that it can be shared across all BSS.
     """
 
     class VariableType(models.TextChoices):
@@ -163,6 +166,61 @@ class WealthCharacteristic(Dimension):
         verbose_name_plural = _("Wealth Group Characteristics")
 
 
+# Defined outside LivelihoodStrategy to make it easy to access from subclasses
+# This is a hard-coded list of choices because additions to the list require
+# matching custom subclasses of LivelihoodActivity anyway.
+class LivelihoodStrategyTypes(models.TextChoices):
+    MILK_PRODUCTION = "MilkProduction", _("Milk Production")
+    BUTTER_PRODUCTION = "ButterProduction", _("Butter Production")
+    MEAT_PRODUCTION = "MeatProduction", _("Meat Production")
+    LIVESTOCK_SALES = "LivestockSales", _("Livestock Sales")
+    CROP_PRODUCTION = "CropProduction", _("Crop Production")
+    FOOD_PURCHASE = "FoodPurchase", _("Food Purchase")
+    PAYMENT_IN_KIND = "PaymentInKind", _("Payment in Kind")
+    RELIEF_GIFTS_OTHER = "ReliefGiftsOther", _("Relief, Gifts and Other Food")
+    FISHING = "Fishing", _("Fishing")
+    WILD_FOOD_GATHERING = "WildFoodGathering", _("Wild Food Gathering")
+    OTHER_CASH_INCOME = "OtherCashIncome", _("Other Cash Income")
+    OTHER_PURCHASES = "OtherPurchases", _("Other Purchases")
+
+
+class SeasonalActivityType(Dimension):
+    """
+    Seasonal activities for the various food and income activities.
+
+    Includes standard activities and events supporting Livelihood Strategies,
+    such as planting, weeding, harvesting for Crop Production and heat, birth
+    milk production and sales for Livestock.
+
+    It also includes other important periodic events such as recurring periods
+    of high market prices or poor access to food.
+
+    Standardized from descriptions in the BSS 'Seas Cal' worksheet in Column A,
+    so that it can be shared across all BSS.
+    """
+
+    class SeasonalActivityCategories(models.TextChoices):
+        CROP = "crop", _("Crops")
+        LIVESTOCK = "livestock", _("Livestock")
+        GARDENING = "gardening", _("Gardening")
+        FISHING = "fishing", _("Fishing")
+
+    name = common_models.NameField()  # e.g. préparation de la terre,
+    # @TODO What is the overlap with LivelihoodStrategyTypes? Can we reuse or share?
+    activity_category = models.CharField(
+        max_length=20, choices=SeasonalActivityCategories.choices, verbose_name=_("Activity Category")
+    )
+
+    class Meta:
+        verbose_name = _("Seasonal Activity Type")
+        verbose_name_plural = _("Seasonal Activity Types")
+
+
+# @TODO Remove in favor of FDW UnitOfMeasure and conversion routines,
+# which already have unit tests, etc. - there is no point have a second
+# implementation, and the FDW one seems fit for purpose, including conversions
+# via standard units, etc.
+'''
 class UnitOfMeasure(Dimension):
     """
     For example kilograms, hectares, hours, kcal% or USD.
@@ -212,6 +270,7 @@ class Currency(UnitOfMeasure):
     """
     The sub-set of UnitOfMeasures that are Currencies, for diagram clarity.
     """
+'''
 
 
 class Item(Dimension):
@@ -272,6 +331,11 @@ class Item(Dimension):
         verbose_name_plural = _("Items")
 
 
+# @TODO Remove in favor of FDW UnitOfMeasure and conversion routines,
+# which already have unit tests, etc. - there is no point have a second
+# implementation, and the FDW one seems fit for purpose, including conversions
+# via standard units, etc.
+"""
 class UnitOfMeasureConversion(models.Model):
     from_unit_of_measure = models.ForeignKey(
         UnitOfMeasure,
@@ -321,11 +385,15 @@ class UnitOfMeasureConversion(models.Model):
             return value * self.multiplier + self.offset
         else:
             return (value - self.offset) / self.multiplier
+"""
 
 
 class WealthCategory(Dimension):
     """
     The local definitions of wealth group, common to all BSSes in an LHZ.
+
+    Standardized from the BSS 'WB' worksheet in Column B and the 'Data'
+    worksheet in Row 3, so that it can be shared across all BSS.
     """
 
 
