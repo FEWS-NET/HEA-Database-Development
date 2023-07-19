@@ -23,7 +23,9 @@ class CurrencyAdmin(admin.ModelAdmin):
 
 class CountryAdmin(admin.ModelAdmin):
     list_display = ("iso3166a2", "name", "iso3166a3", "iso3166n3", "iso_en_name", "iso_fr_name", "iso_es_name")
-    ordering = ["iso3166a2",]
+    ordering = [
+        "iso3166a2",
+    ]
 
 
 class CountryClassifiedProductAliasesInline(InlineModelAdmin):

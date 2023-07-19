@@ -20,9 +20,7 @@ from .models import (
     MilkProduction,
     OtherCashIncome,
     PaymentInKind,
-    Season,
     SeasonalActivity,
-    SeasonalActivityType,
     SeasonalActivityOccurrence,
     SourceOrganization,
     WealthGroup,
@@ -33,6 +31,8 @@ from .models import (
     LivelihoodActivity,
 )
 from common.admin import GeoModelAdmin
+
+from metadata.models import SeasonalActivityType
 
 admin.site.site_header = "HEA Baseline Database Administration"
 admin.site.index_title = "HEA Baseline"
@@ -157,7 +157,8 @@ class LivelihoodActivityInlineAdmin(admin.StackedInline):
             None,
             {
                 "fields": [
-                    "livelihood_strategy", "scenario",
+                    "livelihood_strategy",
+                    "scenario",
                 ]
             },
         ),
@@ -312,13 +313,8 @@ class WealthGroupAdmin(admin.ModelAdmin):
     ] + [child for child in LivelihoodActivityInlineAdmin.__subclasses__()]
 
     def get_queryset(self, request):
-        queryset = (
-            super()
-            .get_queryset(request)
-            .prefetch_related("livelihoodactivity_set")
-        )
+        queryset = super().get_queryset(request).prefetch_related("livelihoodactivity_set")
         return queryset
-
 
 
 class SeasonalActivityTypeAdmin(admin.ModelAdmin):
@@ -490,6 +486,5 @@ admin.site.register(Market, MarketAdmin)
 admin.site.register(MarketPrice, MarketPriceAdmin)
 admin.site.register(Hazard, HazardAdmin)
 
-admin.site.register(SeasonalActivityType, SeasonalActivityTypeAdmin)
 admin.site.register(SeasonalActivity, SeasonalActivityAdmin)
 admin.site.register(SeasonalActivityOccurrence, SeasonalActivityOccurrenceAdmin)
