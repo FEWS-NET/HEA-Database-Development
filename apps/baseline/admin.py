@@ -23,6 +23,7 @@ from .models import (
     Season,
     SeasonalActivity,
     SeasonalActivityType,
+    SeasonalActivityOccurrence,
     SourceOrganization,
     WealthGroup,
     WealthGroupCharacteristicValue,
@@ -89,10 +90,10 @@ class LivelihoodZoneBaselineAdmin(GeoModelAdmin):
         "main_livelihood_category",
         "source_organization",
     ]
-    list_filter = (
+    list_filter = [
         "source_organization",
         "livelihood_zone__country",
-    )
+    ]
     date_hierarchy = "reference_year_start_date"
 
 
@@ -110,9 +111,22 @@ class CommunityAdmin(GeoModelAdmin):
 
 
 class LivelihoodStrategyAdmin(admin.ModelAdmin):
-
-    fields = ("livelihood_zone_baseline", "strategy_type", "season", "product", "additional_identifier")
-    list_display = ("livelihood_zone_baseline", "strategy_type", "season", "product")
+    fields = (
+        "livelihood_zone_baseline",
+        "strategy_type",
+        "season",
+        "product",
+        "unit_of_measure",
+        "household_labor_provider",
+        "additional_identifier",
+    )
+    list_display = (
+        "livelihood_zone_baseline",
+        "strategy_type",
+        "season",
+        "product",
+        "unit_of_measure",
+    )
     search_fields = ("strategy_type", "livelihood_zone_baseline", "product")
     list_filter = (
         "strategy_type",
@@ -137,13 +151,13 @@ class LivelihoodActivityInlineAdmin(admin.StackedInline):
     model = LivelihoodActivity
     classes = ["collapse"]
     form = LivelihoodActivityForm
-    extra = 1
+    extra = 0
     fieldsets = [
         (
             None,
             {
                 "fields": [
-                    "livelihood_strategy",
+                    "livelihood_strategy", "scenario",
                 ]
             },
         ),
@@ -155,7 +169,6 @@ class LivelihoodActivityInlineAdmin(admin.StackedInline):
                     "quantity_consumed",
                     "quantity_sold",
                     "quantity_other_uses",
-                    "unit_of_measure",
                 ]
             },
         ),
@@ -290,55 +303,177 @@ class WealthGroupAdmin(admin.ModelAdmin):
     list_filter = (
         "livelihood_zone_baseline__source_organization",
         "livelihood_zone_baseline__livelihood_zone__country",
-        "livelihood_zone_baseline__livelihood_zone",
+        "livelihood_zone_baseline__livelihood_zone__name",
+        "community",
         "wealth_category",
     )
     inlines = [
         WealthGroupCharacteristicValueInlineAdmin,
     ] + [child for child in LivelihoodActivityInlineAdmin.__subclasses__()]
 
-    def save_model(self, request, obj, form, change):
-        super().save_model(request, obj, form, change)
+    def get_queryset(self, request):
+        queryset = (
+            super()
+            .get_queryset(request)
+            .prefetch_related("livelihoodactivity_set")
+        )
+        return queryset
 
 
-@admin.register(SeasonalActivityType)
+
 class SeasonalActivityTypeAdmin(admin.ModelAdmin):
-    pass
+    fields = ("name", "activity_category")
+    list_display = ("name", "activity_category")
+    search_fields = ("name", "activity_category")
 
 
-@admin.register(Season)
-class SeasonAdmin(admin.ModelAdmin):
-    pass
-
-
-@admin.register(SeasonalActivity)
 class SeasonalActivityAdmin(admin.ModelAdmin):
-    pass
+    fields = ("livelihood_zone_baseline", "activity_type", "season", "product")
+    list_display = ("livelihood_zone_baseline", "activity_type", "season", "product")
+    search_fields = ("activity_type", "season", "product")
+    list_filter = ("livelihood_zone_baseline__livelihood_zone", "activity_type", "season", "product")
 
 
-@admin.register(CommunityCropProduction)
+class SeasonalActivityOccurrenceAdmin(admin.ModelAdmin):
+    list_display = ("seasonal_activity", "community", "start_month", "end_month")
+    search_fields = ("seasonal_activity__activity_type", "seasonal_activity__season", "seasonal_activity__product")
+    list_filter = (
+        "community",
+        "seasonal_activity__activity_type",
+        "seasonal_activity__season",
+        "seasonal_activity__product",
+    )
+    ordering = ["start"]
+
+
 class CommunityCropProductionAdmin(admin.ModelAdmin):
-    pass
+    fields = (
+        "community",
+        "crop_type",
+        "crop_purpose",
+        "season",
+        "production_with_inputs",
+        "production_with_out_inputs",
+        "seed_requirement",
+        "unit_of_land",
+    )
+    list_display = (
+        "community",
+        "crop_type",
+        "season",
+        "production_with_inputs",
+        "production_with_out_inputs",
+        "unit_of_land",
+    )
+    search_fields = (
+        "crop_type",
+        "crop_purpose",
+        "season",
+    )
+    list_filter = (
+        "community__livelihood_zone_baseline__livelihood_zone",
+        "community",
+        "crop_type",
+        "season",
+    )
 
 
-@admin.register(CommunityLivestock)
 class CommunityLivestockAdmin(admin.ModelAdmin):
-    pass
+    fields = (
+        "community",
+        "livestock_type",
+        "birth_interval",
+        "wet_season_lactation_period",
+        "wet_season_milk_production",
+        "dry_season_lactation_period",
+        "dry_season_milk_production",
+        "age_at_sale",
+        "additional_attributes",
+    )
+    list_display = (
+        "community",
+        "livestock_type",
+        "wet_season_milk_production",
+        "dry_season_milk_production",
+    )
+    search_fields = ("livestock_type",)
+    list_filter = (
+        "community__livelihood_zone_baseline__livelihood_zone",
+        "community",
+        "livestock_type",
+    )
 
 
-@admin.register(Market)
 class MarketAdmin(admin.ModelAdmin):
-    pass
+    fields = (
+        "name",
+        "community",
+    )
+    list_display = (
+        "name",
+        "community",
+    )
+    search_fields = (
+        "name",
+        "community",
+    )
+    list_filter = (
+        "community",
+        "community__livelihood_zone_baseline__livelihood_zone",
+    )
 
 
-@admin.register(MarketPrice)
 class MarketPriceAdmin(admin.ModelAdmin):
-    pass
+    fields = (
+        "community",
+        "product",
+        "market",
+        "low_price",
+        "low_price_month",
+        "high_price",
+        "high_price_month",
+        "unit_of_measure",
+    )
+    list_display = (
+        "community",
+        "product",
+        "market",
+        "low_price",
+        "low_price_month",
+        "high_price",
+        "high_price_month",
+        "unit_of_measure",
+    )
+    search_fields = (
+        "community",
+        "product",
+        "market",
+    )
+    list_filter = (
+        "community",
+        "market",
+        "community__livelihood_zone_baseline__livelihood_zone",
+        "product",
+    )
 
 
-@admin.register(Hazard)
 class HazardAdmin(admin.ModelAdmin):
-    pass
+    fields = ("community", "hazard_category", "is_chronic", "year", "seasonal_performance", "event", "response")
+    list_display = (
+        "community",
+        "hazard_category",
+        "is_chronic",
+        "year",
+    )
+    search_fields = (
+        "community",
+        "hazard_category",
+    )
+    list_filter = (
+        "community",
+        "hazard_category",
+        "community__livelihood_zone_baseline__livelihood_zone",
+    )
 
 
 admin.site.register(SourceOrganization, SourceOrganizationAdmin)
@@ -347,18 +482,14 @@ admin.site.register(LivelihoodZoneBaseline, LivelihoodZoneBaselineAdmin)
 admin.site.register(Community, CommunityAdmin)
 admin.site.register(LivelihoodStrategy, LivelihoodStrategyAdmin)
 admin.site.register(WealthGroup, WealthGroupAdmin)
-# admin.site.register(WealthGroupCharacteristicValue, WealthGroupCharacteristicValueAdmin)
 
-# admin.site.register(MilkProduction, MilkProductionAdmin)
-# admin.site.register(ButterProduction, ButterProductionAdmin)
-# admin.site.register(MeatProduction, MeatProductionAdmin)
-# admin.site.register(LivestockSales, LivestockSalesAdmin)
-# admin.site.register(CropProduction, CropProductionAdmin)
-# admin.site.register(FoodPurchase, FoodPurchaseProductionAdmin)
-#
-# admin.site.register(PaymentInKind, PaymentInKindAdmin)
-# admin.site.register(ReliefGiftsOther, ReliefGiftsAdmin)
-# admin.site.register(Fishing, FishingAdmin)
-# admin.site.register(WildFoodGathering, WildFoodGatheringAdmin)
-# admin.site.register(OtherCashIncome, OtherCashIncomeAdmin)
-# admin.site.register(OtherPurchases, OtherPurchasesAdmin)
+admin.site.register(CommunityCropProduction, CommunityCropProductionAdmin)
+admin.site.register(CommunityLivestock, CommunityLivestockAdmin)
+
+admin.site.register(Market, MarketAdmin)
+admin.site.register(MarketPrice, MarketPriceAdmin)
+admin.site.register(Hazard, HazardAdmin)
+
+admin.site.register(SeasonalActivityType, SeasonalActivityTypeAdmin)
+admin.site.register(SeasonalActivity, SeasonalActivityAdmin)
+admin.site.register(SeasonalActivityOccurrence, SeasonalActivityOccurrenceAdmin)

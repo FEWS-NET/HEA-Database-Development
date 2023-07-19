@@ -1,0 +1,89 @@
+{% load i18n %}
+
+{% if app_list %}
+  {% for app in app_list %}
+    <div class="app-{{ app.app_label }} module{% if app.app_url in request.path|urlencode %} current-app{% endif %}">
+      <table style="width: 600px">
+        <caption>
+          <a href="{{ app.app_url }}" class="section" title="{% blocktranslate with name=app.name %}Models in the {{ name }} application{% endblocktranslate %}">{{ app.name }}</a>
+        </caption>
+        {#  @TODO Temporary admin - to be changed once Workflow, ingestion and data management discussions have been finalized#}
+      {% if app.name == "Baseline" %}
+           <tr class="model-{{ model.object_name|lower }}{% if model.admin_url in request.path|urlencode %} current-model{% endif %}">
+           </tr>
+          <tr>
+           <td>
+               <h2>Load Baseline Storage Sheet (BSS)</h2>
+        <ul>
+        {# @TODO  Permissions aren't enforced yet and Source org and Livelihood mgt could go to Metadata #}
+            <li><a href="{% url 'admin:baseline_sourceorganization_changelist' %}">Source Organization</a> </li>
+            <li><a href="{% url 'admin:baseline_livelihoodzone_changelist' %}">Livelihood Zone</a></li>
+            <li><a href="{% url 'admin:baseline_livelihoodzonebaseline_changelist' %}">Livelihood Zone Baseline</a></li>
+            <li><a href="{% url 'admin:baseline_community_changelist' %}">Community</a></li>
+
+        </ul>
+           </td>
+          </tr>
+          <tr>
+           <td>
+               <h2>Wealth Group Level Data(BSS WB,Data Sheets)</h2>
+        <ul>
+           <li><a href="{% url 'admin:baseline_wealthgroup_changelist' %}">Manage Wealth Group Data</a></li>
+        </ul>
+           </td>
+          </tr>
+            <tr>
+           <td>
+               <h2>Community Data(BSS Production Sheet)</h2>
+        <ul>
+            <li><a href="{% url 'admin:baseline_communitycropproduction_changelist' %}">Crop Productions</a></li>
+            <li><a href="{% url 'admin:baseline_communitylivestock_changelist' %}">Livestock Production</a></li>
+            <li><a href="{% url 'admin:baseline_market_changelist' %}">Markets</a></li>
+            <li><a href="{% url 'admin:baseline_marketprice_changelist' %}">Market Prices</a></li>
+            <li><a href="{% url 'admin:baseline_hazard_changelist' %}">Hazards</a></li>
+        </ul>
+           </td>
+          </tr>
+              <tr>
+           <td>
+               <h2>Seasonal Calendars</h2>
+        <ul>
+            <li><a href="{% url 'admin:baseline_seasonalactivitytype_changelist' %}">Seasonal Activity Type</a></li>
+            <li><a href="{% url 'admin:baseline_seasonalactivity_changelist' %}">Seasonal Activities</a></li>
+            <li><a href="{% url 'admin:baseline_seasonalactivityoccurrence_changelist' %}">Activity Occurrence </a></li>
+        </ul>
+           </td>
+          </tr>
+          {% elif app.name == "Authentication and Authorization" or app.name == "Common" %}
+           {% for model in app.models %}
+          <tr class="model-{{ model.object_name|lower }}{% if model.admin_url in request.path|urlencode %} current-model{% endif %}">
+            {% if model.admin_url %}
+              <th scope="row"><a href="{{ model.admin_url }}"{% if model.admin_url in request.path|urlencode %} aria-current="page"{% endif %}>{{ model.name }}</a></th>
+            {% else %}
+              <th scope="row">{{ model.name }}</th>
+            {% endif %}
+
+            {% if model.add_url %}
+              <td><a href="{{ model.add_url }}" class="addlink">{% translate 'Add' %}</a></td>
+            {% else %}
+              <td></td>
+            {% endif %}
+
+            {% if model.admin_url and show_changelinks %}
+              {% if model.view_only %}
+                <td><a href="{{ model.admin_url }}" class="viewlink">{% translate 'View' %}</a></td>
+              {% else %}
+                <td><a href="{{ model.admin_url }}" class="changelink">{% translate 'Change' %}</a></td>
+              {% endif %}
+            {% elif show_changelinks %}
+              <td></td>
+            {% endif %}
+          </tr>
+        {% endfor %}
+      {% endif %}
+      </table>
+    </div>
+  {% endfor %}
+{% else %}
+  <p>{% translate 'You don’t have permission to view or edit anything.' %}</p>
+{% endif %}

@@ -444,6 +444,9 @@ class Season(models.Model):
     )
     rain_fall_record = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_("Rainfall record"))
 
+    def __str__(self):
+        return self.name
+
     class Meta:
         verbose_name = _("Season")
         verbose_name_plural = _("Seasons")

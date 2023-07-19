@@ -8,6 +8,7 @@ from .forms import ClassifiedProductForm
 from .models import (
     CountryClassifiedProductAliases,
     Currency,
+    Country,
     ClassifiedProduct,
     UnitOfMeasureConversion,
     UnitOfMeasure,
@@ -20,6 +21,11 @@ class CurrencyAdmin(admin.ModelAdmin):
     search_fields = ["iso4217a3", "iso4217n3", "iso_en_name"]
 
 
+class CountryAdmin(admin.ModelAdmin):
+    list_display = ("iso3166a2", "name", "iso3166a3", "iso3166n3", "iso_en_name", "iso_fr_name", "iso_es_name")
+    ordering = ["iso3166a2",]
+
+
 class CountryClassifiedProductAliasesInline(InlineModelAdmin):
     model = CountryClassifiedProductAliases
     fields = ("country",)  # "aliases")
@@ -29,6 +35,7 @@ class CountryClassifiedProductAliasesInline(InlineModelAdmin):
 class ClassifiedProductAdmin(TreeAdmin):
     form = ClassifiedProductForm
     list_display = ("cpcv2", "description", "common_name", "scientific_name")
+    ordering = ["cpcv2"]
     search_fields = [
         "^cpcv2",
         "description",
@@ -79,3 +86,4 @@ class GeoModelAdmin(OSMGeoAdmin, admin.ModelAdmin):
 admin.site.register(Currency, CurrencyAdmin)
 admin.site.register(ClassifiedProduct, ClassifiedProductAdmin)
 admin.site.register(UnitOfMeasure, UnitOfMeasureAdmin)
+admin.site.register(Country, CountryAdmin)

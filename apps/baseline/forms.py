@@ -18,6 +18,5 @@ class LivelihoodActivityForm(forms.ModelForm):
         self.fields["quantity_sold"].label = "Sold"
         self.fields["quantity_consumed"].label = "Consumed"
         self.fields["quantity_other_uses"].label = "Other uses"
-        self.fields["unit_of_measure"].label = "Unit"
         self.fields["total_kcals_consumed"].label = "Total Consumed"
         self.fields["percentage_kcals"].label = "Percentage"
