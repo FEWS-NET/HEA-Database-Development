@@ -156,6 +156,9 @@ class IdentifierManager(IdentifierQueryMixin, ShowQueryVariablesMixin, models.Ma
     use_for_related_fields = True
 
 
+# @TODO https://fewsnet.atlassian.net/browse/HEA-26
+# We will use Django Model Translation, and fall back to using this class if
+# necessary.
 class TranslatableModel(models.Model):
     """
     Abstract base class that makes a model translatable, assuming that it
@@ -879,7 +882,9 @@ class ClassifiedProduct(MP_Node, Model):
     # )
     scientific_name = models.CharField(max_length=100, verbose_name="scientific name", blank=True, null=True)
 
-    unit_of_measure = models.ForeignKey(UnitOfMeasure, on_delete=models.PROTECT, verbose_name=_("Unit of Measure"))
+    unit_of_measure = models.ForeignKey(
+        UnitOfMeasure, db_column="unit_code", on_delete=models.PROTECT, verbose_name=_("Unit of Measure")
+    )
     kcals_per_unit = models.PositiveSmallIntegerField(blank=True, null=True, verbose_name=_("Kcals per Unit"))
 
     objects = IdentifierManager.from_queryset(ClassifiedProductQuerySet)()

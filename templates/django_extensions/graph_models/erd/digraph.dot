@@ -4,8 +4,8 @@
 ' Created: {{ created_at }}
 {% if cli_options %}' CLI Options: {{ cli_options }}{% endif %}
 
-' Uncomment to get a left to right layout instead of the default top to bottom direction
-' left to right direction
+{% if rankdir == 'LR' %}left to right direction{% else %}' Uncomment to get a left to right layout instead of the default top to bottom direction
+' left to right direction{% endif %}
 
 ' use :: to distinguish subclasses
 set separator ::
