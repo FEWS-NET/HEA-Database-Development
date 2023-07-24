@@ -1,6 +1,8 @@
 """
 Models for managing HEA Baseline Surveys
 """
+from datetime import datetime
+
 from django.contrib.gis.db import models
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -1117,6 +1119,18 @@ class SeasonalActivityOccurrence(models.Model):
     end = models.PositiveSmallIntegerField(
         validators=[MaxValueValidator(365), MinValueValidator(1)], verbose_name=_("End Day")
     )
+
+    def start_month(self):
+        return self.get_month_from_day_number(self.start)
+
+    def end_month(self):
+        return self.get_month_from_day_number(self.end)
+
+    def get_month_from_day_number(self, day_number):
+        _date = datetime.date(self.livelihood_zone_baseline.reference_year_start_date.year(), 1, 1).fromordinal(
+            day_number
+        )
+        return _date.month
 
     def calculate_fields(self):
         self.livelihood_zone_baseline = self.seasonal_activity.livelihood_zone_baseline

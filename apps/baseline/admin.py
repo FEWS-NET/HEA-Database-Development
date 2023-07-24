@@ -347,8 +347,8 @@ class CommunityCropProductionAdmin(admin.ModelAdmin):
         "crop_type",
         "crop_purpose",
         "season",
-        "production_with_inputs",
-        "production_with_out_inputs",
+        "yield_with_inputs",
+        "yield_without_inputs",
         "seed_requirement",
         "unit_of_land",
     )
@@ -356,8 +356,8 @@ class CommunityCropProductionAdmin(admin.ModelAdmin):
         "community",
         "crop_type",
         "season",
-        "production_with_inputs",
-        "production_with_out_inputs",
+        "yield_with_inputs",
+        "yield_without_inputs",
         "unit_of_land",
     )
     search_fields = (

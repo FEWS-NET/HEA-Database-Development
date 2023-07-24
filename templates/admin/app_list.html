@@ -37,7 +37,7 @@
                <h2>Community Data(BSS Production Sheet)</h2>
         <ul>
             <li><a href="{% url 'admin:baseline_communitycropproduction_changelist' %}">Crop Productions</a></li>
-            <li><a href="{% url 'admin:baseline_communitylivestock_changelist' %}">Livestock Production</a></li>
+            <li><a href="{% url 'admin:baseline_communitylivestock_changelist' %}">Livestock Productions</a></li>
             <li><a href="{% url 'admin:baseline_market_changelist' %}">Markets</a></li>
             <li><a href="{% url 'admin:baseline_marketprice_changelist' %}">Market Prices</a></li>
             <li><a href="{% url 'admin:baseline_hazard_changelist' %}">Hazards</a></li>
@@ -53,7 +53,7 @@
         </ul>
            </td>
           </tr>
-          {% elif app.name == "Authentication and Authorization" or app.name == "Common" %}
+          {% elif app.name == "Authentication and Authorization" or app.name == "Common" or app.name == "Metadata" %}
            {% for model in app.models %}
           <tr class="model-{{ model.object_name|lower }}{% if model.admin_url in request.path|urlencode %} current-model{% endif %}">
             {% if model.admin_url %}

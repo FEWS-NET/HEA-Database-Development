@@ -84,7 +84,6 @@ EXTERNAL_APPS = [
     "django.contrib.gis",
     "django.contrib.admindocs",
     "django_extensions",
-    "django.contrib.gis",
 ]
 PROJECT_APPS = ["common", "metadata", "spatial", "baseline"]
 INSTALLED_APPS = EXTERNAL_APPS + PROJECT_APPS
