@@ -1,8 +1,6 @@
 """
 Models for managing HEA Baseline Surveys
 """
-from datetime import datetime
-
 from django.contrib.gis.db import models
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -11,13 +9,17 @@ from django.utils.translation import gettext_lazy as _
 from model_utils.managers import InheritanceManager
 
 import common.models as common_models
-from common.models import ClassifiedProduct, Country, Currency, UnitOfMeasure
+from common.models import (
+    ClassifiedProduct,
+    Country,
+    Currency,
+    UnitOfMeasure,
+    UnitOfMeasureConversion,
+)
 from metadata.models import (
-    CropType,
     HazardCategory,
     LivelihoodCategory,
     LivelihoodStrategyTypes,
-    LivestockType,
     Season,
     SeasonalActivityType,
     WealthCategory,
@@ -223,8 +225,8 @@ class Community(models.Model):
         ]
 
 
-# @TODO Should this be SocioEconomicGroup, or maybe PopulationGroup,
-# given female-headed households, etc.
+# @TODO https://fewsnet.atlassian.net/browse/HEA-92
+# Should this be SocioEconomicGroup, or maybe PopulationGroup, given female-headed households, etc.
 # Jenny will check with P3 on preferred English naming. In French, it is something else anyway, I think.
 class WealthGroup(models.Model):
     """
@@ -254,6 +256,12 @@ class WealthGroup(models.Model):
     # Wealth Category for the whole Livelihood Zone Baseline.
     # @TODO Or make this a mandatory geographic_unit
     # In which case we move validation out of here and into the spatial hierarchy.
+    # Roger: We need the `livelihood_zone_baseline` as a foreign key anyway,
+    # so we can validate that Activity->Strategy->Baseline and Activity->WealthGroup->Baseline end up at the
+    # same Baseline. Therefore we need the `livelihood_zone_baseline` as a separate column anyway. I think it
+    # would be weird to have `livelihood_zone_baseline` and `geographic_unit` both pointing at the same object,
+    # and it would be less obvious whether a WealthGroup is a BaselineWealthGroup or a CommunityWealthGroup.
+    # Therefore, I think that the current approach with an optional `community` is preferable.
     community = models.ForeignKey(
         Community, blank=True, null=True, on_delete=models.CASCADE, verbose_name=_("Community")
     )
@@ -363,13 +371,29 @@ class WealthGroupCharacteristicValue(models.Model):
     value = models.JSONField(
         verbose_name=_("value"), help_text=_("A single property value, eg, a float, str or list, not a dict of props.")
     )
-    # @TODO Do we need `low_value`` and `high_value`` to store the range for a Baseline Wealth Group.
+    # @TODO https://fewsnet.atlassian.net/browse/HEA-52
+    # Do we need `min_value` and `max_value` to store the range for a Baseline Wealth Group.
+    # E..g. See CD09_Final 'WB':$AS:$AT
+    min_value = models.JSONField(
+        verbose_name=_("value"),
+        blank=True,
+        null=True,
+        help_text=_("The minimum value of the possible range for this value."),
+    )
+    max_value = models.JSONField(
+        verbose_name=_("value"),
+        blank=True,
+        null=True,
+        help_text=_("The maximum value of the possible range for this value."),
+    )
 
     class Meta:
         verbose_name = _("Wealth Characteristic Value")
         verbose_name_plural = _("Wealth Characteristic Values")
 
 
+# @TODO https://fewsnet.atlassian.net/browse/HEA-93
+# Does this name cause confusion for people who think Strategy === Coping Strategy?
 class LivelihoodStrategy(models.Model):
     """
     An activity undertaken by households in a Livelihood Zone that produces food or income or requires expenditure.
@@ -406,6 +430,22 @@ class LivelihoodStrategy(models.Model):
     # that have equal distribution across the year, such as purchase of tea and
     # sugar, or remittances.
     season = models.ForeignKey(Season, on_delete=models.PROTECT, verbose_name=_("Season"))
+    # @TODO For OtherCashIncome, there is no Product. I think we want:
+    # quantity_produced = null (or maybe 0)
+    # quantity_sold = null (or maybe 0)
+    # quantity_other_uses = null (or maybe 0)
+    # income = XXX
+    # expenditure = 0 (or maybe null)
+    # Similarly, for OtherPurchases. I think we want:
+    # quantity_produced = null (or maybe 0)
+    # quantity_sold = null (or maybe 0)
+    # quantity_other_uses = null (or maybe 0)
+    # income = 0 (or maybe null)
+    # expenditure = XXX
+    # Do we make product nullable here?
+    # Dave: How do we tell what Remittances are, if we can't look it up as a product?
+    # Or maybe to Item with an attribute for cpcv2
+    # Dave, Girum, Roger: Null rather 0
     product = models.ForeignKey(
         ClassifiedProduct,
         on_delete=models.PROTECT,
@@ -413,9 +453,14 @@ class LivelihoodStrategy(models.Model):
         help_text=_("Item Produced, eg, full fat milk"),
         related_name="livelihood_strategies",
     )
-    # @TODO Moved from LivelihoodActivity to LivelihoodStrategy because it is
-    # defined in Column A and applies to all Wealth Groups in the BSS.
-    unit_of_measure = models.ForeignKey(UnitOfMeasure, on_delete=models.PROTECT, verbose_name=_("Unit of Measure"))
+    unit_of_measure = models.ForeignKey(
+        UnitOfMeasure, db_column="unit_code", on_delete=models.PROTECT, verbose_name=_("Unit of Measure")
+    )
+    currency = models.ForeignKey(Currency, db_column="iso4217a3", on_delete=models.PROTECT, verbose_name=_("Currency"))
+    # In Somalia they track export/local sales separately - see SO18 Data:B178 and also B770
+    # In many BSS they store separate data for Rainfed and Irrigated production of staple crops.
+    # @TODO See https://fewsnet.atlassian.net/browse/HEA-67
+    # Are there other types than rainfed and irrigated?
     additional_identifier = models.CharField(
         blank=True,
         verbose_name=_("Additional Identifer"),
@@ -489,9 +534,6 @@ class LivelihoodActivity(models.Model):
         verbose_name=_("Strategy Type"),
         help_text=_("The type of livelihood strategy, such as crop production, or wild food gathering."),
     )
-    # @TODO Rather that store expandability in additional columns in the row,
-    # we could store a second row containing the values for a Response scenario.
-    # if we go this route remove `expandability` below
     scenario = models.CharField(
         max_length=20,
         choices=LivelihoodActivityScenario.choices,
@@ -506,7 +548,6 @@ class LivelihoodActivity(models.Model):
     # Can normally be calculated / validated as `quantity_received - quantity_sold - quantity_other_uses`
     quantity_consumed = models.PositiveSmallIntegerField(verbose_name=_("Quantity Consumed"))
 
-    currency = models.ForeignKey(Currency, verbose_name=_("currency"), db_column="iso4217a3", on_delete=models.PROTECT)
     price = models.FloatField(blank=True, null=True, verbose_name=_("Price"), help_text=_("Price per unit"))
     # Can be calculated / validated as `quantity_sold * price` for livelihood strategies that involve the sale of
     # a proportion of the household's own production.
@@ -516,7 +557,7 @@ class LivelihoodActivity(models.Model):
     expenditure = models.FloatField(help_text=_("Expenditure"))
 
     # Can normally be calculated  / validated as `quantity_consumed` * `kcals_per_unit`
-    total_kcals_consumed = models.PositiveSmallIntegerField(
+    kcals_consumed = models.PositiveSmallIntegerField(
         verbose_name=_("Total kcals consumed"),
         help_text=_("Total kcals consumed by a household in the reference year from this livelihood strategy"),
     )
@@ -526,54 +567,74 @@ class LivelihoodActivity(models.Model):
         help_text=_("Percentage of annual household kcal requirement provided by this livelihood strategy"),
     )
 
-    # @TODO: if daily calorie level varies by LZB then save consumed_kcal_percent here too
-    # We think that Daily KCal is fixed at 2100
-    # Is this captured per Livelihood Strategy or is it only calculated/stored at the LHZ level.
-    # It is stored in the Exp Factors worksheet in the BSS, which references an external worksheet.
-    # It is also present in the LIAS.
-    # expandability_kcals = models.FloatField(help_text=_("Expandability in Kilocalories"))
-
     def calculate_fields(self):
         self.livelihood_zone_baseline = self.livelihood_strategy.livelihood_zone_baseline
         self.strategy_type = self.livelihood_strategy.strategy_type
 
-        # @TODO Roger: Do we calculate these values or just validate them. I.e. if they load a BSS where the
-        # value exists but is incorrect, do we want to raise an error rather than ignore their value and calculate
-        # our own.
-        # @TODO To what extent do we need to validate? Or do we just accept.
-        # Dave: Do we use Django Forms as a separate validation layer, and load the data from the dataframe into a Form
-        # instance and then check whether it is valid.  See Two Scoops for an explanation.
+        # @TODO This hasn't been reviewed yet.
         self.is_staple = self.wealth_group.community.livelihood_zone_baseline.staple_set(
             item=self.output_item
         ).exists()
-        self.total_quantity_produced = self.calculate_total_quantity_produced()
-        self.income = self.calculate_income()
-        # We store in local currency and unit as well as USD, kg and kcal for transparency and traceability
-        self.income_usd = self.production_unit_of_measure.convert_from(self.income, self.currency)
-        self.kcals_consumed = self.calculate_kcals_consumed()
-        self.expandibility_kcals = self.calculate_expandibility_kcals()
 
     # These formulae are copied directly from the BSS cells:
 
-    def calculate_total_quantity_produced(self):
-        return self.units_produced_per_period * self.duration
+    def validate_quantity_produced(self):
+        """
+        Validate the quantity_produced.
 
-    def calculate_income(self):
-        return self.calculate_total_quantity_produced() * self.quantity_sold * self.price
+        In for many LivelihoodActivity subclasses the quantity_produced cannot
+        be calculated from the data in the Baseline. In those cases this
+        validation passes automatically.
 
-    def calculate_kcals_consumed(self):
-        return self.calculate_total_quantity_produced() * self.quantity_consumed * self.kcals_per_unit
+        However, some LivelihoodActivity subclasses, such as MilkProduction,
+        MeatProduction, etc. have additional fields that allow the
+        quantity_produced to be validated. This method is overwritten in those
+        subclasses.
+        """
+        pass
 
-    # @TODO: if daily calory level varies by LZB then save consumed_kcal_percent here too
-    # Is this captured per Wealth Group
-    # def calculate_expandibility_kcals(self):
-    #    # @TODO: This is a guess, the BSSes are much more complex than this (I hope the complexity is all validation).
-    #    return (
-    #        self.calculate_total_quantity_produced()
-    #        * (self.quantity_sold + self.quantity_other_uses)
-    #        * self.kcals_per_unit
-    #    )
+    def validate_quantity_consumed(self):
+        if self.quantity_consumed != self.quantity_produced - self.quantity_sold - self.quantity_other_uses:
+            raise ValidationError(
+                _(
+                    "Quantity consumed for a Livelihood Activity must be quantity produced - quantity sold - quantity used for other things"  # NOQA: E501
+                )
+            )
 
+    def validate_income(self):
+        if self.income != self.quantity_sold * self.price:
+            raise ValidationError(_("Income for a Livelihood Activity must be quantity sold multiplied by price"))
+
+    def validate_expenditure(self):
+        """
+        Validate the expenditure.
+
+        In for many LivelihoodActivity subclasses the quantity_produced is the
+        result of labor rather than expenditure. In those cases this validation
+        passes automatically.
+
+        However, some LivelihoodActivity subclasses, such as FoodPurchase and
+        OtherPurchase, involve spending money to acquire the item, in which
+        case we must validate that expenditure = quantity_produced * price
+        """
+        if self.expenditure and self.expenditure != self.quantity_produced * self.price:
+            raise ValidationError(
+                _("Expenditure for a Livelihood Activity must be quantity produced multiplied by price")
+            )
+
+    def validate_kcals_consumed(self):
+        conversion_factor = UnitOfMeasureConversion.objects.get_conversion_factor(
+            from_unit=self.livelihood_strategy.unit_of_measure,
+            to_unit=self.livelihood_strategy.product.unit_of_measure,
+        )
+        kcals_per_unit = self.livelihood_strategy.product.kcals_per_unit
+        if self.kcals_consumed != self.quantity_consumed * conversion_factor * kcals_per_unit:
+            raise ValidationError(
+                _("Kcals consumed for a Livelihood Activity must be quantity consumed multiplied by kcals per unit")
+            )
+
+    # @TODO Do we use Django Forms as a separate validation layer, and load the data from the dataframe into a Form
+    # instance and then check whether it is valid.  See Two Scoops for an explanation.
     def clean(self):
         if self.wealth_group.livelihood_zone_baseline != self.livelihood_strategy.livelihood_zone_baseline:
             raise ValidationError(
@@ -581,6 +642,11 @@ class LivelihoodActivity(models.Model):
                     "Wealth Group and Livelihood Strategy for a Livelihood Activity must belong to the same Livelihood Zone Baseline"  # NOQA: E501
                 )
             )
+        self.validate_quantity_produced()
+        self.validate_quantity_consumed()
+        self.validate_income()
+        self.validate_expenditure()
+        self.validate_kcals_consumed()
         super().clean()
 
     def save(self, *args, **kwargs):
@@ -640,6 +706,11 @@ class MilkProduction(LivelihoodActivity):
     # production/sales/other_users/consumption into rows in a table rather than columns so that a
     # LivelihoodStrategy can have 0 or many of each type. I.e. adopt the TransferModel approach that
     # Chris proposed early on.
+
+    def validate_quantity_produced(self):
+        # @TODO Add validation
+        pass
+
     class Meta:
         verbose_name = LivelihoodStrategyTypes.MILK_PRODUCTION.label
         verbose_name_plural = LivelihoodStrategyTypes.MILK_PRODUCTION.label
@@ -682,6 +753,10 @@ class ButterProduction(LivelihoodActivity):
     # Doesn't reconcile with Ghee production, e.g. AI105 because that has:
     # =IF(SUM(AI90,AI98)=0,"",SUM(AI90,-AI91*AI94,-AI95*AI94,AI98,-AI99*AI102,-AI103*AI102)*0.04)
 
+    def validate_quantity_produced(self):
+        # @TODO Add validation
+        pass
+
     class Meta:
         verbose_name = LivelihoodStrategyTypes.BUTTER_PRODUCTION.label
         verbose_name_plural = LivelihoodStrategyTypes.BUTTER_PRODUCTION.label
@@ -696,7 +771,13 @@ class MeatProduction(LivelihoodActivity):
 
     # Production calculation /validation is `input_quantity` * `item_yield`
     animals_slaughtered = models.PositiveSmallIntegerField(verbose_name=_("Number of animals slaughtered"))
-    item_yield = models.FloatField(verbose_name=_("Carcass weight per animal"))
+    carcass_weight = models.FloatField(verbose_name=_("Carcass weight per animal"))
+
+    def validate_quantity_produced(self):
+        if self.quantity_produced != self.animals_slaughtered * self.carcass_weight:
+            raise ValidationError(
+                _("Quantity Produced for a Meat Production must be animals slaughtered multiplied by carcass weight")
+            )
 
     class Meta:
         verbose_name = LivelihoodStrategyTypes.MEAT_PRODUCTION.label
@@ -710,21 +791,12 @@ class LivestockSales(LivelihoodActivity):
     Stored on the BSS 'Data' worksheet in the 'Livestock Production' section, typically starting around Row 181.
     """
 
-    # In Somalia they track export/local sales separately - see SO18 Data:B178 and also B770
-    # @TODO Do we need to keep this as a separate field, or can we create a generic field in LivelihoodStrategy for
-    # `subtype` or similar.
-    product_destination = models.CharField(
-        verbose_name=_("Product Destination"), help_text=_("The product destination, e.g. local or export")
-    )
-
-    # Production calculation /validation is `input_quantity` * `item_yield`
-    animals_sold = models.PositiveSmallIntegerField(verbose_name=_("Number of animals sold"))
-
     # @TODO Do we need validation around offtake (animals_sold) to make sure
-    # that they are selling and killing more animals than they own.
+    # that they are not selling and killing more animals than they own.
     class Meta:
         verbose_name = LivelihoodStrategyTypes.LIVESTOCK_SALES.label
         verbose_name_plural = LivelihoodStrategyTypes.LIVESTOCK_SALES.label
+        proxy = True
 
 
 class CropProduction(LivelihoodActivity):
@@ -737,22 +809,10 @@ class CropProduction(LivelihoodActivity):
     provided kcal_percentage and the kcal/kg.
     """
 
-    # @TODO See https://fewsnet.atlassian.net/browse/HEA-67
-    # Are there other types than rainfed and irrigated?
-    # @TODO Do we need to keep this as a separate field, or can we create a generic field in LivelihoodStrategy for
-    # `subtype` or similar.  The production system is combined with other modifiers like Green Consumption.
-    # I.e. we have Rainfed, Green Consumption so perhaps subtype is necessary even if we have production_system as a
-    # separate field. Although pehaps Green Maize is a different crop type - because the Kcal/kg will be different.
-    production_system = models.CharField(
-        max_length=60,
-        default="rainfed",
-        verbose_name=_("Production System"),
-        help_text=_("Production system used to grow the crop, such as rainfed or irrigated"),
-    )
-
     class Meta:
         verbose_name = LivelihoodStrategyTypes.CROP_PRODUCTION.label
         verbose_name_plural = LivelihoodStrategyTypes.CROP_PRODUCTION.label
+        proxy = True
 
 
 class FoodPurchase(LivelihoodActivity):
@@ -773,6 +833,14 @@ class FoodPurchase(LivelihoodActivity):
         verbose_name=_("Months per year"), help_text=_("Number of months in a year that the product is purchased")
     )
 
+    def validate_quantity_produced(self):
+        if self.quantity_produced != self.unit_multiple * self.purchases_per_month * self.months_per_year:
+            raise ValidationError(
+                _(
+                    "Quantity produced for a Food Purchase must be purchase amount * purchases per month * months per year"  # NOQA: E501
+                )
+            )
+
     class Meta:
         verbose_name = LivelihoodStrategyTypes.FOOD_PURCHASE.label
         verbose_name_plural = _("Food Purchases")
@@ -786,6 +854,9 @@ class PaymentInKind(LivelihoodActivity):
     """
 
     # Production calculation/validation is `people_per_hh * labor_per_month * months_per_year`
+    payment_per_time = models.PositiveSmallIntegerField(
+        verbose_name=_("Payment per time"), help_text=_("Amount of item received each time the labor is performed")
+    )
     people_per_hh = models.PositiveSmallIntegerField(
         verbose_name=_("People per household"), help_text=_("Number of household members who perform the labor")
     )
@@ -793,6 +864,17 @@ class PaymentInKind(LivelihoodActivity):
     months_per_year = models.PositiveSmallIntegerField(
         verbose_name=_("Months per year"), help_text=_("Number of months in a year that the labor is performed")
     )
+
+    def validate_quantity_produced(self):
+        if (
+            self.quantity_produced
+            != self.payment_per_time * self.people_per_hh * self.labor_per_month * self.months_per_year
+        ):
+            raise ValidationError(
+                _(
+                    "Quantity produced for Payment In Kind must be payment per time * number of people * labor per month * months per year"  # NOQA: E501
+                )
+            )
 
     class Meta:
         verbose_name = LivelihoodStrategyTypes.PAYMENT_IN_KIND.label
@@ -814,6 +896,12 @@ class ReliefGiftsOther(LivelihoodActivity):
     received_per_year = models.PositiveSmallIntegerField(
         verbose_name=_("Gifts per year"), help_text=_("Number of times in a year that the item is received")
     )
+
+    def validate_quantity_produced(self):
+        if self.quantity_produced != self.unit_multiple * self.received_per_year:
+            raise ValidationError(
+                _("Quantity produced for Relief, Gifts, Other must be amount received * times per year")
+            )
 
     class Meta:
         verbose_name = LivelihoodStrategyTypes.RELIEF_GIFTS_OTHER.label
@@ -860,6 +948,9 @@ class OtherCashIncome(LivelihoodActivity):
     # However, some other income (e.g. Remittances) just has a number of times per year and is not calculated from
     # people_per_hh, etc. Therefore those fields must be nullable, and we must store the total number of times per year
     # as a separate field
+    payment_per_time = models.PositiveSmallIntegerField(
+        verbose_name=_("Payment per time"), help_text=_("Amount of money received each time the labor is performed")
+    )
     people_per_hh = models.PositiveSmallIntegerField(
         verbose_name=_("People per household"),
         blank=True,
@@ -877,6 +968,25 @@ class OtherCashIncome(LivelihoodActivity):
         verbose_name=_("Times per year"),
         help_text=_("Number of times in a year that the income is received"),
     )
+
+    def validate_income(self):
+        if (
+            self.people_per_hh
+            and self.income != self.payment_per_time * self.people_per_hh * self.labor_per_month * self.months_per_year
+        ):
+            raise ValidationError(
+                _(
+                    "Quantity produced for Other Cash Income must be payment per time * number of people * labor per month * months per year"  # NOQA: E501
+                )
+            )
+        if self.income != self.payment_per_time * self.times_per_year:
+            raise ValidationError(
+                _("Quantity produced for Other Cash Income must be payment per time * times per year")
+            )
+
+    def calculate_fields(self):
+        self.times_per_year = self.people_per_hh * self.labor_per_month * self.months_per_year
+        super().calculate_fields()
 
     class Meta:
         verbose_name = LivelihoodStrategyTypes.OTHER_CASH_INCOME.label
@@ -910,6 +1020,14 @@ class OtherPurchases(LivelihoodActivity):
         verbose_name=_("Months per year"),
         help_text=_("Number of months in a year that the product is purchased"),
     )
+
+    def validate_expenditure(self):
+        if self.expenditure != self.price * self.unit_multiple * self.purchases_per_month * self.months_per_year:
+            raise ValidationError(
+                _(
+                    "Expenditure for Other Purchases must be price * unit multiple * purchases per month * months per year"  # NOQA: E501
+                )
+            )
 
     class Meta:
         verbose_name = LivelihoodStrategyTypes.OTHER_PURCHASES.label
@@ -989,19 +1107,6 @@ class SeasonalActivityOccurrence(models.Model):
         Community, blank=True, null=True, on_delete=models.RESTRICT, verbose_name=_("Community or Village")
     )
 
-    # Tracks when the activity occurs (the month when the activity typically occurs)
-    # We can have a validator here, put the month no - e.g. 9, 10, 11
-    # @TODO I don't think we want a single month here, I think this model represents the row on the Seasonal Calendar
-    # in Form 3 - it is an activity that occurs in multiple months.
-    # @TODO Do we store the activities as months or as a start and end day to allow more granularity
-    # See https://fewsnet.atlassian.net/browse/DATA-2709 for a discussion of day vs month for Crop Calendars in the
-    # FDW Crop Production domain.
-    # activity_occurence = models.JSONField(verbose_name=_("Activity occurrence"))
-
-    # Distinct Start and End fields, one row per period
-    # I don't think we will have multiple periods per season, so we end up with one row per community, plus an extra
-    # one for the baseline.
-
     # We use day in the year instead of month to allow greater granularity,
     # and compatibility with the potential FDW Enhanced Crop Calendar output.
     # Note that if the occurrence goes over the year end, then the start day
@@ -1012,96 +1117,6 @@ class SeasonalActivityOccurrence(models.Model):
     end = models.PositiveSmallIntegerField(
         validators=[MaxValueValidator(365), MinValueValidator(1)], verbose_name=_("End Day")
     )
-
-    def start_month(self):
-        return self.get_month_from_day_number(self.start)
-
-    def end_month(self):
-        return self.get_month_from_day_number(self.end)
-
-    def get_month_from_day_number(self, day_number):
-        _date = datetime.date(self.livelihood_zone_baseline.reference_year_start_date.year(), 1, 1).fromordinal(
-            day_number
-        )
-        return _date.month
-
-    # @TODO Do any of these offer advantages, that aren't easily achieved
-    # using calculated fields or queryset or serializer methods?
-    """
-    # OR
-
-    start = models.PositiveSmallIntegerField(
-        choices=MONTHS.items(), validators=[MaxValueValidator(12), MinValueValidator(1)], verbose_name=_("Start Month")
-    )
-    end = models.PositiveSmallIntegerField(
-        choices=MONTHS.items(), validators=[MaxValueValidator(12), MinValueValidator(1)], verbose_name=_("End Month")
-    )
-
-    # OR
-
-    # One row per month:
-    month = models.PositiveSmallIntegerField(
-        choices=MONTHS.items(), validators=[MaxValueValidator(12), MinValueValidator(1)], verbose_name=_("Month")
-    )
-
-    # OR
-
-    # One column per month.
-    # Pros: Easy to add up the  numbers by month required for the seasonal calendar summary, easy to explain
-    # Cons: It is a denormalization - the "correct" model is a table for ActivityMonth
-    january = models.BooleanField(
-        default=False, verbose_name=_("January"), help_text=_("Is the activity undertaken in January?")
-    )
-    february = models.BooleanField(
-        default=False, verbose_name=_("February"), help_text=_("Is the activity undertaken in February?")
-    )
-    march = models.BooleanField(
-        default=False, verbose_name=_("March"), help_text=_("Is the activity undertaken in March?")
-    )
-    april = models.BooleanField(
-        default=False, verbose_name=_("April"), help_text=_("Is the activity undertaken in April?")
-    )
-    may = models.BooleanField(default=False, verbose_name=_("May"), help_text=_("Is the activity undertaken in May?"))
-    june = models.BooleanField(
-        default=False, verbose_name=_("June"), help_text=_("Is the activity undertaken in June?")
-    )
-    july = models.BooleanField(
-        default=False, verbose_name=_("July"), help_text=_("Is the activity undertaken in July?")
-    )
-    august = models.BooleanField(
-        default=False, verbose_name=_("August"), help_text=_("Is the activity undertaken in August?")
-    )
-    september = models.BooleanField(
-        default=False, verbose_name=_("September"), help_text=_("Is the activity undertaken in September?")
-    )
-    october = models.BooleanField(
-        default=False, verbose_name=_("October"), help_text=_("Is the activity undertaken in October?")
-    )
-    november = models.BooleanField(
-        default=False, verbose_name=_("November"), help_text=_("Is the activity undertaken in November?")
-    )
-    december = models.BooleanField(
-        default=False, verbose_name=_("December"), help_text=_("Is the activity undertaken in December?")
-    )
-
-    # OR
-
-    # Array field that contains the months:
-    # Pros - less wordy
-    # Cons - harder to validate, or aggregate, or display, and not database independent
-    months = ArrayField(
-        models.PositiveSmallIntegerField(validators=[MaxValueValidator(12), MinValueValidator(1)]),
-        verbose_name=_("Months"),
-        help_text=_("Months the activity is undertaken in"),
-    )
-
-    # OR
-
-    # Array of booleans, same pros and cons, marginally easier to aggregate
-    months = ArrayField(
-        models.BooleanField(), size=12, verbose_name=_("Months"), help_text=_("Months the activity is undertaken in")
-    )
-    """
 
     def calculate_fields(self):
         self.livelihood_zone_baseline = self.seasonal_activity.livelihood_zone_baseline
@@ -1136,6 +1151,8 @@ class SeasonalActivityOccurrence(models.Model):
         ]
 
 
+# @TODO https://fewsnet.atlassian.net/browse/HEA-91
+# What is this used for?
 class CommunityCropProduction(models.Model):
     """
     The community crop production data for a crop producing community
@@ -1148,21 +1165,42 @@ class CommunityCropProduction(models.Model):
         ("cash_crop", "Cash Crop"),
     )
     community = models.ForeignKey(Community, on_delete=models.RESTRICT, verbose_name=_("Community or Village"))
-    crop_type = models.ForeignKey(CropType, on_delete=models.RESTRICT, verbose_name=_("Crop Type"))
+    crop_type = models.ForeignKey(ClassifiedProduct, on_delete=models.RESTRICT, verbose_name=_("Crop Type"))
     crop_purpose = models.CharField(max_length=20, choices=CROP_PURPOSE, verbose_name=_("Crop purpose"))
     season = models.ForeignKey(Season, on_delete=models.RESTRICT, verbose_name=_("Season"))
-    production_with_inputs = models.FloatField(
-        verbose_name=_("Production with input"),
-        help_text=_("Yield in reference period with input (seed and fertilizer)"),
+    yield_with_inputs = models.FloatField(
+        verbose_name=_("Yield with inputs"),
+        help_text=_("Yield in reference period with inputs (seeds and fertilizer)"),
     )
-    production_with_out_inputs = models.FloatField(
-        verbose_name=_("Production with input"),
-        help_text=_("Yield in reference period without input (seed and fertilizer)"),
+    yield_without_inputs = models.FloatField(
+        verbose_name=_("Yield without inputs"),
+        help_text=_("Yield in reference period without inputs (seeds and fertilizer)"),
     )
     seed_requirement = models.FloatField(verbose_name=_("Seed requirement"))
-    unit_of_land = models.ForeignKey(UnitOfMeasure, on_delete=models.RESTRICT, verbose_name=_("Unit of land"))
+    unit_of_land = models.ForeignKey(
+        UnitOfMeasure, db_column="unit_code", on_delete=models.RESTRICT, verbose_name=_("Unit of land")
+    )
     # @TODO We need to store the harvest month for each crop, because it is needed
     # to calculate the per month food, income and expenditure shown in Table 4 of the LIAS Sheet S
+
+    # @TODO Do we need to add UnitOfMeasure and parse it out of `6x50kg bags`, etc. or can we just store it as text.
+
+    def clean(self):
+        if not self.crop_type_id.startswith("R01"):
+            raise ValidationError(
+                _(
+                    "Crop type for Community Crop Production must have a CPCv2 code beginning R01 (Agriculture Products)"  # NOQA: E501
+                )
+            )
+        super().clean()
+
+    def save(self, *args, **kwargs):
+        # No need to enforce foreign keys or uniqueness because database constraints will do it anyway
+        self.full_clean(
+            exclude=[field.name for field in self._meta.fields if isinstance(field, models.ForeignKey)],
+            validate_unique=False,
+        )
+        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = _("Community Crop Production")
@@ -1181,7 +1219,7 @@ class CommunityLivestock(models.Model):
     """
 
     community = models.ForeignKey(Community, on_delete=models.CASCADE, verbose_name=_("Wealth Group"))
-    livestock_type = models.ForeignKey(LivestockType, on_delete=models.RESTRICT, verbose_name=_("Livestock Type"))
+    livestock_type = models.ForeignKey(ClassifiedProduct, on_delete=models.RESTRICT, verbose_name=_("Livestock Type"))
     birth_interval = models.PositiveSmallIntegerField(
         verbose_name=_("Birth Interval"), help_text=_("Number of months between Births")
     )
@@ -1205,6 +1243,21 @@ class CommunityLivestock(models.Model):
     # @TODO At implementation we need to ensure consistency across records
     # that means we either need a EAV table or validation at data entry.
     additional_attributes = models.JSONField()
+
+    def clean(self):
+        if not self.livestock_type_id.startswith("L021"):
+            raise ValidationError(
+                _("Livestock type for Community Livestock must have a CPCv2 code beginning L021 (Live animals)")
+            )
+        super().clean()
+
+    def save(self, *args, **kwargs):
+        # No need to enforce foreign keys or uniqueness because database constraints will do it anyway
+        self.full_clean(
+            exclude=[field.name for field in self._meta.fields if isinstance(field, models.ForeignKey)],
+            validate_unique=False,
+        )
+        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = _("Wealth Group Attribute")
@@ -1249,7 +1302,9 @@ class MarketPrice(models.Model):
     low_price_month = models.SmallIntegerField(choices=list(MONTHS), verbose_name=_("Low Price Month"))
     high_price = models.FloatField("High price")
     high_price_month = models.SmallIntegerField(choices=list(MONTHS), verbose_name=_("High Price Month"))
-    unit_of_measure = models.ForeignKey(UnitOfMeasure, on_delete=models.RESTRICT, verbose_name=_("Unit of measure"))
+    unit_of_measure = models.ForeignKey(
+        UnitOfMeasure, db_column="unit_code", on_delete=models.RESTRICT, verbose_name=_("Unit of measure")
+    )
 
     class Meta:
         verbose_name = _("MarketPrice")
