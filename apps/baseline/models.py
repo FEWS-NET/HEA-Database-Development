@@ -1160,13 +1160,15 @@ class CommunityCropProduction(models.Model):
     And the data goes to the BSS's 'Production' worksheet
     """
 
-    CROP_PURPOSE = (
-        ("main_crop", "Main Food Crop"),
-        ("cash_crop", "Cash Crop"),
-    )
+    # @TODO  CropPurpose is referring the 'Main food & cash crops...' in Form 3,
+    #  but the BSS doesn't seem to contain this, should we keep this?
+    class CropPurpose(models.TextChoices):
+        BASELINE = "main_crop", _("Main Food Crop")
+        RESPONSE = "cash_crop", _("Cash Crop")
+
     community = models.ForeignKey(Community, on_delete=models.RESTRICT, verbose_name=_("Community or Village"))
     crop_type = models.ForeignKey(ClassifiedProduct, on_delete=models.RESTRICT, verbose_name=_("Crop Type"))
-    crop_purpose = models.CharField(max_length=20, choices=CROP_PURPOSE, verbose_name=_("Crop purpose"))
+    crop_purpose = models.CharField(max_length=20, choices=CropPurpose.choices, verbose_name=_("Crop purpose"))
     season = models.ForeignKey(Season, on_delete=models.RESTRICT, verbose_name=_("Season"))
     yield_with_inputs = models.FloatField(
         verbose_name=_("Yield with inputs"),
@@ -1180,6 +1182,7 @@ class CommunityCropProduction(models.Model):
     unit_of_land = models.ForeignKey(
         UnitOfMeasure, db_column="unit_code", on_delete=models.RESTRICT, verbose_name=_("Unit of land")
     )
+
     # @TODO We need to store the harvest month for each crop, because it is needed
     # to calculate the per month food, income and expenditure shown in Table 4 of the LIAS Sheet S
 
@@ -1282,15 +1285,12 @@ class MarketPrice(models.Model):
     """
     Prices for the reference year are interviewed in Form 3
     Data is captured in 'prices' worksheet of the BSS
+
+    Do we benefit from re-designing this as time series like FDW ?
     """
 
     MONTHS = MONTHS.items()
     community = models.ForeignKey(Community, on_delete=models.RESTRICT, verbose_name=_("Community or Village"))
-    # We need the item to reference it but the item can be Crop, Livestock, Other expenditure items
-    # e.g. tea, coffee, sugar ..# do we need to have
-    # a) something similar to Classified Product or
-    # b) a reference model -
-    # MarketItem with category as Main food, Cash crops Livestock ..
     product = models.ForeignKey(
         ClassifiedProduct,
         on_delete=models.RESTRICT,
@@ -1309,11 +1309,6 @@ class MarketPrice(models.Model):
     class Meta:
         verbose_name = _("MarketPrice")
         verbose_name_plural = _("MarketPrices")
-
-
-# LabourMarket?
-# LivestockMigration
-# The interview form has these but couldn't find it in the BSSs
 
 
 class Hazard(models.Model):
@@ -1348,3 +1343,71 @@ class Hazard(models.Model):
     class Meta:
         verbose_name = _("Hazard")
         verbose_name_plural = _("Hazards")
+
+
+class ExpandabilityFactor(models.Model):
+    """
+    Captured in the 'ExpFactors' Sheet of the BSS, the Expandability factors per
+    WealthGroups are a helpful input data for the Expandability calculations
+    """
+
+    class ExpenditureCodeForBasket(models.IntegerChoices):
+        """
+        Applicable to Expenditure types of strategies and takes the following values:
+        1	main staple
+        2	other staple
+        3	survival non-food
+        4	livelihoods protection
+
+        """
+
+        MAIN_STAPLE = 1
+        OTHER_STAPLE = 2
+        SURVIVAL_NON_FOOD = 3
+        LIVELIHOODS_PROTECTION = 4
+
+    livelihood_strategy = models.ForeignKey(
+        LivelihoodStrategy, on_delete=models.PROTECT, help_text=_("Livelihood Strategy")
+    )
+    wealth_group = models.ForeignKey(WealthGroup, on_delete=models.RESTRICT, verbose_name=_("Wealth Group"))
+    max_min_percentage_factor = models.PositiveSmallIntegerField(
+        verbose_name=_("Max or min percentage factor"),
+    )
+    expenditure_code_for_basket = models.IntegerField(choices=ExpenditureCodeForBasket.choices, null=True, blank=True)
+    # Sheet G contains some texts that seems describing the
+    remark = models.TextField(max_length=255, verbose_name=_("Remark"), null=True, blank=True)
+
+
+class CopingStrategy(models.Model):
+    """
+    The capacity of households to diversify and expand access to various sources of food and income,
+    and thus to cope with a specified hazard
+
+    Captured in the 'Coping' Sheet of the BSS whenever available
+
+    Notably this sheet is not found in most BSSs, and whenever there is, the data seems an inconsistent text
+    as opposed to the expected numeric values, and this may require us to parse the text during ingestion
+
+    Coping Strategy also is better analysed during the outcome analysis stage, by taking into account the
+    exact hazard/shock,
+
+    In addition, at times in the literature, Coping seems used synonymous to Expandability,
+    however it seems suitable to model the data in 'Coping' sheet - see Practitioners' guide page 137
+    """
+
+    # @TODO we can also use negative values and avoid this enum but parsing the data like this my be clearer and
+    # possibly easier to report ?
+    class Strategy(models.TextChoices):
+        REDUCE = "reduce", _("Reduce")
+        INCREASE = "increase", _("Increase")
+
+    community = models.ForeignKey(Community, on_delete=models.RESTRICT, verbose_name=_("Community or Village"))
+    leaders = models.CharField(max_length=255, null=True, blank=True)
+    wealth_group = models.ForeignKey(WealthGroup, on_delete=models.RESTRICT, verbose_name=_("Wealth Group"))
+    livelihood_strategy = models.ForeignKey(
+        LivelihoodStrategy, on_delete=models.PROTECT, help_text=_("Livelihood Strategy")
+    )
+    strategy = models.CharField(max_length=20, choices=Strategy.choices, verbose_name=_("Strategy"))
+    by_value = models.PositiveSmallIntegerField(
+        verbose_name=_("Reduce or increase by"),
+    )
