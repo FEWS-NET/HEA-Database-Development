@@ -11,7 +11,7 @@ from common.models import Country
 logger = logging.getLogger(__name__)
 
 
-class Dimension(models.Model):
+class Dimension(common_models.Model):
     """
     Dimension provides shared functionality to serve reference data via API,
     filter, aggregate, group, map, ingest, render, search, translate, convert.
@@ -156,7 +156,7 @@ class HazardCategory(Dimension):
         verbose_name_plural = _("Hazard Categories")
 
 
-class Season(models.Model):
+class Season(common_models.Model):
     """
     A division of the year, marked by changes in weather, ecology, and associated livelihood zone
     activities for income generation.

@@ -85,7 +85,7 @@ EXTERNAL_APPS = [
     "django.contrib.admindocs",
     "django_extensions",
 ]
-PROJECT_APPS = ["common", "metadata", "spatial", "baseline"]
+PROJECT_APPS = ["common", "metadata", "baseline"]
 INSTALLED_APPS = EXTERNAL_APPS + PROJECT_APPS
 
 MIDDLEWARE = [
