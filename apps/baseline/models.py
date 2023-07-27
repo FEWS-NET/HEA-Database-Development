@@ -378,13 +378,13 @@ class WealthGroupCharacteristicValue(common_models.Model):
     # Do we need `min_value` and `max_value` to store the range for a Baseline Wealth Group.
     # E..g. See CD09_Final 'WB':$AS:$AT
     min_value = models.JSONField(
-        verbose_name=_("value"),
+        verbose_name=_("min_value"),
         blank=True,
         null=True,
         help_text=_("The minimum value of the possible range for this value."),
     )
     max_value = models.JSONField(
-        verbose_name=_("value"),
+        verbose_name=_("min_value"),
         blank=True,
         null=True,
         help_text=_("The maximum value of the possible range for this value."),
@@ -674,7 +674,7 @@ class LivelihoodActivity(common_models.Model):
         ]
 
     class ExtraMeta:
-        identifier = ["wealth_group", "item", "additional_identifier"]
+        identifier = ["wealth_group", "livelihood_strategy", "strategy_type"]
 
 
 class MilkProduction(LivelihoodActivity):

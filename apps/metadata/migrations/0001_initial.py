@@ -103,7 +103,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 "verbose_name": "Livelihood Category",
-                "verbose_name_plural": "Livelihood Category",
+                "verbose_name_plural": "Livelihood Categories",
             },
         ),
         migrations.CreateModel(
@@ -204,6 +204,8 @@ class Migration(migrations.Migration):
             ],
             options={
                 "abstract": False,
+                "verbose_name": "Wealth Category",
+                "verbose_name_plural": "Wealth Categories",
             },
         ),
         migrations.CreateModel(

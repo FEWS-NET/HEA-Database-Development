@@ -153,6 +153,8 @@ STATIC_URL = STATIC_HOST + "/static/"
 STATIC_ROOT = normpath(join(SITE_ROOT, "assets"))
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
+STATICFILES_DIRS = (normpath(join(SITE_ROOT, "static")),)
+
 LOGGING = {
     "version": 1,
     # Don't disable existing loggers, because doing so

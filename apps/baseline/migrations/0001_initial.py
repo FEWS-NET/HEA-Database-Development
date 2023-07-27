@@ -799,7 +799,7 @@ class Migration(migrations.Migration):
                         blank=True,
                         help_text="The minimum value of the possible range for this value.",
                         null=True,
-                        verbose_name="value",
+                        verbose_name="min_value",
                     ),
                 ),
                 (
@@ -808,7 +808,7 @@ class Migration(migrations.Migration):
                         blank=True,
                         help_text="The maximum value of the possible range for this value.",
                         null=True,
-                        verbose_name="value",
+                        verbose_name="max_value",
                     ),
                 ),
                 (

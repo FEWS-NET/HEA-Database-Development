@@ -117,6 +117,7 @@ class LivelihoodStrategyAdmin(admin.ModelAdmin):
         "product",
         "unit_of_measure",
         "household_labor_provider",
+        "currency",
         "additional_identifier",
     )
     list_display = (
@@ -135,6 +136,7 @@ class LivelihoodStrategyAdmin(admin.ModelAdmin):
 
 
 class WealthGroupCharacteristicValueInlineAdmin(admin.TabularInline):
+    fields = ["wealth_characteristic", "value", "min_value", "max_value"]
     model = WealthGroupCharacteristicValue
     extra = 1
     classes = ["collapse"]
@@ -175,14 +177,14 @@ class LivelihoodActivityInlineAdmin(admin.StackedInline):
         (
             "KCals",
             {
-                # "classes": ["collapse", "extrapretty"],
+                "classes": ["collapse", "extrapretty"],
                 "fields": [
-                    "total_kcals_consumed",
+                    "kcals_consumed",
                     "percentage_kcals",
                 ],
             },
         ),
-        ("Economy", {"fields": ["price", "currency", "income", "expenditure"]}),
+        ("Economy", {"fields": ["price", "income", "expenditure"]}),
     ]
 
     def save_model(self, request, obj, form, change):
@@ -220,26 +222,16 @@ class MeatProductionInlineAdmin(LivelihoodActivityInlineAdmin):
 
     def get_fieldsets(self, request, obj=None):
         fieldsets = super().get_fieldsets(request, obj).copy()
-        fieldsets.insert(1, ("Meat source", {"fields": ["animals_slaughtered", "item_yield"]}))
+        fieldsets.insert(1, ("Meat source", {"fields": ["animals_slaughtered", "carcass_weight"]}))
         return fieldsets
 
 
 class LivestockSalesInlineAdmin(LivelihoodActivityInlineAdmin):
     model = LivestockSales
 
-    def get_fieldsets(self, request, obj=None):
-        fieldsets = super().get_fieldsets(request, obj).copy()
-        fieldsets.insert(1, ("Livestock", {"fields": ["product_destination", "animals_sold"]}))
-        return fieldsets
-
 
 class CropProductionInlineAdmin(LivelihoodActivityInlineAdmin):
     model = CropProduction
-
-    def get_fieldsets(self, request, obj=None):
-        fieldsets = super().get_fieldsets(request, obj).copy()
-        fieldsets.insert(1, ("Crop", {"fields": ["production_system"]}))
-        return fieldsets
 
 
 class FoodPurchaseProductionInlineAdmin(LivelihoodActivityInlineAdmin):

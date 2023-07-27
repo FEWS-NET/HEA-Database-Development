@@ -57,7 +57,7 @@ class LivelihoodCategory(Dimension):
 
     class Meta:
         verbose_name = _("Livelihood Category")
-        verbose_name_plural = _("Livelihood Category")
+        verbose_name_plural = _("Livelihood Categories")
 
 
 class WealthCharacteristic(Dimension):
@@ -144,6 +144,10 @@ class WealthCategory(Dimension):
     Standardized from the BSS 'WB' worksheet in Column B and the 'Data'
     worksheet in Row 3, so that it can be shared across all BSS.
     """
+
+    class Meta:
+        verbose_name = _("Wealth Category")
+        verbose_name_plural = _("Wealth Categories")
 
 
 class HazardCategory(Dimension):
