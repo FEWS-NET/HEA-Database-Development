@@ -27,7 +27,7 @@ from metadata.models import (
 )
 
 
-class SourceOrganization(models.Model):
+class SourceOrganization(common_models.Model):
     """
     An Organization that provides HEA Baselines.
     """
@@ -44,7 +44,7 @@ class SourceOrganization(models.Model):
         identifier = ["name"]
 
 
-class LivelihoodZone(models.Model):
+class LivelihoodZone(common_models.Model):
     """
     A geographical area within a Country in which people share broadly the same
     patterns of access to food and income, and have the same access to markets.
@@ -70,7 +70,7 @@ class LivelihoodZone(models.Model):
         ]
 
 
-class LivelihoodZoneBaseline(models.Model):
+class LivelihoodZoneBaseline(common_models.Model):
     """
     An HEA Baseline for a LivelihoodZone in a given reference year.
 
@@ -133,6 +133,7 @@ class LivelihoodZoneBaseline(models.Model):
     )
     population_estimate = models.PositiveIntegerField(
         blank=True,
+        null=True,
         verbose_name=_("Population Estimate"),
         help_text=_("The estimated population of the Livelihood Zone during the reference year"),
     )
@@ -149,7 +150,7 @@ class LivelihoodZoneBaseline(models.Model):
         ]
 
 
-class Staple(models.Model):
+class Staple(common_models.Model):
     """
     Stores the main staples for a LivelihoodZoneBaseline.
     Does not store 'other' staples as I've not seen a need to, but could do with a CHOICE field.
@@ -180,7 +181,7 @@ class Staple(models.Model):
 # Girum: We need to be able to link Community to Admin2, etc. LIAS uses the
 # Admin/LHZ intersect.
 # Chris: 1:1 Relationship to GeographicUnit
-class Community(models.Model):
+class Community(common_models.Model):
     """
     A representative location within the Livelihood Zone whose population was
     surveyed to produce the Baseline.
@@ -228,7 +229,7 @@ class Community(models.Model):
 # @TODO https://fewsnet.atlassian.net/browse/HEA-92
 # Should this be SocioEconomicGroup, or maybe PopulationGroup, given female-headed households, etc.
 # Jenny will check with P3 on preferred English naming. In French, it is something else anyway, I think.
-class WealthGroup(models.Model):
+class WealthGroup(common_models.Model):
     """
     Households within a Livelihood Zone with similar capacity to exploit the available food and income options.
 
@@ -350,7 +351,7 @@ class CommunityWealthGroup(WealthGroup):
         proxy = True
 
 
-class WealthGroupCharacteristicValue(models.Model):
+class WealthGroupCharacteristicValue(common_models.Model):
     """
     An attribute of a Wealth Group such as the number of school-age children.
 
@@ -394,7 +395,7 @@ class WealthGroupCharacteristicValue(models.Model):
 
 # @TODO https://fewsnet.atlassian.net/browse/HEA-93
 # Does this name cause confusion for people who think Strategy === Coping Strategy?
-class LivelihoodStrategy(models.Model):
+class LivelihoodStrategy(common_models.Model):
     """
     An activity undertaken by households in a Livelihood Zone that produces food or income or requires expenditure.
 
@@ -497,7 +498,7 @@ class LivelihoodStrategy(models.Model):
         ]
 
 
-class LivelihoodActivity(models.Model):
+class LivelihoodActivity(common_models.Model):
     """
     An activity undertaken by households in a Wealth Group that produces food or income or requires expenditure.
 
@@ -542,27 +543,31 @@ class LivelihoodActivity(models.Model):
     )
     wealth_group = models.ForeignKey(WealthGroup, on_delete=models.PROTECT, help_text=_("Wealth Group"))
 
-    quantity_produced = models.PositiveSmallIntegerField(verbose_name=_("Quantity Produced"))
-    quantity_sold = models.PositiveSmallIntegerField(verbose_name=_("Quantity Sold/Exchanged"))
-    quantity_other_uses = models.PositiveSmallIntegerField(verbose_name=_("Quantity Other Uses"))
+    quantity_produced = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Produced"))
+    quantity_sold = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Sold/Exchanged"))
+    quantity_other_uses = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Other Uses"))
     # Can normally be calculated / validated as `quantity_received - quantity_sold - quantity_other_uses`
-    quantity_consumed = models.PositiveSmallIntegerField(verbose_name=_("Quantity Consumed"))
+    quantity_consumed = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Consumed"))
 
     price = models.FloatField(blank=True, null=True, verbose_name=_("Price"), help_text=_("Price per unit"))
     # Can be calculated / validated as `quantity_sold * price` for livelihood strategies that involve the sale of
     # a proportion of the household's own production.
-    income = models.FloatField(help_text=_("Income"))
+    income = models.FloatField(blank=True, null=True, help_text=_("Income"))
     # Can be calculated / validated as `quantity_consumed * price` for livelihood strategies that involve the purchase
     # of external goods or services.
-    expenditure = models.FloatField(help_text=_("Expenditure"))
+    expenditure = models.FloatField(blank=True, null=True, help_text=_("Expenditure"))
 
     # Can normally be calculated  / validated as `quantity_consumed` * `kcals_per_unit`
-    kcals_consumed = models.PositiveSmallIntegerField(
+    kcals_consumed = models.PositiveIntegerField(
+        blank=True,
+        null=True,
         verbose_name=_("Total kcals consumed"),
         help_text=_("Total kcals consumed by a household in the reference year from this livelihood strategy"),
     )
     # Can be calculated / validated as `total_kcals_consumed / DAILY_KCAL_REQUIRED (2100) / DAYS_PER_YEAR (365) / self.wealth_group.average_household_size`  # NOQA: E501
-    percentage_kcals = models.PositiveSmallIntegerField(
+    percentage_kcals = models.FloatField(
+        blank=True,
+        null=True,
         verbose_name=_("Percentage of required kcals"),
         help_text=_("Percentage of annual household kcal requirement provided by this livelihood strategy"),
     )
@@ -760,6 +765,7 @@ class ButterProduction(LivelihoodActivity):
     class Meta:
         verbose_name = LivelihoodStrategyTypes.BUTTER_PRODUCTION.label
         verbose_name_plural = LivelihoodStrategyTypes.BUTTER_PRODUCTION.label
+        proxy: True
 
 
 class MeatProduction(LivelihoodActivity):
@@ -1034,7 +1040,7 @@ class OtherPurchases(LivelihoodActivity):
         verbose_name_plural = LivelihoodStrategyTypes.OTHER_PURCHASES.label
 
 
-class SeasonalActivity(models.Model):
+class SeasonalActivity(common_models.Model):
     """
     An activity or event undertaken/experienced by households in a Livelihood Zone at specific periods during the year.
 
@@ -1083,7 +1089,7 @@ class SeasonalActivity(models.Model):
         ]
 
 
-class SeasonalActivityOccurrence(models.Model):
+class SeasonalActivityOccurrence(common_models.Model):
     """
     The specific times when a Seasonal Activity is undertaken in a Community or in the Liveihood Zone as a whole.
 
@@ -1153,7 +1159,7 @@ class SeasonalActivityOccurrence(models.Model):
 
 # @TODO https://fewsnet.atlassian.net/browse/HEA-91
 # What is this used for?
-class CommunityCropProduction(models.Model):
+class CommunityCropProduction(common_models.Model):
     """
     The community crop production data for a crop producing community
     Form 3's CROP PRODUCTION is used for community-level interviews
@@ -1214,7 +1220,7 @@ class CommunityCropProduction(models.Model):
 # or are they on WealthGroupLivestock as a result of the repition on Form 4
 # These worksheets are locked in the BSS. They are important reference data even
 # if the WealthGroup-level values are used for calculations.
-class CommunityLivestock(models.Model):
+class CommunityLivestock(common_models.Model):
     """
     An animal typically raised by households in a Community, with revelant additional attributes.
 
@@ -1267,7 +1273,7 @@ class CommunityLivestock(models.Model):
         verbose_name_plural = _("Wealth Group Attributes")
 
 
-class Market(models.Model):
+class Market(common_models.Model):
     """
     The markets in the bss are just names
     TODO: should we make this spatial? and move it to spatial or metadata?
@@ -1281,7 +1287,7 @@ class Market(models.Model):
         verbose_name_plural = _("Markets")
 
 
-class MarketPrice(models.Model):
+class MarketPrice(common_models.Model):
     """
     Prices for the reference year are interviewed in Form 3
     Data is captured in 'prices' worksheet of the BSS
@@ -1317,7 +1323,7 @@ class MarketPrice(models.Model):
         verbose_name_plural = _("MarketPrices")
 
 
-class Hazard(models.Model):
+class Hazard(common_models.Model):
     """
     A shock such as drought, flood, conflict or market disruption which is likely
     to have an impact on people’s livelihoods
