@@ -1290,6 +1290,7 @@ class MarketPrice(models.Model):
     """
 
     MONTHS = MONTHS.items()
+    # TODO: should we remove the community from here as it is referenced in market?
     community = models.ForeignKey(Community, on_delete=models.RESTRICT, verbose_name=_("Community or Village"))
     product = models.ForeignKey(
         ClassifiedProduct,
@@ -1305,6 +1306,11 @@ class MarketPrice(models.Model):
     unit_of_measure = models.ForeignKey(
         UnitOfMeasure, db_column="unit_code", on_delete=models.RESTRICT, verbose_name=_("Unit of measure")
     )
+
+    def clean(self):
+        if self.community != self.market.community:
+            raise ValidationError(_("Market and Market Prices shall have the same community"))
+        super().clean()
 
     class Meta:
         verbose_name = _("MarketPrice")
@@ -1374,7 +1380,7 @@ class ExpandabilityFactor(models.Model):
         verbose_name=_("Max or min percentage factor"),
     )
     expenditure_code_for_basket = models.IntegerField(choices=ExpenditureCodeForBasket.choices, null=True, blank=True)
-    # Sheet G contains some texts that seems describing the
+    # Sheet G contains some texts that seems describing where data is coming from, mostly 'Summ' sheet
     remark = models.TextField(max_length=255, verbose_name=_("Remark"), null=True, blank=True)
 
 
