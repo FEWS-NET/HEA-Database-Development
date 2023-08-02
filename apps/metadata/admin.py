@@ -4,6 +4,7 @@ from .models import (
     HazardCategory,
     LivelihoodCategory,
     Season,
+    SeasonalActivityType,
     WealthCategory,
     WealthCharacteristic,
 )
@@ -34,10 +35,29 @@ class LivelihoodCategoryAdmin(DimensionAdmin):
     """
 
 
+class SeasonalActivityTypeAdmin(DimensionAdmin):
+    """
+    A concrete admin for  SeasonalActivityType
+    """
+
+    fields = (
+        "code",
+        "name",
+        "activity_category",
+        "description",
+        "aliases",
+    )
+
+
 class WealthCategoryAdmin(DimensionAdmin):
     """
     A concrete admin for WealthCategory
     """
+
+    def get_fields(self, request, obj=None):
+        fields = super().get_fields(request, obj)
+        fields.insert(1, "variable_type")
+        return fields
 
 
 class WealthCharacteristicAdmin(DimensionAdmin):
@@ -71,6 +91,7 @@ class SeasonAdmin(admin.ModelAdmin):
 
 admin.site.register(LivelihoodCategory, LivelihoodCategoryAdmin)
 admin.site.register(WealthCategory, WealthCategoryAdmin)
+admin.site.register(SeasonalActivityType, SeasonalActivityTypeAdmin)
 
 admin.site.register(WealthCharacteristic, WealthCharacteristicAdmin)
 admin.site.register(HazardCategory, HazardCategoryAdmin)

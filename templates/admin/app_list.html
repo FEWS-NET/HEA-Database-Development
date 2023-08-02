@@ -1,88 +1,240 @@
 {% load i18n %}
-
 {% if app_list %}
-  {% for app in app_list %}
-    <div class="app-{{ app.app_label }} module{% if app.app_url in request.path|urlencode %} current-app{% endif %}">
-      <table style="width: 600px">
-        <caption>
-          <a href="{{ app.app_url }}" class="section" title="{% blocktranslate with name=app.name %}Models in the {{ name }} application{% endblocktranslate %}">{{ app.name }}</a>
-        </caption>
-        {#  @TODO Temporary admin - to be changed once Workflow, ingestion and data management discussions have been finalized#}
-      {% if app.name == "Baseline" %}
-           <tr class="model-{{ model.object_name|lower }}{% if model.admin_url in request.path|urlencode %} current-model{% endif %}">
-           </tr>
-          <tr>
-           <td>
-               <h2>Load Baseline Storage Sheet (BSS)</h2>
-        <ul>
-        {# @TODO  Permissions aren't enforced yet and Source org and Livelihood mgt could go to Metadata #}
-            <li><a href="{% url 'admin:baseline_sourceorganization_changelist' %}">Source Organization</a> </li>
-            <li><a href="{% url 'admin:baseline_livelihoodzone_changelist' %}">Livelihood Zone</a></li>
-            <li><a href="{% url 'admin:baseline_livelihoodzonebaseline_changelist' %}">Livelihood Zone Baseline</a></li>
-            <li><a href="{% url 'admin:baseline_community_changelist' %}">Community</a></li>
 
-        </ul>
-           </td>
-          </tr>
-          <tr>
-           <td>
-               <h2>Wealth Group Level Data(BSS WB,Data Sheets)</h2>
-        <ul>
-           <li><a href="{% url 'admin:baseline_wealthgroup_changelist' %}">Manage Wealth Group Data</a></li>
-        </ul>
-           </td>
-          </tr>
-            <tr>
-           <td>
-               <h2>Community Data(BSS Production Sheet)</h2>
-        <ul>
-            <li><a href="{% url 'admin:baseline_communitycropproduction_changelist' %}">Crop Productions</a></li>
-            <li><a href="{% url 'admin:baseline_communitylivestock_changelist' %}">Livestock Productions</a></li>
-            <li><a href="{% url 'admin:baseline_market_changelist' %}">Markets</a></li>
-            <li><a href="{% url 'admin:baseline_marketprice_changelist' %}">Market Prices</a></li>
-            <li><a href="{% url 'admin:baseline_hazard_changelist' %}">Hazards</a></li>
-        </ul>
-           </td>
-          </tr>
-              <tr>
-           <td>
-               <h2>Seasonal Calendars</h2>
-        <ul>
-            <li><a href="{% url 'admin:baseline_seasonalactivity_changelist' %}">Seasonal Activities</a></li>
-            <li><a href="{% url 'admin:baseline_seasonalactivityoccurrence_changelist' %}">Activity Occurrences </a></li>
-        </ul>
-           </td>
-          </tr>
-          {% elif app.name == "Authentication and Authorization" or app.name == "Common" or app.name == "Metadata" %}
-           {% for model in app.models %}
-          <tr class="model-{{ model.object_name|lower }}{% if model.admin_url in request.path|urlencode %} current-model{% endif %}">
-            {% if model.admin_url %}
-              <th scope="row"><a href="{{ model.admin_url }}"{% if model.admin_url in request.path|urlencode %} aria-current="page"{% endif %}>{{ model.name }}</a></th>
-            {% else %}
-              <th scope="row">{{ model.name }}</th>
-            {% endif %}
+    {% if 'baseline.view_sourceorganization' in perms or 'baseline.view_livelihoodzone' in perms or 'baseline.view_livelihoodzonebaseline' in perms or 'baseline.view_community' in perms %}
+        <div class="menu-category">
+            <h5>{% translate 'BSS Setup' %}</h5>
 
-            {% if model.add_url %}
-              <td><a href="{{ model.add_url }}" class="addlink">{% translate 'Add' %}</a></td>
-            {% else %}
-              <td></td>
+            {% if perms.baseline.view_sourceorganization %}
+                <div class="row row-cols-1 row-cols-md-3 g-4">
+                <!-- Card 1 -->
+                <div class="col">
+                    <div class="card m-2">
+                        <div class="card-body">
+                            <a class="link-dark rounded"
+                               href="{% url 'admin:baseline_sourceorganization_changelist' %}"> {% translate 'Source Organizations' %} </a>
+                        </div>
+                    </div>
+                </div>
             {% endif %}
+            {% if perms.baseline.view_livelihoodzone %}
+                <div class="col">
+                    <div class="card m-2">
+                        <div class="card-body">
+                            <a class="link-dark rounded" href="{% url 'admin:baseline_livelihoodzone_changelist' %}"> {% translate 'Livelihood Zones' %}</a>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+            {% if perms.baseline.view_livelihoodzonebaseline %}
+                <div class="col">
+                    <div class="card m-2">
+                        <div class="card-body">
+                            <a class="link-dark rounded"
+                               href="{% url 'admin:baseline_livelihoodzonebaseline_changelist' %}"> {% translate 'Livelihood Zone Baselines' %}</a>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+            {% if perms.baseline.view_community %}
+                <div class="col">
+                    <div class="card m-2">
+                        <div class="card-body">
+                            <a class="link-dark rounded"
+                               href="{% url 'admin:baseline_community_changelist' %}">{% translate 'Communities' %}</a>
+                        </div>
+                    </div>
+                </div>
 
-            {% if model.admin_url and show_changelinks %}
-              {% if model.view_only %}
-                <td><a href="{{ model.admin_url }}" class="viewlink">{% translate 'View' %}</a></td>
-              {% else %}
-                <td><a href="{{ model.admin_url }}" class="changelink">{% translate 'Change' %}</a></td>
-              {% endif %}
-            {% elif show_changelinks %}
-              <td></td>
+
             {% endif %}
-          </tr>
-        {% endfor %}
-      {% endif %}
-      </table>
-    </div>
-  {% endfor %}
+        </div>
+        </div>
+    {% endif %}
+    {% if 'baseline.view_wealthgroup' in perms %}
+        <div class="menu-category">
+            <h5> {% translate  'BSS WB,Data,.. Sheets' %} </h5>
+            <div class="row row-cols-1 row-cols-md-3 g-4">
+                <div class="col">
+                    <div class="card m-2">
+                        <div class="card-body">
+                            <a class="link-dark rounded" href="{% url 'admin:baseline_wealthgroup_changelist' %}">{% translate  'Wealth Group Data' %}</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    {% if 'baseline.view_communitycropproduction' in perms or  'baseline.view_communitylivestock'  in perms %}
+        <div class="menu-category">
+            <h5>{% translate 'BSS Production Sheet' %}</h5>
+            <div class="row row-cols-1 row-cols-md-3 g-4">
+                {% if perms.baseline.view_communitycropproduction %}
+                    <!-- Card 1 -->
+                    <div class="col">
+                        <div class="card m-2">
+                            <div class="card-body">
+                                <a href="{% url 'admin:baseline_communitycropproduction_changelist' %}"> {%  translate 'Crop Productions' %}"</a>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+                {% if perms.baseline.view_communitylivestock %}
+                    <!-- Card 2 -->
+                    <div class="col">
+                        <div class="card m-2">
+                            <div class="card-body">
+                                <a href="{% url 'admin:baseline_communitylivestock_changelist' %}">{%  translate 'Livestock Productions' %}</a>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+        </div>
+    {% endif %}
+    {% if 'metadata.view_seasonalactivitytype' in perms or  'baseline.view_seasonalactivity'  in perms or  'baseline.view_seasonalactivityoccurrence'  in perms %}
+        <div class="menu-category">
+            <h5>{% translate 'Seasonal Calendars' %}</h5>
+            <div class="row row-cols-1 row-cols-md-3 g-4">
+                <!-- Card 1 -->
+                {% if 'metadata.view_seasonalactivitytype' in perms %}
+                    <div class="col">
+                    <div class="card m-2">
+                        <div class="card-body">
+                            <a href="{% url 'admin:metadata_seasonalactivitytype_changelist' %}"> {%  translate 'Seasonal Activity Type' %}</a>
+                        </div>
+                    </div>
+                {% endif %}
+                </div>
+                <!-- Card 2 -->
+                {% if 'baseline.view_seasonalactivity' in perms %}
+                    <div class="col">
+                        <div class="card m-2">
+                            <div class="card-body">
+                                <a href="{% url 'admin:baseline_seasonalactivity_changelist' %}">{%  translate 'Seasonal Activities' %}</a>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+                <!-- Card 3 -->
+                {% if 'baseline.view_seasonalactivityoccurrence' in perms %}
+                    <div class="col">
+                        <div class="card m-2">
+                            <div class="card-body">
+                                <a href="{% url 'admin:baseline_seasonalactivityoccurrence_changelist' %}">{%  translate 'Activity Occurrences' %} </a>
+                            </div>
+                        </div>
+                    </div>
+
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+
+
+    {% if perms.common %}
+        <div class="menu-category">
+            <h5> {% translate 'Common' %}</h5>
+            <div class="row row-cols-1 row-cols-md-3 g-4">
+                <div class="col">
+                    <div class="card m-2">
+                        <div class="card-body">
+                            <a href="{% url 'admin:common_country_changelist' %}"> {% translate 'Countries' %}</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card m-2">
+                        <div class="card-body">
+                            <a href="{% url 'admin:common_currency_changelist' %}"> {% translate 'Currencies' %}</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card m-2">
+                        <div class="card-body">
+                            <a href="{% url 'admin:common_classifiedproduct_changelist' %}">{% translate 'Products' %}</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card m-2">
+                        <div class="card-body">
+                            <a href="{% url 'admin:common_unitofmeasure_changelist' %}">{% translate 'Units of Measure' %}</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if perms.metadata %}
+        <div class="menu-category">
+        <h5> {% translate 'Metadata' %}</h5>
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            <div class="col">
+                <div class="card m-2">
+                    <div class="card-body">
+                        <a href="{% url 'admin:metadata_hazardcategory_changelist' %}"> {% translate 'Hazard Categories' %}</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card m-2">
+                    <div class="card-body">
+                        <a href="{% url 'admin:metadata_livelihoodcategory_changelist' %}">{% translate 'Livelihood Categories' %}</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card m-2">
+                    <div class="card-body">
+                        <a href="{% url 'admin:metadata_season_changelist' %}">{% translate 'Seasons' %}</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card m-2">
+                    <div class="card-body">
+                        <a href="{% url 'admin:metadata_wealthcategory_changelist' %}">{% translate 'Wealth Categories' %}</a>
+                    </div>
+                </div>
+
+            </div>
+            <div class="col">
+                <div class="card m-2">
+                    <div class="card-body">
+                        <a href="{% url 'admin:metadata_wealthcharacteristic_changelist' %}">{% translate 'Wealth Group Characteristics' %}</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+    {% endif %}
+
+    {% if perms.auth %}
+        <div class="menu-category">
+        <h5>{% translate 'User management' %}</h5>
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            <div class="col">
+                <div class="card m-2">
+                    <div class="card-body">
+                        <a href="{% url 'admin:auth_user_changelist' %}">{% translate 'Users' %}</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card m-2">
+                    <div class="card-body">
+                        <a href="{% url 'admin:auth_group_changelist' %}">{% translate 'Groups' %}</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
 {% else %}
-  <p>{% translate 'You don’t have permission to view or edit anything.' %}</p>
+    <p>{% translate 'You don’t have permission to view or edit anything.' %}</p>
 {% endif %}
+
+

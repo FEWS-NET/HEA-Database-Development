@@ -84,6 +84,7 @@ EXTERNAL_APPS = [
     "django.contrib.gis",
     "django.contrib.admindocs",
     "django_extensions",
+    "bootstrap5",
 ]
 PROJECT_APPS = ["common", "metadata", "baseline"]
 INSTALLED_APPS = EXTERNAL_APPS + PROJECT_APPS
@@ -153,7 +154,9 @@ STATIC_URL = STATIC_HOST + "/static/"
 STATIC_ROOT = normpath(join(SITE_ROOT, "assets"))
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
-STATICFILES_DIRS = (normpath(join(SITE_ROOT, "static")),)
+STATICFILES_DIRS = (
+    normpath(join(SITE_ROOT, "static")),
+)
 
 LOGGING = {
     "version": 1,

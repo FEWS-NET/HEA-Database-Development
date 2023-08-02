@@ -1,6 +1,7 @@
 from django.contrib import admin
 
 from common.admin import GeoModelAdmin
+from metadata.models import LivelihoodStrategyTypes
 
 from .forms import LivelihoodActivityForm
 from .models import (
@@ -35,6 +36,7 @@ from .models import (
 
 admin.site.site_header = "HEA Baseline Database Administration"
 admin.site.index_title = "HEA Baseline"
+admin.site.site_title = "Administration"
 
 
 class SourceOrganizationAdmin(admin.ModelAdmin):
@@ -177,7 +179,6 @@ class LivelihoodActivityInlineAdmin(admin.StackedInline):
         (
             "KCals",
             {
-                "classes": ["collapse", "extrapretty"],
                 "fields": [
                     "kcals_consumed",
                     "percentage_kcals",
@@ -212,9 +213,15 @@ class MilkProductionInlineAdmin(LivelihoodActivityInlineAdmin):
         )
         return fieldsets
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyTypes.MILK_PRODUCTION)
+
 
 class ButterProductionInlineAdmin(LivelihoodActivityInlineAdmin):
     model = ButterProduction
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyTypes.BUTTER_PRODUCTION)
 
 
 class MeatProductionInlineAdmin(LivelihoodActivityInlineAdmin):
@@ -225,13 +232,22 @@ class MeatProductionInlineAdmin(LivelihoodActivityInlineAdmin):
         fieldsets.insert(1, ("Meat source", {"fields": ["animals_slaughtered", "carcass_weight"]}))
         return fieldsets
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyTypes.MEAT_PRODUCTION)
+
 
 class LivestockSalesInlineAdmin(LivelihoodActivityInlineAdmin):
     model = LivestockSales
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyTypes.LIVESTOCK_SALES)
+
 
 class CropProductionInlineAdmin(LivelihoodActivityInlineAdmin):
     model = CropProduction
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyTypes.CROP_PRODUCTION)
 
 
 class FoodPurchaseProductionInlineAdmin(LivelihoodActivityInlineAdmin):
@@ -242,6 +258,9 @@ class FoodPurchaseProductionInlineAdmin(LivelihoodActivityInlineAdmin):
         fieldsets.insert(1, ("Purchases", {"fields": ["unit_multiple", "purchases_per_month", "months_per_year"]}))
         return fieldsets
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyTypes.FOOD_PURCHASE)
+
 
 class PaymentInKindInlineAdmin(LivelihoodActivityInlineAdmin):
     model = PaymentInKind
@@ -251,6 +270,9 @@ class PaymentInKindInlineAdmin(LivelihoodActivityInlineAdmin):
         fieldsets.insert(1, ("Payment", {"fields": ["people_per_hh", "labor_per_month", "months_per_year"]}))
         return fieldsets
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyTypes.PAYMENT_IN_KIND)
+
 
 class ReliefGiftsInlineAdmin(LivelihoodActivityInlineAdmin):
     model = ReliefGiftsOther
@@ -259,6 +281,9 @@ class ReliefGiftsInlineAdmin(LivelihoodActivityInlineAdmin):
         fieldsets = super().get_fieldsets(request, obj).copy()
         fieldsets.insert(1, ("Relief", {"fields": ["unit_multiple", "received_per_year"]}))
         return fieldsets
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyTypes.RELIEF_GIFTS_OTHER)
 
 
 class OtherCashIncomeInlineAdmin(LivelihoodActivityInlineAdmin):
@@ -271,13 +296,22 @@ class OtherCashIncomeInlineAdmin(LivelihoodActivityInlineAdmin):
         )
         return fieldsets
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyTypes.OTHER_CASH_INCOME)
+
 
 class FishingInlineAdmin(LivelihoodActivityInlineAdmin):
     model = Fishing
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyTypes.FISHING)
+
 
 class WildFoodGatheringInlineAdmin(LivelihoodActivityInlineAdmin):
     model = WildFoodGathering
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyTypes.WILD_FOOD_GATHERING)
 
 
 class OtherPurchasesAdmin(LivelihoodActivityInlineAdmin):
@@ -287,6 +321,9 @@ class OtherPurchasesAdmin(LivelihoodActivityInlineAdmin):
         fieldsets = super().get_fieldsets(request, obj).copy()
         fieldsets.insert(1, (None, {"fields": ["unit_multiple", "purchases_per_month", "months_per_year"]}))
         return fieldsets
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyTypes.OTHER_PURCHASES)
 
 
 class WealthGroupAdmin(admin.ModelAdmin):

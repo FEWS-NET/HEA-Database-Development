@@ -1,7 +1,7 @@
 """
 Models for managing HEA Baseline Surveys
 """
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from django.contrib.gis.db import models
 from django.core.exceptions import ValidationError
@@ -213,6 +213,9 @@ class Community(common_models.Model):
         help_text=_("The names of interviewers who interviewed the Community, in case any clarification is neeeded."),
     )
 
+    class ExtraMeta:
+        identifier = ["name"]
+
     class Meta:
         verbose_name = _("Community")
         verbose_name_plural = _("Communities")
@@ -384,7 +387,7 @@ class WealthGroupCharacteristicValue(common_models.Model):
         help_text=_("The minimum value of the possible range for this value."),
     )
     max_value = models.JSONField(
-        verbose_name=_("min_value"),
+        verbose_name=_("max_value"),
         blank=True,
         null=True,
         help_text=_("The maximum value of the possible range for this value."),
@@ -498,6 +501,9 @@ class LivelihoodStrategy(common_models.Model):
                 name="baseline_livelihoodstrategy_id_season_uniq",
             ),
         ]
+
+    class ExtraMeta:
+        identifier = ["livelihood_zone_baseline", "strategy_type", "product", "season"]
 
 
 class LivelihoodActivity(common_models.Model):
@@ -1090,6 +1096,9 @@ class SeasonalActivity(common_models.Model):
             ),
         ]
 
+    class ExtraMeta:
+        identifier = ["activity_type", "season", "product"]
+
 
 class SeasonalActivityOccurrence(common_models.Model):
     """
@@ -1133,9 +1142,8 @@ class SeasonalActivityOccurrence(common_models.Model):
         return self.get_month_from_day_number(self.end)
 
     def get_month_from_day_number(self, day_number):
-        _date = datetime.date(self.livelihood_zone_baseline.reference_year_start_date.year(), 1, 1).fromordinal(
-            day_number
-        )
+        first_day_of_reference_year = datetime(self.livelihood_zone_baseline.reference_year_start_date.year, 1, 1)
+        _date = first_day_of_reference_year + timedelta(days=day_number - 1)
         return _date.month
 
     def calculate_fields(self):
@@ -1292,6 +1300,9 @@ class Market(common_models.Model):
 
     name = common_models.NameField(verbose_name=_("Name"))
     community = models.ForeignKey(Community, on_delete=models.RESTRICT, verbose_name=_("Community or Village"))
+
+    class ExtraMeta:
+        identifier = ["name"]
 
     class Meta:
         verbose_name = _("Market")
