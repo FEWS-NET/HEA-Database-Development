@@ -23,7 +23,6 @@ from .models import (
     SeasonalActivity,
     SeasonalActivityType,
     SourceOrganization,
-    Staple,
     WealthGroup,
     WealthGroupCharacteristicValue,
     WildFoodGathering,
@@ -45,11 +44,6 @@ class LivelihoodZoneAdmin(admin.ModelAdmin):
 
 @admin.register(LivelihoodZoneBaseline)
 class LivelihoodZoneBaselineAdmin(admin.ModelAdmin):
-    pass
-
-
-@admin.register(Staple)
-class StapleAdmin(admin.ModelAdmin):
     pass
 
 
