@@ -116,7 +116,10 @@ REST_FRAMEWORK = {
         "rest_framework_xml.renderers.XMLRenderer",
         "common.renderers.FormattedCSVRenderer",
     ),
-    "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.backends.DjangoFilterBackend",),
+    "DEFAULT_FILTER_BACKENDS": [
+        "django_filters.rest_framework.DjangoFilterBackend",
+        "rest_framework.filters.SearchFilter",
+    ],
     "DATETIME_FORMAT": "%Y-%m-%dT%H:%M:%S",
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
     "EXCEPTION_HANDLER": "apps.common.exception_handlers.drf_exception_handler",
