@@ -3,8 +3,19 @@ from django.contrib import admin
 from django.urls import include, path
 from rest_framework import routers
 
+from common.viewsets import (
+    ClassifiedProductViewSet,
+    CountryViewSet,
+    CurrencyViewSet,
+    UnitOfMeasureViewSet,
+)
+
 router = routers.DefaultRouter()
-# router.register(r"livelihoodcategories", LivelihoodCategoryViewSet)
+
+router.register(r"country", CountryViewSet)
+router.register(r"currency", CurrencyViewSet)
+router.register(r"unitofmeasure", UnitOfMeasureViewSet)
+router.register(r"classifiedproduct", ClassifiedProductViewSet)
 
 urlpatterns = [
     ########## LOCALE INDEPENDENT PATHS go here. ##########
