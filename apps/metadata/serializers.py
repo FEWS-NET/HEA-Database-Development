@@ -87,16 +87,16 @@ class SeasonSerializer(serializers.ModelSerializer):
     end_month = serializers.SerializerMethodField()
 
     def get_start_month(self, obj):
-        return self.get_month_from_day_number(obj, obj.start)
+        return self.get_month_from_day_number(obj.start)
 
     def get_end_month(self, obj):
-        return self.get_month_from_day_number(obj, obj.end)
+        return self.get_month_from_day_number(obj.end)
 
-    def get_month_from_day_number(self, obj, day_number):
+    def get_month_from_day_number(self, day_number):
         # @TODO is it better to lookup the reference year from the livelihood_zone_baseline via
         # e.g. obj.country.livelihoodzone_set.first().livelihoodzonebaseline_set.first().reference_year_start_date.year
-        first_day_of_reference_year = datetime(datetime.today().year, 1, 1)
-        _date = first_day_of_reference_year + timedelta(days=day_number - 1)
+        first_day_of_year = datetime(datetime.today().year, 1, 1)
+        _date = first_day_of_year + timedelta(days=day_number - 1)
         return _date.month
 
     class Meta:

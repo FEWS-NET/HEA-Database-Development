@@ -3,6 +3,13 @@ import json
 from rest_framework.reverse import reverse
 from rest_framework.test import APITestCase
 
+from metadata.models import (
+    HazardCategory,
+    LivelihoodCategory,
+    SeasonalActivityType,
+    WealthCategory,
+    WealthCharacteristic,
+)
 from metadata.test.factories import (
     HazardCategoryFactory,
     LivelihoodCategoryFactory,
@@ -41,101 +48,70 @@ class DimensionViewSetTestCase(APITestCase):
         self.seasonalactivitytype_url = reverse("seasonalactivitytype-list")
         self.wealthcharacteristic_url = reverse("wealthcharacteristic-list")
 
-    # LivelihoodCategory Tests
-    def test_livelihoodcategory_list_returns_all_records(self):
+    def test_list_returns_all_records(self):
+        # LivelihoodCategory
         response = self.client.get(self.livelihoodcategory_url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 3)
 
-    def test_livelihoodcategory_search_by_code(self):
-        response = self.client.get(self.livelihoodcategory_url, {"search": self.livelihoodcategory2.code})
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(self.livelihoodcategory2.code, json.loads(response.content)[0]["code"])
-
-    def test_livelihoodcategory_search_by_name(self):
-        response = self.client.get(self.livelihoodcategory_url, {"search": self.livelihoodcategory3.name})
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(self.livelihoodcategory3.code, json.loads(response.content)[0]["code"])
-
-    def test_livelihoodcategory_filter_by_name(self):
-        response = self.client.get(self.livelihoodcategory_url, {"name": self.livelihoodcategory1.name})
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(self.livelihoodcategory1.code, json.loads(response.content)[0]["code"])
-
-    # HazardCategory Tests
-    def test_hazardcategory_list_returns_all_records(self):
+        # HazardCategory
         response = self.client.get(self.hazardcategory_url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 2)
 
-    def test_hazardcategory_search_by_code(self):
-        response = self.client.get(self.hazardcategory_url, {"search": self.hazardcategory1.code})
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(self.hazardcategory1.code, json.loads(response.content)[0]["code"])
-
-    def test_hazardcategory_search_by_name(self):
-        response = self.client.get(self.hazardcategory_url, {"search": self.hazardcategory2.name})
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(self.hazardcategory2.code, json.loads(response.content)[0]["code"])
-
-    def test_hazardcategory_filter_by_name(self):
-        response = self.client.get(self.hazardcategory_url, {"name": self.hazardcategory2.name})
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(self.hazardcategory2.code, json.loads(response.content)[0]["code"])
-
-    # WealthCategory Tests
-    def test_wealthcategory_list_returns_all_records(self):
+        # WealthCategory
         response = self.client.get(self.wealthcategory_url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 3)
 
-    def test_wealthcategory_search_by_code(self):
-        response = self.client.get(self.wealthcategory_url, {"search": self.wealthcategory1.code})
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(self.wealthcategory1.code, json.loads(response.content)[0]["code"])
-
-    def test_wealthcategory_search_by_name(self):
-        response = self.client.get(self.wealthcategory_url, {"search": self.wealthcategory2.name})
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(self.wealthcategory2.code, json.loads(response.content)[0]["code"])
-
-    def test_wealthcategory_filter_by_name(self):
-        response = self.client.get(self.wealthcategory_url, {"name": self.wealthcategory3.name})
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(self.wealthcategory3.code, json.loads(response.content)[0]["code"])
-
-    # SeasonalActivityType Tests
-    def test_seasonalactivitytype_list_returns_all_records(self):
+        # SeasonalActivityType
         response = self.client.get(self.seasonalactivitytype_url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 2)
 
-    def test_seasonalactivitytype_search_by_code(self):
-        response = self.client.get(self.seasonalactivitytype_url, {"search": self.seasonalactivitytype1.code})
+        # WealthCharacteristic
+        response = self.client.get(self.wealthcharacteristic_url)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(self.seasonalactivitytype1.code, json.loads(response.content)[0]["code"])
+        self.assertEqual(len(response.data), 3)
 
-    def test_seasonalactivitytype_search_by_name(self):
-        response = self.client.get(self.seasonalactivitytype_url, {"search": self.seasonalactivitytype2.name})
+    def _test_search_by_code(self, model_cls):
+        # Test search by code for each model
+        url = reverse(f"{model_cls._meta.model_name}-list")
+        response = self.client.get(url, {"search": model_cls.objects.first().code})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
-        self.assertEqual(self.seasonalactivitytype2.code, json.loads(response.content)[0]["code"])
+        self.assertEqual(model_cls.objects.first().code, json.loads(response.content)[0]["code"])
 
-    def test_seasonalactivitytype_filter_by_name(self):
-        response = self.client.get(self.seasonalactivitytype_url, {"name": self.seasonalactivitytype1.name})
+    def _test_search_by_name(self, model_cls):
+        # Test search by name for each model
+        url = reverse(f"{model_cls._meta.model_name}-list")
+        response = self.client.get(url, {"search": model_cls.objects.first().name})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
-        self.assertEqual(self.seasonalactivitytype1.code, json.loads(response.content)[0]["code"])
+        self.assertEqual(model_cls.objects.first().code, json.loads(response.content)[0]["code"])
+
+    def _test_filter_by_name(self, model_cls):
+        # Test filter by name for each model
+        url = reverse(f"{model_cls._meta.model_name}-list")
+        response = self.client.get(url, {"name": model_cls.objects.first().name})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(model_cls.objects.first().code, json.loads(response.content)[0]["code"])
+
+    def test_search_and_filter(self):
+        models_to_test = [
+            LivelihoodCategory,
+            HazardCategory,
+            WealthCategory,
+            SeasonalActivityType,
+            WealthCharacteristic,
+        ]
+
+        for model_cls in models_to_test:
+            with self.subTest(model=model_cls):
+                self._test_search_by_code(model_cls)
+                self._test_search_by_name(model_cls)
+                self._test_filter_by_name(model_cls)
 
     def test_seasonalactivitytype_filter_by_activity_category(self):
         response = self.client.get(
@@ -144,30 +120,6 @@ class DimensionViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(self.seasonalactivitytype1.code, json.loads(response.content)[0]["code"])
-
-    # WealthCharacteristic Tests
-    def test_wealthcharacteristic_list_returns_all_records(self):
-        response = self.client.get(self.wealthcharacteristic_url)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 3)
-
-    def test_wealthcharacteristic_search_by_code(self):
-        response = self.client.get(self.wealthcharacteristic_url, {"search": self.wealthcharacteristic1.code})
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(self.wealthcharacteristic1.code, json.loads(response.content)[0]["code"])
-
-    def test_wealthcharacteristic_search_by_name(self):
-        response = self.client.get(self.wealthcharacteristic_url, {"search": self.wealthcharacteristic2.name})
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(self.wealthcharacteristic2.code, json.loads(response.content)[0]["code"])
-
-    def test_wealthcharacteristic_filter_by_name(self):
-        response = self.client.get(self.wealthcharacteristic_url, {"name": self.wealthcharacteristic3.name})
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(self.wealthcharacteristic3.code, json.loads(response.content)[0]["code"])
 
     def test_wealthcharacteristic_filter_by_variable_type(self):
         response = self.client.get(
@@ -183,7 +135,7 @@ class SeasonViewSetTestCase(APITestCase):
     def setUpTestData(cls):
         cls.season1 = SeasonFactory()
         cls.season2 = SeasonFactory()
-        cls.season3 = SeasonFactory()
+        cls.season3 = SeasonFactory(start=200, end=260)
 
     def setUp(self) -> None:
         self.url = reverse("season-list")
@@ -210,3 +162,15 @@ class SeasonViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(self.season3.name, json.loads(response.content)[0]["name"])
+
+    def test_start_month_and_end_month_fields(self):
+        response = response = self.client.get(f"{self.url}{self.season3.pk}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(len(json.loads(response.content)), 1)
+        data = json.loads(response.content)
+        self.assertEqual(self.season3.name, data["name"])
+        # start date of 200 corresponds to July (7) and 260 is Sept (9)
+        self.assertIn("start_month", data)
+        self.assertIn("end_month", data)
+        self.assertEqual(data["start_month"], 7)
+        self.assertEqual(data["end_month"], 9)
