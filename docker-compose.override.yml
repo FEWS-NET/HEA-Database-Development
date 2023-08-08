@@ -11,17 +11,12 @@ services:
     build:
       target: dev
     ports:
-      - 8000:8000
-      - 8889:8888
+      - "8000:8000"
     volumes:
       - ./:/usr/src/app
-      # Ensure we have separate volumes for writable directories inside the container
+      # Separate volumes for writable directories inside the container
       - /usr/src/app/assets
       - /usr/src/app/cache
-      - /usr/src/app/data-explorer/build
-      - /usr/src/app/fde2/build
-      - /usr/src/app/fdm/build
-      - /usr/src/app/docs/_build
       - /usr/src/app/log
       - /usr/src/app/media
     environment:
@@ -32,6 +27,3 @@ services:
       - --timeout=3600
       - --workers=12
       - --reload
-      - --reload-extra-file data-explorer/build
-      - --reload-extra-file fde2/build
-      - --reload-extra-file fdm/build

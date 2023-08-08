@@ -6,7 +6,6 @@ from datetime import datetime, timedelta
 from django.contrib.gis.db import models
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
-from django.utils.dates import MONTHS
 from django.utils.translation import gettext_lazy as _
 from model_utils.managers import InheritanceManager
 
@@ -22,6 +21,7 @@ from metadata.models import (
     HazardCategory,
     LivelihoodCategory,
     LivelihoodStrategyTypes,
+    Market,
     Season,
     SeasonalActivityType,
     WealthCategory,
@@ -152,11 +152,17 @@ class LivelihoodZoneBaseline(common_models.Model):
         ]
 
 
-class Staple(common_models.Model):
+# @TODO Can we have a better name.
+class LivelihoodProductCategory(common_models.Model):
     """
-    Stores the main staples for a LivelihoodZoneBaseline.
-    Does not store 'other' staples as I've not seen a need to, but could do with a CHOICE field.
+    The usage category of the Product in the Livelihood Zone, such as staple food or livelihood protection.
     """
+
+    class ProductBasket(models.IntegerChoices):
+        MAIN_STAPLE = 1, _("Main Staple")
+        OTHER_STAPLE = 2, _("Other Staple")
+        SURVIVAL_NON_FOOD = 3, _("Non-food survival")
+        LIVELIHOODS_PROTECTION = 4, _("Livelihoods Protection")
 
     livelihood_zone_baseline = models.ForeignKey(
         LivelihoodZoneBaseline,
@@ -167,6 +173,11 @@ class Staple(common_models.Model):
     product = models.ForeignKey(
         ClassifiedProduct, on_delete=models.RESTRICT, related_name="staple_foods", verbose_name=_("Item")
     )
+    basket = models.PositiveSmallIntegerField(choices=ProductBasket.choices, verbose_name=_("Product Basket"))
+
+    class Meta:
+        verbose_name = _("Livelihood Product Category")
+        verbose_name_plural = _("Livelihood Product Categories")
 
 
 # @TODO https://fewsnet.atlassian.net/browse/HEA-54
@@ -680,7 +691,7 @@ class LivelihoodActivity(common_models.Model):
         ]
 
     class ExtraMeta:
-        identifier = ["wealth_group", "livelihood_strategy", "strategy_type"]
+        identifier = ["wealth_group", "item", "additional_identifier"]
 
 
 class MilkProduction(LivelihoodActivity):
@@ -1188,13 +1199,15 @@ class CommunityCropProduction(common_models.Model):
     And the data goes to the BSS's 'Production' worksheet
     """
 
-    CROP_PURPOSE = (
-        ("main_crop", "Main Food Crop"),
-        ("cash_crop", "Cash Crop"),
-    )
+    # @TODO  CropPurpose is referring the 'Main food & cash crops...' in Form 3,
+    #  but the BSS doesn't seem to contain this, should we keep this?
+    class CropPurpose(models.TextChoices):
+        BASELINE = "main_crop", _("Main Food Crop")
+        RESPONSE = "cash_crop", _("Cash Crop")
+
     community = models.ForeignKey(Community, on_delete=models.RESTRICT, verbose_name=_("Community or Village"))
     crop_type = models.ForeignKey(ClassifiedProduct, on_delete=models.RESTRICT, verbose_name=_("Crop Type"))
-    crop_purpose = models.CharField(max_length=20, choices=CROP_PURPOSE, verbose_name=_("Crop purpose"))
+    crop_purpose = models.CharField(max_length=20, choices=CropPurpose.choices, verbose_name=_("Crop purpose"))
     season = models.ForeignKey(Season, on_delete=models.RESTRICT, verbose_name=_("Season"))
     yield_with_inputs = models.FloatField(
         verbose_name=_("Yield with inputs"),
@@ -1208,6 +1221,7 @@ class CommunityCropProduction(common_models.Model):
     unit_of_land = models.ForeignKey(
         UnitOfMeasure, db_column="unit_code", on_delete=models.RESTRICT, verbose_name=_("Unit of land")
     )
+
     # @TODO We need to store the harvest month for each crop, because it is needed
     # to calculate the per month food, income and expenditure shown in Table 4 of the LIAS Sheet S
 
@@ -1292,90 +1306,242 @@ class CommunityLivestock(common_models.Model):
         verbose_name_plural = _("Wealth Group Attributes")
 
 
-class Market(common_models.Model):
-    """
-    The markets in the bss are just names
-    TODO: should we make this spatial? and move it to spatial or metadata?
-    """
-
-    name = common_models.NameField(verbose_name=_("Name"))
-    community = models.ForeignKey(Community, on_delete=models.RESTRICT, verbose_name=_("Community or Village"))
-
-    class ExtraMeta:
-        identifier = ["name"]
-
-    class Meta:
-        verbose_name = _("Market")
-        verbose_name_plural = _("Markets")
-
-
 class MarketPrice(common_models.Model):
     """
     Prices for the reference year are interviewed in Form 3
-    Data is captured in 'prices' worksheet of the BSS
+
+    Stored on the BSS 'Prices' worksheet.
     """
 
-    MONTHS = MONTHS.items()
     community = models.ForeignKey(Community, on_delete=models.RESTRICT, verbose_name=_("Community or Village"))
-    # We need the item to reference it but the item can be Crop, Livestock, Other expenditure items
-    # e.g. tea, coffee, sugar ..# do we need to have
-    # a) something similar to Classified Product or
-    # b) a reference model -
-    # MarketItem with category as Main food, Cash crops Livestock ..
     product = models.ForeignKey(
         ClassifiedProduct,
         on_delete=models.RESTRICT,
         related_name="market_prices",
         help_text=_("Crop, livestock or other category of items"),
     )
-    market = models.ForeignKey(Market, on_delete=models.RESTRICT)
-    low_price = models.FloatField("Low price")
-    low_price_month = models.SmallIntegerField(choices=list(MONTHS), verbose_name=_("Low Price Month"))
-    high_price = models.FloatField("High price")
-    high_price_month = models.SmallIntegerField(choices=list(MONTHS), verbose_name=_("High Price Month"))
+    # Sometimes the BSS has "farmgate" or "within the village" or "locally" as
+    # the market. For example, MWSLA_30Sep15 (https://docs.google.com/spreadsheets/d/1AX6GGt7S1wAP_NlTBBK8FKbCN4kImgzY/edit#gid=2078095544)  # NOQA: E501
+    # @TODO Should the market be nullable, or should we have a Market with the
+    # same name and geography as the Community when that happens.
+    market = models.ForeignKey(Market, blank=True, null=True, on_delete=models.RESTRICT)
+    description = common_models.DescriptionField(max_length=100)
+    currency = models.ForeignKey(Currency, on_delete=models.RESTRICT, verbose_name=_("Currency"))
     unit_of_measure = models.ForeignKey(
         UnitOfMeasure, db_column="unit_code", on_delete=models.RESTRICT, verbose_name=_("Unit of measure")
     )
+    # We use day in the year instead of month to allow greater granularity,
+    # and compatibility with the potential FDW Enhanced Crop Calendar output.
+    # Note that if the occurrence goes over the year end, then the start day
+    # will be larger than the end day.
+    low_price_start = models.PositiveSmallIntegerField(
+        validators=[MaxValueValidator(365), MinValueValidator(1)], verbose_name=_("Low Price Start Day")
+    )
+    low_price_end = models.PositiveSmallIntegerField(
+        validators=[MaxValueValidator(365), MinValueValidator(1)], verbose_name=_("Low Price End Day")
+    )
+    low_price = models.FloatField(verbose_name=_("Low price"))
+    high_price_start = models.PositiveSmallIntegerField(
+        validators=[MaxValueValidator(365), MinValueValidator(1)], verbose_name=_("High Price Start Day")
+    )
+    high_price_end = models.PositiveSmallIntegerField(
+        validators=[MaxValueValidator(365), MinValueValidator(1)], verbose_name=_("High Price End Day")
+    )
+    high_price = models.FloatField(verbose_name=_("High price"))
 
     class Meta:
-        verbose_name = _("MarketPrice")
-        verbose_name_plural = _("MarketPrices")
+        verbose_name = _("Market Price")
+        verbose_name_plural = _("Market Prices")
 
 
-# LabourMarket?
-# LivestockMigration
-# The interview form has these but couldn't find it in the BSSs
+# @TODO Ask Save what to call this
+class AnnualProductionPerformance(common_models.Model):
+    """
+    Relative production performance and resulting food security experienced
+    in a recent year prior to the reference year.
+
+    Stored on the BSS 'Timeline' worksheet based on responses to the Form 3.
+    """
+
+    class Performance(models.IntegerChoices):
+        VERY_POOR = 1, _("Very Poor")
+        POOR = 2, _("Poor")
+        MEDIUM = 3, _("Medium")
+        GOOD = 4, _("Good")
+        VERY_GOOD = 5, _("Very Good")
+
+    community = models.ForeignKey(Community, on_delete=models.RESTRICT, verbose_name=_("Community or Village"))
+    performance_year_start_date = models.DateField(
+        verbose_name=_("Performance Year Start Date"),
+        help_text=_("The first day of the month of the start month in the performance year"),
+    )
+    performance_year_end_date = models.DateField(
+        verbose_name=_("Performance Year End Date"),
+        help_text=_("The last day of the month of the end month in the performance year"),
+    )
+    annual_performance = models.SmallIntegerField(
+        blank=True,
+        null=True,
+        choices=Performance.choices,
+        validators=[
+            MinValueValidator(1, message="Performance rank must be at least 1."),
+            MaxValueValidator(5, message="Performance rank must be at most 5."),
+        ],
+        verbose_name=_("Seasonal Performance"),
+        help_text=_("Ranking of the annual production performance from Very Poor (1) to Very Good (5)"),
+    )
+    # @TODO SN05 https://docs.google.com/spreadsheets/d/1Su_1HMb7kkq5YXDtdETCnSuD6-goA4aA/edit#gid=54536490
+    # contains text descriptions for the seasonal performance.
+    description = common_models.DescriptionField()
+
+    class Meta:
+        verbose_name = _("Annual Production Performance")
+        verbose_name_plural = _("Annual Production Performance")
 
 
 class Hazard(common_models.Model):
     """
     A shock such as drought, flood, conflict or market disruption which is likely
-    to have an impact on people’s livelihoods
-    Form 3 interviews hazard information and the BSS has 'timeline' for capturing Chronic and Periodic Hazards
+    to have an impact on people’s livelihoods.
+
+    Hazards can be Chronic (every year) or Periodic hazards (not every year).
+
+    Stored on the BSS 'Timeline' worksheet based on responses to the Form 3.
     """
 
+    class ChronicOrPeriodic(models.TextChoices):
+        CHRONIC = "chronic", _("Chronic")
+        PERIODIC = "periodic", _("Periodic")
+
+    # @TODO Is this risk, likelihood or impact?
+    class HazardRanking(models.IntegerChoices):
+        MOST_IMPORTANT = 1, _("Most Important")
+        IMPORTANT = 2, _("Important")
+        LESS_IMPORTANT = 3, _("Less Important")
+
     community = models.ForeignKey(Community, on_delete=models.RESTRICT, verbose_name=_("Community or Village"))
-    hazard_category = models.ForeignKey(HazardCategory, on_delete=models.RESTRICT, verbose_name=_("Hazard Category"))
-    is_chronic = models.BooleanField(verbose_name=_("Is Chronic"))
-    year = models.IntegerField(
-        validators=[
-            MinValueValidator(1900, message="Year must be greater than or equal to 1900."),
-            MaxValueValidator(2100, message="Year must be less than or equal to 2100."),
-        ]
-    )
-    seasonal_performance = models.SmallIntegerField(
+    chronic_or_periodic = models.CharField(choices=ChronicOrPeriodic.choices, verbose_name=_("Chronic or Periodic"))
+    ranking = models.PositiveSmallIntegerField(
+        choices=HazardRanking.choices,
         validators=[
             MinValueValidator(1, message="Performance rank must be at least 1."),
             MaxValueValidator(5, message="Performance rank must be at most 5."),
-        ]
+        ],
+        verbose_name=_("Ranking"),
     )
-    event = common_models.DescriptionField(
-        max_length=255, null=True, blank=True, verbose_name=_("Description of event(s)")
-    )
-    response = common_models.DescriptionField(
-        max_length=255, null=True, blank=True, verbose_name=_("Description of event(s)")
+    hazard_category = models.ForeignKey(HazardCategory, on_delete=models.RESTRICT, verbose_name=_("Hazard Category"))
+    # @TODO MG23 https://docs.google.com/spreadsheets/d/18Y85UKXGehudt2YX5Oc_adw2TUxo6nY7/edit#gid=1565100920
+    # contains additional information on Events and Responses by year in the Timeline worksheet.
+    description = common_models.DescriptionField(
+        max_length=255, verbose_name=_("Description of Event(s) and/or Response(s)")
     )
 
     class Meta:
         verbose_name = _("Hazard")
         verbose_name_plural = _("Hazards")
+
+
+class Event(common_models.Model):
+    """
+    A shock such as drought, flood, conflict or market disruption which
+    happened in a recent year prior to the reference year.
+
+    Stored on the BSS 'Timeline' worksheet based on responses to the Form 3.
+    """
+
+    community = models.ForeignKey(Community, on_delete=models.RESTRICT, verbose_name=_("Community or Village"))
+    event_year_start_date = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name=_("Event Year Start Date"),
+        help_text=_("The first day of the month of the start month in the event year"),
+    )
+    event_year_end_date = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name=_("Event Year End Date"),
+        help_text=_("The last day of the month of the end month in the event year"),
+    )
+    # @TODO MG23 https://docs.google.com/spreadsheets/d/18Y85UKXGehudt2YX5Oc_adw2TUxo6nY7/edit#gid=1565100920
+    # contains additional information on Events and Responses by year in the Timeline worksheet.
+    description = common_models.DescriptionField(
+        max_length=255, verbose_name=_("Description of Event(s) and/or Response(s)")
+    )
+
+    class Meta:
+        verbose_name = _("Event")
+        verbose_name_plural = _("Events")
+
+
+class ExpandabilityFactor(models.Model):
+    """
+    The percentage of the quantity sold, income or expenditure which applies
+    to a Livelihood Strategy in a response scenario.
+
+    Stored on the BSS 'Exp factors' worksheet.
+    """
+
+    livelihood_strategy = models.ForeignKey(
+        LivelihoodStrategy, on_delete=models.PROTECT, help_text=_("Livelihood Strategy")
+    )
+    wealth_group = models.ForeignKey(WealthGroup, on_delete=models.RESTRICT, verbose_name=_("Wealth Group"))
+
+    # @TODO make these percentages
+    percentage_produced = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Produced"))
+    percentage_sold = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Sold/Exchanged"))
+    percentage_other_uses = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Other Uses"))
+    # Can normally be calculated / validated as `quantity_received - quantity_sold - quantity_other_uses`
+    percentge_consumed = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Consumed"))
+
+    # Can be calculated / validated as `quantity_sold * price` for livelihood strategies that involve the sale of
+    # a proportion of the household's own production.
+    precentage_income = models.FloatField(blank=True, null=True, help_text=_("Income"))
+    # Can be calculated / validated as `quantity_consumed * price` for livelihood strategies that involve the purchase
+    # of external goods or services.
+    percentage_expenditure = models.FloatField(blank=True, null=True, help_text=_("Expenditure"))
+
+    # Sheet G contains some texts that seems describing where data is coming from, mostly 'Summ' sheet
+    remark = models.TextField(max_length=255, verbose_name=_("Remark"), null=True, blank=True)
+
+    class Meta:
+        verbose_name = _("Expandability Factor")
+        verbose_name_plural = _("Expandability Factor")
+
+
+class CopingStrategy(models.Model):
+    """
+    The capacity of households to diversify and expand access to various sources of food and income,
+    and thus to cope with a specified hazard
+
+    Captured in the 'Coping' Sheet of the BSS whenever available
+
+    Notably this sheet is not found in most BSSs, and whenever there is, the data seems an inconsistent text
+    as opposed to the expected numeric values, and this may require us to parse the text during ingestion
+
+    Coping Strategy also is better analysed during the outcome analysis stage, by taking into account the
+    exact hazard/shock,
+
+    In addition, at times in the literature, Coping seems used synonymous to Expandability,
+    however it seems suitable to model the data in 'Coping' sheet - see Practitioners' guide page 137
+    """
+
+    # @TODO we can also use negative values and avoid this enum but parsing the data like this my be clearer and
+    # possibly easier to report ?
+    class Strategy(models.TextChoices):
+        REDUCE = "reduce", _("Reduce")
+        INCREASE = "increase", _("Increase")
+
+    community = models.ForeignKey(Community, on_delete=models.RESTRICT, verbose_name=_("Community or Village"))
+    leaders = models.CharField(max_length=255, null=True, blank=True)
+    wealth_group = models.ForeignKey(WealthGroup, on_delete=models.RESTRICT, verbose_name=_("Wealth Group"))
+    livelihood_strategy = models.ForeignKey(
+        LivelihoodStrategy, on_delete=models.PROTECT, help_text=_("Livelihood Strategy")
+    )
+    strategy = models.CharField(max_length=20, choices=Strategy.choices, verbose_name=_("Strategy"))
+    by_value = models.PositiveSmallIntegerField(
+        verbose_name=_("Reduce or increase by"),
+    )
+
+    class Meta:
+        verbose_name = _("Coping Strategy")
+        verbose_name_plural = _("Coping Strategies")

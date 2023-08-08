@@ -153,9 +153,26 @@ class WealthCategory(Dimension):
         verbose_name_plural = _("Wealth Categories")
 
 
+class Market(Dimension):
+    """
+    The markets in the bss are just names
+    TODO: should we make this spatial? and move it to spatial or metadata?
+    """
+
+    country = common_models.NameField(verbose_name=_("Name"))
+
+    class Meta:
+        verbose_name = _("Market")
+        verbose_name_plural = _("Markets")
+
+
 class HazardCategory(Dimension):
     """
-    Category of Hazards like: Drought, Epidemic crop disease,	Wild Animals, Flood, Epidemic livestock disease	...
+    A category of Hazards such as drought, epidemic crop disease, epidemic livestock disease, floods, etc.
+
+    The Form 3 template includes the following Hazard Categories:
+      Drought, Frost, Wind, Epidemic crop disease, Wild Animalst, Flood, Hail,
+      Crop Pests, Epidemic livestock disease, Market events.
     """
 
     class Meta:
