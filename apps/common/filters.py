@@ -1,20 +1,18 @@
 """
 Filter that enhance Django Filters, generally used for the REST API
 """
-import datetime
 import logging
 
-from dateutil.relativedelta import relativedelta
 from django.core.exceptions import FieldDoesNotExist, ValidationError
 from django.core.validators import EMPTY_VALUES
 from django.db.models import F, Func, Q
 from django.forms import TextInput
-from django.forms.fields import ChoiceField, DateField, Field, MultipleChoiceField
+from django.forms.fields import ChoiceField, Field, MultipleChoiceField
 from django.forms.models import ModelMultipleChoiceField
 from django.utils.datastructures import MultiValueDict
 from django.utils.encoding import force_str
 from django_filters import ModelMultipleChoiceFilter, MultipleChoiceFilter
-from django_filters.filters import BooleanFilter, CharFilter, ChoiceFilter, DateFilter
+from django_filters.filters import BooleanFilter, CharFilter, ChoiceFilter
 from rest_framework.filters import OrderingFilter
 
 logger = logging.getLogger(__name__)
@@ -239,39 +237,3 @@ class EmptyStringFilter(BooleanFilter):
         method = qs.exclude if exclude else qs.filter
 
         return method(**{self.field_name: ""})
-
-
-class DefaultingDateField(DateField):
-    """
-    A date field that accepts defaults like "last_month", "today"
-    """
-
-    def to_python(self, value):
-        if value == "last_month":
-            value = datetime.date.today().replace(day=1) - datetime.timedelta(days=1)
-        elif value == "second_last_month":
-            value = datetime.date.today() + relativedelta(days=1) + relativedelta(months=-2, day=31)
-        elif value == "today":
-            value = datetime.date.today()
-        elif value == "tomorrow":
-            value = datetime.date.today() + relativedelta(days=1)
-        return super().to_python(value)
-
-
-class DefaultingDateFilter(DateFilter):
-    """
-    A date filter that accepts defaults like "today"
-    """
-
-    field_class = DefaultingDateField
-
-    def filter(self, qs, value):
-        if value:
-            if self.lookup_expr in ["lte", "gte"]:
-                # period_date filter for start and end date with either gte or lte expression will fall here.
-                query = Q()
-                query = Q(**{self.field_name + "__" + self.lookup_expr: value})
-                return qs.filter(query)
-            else:
-                return qs.current_all(value)
-        return qs
