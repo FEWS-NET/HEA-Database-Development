@@ -1,5 +1,6 @@
 import csv
 import logging
+from datetime import datetime, timedelta
 
 from django.db.migrations.operations.base import Operation
 from django.forms.models import modelform_factory
@@ -121,3 +122,9 @@ class LoadModelFromDict(Operation):
     def describe(self):
         # This is used to describe what the operation does in console output.
         return "Load data into a model from a list of dicts or a delimited file"
+
+
+def get_month_from_day_number(ref_year, day_number):
+    first_day_of_reference_year = datetime(ref_year, 1, 1)
+    _date = first_day_of_reference_year + timedelta(days=day_number - 1)
+    return _date.month

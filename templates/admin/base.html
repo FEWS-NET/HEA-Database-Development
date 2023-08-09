@@ -11,10 +11,11 @@
 
 {% endblock %}">
 <link rel="stylesheet" href="{% static "admin/css/overrides.css" %}">
-
+<link rel="stylesheet" href="{% static "bootstrap5/css/bootstrap.css" %}">
 {% block dark-mode-vars %}
   <link rel="stylesheet" href="{% static "admin/css/dark_mode.css" %}">
   <script src="{% static "admin/js/theme.js" %}" defer></script>
+  <script src="{% static "bootstrap5/js/bootstrap.js" %}" defer></script>
 {% endblock %}
 {% if not is_popup and is_nav_sidebar_enabled %}
   <link rel="stylesheet" href="{% static "admin/css/nav_sidebar.css" %}">
@@ -30,9 +31,9 @@
     {% if LANGUAGE_BIDI %}<link rel="stylesheet" href="{% static "admin/css/responsive_rtl.css" %}">{% endif %}
 {% endblock %}
 {% block blockbots %}<meta name="robots" content="NONE,NOARCHIVE">{% endblock %}
-{% load bootstrap5 %}
-{% bootstrap_css %}
-{% bootstrap_javascript %}
+{#{% load bootstrap5 %}#}
+{#{% bootstrap_css %}#}
+{#{% bootstrap_javascript %}#}
 </head>
 
 <body class="{% if is_popup %}popup {% endif %}{% block bodyclass %}{% endblock %}"
@@ -73,7 +74,6 @@
                     {% csrf_token %}
                     <button type="submit">{% translate 'Log out' %}</button>
                 </form>
-                {% include "admin/color_theme_toggle.html" %}
             {% endblock %}
         </div>
         {% endif %}

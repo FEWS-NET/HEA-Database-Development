@@ -1,7 +1,6 @@
 """
 Models for managing HEA Baseline Surveys
 """
-from datetime import datetime, timedelta
 
 from django.contrib.gis.db import models
 from django.core.exceptions import ValidationError
@@ -17,6 +16,7 @@ from common.models import (
     UnitOfMeasure,
     UnitOfMeasureConversion,
 )
+from common.utils import get_month_from_day_number
 from metadata.models import (
     HazardCategory,
     LivelihoodCategory,
@@ -691,7 +691,7 @@ class LivelihoodActivity(common_models.Model):
         ]
 
     class ExtraMeta:
-        identifier = ["wealth_group", "item", "additional_identifier"]
+        identifier = ["livelihood_strategy", "wealth_group", "strategy_type", "scenario"]
 
 
 class MilkProduction(LivelihoodActivity):
@@ -1147,15 +1147,10 @@ class SeasonalActivityOccurrence(common_models.Model):
     )
 
     def start_month(self):
-        return self.get_month_from_day_number(self.start)
+        return get_month_from_day_number(self.livelihood_zone_baseline.reference_year_start_date.year, self.start)
 
     def end_month(self):
-        return self.get_month_from_day_number(self.end)
-
-    def get_month_from_day_number(self, day_number):
-        first_day_of_reference_year = datetime(self.livelihood_zone_baseline.reference_year_start_date.year, 1, 1)
-        _date = first_day_of_reference_year + timedelta(days=day_number - 1)
-        return _date.month
+        return get_month_from_day_number(self.livelihood_zone_baseline.reference_year_start_date.year, self.end)
 
     def calculate_fields(self):
         self.livelihood_zone_baseline = self.seasonal_activity.livelihood_zone_baseline
@@ -1348,6 +1343,26 @@ class MarketPrice(common_models.Model):
         validators=[MaxValueValidator(365), MinValueValidator(1)], verbose_name=_("High Price End Day")
     )
     high_price = models.FloatField(verbose_name=_("High price"))
+
+    def low_price_start_month(self):
+        return get_month_from_day_number(
+            self.community.livelihood_zone_baseline.reference_year_start_date.year, self.low_price_start
+        )
+
+    def low_price_end_month(self):
+        return get_month_from_day_number(
+            self.community.livelihood_zone_baseline.reference_year_start_date.year, self.low_price_end
+        )
+
+    def high_price_start_month(self):
+        return get_month_from_day_number(
+            self.community.livelihood_zone_baseline.reference_year_start_date.year, self.high_price_start
+        )
+
+    def high_price_end_month(self):
+        return get_month_from_day_number(
+            self.community.livelihood_zone_baseline.reference_year_start_date.year, self.high_price_end
+        )
 
     class Meta:
         verbose_name = _("Market Price")

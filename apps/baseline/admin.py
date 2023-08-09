@@ -5,11 +5,14 @@ from metadata.models import LivelihoodStrategyTypes
 
 from .forms import LivelihoodActivityForm
 from .models import (
+    AnnualProductionPerformance,
     ButterProduction,
     Community,
     CommunityCropProduction,
     CommunityLivestock,
     CropProduction,
+    Event,
+    ExpandabilityFactor,
     Fishing,
     FoodPurchase,
     Hazard,
@@ -18,7 +21,6 @@ from .models import (
     LivelihoodZone,
     LivelihoodZoneBaseline,
     LivestockSales,
-    Market,
     MarketPrice,
     MeatProduction,
     MilkProduction,
@@ -428,45 +430,33 @@ class CommunityLivestockAdmin(admin.ModelAdmin):
     )
 
 
-class MarketAdmin(admin.ModelAdmin):
-    fields = (
-        "name",
-        "community",
-    )
-    list_display = (
-        "name",
-        "community",
-    )
-    search_fields = (
-        "name",
-        "community",
-    )
-    list_filter = (
-        "community",
-        "community__livelihood_zone_baseline__livelihood_zone",
-    )
-
-
 class MarketPriceAdmin(admin.ModelAdmin):
     fields = (
         "community",
         "product",
+        "currency",
         "market",
+        "description",
         "low_price",
-        "low_price_month",
+        "low_price_start",
+        "low_price_end",
         "high_price",
-        "high_price_month",
+        "high_price_start",
+        "high_price_end",
         "unit_of_measure",
     )
     list_display = (
         "community",
         "product",
+        "unit_of_measure",
         "market",
         "low_price",
-        "low_price_month",
+        "low_price_start_month",
+        "low_price_end_month",
+        "high_price_start_month",
+        "high_price_end_month",
         "high_price",
-        "high_price_month",
-        "unit_of_measure",
+        "currency",
     )
     search_fields = (
         "community",
@@ -482,22 +472,107 @@ class MarketPriceAdmin(admin.ModelAdmin):
 
 
 class HazardAdmin(admin.ModelAdmin):
-    fields = ("community", "hazard_category", "is_chronic", "year", "seasonal_performance", "event", "response")
+    fields = (
+        "community",
+        "chronic_or_periodic",
+        "ranking",
+        "hazard_category",
+        "description",
+    )
     list_display = (
         "community",
+        "chronic_or_periodic",
+        "ranking",
         "hazard_category",
-        "is_chronic",
-        "year",
     )
     search_fields = (
         "community",
+        "chronic_or_periodic",
         "hazard_category",
     )
     list_filter = (
         "community",
         "hazard_category",
+        "chronic_or_periodic",
         "community__livelihood_zone_baseline__livelihood_zone",
     )
+
+
+class AnnualProductionPerformanceAdmin(admin.ModelAdmin):
+    fields = (
+        "community",
+        "performance_year_start_date",
+        "performance_year_end_date",
+        "annual_performance",
+        "description",
+    )
+    list_display = (
+        "community",
+        "performance_year_start_date",
+        "performance_year_end_date",
+        "annual_performance",
+    )
+    search_fields = (
+        "community",
+        "performance_year_start_date",
+        "performance_year_end_date",
+        "annual_performance",
+        "description",
+    )
+    list_filter = (
+        "community",
+        "community__livelihood_zone_baseline__livelihood_zone",
+    )
+
+
+class EventAdmin(admin.ModelAdmin):
+    fields = (
+        "community",
+        "event_year_start_date",
+        "event_year_end_date",
+        "description",
+    )
+    list_display = (
+        "community",
+        "event_year_start_date",
+        "event_year_end_date",
+        "description",
+    )
+    search_fields = (
+        "community",
+        "description",
+    )
+    list_filter = (
+        "community",
+        "community__livelihood_zone_baseline__livelihood_zone",
+    )
+
+
+class ExpandabilityFactorAdmin(admin.ModelAdmin):
+
+    fields = (
+        "livelihood_strategy",
+        "wealth_group",
+        "percentage_produced",
+        "percentage_sold",
+        "percentage_other_uses",
+        "percentge_consumed",
+        "precentage_income",
+        "percentage_expenditure",
+        "remark",
+    )
+    list_display = (
+        "livelihood_strategy",
+        "wealth_group",
+        "percentage_produced",
+        "percentage_sold",
+        "percentage_other_uses",
+        "percentge_consumed",
+        "precentage_income",
+        "percentage_expenditure",
+    )
+    search_fields = ("livelihood_strategy", "wealth_group")
+    list_filter = ("livelihood_strategy", "wealth_group")
 
 
 admin.site.register(SourceOrganization, SourceOrganizationAdmin)
@@ -510,9 +585,10 @@ admin.site.register(WealthGroup, WealthGroupAdmin)
 admin.site.register(CommunityCropProduction, CommunityCropProductionAdmin)
 admin.site.register(CommunityLivestock, CommunityLivestockAdmin)
 
-admin.site.register(Market, MarketAdmin)
 admin.site.register(MarketPrice, MarketPriceAdmin)
 admin.site.register(Hazard, HazardAdmin)
-
+admin.site.register(Event, EventAdmin)
+admin.site.register(ExpandabilityFactor, ExpandabilityFactorAdmin)
 admin.site.register(SeasonalActivity, SeasonalActivityAdmin)
 admin.site.register(SeasonalActivityOccurrence, SeasonalActivityOccurrenceAdmin)
+admin.site.register(AnnualProductionPerformance, AnnualProductionPerformanceAdmin)

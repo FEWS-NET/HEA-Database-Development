@@ -3,6 +3,7 @@ from django.contrib import admin
 from .models import (
     HazardCategory,
     LivelihoodCategory,
+    Market,
     Season,
     SeasonalActivityType,
     WealthCategory,
@@ -89,10 +90,20 @@ class SeasonAdmin(admin.ModelAdmin):
     ordering = ("order",)
 
 
+class MarketAdmin(DimensionAdmin):
+    def get_fields(self, request, obj=None):
+        fields = super().get_fields(request, obj)
+        fields.insert(1, "country")
+        return fields
+
+    list_filter = ("country",)
+
+
 admin.site.register(LivelihoodCategory, LivelihoodCategoryAdmin)
 admin.site.register(WealthCategory, WealthCategoryAdmin)
 admin.site.register(SeasonalActivityType, SeasonalActivityTypeAdmin)
 
+admin.site.register(Market, MarketAdmin)
 admin.site.register(WealthCharacteristic, WealthCharacteristicAdmin)
 admin.site.register(HazardCategory, HazardCategoryAdmin)
 admin.site.register(Season, SeasonAdmin)
