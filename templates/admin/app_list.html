@@ -33,7 +33,11 @@
                             <a class="link-dark rounded"
                                href="{% url 'admin:baseline_livelihoodzonebaseline_changelist' %}"> {% translate 'Livelihood Zone Baselines' %}</a>
                         </div>
+                         <a class="btn btn-link" type="button"
+                                 data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight" aria-controls="offcanvasRight">Learn more about Baseline</a>
+
                     </div>
+
                 </div>
             {% endif %}
             {% if perms.baseline.view_community %}
@@ -238,3 +242,39 @@
 {% endif %}
 
 
+
+<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
+  <div class="offcanvas-header">
+    <h5 id="offcanvasRightLabel">{% translate 'Help' %} </h5>
+    <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body">
+   <div class="container">
+  <h6>{% translate 'An HEA Baseline for a LivelihoodZone in a given reference year' %}</h6>
+  {% blocktrans %}
+  <p>Each LivelihoodZoneVersion contains the uploaded BSS that was used to create it.</p>
+
+  <p>
+    The reference year is a consumption year, the beginning and the end of the year depends on the livelihood zone.
+  </p>
+  <pre>
+  For non-Urban Livelihood Zones it is aligned with the Seasons.
+  </pre>
+  <pre>
+  For agricultural and agropastoral Livelihood Zones,
+  the reference year begins with the first month of the
+  harvest and runs until the end of the lean season.
+  For example, this is from October 2022 to September
+  2023 for the Sahel countries.
+  </pre>
+  <pre>
+  For pastoralist Livelihood Zones, the reference
+  year begins with the month in which the livestock
+  have enough fodder (providing good milk yield) and
+  runs until the end of lean season for livestock.
+  Example from July 2022 to June 2023 for
+  the Sahel countries.</pre>
+       {% endblocktrans %}
+</div>
+  </div>
+</div>
