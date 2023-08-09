@@ -86,7 +86,6 @@ EXTERNAL_APPS = [
     "django.contrib.gis",
     "django.contrib.admindocs",
     "django_extensions",
-    "bootstrap5",
 ]
 PROJECT_APPS = ["common", "metadata", "baseline"]
 INSTALLED_APPS = EXTERNAL_APPS + PROJECT_APPS
