@@ -25,6 +25,7 @@
                         });
                 } else {
                     docStringContainer.innerHTML = "";
+                     modelName.textContent = "";
                 }
             });
         });
@@ -380,7 +381,7 @@
 
 <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
     <div class="offcanvas-header">
-        <h5 id="offcanvasRightLabel">{% translate 'Learn more on Baseline' %} </h5>
+        <h5 id="offcanvasRightLabel">{% translate 'Learn more on Baseline Models' %} </h5>
         <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
     <div class="offcanvas-body">
@@ -389,25 +390,25 @@
                 <label for="model-select">{% translate "Select Model"%} :</label>
                 <select id="model-select">
                     <option value="---">---</option>
-                    <optgroup label={% translate "BSS Setup" %}></optgroup>
+                    <optgroup label= "BSS Setup"></optgroup>
                     <option value="baseline:sourceorganization"> {% translate "Source Organizations" %}</option>
                     <option value="baseline:livelihoodzone">{% translate "Livelihood Zone" %} </option>
                     <option value="baseline:community"> {% translate "Community" %}</option>
                     <option value="baseline:livelihoodzonebaseline"> {% translate "Livelihood Zone Baseline" %}</option>
-                    <optgroup label={% translate "Wealth Groups" %}></optgroup>
+                    <optgroup label="Wealth Groups"></optgroup>
                     <option value="baseline:wealthgroup"> {% translate "Wealth Breakdown" %}</option>
                     <option value="baseline:livelihoodstrategy"> {% translate "Livelihood Strategy" %}</option>
                     <option value="baseline:livelihoodactivity"> {% translate "Livelihood Activity" %}</option>
-                    <optgroup label={% translate "Community Productions" %}></optgroup>
+                    <optgroup label="Community Productions"></optgroup>
                     <option value="baseline:communitycropproduction"> {% translate "Crop" %}</option>
                     <option value="baseline:communitylivestock"> {% translate "Livestock" %}</option>
-                    <optgroup label={% translate "Market Prices" %}></optgroup>
+                    <optgroup label="Market Prices"></optgroup>
                     <option value="baseline:marketprice"> {% translate "Market Prices" %}</option>
-                    <optgroup label={% translate "Seasonal Calender" %}></optgroup>
+                    <optgroup label="Seasonal Calender"></optgroup>
                     <option value="metadata:seasonalactivitytype"> {% translate "Seasonal Activity Type" %}</option>
                     <option value="baseline:seasonalactivity"> {% translate "Seasonal Activities" %}</option>
                     <option value="baseline:activityoccurrences"> {% translate "Activity Occurrences" %}</option>
-                    <optgroup label={% translate "Hazards and Events" %}></optgroup>
+                    <optgroup label="Hazards and Events"></optgroup>
                     <option value="metadata:annualproductionperformance"> {% translate "Annual Production Performances" %}</option>
                     <option value="baseline:hazard"> {% translate "Hazards" %}</option>
                     <option value="baseline:event"> {% translate "Events" %}</option>

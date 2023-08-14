@@ -32,6 +32,9 @@ from metadata.models import (
 class SourceOrganization(common_models.Model):
     """
     An Organization that provides HEA Baselines.
+
+    The Organization is the owner of the Baseline, with a non-public baseline permission,
+    the Organization is responsible for sharing the baseline
     """
 
     name = common_models.NameField(max_length=200, unique=True)
@@ -626,8 +629,9 @@ class LivelihoodActivity(common_models.Model):
             )
 
     def validate_income(self):
-        if self.income != self.quantity_sold * self.price:
-            raise ValidationError(_("Income for a Livelihood Activity must be quantity sold multiplied by price"))
+        if self.income:
+            if self.income != self.quantity_sold * self.price:
+                raise ValidationError(_("Income for a Livelihood Activity must be quantity sold multiplied by price"))
 
     def validate_expenditure(self):
         """
@@ -652,10 +656,11 @@ class LivelihoodActivity(common_models.Model):
             to_unit=self.livelihood_strategy.product.unit_of_measure,
         )
         kcals_per_unit = self.livelihood_strategy.product.kcals_per_unit
-        if self.kcals_consumed != self.quantity_consumed * conversion_factor * kcals_per_unit:
-            raise ValidationError(
-                _("Kcals consumed for a Livelihood Activity must be quantity consumed multiplied by kcals per unit")
-            )
+        if kcals_per_unit:
+            if self.kcals_consumed != self.quantity_consumed * conversion_factor * kcals_per_unit:
+                raise ValidationError(
+                    _("Kcals consumed for a Livelihood Activity must be quantity consumed multiplied by kcals per unit")
+                )
 
     # @TODO Do we use Django Forms as a separate validation layer, and load the data from the dataframe into a Form
     # instance and then check whether it is valid.  See Two Scoops for an explanation.

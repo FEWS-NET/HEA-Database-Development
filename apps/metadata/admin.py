@@ -12,12 +12,12 @@ from .models import (
 
 
 class DimensionAdmin(admin.ModelAdmin):
-    fields = (
+    fields = [
         "code",
         "name",
         "description",
         "aliases",
-    )
+    ]
     list_display = (
         "code",
         "name",
@@ -55,16 +55,17 @@ class WealthCategoryAdmin(DimensionAdmin):
     A concrete admin for WealthCategory
     """
 
-    def get_fields(self, request, obj=None):
-        fields = super().get_fields(request, obj)
-        fields.insert(1, "variable_type")
-        return fields
-
 
 class WealthCharacteristicAdmin(DimensionAdmin):
     """
     A concrete admin for WealthCharacteristic
     """
+
+    def get_fields(self, request, obj=None):
+        fields = super().get_fields(request, obj)
+        if "variable_type" not in fields:
+            fields += ["variable_type"]
+        return fields
 
     list_filter = ("variable_type",)
 
@@ -93,7 +94,8 @@ class SeasonAdmin(admin.ModelAdmin):
 class MarketAdmin(DimensionAdmin):
     def get_fields(self, request, obj=None):
         fields = super().get_fields(request, obj)
-        fields.insert(1, "country")
+        if "country" not in fields:
+            fields +=  ["country"]
         return fields
 
     list_filter = ("country",)
