@@ -10,6 +10,7 @@ from .models import (
     Community,
     CommunityCropProduction,
     CommunityLivestock,
+    CopingStrategy,
     CropProduction,
     Event,
     ExpandabilityFactor,
@@ -575,6 +576,14 @@ class ExpandabilityFactorAdmin(admin.ModelAdmin):
     list_filter = ("livelihood_strategy", "wealth_group")
 
 
+class CopingStrategyAdmin(admin.ModelAdmin):
+
+    fields = ("community", "leaders", "wealth_group", "livelihood_strategy", "strategy", "by_value")
+    list_display = ("community", "leaders", "wealth_group", "livelihood_strategy", "strategy", "by_value")
+    search_fields = ("community", "livelihood_strategy", "wealth_group")
+    list_filter = ("community", "livelihood_strategy", "wealth_group")
+
+
 admin.site.register(SourceOrganization, SourceOrganizationAdmin)
 admin.site.register(LivelihoodZone, LivelihoodZoneAdmin)
 admin.site.register(LivelihoodZoneBaseline, LivelihoodZoneBaselineAdmin)
@@ -589,6 +598,8 @@ admin.site.register(MarketPrice, MarketPriceAdmin)
 admin.site.register(Hazard, HazardAdmin)
 admin.site.register(Event, EventAdmin)
 admin.site.register(ExpandabilityFactor, ExpandabilityFactorAdmin)
+admin.site.register(CopingStrategy, CopingStrategyAdmin)
+
 admin.site.register(SeasonalActivity, SeasonalActivityAdmin)
 admin.site.register(SeasonalActivityOccurrence, SeasonalActivityOccurrenceAdmin)
 admin.site.register(AnnualProductionPerformance, AnnualProductionPerformanceAdmin)

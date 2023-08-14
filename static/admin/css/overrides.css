@@ -144,3 +144,12 @@ ul > li {
 textarea{
     height: 60px;
 }
+
+input[type="text"], input[type="password"], input[type="email"], input[type="url"], input[type="number"], input[type="tel"], textarea, select, .vTextField {
+  border: 1px solid var(--border-color);
+  border-radius: 0px;
+  padding: 5px 6px;
+  margin-top: 0;
+  color: var(--body-fg);
+  background-color: var(--body-bg);
+}

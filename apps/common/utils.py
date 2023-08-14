@@ -2,6 +2,7 @@ import csv
 import logging
 from datetime import datetime, timedelta
 
+from django.apps import apps
 from django.db.migrations.operations.base import Operation
 from django.forms.models import modelform_factory
 
@@ -128,3 +129,17 @@ def get_month_from_day_number(ref_year, day_number):
     first_day_of_reference_year = datetime(ref_year, 1, 1)
     _date = first_day_of_reference_year + timedelta(days=day_number - 1)
     return _date.month
+
+
+def get_doc_strings_for_model(model_name):
+    """
+    Gets the doc strings defined in the model for references or help guide purposes
+
+    model_name - have a format app_label:model e.g. baseline:community
+    """
+    app_label, model = model_name.split(":")
+    model = apps.get_model(app_label=app_label, model_name=model)
+    if model:
+        return model.__doc__
+    else:
+        return f"Model '{model_name}' not found"
