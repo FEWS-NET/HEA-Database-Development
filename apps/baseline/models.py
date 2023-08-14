@@ -659,7 +659,9 @@ class LivelihoodActivity(common_models.Model):
         if kcals_per_unit:
             if self.kcals_consumed != self.quantity_consumed * conversion_factor * kcals_per_unit:
                 raise ValidationError(
-                    _("Kcals consumed for a Livelihood Activity must be quantity consumed multiplied by kcals per unit")
+                    _(
+                        "Kcals consumed for a Livelihood Activity must be quantity consumed multiplied by kcals per unit"  # NOQA: E501
+                    )
                 )
 
     # @TODO Do we use Django Forms as a separate validation layer, and load the data from the dataframe into a Form

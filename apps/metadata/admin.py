@@ -95,7 +95,7 @@ class MarketAdmin(DimensionAdmin):
     def get_fields(self, request, obj=None):
         fields = super().get_fields(request, obj)
         if "country" not in fields:
-            fields +=  ["country"]
+            fields += ["country"]
         return fields
 
     list_filter = ("country",)
