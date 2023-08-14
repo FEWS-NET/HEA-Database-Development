@@ -66,11 +66,11 @@ RUN mkdir -p \
 # paths are required for them to still work when docker-compose.override.yml is
 # mounting the working directory into /usr/src/app
 VOLUME \
-    assets \
-    cache \
-    log \
-    media \
-    run
+    /usr/src/app/assets \
+    /usr/src/app/cache \
+    /usr/src/app/log \
+    /usr/src/app/media \
+    /usr/src/app/run
 
 ## Create a second build stage that adds the source code
 ## This allows the test and dev stages below to reuse the base stage
