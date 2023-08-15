@@ -11,16 +11,18 @@ from common.models import Country
 logger = logging.getLogger(__name__)
 
 
-class Dimension(common_models.Model):
+class ReferenceData(common_models.Model):
     """
-    Dimension provides shared functionality to serve reference data via API,
-    filter, aggregate, group, map, ingest, render, search, translate, convert.
+    Reference data for a model.
+
+    Provides shared structure and functionality for reference data
+    (e.g. categories or types) that are used as metadata lookups for other models.
     """
 
     code = common_models.CodeField(primary_key=True, verbose_name=_("Code"))
     name = common_models.NameField()
     description = common_models.DescriptionField()
-    # Some dimensions need to be sorted in a custom (i.e. non-alphabetic) order.
+    # Some reference data needs to be sorted in a custom (i.e. non-alphabetic) order.
     # For example, WealthCategory needs to be VP, P, M, BO in most cases.
     ordering = models.PositiveSmallIntegerField(
         blank=True,
@@ -54,7 +56,7 @@ class Dimension(common_models.Model):
         abstract = True
 
 
-class LivelihoodCategory(Dimension):
+class LivelihoodCategory(ReferenceData):
     """
     A type of Livelihood Zone, such as Pastoral or Rain-fed AgroPastoral, etc.
     """
@@ -68,7 +70,7 @@ class LivelihoodCategory(Dimension):
         verbose_name_plural = _("Livelihood Category")
 
 
-class WealthCharacteristic(Dimension):
+class WealthCharacteristic(ReferenceData):
     """
     A Characteristic of a Wealth Group, such as `Number of children at school`, etc.
 
@@ -120,7 +122,7 @@ class LivelihoodActivityScenario(models.TextChoices):
     RESPONSE = "response", _("Response")
 
 
-class SeasonalActivityType(Dimension):
+class SeasonalActivityType(ReferenceData):
     """
     Seasonal activities for the various food and income activities.
 
@@ -151,7 +153,7 @@ class SeasonalActivityType(Dimension):
         verbose_name_plural = _("Seasonal Activity Types")
 
 
-class WealthCategory(Dimension):
+class WealthCategory(ReferenceData):
     """
     The local definitions of wealth group, common to all BSSes in an LHZ.
 
@@ -164,7 +166,7 @@ class WealthCategory(Dimension):
         verbose_name_plural = _("Wealth Categories")
 
 
-class Market(Dimension):
+class Market(ReferenceData):
     """
     The markets in the bss are just names
     TODO: should we make this spatial? and move it to spatial or metadata?
@@ -177,7 +179,7 @@ class Market(Dimension):
         verbose_name_plural = _("Markets")
 
 
-class HazardCategory(Dimension):
+class HazardCategory(ReferenceData):
     """
     A category of Hazards such as drought, epidemic crop disease, epidemic livestock disease, floods, etc.
 
