@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 from common.admin import GeoModelAdmin
-from metadata.models import LivelihoodStrategyTypes
+from metadata.models import LivelihoodStrategyType
 
 from .forms import LivelihoodActivityForm
 from .models import (
@@ -217,14 +217,14 @@ class MilkProductionInlineAdmin(LivelihoodActivityInlineAdmin):
         return fieldsets
 
     def get_queryset(self, request):
-        return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyTypes.MILK_PRODUCTION)
+        return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyType.MILK_PRODUCTION)
 
 
 class ButterProductionInlineAdmin(LivelihoodActivityInlineAdmin):
     model = ButterProduction
 
     def get_queryset(self, request):
-        return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyTypes.BUTTER_PRODUCTION)
+        return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyType.BUTTER_PRODUCTION)
 
 
 class MeatProductionInlineAdmin(LivelihoodActivityInlineAdmin):
@@ -236,21 +236,21 @@ class MeatProductionInlineAdmin(LivelihoodActivityInlineAdmin):
         return fieldsets
 
     def get_queryset(self, request):
-        return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyTypes.MEAT_PRODUCTION)
+        return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyType.MEAT_PRODUCTION)
 
 
 class LivestockSalesInlineAdmin(LivelihoodActivityInlineAdmin):
     model = LivestockSales
 
     def get_queryset(self, request):
-        return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyTypes.LIVESTOCK_SALES)
+        return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyType.LIVESTOCK_SALES)
 
 
 class CropProductionInlineAdmin(LivelihoodActivityInlineAdmin):
     model = CropProduction
 
     def get_queryset(self, request):
-        return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyTypes.CROP_PRODUCTION)
+        return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyType.CROP_PRODUCTION)
 
 
 class FoodPurchaseProductionInlineAdmin(LivelihoodActivityInlineAdmin):
@@ -262,7 +262,7 @@ class FoodPurchaseProductionInlineAdmin(LivelihoodActivityInlineAdmin):
         return fieldsets
 
     def get_queryset(self, request):
-        return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyTypes.FOOD_PURCHASE)
+        return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyType.FOOD_PURCHASE)
 
 
 class PaymentInKindInlineAdmin(LivelihoodActivityInlineAdmin):
@@ -274,7 +274,7 @@ class PaymentInKindInlineAdmin(LivelihoodActivityInlineAdmin):
         return fieldsets
 
     def get_queryset(self, request):
-        return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyTypes.PAYMENT_IN_KIND)
+        return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyType.PAYMENT_IN_KIND)
 
 
 class ReliefGiftsInlineAdmin(LivelihoodActivityInlineAdmin):
@@ -286,7 +286,7 @@ class ReliefGiftsInlineAdmin(LivelihoodActivityInlineAdmin):
         return fieldsets
 
     def get_queryset(self, request):
-        return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyTypes.RELIEF_GIFTS_OTHER)
+        return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyType.RELIEF_GIFTS_OTHER)
 
 
 class OtherCashIncomeInlineAdmin(LivelihoodActivityInlineAdmin):
@@ -300,21 +300,21 @@ class OtherCashIncomeInlineAdmin(LivelihoodActivityInlineAdmin):
         return fieldsets
 
     def get_queryset(self, request):
-        return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyTypes.OTHER_CASH_INCOME)
+        return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyType.OTHER_CASH_INCOME)
 
 
 class FishingInlineAdmin(LivelihoodActivityInlineAdmin):
     model = Fishing
 
     def get_queryset(self, request):
-        return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyTypes.FISHING)
+        return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyType.FISHING)
 
 
 class WildFoodGatheringInlineAdmin(LivelihoodActivityInlineAdmin):
     model = WildFoodGathering
 
     def get_queryset(self, request):
-        return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyTypes.WILD_FOOD_GATHERING)
+        return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyType.WILD_FOOD_GATHERING)
 
 
 class OtherPurchasesAdmin(LivelihoodActivityInlineAdmin):
@@ -326,12 +326,12 @@ class OtherPurchasesAdmin(LivelihoodActivityInlineAdmin):
         return fieldsets
 
     def get_queryset(self, request):
-        return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyTypes.OTHER_PURCHASES)
+        return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyType.OTHER_PURCHASES)
 
 
 class WealthGroupAdmin(admin.ModelAdmin):
-    list_display = ("name", "community", "wealth_category", "percentage_of_households")
-    search_fields = ("name", "community__name", "wealth_category")
+    list_display = ("community", "wealth_category", "percentage_of_households")
+    search_fields = ("community__name", "wealth_category")
     list_filter = (
         "livelihood_zone_baseline__source_organization",
         "livelihood_zone_baseline__livelihood_zone__country",
@@ -376,31 +376,31 @@ class SeasonalActivityOccurrenceAdmin(admin.ModelAdmin):
 class CommunityCropProductionAdmin(admin.ModelAdmin):
     fields = (
         "community",
-        "crop_type",
+        "crop",
         "crop_purpose",
         "season",
         "yield_with_inputs",
         "yield_without_inputs",
         "seed_requirement",
-        "unit_of_land",
+        "unit_of_measure",
     )
     list_display = (
         "community",
-        "crop_type",
+        "crop",
         "season",
         "yield_with_inputs",
         "yield_without_inputs",
-        "unit_of_land",
+        "unit_of_measure",
     )
     search_fields = (
-        "crop_type",
+        "crop",
         "crop_purpose",
         "season",
     )
     list_filter = (
         "community__livelihood_zone_baseline__livelihood_zone",
         "community",
-        "crop_type",
+        "crop",
         "season",
     )
 
@@ -408,7 +408,7 @@ class CommunityCropProductionAdmin(admin.ModelAdmin):
 class CommunityLivestockAdmin(admin.ModelAdmin):
     fields = (
         "community",
-        "livestock_type",
+        "livestock",
         "birth_interval",
         "wet_season_lactation_period",
         "wet_season_milk_production",
@@ -419,7 +419,7 @@ class CommunityLivestockAdmin(admin.ModelAdmin):
     )
     list_display = (
         "community",
-        "livestock_type",
+        "livestock",
         "wet_season_milk_production",
         "dry_season_milk_production",
     )
@@ -427,7 +427,7 @@ class CommunityLivestockAdmin(admin.ModelAdmin):
     list_filter = (
         "community__livelihood_zone_baseline__livelihood_zone",
         "community",
-        "livestock_type",
+        "livestock",
     )
 
 
