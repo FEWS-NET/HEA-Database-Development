@@ -945,7 +945,7 @@ class CountryClassifiedProductAliases(Model):
     product = models.ForeignKey(
         ClassifiedProduct,
         db_column="product_code",
-        verbose_name=_("product"),
+        verbose_name=_("Product"),
         related_name="per_country_aliases",
         on_delete=CASCADE,
     )
