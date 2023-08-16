@@ -3,9 +3,9 @@ from datetime import datetime, timedelta
 from rest_framework import serializers
 
 from .models import (
-    Dimension,
     HazardCategory,
     LivelihoodCategory,
+    ReferenceData,
     Season,
     SeasonalActivityType,
     WealthCategory,
@@ -13,68 +13,68 @@ from .models import (
 )
 
 
-class DimensionSerializer(serializers.ModelSerializer):
+class ReferenceDataSerializer(serializers.ModelSerializer):
     """
-    Serializer class for the Dimension base model.
+    Serializer class for the ReferenceData base model.
     """
 
     class Meta:
-        model = Dimension
+        model = ReferenceData
         fields = ["code", "name", "description", "aliases"]
 
 
-class LivelihoodCategorySerializer(DimensionSerializer):
+class LivelihoodCategorySerializer(ReferenceDataSerializer):
     """
     Serializer class for the LivelihoodCategory model
     """
 
-    class Meta(DimensionSerializer.Meta):
+    class Meta(ReferenceDataSerializer.Meta):
         model = LivelihoodCategory
 
 
-class WealthCharacteristicSerializer(DimensionSerializer):
+class WealthCharacteristicSerializer(ReferenceDataSerializer):
     """
-    Serializer class for DimensionSerializer model
+    Serializer class for ReferenceDataSerializer model
     """
 
     variable_type = serializers.CharField()
 
-    class Meta(DimensionSerializer.Meta):
+    class Meta(ReferenceDataSerializer.Meta):
         model = WealthCharacteristic
-        fields = DimensionSerializer.Meta.fields + [
+        fields = ReferenceDataSerializer.Meta.fields + [
             "variable_type",
         ]
 
 
-class SeasonalActivityTypeSerializer(DimensionSerializer):
+class SeasonalActivityTypeSerializer(ReferenceDataSerializer):
     """
     Serializer class for SeasonalActivityType model
     """
 
     activity_category = serializers.CharField()
 
-    class Meta(DimensionSerializer.Meta):
+    class Meta(ReferenceDataSerializer.Meta):
         model = SeasonalActivityType
-        fields = DimensionSerializer.Meta.fields + [
+        fields = ReferenceDataSerializer.Meta.fields + [
             "activity_category",
         ]
 
 
-class WealthCategorySerializer(DimensionSerializer):
+class WealthCategorySerializer(ReferenceDataSerializer):
     """
     Serializer class for the WealthCategory model
     """
 
-    class Meta(DimensionSerializer.Meta):
+    class Meta(ReferenceDataSerializer.Meta):
         model = WealthCategory
 
 
-class HazardCategorySerializer(DimensionSerializer):
+class HazardCategorySerializer(ReferenceDataSerializer):
     """
     Serializer class for the HazardCategory model
     """
 
-    class Meta(DimensionSerializer.Meta):
+    class Meta(ReferenceDataSerializer.Meta):
         model = HazardCategory
 
 

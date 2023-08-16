@@ -59,10 +59,10 @@ class SeasonalActivityTypeFactory(factory.django.DjangoModelFactory):
     code = factory.Iterator(["AC1", "AC2", "AC3", "AC4"])
     activity_category = factory.Iterator(
         [
-            SeasonalActivityType.SeasonalActivityCategories.CROP,
-            SeasonalActivityType.SeasonalActivityCategories.FISHING,
-            SeasonalActivityType.SeasonalActivityCategories.LIVESTOCK,
-            SeasonalActivityType.SeasonalActivityCategories.GARDENING,
+            SeasonalActivityType.SeasonalActivityCategory.CROP,
+            SeasonalActivityType.SeasonalActivityCategory.FISHING,
+            SeasonalActivityType.SeasonalActivityCategory.LIVESTOCK,
+            SeasonalActivityType.SeasonalActivityCategory.GARDENING,
         ]
     )
     name = factory.LazyAttribute(lambda o: f"{o.code} Seasonal Activity Type")
@@ -76,7 +76,7 @@ class SeasonFactory(factory.django.DjangoModelFactory):
 
     name = factory.Iterator(["Season 1", "Season 2", "Season 3"])
     country = factory.SubFactory(CountryFactory)
-    season_type = factory.Iterator([Season.SeasonTypes.WET, Season.SeasonTypes.DRY, Season.SeasonTypes.MILD])
+    season_type = factory.Iterator([Season.SeasonType.WET, Season.SeasonType.DRY, Season.SeasonType.MILD])
     order = factory.Iterator([1, 2, 3])
     start = factory.Iterator((25, 95, 200))
     end = factory.Iterator((95, 199, 360))

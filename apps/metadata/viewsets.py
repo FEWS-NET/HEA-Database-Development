@@ -3,18 +3,18 @@ from rest_framework import viewsets
 
 from common.models import Country
 from metadata.models import (
-    Dimension,
     HazardCategory,
     LivelihoodCategory,
+    ReferenceData,
     Season,
     SeasonalActivityType,
     WealthCategory,
     WealthCharacteristic,
 )
 from metadata.serializers import (
-    DimensionSerializer,
     HazardCategorySerializer,
     LivelihoodCategorySerializer,
+    ReferenceDataSerializer,
     SeasonalActivityTypeSerializer,
     SeasonSerializer,
     WealthCategorySerializer,
@@ -22,7 +22,7 @@ from metadata.serializers import (
 )
 
 
-class DimensionFilterSet(filters.FilterSet):
+class ReferenceDataFilterSet(filters.FilterSet):
     """ """
 
     name = filters.CharFilter(
@@ -37,33 +37,33 @@ class DimensionFilterSet(filters.FilterSet):
     )
 
     class Meta:
-        model = Dimension
+        model = ReferenceData
         fields = ["name", "description"]
 
 
-class DimensionViewSet(viewsets.ModelViewSet):
+class ReferenceDataViewSet(viewsets.ModelViewSet):
     """ """
 
-    serializer_class = DimensionSerializer
-    filterset_class = DimensionFilterSet
+    serializer_class = ReferenceDataSerializer
+    filterset_class = ReferenceDataFilterSet
     search_fields = ["code", "name", "description", "aliases"]
 
 
-class LivelihoodCategoryViewSet(DimensionViewSet):
+class LivelihoodCategoryViewSet(ReferenceDataViewSet):
     """ """
 
     queryset = LivelihoodCategory.objects.all()
     serializer_class = LivelihoodCategorySerializer
 
 
-class WealthCategoryViewSet(DimensionViewSet):
+class WealthCategoryViewSet(ReferenceDataViewSet):
     """ """
 
     queryset = WealthCategory.objects.all()
     serializer_class = WealthCategorySerializer
 
 
-class WealthCharacteristicFilterSet(DimensionFilterSet):
+class WealthCharacteristicFilterSet(ReferenceDataFilterSet):
     """ """
 
     variable_type = filters.ChoiceFilter(
@@ -71,11 +71,11 @@ class WealthCharacteristicFilterSet(DimensionFilterSet):
     )
 
     class Meta:
-        model = Dimension
+        model = ReferenceData
         fields = ["name", "description", "variable_type"]
 
 
-class WealthCharacteristicViewSet(DimensionViewSet):
+class WealthCharacteristicViewSet(ReferenceDataViewSet):
     """ """
 
     queryset = WealthCharacteristic.objects.all()
@@ -84,15 +84,15 @@ class WealthCharacteristicViewSet(DimensionViewSet):
     search_fields = ["code", "name", "description", "variable_type", "aliases"]
 
 
-class SeasonalActivityTypeFilterSet(DimensionFilterSet):
+class SeasonalActivityTypeFilterSet(ReferenceDataFilterSet):
     """ """
 
     activity_category = filters.ChoiceFilter(
-        choices=SeasonalActivityType.SeasonalActivityCategories.choices,
+        choices=SeasonalActivityType.SeasonalActivityCategory.choices,
     )
 
     class Meta:
-        model = Dimension
+        model = ReferenceData
         fields = [
             "name",
             "description",
@@ -100,7 +100,7 @@ class SeasonalActivityTypeFilterSet(DimensionFilterSet):
         ]
 
 
-class SeasonalActivityTypeViewSet(DimensionViewSet):
+class SeasonalActivityTypeViewSet(ReferenceDataViewSet):
     """ """
 
     queryset = SeasonalActivityType.objects.all()
@@ -109,7 +109,7 @@ class SeasonalActivityTypeViewSet(DimensionViewSet):
     search_fields = ["code", "name", "description", "activity_category", "aliases"]
 
 
-class HazardCategoryViewSet(DimensionViewSet):
+class HazardCategoryViewSet(ReferenceDataViewSet):
     """ """
 
     queryset = HazardCategory.objects.all()
@@ -130,7 +130,7 @@ class SeasonFilterSet(filters.FilterSet):
         distinct=False,
     )
     season_type = filters.ChoiceFilter(
-        choices=Season.SeasonTypes.choices,
+        choices=Season.SeasonType.choices,
     )
     name = filters.CharFilter(
         field_name="name",

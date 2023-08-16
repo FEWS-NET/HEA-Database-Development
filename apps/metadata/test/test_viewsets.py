@@ -20,7 +20,7 @@ from metadata.test.factories import (
 )
 
 
-class DimensionViewSetTestCase(APITestCase):
+class ReferenceDataViewSetTestCase(APITestCase):
     @classmethod
     def setUpTestData(cls):
         cls.livelihoodcategory1 = LivelihoodCategoryFactory()
