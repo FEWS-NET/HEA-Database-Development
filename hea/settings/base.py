@@ -114,7 +114,7 @@ REST_FRAMEWORK = {
         "rest_framework.renderers.BrowsableAPIRenderer",
         "common.renderers.HtmlTableRenderer",
         "rest_framework_xml.renderers.XMLRenderer",
-        "common.renderers.FormattedCSVRenderer",
+        "common.renderers.CSVRenderer",
     ),
     "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.backends.DjangoFilterBackend",),
     "DATETIME_FORMAT": "%Y-%m-%dT%H:%M:%S",
