@@ -5,6 +5,7 @@ from rest_framework import routers
 
 from baseline.viewsets import (
     AnnualProductionPerformanceViewSet,
+    BaselineLivelihoodActivityViewSet,
     BaselineWealthGroupViewSet,
     ButterProductionViewSet,
     CommunityCropProductionViewSet,
@@ -31,6 +32,7 @@ from baseline.viewsets import (
     OtherPurchasesViewSet,
     PaymentInKindViewSet,
     ReliefGiftsOtherViewSet,
+    ResponseLivelihoodActivityViewSet,
     SeasonalActivityOccurrenceViewSet,
     SeasonalActivityViewSet,
     SourceOrganizationViewSet,
@@ -52,6 +54,8 @@ router.register(r"communitywealthgroups", CommunityWealthGroupViewSet)
 router.register(r"wealthcharacteristicvalues", WealthGroupCharacteristicValueViewSet)
 router.register(r"livelihoodstrategies", LivelihoodStrategyViewSet)
 router.register(r"livelihoodactivities", LivelihoodActivityViewSet)
+router.register(r"baselinelivelihoodactivities", BaselineLivelihoodActivityViewSet)
+router.register(r"responselivelihoodactivities", ResponseLivelihoodActivityViewSet)
 router.register(r"milkproduction", MilkProductionViewSet)
 router.register(r"butterproduction", ButterProductionViewSet)
 router.register(r"meatproduction", MeatProductionViewSet)
@@ -59,7 +63,7 @@ router.register(r"livestocksales", LivestockSalesViewSet)
 router.register(r"cropproduction", CropProductionViewSet)
 router.register(r"foodpurchases", FoodPurchaseViewSet)
 router.register(r"paymentsinkind", PaymentInKindViewSet)
-router.register(r"relief,giftsandotherfood", ReliefGiftsOtherViewSet)
+router.register(r"reliefgiftsandotherfood", ReliefGiftsOtherViewSet)
 router.register(r"fishing", FishingViewSet)
 router.register(r"wildfoodgathering", WildFoodGatheringViewSet)
 router.register(r"othercashincome", OtherCashIncomeViewSet)

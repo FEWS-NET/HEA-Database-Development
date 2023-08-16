@@ -4,6 +4,7 @@ from rest_framework import viewsets
 
 from .models import (
     AnnualProductionPerformance,
+    BaselineLivelihoodActivity,
     BaselineWealthGroup,
     ButterProduction,
     Community,
@@ -30,6 +31,7 @@ from .models import (
     OtherPurchases,
     PaymentInKind,
     ReliefGiftsOther,
+    ResponseLivelihoodActivity,
     SeasonalActivity,
     SeasonalActivityOccurrence,
     SourceOrganization,
@@ -39,6 +41,7 @@ from .models import (
 )
 from .serializers import (
     AnnualProductionPerformanceSerializer,
+    BaselineLivelihoodActivitySerializer,
     BaselineWealthGroupSerializer,
     ButterProductionSerializer,
     CommunityCropProductionSerializer,
@@ -65,6 +68,7 @@ from .serializers import (
     OtherPurchasesSerializer,
     PaymentInKindSerializer,
     ReliefGiftsOtherSerializer,
+    ResponseLivelihoodActivitySerializer,
     SeasonalActivityOccurrenceSerializer,
     SeasonalActivitySerializer,
     SourceOrganizationSerializer,
@@ -197,7 +201,6 @@ class WealthGroupFilterSet(filters.FilterSet):
             "id",
             "created",
             "modified",
-            "name",
             "livelihood_zone_baseline",
             "community",
             "wealth_category",
@@ -214,7 +217,6 @@ class WealthGroupViewSet(viewsets.ModelViewSet):
     queryset = WealthGroup.objects.all()
     serializer_class = WealthGroupSerializer
     filterset_class = WealthGroupFilterSet
-    search_fields = ["name"]
 
 
 class BaselineWealthGroupFilterSet(filters.FilterSet):
@@ -224,7 +226,6 @@ class BaselineWealthGroupFilterSet(filters.FilterSet):
             "id",
             "created",
             "modified",
-            "name",
             "livelihood_zone_baseline",
             "community",
             "wealth_category",
@@ -241,7 +242,6 @@ class BaselineWealthGroupViewSet(viewsets.ModelViewSet):
     queryset = BaselineWealthGroup.objects.all()
     serializer_class = BaselineWealthGroupSerializer
     filterset_class = BaselineWealthGroupFilterSet
-    search_fields = ["name"]
 
 
 class CommunityWealthGroupFilterSet(filters.FilterSet):
@@ -251,7 +251,6 @@ class CommunityWealthGroupFilterSet(filters.FilterSet):
             "id",
             "created",
             "modified",
-            "name",
             "livelihood_zone_baseline",
             "community",
             "wealth_category",
@@ -268,7 +267,6 @@ class CommunityWealthGroupViewSet(viewsets.ModelViewSet):
     queryset = CommunityWealthGroup.objects.all()
     serializer_class = CommunityWealthGroupSerializer
     filterset_class = CommunityWealthGroupFilterSet
-    search_fields = ["name"]
 
 
 class WealthGroupCharacteristicValueFilterSet(filters.FilterSet):
@@ -365,6 +363,76 @@ class LivelihoodActivityViewSet(viewsets.ModelViewSet):
     queryset = LivelihoodActivity.objects.all()
     serializer_class = LivelihoodActivitySerializer
     filterset_class = LivelihoodActivityFilterSet
+    search_fields = ["strategy_type", "scenario"]
+
+
+class BaselineLivelihoodActivityFilterSet(filters.FilterSet):
+    class Meta:
+        model = BaselineLivelihoodActivity
+        fields = [
+            "id",
+            "created",
+            "modified",
+            "livelihood_strategy",
+            "livelihood_zone_baseline",
+            "strategy_type",
+            "scenario",
+            "wealth_group",
+            "quantity_produced",
+            "quantity_sold",
+            "quantity_other_uses",
+            "quantity_consumed",
+            "price",
+            "income",
+            "expenditure",
+            "kcals_consumed",
+            "percentage_kcals",
+        ]
+
+
+class BaselineLivelihoodActivityViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint that allows baseline livelihood activities to be viewed or edited.
+    """
+
+    queryset = BaselineLivelihoodActivity.objects.all()
+    serializer_class = BaselineLivelihoodActivitySerializer
+    filterset_class = BaselineLivelihoodActivityFilterSet
+    search_fields = ["strategy_type", "scenario"]
+
+
+class ResponseLivelihoodActivityFilterSet(filters.FilterSet):
+    class Meta:
+        model = ResponseLivelihoodActivity
+        fields = [
+            "id",
+            "created",
+            "modified",
+            "livelihood_strategy",
+            "livelihood_zone_baseline",
+            "strategy_type",
+            "scenario",
+            "wealth_group",
+            "quantity_produced",
+            "quantity_sold",
+            "quantity_other_uses",
+            "quantity_consumed",
+            "price",
+            "income",
+            "expenditure",
+            "kcals_consumed",
+            "percentage_kcals",
+        ]
+
+
+class ResponseLivelihoodActivityViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint that allows response livelihood activities to be viewed or edited.
+    """
+
+    queryset = ResponseLivelihoodActivity.objects.all()
+    serializer_class = ResponseLivelihoodActivitySerializer
+    filterset_class = ResponseLivelihoodActivityFilterSet
     search_fields = ["strategy_type", "scenario"]
 
 
@@ -868,13 +936,13 @@ class CommunityCropProductionFilterSet(filters.FilterSet):
             "created",
             "modified",
             "community",
-            "crop_type",
+            "crop",
             "crop_purpose",
             "season",
             "yield_with_inputs",
             "yield_without_inputs",
             "seed_requirement",
-            "unit_of_land",
+            "unit_of_measure",
         ]
 
 
@@ -897,7 +965,7 @@ class CommunityLivestockFilterSet(filters.FilterSet):
             "created",
             "modified",
             "community",
-            "livestock_type",
+            "livestock",
             "birth_interval",
             "wet_season_lactation_period",
             "wet_season_milk_production",
