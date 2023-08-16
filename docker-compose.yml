@@ -64,8 +64,8 @@ services:
       args:
         - PIP_TRUSTED_HOST
         - PIP_INDEX_URL
-#    depends_on:
-#      - db
+    depends_on:
+      - db
     environment: &base_env
       CLIENT: ${CLIENT}
       APP: ${APP}

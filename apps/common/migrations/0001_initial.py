@@ -297,7 +297,7 @@ class Migration(migrations.Migration):
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="per_country_aliases",
                         to="common.classifiedproduct",
-                        verbose_name="product",
+                        verbose_name="Product",
                     ),
                 ),
             ],

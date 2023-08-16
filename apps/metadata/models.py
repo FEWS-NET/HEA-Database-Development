@@ -11,15 +11,25 @@ from common.models import Country
 logger = logging.getLogger(__name__)
 
 
-class Dimension(common_models.Model):
+class ReferenceData(common_models.Model):
     """
-    Dimension provides shared functionality to serve reference data via API,
-    filter, aggregate, group, map, ingest, render, search, translate, convert.
+    Reference data for a model.
+
+    Provides shared structure and functionality for reference data
+    (e.g. categories or types) that are used as metadata lookups for other models.
     """
 
     code = common_models.CodeField(primary_key=True, verbose_name=_("Code"))
     name = common_models.NameField()
     description = common_models.DescriptionField()
+    # Some reference data needs to be sorted in a custom (i.e. non-alphabetic) order.
+    # For example, WealthCategory needs to be VP, P, M, BO in most cases.
+    ordering = models.PositiveSmallIntegerField(
+        blank=True,
+        null=True,
+        verbose_name=_("Ordering"),
+        help_text=_("The order to display the items in when sorting by this field, if not obvious."),
+    )
     # @TODO ArrayField or JSONField?
     aliases = models.JSONField(
         blank=True,
@@ -49,7 +59,7 @@ class Dimension(common_models.Model):
         identifier = ["name"]
 
 
-class LivelihoodCategory(Dimension):
+class LivelihoodCategory(ReferenceData):
     """
     A type of Livelihood Zone, such as Pastoral or Rain-fed AgroPastoral, etc.
     """
@@ -63,7 +73,7 @@ class LivelihoodCategory(Dimension):
         verbose_name_plural = _("Livelihood Categories")
 
 
-class WealthCharacteristic(Dimension):
+class WealthCharacteristic(ReferenceData):
     """
     A Characteristic of a Wealth Group, such as `Number of children at school`, etc.
 
@@ -94,7 +104,7 @@ class WealthCharacteristic(Dimension):
 # Defined outside LivelihoodStrategy to make it easy to access from subclasses
 # This is a hard-coded list of choices because additions to the list require
 # matching custom subclasses of LivelihoodActivity anyway.
-class LivelihoodStrategyTypes(models.TextChoices):
+class LivelihoodStrategyType(models.TextChoices):
     MILK_PRODUCTION = "MilkProduction", _("Milk Production")
     BUTTER_PRODUCTION = "ButterProduction", _("Butter Production")
     MEAT_PRODUCTION = "MeatProduction", _("Meat Production")
@@ -109,7 +119,13 @@ class LivelihoodStrategyTypes(models.TextChoices):
     OTHER_PURCHASES = "OtherPurchases", _("Other Purchases")
 
 
-class SeasonalActivityType(Dimension):
+# Defined outside LivelihoodActivity to make it easy to access from subclasses
+class LivelihoodActivityScenario(models.TextChoices):
+    BASELINE = "baseline", _("Baseline")
+    RESPONSE = "response", _("Response")
+
+
+class SeasonalActivityType(ReferenceData):
     """
     Seasonal activities for the various food and income activities.
 
@@ -125,14 +141,14 @@ class SeasonalActivityType(Dimension):
     """
 
     # @TODO What is the overlap with LivelihoodStrategyTypes? Can we reuse or share?
-    class SeasonalActivityCategories(models.TextChoices):
+    class SeasonalActivityCategory(models.TextChoices):
         CROP = "crop", _("Crops")
         LIVESTOCK = "livestock", _("Livestock")
         GARDENING = "gardening", _("Gardening")
         FISHING = "fishing", _("Fishing")
 
     activity_category = models.CharField(
-        max_length=20, choices=SeasonalActivityCategories.choices, verbose_name=_("Activity Category")
+        max_length=20, choices=SeasonalActivityCategory.choices, verbose_name=_("Activity Category")
     )
 
     class Meta:
@@ -140,7 +156,7 @@ class SeasonalActivityType(Dimension):
         verbose_name_plural = _("Seasonal Activity Types")
 
 
-class WealthCategory(Dimension):
+class WealthCategory(ReferenceData):
     """
     The local definitions of wealth group, common to all BSSes in an LHZ.
 
@@ -153,7 +169,7 @@ class WealthCategory(Dimension):
         verbose_name_plural = _("Wealth Categories")
 
 
-class Market(Dimension):
+class Market(ReferenceData):
     """
     The markets in the bss are just names
     TODO: should we make this spatial? and move it to spatial or metadata?
@@ -166,7 +182,7 @@ class Market(Dimension):
         verbose_name_plural = _("Markets")
 
 
-class HazardCategory(Dimension):
+class HazardCategory(ReferenceData):
     """
     A category of Hazards such as drought, epidemic crop disease, epidemic livestock disease, floods, etc.
 
@@ -186,7 +202,7 @@ class Season(common_models.Model):
     activities for income generation.
     """
 
-    class SeasonTypes(models.TextChoices):
+    class SeasonType(models.TextChoices):
         HARVEST = "Harvest", _("Harvest")
         LEAN = "Lean", _("Lean")
         WET = "Wet", _("Wet")
@@ -198,7 +214,7 @@ class Season(common_models.Model):
         WINTER = "Winter", _("Winter")
         MONSOON = "Monsoon", _("Monsoon")
 
-    class YearAlignments(models.TextChoices):
+    class YearAlignment(models.TextChoices):
         START = "Start", _("Start")
         END = "End", _("End")
 
@@ -209,7 +225,7 @@ class Season(common_models.Model):
     description = models.TextField(max_length=255, verbose_name=_("Description"))
     season_type = models.CharField(
         max_length=20,
-        choices=SeasonTypes.choices,
+        choices=SeasonType.choices,
         verbose_name=_("Season Type"),
         help_text=_(
             "Refers to the classification of a specific time of year based on weather patterns, temperature, and other factors"  # NOQA: E501
@@ -227,8 +243,8 @@ class Season(common_models.Model):
     )
     alignment = models.CharField(
         max_length=5,
-        choices=YearAlignments.choices,
-        default=YearAlignments.END,
+        choices=YearAlignment.choices,
+        default=YearAlignment.END,
         verbose_name=_("Year alignment"),
         help_text=_(
             "Whether a label for a season that contains a single year refers to the start year or the end year for that Season."  # NOQA: E501

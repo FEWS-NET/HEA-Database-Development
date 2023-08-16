@@ -1,7 +1,6 @@
 """
 Models for managing HEA Baseline Surveys
 """
-
 from django.contrib.gis.db import models
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -19,8 +18,9 @@ from common.models import (
 from common.utils import get_month_from_day_number
 from metadata.models import (
     HazardCategory,
+    LivelihoodActivityScenario,
     LivelihoodCategory,
-    LivelihoodStrategyTypes,
+    LivelihoodStrategyType,
     Market,
     Season,
     SeasonalActivityType,
@@ -32,9 +32,6 @@ from metadata.models import (
 class SourceOrganization(common_models.Model):
     """
     An Organization that provides HEA Baselines.
-
-    The Organization is the owner of the Baseline, with a non-public baseline permission,
-    the Organization is responsible for sharing the baseline
     """
 
     name = common_models.NameField(max_length=200, unique=True)
@@ -174,7 +171,11 @@ class LivelihoodProductCategory(common_models.Model):
         verbose_name=_("Livelihood Zone Baseline"),
     )
     product = models.ForeignKey(
-        ClassifiedProduct, on_delete=models.RESTRICT, related_name="staple_foods", verbose_name=_("Item")
+        ClassifiedProduct,
+        db_column="product_code",
+        on_delete=models.RESTRICT,
+        related_name="staple_foods",
+        verbose_name=_("Product"),
     )
     basket = models.PositiveSmallIntegerField(choices=ProductBasket.choices, verbose_name=_("Product Basket"))
 
@@ -263,7 +264,6 @@ class WealthGroup(common_models.Model):
     Row 3.
     """
 
-    name = models.CharField(max_length=100, verbose_name=_("Name"))
     livelihood_zone_baseline = models.ForeignKey(
         LivelihoodZoneBaseline,
         on_delete=models.CASCADE,
@@ -309,6 +309,13 @@ class WealthGroup(common_models.Model):
             validate_unique=False,
         )
         super().save(*args, **kwargs)
+
+    def __str__(self):
+        return (
+            f"{str(self.community)} {str(self.wealth_category)}"
+            if self.community
+            else f"{str(self.livelihood_zone_baseline)} {str(self.wealth_category)}"
+        )
 
     class Meta:
         verbose_name = _("Wealth Group")
@@ -426,7 +433,7 @@ class LivelihoodStrategy(common_models.Model):
     # The 'Graphs' worksheet in NE01(BIL) and MG2 adds a `qui?` lookup in
     # Column F that tracks which household members are primarily responsible
     # for Livelihood Strategies that generate food and income.
-    class HouseholdLaborProviders(models.TextChoices):
+    class HouseholdLaborProvider(models.TextChoices):
         MEN = "men", _("Mainly Men")
         WOMEN = "women", _("Mainly Women")
         CHILDREN = "children", _("Mainly Children")
@@ -441,7 +448,7 @@ class LivelihoodStrategy(common_models.Model):
     # This also acts as a discriminator column for LivelihoodActivity
     strategy_type = models.CharField(
         max_length=30,
-        choices=LivelihoodStrategyTypes.choices,
+        choices=LivelihoodStrategyType.choices,
         db_index=True,
         verbose_name=_("Strategy Type"),
         help_text=_("The type of livelihood strategy, such as crop production, or wild food gathering."),
@@ -468,15 +475,18 @@ class LivelihoodStrategy(common_models.Model):
     # Dave, Girum, Roger: Null rather 0
     product = models.ForeignKey(
         ClassifiedProduct,
+        db_column="product_code",
         on_delete=models.PROTECT,
-        verbose_name=_("Item"),
-        help_text=_("Item Produced, eg, full fat milk"),
+        verbose_name=_("Product"),
+        help_text=_("Product, e.g. full fat milk"),
         related_name="livelihood_strategies",
     )
     unit_of_measure = models.ForeignKey(
         UnitOfMeasure, db_column="unit_code", on_delete=models.PROTECT, verbose_name=_("Unit of Measure")
     )
-    currency = models.ForeignKey(Currency, db_column="iso4217a3", on_delete=models.PROTECT, verbose_name=_("Currency"))
+    currency = models.ForeignKey(
+        Currency, db_column="currency_code", on_delete=models.PROTECT, verbose_name=_("Currency")
+    )
     # In Somalia they track export/local sales separately - see SO18 Data:B178 and also B770
     # In many BSS they store separate data for Rainfed and Irrigated production of staple crops.
     # @TODO See https://fewsnet.atlassian.net/browse/HEA-67
@@ -489,7 +499,7 @@ class LivelihoodStrategy(common_models.Model):
     # Not all BSS track this, and it isn't tracked for expenditures, so
     # the field must be `blank=True`.
     household_labor_provider = models.CharField(
-        choices=HouseholdLaborProviders.choices, blank=True, verbose_name=_("Activity done by")
+        choices=HouseholdLaborProvider.choices, blank=True, verbose_name=_("Activity done by")
     )
 
     class Meta:
@@ -517,7 +527,7 @@ class LivelihoodStrategy(common_models.Model):
         ]
 
     class ExtraMeta:
-        identifier = ["livelihood_zone_baseline", "strategy_type", "product", "season"]
+        identifier = ["livelihood_zone_baseline", "product", "additional_identifier"]
 
 
 class LivelihoodActivity(common_models.Model):
@@ -532,10 +542,6 @@ class LivelihoodActivity(common_models.Model):
 
     Stored on the BSS 'Data' worksheet.
     """
-
-    class LivelihoodActivityScenario(models.TextChoices):
-        BASELINE = "baseline", _("Baseline")
-        RESPONSE = "response", _("Response")
 
     livelihood_strategy = models.ForeignKey(
         LivelihoodStrategy, on_delete=models.PROTECT, help_text=_("Livelihood Strategy")
@@ -552,7 +558,7 @@ class LivelihoodActivity(common_models.Model):
     # Inherited from Livelihood Strategy to acts as a discriminator column.
     strategy_type = models.CharField(
         max_length=30,
-        choices=LivelihoodStrategyTypes.choices,
+        choices=LivelihoodStrategyType.choices,
         db_index=True,
         verbose_name=_("Strategy Type"),
         help_text=_("The type of livelihood strategy, such as crop production, or wild food gathering."),
@@ -629,9 +635,8 @@ class LivelihoodActivity(common_models.Model):
             )
 
     def validate_income(self):
-        if self.income:
-            if self.income != self.quantity_sold * self.price:
-                raise ValidationError(_("Income for a Livelihood Activity must be quantity sold multiplied by price"))
+        if self.income != self.quantity_sold * self.price:
+            raise ValidationError(_("Income for a Livelihood Activity must be quantity sold multiplied by price"))
 
     def validate_expenditure(self):
         """
@@ -656,13 +661,10 @@ class LivelihoodActivity(common_models.Model):
             to_unit=self.livelihood_strategy.product.unit_of_measure,
         )
         kcals_per_unit = self.livelihood_strategy.product.kcals_per_unit
-        if kcals_per_unit:
-            if self.kcals_consumed != self.quantity_consumed * conversion_factor * kcals_per_unit:
-                raise ValidationError(
-                    _(
-                        "Kcals consumed for a Livelihood Activity must be quantity consumed multiplied by kcals per unit"  # NOQA: E501
-                    )
-                )
+        if self.kcals_consumed != self.quantity_consumed * conversion_factor * kcals_per_unit:
+            raise ValidationError(
+                _("Kcals consumed for a Livelihood Activity must be quantity consumed multiplied by kcals per unit")
+            )
 
     # @TODO Do we use Django Forms as a separate validation layer, and load the data from the dataframe into a Form
     # instance and then check whether it is valid.  See Two Scoops for an explanation.
@@ -698,7 +700,69 @@ class LivelihoodActivity(common_models.Model):
         ]
 
     class ExtraMeta:
-        identifier = ["livelihood_strategy", "wealth_group", "strategy_type", "scenario"]
+        identifier = ["livelihood_strategy", "wealth_group", "scenario"]
+
+
+class BaselineLivelihoodActivityManager(InheritanceManager):
+    def get_queryset(self):
+        return super().get_queryset().filter(scenario=LivelihoodActivityScenario.BASELINE).select_subclasses()
+
+
+class BaselineLivelihoodActivity(LivelihoodActivity):
+    """
+    An activity undertaken by households in a Wealth Group that produces food or income or requires expenditure.
+
+    A Baseline Livelihood Activity contains the outputs of a Livelihood Strategy
+    employed by a Wealth Group in a Community or a Wealth Group representing
+    the Baseline as a whole in the reference year.
+
+    Stored on the BSS 'Data' worksheet.
+    """
+
+    objects = BaselineLivelihoodActivityManager()
+
+    def clean(self):
+        if self.scenario != LivelihoodActivityScenario.BASELINE:
+            raise ValidationError(_("A Baseline Livelihood Activity must use the Baseline Scenario"))
+        super().clean()
+
+    class Meta:
+        verbose_name = _("Baseline Livelihood Activity")
+        verbose_name_plural = _("Baseline Livelihood Activities")
+        proxy = True
+
+
+class ResponseLivelihoodActivityManager(InheritanceManager):
+    def get_queryset(self):
+        return super().get_queryset().exclude(scenario=LivelihoodActivityScenario.RESPONSE).select_subclasses()
+
+
+class ResponseLivelihoodActivity(LivelihoodActivity):
+    """
+    An activity undertaken by households in a Wealth Group that produces food or income or requires expenditure.
+
+    A Response Livelihood Activity contains the outputs of a Livelihood Strategy
+    employed by a Wealth Group representing the Baseline as a whole during the
+    response to a shock.
+
+    Stored on the BSS 'Summ' worksheet.
+    """
+
+    # Note that the ResponseLivelihoodActivity contains the full set of attributes
+    # for the Activity, including those values that are not explicitly entered
+    # in the 'Summ' worksheet because they are implicitly inherited from the
+    # matching BaselineLivelihoodActivity.
+    objects = ResponseLivelihoodActivityManager()
+
+    def clean(self):
+        if self.scenario != LivelihoodActivityScenario.RESPONSE:
+            raise ValidationError(_("A Response Livelihood Activity must use the Response Scenario"))
+        super().clean()
+
+    class Meta:
+        verbose_name = _("Response Livelihood Activity")
+        verbose_name_plural = _("Response Livelihood Activities")
+        proxy = True
 
 
 class MilkProduction(LivelihoodActivity):
@@ -708,13 +772,9 @@ class MilkProduction(LivelihoodActivity):
     Stored on the BSS 'Data' worksheet in the 'Livestock Production' section, typically starting around Row 60.
     """
 
-    SKIM = "skim"
-    WHOLE = "whole"
-
-    MILK_TYPE_CHOICES = (
-        (SKIM, _("skim")),
-        (WHOLE, _("whole")),
-    )
+    class MilkType(models.TextChoices):
+        SKIM = "skim", _("Skim")
+        WHOLE = "whole", _("whole")
 
     # Production calculation /validation is `lactation days * daily_production`
     milking_animals = models.PositiveSmallIntegerField(verbose_name=_("Number of milking animals"))
@@ -725,7 +785,7 @@ class MilkProduction(LivelihoodActivity):
     # This is not required for scenario development and is only used for the kcal calculations in the BSS.
     # Do we need to store it in the database?.
     type_of_milk_sold_or_other_uses = models.CharField(
-        choices=MILK_TYPE_CHOICES, verbose_name=_("Skim or whole milk sold or used")
+        choices=MilkType.choices, verbose_name=_("Skim or whole milk sold or used")
     )
 
     # @TODO See https://fewsnet.atlassian.net/browse/HEA-65
@@ -743,8 +803,8 @@ class MilkProduction(LivelihoodActivity):
         pass
 
     class Meta:
-        verbose_name = LivelihoodStrategyTypes.MILK_PRODUCTION.label
-        verbose_name_plural = LivelihoodStrategyTypes.MILK_PRODUCTION.label
+        verbose_name = LivelihoodStrategyType.MILK_PRODUCTION.label
+        verbose_name_plural = LivelihoodStrategyType.MILK_PRODUCTION.label
 
 
 class ButterProduction(LivelihoodActivity):
@@ -789,8 +849,8 @@ class ButterProduction(LivelihoodActivity):
         pass
 
     class Meta:
-        verbose_name = LivelihoodStrategyTypes.BUTTER_PRODUCTION.label
-        verbose_name_plural = LivelihoodStrategyTypes.BUTTER_PRODUCTION.label
+        verbose_name = LivelihoodStrategyType.BUTTER_PRODUCTION.label
+        verbose_name_plural = LivelihoodStrategyType.BUTTER_PRODUCTION.label
         proxy: True
 
 
@@ -812,8 +872,8 @@ class MeatProduction(LivelihoodActivity):
             )
 
     class Meta:
-        verbose_name = LivelihoodStrategyTypes.MEAT_PRODUCTION.label
-        verbose_name_plural = LivelihoodStrategyTypes.MEAT_PRODUCTION.label
+        verbose_name = LivelihoodStrategyType.MEAT_PRODUCTION.label
+        verbose_name_plural = LivelihoodStrategyType.MEAT_PRODUCTION.label
 
 
 class LivestockSales(LivelihoodActivity):
@@ -826,8 +886,8 @@ class LivestockSales(LivelihoodActivity):
     # @TODO Do we need validation around offtake (animals_sold) to make sure
     # that they are not selling and killing more animals than they own.
     class Meta:
-        verbose_name = LivelihoodStrategyTypes.LIVESTOCK_SALES.label
-        verbose_name_plural = LivelihoodStrategyTypes.LIVESTOCK_SALES.label
+        verbose_name = LivelihoodStrategyType.LIVESTOCK_SALES.label
+        verbose_name_plural = LivelihoodStrategyType.LIVESTOCK_SALES.label
         proxy = True
 
 
@@ -842,8 +902,8 @@ class CropProduction(LivelihoodActivity):
     """
 
     class Meta:
-        verbose_name = LivelihoodStrategyTypes.CROP_PRODUCTION.label
-        verbose_name_plural = LivelihoodStrategyTypes.CROP_PRODUCTION.label
+        verbose_name = LivelihoodStrategyType.CROP_PRODUCTION.label
+        verbose_name_plural = LivelihoodStrategyType.CROP_PRODUCTION.label
         proxy = True
 
 
@@ -874,7 +934,7 @@ class FoodPurchase(LivelihoodActivity):
             )
 
     class Meta:
-        verbose_name = LivelihoodStrategyTypes.FOOD_PURCHASE.label
+        verbose_name = LivelihoodStrategyType.FOOD_PURCHASE.label
         verbose_name_plural = _("Food Purchases")
 
 
@@ -909,7 +969,7 @@ class PaymentInKind(LivelihoodActivity):
             )
 
     class Meta:
-        verbose_name = LivelihoodStrategyTypes.PAYMENT_IN_KIND.label
+        verbose_name = LivelihoodStrategyType.PAYMENT_IN_KIND.label
         verbose_name_plural = _("Payments in Kind")
 
 
@@ -936,8 +996,8 @@ class ReliefGiftsOther(LivelihoodActivity):
             )
 
     class Meta:
-        verbose_name = LivelihoodStrategyTypes.RELIEF_GIFTS_OTHER.label
-        verbose_name_plural = LivelihoodStrategyTypes.RELIEF_GIFTS_OTHER.label
+        verbose_name = LivelihoodStrategyType.RELIEF_GIFTS_OTHER.label
+        verbose_name_plural = LivelihoodStrategyType.RELIEF_GIFTS_OTHER.label
 
 
 class Fishing(LivelihoodActivity):
@@ -949,8 +1009,8 @@ class Fishing(LivelihoodActivity):
     """
 
     class Meta:
-        verbose_name = LivelihoodStrategyTypes.FISHING.label
-        verbose_name_plural = LivelihoodStrategyTypes.FISHING.label
+        verbose_name = LivelihoodStrategyType.FISHING.label
+        verbose_name_plural = LivelihoodStrategyType.FISHING.label
         proxy = True
 
 
@@ -963,8 +1023,8 @@ class WildFoodGathering(LivelihoodActivity):
     """
 
     class Meta:
-        verbose_name = LivelihoodStrategyTypes.WILD_FOOD_GATHERING.label
-        verbose_name_plural = LivelihoodStrategyTypes.WILD_FOOD_GATHERING.label
+        verbose_name = LivelihoodStrategyType.WILD_FOOD_GATHERING.label
+        verbose_name_plural = LivelihoodStrategyType.WILD_FOOD_GATHERING.label
         proxy = True
 
 
@@ -1021,8 +1081,8 @@ class OtherCashIncome(LivelihoodActivity):
         super().calculate_fields()
 
     class Meta:
-        verbose_name = LivelihoodStrategyTypes.OTHER_CASH_INCOME.label
-        verbose_name_plural = LivelihoodStrategyTypes.OTHER_CASH_INCOME.label
+        verbose_name = LivelihoodStrategyType.OTHER_CASH_INCOME.label
+        verbose_name_plural = LivelihoodStrategyType.OTHER_CASH_INCOME.label
 
 
 class OtherPurchases(LivelihoodActivity):
@@ -1062,8 +1122,8 @@ class OtherPurchases(LivelihoodActivity):
             )
 
     class Meta:
-        verbose_name = LivelihoodStrategyTypes.OTHER_PURCHASES.label
-        verbose_name_plural = LivelihoodStrategyTypes.OTHER_PURCHASES.label
+        verbose_name = LivelihoodStrategyType.OTHER_PURCHASES.label
+        verbose_name_plural = LivelihoodStrategyType.OTHER_PURCHASES.label
 
 
 class SeasonalActivity(common_models.Model):
@@ -1086,11 +1146,12 @@ class SeasonalActivity(common_models.Model):
     season = models.ForeignKey(Season, on_delete=models.PROTECT, verbose_name=_("Season"))
     product = models.ForeignKey(
         ClassifiedProduct,
+        db_column="product_code",
         blank=True,
         null=True,
         on_delete=models.PROTECT,
-        verbose_name=_("Item"),
-        help_text=_("Item Produced, eg, full fat milk"),
+        verbose_name=_("Product"),
+        help_text=_("Product, e.g. full fat milk"),
         related_name="baseline_seasonal_activities",
     )
 
@@ -1204,11 +1265,13 @@ class CommunityCropProduction(common_models.Model):
     # @TODO  CropPurpose is referring the 'Main food & cash crops...' in Form 3,
     #  but the BSS doesn't seem to contain this, should we keep this?
     class CropPurpose(models.TextChoices):
-        BASELINE = "main_crop", _("Main Food Crop")
-        RESPONSE = "cash_crop", _("Cash Crop")
+        FOOD = "food", _("Main Food Crop")
+        CASH = "cash", _("Cash Crop")
 
     community = models.ForeignKey(Community, on_delete=models.RESTRICT, verbose_name=_("Community or Village"))
-    crop_type = models.ForeignKey(ClassifiedProduct, on_delete=models.RESTRICT, verbose_name=_("Crop Type"))
+    crop = models.ForeignKey(
+        ClassifiedProduct, db_column="crop_code", on_delete=models.RESTRICT, verbose_name=_("Crop Type")
+    )
     crop_purpose = models.CharField(max_length=20, choices=CropPurpose.choices, verbose_name=_("Crop purpose"))
     season = models.ForeignKey(Season, on_delete=models.RESTRICT, verbose_name=_("Season"))
     yield_with_inputs = models.FloatField(
@@ -1220,8 +1283,8 @@ class CommunityCropProduction(common_models.Model):
         help_text=_("Yield in reference period without inputs (seeds and fertilizer)"),
     )
     seed_requirement = models.FloatField(verbose_name=_("Seed requirement"))
-    unit_of_land = models.ForeignKey(
-        UnitOfMeasure, db_column="unit_code", on_delete=models.RESTRICT, verbose_name=_("Unit of land")
+    unit_of_measure = models.ForeignKey(
+        UnitOfMeasure, db_column="unit_code", on_delete=models.RESTRICT, verbose_name=_("Unit of Measure")
     )
 
     # @TODO We need to store the harvest month for each crop, because it is needed
@@ -1230,7 +1293,7 @@ class CommunityCropProduction(common_models.Model):
     # @TODO Do we need to add UnitOfMeasure and parse it out of `6x50kg bags`, etc. or can we just store it as text.
 
     def clean(self):
-        if not self.crop_type_id.startswith("R01"):
+        if not self.crop_id.startswith("R01"):
             raise ValidationError(
                 _(
                     "Crop type for Community Crop Production must have a CPCv2 code beginning R01 (Agriculture Products)"  # NOQA: E501
@@ -1263,7 +1326,9 @@ class CommunityLivestock(common_models.Model):
     """
 
     community = models.ForeignKey(Community, on_delete=models.CASCADE, verbose_name=_("Wealth Group"))
-    livestock_type = models.ForeignKey(ClassifiedProduct, on_delete=models.RESTRICT, verbose_name=_("Livestock Type"))
+    livestock = models.ForeignKey(
+        ClassifiedProduct, db_column="livestock_code", on_delete=models.RESTRICT, verbose_name=_("Livestock Type")
+    )
     birth_interval = models.PositiveSmallIntegerField(
         verbose_name=_("Birth Interval"), help_text=_("Number of months between Births")
     )
@@ -1289,7 +1354,7 @@ class CommunityLivestock(common_models.Model):
     additional_attributes = models.JSONField()
 
     def clean(self):
-        if not self.livestock_type_id.startswith("L021"):
+        if not self.livestock_id.startswith("L021"):
             raise ValidationError(
                 _("Livestock type for Community Livestock must have a CPCv2 code beginning L021 (Live animals)")
             )
@@ -1318,9 +1383,11 @@ class MarketPrice(common_models.Model):
     community = models.ForeignKey(Community, on_delete=models.RESTRICT, verbose_name=_("Community or Village"))
     product = models.ForeignKey(
         ClassifiedProduct,
+        db_column="product_code",
         on_delete=models.RESTRICT,
         related_name="market_prices",
-        help_text=_("Crop, livestock or other category of items"),
+        verbose_name=_("Product"),
+        help_text=_("Product, e.g. full fat milk"),
     )
     # Sometimes the BSS has "farmgate" or "within the village" or "locally" as
     # the market. For example, MWSLA_30Sep15 (https://docs.google.com/spreadsheets/d/1AX6GGt7S1wAP_NlTBBK8FKbCN4kImgzY/edit#gid=2078095544)  # NOQA: E501
@@ -1328,9 +1395,11 @@ class MarketPrice(common_models.Model):
     # same name and geography as the Community when that happens.
     market = models.ForeignKey(Market, blank=True, null=True, on_delete=models.RESTRICT)
     description = common_models.DescriptionField(max_length=100)
-    currency = models.ForeignKey(Currency, on_delete=models.RESTRICT, verbose_name=_("Currency"))
+    currency = models.ForeignKey(
+        Currency, db_column="currency_code", on_delete=models.RESTRICT, verbose_name=_("Currency")
+    )
     unit_of_measure = models.ForeignKey(
-        UnitOfMeasure, db_column="unit_code", on_delete=models.RESTRICT, verbose_name=_("Unit of measure")
+        UnitOfMeasure, db_column="unit_code", on_delete=models.RESTRICT, verbose_name=_("Unit of Measure")
     )
     # We use day in the year instead of month to allow greater granularity,
     # and compatibility with the potential FDW Enhanced Crop Calendar output.
@@ -1406,11 +1475,11 @@ class AnnualProductionPerformance(common_models.Model):
         null=True,
         choices=Performance.choices,
         validators=[
-            MinValueValidator(1, message="Performance rank must be at least 1."),
-            MaxValueValidator(5, message="Performance rank must be at most 5."),
+            MinValueValidator(1, message="Performance rating must be at least 1."),
+            MaxValueValidator(5, message="Performance rating must be at most 5."),
         ],
         verbose_name=_("Seasonal Performance"),
-        help_text=_("Ranking of the annual production performance from Very Poor (1) to Very Good (5)"),
+        help_text=_("Rating of the annual production performance from Very Poor (1) to Very Good (5)"),
     )
     # @TODO SN05 https://docs.google.com/spreadsheets/d/1Su_1HMb7kkq5YXDtdETCnSuD6-goA4aA/edit#gid=54536490
     # contains text descriptions for the seasonal performance.
