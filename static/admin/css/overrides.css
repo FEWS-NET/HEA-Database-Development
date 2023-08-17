@@ -89,7 +89,7 @@ ul > li {
 
 /* CSS for hover effect */
 .card:hover {
-    transform: scale(1.1);
+    transform: scale(1.02);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
@@ -102,6 +102,7 @@ ul > li {
 }
 
 .card {
+    margin: 10px;
     position: relative;
     display: flex;
     flex-direction: column;

@@ -1,37 +1,5 @@
 {% load i18n %}
 
-{% block extrahead %}
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const modelSelect = document.getElementById('model-select');
-            const modelName = document.getElementById('model-name');
-            const docStringContainer = document.getElementById('doc-string-container');
-
-            modelSelect.addEventListener('change', function () {
-                const selectedModel = modelSelect.value;
-                // Make an AJAX request to the DRF endpoint
-                if (selectedModel != "---") {
-                    fetch(`/api/model_doc_strings/${selectedModel}`)
-                        .then(response => response.json())
-                        .then(data => {
-                            // Update the content of the container div with the returned data
-                            docStringContainer.innerHTML = data.doc_string;
-                            modelName.textContent = modelSelect.options[modelSelect.selectedIndex].text;
-                        })
-                        .catch(error => {
-                            console.error('Error fetching doc strings:', error);
-                            docStringContainer.innerHTML = 'Error fetching doc strings.';
-
-                        });
-                } else {
-                    docStringContainer.innerHTML = "";
-                     modelName.textContent = "";
-                }
-            });
-        });
-    </script>
-{% endblock %}
-
 <p class="lead">
     {% blocktrans %}
         A HEA baseline is a data collection conducted for a country during a specific reference year.
@@ -43,9 +11,7 @@
     {% endblocktrans %}
 
 </p>
-<a class="btn btn-link" type="button"
-   data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight"
-   aria-controls="offcanvasRight"> {% translate "Learn more about Baseline" %}</a>
+
 {% if app_list %}
 
     {% if 'baseline.view_sourceorganization' in perms or 'baseline.view_livelihoodzone' in perms or 'baseline.view_livelihoodzonebaseline' in perms or 'baseline.view_community' in perms %}
@@ -378,51 +344,3 @@
 {% endif %}
 
 
-
-<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
-    <div class="offcanvas-header">
-        <h5 id="offcanvasRightLabel">{% translate 'Learn more on Baseline Models' %} </h5>
-        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-    </div>
-    <div class="offcanvas-body">
-        <div class="container">
-            <div class="dropdown mt-3">
-                <label for="model-select">{% translate "Select Model"%} :</label>
-                <select id="model-select">
-                    <option value="---">---</option>
-                    <optgroup label= "BSS Setup"></optgroup>
-                    <option value="baseline:sourceorganization"> {% translate "Source Organizations" %}</option>
-                    <option value="baseline:livelihoodzone">{% translate "Livelihood Zone" %} </option>
-                    <option value="baseline:community"> {% translate "Community" %}</option>
-                    <option value="baseline:livelihoodzonebaseline"> {% translate "Livelihood Zone Baseline" %}</option>
-                    <optgroup label="Wealth Groups"></optgroup>
-                    <option value="baseline:wealthgroup"> {% translate "Wealth Breakdown" %}</option>
-                    <option value="baseline:livelihoodstrategy"> {% translate "Livelihood Strategy" %}</option>
-                    <option value="baseline:livelihoodactivity"> {% translate "Livelihood Activity" %}</option>
-                    <optgroup label="Community Productions"></optgroup>
-                    <option value="baseline:communitycropproduction"> {% translate "Crop" %}</option>
-                    <option value="baseline:communitylivestock"> {% translate "Livestock" %}</option>
-                    <optgroup label="Market Prices"></optgroup>
-                    <option value="baseline:marketprice"> {% translate "Market Prices" %}</option>
-                    <optgroup label="Seasonal Calender"></optgroup>
-                    <option value="metadata:seasonalactivitytype"> {% translate "Seasonal Activity Type" %}</option>
-                    <option value="baseline:seasonalactivity"> {% translate "Seasonal Activities" %}</option>
-                    <option value="baseline:activityoccurrences"> {% translate "Activity Occurrences" %}</option>
-                    <optgroup label="Hazards and Events"></optgroup>
-                    <option value="metadata:annualproductionperformance"> {% translate "Annual Production Performances" %}</option>
-                    <option value="baseline:hazard"> {% translate "Hazards" %}</option>
-                    <option value="baseline:event"> {% translate "Events" %}</option>
-                </select>
-            </div>
-        </div>
-        <div style="margin-top: 20px;">
-            <h6 class="lead" id="model-name">   {% translate '' %} </h6>
-            {% blocktrans %}
-
-                <div style="white-space: pre-line" id="doc-string-container">
-
-                </div>
-            {% endblocktrans %}
-        </div>
-    </div>
-</div>
