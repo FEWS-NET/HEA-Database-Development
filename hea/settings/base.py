@@ -84,6 +84,7 @@ EXTERNAL_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.gis",
     "django.contrib.admindocs",
+    "binary_database_files",
     "django_extensions",
 ]
 PROJECT_APPS = ["common", "metadata", "baseline"]
@@ -237,3 +238,8 @@ LOGGING = {
     # so that additional handlers can be used to get additional detail, e.g. `common.resources.LoggingResourceMixin`
     "root": {"handlers": ["console", "logfile"], "level": "DEBUG"},
 }
+
+DEFAULT_FILE_STORAGE = "binary_database_files.storage.DatabaseStorage"
+# Serve files from the database, in case they are not present on the file
+# system, for example if the container has been replaced.
+DATABASE_FILES_URL_METHOD = "URL_METHOD_2"

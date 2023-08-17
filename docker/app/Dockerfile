@@ -35,14 +35,21 @@ ENV PYTHONIOENCODING UTF-8
 EXPOSE 8000 8888 8022
 ENTRYPOINT ["/usr/src/app/docker/app/run_django.sh"]
 
-# See https://github.com/pypa/setuptools/issues/2781
+# Update pip for faster dependency resolution.
+ARG PIP_TRUSTED_HOST=127.0.0.1
+ARG PIP_INDEX_URL=https://pypi.python.org/simple/
+RUN pip install --quiet --no-cache-dir --upgrade pip
+
+# Install pyGDAL based on the version of GDAL available in the OS.
+# Currently, the version of GDAL in use conflicts with current setuptools,
+# so pin an older version - see https://github.com/pypa/setuptools/issues/2781
 RUN pip --quiet --no-cache-dir install "setuptools<58.0.0"
-RUN VERSION=$(gdal-config --version); CFLAGS=$(gdal-config --cflags) pip install GDAL[numpy]==${VERSION}
+# GDAL requires numpy for some extensions to build, make sure the numpy version
+# specified here matches requirements/base.txt
+RUN VERSION=$(gdal-config --version); CFLAGS=$(gdal-config --cflags) pip install --quiet --no-cache-dir numpy==1.25.2 GDAL[numpy]==${VERSION}
 
 # Install the Python requirements
 COPY requirements /usr/src/app/requirements
-ARG PIP_TRUSTED_HOST=127.0.0.1
-ARG PIP_INDEX_URL=https://pypi.python.org/simple/
 RUN pip install --quiet --no-cache-dir -r /usr/src/app/requirements/base.txt
 
 WORKDIR /usr/src/app
