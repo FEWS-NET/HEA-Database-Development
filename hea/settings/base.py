@@ -169,7 +169,11 @@ USE_TZ = True
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 SESSION_ENGINE = "django.contrib.sessions.backends.cached_db"
 
+# Media (including uploaded files)
+MEDIA_ROOT = normpath(join(SITE_ROOT, "media"))
+MEDIA_URL = "/media/"
 
+# Staticfiles
 STATIC_HOST = env.str("DJANGO_STATIC_HOST", "")
 STATIC_URL = STATIC_HOST + "/static/"
 STATIC_ROOT = normpath(join(SITE_ROOT, "assets"))
