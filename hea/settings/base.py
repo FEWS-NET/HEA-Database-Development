@@ -243,3 +243,11 @@ DEFAULT_FILE_STORAGE = "binary_database_files.storage.DatabaseStorage"
 # Serve files from the database, in case they are not present on the file
 # system, for example if the container has been replaced.
 DATABASE_FILES_URL_METHOD = "URL_METHOD_2"
+
+
+# Don't report missing HSTS preload, because we don't run SSL in local or CI environments.
+# See: https://docs.djangoproject.com/en/3.0/ref/settings/#std:setting-SILENCED_SYSTEM_CHECKS
+SILENCED_SYSTEM_CHECKS = [
+    # SECURE_HSTS_PRELOAD: https://docs.djangoproject.com/en/3.0/ref/settings/#secure-hsts-preload
+    "security.W021",
+]
