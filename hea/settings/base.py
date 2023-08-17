@@ -166,7 +166,7 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 SESSION_ENGINE = "django.contrib.sessions.backends.cached_db"
 
 # Media (including uploaded files)
