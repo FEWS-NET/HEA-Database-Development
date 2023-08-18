@@ -29,9 +29,9 @@ class WealthCategoryFactory(factory.django.DjangoModelFactory):
         model = "metadata.WealthCategory"
         django_get_or_create = ("code", "name")
 
-    code = factory.Iterator(["WC1", "WC2", "WC3", "WC4"])
-    name = factory.LazyAttribute(lambda o: f"{o.code} Wealth Category")
-    description = factory.LazyAttribute(lambda o: f"{o.code} Wealth Category Description")
+    code = factory.Iterator(["VP", "P", "M", "BO"])
+    name = factory.Iterator(["Very Poor", "Poor", "Medium", "Bettor Off"])
+    description = factory.LazyAttribute(lambda o: f"{o.name} Wealth Category Description")
 
 
 class WealthCharacteristicFactory(factory.django.DjangoModelFactory):
