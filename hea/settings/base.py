@@ -84,6 +84,7 @@ EXTERNAL_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.gis",
     "django.contrib.admindocs",
+    "binary_database_files",
     "django_extensions",
 ]
 PROJECT_APPS = ["common", "metadata", "baseline"]
@@ -168,10 +169,14 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 SESSION_ENGINE = "django.contrib.sessions.backends.cached_db"
 
+# Media (including uploaded files)
+MEDIA_ROOT = normpath(join(SITE_ROOT, "media"))
+MEDIA_URL = "/media/"
 
+# Staticfiles
 STATIC_HOST = env.str("DJANGO_STATIC_HOST", "")
 STATIC_URL = STATIC_HOST + "/static/"
 STATIC_ROOT = normpath(join(SITE_ROOT, "assets"))
@@ -240,3 +245,16 @@ LOGGING = {
     # so that additional handlers can be used to get additional detail, e.g. `common.resources.LoggingResourceMixin`
     "root": {"handlers": ["console", "logfile"], "level": "DEBUG"},
 }
+
+DEFAULT_FILE_STORAGE = "binary_database_files.storage.DatabaseStorage"
+# Serve files from the database, in case they are not present on the file
+# system, for example if the container has been replaced.
+DATABASE_FILES_URL_METHOD = "URL_METHOD_2"
+
+
+# Don't report missing HSTS preload, because we don't run SSL in local or CI environments.
+# See: https://docs.djangoproject.com/en/3.0/ref/settings/#std:setting-SILENCED_SYSTEM_CHECKS
+SILENCED_SYSTEM_CHECKS = [
+    # SECURE_HSTS_PRELOAD: https://docs.djangoproject.com/en/3.0/ref/settings/#secure-hsts-preload
+    "security.W021",
+]

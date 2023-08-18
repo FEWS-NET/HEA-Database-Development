@@ -35,6 +35,9 @@ router.register(r"season", SeasonViewSet)
 
 urlpatterns = [
     ########## LOCALE INDEPENDENT PATHS go here. ##########
+    # Database Files
+    path("", include("binary_database_files.urls")),
+    # API
     path("api/", include(router.urls)),
     path("api-auth/", include("rest_framework.urls", namespace="rest_framework")),
 ] + i18n_patterns(
