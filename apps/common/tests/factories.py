@@ -1,7 +1,7 @@
 import factory
 from factory import fuzzy
 
-from common.models import ClassifiedProduct, UnitOfMeasure
+from common.models import ClassifiedProduct, UnitOfMeasure, CountryClassifiedProductAliases, UnitOfMeasureConversion
 
 
 class TreebeardFactory(factory.django.DjangoModelFactory):
@@ -141,3 +141,19 @@ class GroupFactory(factory.django.DjangoModelFactory):
             # A list of permissions were passed in, use them
             for permission in extracted:
                 self.permissions.add(permission)
+
+class UnitOfMeasureConversionFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = UnitOfMeasureConversion
+
+    from_unit = factory.SubFactory("common.tests.factories.UnitOfMeasureFactory")
+    to_unit = factory.SubFactory("common.tests.factories.UnitOfMeasureFactory")
+    conversion_factor = factory.Sequence(lambda n: n + 1)
+
+
+class CountryClassifiedProductAliasesFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = CountryClassifiedProductAliases
+
+    country = factory.SubFactory("common.tests.factories.CountryFactory")
+    product = factory.SubFactory("common.tests.factories.ClassifiedProductFactory")
