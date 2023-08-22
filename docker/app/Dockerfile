@@ -65,9 +65,10 @@ RUN mkdir -p \
         cache \
         log \
         media \
+        notebooks \
         run && \
     adduser --disabled-password --disabled-login --no-create-home --gecos django django && \
-    chown -R django:django cache log media run
+    chown -R django:django cache log media run notebooks
 
 # Create volumes for writable directories inside the container. Note that absolute
 # paths are required for them to still work when docker-compose.override.yml is
@@ -77,6 +78,7 @@ VOLUME \
     /usr/src/app/cache \
     /usr/src/app/log \
     /usr/src/app/media \
+    /usr/src/app/notebooks \
     /usr/src/app/run
 
 ## Create a second build stage that adds the source code

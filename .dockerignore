@@ -57,13 +57,10 @@ reports/
 # BIRT Report Settings
 **/*.rptconfig
 
-# Compiled Assets and Media
+# Compiled Assets, Notebooks and Media
 assets/
-!apps/viz/dash/*/assets/
-data-explorer/build/
-fde2/build/
-fdm/build/
 media/
+notebooks/
 
 # External components
 vendor/
