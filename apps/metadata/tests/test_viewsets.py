@@ -10,7 +10,8 @@ from metadata.models import (
     WealthCategory,
     WealthCharacteristic,
 )
-from metadata.test.factories import (
+
+from .factories import (
     HazardCategoryFactory,
     LivelihoodCategoryFactory,
     SeasonalActivityTypeFactory,

@@ -4,7 +4,8 @@ from rest_framework.reverse import reverse
 from rest_framework.test import APITestCase
 
 from common.models import ClassifiedProduct, UnitOfMeasure
-from common.test.factories import (
+
+from .factories import (
     ClassifiedProductFactory,
     CountryFactory,
     CurrencyFactory,

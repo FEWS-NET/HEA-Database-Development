@@ -1,6 +1,6 @@
 import factory
 
-from common.test.factories import CountryFactory
+from common.tests.factories import CountryFactory
 from metadata.models import Season, SeasonalActivityType, WealthCharacteristic
 
 
