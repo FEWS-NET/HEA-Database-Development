@@ -685,8 +685,9 @@ class UnitOfMeasure(Model):
         """
         Ensure that aliases are lowercase and don't contain duplicates
         """
-        if self.aliases:
-            self.aliases = list(set([alias.lower() for alias in self.aliases if alias]))
+        # @TODO uncomment this when aliases get decision
+        # if self.aliases:
+        #     self.aliases = list(set([alias.lower() for alias in self.aliases if alias]))
 
     def save(self, *args, **kwargs):
         self.calculate_fields()
