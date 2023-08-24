@@ -183,20 +183,6 @@ class LivelihoodProductCategory(common_models.Model):
         verbose_name_plural = _("Livelihood Product Categories")
 
 
-# @TODO https://fewsnet.atlassian.net/browse/HEA-54
-# Do we subclass GeographicUnit, in which case we don't need to worry
-# about the geography field, or the way to capture the Admin units above the
-# Village. If we keep this a bare Model without subclassing GeographicUnit then
-# we need to add `location = models.LocationField()` and `full_name`
-# (to capture the village name combined with the admin unit name)
-# I favor joining to geography, even if this is one-to-one. I also favor
-# putting interview details in a different table, as they are not properties
-# of the Community/Village (although better still I think remove the fields to
-# simplify ingestion).
-# Dave: `Community(GeographicUnit)` would be the most FDW-like approach
-# Girum: We need to be able to link Community to Admin2, etc. LIAS uses the
-# Admin/LHZ intersect.
-# Chris: 1:1 Relationship to GeographicUnit
 class Community(common_models.Model):
     """
     A representative location within the Livelihood Zone whose population was
@@ -207,7 +193,19 @@ class Community(common_models.Model):
     arrondissement.
     """
 
+    code = models.CharField(
+        max_length=25,
+        blank=True,
+        null=True,
+        verbose_name=_("Code"),
+        help_text=_("A short identifier for the Community"),
+    )
     name = common_models.NameField()
+    full_name = common_models.NameField(
+        max_length=200,
+        verbose_name=_("Full Name"),
+        help_text=_("The full name the Community, including the parent administrative units."),
+    )
     livelihood_zone_baseline = models.ForeignKey(
         LivelihoodZoneBaseline,
         on_delete=models.CASCADE,
