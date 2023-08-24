@@ -1,14 +1,7 @@
 import factory
 
 from common.tests.factories import CountryFactory
-from ..models import (
-    HazardCategory,
-    LivelihoodCategory,
-    Season,
-    SeasonalActivityType,
-    WealthCategory,
-    WealthCharacteristic,
-)
+from metadata.models import Season, SeasonalActivityType, WealthCharacteristic
 
 
 class LivelihoodCategoryFactory(factory.django.DjangoModelFactory):

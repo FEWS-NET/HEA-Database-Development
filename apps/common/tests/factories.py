@@ -1,7 +1,12 @@
 import factory
 from factory import fuzzy
 
-from common.models import ClassifiedProduct, UnitOfMeasure, CountryClassifiedProductAliases, UnitOfMeasureConversion
+from common.models import (
+    ClassifiedProduct,
+    CountryClassifiedProductAliases,
+    UnitOfMeasure,
+    UnitOfMeasureConversion,
+)
 
 
 class TreebeardFactory(factory.django.DjangoModelFactory):
@@ -141,6 +146,7 @@ class GroupFactory(factory.django.DjangoModelFactory):
             # A list of permissions were passed in, use them
             for permission in extracted:
                 self.permissions.add(permission)
+
 
 class UnitOfMeasureConversionFactory(factory.django.DjangoModelFactory):
     class Meta:
