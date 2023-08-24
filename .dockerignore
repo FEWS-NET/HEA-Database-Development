@@ -60,7 +60,6 @@ reports/
 # Compiled Assets, Notebooks and Media
 assets/
 media/
-notebooks/
 
 # External components
 vendor/
