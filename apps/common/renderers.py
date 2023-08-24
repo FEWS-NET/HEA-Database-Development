@@ -16,7 +16,19 @@ class CSVRenderer(BaseRenderer):
     charset = "utf-8-sig"
     filename = "hea-data.csv"
 
+    def prepare_data(self, data, accepted_media_type=None, renderer_context=None):
+        """
+        Converts data into a specialized format. Override this method in
+        subclasses to provide specialized formatting e.g timeseries format.
+        """
+        return data
+
     def render(self, data, accepted_media_type=None, renderer_context=None):
+        """
+        Render the data, creating the table header inside the first iteration
+        of the loop in case data is a generator
+        """
+        data = self.prepare_data(data, accepted_media_type, renderer_context)
         csv_buffer = io.TextIOWrapper(io.BytesIO(), encoding=self.charset)
         writer = csv.writer(csv_buffer)
         first_row = True
