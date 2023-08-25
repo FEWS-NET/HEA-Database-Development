@@ -57,11 +57,10 @@ reports/
 # BIRT Report Settings
 **/*.rptconfig
 
-# Compiled Assets, Notebooks and Media
+# Compiled Assets and Media
 assets/
 jupyter/
 media/
-notebooks/
 
 # External components
 vendor/
