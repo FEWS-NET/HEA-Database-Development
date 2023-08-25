@@ -57,18 +57,20 @@ WORKDIR /usr/src/app
 # These directories should be listed in .dockerignore
 # - assets contains compiled staticfiles
 # - cache contains locally cached objects
+# - jupyter contains local Jupyter/IPython files such as settings and the notebook secret
 # - log is required for the Django logs
 # - media is required for user uploaded files
 # - run is required for pid files
 RUN mkdir -p \
         assets \
         cache \
+        jupyter \
         log \
         media \
         notebooks \
         run && \
     adduser --disabled-password --disabled-login --no-create-home --gecos django django && \
-    chown -R django:django cache log media run notebooks
+    chown -R django:django cache jupyter log media run notebooks
 
 # Create volumes for writable directories inside the container. Note that absolute
 # paths are required for them to still work when docker-compose.override.yml is
@@ -76,6 +78,7 @@ RUN mkdir -p \
 VOLUME \
     /usr/src/app/assets \
     /usr/src/app/cache \
+    /usr/src/app/jupyter \
     /usr/src/app/log \
     /usr/src/app/media \
     /usr/src/app/notebooks \

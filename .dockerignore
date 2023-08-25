@@ -59,6 +59,7 @@ reports/
 
 # Compiled Assets, Notebooks and Media
 assets/
+jupyter/
 media/
 notebooks/
 
