@@ -53,10 +53,9 @@ reports/
 
 # Compiled Assets and Media
 assets/
-!apps/viz/dash/*/assets/
 media/
+notebooks/
 static/dojo/
-docs/_build/html/
 
 # any node or bower installation folders
 *node_modules/*
