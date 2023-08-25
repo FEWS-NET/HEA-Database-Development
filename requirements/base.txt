@@ -14,8 +14,10 @@ docutils==0.20.1
 factory-boy==3.2.1
 gunicorn==20.1.0
 json-logging-py==0.2
+lxml==4.9.3
 # Make sure that same version of numpy is specified here and in docker/app/Dockerfile
 numpy==1.25.2
+pandas==2.0.3
 # Upgrade to psycopg>=3 once ddtrace supports it.
 # See https://github.com/DataDog/dd-trace-py/issues/4393
 psycopg2-binary==2.9.7
