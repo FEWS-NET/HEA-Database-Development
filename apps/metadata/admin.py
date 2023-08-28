@@ -60,6 +60,7 @@ class WealthCharacteristicAdmin(DimensionAdmin):
     """
     A concrete admin for WealthCharacteristic
     """
+
     fields = (
         "code",
         "name",
