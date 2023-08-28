@@ -60,12 +60,13 @@ class WealthCharacteristicAdmin(DimensionAdmin):
     """
     A concrete admin for WealthCharacteristic
     """
-
-    def get_fields(self, request, obj=None):
-        fields = super().get_fields(request, obj)
-        if "variable_type" not in fields:
-            fields += ["variable_type"]
-        return fields
+    fields = (
+        "code",
+        "name",
+        "variable_type",
+        "description",
+        "aliases",
+    )
 
     list_filter = ("variable_type",)
 
@@ -92,11 +93,14 @@ class SeasonAdmin(admin.ModelAdmin):
 
 
 class MarketAdmin(DimensionAdmin):
-    def get_fields(self, request, obj=None):
-        fields = super().get_fields(request, obj)
-        if "country" not in fields:
-            fields += ["country"]
-        return fields
+
+    fields = [
+        "code",
+        "name",
+        "country",
+        "description",
+        "aliases",
+    ]
 
     list_filter = ("country",)
 

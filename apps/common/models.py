@@ -600,7 +600,7 @@ class Currency(models.Model):
         verbose_name_plural = _("Currencies")
 
     def __str__(self):
-        return f"{self.iso_en_name}:{self.iso4217a3}"
+        return self.iso4217a3
 
     class ExtraMeta:
         identifier = ["iso4217a3"]
