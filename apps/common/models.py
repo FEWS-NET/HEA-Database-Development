@@ -574,9 +574,6 @@ class Country(models.Model):
         help_text=_("The name in Spanish of the Country approved by the ISO 3166 Maintenance Agency"),
     )
 
-    def __str__(self):
-        return "%s" % (self.name)
-
     class Meta:
         verbose_name = _("Country")
         verbose_name_plural = _("Countries")
@@ -691,6 +688,7 @@ class UnitOfMeasure(Model):
         """
         Ensure that aliases are lowercase and don't contain duplicates
         """
+        # @TODO uncomment this when aliases get decision
         # if self.aliases:
         #     self.aliases = list(set([alias.lower() for alias in self.aliases if alias]))
 

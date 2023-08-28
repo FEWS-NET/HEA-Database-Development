@@ -35,14 +35,21 @@ ENV PYTHONIOENCODING UTF-8
 EXPOSE 8000 8888 8022
 ENTRYPOINT ["/usr/src/app/docker/app/run_django.sh"]
 
-# See https://github.com/pypa/setuptools/issues/2781
+# Update pip for faster dependency resolution.
+ARG PIP_TRUSTED_HOST=127.0.0.1
+ARG PIP_INDEX_URL=https://pypi.python.org/simple/
+RUN pip install --quiet --no-cache-dir --upgrade pip
+
+# Install pyGDAL based on the version of GDAL available in the OS.
+# Currently, the version of GDAL in use conflicts with current setuptools,
+# so pin an older version - see https://github.com/pypa/setuptools/issues/2781
 RUN pip --quiet --no-cache-dir install "setuptools<58.0.0"
-RUN VERSION=$(gdal-config --version); CFLAGS=$(gdal-config --cflags) pip install GDAL[numpy]==${VERSION}
+# GDAL requires numpy for some extensions to build, make sure the numpy version
+# specified here matches requirements/base.txt
+RUN VERSION=$(gdal-config --version); CFLAGS=$(gdal-config --cflags) pip install --quiet --no-cache-dir numpy==1.25.2 GDAL[numpy]==${VERSION}
 
 # Install the Python requirements
 COPY requirements /usr/src/app/requirements
-ARG PIP_TRUSTED_HOST=127.0.0.1
-ARG PIP_INDEX_URL=https://pypi.python.org/simple/
 RUN pip install --quiet --no-cache-dir -r /usr/src/app/requirements/base.txt
 
 WORKDIR /usr/src/app
@@ -50,17 +57,20 @@ WORKDIR /usr/src/app
 # These directories should be listed in .dockerignore
 # - assets contains compiled staticfiles
 # - cache contains locally cached objects
+# - jupyter contains local Jupyter/IPython files such as settings and the notebook secret
 # - log is required for the Django logs
 # - media is required for user uploaded files
 # - run is required for pid files
 RUN mkdir -p \
         assets \
         cache \
+        jupyter \
         log \
         media \
+        notebooks \
         run && \
     adduser --disabled-password --disabled-login --no-create-home --gecos django django && \
-    chown -R django:django cache log media run
+    chown -R django:django cache jupyter log media run notebooks
 
 # Create volumes for writable directories inside the container. Note that absolute
 # paths are required for them to still work when docker-compose.override.yml is
@@ -68,8 +78,10 @@ RUN mkdir -p \
 VOLUME \
     /usr/src/app/assets \
     /usr/src/app/cache \
+    /usr/src/app/jupyter \
     /usr/src/app/log \
     /usr/src/app/media \
+    /usr/src/app/notebooks \
     /usr/src/app/run
 
 ## Create a second build stage that adds the source code

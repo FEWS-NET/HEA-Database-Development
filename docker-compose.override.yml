@@ -18,6 +18,7 @@ services:
       # Separate volumes for writable directories inside the container
       - /usr/src/app/assets
       - /usr/src/app/cache
+      - /usr/src/app/jupyter
       - /usr/src/app/log
       - /usr/src/app/media
     environment:

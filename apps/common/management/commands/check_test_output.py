@@ -45,20 +45,20 @@ class Command(BaseCommand):
         input_file = options.get("filename")
         content = input_file.read()
 
-        # Find the test output by finding all test between the --- markers after the "Running tests..." header
-        result = re.search(
-            r"System check identified no issues \(. silenced\)\.\n(.+)\n-+", content, re.DOTALL | re.MULTILINE
-        )
+        # Find the test output by finding all text before the --- marker after the "Found x test(s)" header
+        result = re.search(r"Found \d+ test\(s\)\.\n(.+)\n-+", content, re.DOTALL | re.MULTILINE)
         if not result:
             raise CommandError("Cannot find test output")
         test_output = result.groups()[0]
 
         # Prepare regex patterns for "acceptable" lines or output
         good_lines = [
+            r"^Found \d+ test\(s\)\.$",
             r"^System check identified no issues.*$",
             # Verbose output, e.g.  test_weekly_facts (apps.price.tests.test_models.MarketFactsCase) ... ok (32.194s):
             r"^  test_\w+ \([\w\.]+\) \.\.\..*?\([\d\.]+s\)$",
-            r"^[\.s]+$",  # Simple output, e.g. .....................s.............................s..................
+            # Simple output, e.g. .....................s.............................s..................
+            r"^[\.s]+$",
             r"^.*Saving combined file.*$",
             r"^.*Saved combined results.*$",
             r"^$",

@@ -1,0 +1,12 @@
+[flake8]
+exclude = ./builds,./.history,./venv,./vendor,migrations,node_modules,bower_components
+ignore = E203, E127, E128, E266, W503, N802, N803, N806
+max-line-length = 119
+# We have many existing methods that are overly complex, so we can't introduce this yet
+# max-complexity = 18
+select = B,C,E,F,W,T4,B9
+# We need to configure the mypy.ini because the flake8-mypy's default
+# options don't properly override it, so if we don't specify it we get
+# half of the config from mypy.ini and half from flake8-mypy.
+mypy_config = mypy.ini
+
