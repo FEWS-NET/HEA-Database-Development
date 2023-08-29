@@ -1,6 +1,7 @@
 """
 Models for managing HEA Baseline Surveys
 """
+
 from django.contrib.gis.db import models
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -1213,10 +1214,10 @@ class SeasonalActivityOccurrence(common_models.Model):
     )
 
     def start_month(self):
-        return get_month_from_day_number(self.livelihood_zone_baseline.reference_year_start_date.year, self.start)
+        return get_month_from_day_number(self.start)
 
     def end_month(self):
-        return get_month_from_day_number(self.livelihood_zone_baseline.reference_year_start_date.year, self.end)
+        return get_month_from_day_number(self.end)
 
     def calculate_fields(self):
         self.livelihood_zone_baseline = self.seasonal_activity.livelihood_zone_baseline
@@ -1419,24 +1420,16 @@ class MarketPrice(common_models.Model):
     high_price = models.FloatField(verbose_name=_("High price"))
 
     def low_price_start_month(self):
-        return get_month_from_day_number(
-            self.community.livelihood_zone_baseline.reference_year_start_date.year, self.low_price_start
-        )
+        return get_month_from_day_number(self.low_price_start)
 
     def low_price_end_month(self):
-        return get_month_from_day_number(
-            self.community.livelihood_zone_baseline.reference_year_start_date.year, self.low_price_end
-        )
+        return get_month_from_day_number(self.low_price_end)
 
     def high_price_start_month(self):
-        return get_month_from_day_number(
-            self.community.livelihood_zone_baseline.reference_year_start_date.year, self.high_price_start
-        )
+        return get_month_from_day_number(self.high_price_start)
 
     def high_price_end_month(self):
-        return get_month_from_day_number(
-            self.community.livelihood_zone_baseline.reference_year_start_date.year, self.high_price_end
-        )
+        return get_month_from_day_number(self.high_price_end)
 
     class Meta:
         verbose_name = _("Market Price")

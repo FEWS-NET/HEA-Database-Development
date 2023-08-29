@@ -13,11 +13,11 @@
 
             {% if 'baseline.view_sourceorganization' in perms or 'baseline.view_livelihoodzone' in perms or 'baseline.view_livelihoodzonebaseline' in perms or 'baseline.view_community' in perms %}
                 <li class="mb-1">
-                    <button class="btn btn-toggle align-items-center rounded collapsed" data-bs-toggle="collapse"
+                    <button class="btn btn-toggle align-items-center rounded collapsed-menu" data-bs-toggle="collapse"
                             data-bs-target="#home-collapse" aria-expanded="true">
                         {% translate 'BSS Setup' %}
                     </button>
-                    <div class="collapse show" id="home-collapse">
+                    <div class="collapsed-menu show" id="home-collapse">
                         <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
                             {% if perms.baseline.view_sourceorganization %}
                                 <li><a class="link-dark rounded"
@@ -43,11 +43,11 @@
 
             {% if 'baseline.view_wealthgroup' in perms %}
                 <li class="mb-1">
-                    <button class="btn btn-toggle align-items-center rounded collapsed" data-bs-toggle="collapse"
+                    <button class="btn btn-toggle align-items-center rounded collapsed-menu" data-bs-toggle="collapse"
                             data-bs-target="#wg-collapse" aria-expanded="false">
                         {% translate 'BSS WB, Data,.. Sheets' %}
                     </button>
-                    <div class="collapse" id="wg-collapse">
+                    <div class="collapse-menu" id="wg-collapse">
                         <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
                             <li><a class="link-dark rounded" href="{% url 'admin:baseline_wealthgroup_changelist' %}">{% translate 'Wealth Group Data' %}</a></li>
                         </ul>
@@ -58,11 +58,11 @@
 
             {% if 'baseline.view_communitycropproduction' in perms or 'baseline.view_communitylivestock' in perms %}
                 <li class="mb-1">
-                    <button class="btn btn-toggle align-items-center rounded collapsed" data-bs-toggle="collapse"
+                    <button class="btn btn-toggle align-items-center rounded collapsed-menu" data-bs-toggle="collapse"
                             data-bs-target="#production-collapse" aria-expanded="false">
                         {% translate 'BSS Production Data' %}
                     </button>
-                    <div class="collapse" id="production-collapse">
+                    <div class="collapse-menu" id="production-collapse">
                         <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
                             {% if perms.baseline.view_communitycropproduction %}
                                 <li><a class="link-dark rounded"
@@ -81,11 +81,11 @@
 
             {% if 'metadata.view_seasonalactivitytype' in perms or 'baseline.view_seasonalactivity' in perms or 'baseline.view_seasonalactivityoccurrence' in perms %}
                 <li class="mb-1">
-                    <button class="btn btn-toggle align-items-center rounded collapsed" data-bs-toggle="collapse"
+                    <button class="btn btn-toggle align-items-center rounded collapsed-menu" data-bs-toggle="collapse"
                             data-bs-target="#seascal-collapse" aria-expanded="false">
                         {% translate 'Seasonal Calendars' %}
                     </button>
-                    <div class="collapse" id="seascal-collapse">
+                    <div class="collapse-menu" id="seascal-collapse">
                         <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
                             {% if 'metadata.view_seasonalactivitytype' in perms %}
                                 <li><a class="link-dark rounded"
@@ -111,11 +111,11 @@
 
             {% if perms.common %}
                 <li class="mb-1">
-                    <button class="btn btn-toggle align-items-center rounded collapsed" data-bs-toggle="collapse"
+                    <button class="btn btn-toggle align-items-center rounded collapsed-menu" data-bs-toggle="collapse"
                             data-bs-target="#common-collapse" aria-expanded="false">
                         {% translate 'Common' %}
                     </button>
-                    <div class="collapse" id="common-collapse">
+                    <div class="collapse-menu" id="common-collapse">
                         <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
                             <li><a class="link-dark rounded"
                                    href="{% url 'admin:common_country_changelist' %}">{% translate 'Countries' %}</a>
@@ -137,11 +137,11 @@
             {% if perms.metadata %}
                 <li class="border-top my-2"></li>
                 <li class="mb-1">
-                    <button class="btn btn-toggle align-items-center rounded collapsed" data-bs-toggle="collapse"
+                    <button class="btn btn-toggle align-items-center rounded collapsed-menu" data-bs-toggle="collapse"
                             data-bs-target="#metadata-collapse" aria-expanded="false">
                         {% translate 'Metadata' %}
                     </button>
-                    <div class="collapse" id="metadata-collapse">
+                    <div class="collapse-menu" id="metadata-collapse">
                         <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
                             <li><a class="link-dark rounded"
                                    href="{% url 'admin:metadata_hazardcategory_changelist' %}">{% translate 'Hazard Categories' %}</a>
@@ -165,11 +165,11 @@
                 {% endif %}
             {% if perms.auth %}
                 <li class="mb-1">
-                    <button class="btn btn-toggle align-items-center rounded collapsed" data-bs-toggle="collapse"
+                    <button class="btn btn-toggle align-items-center rounded collapsed-menu" data-bs-toggle="collapse"
                             data-bs-target="#account-collapse" aria-expanded="false">
                         {% translate 'User management' %}
                     </button>
-                    <div class="collapse" id="account-collapse">
+                    <div class="collapse-menu" id="account-collapse">
                         <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
                             <li><a class="link-dark rounded" href="{% url 'admin:auth_user_changelist' %}">{% translate 'Users' %}</a></li>
                             <li><a class="link-dark rounded" href="{% url 'admin:auth_group_changelist' %}">{% translate 'Groups' %}</a></li>

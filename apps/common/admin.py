@@ -4,7 +4,6 @@ from django.contrib.admin.options import InlineModelAdmin
 from django.contrib.gis.admin import OSMGeoAdmin
 from treebeard.admin import TreeAdmin
 
-from .forms import ClassifiedProductForm
 from .models import (
     ClassifiedProduct,
     Country,
@@ -35,7 +34,7 @@ class CountryClassifiedProductAliasesInline(InlineModelAdmin):
 
 
 class ClassifiedProductAdmin(TreeAdmin):
-    form = ClassifiedProductForm
+    # form = ClassifiedProductForm
     list_display = ("cpcv2", "description", "common_name", "scientific_name")
     ordering = ["cpcv2"]
     search_fields = [

@@ -125,9 +125,9 @@ class LoadModelFromDict(Operation):
         return "Load data into a model from a list of dicts or a delimited file"
 
 
-def get_month_from_day_number(ref_year, day_number):
-    first_day_of_reference_year = datetime(ref_year, 1, 1)
-    _date = first_day_of_reference_year + timedelta(days=day_number - 1)
+def get_month_from_day_number(day_number):
+    first_day_of_year = datetime(datetime.today().year, 1, 1)
+    _date = first_day_of_year + timedelta(days=day_number - 1)  # timedelta uses 0 based index
     return _date.month
 
 
