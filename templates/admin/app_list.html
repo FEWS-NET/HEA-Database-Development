@@ -121,7 +121,7 @@
                 {% endif %}
                 </div>
                 <!-- Card 2 -->
-                {% if 'baseline.view_hazard' in perms %}
+                {% if 'baseline.view_marketprice' in perms %}
                     <div class="col">
                         <div class="card m-2">
                             <div class="card-body">
@@ -220,7 +220,7 @@
                     <div class="col">
                     <div class="card m-2">
                         <div class="card-body">
-                            <a href="{% url 'admin:baseline_expandabilityfactor_changelist' %}"> {% translate 'Expandability Factor' %}</a>
+                            <a href="{% url 'admin:baseline_expandabilityfactor_changelist' %}"> {% translate 'Expandability Factors' %}</a>
                         </div>
                     </div>
                 {% endif %}
@@ -230,7 +230,7 @@
                     <div class="col">
                         <div class="card m-2">
                             <div class="card-body">
-                                <a href="{% url 'admin:baseline_copingstrategy_changelist' %}">{% translate 'Coping Strategy' %}</a>
+                                <a href="{% url 'admin:baseline_copingstrategy_changelist' %}">{% translate 'Coping Strategies' %}</a>
                             </div>
                         </div>
                     </div>

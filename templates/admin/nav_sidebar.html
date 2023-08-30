@@ -26,14 +26,17 @@
                             {% endif %}
                             {% if perms.baseline.view_livelihoodzone %}
                                 <li><a class="link-dark rounded"
-                                       href="{% url 'admin:baseline_livelihoodzone_changelist' %}">{% translate 'Livelihood Zones' %}</a></li>
+                                       href="{% url 'admin:baseline_livelihoodzone_changelist' %}">{% translate 'Livelihood Zones' %}</a>
+                                </li>
                             {% endif %}
                             {% if perms.baseline.view_livelihoodzonebaseline %}
                                 <li><a class="link-dark rounded"
-                                       href="{% url 'admin:baseline_livelihoodzonebaseline_changelist' %}">{% translate 'Livelihood Zone Baselines' %}</a></li>
+                                       href="{% url 'admin:baseline_livelihoodzonebaseline_changelist' %}">{% translate 'Livelihood Zone Baselines' %}</a>
+                                </li>
                             {% endif %}
                             {% if perms.baseline.view_community %}
-                                <li><a class="link-dark rounded" href="{% url 'admin:baseline_community_changelist' %}">{% translate 'Communities' %}</a>
+                                <li><a class="link-dark rounded"
+                                       href="{% url 'admin:baseline_community_changelist' %}">{% translate 'Communities' %}</a>
                                 </li>
                             {% endif %}
                         </ul>
@@ -49,7 +52,9 @@
                     </button>
                     <div class="collapse-menu" id="wg-collapse">
                         <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
-                            <li><a class="link-dark rounded" href="{% url 'admin:baseline_wealthgroup_changelist' %}">{% translate 'Wealth Group Data' %}</a></li>
+                            <li><a class="link-dark rounded"
+                                   href="{% url 'admin:baseline_wealthgroup_changelist' %}">{% translate 'Wealth Group Data' %}</a>
+                            </li>
                         </ul>
                     </div>
                 </li>
@@ -72,6 +77,28 @@
                             {% if perms.baseline.view_communitylivestock %}
                                 <li><a class="link-dark rounded"
                                        href="{% url 'admin:baseline_communitylivestock_changelist' %}">{% translate 'Livestock Productions' %}</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </li>
+            {% endif %}
+            {% if 'metadata.view_market' in perms or 'baseline.view_marketprice' in perms %}
+                <li class="mb-1">
+                    <button class="btn btn-toggle align-items-center rounded collapsed-menu" data-bs-toggle="collapse"
+                            data-bs-target="#production-collapse" aria-expanded="false">
+                        {% translate 'Marekt Prices' %}
+                    </button>
+                    <div class="collapse-menu" id="production-collapse">
+                        <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+                            {% if 'metadata.view_market' in perms %}
+                                <li><a class="link-dark rounded"
+                                       href="{% url 'admin:metadata_market_changelist' %}">{% translate 'Markets' %}</a>
+                                </li>
+                            {% endif %}
+                            {% if 'baseline.view_marketprice' in perms %}
+                                <li><a class="link-dark rounded"
+                                       href="{% url 'admin:baseline_marketprice_changelist' %}">{% translate 'Market Prices' %}</a>
                                 </li>
                             {% endif %}
                         </ul>
@@ -106,7 +133,57 @@
                     </div>
                 </li>
             {% endif %}
+            {% if 'baseline.view_annualproductionperformance' in perms or 'baseline.view_hazard' in perms or 'baseline.view_event' in perms %}
+                <li class="mb-1">
+                    <button class="btn btn-toggle align-items-center rounded collapsed-menu" data-bs-toggle="collapse"
+                            data-bs-target="#seascal-collapse" aria-expanded="false">
+                        {% translate 'Hazards and Events' %}
+                    </button>
+                    <div class="collapse-menu" id="seascal-collapse">
+                        <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+                            {% if 'baseline.view_annualproductionperformance' in perms %}
+                                <li><a class="link-dark rounded"
+                                       href="{% url 'admin:baseline_annualproductionperformance_changelist' %}">{% translate 'Annual Production Performances' %}</a>
+                                </li>
+                            {% endif %}
+                            {% if 'baseline.view_hazard' in perms %}
+                                <li><a class="link-dark rounded"
+                                       href="{% url 'admin:baseline_hazard_changelist' %}">{% translate 'Hazards' %}</a>
+                                </li>
+                            {% endif %}
+                            {% if 'baseline.view_event' in perms %}
+                                <li><a class="link-dark rounded"
+                                       href="{% url 'admin:baseline_event_changelist' %}">{% translate 'Events' %}</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </li>
+            {% endif %}
 
+            {% if 'baseline.view_expandabilityfactor' in perms or 'baseline.view_copingstrategy' in perms %}
+                <li class="mb-1">
+                    <button class="btn btn-toggle align-items-center rounded collapsed-menu"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#production-collapse" aria-expanded="false">
+                        {% translate 'Expandadability and Coping' %}
+                    </button>
+                    <div class="collapse-menu" id="production-collapse">
+                        <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+                            {% if 'baseline.view_expandabilityfactor' in perms %}
+                                <li><a class="link-dark rounded"
+                                       href="{% url 'admin:baseline_expandabilityfactor_changelist' %}">{% translate 'Expandability Factors' %}</a>
+                                </li>
+                            {% endif %}
+                            {% if 'baseline.view_copingstrategy' in perms %}
+                                <li><a class="link-dark rounded"
+                                       href="{% url 'admin:baseline_copingstrategy_changelist' %}">{% translate 'Coping Strategies' %}</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </li>
+            {% endif %}
             <li class="border-top my-4"></li>
 
             {% if perms.common %}
@@ -161,8 +238,10 @@
                         </ul>
                     </div>
                 </li>
+
+
                 <li class="border-top my-2"></li>
-                {% endif %}
+            {% endif %}
             {% if perms.auth %}
                 <li class="mb-1">
                     <button class="btn btn-toggle align-items-center rounded collapsed-menu" data-bs-toggle="collapse"
@@ -171,8 +250,10 @@
                     </button>
                     <div class="collapse-menu" id="account-collapse">
                         <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
-                            <li><a class="link-dark rounded" href="{% url 'admin:auth_user_changelist' %}">{% translate 'Users' %}</a></li>
-                            <li><a class="link-dark rounded" href="{% url 'admin:auth_group_changelist' %}">{% translate 'Groups' %}</a></li>
+                            <li><a class="link-dark rounded"
+                                   href="{% url 'admin:auth_user_changelist' %}">{% translate 'Users' %}</a></li>
+                            <li><a class="link-dark rounded"
+                                   href="{% url 'admin:auth_group_changelist' %}">{% translate 'Groups' %}</a></li>
                         </ul>
                     </div>
                 </li>

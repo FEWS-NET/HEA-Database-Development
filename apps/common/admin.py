@@ -3,6 +3,7 @@ from django.contrib import admin
 from django.contrib.admin.options import InlineModelAdmin
 from django.contrib.gis.admin import OSMGeoAdmin
 from treebeard.admin import TreeAdmin
+from treebeard.forms import movenodeform_factory
 
 from .models import (
     ClassifiedProduct,
@@ -34,7 +35,16 @@ class CountryClassifiedProductAliasesInline(InlineModelAdmin):
 
 
 class ClassifiedProductAdmin(TreeAdmin):
-    # form = ClassifiedProductForm
+    form = movenodeform_factory(ClassifiedProduct)
+    fields = [
+        "cpcv2",
+        "common_name",
+        "scientific_name",
+        "unit_of_measure",
+        "kcals_per_unit",
+        "_position",
+        "_ref_node_id",
+    ]
     list_display = ("cpcv2", "description", "common_name", "scientific_name")
     ordering = ["cpcv2"]
     search_fields = [
