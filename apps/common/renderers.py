@@ -29,12 +29,15 @@ class FormattedCSVRenderer(BaseRenderer):
     def render(self, data, accepted_media_type=None, renderer_context=None):
         csv_buffer = TextIOWrapper(BytesIO(), encoding=self.charset)
         writer = csv.writer(csv_buffer)
+        first_row = True
         for row in self.prepare_data(data, accepted_media_type, renderer_context):
-            writer.writerow(row)
-
-        # Set up response
+            if first_row:
+                writer.writerow(row.keys())
+                first_row = False
+            writer.writerow(row.values())
         renderer_context["response"]["Content-Disposition"] = 'attachment; filename="%s"' % self.filename
         renderer_context["response"]["Cache-Control"] = "no-cache"
+        csv_buffer.seek(0)
         return csv_buffer.buffer.getvalue()
 
 
@@ -66,19 +69,29 @@ class HtmlTableRenderer(BaseRenderer):
             '<meta http-equiv="Content-Type" content="text/html; charset=utf-8">'
             '<link href="' + static("bootstrap/css/bootstrap.min.css") + '" rel="stylesheet">'
             '<link href="' + static("css/bootstrap-responsive.min.css") + '" rel="stylesheet">'
-            '<link href="' + static("css/project.css") + '" rel="stylesheet"></head><body>)'
+            '<link href="' + static("css/project.css") + '" rel="stylesheet"></head><body>'
         )
         data = self.prepare_data(data, accepted_media_type, renderer_context)
         if data and len(data) > 0:
             html += '<div class="row"><div class="span-12"><table class="table table-bordered"><tbody>\n'
+        first_row = True
         for row in data:
+            if first_row:
+                html += '<table class="table table-bordered" style="margin: 30px;">'
+                html += "<thead><tr>"
+                for field in row.keys():
+                    # Duplicate columns from a dataframe will have trailing spaces
+                    html += "<th>{0}</th>".format(field.strip())
+                html += "</tr></thead><tbody>\n"
+                first_row = False
             html += "<tr>"
-            for value in row:
+            for value in row.values():
                 value = str(value) if value else ""
                 html += "<td>{0}</td>".format(value)
             html += "</tr>\n"
-            html += "</tbody></table></div></div>"
         if data is None or len(data) == 0:
             html += '<div class="message-block "><span>No data found</span></div>'
+        else:
+            html += "</tbody></table></div></div>"
         html += "</body></html>"
         return html.encode(self.charset)

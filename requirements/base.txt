@@ -15,7 +15,7 @@ factory-boy==3.2.1
 gunicorn==20.1.0
 json-logging-py==0.2
 jupyterlab==4.0.5
-# Make sure that same version of numpy is specified here and in docker/app/Dockerfile
+lxml==4.9.3
 numpy==1.25.2
 openpyxl==3.1.2
 pandas==2.0.3
