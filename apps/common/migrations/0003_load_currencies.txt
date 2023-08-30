@@ -1,0 +1,267 @@
+iso4217a3;iso4217n3;iso_en_name
+ADF;;Andorran Franc (1:1 peg to the french franc)
+ADP;20;Andorran Peseta A (1:1 peg to the Spanish Peseta)
+AED;784;UAE Dirham
+AFA;4;Afghani
+AFN;971;Afghani
+ALK;;Albanian old lek
+ALL;8;Lek
+AMD;51;Armenian Dram
+ANG;532;Netherlands Antillean Guilder
+AOA;973;Kwanza
+AON;24;Angolan New Kwanza
+AOR;982;Angolan Kwanza Readjustado
+ARA;;Argentine austral
+ARL;;Argentine peso ley
+ARM;;Argentine peso moneda nacional
+ARP;;Peso argentino
+ARS;32;Argentine Peso
+ATS;40;Austrian Schilling
+AUD;36;Australian Dollar
+AWG;533;Aruban Florin
+AZM;31;Azerbaijani manat
+AZN;944;Azerbaijanian Manat
+BAM;977;Convertible Mark
+BBD;52;Barbados Dollar
+BDT;50;Taka
+BEC;993;Belgian Franc (convertible)
+BEF;56;Belgian Franc (currency union with LUF)
+BEL;992;Belgian Franc (financial)
+BGJ;;Bulgarian lev A/52
+BGK;;Bulgarian lev A/62
+BGL;100;Bulgarian lev A/99
+BGN;975;Bulgarian Lev
+BHD;48;Bahraini Dinar
+BIF;108;Burundi Franc
+BMD;60;Bermudian Dollar
+BND;96;Brunei Dollar
+BOB;68;Boliviano
+BOP;;Bolivian peso
+BOV;984;Mvdol
+BRB;;Brazilian cruzeiro
+BRC;;Brazilian cruzado
+BRL;986;Brazilian Real
+BSD;44;Bahamian Dollar
+BSF;;Venezuelan Bolivar
+BTN;64;Ngultrum
+BWP;72;Pula
+BYR;974;Belarussian Ruble
+BZD;84;Belize Dollar
+CAD;124;Canadian Dollar
+CDF;976;Congolais Franc
+CHE;947;WIR Euro
+CHF;756;Swiss Franc
+CHW;948;WIR Franc
+CLF;990;Unidades de fomento
+CLP;152;Chilean Peso
+CNX;;Chinese People's Bank dollar
+CNY;156;Yuan Renminbi
+COP;170;Colombian Peso
+COU;970;Unidad de Valor real
+CRC;188;Costa Rican Colon
+CSD;;Serbian Dinar
+CSJ;;Czechoslovak koruna A/53
+CSK;200;Czechoslovak koruna
+CUC;931;Peso Convertible
+CUP;192;Cuban Peso
+CVE;132;Cape Verde Escudo
+CYP;196;Cyprus Pound
+CZK;203;Czech Koruna
+DDM;278;East German Mark of the GDR (East Germany)
+DEM;276;Deutsche Mark
+DJF;262;Djibouti Franc
+DKK;208;Danish Krone
+DOP;214;Dominican Peso
+DZD;12;Algerian Dinar
+ECS;218;Ecuador sucre
+EEK;233;Kroon
+EGP;818;Egyptian Pound
+EQE;;Equatorial Guinean ekwele
+ERN;232;Nakfa
+ESA;996;Spanish peseta (account A)
+ESB;995;Spanish peseta (account B)
+ESP;724;Spanish Peseta
+ETB;230;Ethiopian Birr
+EUR;978;Euro
+FIM;246;Finnish Markka
+FJD;242;Fiji Dollar
+FKP;238;Falkland Islands Pound
+FRF;250;French Franc
+GBP;826;Pound Sterling
+GEL;981;Lari
+GHC;;Ghanaian cedi
+GHS;936;Ghana Cedi
+GIP;292;Gibraltar Pound
+GMD;270;Dalasi
+GNE;;Guinean syli
+GNF;324;Guinea Franc
+GRD;300;Greek Drachma
+GTQ;320;Quetzal
+GWP;624;Guinea-Bissau Peso
+GYD;328;Guyana Dollar
+HKD;344;Hong Kong Dollar
+HNL;340;Lempira
+HRK;191;Croatian Kuna
+HTG;332;Gourde
+HUF;348;Forint
+IDR;360;Rupiah
+IEP;372;Irish Pound (Punt in Irish language)
+ILP;;Israeli lira
+ILR;;Israeli old sheqel
+ILS;376;New Israeli Sheqel
+INR;356;Indian Rupee
+IQD;368;Iraqi Dinar
+IRR;364;Iranian Rial
+ISJ;;Icelandic old krona
+ISK;352;Iceland Krona
+ITL;380;Italian Lira
+JMD;388;Jamaican Dollar
+JOD;400;Jordanian Dinar
+JPY;392;Yen
+KES;404;Kenyan Shilling
+KGS;417;Som
+KHR;116;Riel
+KMF;174;Comoro Franc
+KPW;408;North Korean Won
+KRW;410;Won
+KWD;414;Kuwaiti Dinar
+KYD;136;Cayman Islands Dollar
+KZT;398;Tenge
+LAJ;;Lao kip
+LAK;418;Kip
+LBP;422;Lebanese Pound
+LKR;144;Sri Lanka Rupee
+LRD;430;Liberian Dollar
+LSL;426;Loti
+LTL;440;Lithuanian Litas
+LUF;442;Luxembourg Franc (currency union with BEF)
+LVL;428;Latvian Lats
+LYD;434;Libyan Dinar
+MAD;504;Moroccan Dirham
+MAF;;Mali franc
+MCF;;Monegasque franc (currency union with FRF)
+MDL;498;Moldovan Leu
+MGA;969;Malagasy Ariary
+MGF;450;Malagasy franc
+MKD;807;Denar
+MKN;;Former Yugoslav Republic of Macedonia denar A/93
+MMK;104;Kyat
+MNT;496;Tugrik
+MOP;446;Pataca
+MRO;478;Old Ouguiya
+MRU;;Ouguiya
+MTL;470;Maltese Lira
+MUR;480;Mauritius Rupee
+MVQ;;Maldive rupee
+MVR;462;Rufiyaa
+MWK;454;Kwacha
+MXN;484;Mexican Peso
+MXP;;Mexican Peso
+MXV;979;Mexican Unidad de Inversion (UDI)
+MYR;458;Malaysian Ringgit
+MZM;508;Mozambican metical
+MZN;943;Mozambique Metical
+NAD;516;Namibia Dollar
+NGN;566;Naira
+NIO;558;Cordoba Oro
+NLG;528;Netherlands Guilder
+NOK;578;Norwegian Krone
+NPR;524;Nepalese Rupee
+NZD;554;New Zealand Dollar
+OMR;512;Rial Omani
+PAB;590;Balboa
+PEH;;Peruvian sol
+PEI;;Peruvian inti
+PEN;604;Nuevo Sol
+PGK;598;Kina
+PHP;608;Philippine Peso
+PKR;586;Pakistan Rupee
+PLN;985;Zloty
+PLZ;616;Polish zloty A/94
+PTE;620;Portuguese Escudo
+PYG;600;Guarani
+QAR;634;Qatari Rial
+ROK;;Romanian leu A/52
+ROL;642;Romanian leu A/05
+RON;946;New Romanian Leu
+RSD;941;Serbian Dinar
+RUB;643;Russian Ruble
+RUR;810;Russian rubleA/97
+RWF;646;Rwanda Franc
+SAR;682;Saudi Riyal
+SBD;90;Solomon Islands Dollar
+SCR;690;Seychelles Rupee
+SDD;736;Sudanese Dinar
+SDG;938;Sudanese Pound
+SDP;;Sudanese Pound
+SEK;752;Swedish Krona
+SGD;702;Singapore Dollar
+SHP;654;Saint Helena Pound
+SIT;705;Slovenian Tolar
+SKK;703;Slovak Koruna
+SLL;694;Leone
+SLS;;Somaliland shilling
+SOO;;Old Somali Shilling
+SOS;706;Somali Shilling
+SRD;968;Surinam Dollar
+SRG;740;Suriname guilder
+SSP;728;South Sudanese Pound
+STD;678;Dobra
+SUR;;Soviet Union ruble
+SVC;222;El Salvador Colon
+SYP;760;Syrian Pound
+SZL;748;Lilangeni
+THB;764;Baht
+TJR;762;Tajikistan ruble
+TJS;972;Somoni
+TMM;795;Manat
+TMT;934;Turkmenistan New Manat
+TND;788;Tunisian Dinar
+TOP;776;Pa’anga
+TPE;626;Portuguese Timorese escudo
+TRL;792;Turkish lira A/05
+TRY;949;Turkish Lira
+TTD;780;Trinidad and Tobago Dollar
+TWD;901;New Taiwan Dollar
+TZS;834;Tanzanian Shilling
+UAH;980;Hryvnia
+UAK;804;Ukrainian karbovanets
+UGS;;Ugandan shilling A/87
+UGX;800;Uganda Shilling
+USC;;US Cent
+USD;840;US Dollar
+USN;997;US Dollar (Next Day)
+USS;998;US Dollar (Same Day)
+UYI;940;Uruguay Peso en Unidades Indexadas
+UYN;;Uruguay old peso
+UYU;858;Peso Uruguayo
+UZS;860;Uzbekistan Sum
+VEB;862;Venezuelan Bolivar
+VED;926;Bolívar Digital
+VEF;937;Venezuelan bolívar fuerte
+VES;928;Venezuelan bolívar soberano
+VNC;;Vietnamese old dong
+VND;704;Dong
+VUV;548;Vatu
+WST;882;Tala
+XAF;950;CFA Franc BEAC
+XCD;951;East Caribbean Dollar
+XFO;;Gold-Franc
+XOF;952;CFA Franc BCEAO
+XPF;953;CFP Franc
+YDD;720;South Yemeni dinar
+YER;886;Yemeni Rial
+YUD;;Yugoslav Dinar
+YUM;891;Yugoslav dinar (new)
+ZAL;991;South African financial rand (Funds code) (discont
+ZAR;710;Rand
+ZMK;894;Zambian Kwacha
+ZMW;;New Zambian Kwacha
+ZRN;180;Zairean New Zaire
+ZRZ;;Zairean zaire
+ZWC;;Zimbabwe rhodesian dollar
+ZWD;716;Zimbabwe dollar (1980-2009)
+ZWL;;Zimbabwean dollar
+ZWL_cash;;Zimbabwean dollar (cash)
+ZWL_mobile_money;;Zimbabwean dollar (mobile money)
+ZWL_RTGS;;Zimbabwean dollar (RTGS)

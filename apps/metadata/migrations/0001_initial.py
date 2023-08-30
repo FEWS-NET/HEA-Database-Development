@@ -103,7 +103,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 "verbose_name": "Livelihood Category",
-                "verbose_name_plural": "Livelihood Category",
+                "verbose_name_plural": "Livelihood Categories",
             },
         ),
         migrations.CreateModel(

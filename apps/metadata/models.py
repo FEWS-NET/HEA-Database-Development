@@ -55,6 +55,9 @@ class ReferenceData(common_models.Model):
     class Meta:
         abstract = True
 
+    class ExtraMeta:
+        identifier = ["name"]
+
 
 class LivelihoodCategory(ReferenceData):
     """
@@ -67,7 +70,7 @@ class LivelihoodCategory(ReferenceData):
 
     class Meta:
         verbose_name = _("Livelihood Category")
-        verbose_name_plural = _("Livelihood Category")
+        verbose_name_plural = _("Livelihood Categories")
 
 
 class WealthCharacteristic(ReferenceData):
@@ -247,6 +250,10 @@ class Season(common_models.Model):
             "Whether a label for a season that contains a single year refers to the start year or the end year for that Season."  # NOQA: E501
         ),
     )
+
+    class ExtraMeta:
+        identifier = ["name"]
+
     # @TODO Do we need `SeasonYear` or `SeasonGroup`to act as a parent of consecutive seasons that make up a 12 month period.  # NOQA: E501
     order = models.IntegerField(
         verbose_name=_("Order"),

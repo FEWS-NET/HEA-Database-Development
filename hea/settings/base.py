@@ -74,6 +74,7 @@ CACHES = {
 }
 
 EXTERNAL_APPS = [
+    "treebeard",
     "rest_framework",
     "django_filters",
     "django.contrib.admin",
@@ -181,6 +182,8 @@ STATIC_HOST = env.str("DJANGO_STATIC_HOST", "")
 STATIC_URL = STATIC_HOST + "/static/"
 STATIC_ROOT = normpath(join(SITE_ROOT, "assets"))
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+STATICFILES_DIRS = (normpath(join(SITE_ROOT, "static")),)
 
 LOGGING = {
     "version": 1,

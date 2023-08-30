@@ -596,6 +596,9 @@ class Currency(models.Model):
         verbose_name = _("Currency")
         verbose_name_plural = _("Currencies")
 
+    def __str__(self):
+        return self.iso4217a3
+
     class ExtraMeta:
         identifier = ["iso4217a3"]
 
