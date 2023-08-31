@@ -39,25 +39,23 @@ from .models import (
 )
 
 
-class SourceOrganizationSerializer(serializers.HyperlinkedModelSerializer):
+class SourceOrganizationSerializer(serializers.ModelSerializer):
     class Meta:
         model = SourceOrganization
-        fields = ["id", "created", "modified", "name", "full_name", "description"]
+        fields = ["id", "name", "full_name", "description", "created", "modified"]
 
 
-class LivelihoodZoneSerializer(serializers.HyperlinkedModelSerializer):
+class LivelihoodZoneSerializer(serializers.ModelSerializer):
     class Meta:
         model = LivelihoodZone
-        fields = ["created", "modified", "code", "name", "description", "country"]
+        fields = ["code", "name", "description", "country", "created", "modified"]
 
 
-class LivelihoodZoneBaselineSerializer(serializers.HyperlinkedModelSerializer):
+class LivelihoodZoneBaselineSerializer(serializers.ModelSerializer):
     class Meta:
         model = LivelihoodZoneBaseline
         fields = [
             "id",
-            "created",
-            "modified",
             "livelihood_zone",
             "geography",
             "main_livelihood_category",
@@ -69,97 +67,99 @@ class LivelihoodZoneBaselineSerializer(serializers.HyperlinkedModelSerializer):
             "valid_to_date",
             "population_source",
             "population_estimate",
+            "created",
+            "modified",
         ]
 
 
-class LivelihoodProductCategorySerializer(serializers.HyperlinkedModelSerializer):
+class LivelihoodProductCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = LivelihoodProductCategory
-        fields = ["id", "created", "modified", "livelihood_zone_baseline", "product", "basket"]
+        fields = ["id", "livelihood_zone_baseline", "product", "basket", "created", "modified"]
 
 
-class CommunitySerializer(serializers.HyperlinkedModelSerializer):
+class CommunitySerializer(serializers.ModelSerializer):
     class Meta:
         model = Community
         fields = [
             "id",
-            "created",
-            "modified",
+            "code",
             "name",
+            "full_name",
             "livelihood_zone_baseline",
             "geography",
             "interview_number",
             "interviewers",
+            "created",
+            "modified",
         ]
 
 
-class WealthGroupSerializer(serializers.HyperlinkedModelSerializer):
+class WealthGroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = WealthGroup
         fields = [
             "id",
-            "created",
-            "modified",
             "livelihood_zone_baseline",
             "community",
             "wealth_category",
             "percentage_of_households",
             "average_household_size",
+            "created",
+            "modified",
         ]
 
 
-class BaselineWealthGroupSerializer(serializers.HyperlinkedModelSerializer):
+class BaselineWealthGroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = BaselineWealthGroup
         fields = [
             "id",
-            "created",
-            "modified",
             "livelihood_zone_baseline",
             "community",
             "wealth_category",
             "percentage_of_households",
             "average_household_size",
+            "created",
+            "modified",
         ]
 
 
-class CommunityWealthGroupSerializer(serializers.HyperlinkedModelSerializer):
+class CommunityWealthGroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = CommunityWealthGroup
         fields = [
             "id",
-            "created",
-            "modified",
             "livelihood_zone_baseline",
             "community",
             "wealth_category",
             "percentage_of_households",
             "average_household_size",
+            "created",
+            "modified",
         ]
 
 
-class WealthGroupCharacteristicValueSerializer(serializers.HyperlinkedModelSerializer):
+class WealthGroupCharacteristicValueSerializer(serializers.ModelSerializer):
     class Meta:
         model = WealthGroupCharacteristicValue
         fields = [
             "id",
-            "created",
-            "modified",
             "wealth_group",
             "wealth_characteristic",
             "value",
             "min_value",
             "max_value",
+            "created",
+            "modified",
         ]
 
 
-class LivelihoodStrategySerializer(serializers.HyperlinkedModelSerializer):
+class LivelihoodStrategySerializer(serializers.ModelSerializer):
     class Meta:
         model = LivelihoodStrategy
         fields = [
             "id",
-            "created",
-            "modified",
             "livelihood_zone_baseline",
             "strategy_type",
             "season",
@@ -168,16 +168,16 @@ class LivelihoodStrategySerializer(serializers.HyperlinkedModelSerializer):
             "currency",
             "additional_identifier",
             "household_labor_provider",
+            "created",
+            "modified",
         ]
 
 
-class LivelihoodActivitySerializer(serializers.HyperlinkedModelSerializer):
+class LivelihoodActivitySerializer(serializers.ModelSerializer):
     class Meta:
         model = LivelihoodActivity
         fields = [
             "id",
-            "created",
-            "modified",
             "livelihood_strategy",
             "livelihood_zone_baseline",
             "strategy_type",
@@ -192,16 +192,16 @@ class LivelihoodActivitySerializer(serializers.HyperlinkedModelSerializer):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "created",
+            "modified",
         ]
 
 
-class BaselineLivelihoodActivitySerializer(serializers.HyperlinkedModelSerializer):
+class BaselineLivelihoodActivitySerializer(serializers.ModelSerializer):
     class Meta:
         model = BaselineLivelihoodActivity
         fields = [
             "id",
-            "created",
-            "modified",
             "livelihood_strategy",
             "livelihood_zone_baseline",
             "strategy_type",
@@ -216,16 +216,16 @@ class BaselineLivelihoodActivitySerializer(serializers.HyperlinkedModelSerialize
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "created",
+            "modified",
         ]
 
 
-class ResponseLivelihoodActivitySerializer(serializers.HyperlinkedModelSerializer):
+class ResponseLivelihoodActivitySerializer(serializers.ModelSerializer):
     class Meta:
         model = ResponseLivelihoodActivity
         fields = [
             "id",
-            "created",
-            "modified",
             "livelihood_strategy",
             "livelihood_zone_baseline",
             "strategy_type",
@@ -240,16 +240,16 @@ class ResponseLivelihoodActivitySerializer(serializers.HyperlinkedModelSerialize
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "created",
+            "modified",
         ]
 
 
-class MilkProductionSerializer(serializers.HyperlinkedModelSerializer):
+class MilkProductionSerializer(serializers.ModelSerializer):
     class Meta:
         model = MilkProduction
         fields = [
             "id",
-            "created",
-            "modified",
             "livelihood_strategy",
             "livelihood_zone_baseline",
             "strategy_type",
@@ -264,21 +264,20 @@ class MilkProductionSerializer(serializers.HyperlinkedModelSerializer):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
-            "livelihoodactivity_ptr",
             "milking_animals",
             "lactation_days",
             "daily_production",
             "type_of_milk_sold_or_other_uses",
+            "created",
+            "modified",
         ]
 
 
-class ButterProductionSerializer(serializers.HyperlinkedModelSerializer):
+class ButterProductionSerializer(serializers.ModelSerializer):
     class Meta:
         model = ButterProduction
         fields = [
             "id",
-            "created",
-            "modified",
             "livelihood_strategy",
             "livelihood_zone_baseline",
             "strategy_type",
@@ -293,17 +292,16 @@ class ButterProductionSerializer(serializers.HyperlinkedModelSerializer):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
-            "livelihoodactivity_ptr",
+            "created",
+            "modified",
         ]
 
 
-class MeatProductionSerializer(serializers.HyperlinkedModelSerializer):
+class MeatProductionSerializer(serializers.ModelSerializer):
     class Meta:
         model = MeatProduction
         fields = [
             "id",
-            "created",
-            "modified",
             "livelihood_strategy",
             "livelihood_zone_baseline",
             "strategy_type",
@@ -318,19 +316,18 @@ class MeatProductionSerializer(serializers.HyperlinkedModelSerializer):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
-            "livelihoodactivity_ptr",
             "animals_slaughtered",
             "carcass_weight",
+            "created",
+            "modified",
         ]
 
 
-class LivestockSalesSerializer(serializers.HyperlinkedModelSerializer):
+class LivestockSalesSerializer(serializers.ModelSerializer):
     class Meta:
         model = LivestockSales
         fields = [
             "id",
-            "created",
-            "modified",
             "livelihood_strategy",
             "livelihood_zone_baseline",
             "strategy_type",
@@ -345,16 +342,16 @@ class LivestockSalesSerializer(serializers.HyperlinkedModelSerializer):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "created",
+            "modified",
         ]
 
 
-class CropProductionSerializer(serializers.HyperlinkedModelSerializer):
+class CropProductionSerializer(serializers.ModelSerializer):
     class Meta:
         model = CropProduction
         fields = [
             "id",
-            "created",
-            "modified",
             "livelihood_strategy",
             "livelihood_zone_baseline",
             "strategy_type",
@@ -369,16 +366,16 @@ class CropProductionSerializer(serializers.HyperlinkedModelSerializer):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "created",
+            "modified",
         ]
 
 
-class FoodPurchaseSerializer(serializers.HyperlinkedModelSerializer):
+class FoodPurchaseSerializer(serializers.ModelSerializer):
     class Meta:
         model = FoodPurchase
         fields = [
             "id",
-            "created",
-            "modified",
             "livelihood_strategy",
             "livelihood_zone_baseline",
             "strategy_type",
@@ -393,20 +390,19 @@ class FoodPurchaseSerializer(serializers.HyperlinkedModelSerializer):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
-            "livelihoodactivity_ptr",
             "unit_multiple",
             "purchases_per_month",
             "months_per_year",
+            "created",
+            "modified",
         ]
 
 
-class PaymentInKindSerializer(serializers.HyperlinkedModelSerializer):
+class PaymentInKindSerializer(serializers.ModelSerializer):
     class Meta:
         model = PaymentInKind
         fields = [
             "id",
-            "created",
-            "modified",
             "livelihood_strategy",
             "livelihood_zone_baseline",
             "strategy_type",
@@ -421,21 +417,20 @@ class PaymentInKindSerializer(serializers.HyperlinkedModelSerializer):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
-            "livelihoodactivity_ptr",
             "payment_per_time",
             "people_per_hh",
             "labor_per_month",
             "months_per_year",
+            "created",
+            "modified",
         ]
 
 
-class ReliefGiftsOtherSerializer(serializers.HyperlinkedModelSerializer):
+class ReliefGiftsOtherSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReliefGiftsOther
         fields = [
             "id",
-            "created",
-            "modified",
             "livelihood_strategy",
             "livelihood_zone_baseline",
             "strategy_type",
@@ -450,19 +445,18 @@ class ReliefGiftsOtherSerializer(serializers.HyperlinkedModelSerializer):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
-            "livelihoodactivity_ptr",
             "unit_multiple",
             "received_per_year",
+            "created",
+            "modified",
         ]
 
 
-class FishingSerializer(serializers.HyperlinkedModelSerializer):
+class FishingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Fishing
         fields = [
             "id",
-            "created",
-            "modified",
             "livelihood_strategy",
             "livelihood_zone_baseline",
             "strategy_type",
@@ -477,16 +471,16 @@ class FishingSerializer(serializers.HyperlinkedModelSerializer):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "created",
+            "modified",
         ]
 
 
-class WildFoodGatheringSerializer(serializers.HyperlinkedModelSerializer):
+class WildFoodGatheringSerializer(serializers.ModelSerializer):
     class Meta:
         model = WildFoodGathering
         fields = [
             "id",
-            "created",
-            "modified",
             "livelihood_strategy",
             "livelihood_zone_baseline",
             "strategy_type",
@@ -501,16 +495,16 @@ class WildFoodGatheringSerializer(serializers.HyperlinkedModelSerializer):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "created",
+            "modified",
         ]
 
 
-class OtherCashIncomeSerializer(serializers.HyperlinkedModelSerializer):
+class OtherCashIncomeSerializer(serializers.ModelSerializer):
     class Meta:
         model = OtherCashIncome
         fields = [
             "id",
-            "created",
-            "modified",
             "livelihood_strategy",
             "livelihood_zone_baseline",
             "strategy_type",
@@ -525,22 +519,21 @@ class OtherCashIncomeSerializer(serializers.HyperlinkedModelSerializer):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
-            "livelihoodactivity_ptr",
             "payment_per_time",
             "people_per_hh",
             "labor_per_month",
             "months_per_year",
             "times_per_year",
+            "created",
+            "modified",
         ]
 
 
-class OtherPurchasesSerializer(serializers.HyperlinkedModelSerializer):
+class OtherPurchasesSerializer(serializers.ModelSerializer):
     class Meta:
         model = OtherPurchases
         fields = [
             "id",
-            "created",
-            "modified",
             "livelihood_strategy",
             "livelihood_zone_baseline",
             "strategy_type",
@@ -555,41 +548,40 @@ class OtherPurchasesSerializer(serializers.HyperlinkedModelSerializer):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
-            "livelihoodactivity_ptr",
             "unit_multiple",
             "purchases_per_month",
             "months_per_year",
+            "created",
+            "modified",
         ]
 
 
-class SeasonalActivitySerializer(serializers.HyperlinkedModelSerializer):
+class SeasonalActivitySerializer(serializers.ModelSerializer):
     class Meta:
         model = SeasonalActivity
-        fields = ["id", "created", "modified", "livelihood_zone_baseline", "activity_type", "season", "product"]
+        fields = ["id", "livelihood_zone_baseline", "activity_type", "season", "product", "created", "modified"]
 
 
-class SeasonalActivityOccurrenceSerializer(serializers.HyperlinkedModelSerializer):
+class SeasonalActivityOccurrenceSerializer(serializers.ModelSerializer):
     class Meta:
         model = SeasonalActivityOccurrence
         fields = [
             "id",
-            "created",
-            "modified",
             "seasonal_activity",
             "livelihood_zone_baseline",
             "community",
             "start",
             "end",
+            "created",
+            "modified",
         ]
 
 
-class CommunityCropProductionSerializer(serializers.HyperlinkedModelSerializer):
+class CommunityCropProductionSerializer(serializers.ModelSerializer):
     class Meta:
         model = CommunityCropProduction
         fields = [
             "id",
-            "created",
-            "modified",
             "community",
             "crop",
             "crop_purpose",
@@ -598,16 +590,16 @@ class CommunityCropProductionSerializer(serializers.HyperlinkedModelSerializer):
             "yield_without_inputs",
             "seed_requirement",
             "unit_of_measure",
+            "created",
+            "modified",
         ]
 
 
-class CommunityLivestockSerializer(serializers.HyperlinkedModelSerializer):
+class CommunityLivestockSerializer(serializers.ModelSerializer):
     class Meta:
         model = CommunityLivestock
         fields = [
             "id",
-            "created",
-            "modified",
             "community",
             "livestock",
             "birth_interval",
@@ -617,16 +609,16 @@ class CommunityLivestockSerializer(serializers.HyperlinkedModelSerializer):
             "dry_season_milk_production",
             "age_at_sale",
             "additional_attributes",
+            "created",
+            "modified",
         ]
 
 
-class MarketPriceSerializer(serializers.HyperlinkedModelSerializer):
+class MarketPriceSerializer(serializers.ModelSerializer):
     class Meta:
         model = MarketPrice
         fields = [
             "id",
-            "created",
-            "modified",
             "community",
             "product",
             "market",
@@ -639,54 +631,56 @@ class MarketPriceSerializer(serializers.HyperlinkedModelSerializer):
             "high_price_start",
             "high_price_end",
             "high_price",
+            "created",
+            "modified",
         ]
 
 
-class AnnualProductionPerformanceSerializer(serializers.HyperlinkedModelSerializer):
+class AnnualProductionPerformanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = AnnualProductionPerformance
         fields = [
             "id",
-            "created",
-            "modified",
             "community",
             "performance_year_start_date",
             "performance_year_end_date",
             "annual_performance",
             "description",
+            "created",
+            "modified",
         ]
 
 
-class HazardSerializer(serializers.HyperlinkedModelSerializer):
+class HazardSerializer(serializers.ModelSerializer):
     class Meta:
         model = Hazard
         fields = [
             "id",
-            "created",
-            "modified",
             "community",
             "chronic_or_periodic",
             "ranking",
             "hazard_category",
             "description",
+            "created",
+            "modified",
         ]
 
 
-class EventSerializer(serializers.HyperlinkedModelSerializer):
+class EventSerializer(serializers.ModelSerializer):
     class Meta:
         model = Event
         fields = [
             "id",
-            "created",
-            "modified",
             "community",
             "event_year_start_date",
             "event_year_end_date",
             "description",
+            "created",
+            "modified",
         ]
 
 
-class ExpandabilityFactorSerializer(serializers.HyperlinkedModelSerializer):
+class ExpandabilityFactorSerializer(serializers.ModelSerializer):
     class Meta:
         model = ExpandabilityFactor
         fields = [
@@ -703,7 +697,7 @@ class ExpandabilityFactorSerializer(serializers.HyperlinkedModelSerializer):
         ]
 
 
-class CopingStrategySerializer(serializers.HyperlinkedModelSerializer):
+class CopingStrategySerializer(serializers.ModelSerializer):
     class Meta:
         model = CopingStrategy
         fields = ["id", "community", "leaders", "wealth_group", "livelihood_strategy", "strategy", "by_value"]

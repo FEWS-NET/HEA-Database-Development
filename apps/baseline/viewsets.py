@@ -81,7 +81,7 @@ from .serializers import (
 class SourceOrganizationFilterSet(filters.FilterSet):
     class Meta:
         model = SourceOrganization
-        fields = ["id", "created", "modified", "name", "full_name", "description"]
+        fields = ["id", "name", "full_name", "description", "created", "modified"]
 
 
 class SourceOrganizationViewSet(viewsets.ModelViewSet):
@@ -98,7 +98,7 @@ class SourceOrganizationViewSet(viewsets.ModelViewSet):
 class LivelihoodZoneFilterSet(filters.FilterSet):
     class Meta:
         model = LivelihoodZone
-        fields = ["created", "modified", "code", "name", "description", "country"]
+        fields = ["code", "name", "description", "country", "created", "modified"]
 
 
 class LivelihoodZoneViewSet(viewsets.ModelViewSet):
@@ -117,27 +117,18 @@ class LivelihoodZoneBaselineFilterSet(filters.FilterSet):
         model = LivelihoodZoneBaseline
         fields = [
             "id",
-            "created",
-            "modified",
             "livelihood_zone",
-            "geography",
             "main_livelihood_category",
             "source_organization",
-            "bss",
             "reference_year_start_date",
             "reference_year_end_date",
             "valid_from_date",
             "valid_to_date",
             "population_source",
             "population_estimate",
+            "created",
+            "modified",
         ]
-        exclude = ["geography"]
-        filter_overrides = {
-            models.FileField: {
-                "filter_class": filters.CharFilter,
-                "bss": lambda f: lambda f: {"lookup_expr": "exact"},
-            },
-        }
 
 
 class LivelihoodZoneBaselineViewSet(viewsets.ModelViewSet):
@@ -154,7 +145,7 @@ class LivelihoodZoneBaselineViewSet(viewsets.ModelViewSet):
 class LivelihoodProductCategoryFilterSet(filters.FilterSet):
     class Meta:
         model = LivelihoodProductCategory
-        fields = ["id", "created", "modified", "livelihood_zone_baseline", "product", "basket"]
+        fields = ["id", "livelihood_zone_baseline", "product", "basket", "created", "modified"]
 
 
 class LivelihoodProductCategoryViewSet(viewsets.ModelViewSet):
@@ -172,14 +163,15 @@ class CommunityFilterSet(filters.FilterSet):
         model = Community
         fields = [
             "id",
-            "created",
-            "modified",
+            "code",
             "name",
+            "full_name",
             "livelihood_zone_baseline",
             "interview_number",
             "interviewers",
+            "created",
+            "modified",
         ]
-        exclude = ["geography"]
 
 
 class CommunityViewSet(viewsets.ModelViewSet):
@@ -198,13 +190,13 @@ class WealthGroupFilterSet(filters.FilterSet):
         model = WealthGroup
         fields = [
             "id",
-            "created",
-            "modified",
             "livelihood_zone_baseline",
             "community",
             "wealth_category",
             "percentage_of_households",
             "average_household_size",
+            "created",
+            "modified",
         ]
 
 
@@ -223,13 +215,13 @@ class BaselineWealthGroupFilterSet(filters.FilterSet):
         model = BaselineWealthGroup
         fields = [
             "id",
-            "created",
-            "modified",
             "livelihood_zone_baseline",
             "community",
             "wealth_category",
             "percentage_of_households",
             "average_household_size",
+            "created",
+            "modified",
         ]
 
 
@@ -248,13 +240,13 @@ class CommunityWealthGroupFilterSet(filters.FilterSet):
         model = CommunityWealthGroup
         fields = [
             "id",
-            "created",
-            "modified",
             "livelihood_zone_baseline",
             "community",
             "wealth_category",
             "percentage_of_households",
             "average_household_size",
+            "created",
+            "modified",
         ]
 
 
@@ -273,13 +265,13 @@ class WealthGroupCharacteristicValueFilterSet(filters.FilterSet):
         model = WealthGroupCharacteristicValue
         fields = [
             "id",
-            "created",
-            "modified",
             "wealth_group",
             "wealth_characteristic",
             "value",
             "min_value",
             "max_value",
+            "created",
+            "modified",
         ]
         filter_overrides = {
             models.JSONField: {
@@ -306,8 +298,6 @@ class LivelihoodStrategyFilterSet(filters.FilterSet):
         model = LivelihoodStrategy
         fields = [
             "id",
-            "created",
-            "modified",
             "livelihood_zone_baseline",
             "strategy_type",
             "season",
@@ -316,6 +306,8 @@ class LivelihoodStrategyFilterSet(filters.FilterSet):
             "currency",
             "additional_identifier",
             "household_labor_provider",
+            "created",
+            "modified",
         ]
 
 
@@ -335,8 +327,6 @@ class LivelihoodActivityFilterSet(filters.FilterSet):
         model = LivelihoodActivity
         fields = [
             "id",
-            "created",
-            "modified",
             "livelihood_strategy",
             "livelihood_zone_baseline",
             "strategy_type",
@@ -351,6 +341,8 @@ class LivelihoodActivityFilterSet(filters.FilterSet):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "created",
+            "modified",
         ]
 
 
@@ -370,8 +362,6 @@ class BaselineLivelihoodActivityFilterSet(filters.FilterSet):
         model = BaselineLivelihoodActivity
         fields = [
             "id",
-            "created",
-            "modified",
             "livelihood_strategy",
             "livelihood_zone_baseline",
             "strategy_type",
@@ -386,6 +376,8 @@ class BaselineLivelihoodActivityFilterSet(filters.FilterSet):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "created",
+            "modified",
         ]
 
 
@@ -405,8 +397,6 @@ class ResponseLivelihoodActivityFilterSet(filters.FilterSet):
         model = ResponseLivelihoodActivity
         fields = [
             "id",
-            "created",
-            "modified",
             "livelihood_strategy",
             "livelihood_zone_baseline",
             "strategy_type",
@@ -421,6 +411,8 @@ class ResponseLivelihoodActivityFilterSet(filters.FilterSet):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "created",
+            "modified",
         ]
 
 
@@ -440,8 +432,6 @@ class MilkProductionFilterSet(filters.FilterSet):
         model = MilkProduction
         fields = [
             "id",
-            "created",
-            "modified",
             "livelihood_strategy",
             "livelihood_zone_baseline",
             "strategy_type",
@@ -461,6 +451,8 @@ class MilkProductionFilterSet(filters.FilterSet):
             "lactation_days",
             "daily_production",
             "type_of_milk_sold_or_other_uses",
+            "created",
+            "modified",
         ]
 
 
@@ -480,8 +472,6 @@ class ButterProductionFilterSet(filters.FilterSet):
         model = ButterProduction
         fields = [
             "id",
-            "created",
-            "modified",
             "livelihood_strategy",
             "livelihood_zone_baseline",
             "strategy_type",
@@ -497,6 +487,8 @@ class ButterProductionFilterSet(filters.FilterSet):
             "kcals_consumed",
             "percentage_kcals",
             "livelihoodactivity_ptr",
+            "created",
+            "modified",
         ]
 
 
@@ -516,8 +508,6 @@ class MeatProductionFilterSet(filters.FilterSet):
         model = MeatProduction
         fields = [
             "id",
-            "created",
-            "modified",
             "livelihood_strategy",
             "livelihood_zone_baseline",
             "strategy_type",
@@ -535,6 +525,8 @@ class MeatProductionFilterSet(filters.FilterSet):
             "livelihoodactivity_ptr",
             "animals_slaughtered",
             "carcass_weight",
+            "created",
+            "modified",
         ]
 
 
@@ -554,8 +546,6 @@ class LivestockSalesFilterSet(filters.FilterSet):
         model = LivestockSales
         fields = [
             "id",
-            "created",
-            "modified",
             "livelihood_strategy",
             "livelihood_zone_baseline",
             "strategy_type",
@@ -570,6 +560,8 @@ class LivestockSalesFilterSet(filters.FilterSet):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "created",
+            "modified",
         ]
 
 
@@ -589,8 +581,6 @@ class CropProductionFilterSet(filters.FilterSet):
         model = CropProduction
         fields = [
             "id",
-            "created",
-            "modified",
             "livelihood_strategy",
             "livelihood_zone_baseline",
             "strategy_type",
@@ -605,6 +595,8 @@ class CropProductionFilterSet(filters.FilterSet):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "created",
+            "modified",
         ]
 
 
@@ -624,8 +616,6 @@ class FoodPurchaseFilterSet(filters.FilterSet):
         model = FoodPurchase
         fields = [
             "id",
-            "created",
-            "modified",
             "livelihood_strategy",
             "livelihood_zone_baseline",
             "strategy_type",
@@ -644,6 +634,8 @@ class FoodPurchaseFilterSet(filters.FilterSet):
             "unit_multiple",
             "purchases_per_month",
             "months_per_year",
+            "created",
+            "modified",
         ]
 
 
@@ -663,8 +655,6 @@ class PaymentInKindFilterSet(filters.FilterSet):
         model = PaymentInKind
         fields = [
             "id",
-            "created",
-            "modified",
             "livelihood_strategy",
             "livelihood_zone_baseline",
             "strategy_type",
@@ -684,6 +674,8 @@ class PaymentInKindFilterSet(filters.FilterSet):
             "people_per_hh",
             "labor_per_month",
             "months_per_year",
+            "created",
+            "modified",
         ]
 
 
@@ -703,8 +695,6 @@ class ReliefGiftsOtherFilterSet(filters.FilterSet):
         model = ReliefGiftsOther
         fields = [
             "id",
-            "created",
-            "modified",
             "livelihood_strategy",
             "livelihood_zone_baseline",
             "strategy_type",
@@ -722,6 +712,8 @@ class ReliefGiftsOtherFilterSet(filters.FilterSet):
             "livelihoodactivity_ptr",
             "unit_multiple",
             "received_per_year",
+            "created",
+            "modified",
         ]
 
 
@@ -741,8 +733,6 @@ class FishingFilterSet(filters.FilterSet):
         model = Fishing
         fields = [
             "id",
-            "created",
-            "modified",
             "livelihood_strategy",
             "livelihood_zone_baseline",
             "strategy_type",
@@ -757,6 +747,8 @@ class FishingFilterSet(filters.FilterSet):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "created",
+            "modified",
         ]
 
 
@@ -776,8 +768,6 @@ class WildFoodGatheringFilterSet(filters.FilterSet):
         model = WildFoodGathering
         fields = [
             "id",
-            "created",
-            "modified",
             "livelihood_strategy",
             "livelihood_zone_baseline",
             "strategy_type",
@@ -792,6 +782,8 @@ class WildFoodGatheringFilterSet(filters.FilterSet):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "created",
+            "modified",
         ]
 
 
@@ -811,8 +803,6 @@ class OtherCashIncomeFilterSet(filters.FilterSet):
         model = OtherCashIncome
         fields = [
             "id",
-            "created",
-            "modified",
             "livelihood_strategy",
             "livelihood_zone_baseline",
             "strategy_type",
@@ -833,6 +823,8 @@ class OtherCashIncomeFilterSet(filters.FilterSet):
             "labor_per_month",
             "months_per_year",
             "times_per_year",
+            "created",
+            "modified",
         ]
 
 
@@ -852,8 +844,6 @@ class OtherPurchasesFilterSet(filters.FilterSet):
         model = OtherPurchases
         fields = [
             "id",
-            "created",
-            "modified",
             "livelihood_strategy",
             "livelihood_zone_baseline",
             "strategy_type",
@@ -872,6 +862,8 @@ class OtherPurchasesFilterSet(filters.FilterSet):
             "unit_multiple",
             "purchases_per_month",
             "months_per_year",
+            "created",
+            "modified",
         ]
 
 
@@ -889,7 +881,7 @@ class OtherPurchasesViewSet(viewsets.ModelViewSet):
 class SeasonalActivityFilterSet(filters.FilterSet):
     class Meta:
         model = SeasonalActivity
-        fields = ["id", "created", "modified", "livelihood_zone_baseline", "activity_type", "season", "product"]
+        fields = ["id", "livelihood_zone_baseline", "activity_type", "season", "product", "created", "modified"]
 
 
 class SeasonalActivityViewSet(viewsets.ModelViewSet):
@@ -907,13 +899,13 @@ class SeasonalActivityOccurrenceFilterSet(filters.FilterSet):
         model = SeasonalActivityOccurrence
         fields = [
             "id",
-            "created",
-            "modified",
             "seasonal_activity",
             "livelihood_zone_baseline",
             "community",
             "start",
             "end",
+            "created",
+            "modified",
         ]
 
 
@@ -932,8 +924,6 @@ class CommunityCropProductionFilterSet(filters.FilterSet):
         model = CommunityCropProduction
         fields = [
             "id",
-            "created",
-            "modified",
             "community",
             "crop",
             "crop_purpose",
@@ -942,6 +932,8 @@ class CommunityCropProductionFilterSet(filters.FilterSet):
             "yield_without_inputs",
             "seed_requirement",
             "unit_of_measure",
+            "created",
+            "modified",
         ]
 
 
@@ -961,8 +953,6 @@ class CommunityLivestockFilterSet(filters.FilterSet):
         model = CommunityLivestock
         fields = [
             "id",
-            "created",
-            "modified",
             "community",
             "livestock",
             "birth_interval",
@@ -972,6 +962,8 @@ class CommunityLivestockFilterSet(filters.FilterSet):
             "dry_season_milk_production",
             "age_at_sale",
             "additional_attributes",
+            "created",
+            "modified",
         ]
         filter_overrides = {
             models.JSONField: {
@@ -996,8 +988,6 @@ class MarketPriceFilterSet(filters.FilterSet):
         model = MarketPrice
         fields = [
             "id",
-            "created",
-            "modified",
             "community",
             "product",
             "market",
@@ -1010,6 +1000,8 @@ class MarketPriceFilterSet(filters.FilterSet):
             "high_price_start",
             "high_price_end",
             "high_price",
+            "created",
+            "modified",
         ]
 
 
@@ -1029,13 +1021,13 @@ class AnnualProductionPerformanceFilterSet(filters.FilterSet):
         model = AnnualProductionPerformance
         fields = [
             "id",
-            "created",
-            "modified",
             "community",
             "performance_year_start_date",
             "performance_year_end_date",
             "annual_performance",
             "description",
+            "created",
+            "modified",
         ]
 
 
@@ -1055,13 +1047,13 @@ class HazardFilterSet(filters.FilterSet):
         model = Hazard
         fields = [
             "id",
-            "created",
-            "modified",
             "community",
             "chronic_or_periodic",
             "ranking",
             "hazard_category",
             "description",
+            "created",
+            "modified",
         ]
 
 
@@ -1081,12 +1073,12 @@ class EventFilterSet(filters.FilterSet):
         model = Event
         fields = [
             "id",
-            "created",
-            "modified",
             "community",
             "event_year_start_date",
             "event_year_end_date",
             "description",
+            "created",
+            "modified",
         ]
 
 
