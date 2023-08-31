@@ -125,6 +125,20 @@ class LoadModelFromDict(Operation):
         return "Load data into a model from a list of dicts or a delimited file"
 
 
+class ConditionalLoadModelFromDict(LoadModelFromDict):
+    """
+    Conditionally execute the migration based on condition passed
+    """
+
+    def __init__(self, model, data, delimiter=";", update=False, skip=False):
+        self.skip = skip
+        super().__init__(model, data, delimiter=delimiter, update=update)
+
+    def database_forwards(self, app_label, schema_editor, from_state, to_state):
+        if not self.skip:
+            super().database_forwards(app_label, schema_editor, from_state, to_state)
+
+
 def get_month_from_day_number(day_number):
     first_day_of_year = datetime(datetime.today().year, 1, 1)
     _date = first_day_of_year + timedelta(days=day_number - 1)  # timedelta uses 0 based index
