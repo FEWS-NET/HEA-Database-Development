@@ -127,7 +127,8 @@ class LoadModelFromDict(Operation):
 
 class ConditionalLoadModelFromDict(LoadModelFromDict):
     """
-    Conditionally execute the migration based on condition passed
+    Conditionally execute the migration based on skip parameter,
+    for cases we don't need to run in tests for example
     """
 
     def __init__(self, model, data, delimiter=";", update=False, skip=False):
