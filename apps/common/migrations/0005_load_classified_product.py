@@ -3,6 +3,7 @@ import logging
 import os
 
 import requests
+from django.conf import settings
 from django.db import migrations
 
 from common.utils import UnicodeDictReader, get_frozen_treebeard_model
@@ -12,15 +13,18 @@ logger = logging.getLogger(__name__)
 
 def forwards(apps, schema_editor):
 
-    ClassifiedProduct = get_frozen_treebeard_model(apps.get_model("common", "ClassifiedProduct"))
+    # Skip migration if the environment is testing for having a clean test database setup
+    if "test" not in settings.DATABASES["default"]["NAME"]:
 
-    UnitOfMeasure = apps.get_model("common", "UnitOfMeasure")
+        ClassifiedProduct = get_frozen_treebeard_model(apps.get_model("common", "ClassifiedProduct"))
 
-    load_plain_prefixed_products(ClassifiedProduct)
+        UnitOfMeasure = apps.get_model("common", "UnitOfMeasure")
 
-    update_common_name_from_fdw(ClassifiedProduct)
+        load_plain_prefixed_products(ClassifiedProduct)
 
-    update_kcals_per_unit(ClassifiedProduct, UnitOfMeasure)
+        update_common_name_from_fdw(ClassifiedProduct)
+
+        update_kcals_per_unit(ClassifiedProduct, UnitOfMeasure)
 
 
 def load_plain_prefixed_products(ClassifiedProduct):
