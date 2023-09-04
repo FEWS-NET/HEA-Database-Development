@@ -30,6 +30,11 @@ from metadata.models import (
 )
 
 
+class SourceOrganizationManager(common_models.IdentifierManager):
+    def get_by_natural_key(self, name):
+        return self.get(name=name)
+
+
 class SourceOrganization(common_models.Model):
     """
     An Organization that provides HEA Baselines.
@@ -38,6 +43,11 @@ class SourceOrganization(common_models.Model):
     name = common_models.NameField(max_length=200, unique=True)
     full_name = common_models.NameField(verbose_name=_("full name"), max_length=300, unique=True)
     description = common_models.DescriptionField()
+
+    objects = SourceOrganizationManager()
+
+    def natural_key(self):
+        return (self.name,)
 
     class Meta:
         verbose_name = _("Source Organization")
@@ -67,10 +77,10 @@ class LivelihoodZone(common_models.Model):
         verbose_name = _("Livelihood Zone")
         verbose_name_plural = _("Livelihood Zones")
 
-    class ExtraMeta:
-        identifier = [
-            "code",
-        ]
+
+class LivelihoodZoneBaselineManager(common_models.IdentifierManager):
+    def get_by_natural_key(self, code: str, reference_year_end_date: str):
+        return self.get(livelihood_zone__code=code, reference_year_end_date=reference_year_end_date)
 
 
 class LivelihoodZoneBaseline(common_models.Model):
@@ -114,10 +124,14 @@ class LivelihoodZoneBaseline(common_models.Model):
         help_text=_("The last day of the month of the end month in the reference year"),
     )
     valid_from_date = models.DateField(
+        null=True,
+        blank=True,
         verbose_name=_("Valid From Date"),
         help_text=_("The first day of the month that this baseline is valid from"),
     )
     valid_to_date = models.DateField(
+        null=True,
+        blank=True,
         verbose_name=_("Valid To Date"),
         help_text=_("The last day of the month that this baseline is valid until"),
     )
@@ -141,9 +155,24 @@ class LivelihoodZoneBaseline(common_models.Model):
         help_text=_("The estimated population of the Livelihood Zone during the reference year"),
     )
 
+    objects = LivelihoodZoneBaselineManager()
+
+    def natural_key(self):
+        try:
+            return (self.livelihood_zone.code, self.reference_year_end_date.isoformat())
+        except Exception:
+            print(self.__dict__)
+            raise
+
     class Meta:
         verbose_name = _("Livelihood Zone Baseline")
         verbose_name_plural = _("Livelihood Zone Baselines")
+        constraints = [
+            models.UniqueConstraint(
+                fields=("livelihood_zone", "reference_year_end_date"),
+                name="baseline_livelihoodzonebaseline_livelihood_zone_reference_year_end_date_uniq",
+            )
+        ]
 
     class ExtraMeta:
         identifier = [
@@ -183,6 +212,15 @@ class LivelihoodProductCategory(common_models.Model):
     class Meta:
         verbose_name = _("Livelihood Product Category")
         verbose_name_plural = _("Livelihood Product Categories")
+
+
+class CommunityManager(common_models.IdentifierManager):
+    def get_by_natural_key(self, code: str, reference_year_end_date: str, full_name: str):
+        return self.get(
+            livelihood_zone_baseline__livelihood_zone__code=code,
+            livelihood_zone_baseline__reference_year_end_date=reference_year_end_date,
+            full_name=full_name,
+        )
 
 
 class Community(common_models.Model):
@@ -227,13 +265,23 @@ class Community(common_models.Model):
         help_text=_("The names of interviewers who interviewed the Community, in case any clarification is neeeded."),
     )
 
-    class ExtraMeta:
-        identifier = ["name"]
+    objects = CommunityManager()
+
+    def natural_key(self):
+        return (
+            self.livelihood_zone_baseline.livelihood_zone.code,
+            self.livelihood_zone_baseline.reference_year_end_date.isoformat(),
+            self.full_name,
+        )
 
     class Meta:
         verbose_name = _("Community")
         verbose_name_plural = _("Communities")
         constraints = [
+            models.UniqueConstraint(
+                fields=("livelihood_zone_baseline", "full_name"),
+                name="baseline_community_livelihood_zone_baseline_full_name_uniq",
+            ),
             # Create a unique constraint on id and livelihood_zone_baseline, so that we can use it as a target for a
             # composite foreign key from Seasonal Activity, which in turn allows us to ensure that the Community
             # and the Baseline Seasonal Activity for a Seasonal Activity both have the same Livelihood Baseline.
@@ -241,8 +289,26 @@ class Community(common_models.Model):
             models.UniqueConstraint(
                 fields=["id", "livelihood_zone_baseline"],
                 name="baseline_community_id_livelihood_zone_baseline_uniq",
-            )
+            ),
         ]
+
+
+class WealthGroupManager(common_models.IdentifierManager):
+    def get_by_natural_key(self, code: str, reference_year_end_date: str, wealth_category: str, full_name: str):
+        if full_name:
+            return self.get(
+                livelihood_zone_baseline__livelihood_zone__code=code,
+                livelihood_zone_baseline__reference_year_end_date=reference_year_end_date,
+                wealth_category=wealth_category,
+                community__full_name=full_name,
+            )
+        else:
+            return self.get(
+                livelihood_zone_baseline__livelihood_zone__code=code,
+                livelihood_zone_baseline__reference_year_end_date=reference_year_end_date,
+                wealth_category=wealth_category,
+                community__isnull=True,
+            )
 
 
 # @TODO https://fewsnet.atlassian.net/browse/HEA-92
@@ -296,6 +362,8 @@ class WealthGroup(common_models.Model):
     )
     average_household_size = models.PositiveSmallIntegerField(verbose_name=_("Average household size"))
 
+    objects = WealthGroupManager()
+
     def calculate_fields(self):
         if self.community:
             self.livelihood_zone_baseline = self.community.livelihood_zone_baseline
@@ -316,10 +384,22 @@ class WealthGroup(common_models.Model):
             else f"{str(self.livelihood_zone_baseline)} {str(self.wealth_category)}"
         )
 
+    def natural_key(self):
+        return (
+            self.livelihood_zone_baseline.livelihood_zone_id,
+            self.livelihood_zone_baseline.reference_year_end_date.isoformat(),
+            self.wealth_category,
+            self.community.full_name if self.community else "",
+        )
+
     class Meta:
         verbose_name = _("Wealth Group")
         verbose_name_plural = _("Wealth Groups")
         constraints = [
+            models.UniqueConstraint(
+                fields=("livelihood_zone_baseline", "wealth_category", "community"),
+                name="baseline_wealthgroup_livelihood_zone_baseline_wealth_category_community_uniq",
+            ),
             # Create a unique constraint on id and livelihood_zone_baseline, so that we can use it as a target for a
             # composite foreign key from Livelhood Activity, which in turn allows us to ensure that the Wealth Group
             # and the Livelihood Strategy for a Livelihood Activity both have the same Livelihood Baseline.

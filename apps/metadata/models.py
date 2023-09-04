@@ -52,6 +52,9 @@ class ReferenceData(common_models.Model):
         )
         super().save(*args, **kwargs)
 
+    def __str__(self):
+        return self.code
+
     class Meta:
         abstract = True
 

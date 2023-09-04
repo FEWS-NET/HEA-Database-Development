@@ -232,13 +232,18 @@ class Model(TimeStampedModel):
 
     def __str__(self):
         components = []
-        for field in self.ExtraMeta.identifier:
-            try:
-                component = force_str(getattr(self, field))
-            except ObjectDoesNotExist:
-                component = ""
-            components.append(component)
-        return ": ".join([component for component in components if component])
+        if self.ExtraMeta.identifier:
+            for field in self.ExtraMeta.identifier:
+                try:
+                    component = force_str(getattr(self, field))
+                except ObjectDoesNotExist:
+                    component = ""
+                components.append(component)
+            return ": ".join([component for component in components if component])
+        elif hasattr(self, "natural_key"):
+            return ": ".join([component for component in self.natural_key()])
+        else:
+            return super().__str__()
 
     def __repr__(self):
         return "<%s: %s (%s)>" % (self.__class__.__name__, self, self.pk)
