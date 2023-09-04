@@ -1,6 +1,7 @@
 import csv
 import logging
 from datetime import datetime, timedelta
+from pathlib import Path
 
 from django.apps import apps
 from django.db.migrations.operations.base import Operation
@@ -78,7 +79,7 @@ class LoadModelFromDict(Operation):
         records_updated = 0
         records_failed = 0
 
-        if isinstance(self.data, str):
+        if isinstance(self.data, (str, Path)):
             f = open(self.data, "r")
             data = UnicodeDictReader(f, delimiter=self.delimiter)
         else:
