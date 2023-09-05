@@ -2,25 +2,7 @@ import datetime
 
 import factory
 
-from common.tests.factories import (
-    ClassifiedProductFactory,
-    CountryFactory,
-    CurrencyFactory,
-    UnitOfMeasureFactory,
-)
-from common.utils import b74encode
-from metadata.models import LivelihoodActivityScenario
-from metadata.tests.factories import (
-    HazardCategoryFactory,
-    LivelihoodCategoryFactory,
-    MarketFactory,
-    SeasonalActivityTypeFactory,
-    SeasonFactory,
-    WealthCategoryFactory,
-    WealthCharacteristicFactory,
-)
-
-from ..models import (
+from baseline.models import (
     AnnualProductionPerformance,
     BaselineLivelihoodActivity,
     BaselineWealthGroup,
@@ -57,6 +39,22 @@ from ..models import (
     WealthGroupCharacteristicValue,
     WildFoodGathering,
 )
+from common.tests.factories import (
+    ClassifiedProductFactory,
+    CountryFactory,
+    CurrencyFactory,
+    UnitOfMeasureFactory,
+)
+from metadata.models import LivelihoodActivityScenario
+from metadata.tests.factories import (
+    HazardCategoryFactory,
+    LivelihoodCategoryFactory,
+    MarketFactory,
+    SeasonalActivityTypeFactory,
+    SeasonFactory,
+    WealthCategoryFactory,
+    WealthCharacteristicFactory,
+)
 
 
 class SourceOrganizationFactory(factory.django.DjangoModelFactory):
@@ -64,13 +62,11 @@ class SourceOrganizationFactory(factory.django.DjangoModelFactory):
         model = SourceOrganization
         django_get_or_create = [
             "name",
-            "full_name",
-            "description",
         ]
 
-    name = factory.Sequence(lambda n: f"name {n}")
-    full_name = factory.Sequence(lambda n: f"full_name {n}")
-    description = factory.Sequence(lambda n: f"description {n}")
+    name = factory.Sequence(lambda n: f"SourceOrganization {n} name")
+    full_name = factory.LazyAttribute(lambda o: f"{o.name} full_name")
+    description = factory.LazyAttribute(lambda o: f"{o.name} description")
 
 
 class LivelihoodZoneFactory(factory.django.DjangoModelFactory):
@@ -78,14 +74,11 @@ class LivelihoodZoneFactory(factory.django.DjangoModelFactory):
         model = LivelihoodZone
         django_get_or_create = [
             "code",
-            "name",
-            "description",
-            "country",
         ]
 
-    code = factory.Sequence(lambda n: b74encode(n))
-    name = factory.Sequence(lambda n: f"name {n}")
-    description = factory.Sequence(lambda n: f"description {n}")
+    code = factory.LazyAttributeSequence(lambda o, n: f"{o.country.pk}{n:04d}")
+    name = factory.LazyAttribute(lambda o: f"{o.code} name")
+    description = factory.LazyAttribute(lambda o: f"{o.code} description")
     country = factory.SubFactory(CountryFactory)
 
 
@@ -94,16 +87,7 @@ class LivelihoodZoneBaselineFactory(factory.django.DjangoModelFactory):
         model = LivelihoodZoneBaseline
         django_get_or_create = [
             "livelihood_zone",
-            "geography",
-            "main_livelihood_category",
             "source_organization",
-            "bss",
-            "reference_year_start_date",
-            "reference_year_end_date",
-            "valid_from_date",
-            "valid_to_date",
-            "population_source",
-            "population_estimate",
         ]
 
     livelihood_zone = factory.SubFactory(LivelihoodZoneFactory)
@@ -112,9 +96,9 @@ class LivelihoodZoneBaselineFactory(factory.django.DjangoModelFactory):
     source_organization = factory.SubFactory(SourceOrganizationFactory)
     bss = None
     reference_year_start_date = factory.Sequence(lambda n: datetime.date(1900, 1, 1) + datetime.timedelta(days=n))
-    reference_year_end_date = factory.Sequence(lambda n: datetime.date(1900, 1, 1) + datetime.timedelta(days=n))
+    reference_year_end_date = factory.Sequence(lambda n: datetime.date(1900, 1, 1) + datetime.timedelta(days=n + 10))
     valid_from_date = factory.Sequence(lambda n: datetime.date(1900, 1, 1) + datetime.timedelta(days=n))
-    valid_to_date = factory.Sequence(lambda n: datetime.date(1900, 1, 1) + datetime.timedelta(days=n))
+    valid_to_date = factory.Sequence(lambda n: datetime.date(1900, 1, 1) + datetime.timedelta(days=n + 10))
     population_source = factory.Sequence(lambda n: f"population_source {n}")
     population_estimate = factory.Sequence(lambda n: 500 + n % 1000000)
 
@@ -139,16 +123,13 @@ class CommunityFactory(factory.django.DjangoModelFactory):
         django_get_or_create = [
             "name",
             "livelihood_zone_baseline",
-            "geography",
-            "interview_number",
-            "interviewers",
         ]
 
-    name = factory.Sequence(lambda n: f"name {n}")
+    name = factory.Sequence(lambda n: f"Community {n} name")
     livelihood_zone_baseline = factory.SubFactory(LivelihoodZoneBaselineFactory)
     geography = None
-    interview_number = factory.Sequence(lambda n: f"int_num {b74encode(n)}")
     interviewers = factory.Sequence(lambda n: ", ".join(f"interviewer {i}" for i in range(n)))
+    interview_number = factory.Sequence(lambda n: f"i{n}")
 
 
 class WealthGroupFactory(factory.django.DjangoModelFactory):
@@ -158,12 +139,13 @@ class WealthGroupFactory(factory.django.DjangoModelFactory):
             "livelihood_zone_baseline",
             "community",
             "wealth_category",
-            "percentage_of_households",
-            "average_household_size",
         ]
 
     livelihood_zone_baseline = factory.SubFactory(LivelihoodZoneBaselineFactory)
-    community = factory.SubFactory(CommunityFactory)
+    community = factory.SubFactory(
+        CommunityFactory,
+        livelihood_zone_baseline=factory.SelfAttribute("..livelihood_zone_baseline"),
+    )
     wealth_category = factory.SubFactory(WealthCategoryFactory)
     percentage_of_households = factory.Sequence(lambda n: 10 + n % 81)
     average_household_size = factory.Sequence(lambda n: 2 + n % 29)
@@ -176,8 +158,6 @@ class BaselineWealthGroupFactory(WealthGroupFactory):
             "livelihood_zone_baseline",
             "community",
             "wealth_category",
-            "percentage_of_households",
-            "average_household_size",
         ]
 
     community = None
@@ -190,8 +170,6 @@ class CommunityWealthGroupFactory(WealthGroupFactory):
             "livelihood_zone_baseline",
             "community",
             "wealth_category",
-            "percentage_of_households",
-            "average_household_size",
         ]
 
     community = factory.SubFactory(CommunityFactory)
@@ -203,16 +181,13 @@ class WealthGroupCharacteristicValueFactory(factory.django.DjangoModelFactory):
         django_get_or_create = [
             "wealth_group",
             "wealth_characteristic",
-            "value",
-            "min_value",
-            "max_value",
         ]
 
     wealth_group = factory.SubFactory(WealthGroupFactory)
     wealth_characteristic = factory.SubFactory(WealthCharacteristicFactory)
     value = factory.Sequence(lambda n: n % 1000)
-    min_value = factory.Sequence(lambda n: -10 + n % 1000)
-    max_value = factory.Sequence(lambda n: 10 + n % 1000)
+    min_value = factory.LazyAttribute(lambda o: o.value - 5)
+    max_value = factory.LazyAttribute(lambda o: o.value + 5)
 
 
 class LivelihoodStrategyFactory(factory.django.DjangoModelFactory):
@@ -221,12 +196,8 @@ class LivelihoodStrategyFactory(factory.django.DjangoModelFactory):
         django_get_or_create = [
             "livelihood_zone_baseline",
             "strategy_type",
-            "season",
             "product",
-            "unit_of_measure",
-            "currency",
             "additional_identifier",
-            "household_labor_provider",
         ]
 
     livelihood_zone_baseline = factory.SubFactory(LivelihoodZoneBaselineFactory)
@@ -263,15 +234,6 @@ class LivelihoodActivityFactory(factory.django.DjangoModelFactory):
             "strategy_type",
             "scenario",
             "wealth_group",
-            "quantity_produced",
-            "quantity_sold",
-            "quantity_other_uses",
-            "quantity_consumed",
-            "price",
-            "income",
-            "expenditure",
-            "kcals_consumed",
-            "percentage_kcals",
         ]
 
     livelihood_zone_baseline = factory.SubFactory(LivelihoodZoneBaselineFactory)
@@ -322,15 +284,6 @@ class BaselineLivelihoodActivityFactory(LivelihoodActivityFactory):
             "strategy_type",
             "scenario",
             "wealth_group",
-            "quantity_produced",
-            "quantity_sold",
-            "quantity_other_uses",
-            "quantity_consumed",
-            "price",
-            "income",
-            "expenditure",
-            "kcals_consumed",
-            "percentage_kcals",
         ]
 
     scenario = LivelihoodActivityScenario.BASELINE
@@ -345,15 +298,6 @@ class ResponseLivelihoodActivityFactory(LivelihoodActivityFactory):
             "strategy_type",
             "scenario",
             "wealth_group",
-            "quantity_produced",
-            "quantity_sold",
-            "quantity_other_uses",
-            "quantity_consumed",
-            "price",
-            "income",
-            "expenditure",
-            "kcals_consumed",
-            "percentage_kcals",
         ]
 
     scenario = LivelihoodActivityScenario.RESPONSE
@@ -368,23 +312,9 @@ class MilkProductionFactory(LivelihoodActivityFactory):
             "strategy_type",
             "scenario",
             "wealth_group",
-            "quantity_produced",
-            "quantity_sold",
-            "quantity_other_uses",
-            "quantity_consumed",
-            "price",
-            "income",
-            "expenditure",
-            "kcals_consumed",
-            "percentage_kcals",
-            "milking_animals",
-            "lactation_days",
-            "daily_production",
-            "type_of_milk_sold_or_other_uses",
         ]
 
     strategy_type = "MilkProduction"
-    scenario = factory.Iterator(["baseline", "response"])
     milking_animals = factory.Sequence(lambda n: 1 + n % 20)
     lactation_days = factory.Sequence(lambda n: 1 + n % 365)
     daily_production = factory.Sequence(lambda n: 1 + n % 20)
@@ -400,15 +330,6 @@ class ButterProductionFactory(LivelihoodActivityFactory):
             "strategy_type",
             "scenario",
             "wealth_group",
-            "quantity_produced",
-            "quantity_sold",
-            "quantity_other_uses",
-            "quantity_consumed",
-            "price",
-            "income",
-            "expenditure",
-            "kcals_consumed",
-            "percentage_kcals",
         ]
 
     strategy_type = "ButterProduction"
@@ -423,17 +344,6 @@ class MeatProductionFactory(LivelihoodActivityFactory):
             "strategy_type",
             "scenario",
             "wealth_group",
-            "quantity_produced",
-            "quantity_sold",
-            "quantity_other_uses",
-            "quantity_consumed",
-            "price",
-            "income",
-            "expenditure",
-            "kcals_consumed",
-            "percentage_kcals",
-            "animals_slaughtered",
-            "carcass_weight",
         ]
 
     strategy_type = "MeatProduction"
@@ -451,15 +361,6 @@ class LivestockSalesFactory(LivelihoodActivityFactory):
             "strategy_type",
             "scenario",
             "wealth_group",
-            "quantity_produced",
-            "quantity_sold",
-            "quantity_other_uses",
-            "quantity_consumed",
-            "price",
-            "income",
-            "expenditure",
-            "kcals_consumed",
-            "percentage_kcals",
         ]
 
     strategy_type = "LivestockSales"
@@ -474,15 +375,6 @@ class CropProductionFactory(LivelihoodActivityFactory):
             "strategy_type",
             "scenario",
             "wealth_group",
-            "quantity_produced",
-            "quantity_sold",
-            "quantity_other_uses",
-            "quantity_consumed",
-            "price",
-            "income",
-            "expenditure",
-            "kcals_consumed",
-            "percentage_kcals",
         ]
 
     strategy_type = "CropProduction"
@@ -497,18 +389,6 @@ class FoodPurchaseFactory(LivelihoodActivityFactory):
             "strategy_type",
             "scenario",
             "wealth_group",
-            "quantity_produced",
-            "quantity_sold",
-            "quantity_other_uses",
-            "quantity_consumed",
-            "price",
-            "income",
-            "expenditure",
-            "kcals_consumed",
-            "percentage_kcals",
-            "unit_multiple",
-            "purchases_per_month",
-            "months_per_year",
         ]
 
     strategy_type = "FoodPurchase"
@@ -527,19 +407,6 @@ class PaymentInKindFactory(LivelihoodActivityFactory):
             "strategy_type",
             "scenario",
             "wealth_group",
-            "quantity_produced",
-            "quantity_sold",
-            "quantity_other_uses",
-            "quantity_consumed",
-            "price",
-            "income",
-            "expenditure",
-            "kcals_consumed",
-            "percentage_kcals",
-            "payment_per_time",
-            "people_per_hh",
-            "labor_per_month",
-            "months_per_year",
         ]
 
     strategy_type = "PaymentInKind"
@@ -561,17 +428,6 @@ class ReliefGiftsOtherFactory(LivelihoodActivityFactory):
             "strategy_type",
             "scenario",
             "wealth_group",
-            "quantity_produced",
-            "quantity_sold",
-            "quantity_other_uses",
-            "quantity_consumed",
-            "price",
-            "income",
-            "expenditure",
-            "kcals_consumed",
-            "percentage_kcals",
-            "unit_multiple",
-            "received_per_year",
         ]
 
     strategy_type = "ReliefGiftsOther"
@@ -589,15 +445,6 @@ class FishingFactory(LivelihoodActivityFactory):
             "strategy_type",
             "scenario",
             "wealth_group",
-            "quantity_produced",
-            "quantity_sold",
-            "quantity_other_uses",
-            "quantity_consumed",
-            "price",
-            "income",
-            "expenditure",
-            "kcals_consumed",
-            "percentage_kcals",
         ]
 
     strategy_type = "Fishing"
@@ -612,15 +459,6 @@ class WildFoodGatheringFactory(LivelihoodActivityFactory):
             "strategy_type",
             "scenario",
             "wealth_group",
-            "quantity_produced",
-            "quantity_sold",
-            "quantity_other_uses",
-            "quantity_consumed",
-            "price",
-            "income",
-            "expenditure",
-            "kcals_consumed",
-            "percentage_kcals",
         ]
 
     strategy_type = "WildFoodGathering"
@@ -635,20 +473,6 @@ class OtherCashIncomeFactory(LivelihoodActivityFactory):
             "strategy_type",
             "scenario",
             "wealth_group",
-            "quantity_produced",
-            "quantity_sold",
-            "quantity_other_uses",
-            "quantity_consumed",
-            "price",
-            "income",
-            "expenditure",
-            "kcals_consumed",
-            "percentage_kcals",
-            "payment_per_time",
-            "people_per_hh",
-            "labor_per_month",
-            "months_per_year",
-            "times_per_year",
         ]
 
     strategy_type = "OtherCashIncome"
@@ -676,18 +500,6 @@ class OtherPurchasesFactory(LivelihoodActivityFactory):
             "strategy_type",
             "scenario",
             "wealth_group",
-            "quantity_produced",
-            "quantity_sold",
-            "quantity_other_uses",
-            "quantity_consumed",
-            "price",
-            "income",
-            "expenditure",
-            "kcals_consumed",
-            "percentage_kcals",
-            "unit_multiple",
-            "purchases_per_month",
-            "months_per_year",
         ]
 
     strategy_type = "OtherPurchases"
@@ -727,8 +539,6 @@ class SeasonalActivityOccurrenceFactory(factory.django.DjangoModelFactory):
             "seasonal_activity",
             "livelihood_zone_baseline",
             "community",
-            "start",
-            "end",
         ]
 
     seasonal_activity = factory.SubFactory(SeasonalActivityFactory)
@@ -749,15 +559,12 @@ class CommunityCropProductionFactory(factory.django.DjangoModelFactory):
             "crop",
             "crop_purpose",
             "season",
-            "yield_with_inputs",
-            "yield_without_inputs",
-            "seed_requirement",
-            "unit_of_measure",
         ]
 
     community = factory.SubFactory(CommunityFactory)
     crop = factory.SubFactory(
-        "common.tests.factories.ClassifiedProductFactory", cpcv2=factory.Sequence(lambda n: f"R01{b74encode(n)}")
+        "common.tests.factories.ClassifiedProductFactory",
+        cpcv2=factory.Iterator([f"R019{n}" for n in range(1, 10)]),
     )
     crop_purpose = factory.Iterator(["food", "cash"])
     season = factory.SubFactory(SeasonFactory)
@@ -774,17 +581,13 @@ class CommunityLivestockFactory(factory.django.DjangoModelFactory):
             "community",
             "livestock",
             "birth_interval",
-            "wet_season_lactation_period",
-            "wet_season_milk_production",
-            "dry_season_lactation_period",
-            "dry_season_milk_production",
-            "age_at_sale",
             "additional_attributes",
         ]
 
     community = factory.SubFactory(CommunityFactory)
     livestock = factory.SubFactory(
-        "common.tests.factories.ClassifiedProductFactory", cpcv2=factory.Sequence(lambda n: f"L021{b74encode(n)}")
+        "common.tests.factories.ClassifiedProductFactory",
+        cpcv2=factory.Iterator([f"L021{n}" for n in range(1, 10)]),
     )
     birth_interval = factory.Sequence(lambda n: n + 1)
     wet_season_lactation_period = factory.Sequence(lambda n: 1 + n % 80)
@@ -802,21 +605,12 @@ class MarketPriceFactory(factory.django.DjangoModelFactory):
             "community",
             "product",
             "market",
-            "description",
-            "currency",
-            "unit_of_measure",
-            "low_price_start",
-            "low_price_end",
-            "low_price",
-            "high_price_start",
-            "high_price_end",
-            "high_price",
         ]
 
     community = factory.SubFactory(CommunityFactory)
     product = factory.SubFactory(ClassifiedProductFactory)
     market = factory.SubFactory(MarketFactory)
-    description = factory.Sequence(lambda n: f"description {n}")
+    description = factory.Sequence(lambda n: f"MarketPrice {n} description")
     currency = factory.SubFactory(CurrencyFactory)
     unit_of_measure = factory.SubFactory(UnitOfMeasureFactory)
     low_price_start = factory.Sequence(lambda n: 1 + n % 180)
@@ -833,16 +627,13 @@ class AnnualProductionPerformanceFactory(factory.django.DjangoModelFactory):
         django_get_or_create = [
             "community",
             "performance_year_start_date",
-            "performance_year_end_date",
-            "annual_performance",
-            "description",
         ]
 
     community = factory.SubFactory(CommunityFactory)
     performance_year_start_date = factory.Sequence(lambda n: datetime.date(1900, 1, 1) + datetime.timedelta(days=n))
     performance_year_end_date = factory.Sequence(lambda n: datetime.date(1900, 1, 1) + datetime.timedelta(days=n))
     annual_performance = factory.Iterator(["1", "2", "3", "4", "5"])
-    description = factory.Sequence(lambda n: f"description {n}")
+    description = factory.Sequence(lambda n: f"AnnualProductionPerformance {n} description")
 
 
 class HazardFactory(factory.django.DjangoModelFactory):
@@ -853,14 +644,13 @@ class HazardFactory(factory.django.DjangoModelFactory):
             "chronic_or_periodic",
             "ranking",
             "hazard_category",
-            "description",
         ]
 
     community = factory.SubFactory(CommunityFactory)
     chronic_or_periodic = factory.Iterator(["chronic", "periodic"])
     ranking = factory.Iterator(["1", "2", "3"])
     hazard_category = factory.SubFactory(HazardCategoryFactory)
-    description = factory.Sequence(lambda n: f"description {n}")
+    description = factory.Sequence(lambda n: f"Hazard {n} description")
 
 
 class EventFactory(factory.django.DjangoModelFactory):
@@ -869,14 +659,12 @@ class EventFactory(factory.django.DjangoModelFactory):
         django_get_or_create = [
             "community",
             "event_year_start_date",
-            "event_year_end_date",
-            "description",
         ]
 
     community = factory.SubFactory(CommunityFactory)
     event_year_start_date = factory.Sequence(lambda n: datetime.date(1900, 1, 1) + datetime.timedelta(days=n))
     event_year_end_date = factory.Sequence(lambda n: datetime.date(1900, 1, 1) + datetime.timedelta(days=n))
-    description = factory.Sequence(lambda n: f"description {n}")
+    description = factory.Sequence(lambda n: f"Event {n} description")
 
 
 class ExpandabilityFactorFactory(factory.django.DjangoModelFactory):
@@ -885,13 +673,6 @@ class ExpandabilityFactorFactory(factory.django.DjangoModelFactory):
         django_get_or_create = [
             "livelihood_strategy",
             "wealth_group",
-            "percentage_produced",
-            "percentage_sold",
-            "percentage_other_uses",
-            "percentage_consumed",
-            "percentage_income",
-            "percentage_expenditure",
-            "remark",
         ]
 
     livelihood_strategy = factory.SubFactory(
@@ -905,7 +686,7 @@ class ExpandabilityFactorFactory(factory.django.DjangoModelFactory):
     percentage_consumed = factory.Sequence(lambda n: n % 101)
     percentage_income = factory.Sequence(lambda n: n % 101)
     percentage_expenditure = factory.Sequence(lambda n: n % 101)
-    remark = factory.Sequence(lambda n: f"remark {n}")
+    remark = factory.Sequence(lambda n: f"ExpandabilityFactor {n} remark")
 
 
 class CopingStrategyFactory(factory.django.DjangoModelFactory):
@@ -917,7 +698,6 @@ class CopingStrategyFactory(factory.django.DjangoModelFactory):
             "wealth_group",
             "livelihood_strategy",
             "strategy",
-            "by_value",
         ]
 
     community = factory.SubFactory(CommunityFactory)

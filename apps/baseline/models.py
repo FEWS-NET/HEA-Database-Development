@@ -1,6 +1,8 @@
 """
 Models for managing HEA Baseline Surveys
 """
+import numbers
+
 from django.contrib.gis.db import models
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -411,6 +413,22 @@ class WealthGroupCharacteristicValue(common_models.Model):
     class Meta:
         verbose_name = _("Wealth Characteristic Value")
         verbose_name_plural = _("Wealth Characteristic Values")
+
+    def clean(self):
+        # Validate value is between min_value and max_value, if either are numerics (strings eg "1" not validated)
+        if (
+            isinstance(self.min_value, numbers.Number)
+            and isinstance(self.value, numbers.Number)
+            and self.min_value > self.value
+        ):
+            raise ValidationError(_("Value must be higher than min_value."))
+        if (
+            isinstance(self.max_value, numbers.Number)
+            and isinstance(self.value, numbers.Number)
+            and self.max_value < self.value
+        ):
+            raise ValidationError(_("Value must be lower than max_value."))
+        super().clean()
 
 
 # @TODO https://fewsnet.atlassian.net/browse/HEA-93

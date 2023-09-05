@@ -4,7 +4,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("baseline", "0002_rename_fields_and_db_columns"),
+        ("baseline", "0003_add_community_full_name_and_code"),
     ]
 
     operations = [

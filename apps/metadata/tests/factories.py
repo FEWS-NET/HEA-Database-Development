@@ -1,7 +1,6 @@
 import factory
 
 from common.tests.factories import CountryFactory
-from common.utils import b74encode
 from metadata.models import Market, Season, SeasonalActivityType, WealthCharacteristic
 
 
@@ -95,9 +94,9 @@ class MarketFactory(factory.django.DjangoModelFactory):
             "country",
         ]
 
-    code = factory.Sequence(lambda n: b74encode(n))
-    name = factory.Sequence(lambda n: b74encode(n))
-    description = factory.Sequence(lambda n: b74encode(n))
-    ordering = factory.Sequence(lambda n: n + 1)
-    aliases = factory.Sequence(lambda n: n)
-    country = factory.Sequence(lambda n: b74encode(n))
+    code = factory.Sequence(lambda n: f"code {n}")
+    name = factory.Sequence(lambda n: f"name {n}")
+    description = factory.Sequence(lambda n: f"description {n}")
+    ordering = factory.Sequence(lambda n: n % 1000)
+    aliases = factory.Sequence(lambda n: [f"alias{n + i}" for i in range(n % 10)])
+    country = factory.SubFactory(CountryFactory)
