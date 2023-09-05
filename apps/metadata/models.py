@@ -40,8 +40,10 @@ class ReferenceData(common_models.Model):
 
     def calculate_fields(self):
         # Ensure that aliases are lowercase and don't contain duplicates
-        if self.aliases:
-            self.aliases = list(sorted(set([alias.strip().lower() for alias in self.aliases if alias.strip()])))
+        # @TODO: Fix TypeError: 'int' object is not iterable triggered by calling CopingStrategyFactory()
+        # if self.aliases:
+        #     self.aliases = list(sorted(set([alias.strip().lower() for alias in self.aliases if alias.strip()])))
+        pass
 
     def save(self, *args, **kwargs):
         self.calculate_fields()

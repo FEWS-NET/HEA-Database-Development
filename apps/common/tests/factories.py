@@ -151,15 +151,26 @@ class GroupFactory(factory.django.DjangoModelFactory):
 class UnitOfMeasureConversionFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = UnitOfMeasureConversion
+        django_get_or_create = [
+            "from_unit",
+            "to_unit",
+            "conversion_factor",
+        ]
 
-    from_unit = factory.SubFactory("common.tests.factories.UnitOfMeasureFactory")
-    to_unit = factory.SubFactory("common.tests.factories.UnitOfMeasureFactory")
-    conversion_factor = factory.Sequence(lambda n: n + 1)
+    from_unit = factory.SubFactory(UnitOfMeasureFactory)
+    to_unit = factory.SubFactory(
+        "common.tests.factories.UnitOfMeasureFactory", unit_type=factory.SelfAttribute("..from_unit.unit_type")
+    )
+    conversion_factor = factory.Sequence(lambda n: 0.1 * (1 + n % 20))
 
 
 class CountryClassifiedProductAliasesFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = CountryClassifiedProductAliases
+        django_get_or_create = [
+            "country",
+            "product",
+        ]
 
-    country = factory.SubFactory("common.tests.factories.CountryFactory")
-    product = factory.SubFactory("common.tests.factories.ClassifiedProductFactory")
+    country = factory.SubFactory(CountryFactory)
+    product = factory.SubFactory(ClassifiedProductFactory)

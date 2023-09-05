@@ -1,7 +1,8 @@
 import factory
 
 from common.tests.factories import CountryFactory
-from metadata.models import Season, SeasonalActivityType, WealthCharacteristic
+from common.utils import b74encode
+from metadata.models import Market, Season, SeasonalActivityType, WealthCharacteristic
 
 
 class LivelihoodCategoryFactory(factory.django.DjangoModelFactory):
@@ -80,3 +81,23 @@ class SeasonFactory(factory.django.DjangoModelFactory):
     order = factory.Iterator([1, 2, 3])
     start = factory.Iterator((25, 95, 200))
     end = factory.Iterator((95, 199, 360))
+
+
+class MarketFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Market
+        django_get_or_create = [
+            "code",
+            "name",
+            "description",
+            "ordering",
+            "aliases",
+            "country",
+        ]
+
+    code = factory.Sequence(lambda n: b74encode(n))
+    name = factory.Sequence(lambda n: b74encode(n))
+    description = factory.Sequence(lambda n: b74encode(n))
+    ordering = factory.Sequence(lambda n: n + 1)
+    aliases = factory.Sequence(lambda n: n)
+    country = factory.Sequence(lambda n: b74encode(n))
