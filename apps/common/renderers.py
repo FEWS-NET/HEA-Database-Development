@@ -1,7 +1,6 @@
 import csv
 from io import BytesIO, TextIOWrapper
 
-from django.templatetags.static import static
 from rest_framework.renderers import BaseRenderer
 
 
@@ -67,9 +66,7 @@ class HtmlTableRenderer(BaseRenderer):
         html = (
             "<!DOCTYPE html><html><head>"
             '<meta http-equiv="Content-Type" content="text/html; charset=utf-8">'
-            '<link href="' + static("bootstrap/css/bootstrap.min.css") + '" rel="stylesheet">'
-            '<link href="' + static("css/bootstrap-responsive.min.css") + '" rel="stylesheet">'
-            '<link href="' + static("css/project.css") + '" rel="stylesheet"></head><body>'
+            "</head><body>"
         )
         data = self.prepare_data(data, accepted_media_type, renderer_context)
         if data and len(data) > 0:
