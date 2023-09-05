@@ -3,7 +3,7 @@ import json
 from rest_framework.reverse import reverse
 from rest_framework.test import APITestCase
 
-from common.models import ClassifiedProduct, UnitOfMeasure
+from common.models import ClassifiedProduct, Country, Currency, UnitOfMeasure
 
 from .factories import (
     ClassifiedProductFactory,
@@ -17,6 +17,7 @@ from .factories import (
 class CountryViewSetTestCase(APITestCase):
     @classmethod
     def setUpTestData(cls):
+        cls.existing_countries = Country.objects.count()
         cls.country1 = CountryFactory()
         cls.country2 = CountryFactory()
         cls.country3 = CountryFactory()
@@ -29,7 +30,7 @@ class CountryViewSetTestCase(APITestCase):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         result = json.loads(response.content.decode("utf-8"))
-        self.assertEqual(len(result), 4)
+        self.assertEqual(len(result), 4 + self.existing_countries)
 
     def test_filter_by_single_country_code(self):
         response = self.client.get(self.url, {"country_code": self.country1.iso3166a2})
@@ -83,6 +84,7 @@ class CountryViewSetTestCase(APITestCase):
 class CurrencyViewSetTestCase(APITestCase):
     @classmethod
     def setUpTestData(cls):
+        cls.existing_currencies = Currency.objects.all().count()
         cls.currency1 = CurrencyFactory()
         cls.currency2 = CurrencyFactory()
         cls.currency3 = CurrencyFactory()
@@ -94,7 +96,7 @@ class CurrencyViewSetTestCase(APITestCase):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         result = json.loads(response.content.decode("utf-8"))
-        self.assertEqual(len(result), 3)
+        self.assertEqual(len(result), self.existing_currencies + 3)
 
     def test_filter_by_single_currency_code(self):
         response = self.client.get(self.url, {"currency_code": self.currency1.iso4217a3})
@@ -115,6 +117,7 @@ class CurrencyViewSetTestCase(APITestCase):
 class UnitOfMeasureViewSetTestCase(APITestCase):
     @classmethod
     def setUpTestData(cls):
+        cls.existing_units = UnitOfMeasure.objects.all().count()
         cls.unit1 = UnitOfMeasureFactory()
         cls.unit2 = UnitOfMeasureFactory()
         cls.unit3 = UnitOfMeasureFactory()
@@ -130,7 +133,7 @@ class UnitOfMeasureViewSetTestCase(APITestCase):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         result = json.loads(response.content.decode("utf-8"))
-        self.assertEqual(len(result), 6)
+        self.assertEqual(len(result), self.existing_units + 6)
 
     def test_list_returns_filtered_data_by_unit_type(self):
         response = self.client.get(self.url, {"unit_type": UnitOfMeasure.VOLUME})
@@ -142,6 +145,7 @@ class UnitOfMeasureViewSetTestCase(APITestCase):
 class ClassifiedProductViewSetTestCase(APITestCase):
     @classmethod
     def setUpTestData(cls):
+        cls.existing_products = ClassifiedProduct.objects.all().count()
         cls.product1 = ClassifiedProductFactory()
         cls.product2 = ClassifiedProductFactory()
         cls.superuser = UserFactory(is_superuser=True, is_staff=True, is_active=True)
@@ -177,7 +181,7 @@ class ClassifiedProductViewSetTestCase(APITestCase):
         self.assertEqual(result[0]["common_name"], self.product2.common_name)
 
     def test_search_fields(self):
-        response = self.client.get(self.url, {"search": "Product"})
+        response = self.client.get(self.url, {"search": "Product Description"})
         self.assertEqual(response.status_code, 200)
         result = json.loads(response.content.decode("utf-8"))
         self.assertEqual(len(result), 2)
