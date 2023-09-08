@@ -411,6 +411,16 @@ class WealthGroupCharacteristicValue(common_models.Model):
             "The source of this Wealth Group Characteristic Value, such as a Community Interview (Form 3), or the Baseline Summary"  # NOQA: E501
         ),
     )
+    product = models.ForeignKey(
+        ClassifiedProduct,
+        db_column="product_code",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        verbose_name=_("Product"),
+        help_text=_("Product, e.g. Cattle"),
+        related_name="wealth_group_characteristic_values",
+    )
 
     # @TODO Are we better off with a `value = JSONField()` or `num_value`, `str_value`, `bool_value` as separate fields
     # or a single `value=CharField()` that we just store the str representation of the value in.
@@ -442,12 +452,23 @@ class WealthGroupCharacteristicValue(common_models.Model):
             if self.wealth_group.community:
                 raise ValidationError(
                     _(
-                        "A Wealth Group Characteristic Value from a Baseline Summary must be for a Baseline Wealth Group"
+                        "A Wealth Group Characteristic Value from a Baseline Summary must be for a Baseline Wealth Group"  # NOQA: E501
                     )
                 )
         elif not self.wealth_group.community:
             raise ValidationError(
                 _("A Wealth Group Characteristic Value from a %s must be for a Community Wealth Group")
+                % self.CharacteristicSource(self.source).label
+            )
+        super().clean()
+        if self.wealth_characteristic.has_product:
+            if not self.product:
+                raise ValidationError(
+                    _("A Wealth Group Characteristic Value for %s must have a product" % self.wealth_characteristic)
+                )
+        elif self.product:
+            raise ValidationError(
+                _("A Wealth Group Characteristic Value for %s must not have a product" % self.wealth_characteristic)
                 % self.CharacteristicSource(self.source).label
             )
         super().clean()
@@ -463,6 +484,15 @@ class WealthGroupCharacteristicValue(common_models.Model):
     class Meta:
         verbose_name = _("Wealth Characteristic Value")
         verbose_name_plural = _("Wealth Characteristic Values")
+        constraints = [
+            # Create a unique constraint on wealth_group, wealth_characteristic, product and source.
+            # We can only have one value from each Source (Form 3, Form 4, Summary) for each Wealth Group
+            # for each Characteristic (including the Product if appropriate).
+            models.UniqueConstraint(
+                fields=["wealth_group", "wealth_characteristic", "source", "product"],
+                name="baseline_wealthgroupcharacteristicvalue_group_characteristic_source_product_uniq",
+            ),
+        ]
 
 
 # @TODO https://fewsnet.atlassian.net/browse/HEA-93
