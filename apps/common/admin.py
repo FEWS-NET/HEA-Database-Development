@@ -59,8 +59,6 @@ class ClassifiedProductAdmin(TreeAdmin):
         "per_country_aliases__country__iso_fr_name",
         "per_country_aliases__country__iso_fr_proper",
         "per_country_aliases__country__iso_es_name",
-        "per_country_aliases__country__bgn_name",
-        "per_country_aliases__country__pcgn_name",
     ]
 
 
