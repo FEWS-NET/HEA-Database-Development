@@ -4,12 +4,15 @@ import pandas as pd
 from rest_framework.reverse import reverse
 from rest_framework.test import APITestCase
 
+from common.models import Country
+
 from .factories import CountryFactory
 
 
 class RendererTestCase(APITestCase):
     @classmethod
     def setUpTestData(cls):
+        cls.existing_countries = Country.objects.count()
         cls.num_records = 5
         cls.data = [CountryFactory() for _ in range(cls.num_records)]
 
@@ -19,7 +22,7 @@ class RendererTestCase(APITestCase):
     def test_json(self):
         response = self.client.get(self.url, {"format": "json"})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.json()), self.num_records)
+        self.assertEqual(len(response.json()), self.num_records + self.existing_countries)
 
     def test_csv(self):
         response = self.client.get(self.url, {"format": "csv"})
@@ -30,7 +33,7 @@ class RendererTestCase(APITestCase):
         except AttributeError:
             content = response.content.decode("utf-8")
         df = pd.read_csv(StringIO(content)).fillna("")
-        self.assertEqual(len(df), self.num_records)
+        self.assertEqual(len(df), self.num_records + self.existing_countries)
 
     def test_html(self):
         response = self.client.get(self.url, {"format": "html"})
@@ -41,7 +44,7 @@ class RendererTestCase(APITestCase):
             content = response.content
         df = pd.read_html(content)[0].fillna("")
         # Add 1 to self.num_records for the header row
-        self.assertEqual(len(df), self.num_records + 1)
+        self.assertEqual(len(df), self.num_records + self.existing_countries + 1)
 
     def test_xml(self):
         response = self.client.get(self.url, {"format": "xml"})

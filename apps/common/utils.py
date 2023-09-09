@@ -1,11 +1,14 @@
 import csv
+import importlib
 import logging
+from copy import deepcopy
 from datetime import datetime, timedelta
 from pathlib import Path
 
 from django.apps import apps
 from django.db.migrations.operations.base import Operation
 from django.forms.models import modelform_factory
+from treebeard.mp_tree import MP_Node
 
 logger = logging.getLogger(__name__)
 
@@ -126,21 +129,60 @@ class LoadModelFromDict(Operation):
         return "Load data into a model from a list of dicts or a delimited file"
 
 
+def class_from_name(full_name):
+    """
+    Load a class from a dot-notation string name
+    """
+    try:
+        module_name, class_name = full_name.rsplit(".", 1)
+    except ValueError as e:
+        raise ValueError(f"Can't extract separate module and class names from '{full_name}'") from e
+    # load the module, will raise ImportError if module cannot be loaded
+    m = importlib.import_module(module_name)
+    # get the class, will raise AttributeError if class cannot be found
+    c = getattr(m, class_name)
+    return c
+
+
+def get_frozen_treebeard_model(model):
+    """
+    Create a new model class from a frozen orm model that also contains the Treebeard functions
+    """
+    # Build a new base model that we can alter
+    BaseModel = deepcopy(model)
+    BaseModel._meta = deepcopy(model._meta)
+    BaseModel._meta.abstract = True
+    BaseModel._meta.local_fields = [
+        field for field in model._meta.local_fields if field.name not in ("path", "depth", "numchild")
+    ]
+
+    # Make sure  that we also set the node_order_by. It's OK to copy this from
+    # the current version of the model, because it is not allowed to change
+    # once there is any data in the table.
+    CurrentModel = class_from_name(".".join((model._meta.app_label, "models", model.__name__)))
+
+    # Create a new class with MP_Node functionality and the fields currently
+    # in the database
+    class Frozen_MP_Model(MP_Node, BaseModel):  # noqa: N801
+        node_order_by = getattr(CurrentModel, "node_order_by", None)
+
+        class Meta:
+            app_label = model._meta.app_label
+            db_table = model._meta.db_table
+            ordering = ()  # Required for correct ordering of Treebeard subclasses
+            abstract = False
+
+    if not hasattr(apps, "frozen_models_registry"):
+        apps.frozen_models_registry = []
+    apps.frozen_models_registry.append((model._meta.app_label, Frozen_MP_Model))
+
+    # We don't want to cache the model
+    del apps.all_models[model._meta.app_label]["frozen_mp_model"]
+
+    return Frozen_MP_Model
+
+
 def get_month_from_day_number(day_number):
     first_day_of_year = datetime(datetime.today().year, 1, 1)
     _date = first_day_of_year + timedelta(days=day_number - 1)  # timedelta uses 0 based index
     return _date.month
-
-
-def get_doc_strings_for_model(model_name):
-    """
-    Gets the doc strings defined in the model for references or help guide purposes
-
-    model_name - have a format app_label:model e.g. baseline:community
-    """
-    app_label, model = model_name.split(":")
-    model = apps.get_model(app_label=app_label, model_name=model)
-    if model:
-        return model.__doc__
-    else:
-        return f"Model '{model_name}' not found"

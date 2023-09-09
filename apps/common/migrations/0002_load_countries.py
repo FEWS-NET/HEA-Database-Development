@@ -1,4 +1,4 @@
-from pathlib import Path
+import os.path
 
 from django.conf import settings
 from django.db import migrations, models
@@ -13,5 +13,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        LoadModelFromDict(model="Country", data=Path(__file__).with_suffix(".txt")),
+        LoadModelFromDict(model="Country", data=os.path.splitext(os.path.abspath(__file__))[0] + ".txt"),
     ]
