@@ -69,10 +69,14 @@ def update_classifiedproducts_from_fdw(ClassifiedProduct):
         fdw_product = [product for product in fdw_products if product["cpcv2"] == classified_product.cpcv2]
         if fdw_product and len(fdw_product) == 1:
             classified_product.common_name = fdw_product[0]["common_name"]
-            if len(fdw_product[0]["aliases"]) > 0:
-                classified_product.aliases = {"other_names": ast.literal_eval(fdw_product[0]["aliases"])}
-            if len(fdw_product[0]["hs2012"]) > 0:
-                classified_product.hs2012 = {"hs2012_codes": ast.literal_eval(fdw_product[0]["hs2012"])}
+            if fdw_product[0]["aliases"]:
+                aliases = ast.literal_eval(fdw_product[0]["aliases"])
+                if aliases:
+                    classified_product.aliases = {"other_names": aliases}
+            if fdw_product[0]["hs2012"]:
+                hs2012 = ast.literal_eval(fdw_product[0]["hs2012"])
+                if hs2012:
+                    classified_product.hs2012 = {"hs2012_codes": hs2012}
             classified_product.save()
             records_updated += 1
         else:
