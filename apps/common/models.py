@@ -907,13 +907,6 @@ class ClassifiedProduct(MP_Node, Model):
 
     display_name.short_description = _("name")
 
-    def delete(self):
-        """Removes a node and all it's descendants."""
-        # @TODO Check whether this is still necessary
-        # @TODO Remove once http://code.tabo.pe/django-treebeard/issue/67/treebeard-admin-cannot-work-with-custom-pk
-        # is fixed
-        self.__class__.objects.filter(pk=self.pk).delete()
-
     def __str__(self):
         return "%s / %s" % (self.cpcv2, self.display_name())
 
