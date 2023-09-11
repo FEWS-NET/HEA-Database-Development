@@ -456,6 +456,36 @@ class CommunityWealthGroup(WealthGroup):
         proxy = True
 
 
+class WealthGroupCharacteristicValueManager(common_models.IdentifierManager):
+    def get_by_natural_key(
+        self,
+        code: str,
+        reference_year_end_date: str,
+        wealth_category: str,
+        wealth_characteristic: str,
+        source: str = "baseline_summary",
+        product: str = "",
+        full_name: str = "",
+    ):
+        criteria = {
+            "wealth_characteristic__code": wealth_characteristic,
+            "source": source,
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__code": code,
+            "wealth_group__livelihood_zone_baseline__reference_year_end_date": reference_year_end_date,
+            "wealth_group__wealth_category": wealth_category,
+        }
+        if full_name:
+            criteria["wealth_group__community__full_name"] = full_name
+        else:
+            criteria["wealth_group__community__isnull"] = True
+        if product:
+            criteria["product__cpcv2"] = product
+        else:
+            criteria["product__isnull"] = True
+
+        return self.get(**criteria)
+
+
 class WealthGroupCharacteristicValue(common_models.Model):
     """
     An attribute of a Wealth Group such as the number of school-age children.
@@ -527,6 +557,8 @@ class WealthGroupCharacteristicValue(common_models.Model):
         help_text=_("The maximum value of the possible range for this value."),
     )
 
+    objects = WealthGroupCharacteristicValueManager()
+
     def clean(self):
         if self.source == self.CharacteristicSource.SUMMARY:
             if self.wealth_group.community:
@@ -560,6 +592,17 @@ class WealthGroupCharacteristicValue(common_models.Model):
             validate_unique=False,
         )
         super().save(*args, **kwargs)
+
+    def natural_key(self):
+        return (
+            self.wealth_group.livelihood_zone_baseline.livelihood_zone_id,
+            self.wealth_group.livelihood_zone_baseline.reference_year_end_date.isoformat(),
+            self.wealth_group.wealth_category,
+            self.wealth_characteristic_id,
+            self.source,
+            self.product_id if self.product_id else "",
+            self.wealth_group.community.full_name if self.wealth_group.community else "",
+        )
 
     class Meta:
         verbose_name = _("Wealth Characteristic Value")
