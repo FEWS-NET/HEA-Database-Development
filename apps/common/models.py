@@ -914,11 +914,12 @@ class ClassifiedProduct(MP_Node, Model):
         """
         Ensure that aliases & hs2012 are lowercase and don't contain duplicates
         """
-        # @TODO Update once aliases approach is settled
-        # if self.aliases:
-        #    self.aliases = list(set([alias.lower() for alias in self.aliases if alias]))
-        # if self.hs2012:
-        #    self.hs2012 = list(set([code.lower() for code in self.hs2012 if code]))
+        # @TODO I think this should be changed for a JSON field to something like:
+        # {key.lower(): value.lower() for key, value in aliases.items()} ?
+        if self.aliases:
+            self.aliases = list(set([alias.lower() for alias in self.aliases if alias]))
+        if self.hs2012:
+            self.hs2012 = list(set([code.lower() for code in self.hs2012 if code]))
 
     def save(self, *args, **kwargs):
         self.calculate_fields()
