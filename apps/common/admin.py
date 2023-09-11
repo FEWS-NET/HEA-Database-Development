@@ -42,6 +42,8 @@ class ClassifiedProductAdmin(TreeAdmin):
         "scientific_name",
         "unit_of_measure",
         "kcals_per_unit",
+        "aliases",
+        "hs2012",
         "_position",
         "_ref_node_id",
     ]
