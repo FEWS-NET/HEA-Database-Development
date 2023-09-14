@@ -87,6 +87,11 @@ class WealthCharacteristic(ReferenceData):
         BOOL = "bool", _("Boolean")
         # OTHER = "other", _("Other")
 
+    has_product = models.BooleanField(
+        default=False,
+        verbose_name=_("Has Product?"),
+        help_text=_("Does a value for this characteristic also require a product?"),
+    )
     variable_type = models.CharField(
         verbose_name=_(
             "Variable Type",

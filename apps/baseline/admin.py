@@ -102,7 +102,7 @@ class LivelihoodZoneBaselineAdmin(GeoModelAdmin):
 
 
 class CommunityAdmin(GeoModelAdmin):
-    fields = ("name", "livelihood_zone_baseline", "interview_number", "interviewers", "geography")
+    fields = ("name", "livelihood_zone_baseline", "geography")
     list_display = (
         "name",
         "livelihood_zone_baseline",
