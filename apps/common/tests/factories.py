@@ -154,7 +154,6 @@ class UnitOfMeasureConversionFactory(factory.django.DjangoModelFactory):
         django_get_or_create = [
             "from_unit",
             "to_unit",
-            "conversion_factor",
         ]
 
     from_unit = factory.SubFactory(UnitOfMeasureFactory)

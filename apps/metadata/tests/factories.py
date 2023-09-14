@@ -87,16 +87,12 @@ class MarketFactory(factory.django.DjangoModelFactory):
         model = Market
         django_get_or_create = [
             "code",
-            "name",
-            "description",
-            "ordering",
-            "aliases",
             "country",
         ]
 
-    code = factory.Sequence(lambda n: f"code {n}")
-    name = factory.Sequence(lambda n: f"name {n}")
-    description = factory.Sequence(lambda n: f"description {n}")
+    code = factory.Sequence(lambda n: f"code{n}")
+    name = factory.LazyAttribute(lambda o: f"{o.code} name")
+    description = factory.LazyAttribute(lambda o: f"{o.code} description")
     ordering = factory.Sequence(lambda n: n % 1000)
     aliases = factory.Sequence(lambda n: [f"alias{n + i}" for i in range(n % 10)])
     country = factory.SubFactory(CountryFactory)
