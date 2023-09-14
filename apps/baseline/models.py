@@ -346,10 +346,14 @@ class WealthGroup(common_models.Model):
         help_text=_("Wealth Category, e.g. Poor or Better Off"),
     )
     percentage_of_households = models.PositiveSmallIntegerField(
+        blank=True,
+        null=True,
         verbose_name=_("Percentage of households"),
         help_text=_("Percentage of households in the Community or Livelihood Zone that are in this Wealth Group"),
     )
-    average_household_size = models.PositiveSmallIntegerField(verbose_name=_("Average household size"))
+    average_household_size = models.PositiveSmallIntegerField(
+        blank=True, null=True, verbose_name=_("Average household size")
+    )
 
     objects = WealthGroupManager()
 
