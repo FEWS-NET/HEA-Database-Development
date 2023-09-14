@@ -868,26 +868,27 @@ class ClassifiedProduct(MP_Node, Model):
     )
     description = models.CharField(max_length=800, verbose_name=_("description"))
     common_name = NameField(blank=True, verbose_name=_("common name"))
-
-    # @TODO Do we use this approach for compatibility with FDW and reuse of Lookups
-    # or do we use the Tranlsation approach with a separate table (and what will that do for country-specific aliases)
-    # or do we use a variation of FDW only with JSONField to maintain database independence.
-    # aliases = ArrayField(models.CharField(max_length=60), blank=True, null=True, verbose_name=_("Aliases"))
+    aliases = models.JSONField(
+        blank=True,
+        null=True,
+        verbose_name=_("aliases"),
+        help_text=_("A list of alternate names for the product."),
+    )
     # Note that we store and look up HS2012 values as xxxx.yy, e.g. Durum Wheat is 1001.19 rather than 100119,
     # because it avoids confusion between the CPCv2 and HS2012 codes.
-    # hs2012 = ArrayField(
-    #    models.CharField(max_length=60),
-    #    blank=True,
-    #    null=True,
-    #    verbose_name=_("HS2012"),
-    #    help_text=_(
-    #        "The 6-digit codes for the Product in the Harmonized Commodity Description and Coding System (HS), stored as XXXX.YY"  # NOQA: E501
-    #    ),
-    # )
+    hs2012 = models.JSONField(
+        blank=True,
+        null=True,
+        verbose_name=_("HS2012"),
+        help_text=_(
+            "The 6-digit codes for the Product in the Harmonized Commodity Description and Coding System (HS), "
+            "stored as XXXX.YY "
+        ),
+    )
     scientific_name = models.CharField(max_length=100, verbose_name="scientific name", blank=True, null=True)
 
     unit_of_measure = models.ForeignKey(
-        UnitOfMeasure, db_column="unit_code", on_delete=models.PROTECT, verbose_name=_("Unit of Measure")
+        UnitOfMeasure, db_column="unit_code", null=True, on_delete=models.PROTECT, verbose_name=_("Unit of Measure")
     )
     kcals_per_unit = models.PositiveSmallIntegerField(blank=True, null=True, verbose_name=_("Kcals per Unit"))
 
@@ -906,13 +907,6 @@ class ClassifiedProduct(MP_Node, Model):
 
     display_name.short_description = _("name")
 
-    def delete(self):
-        """Removes a node and all it's descendants."""
-        # @TODO Check whether this is still necessary
-        # @TODO Remove once http://code.tabo.pe/django-treebeard/issue/67/treebeard-admin-cannot-work-with-custom-pk
-        # is fixed
-        self.__class__.objects.filter(pk=self.pk).delete()
-
     def __str__(self):
         return "%s / %s" % (self.cpcv2, self.display_name())
 
@@ -920,11 +914,12 @@ class ClassifiedProduct(MP_Node, Model):
         """
         Ensure that aliases & hs2012 are lowercase and don't contain duplicates
         """
-        # @TODO Update once aliases approach is settled
-        # if self.aliases:
-        #    self.aliases = list(set([alias.lower() for alias in self.aliases if alias]))
-        # if self.hs2012:
-        #    self.hs2012 = list(set([code.lower() for code in self.hs2012 if code]))
+        # @TODO I think this should be changed for a JSON field to something like:
+        # {key.lower(): value.lower() for key, value in aliases.items()} ?
+        if self.aliases:
+            self.aliases = list(set([alias.lower() for alias in self.aliases if alias]))
+        if self.hs2012:
+            self.hs2012 = list(set([code.lower() for code in self.hs2012 if code]))
 
     def save(self, *args, **kwargs):
         self.calculate_fields()
