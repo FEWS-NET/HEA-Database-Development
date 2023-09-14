@@ -17,6 +17,7 @@ from common.models import (
     UnitOfMeasure,
     UnitOfMeasureConversion,
 )
+from common.utils import get_month_from_day_number
 from metadata.models import (
     HazardCategory,
     LivelihoodActivityScenario,
@@ -227,6 +228,9 @@ class Community(common_models.Model):
         help_text=_("The names of interviewers who interviewed the Community, in case any clarification is neeeded."),
     )
 
+    class ExtraMeta:
+        identifier = ["name"]
+
     class Meta:
         verbose_name = _("Community")
         verbose_name_plural = _("Communities")
@@ -398,13 +402,13 @@ class WealthGroupCharacteristicValue(common_models.Model):
     # Do we need `min_value` and `max_value` to store the range for a Baseline Wealth Group.
     # E..g. See CD09_Final 'WB':$AS:$AT
     min_value = models.JSONField(
-        verbose_name=_("value"),
+        verbose_name=_("min_value"),
         blank=True,
         null=True,
         help_text=_("The minimum value of the possible range for this value."),
     )
     max_value = models.JSONField(
-        verbose_name=_("value"),
+        verbose_name=_("max_value"),
         blank=True,
         null=True,
         help_text=_("The maximum value of the possible range for this value."),
@@ -1206,6 +1210,9 @@ class SeasonalActivity(common_models.Model):
             ),
         ]
 
+    class ExtraMeta:
+        identifier = ["activity_type", "season", "product"]
+
 
 class SeasonalActivityOccurrence(common_models.Model):
     """
@@ -1241,6 +1248,12 @@ class SeasonalActivityOccurrence(common_models.Model):
     end = models.PositiveSmallIntegerField(
         validators=[MaxValueValidator(365), MinValueValidator(1)], verbose_name=_("End Day")
     )
+
+    def start_month(self):
+        return get_month_from_day_number(self.start)
+
+    def end_month(self):
+        return get_month_from_day_number(self.end)
 
     def calculate_fields(self):
         self.livelihood_zone_baseline = self.seasonal_activity.livelihood_zone_baseline
@@ -1441,6 +1454,18 @@ class MarketPrice(common_models.Model):
         validators=[MaxValueValidator(365), MinValueValidator(1)], verbose_name=_("High Price End Day")
     )
     high_price = models.FloatField(verbose_name=_("High price"))
+
+    def low_price_start_month(self):
+        return get_month_from_day_number(self.low_price_start)
+
+    def low_price_end_month(self):
+        return get_month_from_day_number(self.low_price_end)
+
+    def high_price_start_month(self):
+        return get_month_from_day_number(self.high_price_start)
+
+    def high_price_end_month(self):
+        return get_month_from_day_number(self.high_price_end)
 
     class Meta:
         verbose_name = _("Market Price")

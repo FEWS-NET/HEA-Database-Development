@@ -1,0 +1,156 @@
+/* Inline admin's collapse class conflict with the navbar admin */
+.module.collapse:not(.show) {
+    display: block !important;
+}
+
+/* For the navbar menu list, remove bullet from the list */
+ul > li {
+    list-style: none !important;
+}
+
+/*Content is limited to 100% width, better render with larger width*/
+.dashboard #content {
+    width: 1000px;
+}
+#content-main{
+    border: 1px solid var(--hairline-color);
+    background: var(--darkened-bg);
+}
+
+
+/*Navbar styles*/
+
+.dropdown-toggle {
+    outline: 0;
+}
+
+.nav-flush .nav-link {
+    border-radius: 0;
+}
+
+.btn-toggle {
+    display: inline-flex;
+    align-items: center;
+    padding: .25rem .5rem;
+    font-weight: 600;
+    color: rgba(0, 0, 0, .65);
+    background-color: transparent;
+    border: 0;
+}
+
+.btn-toggle:hover,
+.btn-toggle:focus {
+    color: rgba(0, 0, 0, .85);
+    background-color: #d2f4ea;
+}
+
+.btn-toggle::before {
+    width: 1.25em;
+    line-height: 0;
+    content: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='rgba%280,0,0,.5%29' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M5 14l6-6-6-6'/%3e%3c/svg%3e");
+    transition: transform .35s ease;
+    transform-origin: .5em 50%;
+}
+
+.btn-toggle[aria-expanded="true"] {
+    color: rgba(0, 0, 0, .85);
+}
+
+.btn-toggle[aria-expanded="true"]::before {
+    transform: rotate(90deg);
+}
+
+.btn-toggle-nav a {
+    display: inline-flex;
+    padding: .1875rem .5rem;
+    margin-top: .125rem;
+    margin-left: 1.25rem;
+    text-decoration: none;
+}
+
+.btn-toggle-nav a:hover,
+.btn-toggle-nav a:focus {
+    background-color: #d2f4ea;
+}
+
+.scrollarea {
+    overflow-y: auto;
+}
+
+.fw-semibold {
+    font-weight: 600;
+}
+
+.lh-tight {
+    line-height: 1.25;
+}
+
+/*For admin menu*/
+
+/* CSS for hover effect */
+.card:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.menu-category {
+    padding: 10px;
+    border-radius: 0px;
+    margin-bottom: 30px;
+    box-shadow: 0 0 5px var(--primary);
+
+}
+
+.card {
+    margin: 10px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    word-wrap: break-word;
+    background-color: #fff;
+    background-clip: border-box;
+    border: 1px solid rgba(0, 0, 0, .125);
+    border-radius: 0px !important;
+}
+
+
+/* Style for the outer container */
+.outer-container {
+    position: relative;
+    /*border: 1px solid #ccc;*/
+    padding: 20px;
+}
+
+/* Style for the recent actions div */
+.recent-actions {
+    position: absolute !important;
+    top: 10px; /* Adjust the top distance as needed */
+    right: 10px; /* Adjust the right distance as needed */
+    background-color: #f8f8f8;
+    border: 1px solid #ddd;
+    padding: 10px;
+    width: 200px; /* Set the width of the recent actions div */
+}
+
+
+.form-row {
+  overflow: hidden;
+  padding: 10px;
+  font-size: 0.8125rem;
+  border-bottom: 0px!important;
+}
+
+
+textarea{
+    height: 60px;
+}
+
+input[type="text"], input[type="password"], input[type="email"], input[type="url"], input[type="number"], input[type="tel"], textarea, select, .vTextField {
+  border: 1px solid var(--border-color);
+  border-radius: 0px;
+  padding: 5px 6px;
+  margin-top: 0;
+  color: var(--body-fg);
+  background-color: var(--body-bg);
+}
