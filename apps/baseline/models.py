@@ -253,17 +253,6 @@ class Community(common_models.Model):
         verbose_name=_("Livelihood Zone Baseline"),
     )
     geography = models.GeometryField(geography=True, dim=2, blank=True, null=True, verbose_name=_("geography"))
-    # Typicallly a number, but sometimes a code, e.g. SO03_NWA_26Nov15
-    # See https://docs.google.com/spreadsheets/d/1wuXjjmQXW9qG5AV8MRKHVadrFUhleUGN/
-    interview_number = models.CharField(
-        max_length=10,
-        verbose_name=_("Interview Number"),
-        help_text=_("The interview number from 1 - 12 or interview code assigned to the Community"),
-    )
-    interviewers = models.CharField(
-        verbose_name=_("Interviewers"),
-        help_text=_("The names of interviewers who interviewed the Community, in case any clarification is neeeded."),
-    )
 
     objects = CommunityManager()
 
