@@ -188,8 +188,8 @@ def get_month_from_day_number(day_number):
 
 
 def b74encode(n):
-    """ Generates short, unique strings from a sequence number, for test data for short CharFields
-    (5,476 codes in two characters instead of the 100 that 00-99 permits). """
+    """Generates short, unique strings from a sequence number, for test data for short CharFields
+    (5,476 codes in two characters instead of the 100 that 00-99 permits)."""
     alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_`\"!$'()*,-+"
     if n == 0:
         return alphabet[n]
