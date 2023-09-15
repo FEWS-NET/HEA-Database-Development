@@ -349,8 +349,8 @@ class MeatProductionFactory(LivelihoodActivityFactory):
 
     strategy_type = "MeatProduction"
     quantity_produced = factory.LazyAttribute(lambda o: o.animals_slaughtered * o.carcass_weight)
-    animals_slaughtered = fuzzy.FuzzyInteger(1, 200)
-    carcass_weight = fuzzy.FuzzyInteger(50, 150)
+    animals_slaughtered = fuzzy.FuzzyInteger(2, 200)
+    carcass_weight = fuzzy.FuzzyInteger(100, 150)
 
 
 class LivestockSalesFactory(LivelihoodActivityFactory):
@@ -681,12 +681,12 @@ class ExpandabilityFactorFactory(factory.django.DjangoModelFactory):
         livelihood_zone_baseline=factory.SelfAttribute("..wealth_group.livelihood_zone_baseline"),
     )
     wealth_group = factory.SubFactory(WealthGroupFactory)
-    percentage_produced = fuzzy.FuzzyInteger(10, 100)
-    percentage_sold = fuzzy.FuzzyInteger(0, 100)
-    percentage_other_uses = fuzzy.FuzzyInteger(0, 100)
-    percentage_consumed = fuzzy.FuzzyInteger(0, 100)
-    percentage_income = fuzzy.FuzzyInteger(0, 100)
-    percentage_expenditure = fuzzy.FuzzyInteger(0, 100)
+    percentage_produced = fuzzy.FuzzyInteger(10, 200)
+    percentage_sold = fuzzy.FuzzyInteger(0, 200)
+    percentage_other_uses = fuzzy.FuzzyInteger(0, 200)
+    percentage_consumed = fuzzy.FuzzyInteger(0, 200)
+    percentage_income = fuzzy.FuzzyInteger(0, 200)
+    percentage_expenditure = fuzzy.FuzzyInteger(0, 200)
     remark = factory.Sequence(lambda n: f"ExpandabilityFactor {n} remark")
 
 
