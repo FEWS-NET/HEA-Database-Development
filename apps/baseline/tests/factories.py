@@ -188,6 +188,20 @@ class WealthGroupCharacteristicValueFactory(factory.django.DjangoModelFactory):
     min_value = factory.LazyAttribute(lambda o: o.value - 5)
     max_value = factory.LazyAttribute(lambda o: o.value + 5)
 
+    @factory.lazy_attribute
+    def source(self):
+        if not self.wealth_group.community:
+            return WealthGroupCharacteristicValue.CharacteristicSource.SUMMARY
+        else:
+            return WealthGroupCharacteristicValue.CharacteristicSource.WEALTH_GROUP
+
+    @factory.lazy_attribute
+    def product(self):
+        if self.wealth_characteristic.has_product:
+            return ClassifiedProductFactory()
+        else:
+            return None
+
 
 class LivelihoodStrategyFactory(factory.django.DjangoModelFactory):
     class Meta:
