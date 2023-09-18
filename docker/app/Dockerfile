@@ -46,7 +46,7 @@ RUN pip install --quiet --no-cache-dir --upgrade pip
 RUN pip --quiet --no-cache-dir install "setuptools<58.0.0"
 # GDAL requires numpy for some extensions to build, make sure the numpy version
 # specified here matches requirements/base.txt
-RUN VERSION=$(gdal-config --version); CFLAGS=$(gdal-config --cflags) pip install --quiet --no-cache-dir numpy==1.25.2 GDAL[numpy]==${VERSION}
+RUN VERSION=$(gdal-config --version); CFLAGS=$(gdal-config --cflags) pip install --quiet --no-cache-dir numpy==1.23.5 GDAL[numpy]==${VERSION}
 
 # Install the Python requirements
 COPY requirements /usr/src/app/requirements
