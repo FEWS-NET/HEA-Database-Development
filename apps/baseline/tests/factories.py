@@ -129,8 +129,6 @@ class CommunityFactory(factory.django.DjangoModelFactory):
     name = factory.Sequence(lambda n: f"Community {n} name")
     livelihood_zone_baseline = factory.SubFactory(LivelihoodZoneBaselineFactory)
     geography = None
-    interviewers = factory.Sequence(lambda n: ", ".join(f"interviewer {i}" for i in range(n)))
-    interview_number = factory.Sequence(lambda n: f"i{n}")
 
 
 class WealthGroupFactory(factory.django.DjangoModelFactory):
