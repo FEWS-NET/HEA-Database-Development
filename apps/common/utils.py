@@ -1,3 +1,4 @@
+import contextlib
 import csv
 import importlib
 import logging
@@ -179,6 +180,40 @@ def get_frozen_treebeard_model(model):
     del apps.all_models[model._meta.app_label]["frozen_mp_model"]
 
     return Frozen_MP_Model
+
+
+@contextlib.contextmanager
+def conditional_logging(logger=None, flush_level=logging.ERROR, capacity=500):
+    """
+    A context manager that logs messages to a buffer and only outputs them if one of the messages is at or above
+    the flush_level.
+
+    """
+    if not isinstance(logger, logging.Logger):
+        logger = logging.getLogger(logger)
+
+    old_handlers = [handler for handler in logger.handlers]
+    for handler in old_handlers:
+        logger.removeHandler(handler)
+
+    new_handlers = [
+        logging.handlers.MemoryHandler(capacity, flushLevel=flush_level, target=handler, flushOnClose=False)
+        for handler in old_handlers
+    ]
+    for handler in new_handlers:
+        logger.addHandler(handler)
+
+    try:
+        yield
+    except Exception:
+        for handler in new_handlers:
+            handler.flush()
+        raise
+    finally:
+        for handler in old_handlers:
+            logger.addHandler(handler)
+        for handler in new_handlers:
+            logger.removeHandler(handler)
 
 
 def get_month_from_day_number(day_number):
