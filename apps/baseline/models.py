@@ -438,6 +438,7 @@ class WealthGroupCharacteristicValue(common_models.Model):
     )
 
     def clean(self):
+        # Validate `source`
         if self.source == self.CharacteristicSource.SUMMARY:
             if self.wealth_group.community:
                 raise ValidationError(
@@ -450,7 +451,7 @@ class WealthGroupCharacteristicValue(common_models.Model):
                 _("A Wealth Group Characteristic Value from a %s must be for a Community Wealth Group")
                 % self.CharacteristicSource(self.source).label
             )
-        super().clean()
+        # Validate `product`
         if self.wealth_characteristic.has_product:
             if not self.product:
                 raise ValidationError(
@@ -461,6 +462,19 @@ class WealthGroupCharacteristicValue(common_models.Model):
                 _("A Wealth Group Characteristic Value for %s must not have a product" % self.wealth_characteristic)
                 % self.CharacteristicSource(self.source).label
             )
+        # Validate `value` is between min_value and max_value, if either are numerics (strings eg "1" not validated)
+        if (
+            isinstance(self.min_value, numbers.Number)
+            and isinstance(self.value, numbers.Number)
+            and self.min_value > self.value
+        ):
+            raise ValidationError(_("Value must be higher than min_value."))
+        if (
+            isinstance(self.max_value, numbers.Number)
+            and isinstance(self.value, numbers.Number)
+            and self.max_value < self.value
+        ):
+            raise ValidationError(_("Value must be lower than max_value."))
         super().clean()
 
     def save(self, *args, **kwargs):
@@ -483,22 +497,6 @@ class WealthGroupCharacteristicValue(common_models.Model):
                 name="baseline_wealthgroupcharacteristicvalue_group_characteristic_source_product_uniq",
             ),
         ]
-
-    def clean(self):
-        # Validate value is between min_value and max_value, if either are numerics (strings eg "1" not validated)
-        if (
-            isinstance(self.min_value, numbers.Number)
-            and isinstance(self.value, numbers.Number)
-            and self.min_value > self.value
-        ):
-            raise ValidationError(_("Value must be higher than min_value."))
-        if (
-            isinstance(self.max_value, numbers.Number)
-            and isinstance(self.value, numbers.Number)
-            and self.max_value < self.value
-        ):
-            raise ValidationError(_("Value must be lower than max_value."))
-        super().clean()
 
 
 # @TODO https://fewsnet.atlassian.net/browse/HEA-93
