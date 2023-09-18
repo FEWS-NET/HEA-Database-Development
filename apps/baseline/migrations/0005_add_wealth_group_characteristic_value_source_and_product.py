@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("baseline", "0003_add_community_full_name_and_code"),
+        ("baseline", "0004_correct_expandibility_percentage_spelling"),
     ]
 
     operations = [
