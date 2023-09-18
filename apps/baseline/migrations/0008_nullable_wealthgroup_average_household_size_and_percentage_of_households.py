@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("baseline", "0006_remove_community_interviewers_and_more"),
+        ("baseline", "0007_remove_community_interviewers_and_more"),
     ]
 
     operations = [

@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("baseline", "0004_add_wealth_group_characteristic_value_source_and_product"),
+        ("baseline", "0005_add_wealth_group_characteristic_value_source_and_product"),
     ]
 
     operations = [

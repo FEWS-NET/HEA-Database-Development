@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("baseline", "0005_community_baseline_community_livelihood_zone_baseline_full_name_uniq_and_more"),
+        ("baseline", "0006_community_baseline_community_livelihood_zone_baseline_full_name_uniq_and_more"),
     ]
 
     operations = [
