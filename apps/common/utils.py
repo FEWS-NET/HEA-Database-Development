@@ -186,3 +186,16 @@ def get_month_from_day_number(day_number):
     first_day_of_year = datetime(datetime.today().year, 1, 1)
     _date = first_day_of_year + timedelta(days=day_number - 1)  # timedelta uses 0 based index
     return _date.month
+
+
+def b74encode(n):
+    """Generates short, unique strings from a sequence number, for test data for short CharFields
+    (5,476 codes in two characters instead of the 100 that 00-99 permits)."""
+    alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_`\"!$'()*,-+"
+    if n == 0:
+        return alphabet[n]
+    encoded = ""
+    while n > 0:
+        n, r = divmod(n, len(alphabet))
+        encoded = alphabet[r] + encoded
+    return encoded
