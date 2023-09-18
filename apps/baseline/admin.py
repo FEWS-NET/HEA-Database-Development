@@ -90,12 +90,12 @@ class LivelihoodZoneBaselineAdmin(GeoModelAdmin):
         "reference_year_end_date",
     )
     search_fields = [
-        "livelihood_zone",
-        "main_livelihood_category",
-        "source_organization",
+        "livelihood_zone__name",
+        "main_livelihood_category__name",
+        "source_organization__name",
     ]
     list_filter = [
-        "source_organization",
+        "source_organization__name",
         "livelihood_zone__country",
     ]
     date_hierarchy = "reference_year_start_date"
@@ -393,13 +393,13 @@ class CommunityCropProductionAdmin(admin.ModelAdmin):
         "unit_of_measure",
     )
     search_fields = (
-        "crop",
+        "crop__description",
         "crop_purpose",
-        "season",
+        "season__name",
     )
     list_filter = (
         "community__livelihood_zone_baseline__livelihood_zone",
-        "community",
+        "community__name",
         "crop",
         "season",
     )
