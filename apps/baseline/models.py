@@ -1,6 +1,7 @@
 """
 Models for managing HEA Baseline Surveys
 """
+import numbers
 
 from django.contrib.gis.db import models
 from django.core.exceptions import ValidationError
@@ -483,6 +484,22 @@ class WealthGroupCharacteristicValue(common_models.Model):
             ),
         ]
 
+    def clean(self):
+        # Validate value is between min_value and max_value, if either are numerics (strings eg "1" not validated)
+        if (
+            isinstance(self.min_value, numbers.Number)
+            and isinstance(self.value, numbers.Number)
+            and self.min_value > self.value
+        ):
+            raise ValidationError(_("Value must be higher than min_value."))
+        if (
+            isinstance(self.max_value, numbers.Number)
+            and isinstance(self.value, numbers.Number)
+            and self.max_value < self.value
+        ):
+            raise ValidationError(_("Value must be lower than max_value."))
+        super().clean()
+
 
 # @TODO https://fewsnet.atlassian.net/browse/HEA-93
 # Does this name cause confusion for people who think Strategy === Coping Strategy?
@@ -669,10 +686,10 @@ class LivelihoodActivity(common_models.Model):
         self.livelihood_zone_baseline = self.livelihood_strategy.livelihood_zone_baseline
         self.strategy_type = self.livelihood_strategy.strategy_type
 
-        # @TODO This hasn't been reviewed yet.
-        self.is_staple = self.wealth_group.community.livelihood_zone_baseline.staple_set(
-            item=self.output_item
-        ).exists()
+        # @TODO This hasn't been reviewed yet, and fix
+        # self.is_staple = self.wealth_group.community.livelihood_zone_baseline.staple_set(
+        #     item=self.output_item
+        # ).exists()
 
     # These formulae are copied directly from the BSS cells:
 
@@ -731,15 +748,34 @@ class LivelihoodActivity(common_models.Model):
                 _("Kcals consumed for a Livelihood Activity must be quantity consumed multiplied by kcals per unit")
             )
 
-    # @TODO Do we use Django Forms as a separate validation layer, and load the data from the dataframe into a Form
-    # instance and then check whether it is valid.  See Two Scoops for an explanation.
-    def clean(self):
-        if self.wealth_group.livelihood_zone_baseline != self.livelihood_strategy.livelihood_zone_baseline:
+    def validate_strategy_type(self):
+        if (
+            type(self) not in {LivelihoodActivity, BaselineLivelihoodActivity, ResponseLivelihoodActivity}
+            and self.strategy_type != self._meta.object_name
+        ):
+            raise ValidationError(
+                _(
+                    f"Incorrect Livelihood Activity strategy type. Found {self.strategy_type}. Expected {self._meta.object_name}."  # NOQA: E501
+                )
+            )
+
+    def validate_livelihood_zone_baseline(self):
+        if not (
+            self.wealth_group.livelihood_zone_baseline
+            == self.livelihood_strategy.livelihood_zone_baseline
+            == self.livelihood_zone_baseline
+        ):
             raise ValidationError(
                 _(
                     "Wealth Group and Livelihood Strategy for a Livelihood Activity must belong to the same Livelihood Zone Baseline"  # NOQA: E501
                 )
             )
+
+    # @TODO Do we use Django Forms as a separate validation layer, and load the data from the dataframe into a Form
+    # instance and then check whether it is valid.  See Two Scoops for an explanation.
+    def clean(self):
+        self.validate_livelihood_zone_baseline()
+        self.validate_strategy_type()
         self.validate_quantity_produced()
         self.validate_quantity_consumed()
         self.validate_income()
@@ -1639,11 +1675,11 @@ class ExpandabilityFactor(models.Model):
     percentage_sold = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Sold/Exchanged"))
     percentage_other_uses = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Other Uses"))
     # Can normally be calculated / validated as `quantity_received - quantity_sold - quantity_other_uses`
-    percentge_consumed = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Consumed"))
+    percentage_consumed = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Consumed"))
 
     # Can be calculated / validated as `quantity_sold * price` for livelihood strategies that involve the sale of
     # a proportion of the household's own production.
-    precentage_income = models.FloatField(blank=True, null=True, help_text=_("Income"))
+    percentage_income = models.FloatField(blank=True, null=True, help_text=_("Income"))
     # Can be calculated / validated as `quantity_consumed * price` for livelihood strategies that involve the purchase
     # of external goods or services.
     percentage_expenditure = models.FloatField(blank=True, null=True, help_text=_("Expenditure"))

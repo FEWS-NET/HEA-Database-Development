@@ -557,8 +557,8 @@ class ExpandabilityFactorAdmin(admin.ModelAdmin):
         "percentage_produced",
         "percentage_sold",
         "percentage_other_uses",
-        "percentge_consumed",
-        "precentage_income",
+        "percentage_consumed",
+        "percentage_income",
         "percentage_expenditure",
         "remark",
     )
@@ -568,8 +568,8 @@ class ExpandabilityFactorAdmin(admin.ModelAdmin):
         "percentage_produced",
         "percentage_sold",
         "percentage_other_uses",
-        "percentge_consumed",
-        "precentage_income",
+        "percentage_consumed",
+        "percentage_income",
         "percentage_expenditure",
     )
     search_fields = ("livelihood_strategy", "wealth_group")
