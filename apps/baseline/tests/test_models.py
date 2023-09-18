@@ -1,10 +1,10 @@
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 
+from baseline.models import WealthGroupCharacteristicValue
 from common.tests.factories import ClassifiedProductFactory
 from common.utils import conditional_logging
 
-from ..models import WealthGroupCharacteristicValue
 from .factories import CommunityFactory, WealthGroupCharacteristicValueFactory
 
 
