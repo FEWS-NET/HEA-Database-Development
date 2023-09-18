@@ -7,11 +7,11 @@ import itertools
 import logging
 from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Optional
 
 import luigi
 import pandas as pd
 from django.core.management import call_command
+from django.db.models import ForeignKey
 
 # from django.conf import settings
 from kiluigi import PipelineError
@@ -54,6 +54,30 @@ def get_index(search_text: str | list[str], data: pd.Series) -> tuple[int, int]:
     return index
 
 
+def verbose_pivot(df: pd.DataFrame, values: str | list[str], index: str | list[str], columns: str | list[str]):
+    """
+    Pivot a DataFrame, or log a detailed exception in the event of a failure
+
+    Failures are typically caused by duplicate entries in the index.
+    """
+    # Make sure index and columns are lists so we can concatenate them in the error handler, if needed.
+    if isinstance(index, str):
+        index = [index]
+    if isinstance(columns, str):
+        columns = [columns]
+    try:
+        return pd.pivot(df, values=values, index=index, columns=columns).reset_index()
+    except ValueError as e:
+        duplicates = df.groupby(index + columns).size().reset_index(name="count")
+
+        # Filter for the entries that appear more than once, i.e., duplicates
+        duplicates = duplicates[duplicates["count"] > 1]
+
+        error_df = pd.merge(df, duplicates[index + columns], on=index + columns)
+
+        raise PipelineError(str(e) + "\n" + error_df.to_markdown()) from e
+
+
 class GetBSS(luigi.ExternalTask):
     """
     External Task that returns a Target for accessing the BSS spreadsheet.
@@ -70,7 +94,7 @@ class GetBSS(luigi.ExternalTask):
                 mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             )
             if not target.exists():
-                raise PipelineError("No local or Google Drive file matching %s" % self.path)
+                raise PipelineError("No local or Google Drive file matching %s" % self.bss_path)
         return target
 
 
@@ -150,7 +174,9 @@ class NormalizeWB(luigi.Task):
                     "source_organization": [
                         metadata.source_organization,
                     ],  # natural key is always a list
-                    "main_livelihood_category": metadata.main_livelihood_category.lower(),
+                    "main_livelihood_category": str(metadata.main_livelihood_category).lower()
+                    if metadata.main_livelihood_category
+                    else "agro-pastoral",  # @TODO Remove this temporary default after Save have completed BSS Metadata
                     "reference_year_start_date": metadata.reference_year_start_date.date().isoformat(),
                     "reference_year_end_date": metadata.reference_year_end_date.date().isoformat(),
                     "valid_from_date": metadata.valid_from_date.date().isoformat(),
@@ -297,38 +323,17 @@ class NormalizeWB(luigi.Task):
             )
         ]
 
-        # Report unmatched metadata
-        errors = []
-        for column in ["wealth_category", "wealth_characteristic", "product"]:
-            if char_df[column].isnull().values.any():
-
-                unmatched_metadata = (
-                    char_df[
-                        (char_df[column].isnull())
-                        & ~((char_df[column + "_original"].isnull()) | (char_df[column + "_original"].eq("")))
-                    ][column + "_original"]
-                    .sort_values()
-                    .unique()
-                )
-                for value in unmatched_metadata:
-                    error = f"Unmatched remote metadata with {column} '{value}'"
-                    errors.append(error)
-                    logger.info(error)
-
-        if errors:
-            raise PipelineError(f"{self}: Missing or inconsistent metadata in BSS", errors=errors)
-
         # Split out the summary data
         summary_df = char_df[char_df["interview_label"].isin(["summary", "min_value", "max_value"])]
         # Drop unwanted columns
         summary_df = summary_df.drop(["full_name", "interviewee_wealth_category"], axis="columns")
         # Pivot the value, min_value and max_value back into columns
-        summary_df = pd.pivot(
+        summary_df = verbose_pivot(
             summary_df,
             values="value",
             index=[col for col in summary_df.columns if col not in ["interview_label", "value"]],
             columns="interview_label",
-        ).reset_index()
+        )
         summary_df.columns.name = None
         summary_df = summary_df.rename(columns={"summary": "value"})
         # Add the source column
@@ -392,9 +397,10 @@ class NormalizeWB(luigi.Task):
         ]
 
         # Pivot the percentage of households and household size back into columns
-        wealth_group_df = pd.pivot(
+        wealth_group_df.to_csv("/home/roger/Temp/df.csv")
+        wealth_group_df = verbose_pivot(
             wealth_group_df, values="value", index=["wealth_category", "full_name"], columns="wealth_characteristic"
-        ).reset_index()
+        )
         wealth_group_df = wealth_group_df.rename(
             columns={
                 "percentage of households": "percentage_of_households",
@@ -474,6 +480,36 @@ class ValidateBaseline(luigi.Task):
         Validate the normalized data and raise a PipelineError if it isn't valid
         """
         errors = []
+        for model_name, instances in data.items():
+            model = class_from_name(f"baseline.models.{model_name}")
+            # Ignore non-`baseline` models.
+            # The normalized data can include other models, e.g. from `metadata`,
+            # but those records must be loaded separately to ensure that they are properly reviewed.
+            if model._meta.app_label == "baseline":
+                df = pd.DataFrame.from_records(instances)
+
+                for field in model._meta.get_fields():
+                    # Only validate foreign keys to model that aren't in the baseline app.
+                    # The data can contain natural key references to parent models within
+                    # baseline, and the fixture will load the parent and the child in the
+                    # same transaction in ImportBaseline below.
+                    if isinstance(field, ForeignKey) and field.related_model._meta.app_label != "baseline":
+                        column = field.name
+                        if df[column].isnull().values.any():
+                            unmatched_metadata = (
+                                df[
+                                    (df[column].isnull())
+                                    & ~((df[column + "_original"].isnull()) | (df[column + "_original"].eq("")))
+                                ][column + "_original"]
+                                .sort_values()
+                                .unique()
+                            )
+                            for value in unmatched_metadata:
+                                error = f"Unmatched remote metadata for {model_name} with {column} '{value}'"
+                                errors.append(error)
+
+        if errors:
+            raise PipelineError(f"{self}: Missing or inconsistent metadata in BSS", errors=errors)
 
 
 @requires(ValidateBaseline)
@@ -547,7 +583,7 @@ class BuildFixture(luigi.Task):
 @requires(BuildFixture)
 class ImportBaseline(luigi.Task):
     """
-    Import a Baseline, including all child tables from a JSON fixture created from aBSS.
+    Import a Baseline, including all child tables from a JSON fixture created from a BSS.
     """
 
     def output(self):
@@ -562,8 +598,34 @@ class ImportBaseline(luigi.Task):
 
 
 class ImportBaselines(luigi.WrapperTask):
+    """
+    Import multiple Baselines, including all child tables from a JSON fixture created from the BSSs.
+    """
+
     bss_paths = luigi.ListParameter(default=[], description="List of path to the BSS files")
     metadata_path = luigi.Parameter(description="Path to the BSS metadata")
 
     def requires(self):
         return [ImportBaseline(bss_path=bss_path, metadata_path=self.metadata_path) for bss_path in self.bss_paths]
+
+
+class ImportAllBaselines(luigi.WrapperTask):
+    """
+    Import all the Baselines stored as BSS files within a folder, including in subfolfders.
+    """
+
+    root_path = luigi.Parameter(description="Path to the root folder containing the BSSs")
+    metadata_path = luigi.Parameter(description="Path to the BSS metadata")
+
+    def requires(self):
+        root_target = LocalTarget(Path(self.root_path).expanduser().absolute(), format=luigi.format.Nop)
+        if not root_target.exists():
+            root_target = GoogleDriveTarget(
+                self.root_path,
+                format=luigi.format.Nop,
+                mimetype="application/vnd.google-apps.folder",
+            )
+            if not root_target.exists():
+                raise PipelineError("No local or Google Drive folder matching %s" % self.root_path)
+        for path in root_target.fs.listdir(self.root_path):
+            yield ImportBaseline(bss_path=path, metadata_path=self.metadata_path)
