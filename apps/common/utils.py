@@ -1,3 +1,4 @@
+import contextlib
 import csv
 import importlib
 import logging
@@ -181,7 +182,54 @@ def get_frozen_treebeard_model(model):
     return Frozen_MP_Model
 
 
+@contextlib.contextmanager
+def conditional_logging(logger=None, flush_level=logging.ERROR, capacity=500):
+    """
+    A context manager that logs messages to a buffer and only outputs them if one of the messages is at or above
+    the flush_level.
+
+    """
+    if not isinstance(logger, logging.Logger):
+        logger = logging.getLogger(logger)
+
+    old_handlers = [handler for handler in logger.handlers]
+    for handler in old_handlers:
+        logger.removeHandler(handler)
+
+    new_handlers = [
+        logging.handlers.MemoryHandler(capacity, flushLevel=flush_level, target=handler, flushOnClose=False)
+        for handler in old_handlers
+    ]
+    for handler in new_handlers:
+        logger.addHandler(handler)
+
+    try:
+        yield
+    except Exception:
+        for handler in new_handlers:
+            handler.flush()
+        raise
+    finally:
+        for handler in old_handlers:
+            logger.addHandler(handler)
+        for handler in new_handlers:
+            logger.removeHandler(handler)
+
+
 def get_month_from_day_number(day_number):
     first_day_of_year = datetime(datetime.today().year, 1, 1)
     _date = first_day_of_year + timedelta(days=day_number - 1)  # timedelta uses 0 based index
     return _date.month
+
+
+def b74encode(n):
+    """Generates short, unique strings from a sequence number, for test data for short CharFields
+    (5,476 codes in two characters instead of the 100 that 00-99 permits)."""
+    alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_`\"!$'()*,-+"
+    if n == 0:
+        return alphabet[n]
+    encoded = ""
+    while n > 0:
+        n, r = divmod(n, len(alphabet))
+        encoded = alphabet[r] + encoded
+    return encoded

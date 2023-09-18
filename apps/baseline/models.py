@@ -1,6 +1,7 @@
 """
 Models for managing HEA Baseline Surveys
 """
+import numbers
 
 from django.contrib.gis.db import models
 from django.core.exceptions import ValidationError
@@ -215,17 +216,6 @@ class Community(common_models.Model):
         verbose_name=_("Livelihood Zone Baseline"),
     )
     geography = models.GeometryField(geography=True, dim=2, blank=True, null=True, verbose_name=_("geography"))
-    # Typicallly a number, but sometimes a code, e.g. SO03_NWA_26Nov15
-    # See https://docs.google.com/spreadsheets/d/1wuXjjmQXW9qG5AV8MRKHVadrFUhleUGN/
-    interview_number = models.CharField(
-        max_length=10,
-        verbose_name=_("Interview Number"),
-        help_text=_("The interview number from 1 - 12 or interview code assigned to the Community"),
-    )
-    interviewers = models.CharField(
-        verbose_name=_("Interviewers"),
-        help_text=_("The names of interviewers who interviewed the Community, in case any clarification is neeeded."),
-    )
 
     class ExtraMeta:
         identifier = ["name"]
@@ -380,13 +370,48 @@ class WealthGroupCharacteristicValue(common_models.Model):
     """
     An attribute of a Wealth Group such as the number of school-age children.
 
-        Stored on the BSS 'WB' worksheet.
+    Stored on the BSS 'WB' worksheet, which contains many values for each Wealth Characteristic.
+
+    The first set of columns contain values from the Community Interviews (Form 3).
+    The second set of columns contain values from the Wealth Group Interviews in each Community (Form 4).
+    The third set of columns contain the summary value and range that is considered representative for the Baseline,
+    and is derived from the Community and Wealth Group Interviews as part of the baseline process.
+
+    A Wealth Group Characteristic Value for a Baseline Wealth Group is always a Summary,
+    but a Characteristic Value for a Community Wealth Group could be either from a
+    Community Interview (Form 3) or a Wealth Group Interview (Form 4) with members
+    of that specific Wealth Group.
     """
+
+    class CharacteristicSource(models.TextChoices):
+        COMMUNITY = "community_interview", _("Community Interview (Form 3)")
+        WEALTH_GROUP = "wealth_group_interview", _("Wealth Group Interview (Form 4)")
+        SUMMARY = "baseline_summary", _("Baseline Summary")
 
     wealth_group = models.ForeignKey(WealthGroup, on_delete=models.RESTRICT, verbose_name=_("Wealth Group"))
     wealth_characteristic = models.ForeignKey(
         WealthCharacteristic, on_delete=models.RESTRICT, verbose_name=_("Wealth Characteristic")
     )
+    source = models.CharField(
+        max_length=30,
+        choices=CharacteristicSource.choices,
+        db_index=True,
+        verbose_name=_("Characteristic Source"),
+        help_text=_(
+            "The source of this Wealth Group Characteristic Value, such as a Community Interview (Form 3), or the Baseline Summary"  # NOQA: E501
+        ),
+    )
+    product = models.ForeignKey(
+        ClassifiedProduct,
+        db_column="product_code",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        verbose_name=_("Product"),
+        help_text=_("Product, e.g. Cattle"),
+        related_name="wealth_group_characteristic_values",
+    )
+
     # @TODO Are we better off with a `value = JSONField()` or `num_value`, `str_value`, `bool_value` as separate fields
     # or a single `value=CharField()` that we just store the str representation of the value in.
     # Examples of the characteristics we need to support:
@@ -397,8 +422,7 @@ class WealthGroupCharacteristicValue(common_models.Model):
     value = models.JSONField(
         verbose_name=_("value"), help_text=_("A single property value, eg, a float, str or list, not a dict of props.")
     )
-    # @TODO https://fewsnet.atlassian.net/browse/HEA-52
-    # Do we need `min_value` and `max_value` to store the range for a Baseline Wealth Group.
+    # The Summary value for a Baseline Wealth Group also contains a min and max value for the Wealth Characteristic
     # E..g. See CD09_Final 'WB':$AS:$AT
     min_value = models.JSONField(
         verbose_name=_("min_value"),
@@ -413,9 +437,66 @@ class WealthGroupCharacteristicValue(common_models.Model):
         help_text=_("The maximum value of the possible range for this value."),
     )
 
+    def clean(self):
+        # Validate `source`
+        if self.source == self.CharacteristicSource.SUMMARY:
+            if self.wealth_group.community:
+                raise ValidationError(
+                    _(
+                        "A Wealth Group Characteristic Value from a Baseline Summary must be for a Baseline Wealth Group"  # NOQA: E501
+                    )
+                )
+        elif not self.wealth_group.community:
+            raise ValidationError(
+                _("A Wealth Group Characteristic Value from a %s must be for a Community Wealth Group")
+                % self.CharacteristicSource(self.source).label
+            )
+        # Validate `product`
+        if self.wealth_characteristic.has_product:
+            if not self.product:
+                raise ValidationError(
+                    _("A Wealth Group Characteristic Value for %s must have a product" % self.wealth_characteristic)
+                )
+        elif self.product:
+            raise ValidationError(
+                _("A Wealth Group Characteristic Value for %s must not have a product" % self.wealth_characteristic)
+                % self.CharacteristicSource(self.source).label
+            )
+        # Validate `value` is between min_value and max_value, if either are numerics (strings eg "1" not validated)
+        if (
+            isinstance(self.min_value, numbers.Number)
+            and isinstance(self.value, numbers.Number)
+            and self.min_value > self.value
+        ):
+            raise ValidationError(_("Value must be higher than min_value."))
+        if (
+            isinstance(self.max_value, numbers.Number)
+            and isinstance(self.value, numbers.Number)
+            and self.max_value < self.value
+        ):
+            raise ValidationError(_("Value must be lower than max_value."))
+        super().clean()
+
+    def save(self, *args, **kwargs):
+        # No need to enforce foreign keys or uniqueness because database constraints will do it anyway
+        self.full_clean(
+            exclude=[field.name for field in self._meta.fields if isinstance(field, models.ForeignKey)],
+            validate_unique=False,
+        )
+        super().save(*args, **kwargs)
+
     class Meta:
         verbose_name = _("Wealth Characteristic Value")
         verbose_name_plural = _("Wealth Characteristic Values")
+        constraints = [
+            # Create a unique constraint on wealth_group, wealth_characteristic, product and source.
+            # We can only have one value from each Source (Form 3, Form 4, Summary) for each Wealth Group
+            # for each Characteristic (including the Product if appropriate).
+            models.UniqueConstraint(
+                fields=["wealth_group", "wealth_characteristic", "source", "product"],
+                name="baseline_wealthgroupcharacteristicvalue_group_characteristic_source_product_uniq",
+            ),
+        ]
 
 
 # @TODO https://fewsnet.atlassian.net/browse/HEA-93
@@ -603,10 +684,10 @@ class LivelihoodActivity(common_models.Model):
         self.livelihood_zone_baseline = self.livelihood_strategy.livelihood_zone_baseline
         self.strategy_type = self.livelihood_strategy.strategy_type
 
-        # @TODO This hasn't been reviewed yet.
-        self.is_staple = self.wealth_group.community.livelihood_zone_baseline.staple_set(
-            item=self.output_item
-        ).exists()
+        # @TODO This hasn't been reviewed yet, and fix
+        # self.is_staple = self.wealth_group.community.livelihood_zone_baseline.staple_set(
+        #     item=self.output_item
+        # ).exists()
 
     # These formulae are copied directly from the BSS cells:
 
@@ -665,15 +746,34 @@ class LivelihoodActivity(common_models.Model):
                 _("Kcals consumed for a Livelihood Activity must be quantity consumed multiplied by kcals per unit")
             )
 
-    # @TODO Do we use Django Forms as a separate validation layer, and load the data from the dataframe into a Form
-    # instance and then check whether it is valid.  See Two Scoops for an explanation.
-    def clean(self):
-        if self.wealth_group.livelihood_zone_baseline != self.livelihood_strategy.livelihood_zone_baseline:
+    def validate_strategy_type(self):
+        if (
+            type(self) not in {LivelihoodActivity, BaselineLivelihoodActivity, ResponseLivelihoodActivity}
+            and self.strategy_type != self._meta.object_name
+        ):
+            raise ValidationError(
+                _(
+                    f"Incorrect Livelihood Activity strategy type. Found {self.strategy_type}. Expected {self._meta.object_name}."  # NOQA: E501
+                )
+            )
+
+    def validate_livelihood_zone_baseline(self):
+        if not (
+            self.wealth_group.livelihood_zone_baseline
+            == self.livelihood_strategy.livelihood_zone_baseline
+            == self.livelihood_zone_baseline
+        ):
             raise ValidationError(
                 _(
                     "Wealth Group and Livelihood Strategy for a Livelihood Activity must belong to the same Livelihood Zone Baseline"  # NOQA: E501
                 )
             )
+
+    # @TODO Do we use Django Forms as a separate validation layer, and load the data from the dataframe into a Form
+    # instance and then check whether it is valid.  See Two Scoops for an explanation.
+    def clean(self):
+        self.validate_livelihood_zone_baseline()
+        self.validate_strategy_type()
         self.validate_quantity_produced()
         self.validate_quantity_consumed()
         self.validate_income()
@@ -1573,11 +1673,11 @@ class ExpandabilityFactor(models.Model):
     percentage_sold = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Sold/Exchanged"))
     percentage_other_uses = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Other Uses"))
     # Can normally be calculated / validated as `quantity_received - quantity_sold - quantity_other_uses`
-    percentge_consumed = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Consumed"))
+    percentage_consumed = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Consumed"))
 
     # Can be calculated / validated as `quantity_sold * price` for livelihood strategies that involve the sale of
     # a proportion of the household's own production.
-    precentage_income = models.FloatField(blank=True, null=True, help_text=_("Income"))
+    percentage_income = models.FloatField(blank=True, null=True, help_text=_("Income"))
     # Can be calculated / validated as `quantity_consumed * price` for livelihood strategies that involve the purchase
     # of external goods or services.
     percentage_expenditure = models.FloatField(blank=True, null=True, help_text=_("Expenditure"))
