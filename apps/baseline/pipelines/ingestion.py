@@ -3,6 +3,7 @@
 # import datetime
 # import hashlib
 # import json
+import io
 import itertools
 import logging
 from collections.abc import Iterable
@@ -54,6 +55,20 @@ def get_index(search_text: str | list[str], data: pd.Series) -> tuple[int, int]:
     return index
 
 
+def get_unmatched_metadata(df: pd.DataFrame, column: str) -> pd.Series:
+    """
+    Return a series of original values that were not matched by a Lookup.
+    """
+    unmatched_metadata = (
+        df[(df[column].isnull()) & ~((df[column + "_original"].isnull()) | (df[column + "_original"].eq("")))][
+            column + "_original"
+        ]
+        .sort_values()
+        .unique()
+    )
+    return unmatched_metadata
+
+
 def verbose_pivot(df: pd.DataFrame, values: str | list[str], index: str | list[str], columns: str | list[str]):
     """
     Pivot a DataFrame, or log a detailed exception in the event of a failure
@@ -68,12 +83,13 @@ def verbose_pivot(df: pd.DataFrame, values: str | list[str], index: str | list[s
     try:
         return pd.pivot(df, values=values, index=index, columns=columns).reset_index()
     except ValueError as e:
-        duplicates = df.groupby(index + columns).size().reset_index(name="count")
+        # Need to fillna, otherwise the groupby returns an empty dataframe
+        duplicates = df.fillna("").groupby(index + columns).size().reset_index(name="count")
 
         # Filter for the entries that appear more than once, i.e., duplicates
         duplicates = duplicates[duplicates["count"] > 1]
 
-        error_df = pd.merge(df, duplicates[index + columns], on=index + columns)
+        error_df = pd.merge(df.fillna(""), duplicates[index + columns], on=index + columns)
 
         raise PipelineError(str(e) + "\n" + error_df.to_markdown()) from e
 
@@ -268,8 +284,17 @@ class NormalizeWB(luigi.Task):
         char_df["wealth_characteristic"] = char_df["characteristic_label"].apply(get_wealth_characteristic)
 
         # Look up the metadata codes
+        # We need to lookup the WealthCharacteristic before we can use it to mask the 'product' column below
         char_df = WealthCategoryLookup().do_lookup(char_df, "wealth_category", "wealth_category")
         char_df = WealthCharacteristicLookup().do_lookup(char_df, "wealth_characteristic", "wealth_characteristic")
+
+        # Report any errors, because unmatched WealthCharacteristics that contain a product reference may cause errors
+        # when reshaping the dataframe. Note that we don't raise an exception here - ValidateBaseline will do that if
+        # we get that far. But we do print the error message to help with troubleshooting.
+        for value in get_unmatched_metadata(char_df, "wealth_characteristic"):
+            logger.warning(
+                f"Unmatched remote metadata for WealthGroupCharacteristicValue with wealth_characteristic '{value}'"
+            )  # NOQA: E501
 
         # Fill NaN values in 'product' from the previous non-null cell
         # (after setting the relevant cells to NA)
@@ -496,14 +521,7 @@ class ValidateBaseline(luigi.Task):
                     if isinstance(field, ForeignKey) and field.related_model._meta.app_label != "baseline":
                         column = field.name
                         if df[column].isnull().values.any():
-                            unmatched_metadata = (
-                                df[
-                                    (df[column].isnull())
-                                    & ~((df[column + "_original"].isnull()) | (df[column + "_original"].eq("")))
-                                ][column + "_original"]
-                                .sort_values()
-                                .unique()
-                            )
+                            unmatched_metadata = get_unmatched_metadata(df, column)
                             for value in unmatched_metadata:
                                 error = f"Unmatched remote metadata for {model_name} with {column} '{value}'"
                                 errors.append(error)
@@ -590,11 +608,13 @@ class ImportBaseline(luigi.Task):
         return IntermediateTarget(path_from_task(self) + ".json", format=JSON, timeout=3600)
 
     def run(self):
-        result = call_command("loaddata", self.input().path, verbosity=3, format="verbose_json")
+        buffer = io.StringIO()
+
+        call_command("loaddata", self.input().path, verbosity=2, format="verbose_json", stdout=buffer)
 
         with self.output().open("w") as output:
             # Data is a JSON object
-            output.write(result)
+            output.write(buffer.getvalue())
 
 
 class ImportBaselines(luigi.WrapperTask):
