@@ -13,6 +13,7 @@ djangorestframework-xml==2.0.0
 docutils==0.20.1
 factory-boy==3.2.1
 gunicorn==20.1.0
+html5lib==1.1
 json-logging-py==0.2
 jupyterlab==4.0.5
 lxml==4.9.3
