@@ -423,10 +423,10 @@ class CommunityLivestockAdmin(admin.ModelAdmin):
         "wet_season_milk_production",
         "dry_season_milk_production",
     )
-    search_fields = ("livestock_type",)
+    search_fields = ("livestock__description",)
     list_filter = (
         "community__livelihood_zone_baseline__livelihood_zone",
-        "community",
+        "community__name",
         "livestock",
     )
 

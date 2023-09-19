@@ -9,8 +9,18 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils.translation import activate
 
-from baseline.admin import CommunityCropProductionAdmin, WealthGroupAdmin
-from baseline.models import CommunityCropProduction, LivelihoodZoneBaseline, WealthGroup
+from baseline.admin import (
+    CommunityCropProductionAdmin,
+    CommunityLivestockAdmin,
+    WealthGroupAdmin,
+)
+from baseline.models import (
+    CommunityCropProduction,
+    CommunityLivestock,
+    LivelihoodZoneBaseline,
+    WealthGroup,
+)
+from common.tests.factories import ClassifiedProductFactory
 from metadata.tests.factories import (
     LivelihoodCategoryFactory,
     SeasonFactory,
@@ -21,6 +31,7 @@ from .factories import (
     ButterProductionFactory,
     CommunityCropProductionFactory,
     CommunityFactory,
+    CommunityLivestockFactory,
     LivelihoodStrategyFactory,
     LivelihoodZoneBaselineFactory,
     LivelihoodZoneFactory,
@@ -282,16 +293,16 @@ class CommunityCropProductionAdminTestCase(TestCase):
         cls.url = "admin:baseline_communitycropproduction_changelist"
         cls.community1 = CommunityFactory(name="Test Community")
         cls.season1 = SeasonFactory()
-        cls.community_cropproduction1 = CommunityCropProductionFactory(
-            community__name=cls.community1, season__name="SeasonQ"
-        )
-        cls.community_cropproduction2 = CommunityCropProductionFactory()
-        cls.community_cropproduction3 = CommunityCropProductionFactory()
+        cls.cropproduction1 = CommunityCropProductionFactory(community__name=cls.community1, season__name="SeasonQ")
+        cls.cropproduction2 = CommunityCropProductionFactory()
+        cls.cropproduction3 = CommunityCropProductionFactory()
         cls.site = AdminSite()
+
         activate("en")
 
     def setUp(self):
         self.client.login(username="admin", password="admin")
+        self.admin = CommunityCropProductionAdmin(model=CommunityCropProduction, admin_site=self.site)
 
     def test_fields(self):
         fields = [
@@ -308,15 +319,98 @@ class CommunityCropProductionAdminTestCase(TestCase):
         list_display = ["community", "crop", "season", "yield_with_inputs", "yield_without_inputs", "unit_of_measure"]
         self.assertEqual(list(self.admin.list_display), list_display)
 
+    def test_list_community_crop_production(self):
+        response = self.client.get(reverse(self.url))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.cropproduction1.community.name)
+        self.assertContains(response, self.cropproduction2.crop)
+        self.assertContains(response, self.cropproduction2.yield_with_inputs)
+        self.assertContains(response, self.cropproduction2.yield_without_inputs)
+
     def test_search_fields(self):
         search_fields = (
             "crop__description",
             "crop_purpose",
             "season__name",
         )
-        admin = CommunityCropProductionAdmin(CommunityCropProduction, admin_site=self.site)
-        self.assertTrue(all(element in admin.search_fields for element in search_fields))
-        response = self.client.get(reverse(self.url), {"q": self.community_cropproduction1.crop.description})
+        self.assertTrue(all(element in self.admin.search_fields for element in search_fields))
+        response = self.client.get(reverse(self.url), {"q": self.cropproduction1.crop.description})
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, self.community_cropproduction1.crop.description)
-        self.assertNotContains(response, self.community_cropproduction2.crop.description)
+        self.assertContains(response, self.cropproduction1.crop.description)
+        self.assertNotContains(response, self.cropproduction2.crop.description)
+
+    def test_filter_community_crop_production(self):
+        response = self.client.get(reverse(self.url), {"community__name": self.cropproduction1.community.name})
+        self.assertEqual(response.status_code, 200)
+
+        # Parse the HTML content of the response
+        soup = BeautifulSoup(response.content, "html.parser")
+
+        # Find the table rows in the result set
+        table_rows = soup.find_all("tr")
+        self.assertEqual(len(table_rows), 2)
+        # Check that the table rows only contain the filtered results
+        self.assertIn(str(self.cropproduction1.community.name), table_rows[1].get_text())
+        self.assertNotIn(str(self.cropproduction2.community.name), table_rows[1].get_text())
+
+
+class CommunityLivestockAdminTestCase(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        User.objects.create_superuser(username="admin", password="admin", email="admin@hea.org")
+        cls.url = "admin:baseline_communitylivestock_changelist"
+        cls.community1 = CommunityFactory(name="Test Community")
+        cls.livestockproduction1 = CommunityLivestockFactory(
+            community=cls.community1, livestock=ClassifiedProductFactory(cpcv2="L021001")
+        )
+        cls.livestockproduction2 = CommunityLivestockFactory(livestock=ClassifiedProductFactory(cpcv2="L021002"))
+        cls.site = AdminSite()
+        activate("en")
+
+    def setUp(self):
+        self.client.login(username="admin", password="admin")
+        self.admin = CommunityLivestockAdmin(model=CommunityLivestock, admin_site=self.site)
+
+    def test_fields(self):
+        fields = [
+            "community",
+            "livestock",
+            "birth_interval",
+            "wet_season_lactation_period",
+            "wet_season_milk_production",
+            "dry_season_lactation_period",
+            "dry_season_milk_production",
+            "age_at_sale",
+            "additional_attributes",
+        ]
+        self.assertEqual(list(self.admin.fields), fields)
+        list_display = [
+            "community",
+            "livestock",
+            "wet_season_milk_production",
+            "dry_season_milk_production",
+        ]
+        self.assertEqual(list(self.admin.list_display), list_display)
+
+    def test_list_community_livestock(self):
+        response = self.client.get(reverse(self.url))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.livestockproduction1.community.name)
+        self.assertContains(response, self.livestockproduction2.livestock)
+        self.assertContains(response, self.livestockproduction2.wet_season_milk_production)
+        self.assertContains(response, self.livestockproduction2.dry_season_milk_production)
+
+    def test_filter_community_livestock(self):
+        response = self.client.get(reverse(self.url), {"community__name": self.livestockproduction1.community.name})
+        self.assertEqual(response.status_code, 200)
+
+        # Parse the HTML content of the response
+        soup = BeautifulSoup(response.content, "html.parser")
+
+        # Find the table rows in the result set
+        table_rows = soup.find_all("tr")
+        self.assertEqual(len(table_rows), 2)
+
+        # Check that the table rows only contain the filtered results
+        self.assertIn(str(self.livestockproduction1.community.name), table_rows[1].get_text())
+        self.assertNotIn(str(self.livestockproduction2.community.name), table_rows[1].get_text())
