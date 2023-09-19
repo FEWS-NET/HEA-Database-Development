@@ -422,7 +422,6 @@ class NormalizeWB(luigi.Task):
         ]
 
         # Pivot the percentage of households and household size back into columns
-        wealth_group_df.to_csv("/home/roger/Temp/df.csv")
         wealth_group_df = verbose_pivot(
             wealth_group_df, values="value", index=["wealth_category", "full_name"], columns="wealth_characteristic"
         )
