@@ -75,7 +75,7 @@ class BaselineAdminTestCase(TestCase):
 
         response = self.client.get(reverse("admin:baseline_livelihoodzonebaseline_changelist"))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, self.livelihood_zone_baseline1.livelihood_zone.name)
+        self.assertContains(response, self.livelihood_zone_baseline1.livelihood_zone.code)
 
         response = self.client.get(reverse("admin:baseline_community_changelist"))
         self.assertEqual(response.status_code, 200)

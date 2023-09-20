@@ -27,8 +27,8 @@ class CurrencyAdminTestCase(TestCase):
 
     def setUp(self):
         self.client.login(username="admin", password="admin")
-        self.currency1 = CurrencyFactory(iso4217a3="USD", iso4217n3="840", iso_en_name="US Dollar")
-        self.currency2 = CurrencyFactory(iso4217a3="KES", iso4217n3="404", iso_en_name="Kenyan Shilling")
+        self.currency1 = CurrencyFactory(iso4217a3="ZZZ", iso4217n3="888")
+        self.currency2 = CurrencyFactory(iso4217a3="ZZA", iso4217n3="777")
 
     def test_list_currency(self):
         response = self.client.get(reverse("admin:common_currency_changelist"))
@@ -43,14 +43,14 @@ class CurrencyAdminTestCase(TestCase):
         self.assertContains(response, self.currency1.iso4217a3)
 
     def test_create_currency(self):
-        self.assertFalse(Currency.objects.filter(iso4217a3="MWK").exists())
+        self.assertFalse(Currency.objects.filter(iso4217a3="XXX").exists())
         data = {
-            "iso4217a3": "MWK",
-            "iso4217n3": "454",
-            "iso_en_name": "Kwacha",
+            "iso4217a3": "XXX",
+            "iso4217n3": "900",
+            "iso_en_name": "Test",
         }
         self.client.post(reverse("admin:common_currency_add"), data)
-        self.assertTrue(Currency.objects.filter(iso4217a3="MWK").exists())
+        self.assertTrue(Currency.objects.filter(iso4217a3="XXX").exists())
 
 
 class CountryAdminTestCase(TestCase):
@@ -61,8 +61,8 @@ class CountryAdminTestCase(TestCase):
 
     def setUp(self):
         self.client.login(username="admin", password="admin")
-        self.country1 = CountryFactory()
-        self.country2 = CountryFactory()
+        self.country1 = CountryFactory(iso3166a2="AA")
+        self.country2 = CountryFactory(iso3166a2="AB")
 
     def test_list_country(self):
         response = self.client.get(reverse("admin:common_country_changelist"))
@@ -77,29 +77,29 @@ class CountryAdminTestCase(TestCase):
         self.assertContains(response, self.country1.iso3166a2)
 
     def test_create_country(self):
-        self.assertFalse(Country.objects.filter(iso3166a2="FR").exists())
+        self.assertFalse(Country.objects.filter(iso3166a2="ZZ").exists())
         data = {
-            "iso3166a2": "FR",
-            "name": "France",
-            "iso3166a3": "FRA",
-            "iso3166n3": "250",
-            "iso_en_name": "France",
+            "iso3166a2": "ZZ",
+            "name": "Test new country",
+            "iso3166a3": "ZZZ",
+            "iso3166n3": "999",
+            "iso_en_name": "Test new country",
         }
         respone = self.client.post(reverse("admin:common_country_add"), data)
         # Missing required fields, validation error
         self.assertIn("Please correct the errors below", str(respone.content))
         data.update(
             {
-                "iso_en_proper": "France",
-                "iso_en_ro_name": "France",
-                "iso_en_ro_proper": "France",
-                "iso_fr_name": "France",
-                "iso_fr_proper": "France",
-                "iso_es_name": "Francia",
+                "iso_en_proper": "Test new country",
+                "iso_en_ro_name": "Test new country",
+                "iso_en_ro_proper": "Test new country",
+                "iso_fr_name": "Tester un nouveau pays",
+                "iso_fr_proper": "Tester un nouveau pays",
+                "iso_es_name": "Probar nuevo país",
             }
         )
         self.client.post(reverse("admin:common_country_add"), data)
-        self.assertTrue(Country.objects.filter(iso3166a2="FR").exists())
+        self.assertTrue(Country.objects.filter(iso3166a2="ZZ").exists())
 
 
 class ClassifiedProductAdminTestCase(TestCase):
@@ -110,8 +110,8 @@ class ClassifiedProductAdminTestCase(TestCase):
 
     def setUp(self):
         self.client.login(username="admin", password="admin")
-        self.product1 = ClassifiedProductFactory()
-        self.product2 = ClassifiedProductFactory()
+        self.product1 = ClassifiedProductFactory(cpcv2="A00001AA")
+        self.product2 = ClassifiedProductFactory(cpcv2="A00002AA")
 
     def test_list_classified_product(self):
         response = self.client.get(reverse("admin:common_classifiedproduct_changelist"))
