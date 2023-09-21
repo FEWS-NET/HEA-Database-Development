@@ -15,6 +15,11 @@ messages = [
     r"Unknown type for Sign-off status",
     r"Unknown type for _ip_UnifiedCompliancePolicyProperties",
 ]
+# And irrelevant Luigi errors, caused by using a local scheduler
+messages += [
+    r"The configuration contains the parameter 'no_configure_logging' with value 'True' that is not consumed by the task 'core'.",  # NOQA: E501
+    r"The configuration contains the parameter 'pidfile' with value '/usr/src/app/run/luigi.pid' that is not consumed by the task 'scheduler'.",  # NOQA: E501
+]
 for message in messages:
     warnings.filterwarnings("ignore", message)
 
