@@ -144,7 +144,7 @@ class GetBSSCorrections(luigi.Task):
     Return a DataFrame of corrections to make to one or more BSSs.
     """
 
-    corrections_path = luigi.Parameter(default=None, description="Path to the BSS corrections")
+    corrections_path = luigi.Parameter(default="", description="Path to the BSS corrections")
 
     def output(self):
         return IntermediateTarget(path_from_task(self) + ".pickle", format=Pickle, timeout=3600)
@@ -719,7 +719,7 @@ class ImportBaselines(luigi.WrapperTask):
 
     bss_paths = luigi.ListParameter(default=[], description="List of path to the BSS files")
     metadata_path = luigi.Parameter(description="Path to the BSS metadata")
-    corrections_path = luigi.Parameter(default=None, description="Path to the BSS corrections")
+    corrections_path = luigi.Parameter(default="", description="Path to the BSS corrections")
 
     def requires(self):
         return [
@@ -735,7 +735,7 @@ class ImportAllBaselines(luigi.WrapperTask):
 
     root_path = luigi.Parameter(description="Path to the root folder containing the BSSs")
     metadata_path = luigi.Parameter(description="Path to the BSS metadata")
-    corrections_path = luigi.Parameter(default=None, description="Path to the BSS corrections")
+    corrections_path = luigi.Parameter(default="", description="Path to the BSS corrections")
 
     def requires(self):
         root_target = LocalTarget(Path(self.root_path).expanduser().absolute(), format=luigi.format.Nop)
