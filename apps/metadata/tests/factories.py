@@ -7,7 +7,7 @@ from metadata.models import Market, Season, SeasonalActivityType, WealthCharacte
 class LivelihoodCategoryFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = "metadata.LivelihoodCategory"
-        django_get_or_create = ("code", "name")
+        django_get_or_create = ("code",)
 
     code = factory.Iterator(["AG", "PA", "AP", "FI"])
     name = factory.LazyAttribute(lambda o: f"{o.code} Livelihood Category")
@@ -17,7 +17,7 @@ class LivelihoodCategoryFactory(factory.django.DjangoModelFactory):
 class HazardCategoryFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = "metadata.HazardCategory"
-        django_get_or_create = ("code", "name")
+        django_get_or_create = ("code",)
 
     code = factory.Iterator(["HA1", "HA2", "HA3", "HA4"])
     name = factory.LazyAttribute(lambda o: f"{o.code} Hazard Category")
@@ -27,7 +27,7 @@ class HazardCategoryFactory(factory.django.DjangoModelFactory):
 class WealthCategoryFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = "metadata.WealthCategory"
-        django_get_or_create = ("code", "name")
+        django_get_or_create = ("code",)
 
     code = factory.Iterator(["VP", "P", "M", "BO"])
     name = factory.Iterator(["Very Poor", "Poor", "Medium", "Bettor Off"])
@@ -37,7 +37,7 @@ class WealthCategoryFactory(factory.django.DjangoModelFactory):
 class WealthCharacteristicFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = "metadata.WealthCharacteristic"
-        django_get_or_create = ("code", "name")
+        django_get_or_create = ("code",)
 
     code = factory.Iterator(["WC1", "WC2", "WC3", "WC4"])
     variable_type = factory.Iterator(
@@ -54,7 +54,7 @@ class WealthCharacteristicFactory(factory.django.DjangoModelFactory):
 class SeasonalActivityTypeFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = "metadata.SeasonalActivityType"
-        django_get_or_create = ("code", "name")
+        django_get_or_create = ("code",)
 
     code = factory.Iterator(["AC1", "AC2", "AC3", "AC4"])
     activity_category = factory.Iterator(

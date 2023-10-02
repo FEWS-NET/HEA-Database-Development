@@ -54,6 +54,7 @@ class Command(BaseCommand):
         # Prepare regex patterns for "acceptable" lines or output
         good_lines = [
             r"^Found \d+ test\(s\)\.$",
+            r"^Using existing test database for alias 'default'...$",
             r"^System check identified no issues.*$",
             # Verbose output, e.g.  test_weekly_facts (apps.price.tests.test_models.MarketFactsCase) ... ok (32.194s):
             r"^  test_\w+ \([\w\.]+\) \.\.\..*?\([\d\.]+s\)$",

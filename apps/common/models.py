@@ -232,13 +232,18 @@ class Model(TimeStampedModel):
 
     def __str__(self):
         components = []
-        for field in self.ExtraMeta.identifier:
-            try:
-                component = force_str(getattr(self, field))
-            except ObjectDoesNotExist:
-                component = ""
-            components.append(component)
-        return ": ".join([component for component in components if component])
+        if self.ExtraMeta.identifier:
+            for field in self.ExtraMeta.identifier:
+                try:
+                    component = force_str(getattr(self, field))
+                except ObjectDoesNotExist:
+                    component = ""
+                components.append(component)
+            return ": ".join([component for component in components if component])
+        elif hasattr(self, "natural_key"):
+            return ": ".join([component for component in self.natural_key()])
+        else:
+            return super().__str__()
 
     def __repr__(self):
         return "<%s: %s (%s)>" % (self.__class__.__name__, self, self.pk)
@@ -575,7 +580,7 @@ class Country(models.Model):
     )
 
     def __str__(self):
-        return self.name
+        return self.iso_en_ro_name if self.iso_en_ro_name else ""
 
     class Meta:
         verbose_name = _("Country")
@@ -917,8 +922,6 @@ class ClassifiedProduct(MP_Node, Model):
         """
         Ensure that aliases & hs2012 are lowercase and don't contain duplicates
         """
-        # @TODO I think this should be changed for a JSON field to something like:
-        # {key.lower(): value.lower() for key, value in aliases.items()} ?
         if self.aliases:
             self.aliases = list(set([alias.lower() for alias in self.aliases if alias]))
         if self.hs2012:

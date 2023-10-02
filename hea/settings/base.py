@@ -1,11 +1,27 @@
 import os
 import socket
 import sys
+import warnings
 from os.path import abspath, basename, dirname, join, normpath
 
 import environ
 import jsonlogging
 import requests
+
+# Ignore irrelevant Openpyxl warnings
+messages = [
+    r"Unknown type for ContentType",
+    r"Unknown type for _ip_UnifiedCompliancePolicyUIAction",
+    r"Unknown type for Sign-off status",
+    r"Unknown type for _ip_UnifiedCompliancePolicyProperties",
+]
+# And irrelevant Luigi errors, caused by using a local scheduler
+messages += [
+    r"The configuration contains the parameter 'no_configure_logging' with value 'True' that is not consumed by the task 'core'.",  # NOQA: E501
+    r"The configuration contains the parameter 'pidfile' with value '/usr/src/app/run/luigi.pid' that is not consumed by the task 'scheduler'.",  # NOQA: E501
+]
+for message in messages:
+    warnings.filterwarnings("ignore", message)
 
 env = environ.Env(LOG_FORMATTER=(str, "standard"))
 
@@ -240,6 +256,8 @@ LOGGING = {
         "django.security": {"handlers": ["console", "logfile"], "level": "ERROR", "propagate": False},
         "factory": {"handlers": ["console", "logfile"], "level": "INFO"},
         "faker": {"handlers": ["console", "logfile"], "level": "INFO"},
+        "luigi": {"level": "INFO"},
+        "luigi-interface": {"level": "INFO"},
         "urllib3": {"handlers": ["console", "logfile"], "level": "INFO", "propagate": False},
         "common.models": {"handlers": ["console", "logfile"], "level": "INFO", "propagate": False},
         "common.signals": {"handlers": ["console", "logfile"], "level": "INFO", "propagate": False},
@@ -254,6 +272,10 @@ DEFAULT_FILE_STORAGE = "binary_database_files.storage.DatabaseStorage"
 # system, for example if the container has been replaced.
 DATABASE_FILES_URL_METHOD = "URL_METHOD_2"
 
+
+SERIALIZATION_MODULES = {
+    "verbose_json": "common.pipelines.serializers.verbose_json",
+}
 
 # Don't report missing HSTS preload, because we don't run SSL in local or CI environments.
 # See: https://docs.djangoproject.com/en/3.0/ref/settings/#std:setting-SILENCED_SYSTEM_CHECKS
