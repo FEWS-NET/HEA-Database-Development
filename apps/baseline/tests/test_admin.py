@@ -199,7 +199,6 @@ class WealthGroupAdminTest(TestCase):
         self.assertEqual(saved_wealth_group.percentage_of_households, wealth_group.percentage_of_households)
 
     def test_wealth_characteristic_inline_admin_display(self):
-        """ """
         wealth_group_characteristic_value = WealthGroupCharacteristicValueFactory(
             wealth_group=self.wealth_group1, value=2.5, min_value=2, max_value=4
         )
@@ -414,8 +413,8 @@ class CommunityCropProductionAdminTestCase(TestCase):
         table_rows = soup.find_all("tr")
         self.assertEqual(len(table_rows), 2)
         # Check that the table rows only contain the filtered results
-        self.assertIn(str(self.cropproduction1.community.name), table_rows[1].get_text())
-        self.assertNotIn(str(self.cropproduction2.community.name), table_rows[1].get_text())
+        self.assertIn(str(self.cropproduction1.crop), table_rows[1].get_text())
+        self.assertNotIn(str(self.cropproduction2.crop), table_rows[1].get_text())
 
 
 class CommunityLivestockAdminTestCase(TestCase):
@@ -476,5 +475,5 @@ class CommunityLivestockAdminTestCase(TestCase):
         self.assertEqual(len(table_rows), 2)
 
         # Check that the table rows only contain the filtered results
-        self.assertIn(str(self.livestockproduction1.community.name), table_rows[1].get_text())
-        self.assertNotIn(str(self.livestockproduction2.community.name), table_rows[1].get_text())
+        self.assertIn(str(self.livestockproduction1.livestock), table_rows[1].get_text())
+        self.assertNotIn(str(self.livestockproduction2.livestock), table_rows[1].get_text())

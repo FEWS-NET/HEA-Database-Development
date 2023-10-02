@@ -289,14 +289,14 @@ class WealthGroupManager(common_models.IdentifierManager):
             return self.get(
                 livelihood_zone_baseline__livelihood_zone__code=code,
                 livelihood_zone_baseline__reference_year_end_date=reference_year_end_date,
-                wealth_category=wealth_category,
+                wealth_category__code=wealth_category,
                 community__full_name=full_name,
             )
         else:
             return self.get(
                 livelihood_zone_baseline__livelihood_zone__code=code,
                 livelihood_zone_baseline__reference_year_end_date=reference_year_end_date,
-                wealth_category=wealth_category,
+                wealth_category__code=wealth_category,
                 community__isnull=True,
             )
 
@@ -382,7 +382,7 @@ class WealthGroup(common_models.Model):
         return (
             self.livelihood_zone_baseline.livelihood_zone_id,
             self.livelihood_zone_baseline.reference_year_end_date.isoformat(),
-            self.wealth_category,
+            self.wealth_category.code,
             self.community.full_name if self.community else "",
         )
 
@@ -466,7 +466,7 @@ class WealthGroupCharacteristicValueManager(common_models.IdentifierManager):
             "source": source,
             "wealth_group__livelihood_zone_baseline__livelihood_zone__code": code,
             "wealth_group__livelihood_zone_baseline__reference_year_end_date": reference_year_end_date,
-            "wealth_group__wealth_category": wealth_category,
+            "wealth_group__wealth_category__code": wealth_category,
         }
         if full_name:
             criteria["wealth_group__community__full_name"] = full_name
@@ -605,7 +605,7 @@ class WealthGroupCharacteristicValue(common_models.Model):
         return (
             self.wealth_group.livelihood_zone_baseline.livelihood_zone_id,
             self.wealth_group.livelihood_zone_baseline.reference_year_end_date.isoformat(),
-            self.wealth_group.wealth_category,
+            self.wealth_group.wealth_category.code,
             self.wealth_characteristic_id,
             self.source,
             self.product_id if self.product_id else "",
