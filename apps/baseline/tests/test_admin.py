@@ -32,9 +32,12 @@ from .factories import (
     CommunityCropProductionFactory,
     CommunityFactory,
     CommunityLivestockFactory,
+    CropProductionFactory,
+    FoodPurchaseFactory,
     LivelihoodStrategyFactory,
     LivelihoodZoneBaselineFactory,
     LivelihoodZoneFactory,
+    LivestockSalesFactory,
     MeatProductionFactory,
     MilkProductionFactory,
     SourceOrganizationFactory,
@@ -284,6 +287,67 @@ class WealthGroupAdminTest(TestCase):
         # Ensure that the response contains the fields from MeatProductionInlineAdmin
         self.assertContains(response, "animals_slaughtered")
         self.assertContains(response, "animals_slaughtered")
+
+    def test_livestock_sales_inline_admin_display(self):
+        livestock_sales = LivestockSalesFactory(wealth_group=self.wealth_group1)
+
+        self.site.register(WealthGroup, WealthGroupAdmin)
+        url = reverse(self.url, args=[self.wealth_group1.pk])
+        response = self.client.get(url)
+
+        self.assertContains(response, "Livestock Sales")
+
+        soup = BeautifulSoup(response.content, "html.parser")
+
+        livestock_sales_strategy_select = soup.find("select", {"id": "id_livestocksales_set-0-livelihood_strategy"})
+        livestock_sales_strategy_select = livestock_sales_strategy_select.find("option", selected=True)
+        self.assertEqual(int(livestock_sales_strategy_select["value"]), livestock_sales.livelihood_strategy.pk)
+
+    def test_crop_production_inline_admin_display(self):
+        crop_production = CropProductionFactory(wealth_group=self.wealth_group1)
+
+        self.site.register(WealthGroup, WealthGroupAdmin)
+        url = reverse(self.url, args=[self.wealth_group1.pk])
+        response = self.client.get(url)
+
+        self.assertContains(response, "Crop Production")
+
+        soup = BeautifulSoup(response.content, "html.parser")
+
+        crop_production_strategy_select = soup.find("select", {"id": "id_cropproduction_set-0-livelihood_strategy"})
+        crop_production_strategy_select = crop_production_strategy_select.find("option", selected=True)
+        self.assertEqual(int(crop_production_strategy_select["value"]), crop_production.livelihood_strategy.pk)
+
+    def test_food_purchase_production_inline_admin_display(self):
+        food_purchase = FoodPurchaseFactory(wealth_group=self.wealth_group1)
+
+        self.site.register(WealthGroup, WealthGroupAdmin)
+        url = reverse(self.url, args=[self.wealth_group1.pk])
+        response = self.client.get(url)
+
+        self.assertContains(response, "Food Purchase")
+        self.assertContains(response, "unit_multiple")
+        self.assertContains(response, "purchases_per_month")
+        self.assertContains(response, "months_per_year")
+
+        soup = BeautifulSoup(response.content, "html.parser")
+
+        food_purchase_strategy_select = soup.find("select", {"id": "id_foodpurchase_set-0-livelihood_strategy"})
+        food_purchase_strategy_select = food_purchase_strategy_select.find("option", selected=True)
+        self.assertEqual(int(food_purchase_strategy_select["value"]), food_purchase.livelihood_strategy.pk)
+
+        self.assertEqual(
+            int(soup.find("input", {"id": "id_foodpurchase_set-0-unit_multiple"})["value"]),
+            food_purchase.unit_multiple,
+        )
+        self.assertEqual(
+            int(soup.find("input", {"id": "id_foodpurchase_set-0-purchases_per_month"})["value"]),
+            food_purchase.purchases_per_month,
+        )
+        self.assertEqual(
+            int(soup.find("input", {"id": "id_foodpurchase_set-0-months_per_year"})["value"]),
+            food_purchase.months_per_year,
+        )
 
 
 class CommunityCropProductionAdminTestCase(TestCase):
