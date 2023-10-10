@@ -8,12 +8,14 @@ import itertools
 import logging
 from collections.abc import Iterable
 from pathlib import Path
+from typing import Optional
 
 import luigi
 import openpyxl
 import pandas as pd
 import xlrd
 import xlwt
+from django.core.exceptions import ValidationError
 from django.core.management import call_command
 from django.db.models import ForeignKey
 from kiluigi import PipelineError
@@ -164,7 +166,16 @@ class GetBSSCorrections(luigi.Task):
                 corrections_df = pd.read_excel(input, "Corrections")
         else:
             corrections_df = pd.DataFrame(
-                columns=["bss_path", "worksheet_name", "range", "value", "correction_date", "author", "comment"]
+                columns=[
+                    "bss_path",
+                    "worksheet_name",
+                    "range",
+                    "prev_value",
+                    "value",
+                    "correction_date",
+                    "author",
+                    "comment",
+                ]
             )
 
         with self.output().open("w") as output:
@@ -187,6 +198,7 @@ class CorrectBSS(luigi.Task):
         # Find the corrections for this BSS
         corrections_df = corrections_df[corrections_df["bss_path"] == path]
 
+        rb = None
         if corrections_df.empty:
             # No corrections, so just leave the file unaltered
             with self.output().open("w") as output, self.input()["bss"].open() as input:
@@ -201,12 +213,15 @@ class CorrectBSS(luigi.Task):
             else:
                 with self.input()["bss"].open() as input:
                     wb = openpyxl.load_workbook(input)
-            wb = self.process(wb, corrections_df)
+            wb = self.process(wb, corrections_df, rb)
             with self.output().open("w") as output:
                 wb.save(output)
 
     def process(
-        self, wb: xlwt.Workbook | openpyxl.Workbook, corrections_df: pd.DataFrame
+        self,
+        wb: xlwt.Workbook | openpyxl.Workbook,
+        corrections_df: pd.DataFrame,
+        xlrd_wb: Optional[xlrd.Workbook] = None,
     ) -> xlwt.Workbook | openpyxl.Workbook:
         """
         Process the Excel workbook and apply corrections and then return the corrected file.
@@ -216,10 +231,21 @@ class CorrectBSS(luigi.Task):
                 for cell in row:
                     if isinstance(wb, xlwt.Workbook):
                         row, col = coordinate_to_tuple(cell)
+                        prev_value = xlrd_wb.sheet_by_name(correction.worksheet_name).cell_value(row - 1, col - 1)
+                        if (
+                            xlrd_wb.sheet_by_name(correction.worksheet_name).cell(row - 1, col - 1).ctype
+                            == xlrd.XL_CELL_ERROR
+                        ):
+                            # xlrd.error_text_from_code returns, eg, "#N/A"
+                            prev_value = xlrd.error_text_from_code[
+                                xlrd_wb.sheet_by_name(correction.worksheet_name).cell_value(row - 1, col - 1)
+                            ]
+                        self.validate_previous_value(cell, correction.prev_value, prev_value)
                         # xlwt uses 0-based indexes, but coordinate_to_tuple uses 1-based, so offset the values
                         wb.get_sheet(correction.worksheet_name).write(row - 1, col - 1, correction.value)
                     else:
                         cell = wb[correction.worksheet_name][cell]
+                        self.validate_previous_value(cell, correction.prev_value, cell.value)
                         cell.value = correction.value
                         cell.comment = Comment(
                             f"{correction.author} on {correction.correction_date.date().isoformat()}: {correction.comment}",  # NOQA: E501
@@ -227,6 +253,16 @@ class CorrectBSS(luigi.Task):
                         )
 
         return wb
+
+    @staticmethod
+    def validate_previous_value(cell, expected_prev_value, prev_value):
+        # "#N/A" is inconsistently loaded as nan, even when copied and pasted in Excel or GSheets
+        if (str(expected_prev_value) != str(prev_value)) & (
+            {"nan", "#N/A"} != {str(expected_prev_value), str(prev_value)}
+        ):
+            raise ValidationError(
+                f"Unexpected value in source BSS. " f"Cell {cell} value {prev_value} expected {expected_prev_value}."
+            )
 
 
 @requires(bss=CorrectBSS, metadata=GetBSSMetadata)
