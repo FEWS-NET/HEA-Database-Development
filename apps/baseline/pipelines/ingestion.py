@@ -221,7 +221,7 @@ class CorrectBSS(luigi.Task):
         self,
         wb: xlwt.Workbook | openpyxl.Workbook,
         corrections_df: pd.DataFrame,
-        xlrd_wb: Optional[xlrd.Workbook] = None,
+        xlrd_wb: Optional[xlrd.book.Book] = None,
     ) -> xlwt.Workbook | openpyxl.Workbook:
         """
         Process the Excel workbook and apply corrections and then return the corrected file.
