@@ -26,7 +26,7 @@ env:
 
   # Avoid "variable is not set. Defaulting to a blank string." warnings
   GOOGLE_ADMIN_EMAIL: ""
-  GOOGLE_CREDENTIALS: ""
+  GOOGLE_APPLICATION_CREDENTIALS: ""
   
   # AWS Variables
   ECR_REGISTRY: "888016039450.dkr.ecr.us-east-1.amazonaws.com"

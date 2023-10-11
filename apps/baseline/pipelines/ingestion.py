@@ -8,19 +8,26 @@ import itertools
 import logging
 from collections.abc import Iterable
 from pathlib import Path
+from typing import Optional
 
 import luigi
+import openpyxl
 import pandas as pd
+import xlrd
+import xlwt
+from django.core.exceptions import ValidationError
 from django.core.management import call_command
 from django.db.models import ForeignKey
-
-# from django.conf import settings
 from kiluigi import PipelineError
+from kiluigi.format import Pickle
 from kiluigi.targets import GoogleDriveTarget, IntermediateTarget, LocalTarget
 from kiluigi.utils import class_from_name, path_from_task
 
 # from luigi.task import TASK_ID_INVALID_CHAR_REGEX, TASK_ID_TRUNCATE_HASH
 from luigi.util import requires
+from openpyxl.comments import Comment
+from openpyxl.utils.cell import coordinate_to_tuple, rows_from_range
+from xlutils.copy import copy as copy_xls
 
 from baseline.models import WealthGroupCharacteristicValue
 from common.lookups import ClassifiedProductLookup
@@ -134,7 +141,131 @@ class GetBSSMetadata(luigi.ExternalTask):
         return target
 
 
-@requires(bss=GetBSS, metadata=GetBSSMetadata)
+class GetBSSCorrections(luigi.Task):
+    """
+    Return a DataFrame of corrections to make to one or more BSSs.
+    """
+
+    corrections_path = luigi.Parameter(default="", description="Path to the BSS corrections")
+
+    def output(self):
+        return IntermediateTarget(path_from_task(self) + ".pickle", format=Pickle, timeout=3600)
+
+    def run(self):
+        if self.corrections_path:
+            target = LocalTarget(Path(self.corrections_path).expanduser().absolute(), format=luigi.format.Nop)
+            if not target.exists():
+                target = GoogleDriveTarget(
+                    self.corrections_path,
+                    format=luigi.format.Nop,
+                    mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                )
+                if not target.exists():
+                    raise PipelineError("No local or Google Drive file matching %s" % self.corrections_path)
+            with target.open() as input:
+                corrections_df = pd.read_excel(input, "Corrections")
+        else:
+            corrections_df = pd.DataFrame(
+                columns=[
+                    "bss_path",
+                    "worksheet_name",
+                    "range",
+                    "prev_value",
+                    "value",
+                    "correction_date",
+                    "author",
+                    "comment",
+                ]
+            )
+
+        with self.output().open("w") as output:
+            output.write(corrections_df)
+
+
+@requires(bss=GetBSS, corrections=GetBSSCorrections)
+class CorrectBSS(luigi.Task):
+    def output(self):
+        return IntermediateTarget(
+            path_from_task(self) + Path(self.input()["bss"].path).suffix, format=luigi.format.Nop, timeout=3600
+        )
+
+    def run(self):
+        with self.input()["corrections"].open() as input:
+            corrections_df = input.read()
+
+        # Find the <country>/<filename>.<ext> path to the file, relative to the root folder.
+        path = f"{Path(self.bss_path).parent.name}/{Path(self.bss_path).name}"
+        # Find the corrections for this BSS
+        corrections_df = corrections_df[corrections_df["bss_path"] == path]
+
+        rb = None
+        if corrections_df.empty:
+            # No corrections, so just leave the file unaltered
+            with self.output().open("w") as output, self.input()["bss"].open() as input:
+                output.write(input.read())
+
+        else:
+            if Path(self.input()["bss"].path).suffix == ".xls":
+                # xlrd can only read XLS files, so we need to use xlutils.copy to create something we can edit
+                with self.input()["bss"].open() as input:
+                    rb = xlrd.open_workbook(file_contents=input.read(), formatting_info=True, on_demand=True)
+                wb = copy_xls(rb)
+            else:
+                with self.input()["bss"].open() as input:
+                    wb = openpyxl.load_workbook(input)
+            wb = self.process(wb, corrections_df, rb)
+            with self.output().open("w") as output:
+                wb.save(output)
+
+    def process(
+        self,
+        wb: xlwt.Workbook | openpyxl.Workbook,
+        corrections_df: pd.DataFrame,
+        xlrd_wb: Optional[xlrd.book.Book] = None,
+    ) -> xlwt.Workbook | openpyxl.Workbook:
+        """
+        Process the Excel workbook and apply corrections and then return the corrected file.
+        """
+        for correction in corrections_df.itertuples():
+            for row in rows_from_range(correction.range):
+                for cell in row:
+                    if isinstance(wb, xlwt.Workbook):
+                        row, col = coordinate_to_tuple(cell)
+                        prev_value = xlrd_wb.sheet_by_name(correction.worksheet_name).cell_value(row - 1, col - 1)
+                        if (
+                            xlrd_wb.sheet_by_name(correction.worksheet_name).cell(row - 1, col - 1).ctype
+                            == xlrd.XL_CELL_ERROR
+                        ):
+                            # xlrd.error_text_from_code returns, eg, "#N/A"
+                            prev_value = xlrd.error_text_from_code[
+                                xlrd_wb.sheet_by_name(correction.worksheet_name).cell_value(row - 1, col - 1)
+                            ]
+                        self.validate_previous_value(cell, correction.prev_value, prev_value)
+                        # xlwt uses 0-based indexes, but coordinate_to_tuple uses 1-based, so offset the values
+                        wb.get_sheet(correction.worksheet_name).write(row - 1, col - 1, correction.value)
+                    else:
+                        cell = wb[correction.worksheet_name][cell]
+                        self.validate_previous_value(cell, correction.prev_value, cell.value)
+                        cell.value = correction.value
+                        cell.comment = Comment(
+                            f"{correction.author} on {correction.correction_date.date().isoformat()}: {correction.comment}",  # NOQA: E501
+                            author=correction.author,
+                        )
+
+        return wb
+
+    @staticmethod
+    def validate_previous_value(cell, expected_prev_value, prev_value):
+        # "#N/A" is inconsistently loaded as nan, even when copied and pasted in Excel or GSheets
+        if (str(expected_prev_value) != str(prev_value)) & (
+            {"nan", "#N/A"} != {str(expected_prev_value), str(prev_value)}
+        ):
+            raise ValidationError(
+                f"Unexpected value in source BSS. " f"Cell {cell} value {prev_value} expected {expected_prev_value}."
+            )
+
+
+@requires(bss=CorrectBSS, metadata=GetBSSMetadata)
 class NormalizeWB(luigi.Task):
     def output(self):
         return IntermediateTarget(path_from_task(self) + ".json", format=JSON, timeout=3600)
@@ -145,16 +276,17 @@ class NormalizeWB(luigi.Task):
         with self.input()["metadata"].open() as input:
             metadata_df = pd.read_excel(input, "Metadata")
 
-        # Find the metadata for this BSS
+        # Find the <country>/<filename>.<ext> path to the file, relative to the root folder.
         path = f"{Path(self.bss_path).parent.name}/{Path(self.bss_path).name}"
-        metadata = metadata_df[metadata_df.bss_path == path].iloc[0]
+        # Find the metadata for this BSS
+        metadata = metadata_df[metadata_df["bss_path"] == path].iloc[0]
 
         data = self.process(data_df, metadata)
 
         with self.output().open("w") as output:
             output.write(data)
 
-    def process(self, data_df: pd.DataFrame, metadata: pd.Series):
+    def process(self, data_df: pd.DataFrame, metadata: pd.Series) -> dict:
         """
         Process the WB Sheet and return a Python dict of normalized data.
 
@@ -623,9 +755,13 @@ class ImportBaselines(luigi.WrapperTask):
 
     bss_paths = luigi.ListParameter(default=[], description="List of path to the BSS files")
     metadata_path = luigi.Parameter(description="Path to the BSS metadata")
+    corrections_path = luigi.Parameter(default="", description="Path to the BSS corrections")
 
     def requires(self):
-        return [ImportBaseline(bss_path=bss_path, metadata_path=self.metadata_path) for bss_path in self.bss_paths]
+        return [
+            ImportBaseline(bss_path=bss_path, metadata_path=self.metadata_path, corrections_path=self.corrections_path)
+            for bss_path in self.bss_paths
+        ]
 
 
 class ImportAllBaselines(luigi.WrapperTask):
@@ -635,6 +771,7 @@ class ImportAllBaselines(luigi.WrapperTask):
 
     root_path = luigi.Parameter(description="Path to the root folder containing the BSSs")
     metadata_path = luigi.Parameter(description="Path to the BSS metadata")
+    corrections_path = luigi.Parameter(default="", description="Path to the BSS corrections")
 
     def requires(self):
         root_target = LocalTarget(Path(self.root_path).expanduser().absolute(), format=luigi.format.Nop)
@@ -647,4 +784,6 @@ class ImportAllBaselines(luigi.WrapperTask):
             if not root_target.exists():
                 raise PipelineError("No local or Google Drive folder matching %s" % self.root_path)
         for path in root_target.fs.listdir(self.root_path):
-            yield ImportBaseline(bss_path=path, metadata_path=self.metadata_path)
+            yield ImportBaseline(
+                bss_path=path, metadata_path=self.metadata_path, corrections_path=self.corrections_path
+            )
