@@ -8,14 +8,12 @@ import itertools
 import logging
 from collections.abc import Iterable
 from pathlib import Path
-from typing import Optional
 
 import luigi
 import openpyxl
 import pandas as pd
 import xlrd
 import xlwt
-from django.core.exceptions import ValidationError
 from django.core.management import call_command
 from django.db.models import ForeignKey
 from kiluigi import PipelineError
@@ -198,7 +196,6 @@ class CorrectBSS(luigi.Task):
         # Find the corrections for this BSS
         corrections_df = corrections_df[corrections_df["bss_path"] == path]
 
-        rb = None
         if corrections_df.empty:
             # No corrections, so just leave the file unaltered
             with self.output().open("w") as output, self.input()["bss"].open() as input:
@@ -208,24 +205,25 @@ class CorrectBSS(luigi.Task):
             if Path(self.input()["bss"].path).suffix == ".xls":
                 # xlrd can only read XLS files, so we need to use xlutils.copy to create something we can edit
                 with self.input()["bss"].open() as input:
-                    rb = xlrd.open_workbook(file_contents=input.read(), formatting_info=True, on_demand=True)
-                wb = copy_xls(rb)
+                    wb = xlrd.open_workbook(file_contents=input.read(), formatting_info=True, on_demand=True)
             else:
                 with self.input()["bss"].open() as input:
                     wb = openpyxl.load_workbook(input)
-            wb = self.process(wb, corrections_df, rb)
+            wb = self.process(wb, corrections_df)
             with self.output().open("w") as output:
                 wb.save(output)
 
     def process(
         self,
-        wb: xlwt.Workbook | openpyxl.Workbook,
+        wb: xlrd.book.Book | openpyxl.Workbook,
         corrections_df: pd.DataFrame,
-        xlrd_wb: Optional[xlrd.book.Book] = None,
     ) -> xlwt.Workbook | openpyxl.Workbook:
         """
         Process the Excel workbook and apply corrections and then return the corrected file.
         """
+        if isinstance(wb, xlrd.book.Book):
+            xlrd_wb = wb
+            wb = copy_xls(wb)  # a writable workbook to be returned by this method
         for correction in corrections_df.itertuples():
             for row in rows_from_range(correction.range):
                 for cell in row:
@@ -254,14 +252,15 @@ class CorrectBSS(luigi.Task):
 
         return wb
 
-    @staticmethod
-    def validate_previous_value(cell, expected_prev_value, prev_value):
+    def validate_previous_value(self, cell, expected_prev_value, prev_value):
         # "#N/A" is inconsistently loaded as nan, even when copied and pasted in Excel or GSheets
         if (str(expected_prev_value) != str(prev_value)) & (
             {"nan", "#N/A"} != {str(expected_prev_value), str(prev_value)}
         ):
-            raise ValidationError(
-                f"Unexpected value in source BSS. " f"Cell {cell} value {prev_value} expected {expected_prev_value}."
+            raise PipelineError(
+                "Unexpected prior value in source BSS. "
+                f"BSS `{self.input()['bss'].name}`, cell `{cell}`, "
+                f"value found `{prev_value}`, expected `{expected_prev_value}`."
             )
 
 
