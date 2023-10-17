@@ -86,7 +86,7 @@ class SeasonAdmin(admin.ModelAdmin):
 
     fields = ("country", "name", "description", "season_type", "start", "end", "alignment", "order")
     list_display = ("country", "name", "season_type", "start", "end")
-    search_fields = ("country__name", "name", "season_type")
+    search_fields = ("country__iso_en_ro_name", "name", "season_type")
     list_filter = (
         ("country", RelatedFieldListFilter),
         "season_type",

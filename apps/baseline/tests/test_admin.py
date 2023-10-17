@@ -21,6 +21,7 @@ from baseline.models import (
     WealthGroup,
 )
 from common.tests.factories import ClassifiedProductFactory
+from metadata.models import LivelihoodStrategyType
 from metadata.tests.factories import (
     LivelihoodCategoryFactory,
     SeasonFactory,
@@ -46,51 +47,121 @@ from .factories import (
 )
 
 
-class BaselineAdminTestCase(TestCase):
+class SourceOrganizationAdminTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
         User.objects.create_superuser(username="admin", password="admin", email="admin@hea.org")
         cls.source_organization1 = SourceOrganizationFactory()
         cls.source_organization2 = SourceOrganizationFactory()
-        cls.livelihood_zone = LivelihoodZoneFactory()
+        activate("en")
+        cls.url = reverse("admin:baseline_sourceorganization_changelist")
+
+    def setUp(self):
+        self.client.login(username="admin", password="admin")
+
+    def test_sourceorganization_admin_changelists(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.source_organization1.name)
+
+    def test_sourceorganization_search_fields(self):
+        response = self.client.get(
+            self.url,
+            {"q": self.source_organization1.name},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.source_organization1.name)
+        self.assertNotContains(response, self.source_organization2.name)
+
+
+class CommunityAdminTestCase(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        User.objects.create_superuser(username="admin", password="admin", email="admin@hea.org")
+        cls.community1 = CommunityFactory(name="Dobley")
+        cls.community2 = CommunityFactory(name="Zukeyla")
+        activate("en")
+        cls.url = reverse("admin:baseline_community_changelist")
+
+    def setUp(self):
+        self.client.login(username="admin", password="admin")
+
+    def test_community_changelists(self):
+        response = self.client.get(reverse("admin:baseline_community_changelist"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.community1.name)
+
+    def test_community_search_fields(self):
+        response = self.client.get(
+            self.url,
+            {"q": self.community1.name},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.community1.name)
+        self.assertNotContains(response, self.community2.name)
+
+
+class LivelihoodZoneAdminTestCase(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        User.objects.create_superuser(username="admin", password="admin", email="admin@hea.org")
+        cls.livelihood_zone1 = LivelihoodZoneFactory()
+        cls.livelihood_zone2 = LivelihoodZoneFactory()
+        activate("en")
+        cls.url = reverse("admin:baseline_livelihoodzone_changelist")
+
+    def setUp(self):
+        self.client.login(username="admin", password="admin")
+
+    def test_livelihoodzone_changelists(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.livelihood_zone1.name)
+
+    def test_search_livelihood_zone(self):
+        response = self.client.get(
+            self.url,
+            {"q": self.livelihood_zone2.name},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.livelihood_zone2.name)
+        self.assertNotContains(response, self.livelihood_zone1.name)
+
+    def test_filter_livelihood_zone(self):
+        response = self.client.get(
+            self.url,
+            {"country": self.livelihood_zone1.country.pk},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.livelihood_zone1.name)
+        self.assertNotContains(response, self.livelihood_zone2.name)
+
+
+class LivelihoodZoneBaselineAdminTestCase(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        User.objects.create_superuser(username="admin", password="admin", email="admin@hea.org")
+        cls.source_organization1 = SourceOrganizationFactory()
         cls.livelihood_zone_baseline1 = LivelihoodZoneBaselineFactory(
             source_organization=cls.source_organization1,
             reference_year_start_date=datetime(2015, 5, 1),
             reference_year_end_date=datetime(2016, 4, 30),
         )
         cls.livelihood_zone_baseline2 = LivelihoodZoneBaselineFactory()
-        cls.community = CommunityFactory()
-        cls.livelihood_strategy = LivelihoodStrategyFactory()
-        cls.site = AdminSite()
         activate("en")
+        cls.url = reverse("admin:baseline_livelihoodzonebaseline_changelist")
 
     def setUp(self):
         self.client.login(username="admin", password="admin")
 
-    def test_admin_changelists(self):
-        response = self.client.get(reverse("admin:baseline_sourceorganization_changelist"))
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, self.source_organization1.name)
-
-        response = self.client.get(reverse("admin:baseline_livelihoodzone_changelist"))
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, self.livelihood_zone.name)
-
-        response = self.client.get(reverse("admin:baseline_livelihoodzonebaseline_changelist"))
+    def test_livelihoodzonebaseline_changelists(self):
+        response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.livelihood_zone_baseline1.livelihood_zone.code)
 
-        response = self.client.get(reverse("admin:baseline_community_changelist"))
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, self.community.name)
-
-        response = self.client.get(reverse("admin:baseline_livelihoodstrategy_changelist"))
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, self.livelihood_strategy.strategy_type)
-
     def test_search_livelihood_zone_baseline_fields(self):
         response = self.client.get(
-            reverse("admin:baseline_livelihoodzonebaseline_changelist"),
+            self.url,
             {"q": self.livelihood_zone_baseline1.livelihood_zone.name},
         )
         self.assertEqual(response.status_code, 200)
@@ -98,7 +169,7 @@ class BaselineAdminTestCase(TestCase):
         self.assertNotContains(response, self.livelihood_zone_baseline2.livelihood_zone)
 
         response = self.client.get(
-            reverse("admin:baseline_livelihoodzonebaseline_changelist"),
+            self.url,
             {"q": self.livelihood_zone_baseline2.livelihood_zone.name},
         )
         self.assertEqual(response.status_code, 200)
@@ -107,7 +178,7 @@ class BaselineAdminTestCase(TestCase):
 
     def test_livelihood_zone_baseline_list_filter(self):
         response = self.client.get(
-            reverse("admin:baseline_livelihoodzonebaseline_changelist"),
+            self.url,
             {"source_organization__id__exact": self.livelihood_zone_baseline1.source_organization.id},
         )
         self.assertEqual(response.status_code, 200)
@@ -115,7 +186,7 @@ class BaselineAdminTestCase(TestCase):
         self.assertNotContains(response, self.livelihood_zone_baseline2.livelihood_zone)
 
     def test_livelihood_zone_baseline_date_hierarchy(self):
-        response = self.client.get(reverse("admin:baseline_livelihoodzonebaseline_changelist"))
+        response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.livelihood_zone_baseline1.reference_year_start_date.year)
         self.assertContains(response, self.livelihood_zone_baseline2.reference_year_start_date.year)
@@ -140,6 +211,48 @@ class BaselineAdminTestCase(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertTrue(LivelihoodZoneBaseline.objects.all().count(), current_count + 1)
         self.assertTrue(LivelihoodZoneBaseline.objects.filter(livelihood_zone=livelihood_zone).exists())
+
+
+class LivelihoodStrategyAdminTestCase(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        User.objects.create_superuser(username="admin", password="admin", email="admin@hea.org")
+        cls.strategy1 = LivelihoodStrategyFactory(
+            livelihood_zone_baseline=LivelihoodZoneBaselineFactory(),
+            strategy_type=LivelihoodStrategyType.MILK_PRODUCTION,
+        )
+        cls.strategy2 = LivelihoodStrategyFactory(
+            livelihood_zone_baseline=LivelihoodZoneBaselineFactory(),
+            strategy_type=LivelihoodStrategyType.CROP_PRODUCTION,
+        )
+        activate("en")
+        cls.url = reverse("admin:baseline_livelihoodstrategy_changelist")
+
+    def setUp(self):
+        self.client.login(username="admin", password="admin")
+
+    def test_livelihoodstrategy_changelists(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.strategy1.strategy_type)
+
+    def test_livelihoodstrategy_search_fields(self):
+        response = self.client.get(
+            self.url,
+            {"q": self.strategy1.livelihood_zone_baseline.livelihood_zone.name},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.strategy1.product.cpcv2)
+        self.assertNotContains(response, self.strategy2.product.cpcv2)
+
+    def test_livelihoodstrategy_list_filter(self):
+        response = self.client.get(
+            self.url,
+            {"strategy_type": self.strategy2.strategy_type},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.strategy2.product.cpcv2)
+        self.assertNotContains(response, self.strategy1.product.cpcv2)
 
 
 class WealthGroupAdminTest(TestCase):
