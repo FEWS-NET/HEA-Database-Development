@@ -960,7 +960,7 @@ class BaselineLivelihoodActivity(LivelihoodActivity):
 
 class ResponseLivelihoodActivityManager(InheritanceManager):
     def get_queryset(self):
-        return super().get_queryset().exclude(scenario=LivelihoodActivityScenario.RESPONSE).select_subclasses()
+        return super().get_queryset().filter(scenario=LivelihoodActivityScenario.RESPONSE).select_subclasses()
 
 
 class ResponseLivelihoodActivity(LivelihoodActivity):
