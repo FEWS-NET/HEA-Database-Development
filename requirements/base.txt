@@ -15,7 +15,7 @@ factory-boy==3.2.1
 gunicorn==20.1.0
 json-logging-py==0.2
 jupyterlab==4.0.5
-git+https://gitlab.com/kimetrica/kimetrica-public-projects/kiluigi.git@f01669fcc175dd95b98458638788f6f99ca84ff5#egg
+git+https://gitlab.com/kimetrica/kimetrica-public-projects/kiluigi.git@913f44b528fe289a6ff1135895d7be229c4a0109#egg
 lxml==4.9.3
 # Make sure that same version of numpy is specified here and in docker/app/Dockerfile
 numpy==1.23.5
