@@ -8,8 +8,8 @@ from metadata.models import (
     ReferenceData,
     Season,
     SeasonalActivityType,
-    WealthCategory,
     WealthCharacteristic,
+    WealthGroupCategory,
 )
 from metadata.serializers import (
     HazardCategorySerializer,
@@ -17,8 +17,8 @@ from metadata.serializers import (
     ReferenceDataSerializer,
     SeasonalActivityTypeSerializer,
     SeasonSerializer,
-    WealthCategorySerializer,
     WealthCharacteristicSerializer,
+    WealthGroupCategorySerializer,
 )
 
 
@@ -56,11 +56,11 @@ class LivelihoodCategoryViewSet(ReferenceDataViewSet):
     serializer_class = LivelihoodCategorySerializer
 
 
-class WealthCategoryViewSet(ReferenceDataViewSet):
+class WealthGroupCategoryViewSet(ReferenceDataViewSet):
     """ """
 
-    queryset = WealthCategory.objects.all()
-    serializer_class = WealthCategorySerializer
+    queryset = WealthGroupCategory.objects.all()
+    serializer_class = WealthGroupCategorySerializer
 
 
 class WealthCharacteristicFilterSet(ReferenceDataFilterSet):

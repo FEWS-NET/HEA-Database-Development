@@ -16,24 +16,28 @@ class WealthGroupCharacteristicValueTestCase(TestCase):
     def test_source(self):
 
         # Source = SUMMARY for a Baseline Wealth Group is OK
-        self.wealth_group_characteristic_value.source = WealthGroupCharacteristicValue.CharacteristicSource.SUMMARY
+        self.wealth_group_characteristic_value.source = WealthGroupCharacteristicValue.CharacteristicReference.SUMMARY
         self.wealth_group_characteristic_value.wealth_group.community = None
         self.wealth_group_characteristic_value.save()
 
         # Source = COMMUNITY for a Community Wealth Group is OK
-        self.wealth_group_characteristic_value.source = WealthGroupCharacteristicValue.CharacteristicSource.COMMUNITY
+        self.wealth_group_characteristic_value.source = (
+            WealthGroupCharacteristicValue.CharacteristicReference.COMMUNITY
+        )
         self.wealth_group_characteristic_value.wealth_group.community = CommunityFactory(
             livelihood_zone_baseline=self.wealth_group_characteristic_value.wealth_group.livelihood_zone_baseline
         )
         self.wealth_group_characteristic_value.save()
 
         # Source = SUMMARY for a Community Wealth Group is not OK
-        self.wealth_group_characteristic_value.source = WealthGroupCharacteristicValue.CharacteristicSource.SUMMARY
+        self.wealth_group_characteristic_value.source = WealthGroupCharacteristicValue.CharacteristicReference.SUMMARY
         with conditional_logging():
             self.assertRaises(ValidationError, self.wealth_group_characteristic_value.save)
 
         # Source = COMMUNITY for a Baseline Wealth Group is not OK
-        self.wealth_group_characteristic_value.source = WealthGroupCharacteristicValue.CharacteristicSource.COMMUNITY
+        self.wealth_group_characteristic_value.source = (
+            WealthGroupCharacteristicValue.CharacteristicReference.COMMUNITY
+        )
         self.wealth_group_characteristic_value.wealth_group.community = None
         with conditional_logging():
             self.assertRaises(ValidationError, self.wealth_group_characteristic_value.save)

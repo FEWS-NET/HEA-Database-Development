@@ -7,8 +7,8 @@ from metadata.models import (
     HazardCategory,
     LivelihoodCategory,
     SeasonalActivityType,
-    WealthCategory,
     WealthCharacteristic,
+    WealthGroupCategory,
 )
 
 from .factories import (
@@ -16,8 +16,8 @@ from .factories import (
     LivelihoodCategoryFactory,
     SeasonalActivityTypeFactory,
     SeasonFactory,
-    WealthCategoryFactory,
     WealthCharacteristicFactory,
+    WealthGroupCategoryFactory,
 )
 
 
@@ -31,9 +31,9 @@ class ReferenceDataViewSetTestCase(APITestCase):
         cls.hazardcategory1 = HazardCategoryFactory()
         cls.hazardcategory2 = HazardCategoryFactory()
 
-        cls.wealthcategory1 = WealthCategoryFactory()
-        cls.wealthcategory2 = WealthCategoryFactory()
-        cls.wealthcategory3 = WealthCategoryFactory()
+        cls.WealthGroupCategory1 = WealthGroupCategoryFactory()
+        cls.WealthGroupCategory2 = WealthGroupCategoryFactory()
+        cls.WealthGroupCategory3 = WealthGroupCategoryFactory()
 
         cls.seasonalactivitytype1 = SeasonalActivityTypeFactory()
         cls.seasonalactivitytype2 = SeasonalActivityTypeFactory()
@@ -45,7 +45,7 @@ class ReferenceDataViewSetTestCase(APITestCase):
     def setUp(self) -> None:
         self.livelihoodcategory_url = reverse("livelihoodcategory-list")
         self.hazardcategory_url = reverse("hazardcategory-list")
-        self.wealthcategory_url = reverse("wealthcategory-list")
+        self.wealthgroupcategory_url = reverse("wealthgroupcategory-list")
         self.seasonalactivitytype_url = reverse("seasonalactivitytype-list")
         self.wealthcharacteristic_url = reverse("wealthcharacteristic-list")
 
@@ -62,8 +62,8 @@ class ReferenceDataViewSetTestCase(APITestCase):
         result = json.loads(response.content.decode("utf-8"))
         self.assertEqual(len(result), 2)
 
-        # WealthCategory
-        response = self.client.get(self.wealthcategory_url)
+        # WealthGroupCategory
+        response = self.client.get(self.wealthgroupcategory_url)
         self.assertEqual(response.status_code, 200)
         result = json.loads(response.content.decode("utf-8"))
         self.assertEqual(len(result), 3)
@@ -111,7 +111,7 @@ class ReferenceDataViewSetTestCase(APITestCase):
         models_to_test = [
             LivelihoodCategory,
             HazardCategory,
-            WealthCategory,
+            WealthGroupCategory,
             SeasonalActivityType,
             WealthCharacteristic,
         ]

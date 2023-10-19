@@ -1,14 +1,14 @@
 from django.test import TestCase
 from kiluigi.utils import submit_task
 
-from baseline.pipelines.ingestion import ImportBaseline
+from baseline.pipelines.ingestion import ImportBaseline, NormalizeData
 from baseline.tests.factories import SourceOrganizationFactory
 from common.tests.factories import ClassifiedProductFactory, CountryFactory
 from common.utils import conditional_logging
 from metadata.tests.factories import (
     LivelihoodCategoryFactory,
-    WealthCategoryFactory,
     WealthCharacteristicFactory,
+    WealthGroupCategoryFactory,
 )
 
 
@@ -24,10 +24,10 @@ class IngestionPipelineTestCase(TestCase):
             code="agropastoral",
             name="Agropastoral",
         )
-        WealthCategoryFactory(code="VP", name="Very Poor", aliases=["vp", "tp"])
-        WealthCategoryFactory(code="P", name="Poor", aliases=["p"])
-        WealthCategoryFactory(code="M", name="Medium", aliases=["m"])
-        WealthCategoryFactory(code="B/O", name="Better Off", aliases=["b/o", "r", "a"])
+        WealthGroupCategoryFactory(code="VP", name="Very Poor", aliases=["vp", "tp"])
+        WealthGroupCategoryFactory(code="P", name="Poor", aliases=["p"])
+        WealthGroupCategoryFactory(code="M", name="Medium", aliases=["m"])
+        WealthGroupCategoryFactory(code="B/O", name="Better Off", aliases=["b/o", "r", "a"])
         WealthCharacteristicFactory(
             code="percentage of households", name="Wealth breakdown (% of households)", aliases=["wealth breakdown"]
         )

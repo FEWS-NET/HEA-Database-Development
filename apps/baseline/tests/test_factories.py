@@ -21,14 +21,14 @@ from .factories import (
     LivelihoodStrategyFactory,
     LivelihoodZoneBaselineFactory,
     LivelihoodZoneFactory,
-    LivestockSalesFactory,
+    LivestockSaleFactory,
     MarketPriceFactory,
     MeatProductionFactory,
     MilkProductionFactory,
     OtherCashIncomeFactory,
-    OtherPurchasesFactory,
+    OtherPurchaseFactory,
     PaymentInKindFactory,
-    ReliefGiftsOtherFactory,
+    ReliefGiftOtherFactory,
     ResponseLivelihoodActivityFactory,
     SeasonalActivityFactory,
     SeasonalActivityOccurrenceFactory,
@@ -108,9 +108,9 @@ class FactoryTestCase(TestCase):
         for _ in range(self.num_records):
             MeatProductionFactory()
 
-    def test_livestocksales_factory(self):
+    def test_LivestockSale_factory(self):
         for _ in range(self.num_records):
-            LivestockSalesFactory()
+            LivestockSaleFactory()
 
     def test_cropproduction_factory(self):
         for _ in range(self.num_records):
@@ -124,9 +124,9 @@ class FactoryTestCase(TestCase):
         for _ in range(self.num_records):
             PaymentInKindFactory()
 
-    def test_reliefgiftsandotherfood_factory(self):
+    def test_reliefgiftandotherfood_factory(self):
         for _ in range(self.num_records):
-            ReliefGiftsOtherFactory()
+            ReliefGiftOtherFactory()
 
     def test_fishing_factory(self):
         for _ in range(self.num_records):
@@ -140,9 +140,9 @@ class FactoryTestCase(TestCase):
         for _ in range(self.num_records):
             OtherCashIncomeFactory()
 
-    def test_otherpurchases_factory(self):
+    def test_OtherPurchase_factory(self):
         for _ in range(self.num_records):
-            OtherPurchasesFactory()
+            OtherPurchaseFactory()
 
     def test_seasonalactivity_factory(self):
         for _ in range(self.num_records):
@@ -202,15 +202,15 @@ class FactoryTestCase(TestCase):
             MilkProductionFactory()
             ButterProductionFactory()
             MeatProductionFactory()
-            LivestockSalesFactory()
+            LivestockSaleFactory()
             CropProductionFactory()
             FoodPurchaseFactory()
             PaymentInKindFactory()
-            ReliefGiftsOtherFactory()
+            ReliefGiftOtherFactory()
             FishingFactory()
             WildFoodGatheringFactory()
             OtherCashIncomeFactory()
-            OtherPurchasesFactory()
+            OtherPurchaseFactory()
             SeasonalActivityFactory()
             SeasonalActivityOccurrenceFactory()
             CommunityCropProductionFactory()

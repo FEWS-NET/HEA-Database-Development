@@ -8,8 +8,8 @@ from .models import (
     ReferenceData,
     Season,
     SeasonalActivityType,
-    WealthCategory,
     WealthCharacteristic,
+    WealthGroupCategory,
 )
 
 
@@ -60,13 +60,13 @@ class SeasonalActivityTypeSerializer(ReferenceDataSerializer):
         ]
 
 
-class WealthCategorySerializer(ReferenceDataSerializer):
+class WealthGroupCategorySerializer(ReferenceDataSerializer):
     """
-    Serializer class for the WealthCategory model
+    Serializer class for the WealthGroupCategory model
     """
 
     class Meta(ReferenceDataSerializer.Meta):
-        model = WealthCategory
+        model = WealthGroupCategory
 
 
 class HazardCategorySerializer(ReferenceDataSerializer):
