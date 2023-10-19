@@ -1,7 +1,7 @@
 from django.test import TestCase
 from kiluigi.utils import submit_task
 
-from baseline.pipelines.ingestion import ImportBaseline, NormalizeData
+from baseline.pipelines.ingestion import ImportBaseline
 from baseline.tests.factories import SourceOrganizationFactory
 from common.tests.factories import ClassifiedProductFactory, CountryFactory
 from common.utils import conditional_logging
