@@ -105,8 +105,8 @@ class WealthCharacteristic(ReferenceData):
     )
 
     class Meta:
-        verbose_name = _("Wealth Group Characteristic")
-        verbose_name_plural = _("Wealth Group Characteristics")
+        verbose_name = _("Wealth Characteristic")
+        verbose_name_plural = _("Wealth Characteristics")
 
 
 # Defined outside LivelihoodStrategy to make it easy to access from subclasses
@@ -183,7 +183,7 @@ class Market(ReferenceData):
     TODO: should we make this spatial? and move it to spatial or metadata?
     """
 
-    country = common_models.NameField(verbose_name=_("Name"))
+    country = models.ForeignKey(Country, verbose_name=_("Country"), db_column="country_code", on_delete=models.PROTECT)
 
     class Meta:
         verbose_name = _("Market")

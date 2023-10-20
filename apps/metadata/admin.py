@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.contrib.admin import RelatedFieldListFilter
 
 from .models import (
     HazardCategory,
@@ -85,9 +86,9 @@ class SeasonAdmin(admin.ModelAdmin):
 
     fields = ("country", "name", "description", "season_type", "start", "end", "alignment", "order")
     list_display = ("country", "name", "season_type", "start", "end")
-    search_fields = ("country", "name", "season_type")
+    search_fields = ("country__iso_en_ro_name", "name", "season_type")
     list_filter = (
-        "country",
+        ("country", RelatedFieldListFilter),
         "season_type",
     )
     ordering = ("order",)
@@ -103,7 +104,7 @@ class MarketAdmin(DimensionAdmin):
         "aliases",
     ]
 
-    list_filter = ("country",)
+    list_filter = (("country", RelatedFieldListFilter),)
 
 
 admin.site.register(LivelihoodCategory, LivelihoodCategoryAdmin)
