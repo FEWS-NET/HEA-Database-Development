@@ -109,8 +109,8 @@ class WealthCharacteristic(ReferenceData):
     )
 
     class Meta:
-        verbose_name = _("Wealth Group Characteristic")
-        verbose_name_plural = _("Wealth Group Characteristics")
+        verbose_name = _("Wealth Characteristic")
+        verbose_name_plural = _("Wealth Characteristics")
 
 
 # Defined outside LivelihoodStrategy to make it easy to access from subclasses

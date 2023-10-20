@@ -57,7 +57,7 @@ class SourceOrganizationAdmin(admin.ModelAdmin):
 
 class LivelihoodZoneAdmin(admin.ModelAdmin):
     list_display = ("code", "name", "country")
-    search_fields = ["code", "name", "description", "country"]
+    search_fields = ["code", "name", "description", "country__iso_en_ro_name"]
     list_filter = ("country",)
 
 
@@ -104,9 +104,9 @@ class LivelihoodZoneBaselineAdmin(GeoModelAdmin):
         "reference_year_end_date",
     )
     search_fields = [
-        "livelihood_zone",
-        "main_livelihood_category",
-        "source_organization",
+        "livelihood_zone__name",
+        "main_livelihood_category__name",
+        "source_organization__name",
     ]
     list_filter = [
         "source_organization",
@@ -129,7 +129,7 @@ class CommunityAdmin(GeoModelAdmin):
         "livelihood_zone_baseline",
         "full_name",
     )
-    search_fields = ("name", "full_name", "livelihood_zone_baseline")
+    search_fields = ("name", "full_name", "livelihood_zone_baseline__livelihood_zone__name")
     list_filter = (
         "livelihood_zone_baseline__livelihood_zone__name",
         "livelihood_zone_baseline__livelihood_zone__country",
@@ -153,10 +153,10 @@ class LivelihoodStrategyAdmin(admin.ModelAdmin):
         "product",
         "unit_of_measure",
     )
-    search_fields = ("strategy_type", "livelihood_zone_baseline", "product")
+    search_fields = ("strategy_type", "livelihood_zone_baseline__livelihood_zone__name", "product__common_name")
     list_filter = (
         "strategy_type",
-        "livelihood_zone_baseline__livelihood_zone__name",
+        "livelihood_zone_baseline__livelihood_zone",
         "livelihood_zone_baseline__livelihood_zone__country",
     )
 
@@ -466,10 +466,10 @@ class CommunityLivestockAdmin(admin.ModelAdmin):
         "wet_season_milk_production",
         "dry_season_milk_production",
     )
-    search_fields = ("livestock_type",)
+    search_fields = ("livestock__common_name",)
     list_filter = (
         "community__livelihood_zone_baseline__livelihood_zone",
-        "community",
+        "community__full_name",
         "livestock",
     )
 

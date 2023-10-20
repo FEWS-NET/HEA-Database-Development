@@ -351,14 +351,14 @@ class WealthGroupManager(common_models.IdentifierManager):
             return self.get(
                 livelihood_zone_baseline__livelihood_zone__code=code,
                 livelihood_zone_baseline__reference_year_end_date=reference_year_end_date,
-                wealth_group_category=wealth_group_category,
+                wealth_group_category__code=wealth_group_category,
                 community__full_name=full_name,
             )
         else:
             return self.get(
                 livelihood_zone_baseline__livelihood_zone__code=code,
                 livelihood_zone_baseline__reference_year_end_date=reference_year_end_date,
-                wealth_group_category=wealth_group_category,
+                wealth_group_category__code=wealth_group_category,
                 community__isnull=True,
             )
 
@@ -529,7 +529,7 @@ class WealthGroupCharacteristicValueManager(common_models.IdentifierManager):
             "reference_type": reference_type,
             "wealth_group__livelihood_zone_baseline__livelihood_zone__code": code,
             "wealth_group__livelihood_zone_baseline__reference_year_end_date": reference_year_end_date,
-            "wealth_group__wealth_group_category": wealth_group_category,
+            "wealth_group__wealth_group_category__code": wealth_group_category,
         }
         if full_name:
             criteria["wealth_group__community__full_name"] = full_name
@@ -1092,7 +1092,7 @@ class BaselineLivelihoodActivity(LivelihoodActivity):
 
 class ResponseLivelihoodActivityManager(InheritanceManager):
     def get_queryset(self):
-        return super().get_queryset().exclude(scenario=LivelihoodActivityScenario.RESPONSE).select_subclasses()
+        return super().get_queryset().filter(scenario=LivelihoodActivityScenario.RESPONSE).select_subclasses()
 
 
 class ResponseLivelihoodActivity(LivelihoodActivity):

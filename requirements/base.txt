@@ -13,6 +13,7 @@ djangorestframework-xml==2.0.0
 docutils
 factory-boy==3.2.1
 gunicorn==20.1.0
+html5lib==1.1
 json-logging-py==0.2
 jupyterlab==4.0.5
 git+https://gitlab.com/kimetrica/kimetrica-public-projects/kiluigi.git@913f44b528fe289a6ff1135895d7be229c4a0109#egg

@@ -265,8 +265,8 @@ class Migration(migrations.Migration):
                 ),
             ],
             options={
-                "verbose_name": "Wealth Group Characteristic",
-                "verbose_name_plural": "Wealth Group Characteristics",
+                "verbose_name": "Wealth Characteristic",
+                "verbose_name_plural": "Wealth Characteristics",
             },
         ),
         migrations.CreateModel(

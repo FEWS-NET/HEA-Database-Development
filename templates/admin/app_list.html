@@ -64,10 +64,11 @@
             </div>
         </div>
     {% endif %}
-    {% if 'baseline.view_wealthgroup' in perms %}
+    {% if 'baseline.view_wealthgroup' in perms or 'baseline.view_livelihoodstrategy' in perms %}
         <div class="menu-category">
             <h5> {% translate 'BSS WB,Data,.. Sheets' %} </h5>
             <div class="row row-cols-1 row-cols-md-3 g-4">
+                  {% if perms.baseline.view_wealthgroup %}
                 <div class="col">
                     <div class="card m-2">
                         <div class="card-body">
@@ -75,6 +76,17 @@
                         </div>
                     </div>
                 </div>
+                  {% endif %}
+
+             {% if perms.baseline.view_livelihoodstrategy %}
+                <div class="col">
+                    <div class="card m-2">
+                        <div class="card-body">
+                            <a href="{% url 'admin:baseline_livelihoodstrategy_changelist' %}">{% translate 'Livelihood Strategy' %}</a>
+                        </div>
+                    </div>
+                </div>
+                  {% endif %}
             </div>
         </div>
     {% endif %}
