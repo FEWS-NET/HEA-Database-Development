@@ -798,6 +798,7 @@ class LivelihoodStrategy(common_models.Model):
     # @TODO See https://fewsnet.atlassian.net/browse/HEA-67
     # Are there other types than rainfed and irrigated?
     additional_identifier = models.CharField(
+        max_length=60,
         blank=True,
         verbose_name=_("Additional Identifer"),
         help_text=_("Additional text identifying the livelihood strategy"),
@@ -936,7 +937,7 @@ class LivelihoodActivity(common_models.Model):
         ALL = "all", _("All Together")
 
     household_labor_provider = models.CharField(
-        choices=HouseholdLaborProvider.choices, blank=True, verbose_name=_("Activity done by")
+        max_length=10, choices=HouseholdLaborProvider.choices, blank=True, verbose_name=_("Activity done by")
     )
 
     def calculate_fields(self):
@@ -1162,9 +1163,11 @@ class MilkProduction(LivelihoodActivity):
     quantity_butter_production = models.PositiveIntegerField(
         blank=True, null=True, verbose_name=_("Quantity used for Butter Production")
     )  # NOQA: E501
-    type_of_milk_consumed = models.CharField(choices=MilkType.choices, verbose_name=_("Skim or whole milk consumed"))
+    type_of_milk_consumed = models.CharField(
+        max_length=10, choices=MilkType.choices, verbose_name=_("Skim or whole milk consumed")
+    )
     type_of_milk_sold_or_other_uses = models.CharField(
-        choices=MilkType.choices, verbose_name=_("Skim or whole milk sold or used for other purposes")
+        max_length=10, choices=MilkType.choices, verbose_name=_("Skim or whole milk sold or used for other purposes")
     )
 
     # @TODO See https://fewsnet.atlassian.net/browse/HEA-65
@@ -1790,7 +1793,7 @@ class CommunityLivestock(common_models.Model):
     )
     # @TODO At implementation we need to ensure consistency across records
     # that means we either need a EAV table or validation at data entry.
-    additional_attributes = models.JSONField()
+    additional_attributes = models.JSONField(blank=True, null=True, verbose_name=_("Additional Attributes"))
 
     def clean(self):
         if not self.livestock_id.startswith("L021"):
@@ -1909,8 +1912,6 @@ class AnnualProductionPerformance(common_models.Model):
         help_text=_("The last day of the month of the end month in the performance year"),
     )
     annual_performance = models.SmallIntegerField(
-        blank=True,
-        null=True,
         choices=Performance.choices,
         validators=[
             MinValueValidator(1, message="Performance rating must be at least 1."),
@@ -1946,7 +1947,9 @@ class Hazard(common_models.Model):
         LESS_IMPORTANT = 3, _("Less Important")
 
     community = models.ForeignKey(Community, on_delete=models.RESTRICT, verbose_name=_("Community or Village"))
-    chronic_or_periodic = models.CharField(choices=ChronicOrPeriodic.choices, verbose_name=_("Chronic or Periodic"))
+    chronic_or_periodic = models.CharField(
+        max_length=10, choices=ChronicOrPeriodic.choices, verbose_name=_("Chronic or Periodic")
+    )
     ranking = models.PositiveSmallIntegerField(
         choices=HazardRanking.choices,
         validators=[
@@ -1994,14 +1997,10 @@ class Event(common_models.Model):
     # `reference_year_end_date` is 2020-09-30, then the event year might be
     # 2017-10-10 through 2018-09-30.
     event_year_start_date = models.DateField(
-        blank=True,
-        null=True,
         verbose_name=_("Event Year Start Date"),
         help_text=_("The first day of the month of the start month in the event year"),
     )
     event_year_end_date = models.DateField(
-        blank=True,
-        null=True,
         verbose_name=_("Event Year End Date"),
         help_text=_("The last day of the month of the end month in the event year"),
     )

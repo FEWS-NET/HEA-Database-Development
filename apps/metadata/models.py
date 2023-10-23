@@ -100,6 +100,7 @@ class WealthCharacteristic(ReferenceData):
         help_text=_("Does a value for this characteristic also require a unit_of_measure?"),
     )
     variable_type = models.CharField(
+        max_length=20,
         verbose_name=_(
             "Variable Type",
         ),
