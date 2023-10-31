@@ -7,6 +7,7 @@ django-extensions==3.2.3
 django-filter==23.2
 django-guardian==2.4.0
 django_model_utils==4.3.1
+django_modeltranslation==0.18.11
 django-treebeard==4.7
 djangorestframework==3.14.0
 djangorestframework-xml==2.0.0
