@@ -231,8 +231,8 @@ class Model(TimeStampedModel):
         identifier = []
 
     def __str__(self):
-        components = []
         if self.ExtraMeta.identifier:
+            components = []
             for field in self.ExtraMeta.identifier:
                 try:
                     component = force_str(getattr(self, field))
@@ -685,20 +685,19 @@ class UnitOfMeasure(Model):
     abbreviation = models.CharField(max_length=12, primary_key=True, verbose_name=_("abbreviation"))
     unit_type = models.CharField(max_length=10, choices=UNIT_TYPE_CHOICES, verbose_name=_("unit type"))
     description = DescriptionField()
-    # @TODO Do we use this approach for compatibility with FDW and reuse of Lookups
-    # or do we use the Tranlsation approach with a separate table (and what will that do for country-specific aliases)
-    # or do we use a variation of FDW only with JSONField to maintain database independence.
-    # aliases = ArrayField(models.CharField(max_length=60), blank=True, null=True, verbose_name=_("Aliases"))
+    aliases = models.JSONField(
+        blank=True,
+        null=True,
+        verbose_name=_("aliases"),
+        help_text=_("A list of alternate names for the product."),
+    )
 
     objects = IdentifierManager.from_queryset(UnitOfMeasureQuerySet)()
 
     def calculate_fields(self):
-        """
-        Ensure that aliases are lowercase and don't contain duplicates
-        """
-        # @TODO uncomment this when aliases get decision
-        # if self.aliases:
-        #     self.aliases = list(set([alias.lower() for alias in self.aliases if alias]))
+        # Ensure that aliases are lowercase and don't contain duplicates
+        if self.aliases:
+            self.aliases = list(sorted(set([alias.strip().lower() for alias in self.aliases if alias.strip()])))
 
     def save(self, *args, **kwargs):
         self.calculate_fields()

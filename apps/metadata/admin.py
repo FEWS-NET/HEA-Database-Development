@@ -7,8 +7,8 @@ from .models import (
     Market,
     Season,
     SeasonalActivityType,
-    WealthCategory,
     WealthCharacteristic,
+    WealthGroupCategory,
 )
 
 
@@ -51,9 +51,9 @@ class SeasonalActivityTypeAdmin(DimensionAdmin):
     )
 
 
-class WealthCategoryAdmin(DimensionAdmin):
+class WealthGroupCategoryAdmin(DimensionAdmin):
     """
-    A concrete admin for WealthCategory
+    A concrete admin for WealthGroupCategory
     """
 
 
@@ -108,7 +108,7 @@ class MarketAdmin(DimensionAdmin):
 
 
 admin.site.register(LivelihoodCategory, LivelihoodCategoryAdmin)
-admin.site.register(WealthCategory, WealthCategoryAdmin)
+admin.site.register(WealthGroupCategory, WealthGroupCategoryAdmin)
 admin.site.register(SeasonalActivityType, SeasonalActivityTypeAdmin)
 
 admin.site.register(Market, MarketAdmin)

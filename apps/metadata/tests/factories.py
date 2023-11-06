@@ -24,14 +24,14 @@ class HazardCategoryFactory(factory.django.DjangoModelFactory):
     description = factory.LazyAttribute(lambda o: f"{o.code} Hazard Category Description")
 
 
-class WealthCategoryFactory(factory.django.DjangoModelFactory):
+class WealthGroupCategoryFactory(factory.django.DjangoModelFactory):
     class Meta:
-        model = "metadata.WealthCategory"
+        model = "metadata.WealthGroupCategory"
         django_get_or_create = ("code",)
 
     code = factory.Iterator(["VP", "P", "M", "BO"])
     name = factory.Iterator(["Very Poor", "Poor", "Medium", "Bettor Off"])
-    description = factory.LazyAttribute(lambda o: f"{o.name} Wealth Category Description")
+    description = factory.LazyAttribute(lambda o: f"{o.name} Wealth Group Category Description")
 
 
 class WealthCharacteristicFactory(factory.django.DjangoModelFactory):
@@ -92,7 +92,7 @@ class MarketFactory(factory.django.DjangoModelFactory):
 
     code = factory.Sequence(lambda n: f"code{n}")
     name = factory.LazyAttribute(lambda o: f"{o.code} name")
+    full_name = factory.LazyAttribute(lambda o: f"{o.code} full name")
     description = factory.LazyAttribute(lambda o: f"{o.code} description")
-    ordering = factory.Sequence(lambda n: n % 1000)
     aliases = factory.Sequence(lambda n: [f"alias{n + i}" for i in range(n % 10)])
     country = factory.SubFactory(CountryFactory)

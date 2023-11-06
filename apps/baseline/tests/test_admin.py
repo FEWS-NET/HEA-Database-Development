@@ -25,7 +25,7 @@ from metadata.models import LivelihoodStrategyType
 from metadata.tests.factories import (
     LivelihoodCategoryFactory,
     SeasonFactory,
-    WealthCategoryFactory,
+    WealthGroupCategoryFactory,
 )
 
 from .factories import (
@@ -272,7 +272,7 @@ class WealthGroupAdminTest(TestCase):
 
         # Ensure that the response contains the fields we expect
         self.assertContains(response, "community")
-        self.assertContains(response, "wealth_category")
+        self.assertContains(response, "wealth_group_category")
         self.assertContains(response, "percentage_of_households")
         # Using BeautifulSoup test that response content on html controls are populated as expected
         soup = BeautifulSoup(response.content, "html.parser")
@@ -295,7 +295,7 @@ class WealthGroupAdminTest(TestCase):
             **{
                 "livelihood_zone_baseline": LivelihoodZoneBaselineFactory(),
                 "community": community,
-                "wealth_category": WealthCategoryFactory(),
+                "wealth_group_category": WealthGroupCategoryFactory(),
                 "percentage_of_households": 30,
                 "average_household_size": 7,
             }

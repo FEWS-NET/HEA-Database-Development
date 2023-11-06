@@ -28,14 +28,14 @@ from .factories import (
     LivelihoodStrategyFactory,
     LivelihoodZoneBaselineFactory,
     LivelihoodZoneFactory,
-    LivestockSalesFactory,
+    LivestockSaleFactory,
     MarketPriceFactory,
     MeatProductionFactory,
     MilkProductionFactory,
     OtherCashIncomeFactory,
-    OtherPurchasesFactory,
+    OtherPurchaseFactory,
     PaymentInKindFactory,
-    ReliefGiftsOtherFactory,
+    ReliefGiftOtherFactory,
     ResponseLivelihoodActivityFactory,
     SeasonalActivityFactory,
     SeasonalActivityOccurrenceFactory,
@@ -668,7 +668,7 @@ class WealthGroupViewSetTestCase(APITestCase):
             "livelihood_zone_country_name",
             "community",
             "community_name",
-            "wealth_category",
+            "wealth_group_category",
             "percentage_of_households",
             "average_household_size",
         )
@@ -714,7 +714,7 @@ class WealthGroupViewSetTestCase(APITestCase):
             {
                 "livelihood_zone_baseline": self.data[0].livelihood_zone_baseline.pk,
                 "community": self.data[0].community.pk,
-                "wealth_category": self.data[0].wealth_category.pk,
+                "wealth_group_category": self.data[0].wealth_category.pk,
             },
         )
         self.assertEqual(response.status_code, 200)
@@ -772,7 +772,7 @@ class BaselineWealthGroupViewSetTestCase(APITestCase):
             "livelihood_zone_name",
             "livelihood_zone_country_code",
             "livelihood_zone_country_name",
-            "wealth_category",
+            "wealth_group_category",
             "percentage_of_households",
             "average_household_size",
         )
@@ -817,7 +817,7 @@ class BaselineWealthGroupViewSetTestCase(APITestCase):
             self.url,
             {
                 "livelihood_zone_baseline": self.data[0].livelihood_zone_baseline.pk,
-                "wealth_category": self.data[0].wealth_category.pk,
+                "wealth_group_category": self.data[0].wealth_category.pk,
             },
         )
         self.assertEqual(response.status_code, 200)
@@ -877,7 +877,7 @@ class CommunityWealthGroupViewSetTestCase(APITestCase):
             "livelihood_zone_country_name",
             "community",
             "community_name",
-            "wealth_category",
+            "wealth_group_category",
             "percentage_of_households",
             "average_household_size",
         )
@@ -924,7 +924,7 @@ class CommunityWealthGroupViewSetTestCase(APITestCase):
             self.url,
             {
                 "livelihood_zone_baseline": self.data[0].livelihood_zone_baseline.pk,
-                "wealth_category": self.data[0].wealth_category.pk,
+                "wealth_group_category": self.data[0].wealth_category.pk,
             },
         )
         self.assertEqual(response.status_code, 200)
@@ -986,7 +986,7 @@ class WealthGroupCharacteristicValueViewSetTestCase(APITestCase):
             "livelihood_zone_country_name",
             "community",
             "community_name",
-            "wealth_category",
+            "wealth_group_category",
             "wealth_category_name",
             "wealth_category_description",
             "wealth_characteristic",
@@ -1263,7 +1263,7 @@ class LivelihoodActivityViewSetTestCase(APITestCase):
             "wealth_group_label",
             "community",
             "community_name",
-            "wealth_category",
+            "wealth_group_category",
             "wealth_category_name",
             "wealth_category_description",
             "wealth_group_percentage_of_households",
@@ -1427,7 +1427,7 @@ class BaselineLivelihoodActivityViewSetTestCase(APITestCase):
             "wealth_group_label",
             "community",
             "community_name",
-            "wealth_category",
+            "wealth_group_category",
             "wealth_category_name",
             "wealth_category_description",
             "wealth_group_percentage_of_households",
@@ -1592,7 +1592,7 @@ class ResponseLivelihoodActivityViewSetTestCase(APITestCase):
             "wealth_group_label",
             "community",
             "community_name",
-            "wealth_category",
+            "wealth_group_category",
             "wealth_category_name",
             "wealth_category_description",
             "wealth_group_percentage_of_households",
@@ -1758,7 +1758,7 @@ class MilkProductionViewSetTestCase(APITestCase):
             "wealth_group_label",
             "community",
             "community_name",
-            "wealth_category",
+            "wealth_group_category",
             "wealth_category_name",
             "wealth_category_description",
             "wealth_group_percentage_of_households",
@@ -1929,7 +1929,7 @@ class ButterProductionViewSetTestCase(APITestCase):
             "wealth_group_label",
             "community",
             "community_name",
-            "wealth_category",
+            "wealth_group_category",
             "wealth_category_name",
             "wealth_category_description",
             "wealth_group_percentage_of_households",
@@ -2093,7 +2093,7 @@ class MeatProductionViewSetTestCase(APITestCase):
             "wealth_group_label",
             "community",
             "community_name",
-            "wealth_category",
+            "wealth_group_category",
             "wealth_category_name",
             "wealth_category_description",
             "wealth_group_percentage_of_households",
@@ -2217,7 +2217,7 @@ class LivestockSalesViewSetTestCase(APITestCase):
     @classmethod
     def setUpTestData(cls):
         cls.num_records = 5
-        cls.data = [LivestockSalesFactory() for _ in range(cls.num_records)]
+        cls.data = [LivestockSaleFactory() for _ in range(cls.num_records)]
         cls.user = User.objects.create_superuser("test", "test@test.com", "password")
 
     def setUp(self):
@@ -2261,7 +2261,7 @@ class LivestockSalesViewSetTestCase(APITestCase):
             "wealth_group_label",
             "community",
             "community_name",
-            "wealth_category",
+            "wealth_group_category",
             "wealth_category_name",
             "wealth_category_description",
             "wealth_group_percentage_of_households",
@@ -2425,7 +2425,7 @@ class CropProductionViewSetTestCase(APITestCase):
             "wealth_group_label",
             "community",
             "community_name",
-            "wealth_category",
+            "wealth_group_category",
             "wealth_category_name",
             "wealth_category_description",
             "wealth_group_percentage_of_households",
@@ -2589,7 +2589,7 @@ class FoodPurchaseViewSetTestCase(APITestCase):
             "wealth_group_label",
             "community",
             "community_name",
-            "wealth_category",
+            "wealth_group_category",
             "wealth_category_name",
             "wealth_category_description",
             "wealth_group_percentage_of_households",
@@ -2759,7 +2759,7 @@ class PaymentInKindViewSetTestCase(APITestCase):
             "wealth_group_label",
             "community",
             "community_name",
-            "wealth_category",
+            "wealth_group_category",
             "wealth_category_name",
             "wealth_category_description",
             "wealth_group_percentage_of_households",
@@ -2887,7 +2887,7 @@ class ReliefGiftsOtherViewSetTestCase(APITestCase):
     @classmethod
     def setUpTestData(cls):
         cls.num_records = 5
-        cls.data = [ReliefGiftsOtherFactory() for _ in range(cls.num_records)]
+        cls.data = [ReliefGiftOtherFactory() for _ in range(cls.num_records)]
         cls.user = User.objects.create_superuser("test", "test@test.com", "password")
 
     def setUp(self):
@@ -2931,7 +2931,7 @@ class ReliefGiftsOtherViewSetTestCase(APITestCase):
             "wealth_group_label",
             "community",
             "community_name",
-            "wealth_category",
+            "wealth_group_category",
             "wealth_category_name",
             "wealth_category_description",
             "wealth_group_percentage_of_households",
@@ -3099,7 +3099,7 @@ class FishingViewSetTestCase(APITestCase):
             "wealth_group_label",
             "community",
             "community_name",
-            "wealth_category",
+            "wealth_group_category",
             "wealth_category_name",
             "wealth_category_description",
             "wealth_group_percentage_of_households",
@@ -3263,7 +3263,7 @@ class WildFoodGatheringViewSetTestCase(APITestCase):
             "wealth_group_label",
             "community",
             "community_name",
-            "wealth_category",
+            "wealth_group_category",
             "wealth_category_name",
             "wealth_category_description",
             "wealth_group_percentage_of_households",
@@ -3427,7 +3427,7 @@ class OtherCashIncomeViewSetTestCase(APITestCase):
             "wealth_group_label",
             "community",
             "community_name",
-            "wealth_category",
+            "wealth_group_category",
             "wealth_category_name",
             "wealth_category_description",
             "wealth_group_percentage_of_households",
@@ -3557,7 +3557,7 @@ class OtherPurchasesViewSetTestCase(APITestCase):
     @classmethod
     def setUpTestData(cls):
         cls.num_records = 5
-        cls.data = [OtherPurchasesFactory() for _ in range(cls.num_records)]
+        cls.data = [OtherPurchaseFactory() for _ in range(cls.num_records)]
         cls.user = User.objects.create_superuser("test", "test@test.com", "password")
 
     def setUp(self):
@@ -3601,7 +3601,7 @@ class OtherPurchasesViewSetTestCase(APITestCase):
             "wealth_group_label",
             "community",
             "community_name",
-            "wealth_category",
+            "wealth_group_category",
             "wealth_category_name",
             "wealth_category_description",
             "wealth_group_percentage_of_households",
@@ -4773,7 +4773,7 @@ class ExpandabilityFactorViewSetTestCase(APITestCase):
             "household_labor_provider_label",
             "wealth_group",
             "wealth_group_label",
-            "wealth_category",
+            "wealth_group_category",
             "wealth_category_name",
             "wealth_category_description",
             "wealth_group_percentage_of_households",
@@ -4907,7 +4907,7 @@ class CopingStrategyViewSetTestCase(APITestCase):
             "leaders",
             "wealth_group",
             "wealth_group_label",
-            "wealth_category",
+            "wealth_group_category",
             "wealth_category_name",
             "wealth_category_description",
             "wealth_group_percentage_of_households",

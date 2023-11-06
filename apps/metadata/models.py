@@ -1,7 +1,7 @@
 import logging
 
+from django.contrib.gis.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator
-from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.utils.translation import pgettext_lazy
 
@@ -23,14 +23,13 @@ class ReferenceData(common_models.Model):
     name = common_models.NameField()
     description = common_models.DescriptionField()
     # Some reference data needs to be sorted in a custom (i.e. non-alphabetic) order.
-    # For example, WealthCategory needs to be VP, P, M, BO in most cases.
+    # For example, WealthGroupCategory needs to be VP, P, M, BO in most cases.
     ordering = models.PositiveSmallIntegerField(
         blank=True,
         null=True,
         verbose_name=_("Ordering"),
         help_text=_("The order to display the items in when sorting by this field, if not obvious."),
     )
-    # @TODO ArrayField or JSONField?
     aliases = models.JSONField(
         blank=True,
         null=True,
@@ -95,7 +94,13 @@ class WealthCharacteristic(ReferenceData):
         verbose_name=_("Has Product?"),
         help_text=_("Does a value for this characteristic also require a product?"),
     )
+    has_unit_of_measure = models.BooleanField(
+        default=False,
+        verbose_name=_("Has Unit Of Measure?"),
+        help_text=_("Does a value for this characteristic also require a unit_of_measure?"),
+    )
     variable_type = models.CharField(
+        max_length=20,
         verbose_name=_(
             "Variable Type",
         ),
@@ -116,15 +121,15 @@ class LivelihoodStrategyType(models.TextChoices):
     MILK_PRODUCTION = "MilkProduction", _("Milk Production")
     BUTTER_PRODUCTION = "ButterProduction", _("Butter Production")
     MEAT_PRODUCTION = "MeatProduction", _("Meat Production")
-    LIVESTOCK_SALES = "LivestockSales", _("Livestock Sales")
+    LIVESTOCK_SALE = "LivestockSale", _("Livestock Sale")
     CROP_PRODUCTION = "CropProduction", _("Crop Production")
     FOOD_PURCHASE = "FoodPurchase", _("Food Purchase")
     PAYMENT_IN_KIND = "PaymentInKind", _("Payment in Kind")
-    RELIEF_GIFTS_OTHER = "ReliefGiftsOther", _("Relief, Gifts and Other Food")
+    RELIEF_GIFT_OTHER = "ReliefGiftOther", _("Relief, Gift or Other Food")
     FISHING = "Fishing", _("Fishing")
     WILD_FOOD_GATHERING = "WildFoodGathering", _("Wild Food Gathering")
     OTHER_CASH_INCOME = "OtherCashIncome", _("Other Cash Income")
-    OTHER_PURCHASES = "OtherPurchases", _("Other Purchases")
+    OTHER_PURCHASE = "OtherPurchase", _("Other Purchase")
 
 
 # Defined outside LivelihoodActivity to make it easy to access from subclasses
@@ -164,7 +169,7 @@ class SeasonalActivityType(ReferenceData):
         verbose_name_plural = _("Seasonal Activity Types")
 
 
-class WealthCategory(ReferenceData):
+class WealthGroupCategory(ReferenceData):
     """
     The local definitions of wealth group, common to all BSSes in an LHZ.
 
@@ -173,17 +178,62 @@ class WealthCategory(ReferenceData):
     """
 
     class Meta:
-        verbose_name = _("Wealth Category")
-        verbose_name_plural = _("Wealth Categories")
+        verbose_name = _("Wealth Group Category")
+        verbose_name_plural = _("Wealth Group Categories")
 
 
-class Market(ReferenceData):
+class MarketManager(common_models.IdentifierManager):
+    def get_by_natural_key(self, full_name):
+        return self.get(full_name=full_name)
+
+
+class Market(common_models.Model):
     """
-    The markets in the bss are just names
-    TODO: should we make this spatial? and move it to spatial or metadata?
+    A geographic point where :class:`baseline.models.MarketPrice` records are collected.
     """
 
-    country = models.ForeignKey(Country, verbose_name=_("Country"), db_column="country_code", on_delete=models.PROTECT)
+    # The field definitions are structured to ensure compatibility with FDW spatial.models.GeographicUnit,
+    # in case we need to match them, or move to a full Spatial setup later.
+    country = models.ForeignKey(
+        Country, db_column="country_code", blank=True, null=True, verbose_name=_("country"), on_delete=models.CASCADE
+    )
+    name = common_models.NameField(max_length=250)
+    code = models.CharField(
+        max_length=25,
+        blank=True,
+        null=True,
+        unique=True,
+        verbose_name=_("code"),
+        help_text=_("An identifier for the Unit, such as the FNID"),
+    )
+    full_name = common_models.NameField(max_length=200, unique=True, verbose_name=_("full name"))
+    description = common_models.DescriptionField()
+    aliases = models.JSONField(
+        blank=True,
+        null=True,
+        verbose_name=_("aliases"),
+        help_text=_("A list of alternate names for the Market."),
+    )
+    geography = models.GeometryField(geography=True, dim=2, blank=True, null=True, verbose_name=_("geography"))
+
+    objects = MarketManager()
+
+    def natural_key(self):
+        return (self.full_name,)
+
+    def calculate_fields(self):
+        # Ensure that aliases are lowercase and don't contain duplicates
+        if self.aliases:
+            self.aliases = list(sorted(set([alias.strip().lower() for alias in self.aliases if alias.strip()])))
+
+    def save(self, *args, **kwargs):
+        self.calculate_fields()
+        # No need to enforce foreign keys or uniqueness because database constraints will do it anyway
+        self.full_clean(
+            exclude=[field.name for field in self._meta.fields if isinstance(field, models.ForeignKey)],
+            validate_unique=False,
+        )
+        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = _("Market")

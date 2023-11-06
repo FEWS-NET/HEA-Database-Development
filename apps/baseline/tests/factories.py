@@ -24,14 +24,14 @@ from baseline.models import (
     LivelihoodStrategy,
     LivelihoodZone,
     LivelihoodZoneBaseline,
-    LivestockSales,
+    LivestockSale,
     MarketPrice,
     MeatProduction,
     MilkProduction,
     OtherCashIncome,
-    OtherPurchases,
+    OtherPurchase,
     PaymentInKind,
-    ReliefGiftsOther,
+    ReliefGiftOther,
     ResponseLivelihoodActivity,
     SeasonalActivity,
     SeasonalActivityOccurrence,
@@ -53,8 +53,8 @@ from metadata.tests.factories import (
     MarketFactory,
     SeasonalActivityTypeFactory,
     SeasonFactory,
-    WealthCategoryFactory,
     WealthCharacteristicFactory,
+    WealthGroupCategoryFactory,
 )
 
 
@@ -138,7 +138,7 @@ class WealthGroupFactory(factory.django.DjangoModelFactory):
         django_get_or_create = [
             "livelihood_zone_baseline",
             "community",
-            "wealth_category",
+            "wealth_group_category",
         ]
 
     livelihood_zone_baseline = factory.SubFactory(LivelihoodZoneBaselineFactory)
@@ -146,7 +146,7 @@ class WealthGroupFactory(factory.django.DjangoModelFactory):
         CommunityFactory,
         livelihood_zone_baseline=factory.SelfAttribute("..livelihood_zone_baseline"),
     )
-    wealth_category = factory.SubFactory(WealthCategoryFactory)
+    wealth_group_category = factory.SubFactory(WealthGroupCategoryFactory)
     percentage_of_households = fuzzy.FuzzyInteger(10, 91)
     average_household_size = fuzzy.FuzzyInteger(2, 31)
 
@@ -157,7 +157,7 @@ class BaselineWealthGroupFactory(WealthGroupFactory):
         django_get_or_create = [
             "livelihood_zone_baseline",
             "community",
-            "wealth_category",
+            "wealth_group_category",
         ]
 
     community = None
@@ -169,7 +169,7 @@ class CommunityWealthGroupFactory(WealthGroupFactory):
         django_get_or_create = [
             "livelihood_zone_baseline",
             "community",
-            "wealth_category",
+            "wealth_group_category",
         ]
 
     community = factory.SubFactory(CommunityFactory)
@@ -192,9 +192,9 @@ class WealthGroupCharacteristicValueFactory(factory.django.DjangoModelFactory):
     @factory.lazy_attribute
     def source(self):
         if not self.wealth_group.community:
-            return WealthGroupCharacteristicValue.CharacteristicSource.SUMMARY
+            return WealthGroupCharacteristicValue.CharacteristicReference.SUMMARY
         else:
-            return WealthGroupCharacteristicValue.CharacteristicSource.WEALTH_GROUP
+            return WealthGroupCharacteristicValue.CharacteristicReference.WEALTH_GROUP
 
     @factory.lazy_attribute
     def product(self):
@@ -220,15 +220,15 @@ class LivelihoodStrategyFactory(factory.django.DjangoModelFactory):
             "MilkProduction",
             "ButterProduction",
             "MeatProduction",
-            "LivestockSales",
+            "LivestockSale",
             "CropProduction",
             "FoodPurchase",
             "PaymentInKind",
-            "ReliefGiftsOther",
+            "ReliefGiftOther",
             "Fishing",
             "WildFoodGathering",
             "OtherCashIncome",
-            "OtherPurchases",
+            "OtherPurchase",
         ]
     )
     season = factory.SubFactory(SeasonFactory)
@@ -256,15 +256,15 @@ class LivelihoodActivityFactory(factory.django.DjangoModelFactory):
             "MilkProduction",
             "ButterProduction",
             "MeatProduction",
-            "LivestockSales",
+            "LivestockSale",
             "CropProduction",
             "FoodPurchase",
             "PaymentInKind",
-            "ReliefGiftsOther",
+            "ReliefGiftOther",
             "Fishing",
             "WildFoodGathering",
             "OtherCashIncome",
-            "OtherPurchases",
+            "OtherPurchase",
         ]
     )
     scenario = factory.Iterator(["baseline", "response"])
@@ -366,9 +366,9 @@ class MeatProductionFactory(LivelihoodActivityFactory):
     carcass_weight = fuzzy.FuzzyInteger(100, 150)
 
 
-class LivestockSalesFactory(LivelihoodActivityFactory):
+class LivestockSaleFactory(LivelihoodActivityFactory):
     class Meta:
-        model = LivestockSales
+        model = LivestockSale
         django_get_or_create = [
             "livelihood_strategy",
             "livelihood_zone_baseline",
@@ -377,7 +377,7 @@ class LivestockSalesFactory(LivelihoodActivityFactory):
             "wealth_group",
         ]
 
-    strategy_type = "LivestockSales"
+    strategy_type = "LivestockSale"
 
 
 class CropProductionFactory(LivelihoodActivityFactory):
@@ -406,9 +406,9 @@ class FoodPurchaseFactory(LivelihoodActivityFactory):
         ]
 
     strategy_type = "FoodPurchase"
-    quantity_produced = factory.LazyAttribute(lambda o: o.unit_multiple * o.purchases_per_month * o.months_per_year)
+    quantity_produced = factory.LazyAttribute(lambda o: o.unit_multiple * o.times_per_month * o.months_per_year)
     unit_multiple = fuzzy.FuzzyInteger(1, 500)
-    purchases_per_month = fuzzy.FuzzyInteger(10, 50)
+    times_per_month = fuzzy.FuzzyInteger(10, 50)
     months_per_year = fuzzy.FuzzyInteger(1, 12)
 
 
@@ -425,17 +425,17 @@ class PaymentInKindFactory(LivelihoodActivityFactory):
 
     strategy_type = "PaymentInKind"
     quantity_produced = factory.LazyAttribute(
-        lambda o: o.payment_per_time * o.people_per_hh * o.labor_per_month * o.months_per_year
+        lambda o: o.payment_per_time * o.people_per_household * o.times_per_month * o.months_per_year
     )
     payment_per_time = fuzzy.FuzzyInteger(10, 200)
-    people_per_hh = fuzzy.FuzzyInteger(1, 16)
-    labor_per_month = fuzzy.FuzzyInteger(1, 21)
+    people_per_household = fuzzy.FuzzyInteger(1, 16)
+    times_per_month = fuzzy.FuzzyInteger(1, 21)
     months_per_year = fuzzy.FuzzyInteger(1, 12)
 
 
-class ReliefGiftsOtherFactory(LivelihoodActivityFactory):
+class ReliefGiftOtherFactory(LivelihoodActivityFactory):
     class Meta:
-        model = ReliefGiftsOther
+        model = ReliefGiftOther
         django_get_or_create = [
             "livelihood_strategy",
             "livelihood_zone_baseline",
@@ -444,10 +444,10 @@ class ReliefGiftsOtherFactory(LivelihoodActivityFactory):
             "wealth_group",
         ]
 
-    strategy_type = "ReliefGiftsOther"
-    quantity_produced = factory.LazyAttribute(lambda o: o.unit_multiple * o.received_per_year)
+    strategy_type = "ReliefGiftOther"
+    quantity_produced = factory.LazyAttribute(lambda o: o.unit_multiple * o.times_per_year)
     unit_multiple = fuzzy.FuzzyInteger(1, 500)
-    received_per_year = fuzzy.FuzzyInteger(10, 160)
+    times_per_year = fuzzy.FuzzyInteger(10, 160)
 
 
 class FishingFactory(LivelihoodActivityFactory):
@@ -491,7 +491,7 @@ class OtherCashIncomeFactory(LivelihoodActivityFactory):
 
     strategy_type = "OtherCashIncome"
     income = factory.LazyAttribute(
-        lambda o: o.payment_per_time * o.people_per_hh * o.labor_per_month * o.months_per_year
+        lambda o: o.payment_per_time * o.people_per_household * o.times_per_month * o.months_per_year
     )
     expenditure = factory.LazyAttribute(lambda o: o.quantity_produced * o.price)
     kcals_consumed = factory.LazyAttribute(
@@ -499,15 +499,15 @@ class OtherCashIncomeFactory(LivelihoodActivityFactory):
     )
     percentage_kcals = fuzzy.FuzzyInteger(1, 200)
     payment_per_time = fuzzy.FuzzyInteger(1, 10000)
-    people_per_hh = fuzzy.FuzzyInteger(1, 30)
-    labor_per_month = fuzzy.FuzzyInteger(1, 40)
+    people_per_household = fuzzy.FuzzyInteger(1, 30)
+    times_per_month = fuzzy.FuzzyInteger(1, 40)
     months_per_year = fuzzy.FuzzyInteger(1, 12)
     times_per_year = fuzzy.FuzzyInteger(1, 300)
 
 
-class OtherPurchasesFactory(LivelihoodActivityFactory):
+class OtherPurchaseFactory(LivelihoodActivityFactory):
     class Meta:
-        model = OtherPurchases
+        model = OtherPurchase
         django_get_or_create = [
             "livelihood_strategy",
             "livelihood_zone_baseline",
@@ -516,17 +516,15 @@ class OtherPurchasesFactory(LivelihoodActivityFactory):
             "wealth_group",
         ]
 
-    strategy_type = "OtherPurchases"
+    strategy_type = "OtherPurchase"
     income = factory.LazyAttribute(lambda o: o.quantity_sold * o.price)
-    expenditure = factory.LazyAttribute(
-        lambda o: o.price * o.unit_multiple * o.purchases_per_month * o.months_per_year
-    )
+    expenditure = factory.LazyAttribute(lambda o: o.price * o.unit_multiple * o.times_per_month * o.months_per_year)
     kcals_consumed = factory.LazyAttribute(
         lambda o: o.quantity_consumed * o.livelihood_strategy.product.kcals_per_unit
     )
     percentage_kcals = fuzzy.FuzzyInteger(1, 200)
     unit_multiple = fuzzy.FuzzyInteger(1, 500)
-    purchases_per_month = fuzzy.FuzzyInteger(1, 50)
+    times_per_month = fuzzy.FuzzyInteger(1, 50)
     months_per_year = fuzzy.FuzzyInteger(1, 12)
 
 
@@ -535,13 +533,13 @@ class SeasonalActivityFactory(factory.django.DjangoModelFactory):
         model = SeasonalActivity
         django_get_or_create = [
             "livelihood_zone_baseline",
-            "activity_type",
+            "seasonal_activity_type",
             "season",
             "product",
         ]
 
     livelihood_zone_baseline = factory.SubFactory(LivelihoodZoneBaselineFactory)
-    activity_type = factory.SubFactory(SeasonalActivityTypeFactory)
+    seasonal_activity_type = factory.SubFactory(SeasonalActivityTypeFactory)
     season = factory.SubFactory(SeasonFactory)
     product = factory.SubFactory(ClassifiedProductFactory)
 

@@ -23,14 +23,14 @@ from .models import (
     LivelihoodStrategy,
     LivelihoodZone,
     LivelihoodZoneBaseline,
-    LivestockSales,
+    LivestockSale,
     MarketPrice,
     MeatProduction,
     MilkProduction,
     OtherCashIncome,
-    OtherPurchases,
+    OtherPurchase,
     PaymentInKind,
-    ReliefGiftsOther,
+    ReliefGiftOther,
     ResponseLivelihoodActivity,
     SeasonalActivity,
     SeasonalActivityOccurrence,
@@ -60,14 +60,14 @@ from .serializers import (
     LivelihoodStrategySerializer,
     LivelihoodZoneBaselineSerializer,
     LivelihoodZoneSerializer,
-    LivestockSalesSerializer,
+    LivestockSaleSerializer,
     MarketPriceSerializer,
     MeatProductionSerializer,
     MilkProductionSerializer,
     OtherCashIncomeSerializer,
-    OtherPurchasesSerializer,
+    OtherPurchaseSerializer,
     PaymentInKindSerializer,
-    ReliefGiftsOtherSerializer,
+    ReliefGiftOtherSerializer,
     ResponseLivelihoodActivitySerializer,
     SeasonalActivityOccurrenceSerializer,
     SeasonalActivitySerializer,
@@ -220,7 +220,7 @@ class WealthGroupFilterSet(filters.FilterSet):
         fields = [
             "livelihood_zone_baseline",
             "community",
-            "wealth_category",
+            "wealth_group_category",
         ]
 
 
@@ -245,7 +245,7 @@ class BaselineWealthGroupFilterSet(filters.FilterSet):
         model = BaselineWealthGroup
         fields = [
             "livelihood_zone_baseline",
-            "wealth_category",
+            "wealth_group_category",
         ]
 
 
@@ -268,7 +268,7 @@ class CommunityWealthGroupFilterSet(filters.FilterSet):
         fields = [
             "livelihood_zone_baseline",
             "community",
-            "wealth_category",
+            "wealth_group_category",
         ]
 
 
@@ -314,7 +314,7 @@ class WealthGroupCharacteristicValueViewSet(viewsets.ModelViewSet):
         "wealth_characteristic",
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
-        "wealth_group__wealth_category",
+        "wealth_group__wealth_group_category",
     )
     serializer_class = WealthGroupCharacteristicValueSerializer
     filterset_class = WealthGroupCharacteristicValueFilterSet
@@ -331,7 +331,6 @@ class LivelihoodStrategyFilterSet(filters.FilterSet):
             "unit_of_measure",
             "currency",
             "additional_identifier",
-            "household_labor_provider",
         ]
 
 
@@ -387,7 +386,7 @@ class LivelihoodActivityViewSet(viewsets.ModelViewSet):
         "livelihood_strategy__unit_of_measure",
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
-        "wealth_group__wealth_category",
+        "wealth_group__wealth_group_category",
     )
     serializer_class = LivelihoodActivitySerializer
     filterset_class = LivelihoodActivityFilterSet
@@ -429,7 +428,7 @@ class BaselineLivelihoodActivityViewSet(viewsets.ModelViewSet):
         "livelihood_strategy__unit_of_measure",
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
-        "wealth_group__wealth_category",
+        "wealth_group__wealth_group_category",
     )
     serializer_class = BaselineLivelihoodActivitySerializer
     filterset_class = BaselineLivelihoodActivityFilterSet
@@ -471,7 +470,7 @@ class ResponseLivelihoodActivityViewSet(viewsets.ModelViewSet):
         "livelihood_strategy__unit_of_measure",
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
-        "wealth_group__wealth_category",
+        "wealth_group__wealth_group_category",
     )
     serializer_class = ResponseLivelihoodActivitySerializer
     filterset_class = ResponseLivelihoodActivityFilterSet
@@ -517,7 +516,7 @@ class MilkProductionViewSet(viewsets.ModelViewSet):
         "livelihood_strategy__unit_of_measure",
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
-        "wealth_group__wealth_category",
+        "wealth_group__wealth_group_category",
     )
     serializer_class = MilkProductionSerializer
     filterset_class = MilkProductionFilterSet
@@ -560,7 +559,7 @@ class ButterProductionViewSet(viewsets.ModelViewSet):
         "livelihood_strategy__unit_of_measure",
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
-        "wealth_group__wealth_category",
+        "wealth_group__wealth_group_category",
     )
     serializer_class = ButterProductionSerializer
     filterset_class = ButterProductionFilterSet
@@ -604,7 +603,7 @@ class MeatProductionViewSet(viewsets.ModelViewSet):
         "livelihood_strategy__unit_of_measure",
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
-        "wealth_group__wealth_category",
+        "wealth_group__wealth_group_category",
     )
     serializer_class = MeatProductionSerializer
     filterset_class = MeatProductionFilterSet
@@ -614,9 +613,9 @@ class MeatProductionViewSet(viewsets.ModelViewSet):
     ]
 
 
-class LivestockSalesFilterSet(filters.FilterSet):
+class LivestockSaleFilterSet(filters.FilterSet):
     class Meta:
-        model = LivestockSales
+        model = LivestockSale
         fields = [
             "livelihood_strategy",
             "livelihood_zone_baseline",
@@ -635,21 +634,21 @@ class LivestockSalesFilterSet(filters.FilterSet):
         ]
 
 
-class LivestockSalesViewSet(viewsets.ModelViewSet):
+class LivestockSaleViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows livestock sales to be viewed or edited.
     """
 
-    queryset = LivestockSales.objects.select_related(
+    queryset = LivestockSale.objects.select_related(
         "livelihood_strategy__product",
         "livelihood_strategy__season",
         "livelihood_strategy__unit_of_measure",
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
-        "wealth_group__wealth_category",
+        "wealth_group__wealth_group_category",
     )
-    serializer_class = LivestockSalesSerializer
-    filterset_class = LivestockSalesFilterSet
+    serializer_class = LivestockSaleSerializer
+    filterset_class = LivestockSaleFilterSet
     search_fields = [
         "scenario",
         "strategy_type",
@@ -688,7 +687,7 @@ class CropProductionViewSet(viewsets.ModelViewSet):
         "livelihood_strategy__unit_of_measure",
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
-        "wealth_group__wealth_category",
+        "wealth_group__wealth_group_category",
     )
     serializer_class = CropProductionSerializer
     filterset_class = CropProductionFilterSet
@@ -717,7 +716,7 @@ class FoodPurchaseFilterSet(filters.FilterSet):
             "kcals_consumed",
             "percentage_kcals",
             "unit_multiple",
-            "purchases_per_month",
+            "times_per_month",
             "months_per_year",
         ]
 
@@ -733,7 +732,7 @@ class FoodPurchaseViewSet(viewsets.ModelViewSet):
         "livelihood_strategy__unit_of_measure",
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
-        "wealth_group__wealth_category",
+        "wealth_group__wealth_group_category",
     )
     serializer_class = FoodPurchaseSerializer
     filterset_class = FoodPurchaseFilterSet
@@ -762,8 +761,8 @@ class PaymentInKindFilterSet(filters.FilterSet):
             "kcals_consumed",
             "percentage_kcals",
             "payment_per_time",
-            "people_per_hh",
-            "labor_per_month",
+            "people_per_household",
+            "times_per_month",
             "months_per_year",
         ]
 
@@ -779,7 +778,7 @@ class PaymentInKindViewSet(viewsets.ModelViewSet):
         "livelihood_strategy__unit_of_measure",
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
-        "wealth_group__wealth_category",
+        "wealth_group__wealth_group_category",
     )
     serializer_class = PaymentInKindSerializer
     filterset_class = PaymentInKindFilterSet
@@ -789,9 +788,9 @@ class PaymentInKindViewSet(viewsets.ModelViewSet):
     ]
 
 
-class ReliefGiftsOtherFilterSet(filters.FilterSet):
+class ReliefGiftOtherFilterSet(filters.FilterSet):
     class Meta:
-        model = ReliefGiftsOther
+        model = ReliefGiftOther
         fields = [
             "livelihood_strategy",
             "livelihood_zone_baseline",
@@ -808,25 +807,25 @@ class ReliefGiftsOtherFilterSet(filters.FilterSet):
             "kcals_consumed",
             "percentage_kcals",
             "unit_multiple",
-            "received_per_year",
+            "times_per_year",
         ]
 
 
-class ReliefGiftsOtherViewSet(viewsets.ModelViewSet):
+class ReliefGiftOtherViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows relief, gifts and other food to be viewed or edited.
     """
 
-    queryset = ReliefGiftsOther.objects.select_related(
+    queryset = ReliefGiftOther.objects.select_related(
         "livelihood_strategy__product",
         "livelihood_strategy__season",
         "livelihood_strategy__unit_of_measure",
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
-        "wealth_group__wealth_category",
+        "wealth_group__wealth_group_category",
     )
-    serializer_class = ReliefGiftsOtherSerializer
-    filterset_class = ReliefGiftsOtherFilterSet
+    serializer_class = ReliefGiftOtherSerializer
+    filterset_class = ReliefGiftOtherFilterSet
     search_fields = [
         "scenario",
         "strategy_type",
@@ -865,7 +864,7 @@ class FishingViewSet(viewsets.ModelViewSet):
         "livelihood_strategy__unit_of_measure",
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
-        "wealth_group__wealth_category",
+        "wealth_group__wealth_group_category",
     )
     serializer_class = FishingSerializer
     filterset_class = FishingFilterSet
@@ -907,7 +906,7 @@ class WildFoodGatheringViewSet(viewsets.ModelViewSet):
         "livelihood_strategy__unit_of_measure",
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
-        "wealth_group__wealth_category",
+        "wealth_group__wealth_group_category",
     )
     serializer_class = WildFoodGatheringSerializer
     filterset_class = WildFoodGatheringFilterSet
@@ -936,8 +935,8 @@ class OtherCashIncomeFilterSet(filters.FilterSet):
             "kcals_consumed",
             "percentage_kcals",
             "payment_per_time",
-            "people_per_hh",
-            "labor_per_month",
+            "people_per_household",
+            "times_per_month",
             "months_per_year",
             "times_per_year",
         ]
@@ -954,7 +953,7 @@ class OtherCashIncomeViewSet(viewsets.ModelViewSet):
         "livelihood_strategy__unit_of_measure",
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
-        "wealth_group__wealth_category",
+        "wealth_group__wealth_group_category",
     )
     serializer_class = OtherCashIncomeSerializer
     filterset_class = OtherCashIncomeFilterSet
@@ -964,9 +963,9 @@ class OtherCashIncomeViewSet(viewsets.ModelViewSet):
     ]
 
 
-class OtherPurchasesFilterSet(filters.FilterSet):
+class OtherPurchaseFilterSet(filters.FilterSet):
     class Meta:
-        model = OtherPurchases
+        model = OtherPurchase
         fields = [
             "livelihood_strategy",
             "livelihood_zone_baseline",
@@ -983,26 +982,26 @@ class OtherPurchasesFilterSet(filters.FilterSet):
             "kcals_consumed",
             "percentage_kcals",
             "unit_multiple",
-            "purchases_per_month",
+            "times_per_month",
             "months_per_year",
         ]
 
 
-class OtherPurchasesViewSet(viewsets.ModelViewSet):
+class OtherPurchaseViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows other purchases to be viewed or edited.
     """
 
-    queryset = OtherPurchases.objects.select_related(
+    queryset = OtherPurchase.objects.select_related(
         "livelihood_strategy__product",
         "livelihood_strategy__season",
         "livelihood_strategy__unit_of_measure",
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
-        "wealth_group__wealth_category",
+        "wealth_group__wealth_group_category",
     )
-    serializer_class = OtherPurchasesSerializer
-    filterset_class = OtherPurchasesFilterSet
+    serializer_class = OtherPurchaseSerializer
+    filterset_class = OtherPurchaseFilterSet
     search_fields = [
         "scenario",
         "strategy_type",
@@ -1014,7 +1013,7 @@ class SeasonalActivityFilterSet(filters.FilterSet):
         model = SeasonalActivity
         fields = [
             "livelihood_zone_baseline",
-            "activity_type",
+            "seasonal_activity_type",
             "season",
             "product",
         ]
@@ -1026,7 +1025,7 @@ class SeasonalActivityViewSet(viewsets.ModelViewSet):
     """
 
     queryset = SeasonalActivity.objects.select_related(
-        "activity_type",
+        "seasonal_activity_type",
         "livelihood_zone_baseline__livelihood_zone__country",
         "livelihood_zone_baseline__source_organization",
         "livelihood_zone_baseline__source_organization",
@@ -1076,7 +1075,8 @@ class CommunityCropProductionFilterSet(filters.FilterSet):
             "yield_with_inputs",
             "yield_without_inputs",
             "seed_requirement",
-            "unit_of_measure",
+            "crop_unit_of_measure",
+            "land_unit_of_measure",
         ]
 
 
@@ -1181,7 +1181,6 @@ class AnnualProductionPerformanceFilterSet(filters.FilterSet):
             "performance_year_start_date",
             "performance_year_end_date",
             "annual_performance",
-            "description",
         ]
 
 
@@ -1196,9 +1195,6 @@ class AnnualProductionPerformanceViewSet(viewsets.ModelViewSet):
     )
     serializer_class = AnnualProductionPerformanceSerializer
     filterset_class = AnnualProductionPerformanceFilterSet
-    search_fields = [
-        "description",
-    ]
 
 
 class HazardFilterSet(filters.FilterSet):
@@ -1287,7 +1283,7 @@ class ExpandabilityFactorViewSet(viewsets.ModelViewSet):
         "wealth_group__community",
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
-        "wealth_group__wealth_category",
+        "wealth_group__wealth_group_category",
     )
     serializer_class = ExpandabilityFactorSerializer
     filterset_class = ExpandabilityFactorFilterSet
@@ -1323,7 +1319,7 @@ class CopingStrategyViewSet(viewsets.ModelViewSet):
         "livelihood_strategy__product",
         "livelihood_strategy__season",
         "livelihood_strategy__unit_of_measure",
-        "wealth_group__wealth_category",
+        "wealth_group__wealth_group_category",
     )
     serializer_class = CopingStrategySerializer
     filterset_class = CopingStrategyFilterSet

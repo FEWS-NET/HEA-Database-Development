@@ -7,8 +7,8 @@ from common.lookups import Lookup
 from .models import (
     LivelihoodCategory,
     ReferenceData,
-    WealthCategory,
     WealthCharacteristic,
+    WealthGroupCategory,
 )
 
 
@@ -30,5 +30,5 @@ class WealthCharacteristicLookup(ReferenceDataLookup):
     model = WealthCharacteristic
 
 
-class WealthCategoryLookup(ReferenceDataLookup):
-    model = WealthCategory
+class WealthGroupCategoryLookup(ReferenceDataLookup):
+    model = WealthGroupCategory

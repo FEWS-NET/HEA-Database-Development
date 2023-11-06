@@ -21,14 +21,14 @@ from ..models import (
     LivelihoodStrategy,
     LivelihoodZone,
     LivelihoodZoneBaseline,
-    LivestockSales,
+    LivestockSale,
     MarketPrice,
     MeatProduction,
     MilkProduction,
     OtherCashIncome,
-    OtherPurchases,
+    OtherPurchase,
     PaymentInKind,
-    ReliefGiftsOther,
+    ReliefGiftOther,
     ResponseLivelihoodActivity,
     SeasonalActivity,
     SeasonalActivityOccurrence,
@@ -58,14 +58,14 @@ from .factories import (
     LivelihoodStrategyFactory,
     LivelihoodZoneBaselineFactory,
     LivelihoodZoneFactory,
-    LivestockSalesFactory,
+    LivestockSaleFactory,
     MarketPriceFactory,
     MeatProductionFactory,
     MilkProductionFactory,
     OtherCashIncomeFactory,
-    OtherPurchasesFactory,
+    OtherPurchaseFactory,
     PaymentInKindFactory,
-    ReliefGiftsOtherFactory,
+    ReliefGiftOtherFactory,
     ResponseLivelihoodActivityFactory,
     SeasonalActivityFactory,
     SeasonalActivityOccurrenceFactory,
@@ -161,10 +161,10 @@ class FactoryTestCase(TestCase):
             MeatProductionFactory()
         self.assertEqual(MeatProduction.objects.count(), self.num_records)
 
-    def test_livestocksales_factory(self):
+    def test_livestocksale_factory(self):
         for _ in range(self.num_records):
-            LivestockSalesFactory()
-        self.assertEqual(LivestockSales.objects.count(), self.num_records)
+            LivestockSaleFactory()
+        self.assertEqual(LivestockSale.objects.count(), self.num_records)
 
     def test_cropproduction_factory(self):
         for _ in range(self.num_records):
@@ -181,10 +181,10 @@ class FactoryTestCase(TestCase):
             PaymentInKindFactory()
         self.assertEqual(PaymentInKind.objects.count(), self.num_records)
 
-    def test_reliefgiftsandotherfood_factory(self):
+    def test_reliefgiftother_factory(self):
         for _ in range(self.num_records):
-            ReliefGiftsOtherFactory()
-        self.assertEqual(ReliefGiftsOther.objects.count(), self.num_records)
+            ReliefGiftOtherFactory()
+        self.assertEqual(ReliefGiftOther.objects.count(), self.num_records)
 
     def test_fishing_factory(self):
         for _ in range(self.num_records):
@@ -201,10 +201,10 @@ class FactoryTestCase(TestCase):
             OtherCashIncomeFactory()
         self.assertEqual(OtherCashIncome.objects.count(), self.num_records)
 
-    def test_otherpurchases_factory(self):
+    def test_otherpurchase_factory(self):
         for _ in range(self.num_records):
-            OtherPurchasesFactory()
-        self.assertEqual(OtherPurchases.objects.count(), self.num_records)
+            OtherPurchaseFactory()
+        self.assertEqual(OtherPurchase.objects.count(), self.num_records)
 
     def test_seasonalactivity_factory(self):
         for _ in range(self.num_records):
@@ -274,15 +274,15 @@ class FactoryTestCase(TestCase):
             MilkProductionFactory()
             ButterProductionFactory()
             MeatProductionFactory()
-            LivestockSalesFactory()
+            LivestockSaleFactory()
             CropProductionFactory()
             FoodPurchaseFactory()
             PaymentInKindFactory()
-            ReliefGiftsOtherFactory()
+            ReliefGiftOtherFactory()
             FishingFactory()
             WildFoodGatheringFactory()
             OtherCashIncomeFactory()
-            OtherPurchasesFactory()
+            OtherPurchaseFactory()
             SeasonalActivityFactory()
             SeasonalActivityOccurrenceFactory()
             CommunityCropProductionFactory()

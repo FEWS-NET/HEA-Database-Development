@@ -30,7 +30,7 @@ from xlutils.copy import copy as copy_xls
 from baseline.models import WealthGroupCharacteristicValue
 from common.lookups import ClassifiedProductLookup
 from common.pipelines.format import JSON
-from metadata.lookups import WealthCategoryLookup, WealthCharacteristicLookup
+from metadata.lookups import WealthCharacteristicLookup, WealthGroupCategoryLookup
 from metadata.models import WealthCharacteristic
 
 # from slugify import slugify
@@ -343,12 +343,12 @@ class NormalizeWB(luigi.Task):
             community_df.iloc[0].str.strip().tolist() == expected_columns for expected_columns in expected_column_sets
         )
         # Normalize the column names
-        community_df.columns = ["wealth_category", "district", "name", "interview_number", "interviewers"]
+        community_df.columns = ["wealth_group_category", "district", "name", "interview_number", "interviewers"]
         community_df = community_df[1:]
         # Find the initial set of Communities by only finding rows that have both a `district` and a `community`,
         # and don't have a `wealth_category`. Also ignore the `Comments` row.
         community_df = (
-            community_df[(community_df["district"] != "Comments") & (community_df["wealth_category"].isna())][
+            community_df[(community_df["district"] != "Comments") & (community_df["wealth_group_category"].isna())][
                 ["district", "name", "interview_number", "interviewers"]
             ]
             .dropna(subset=["district", "name"])
@@ -386,7 +386,9 @@ class NormalizeWB(luigi.Task):
             for wealth_category, admin_name, community_name in zip(row_3_values, row_4_values, row_5_values)
         ]
         char_df.columns = (
-            ["characteristic_label", "wealth_category"] + new_column_names + ["summary", "min_value", "max_value"]
+            ["characteristic_label", "wealth_group_category"]
+            + new_column_names
+            + ["summary", "min_value", "max_value"]
         )
 
         # Fill NaN values in 'wealth_characteristic' from the previous non-null cell
@@ -416,7 +418,7 @@ class NormalizeWB(luigi.Task):
 
         # Look up the metadata codes
         # We need to lookup the WealthCharacteristic before we can use it to mask the 'product' column below
-        char_df = WealthCategoryLookup().do_lookup(char_df, "wealth_category", "wealth_category")
+        char_df = WealthGroupCategoryLookup().do_lookup(char_df, "wealth_group_category", "wealth_group_category")
         char_df = WealthCharacteristicLookup().do_lookup(char_df, "wealth_characteristic", "wealth_characteristic")
 
         # Report any errors, because unmatched WealthCharacteristics that contain a product reference may cause errors
@@ -448,7 +450,7 @@ class NormalizeWB(luigi.Task):
                 "wealth_characteristic_original",
                 "wealth_characteristic",
                 "wealth_category_original",
-                "wealth_category",
+                "wealth_group_category",
             ],
             value_vars=char_df.columns[2:-1],
             var_name="interview_label",
@@ -462,7 +464,7 @@ class NormalizeWB(luigi.Task):
 
         # Drop rows where 'value' is NaN,
         # or wealth category is blank (which is the total row for percentage of households)
-        char_df = char_df.dropna(subset=["value", "wealth_category"])
+        char_df = char_df.dropna(subset=["value", "wealth_group_category"])
 
         # Also drop rows where there is no Community, and which aren't the summary.
         # These rows came from blank columns in the worksheet.
@@ -528,11 +530,11 @@ class NormalizeWB(luigi.Task):
         ] *= 100
 
         # Add the natural key for the Wealth Group
-        char_df["wealth_group"] = char_df[["wealth_category", "full_name"]].apply(
+        char_df["wealth_group"] = char_df[["wealth_group_category", "full_name"]].apply(
             lambda row: [
                 metadata.code,
                 metadata.reference_year_end_date.date().isoformat(),
-                row["wealth_category"],
+                row["wealth_group_category"],
                 row["full_name"],
             ],
             axis="columns",
@@ -554,7 +556,10 @@ class NormalizeWB(luigi.Task):
 
         # Pivot the percentage of households and household size back into columns
         wealth_group_df = verbose_pivot(
-            wealth_group_df, values="value", index=["wealth_category", "full_name"], columns="wealth_characteristic"
+            wealth_group_df,
+            values="value",
+            index=["wealth_group_category", "full_name"],
+            columns="wealth_characteristic",
         )
         wealth_group_df = wealth_group_df.rename(
             columns={
@@ -569,11 +574,15 @@ class NormalizeWB(luigi.Task):
         # Generate all possible combinations of unique 'full_name' and 'wealth_category'
         all_combinations = pd.DataFrame(
             list(
-                itertools.product(wealth_group_df["full_name"].unique(), wealth_group_df["wealth_category"].unique())
+                itertools.product(
+                    wealth_group_df["full_name"].unique(), wealth_group_df["wealth_group_category"].unique()
+                )
             ),
-            columns=["full_name", "wealth_category"],
+            columns=["full_name", "wealth_group_category"],
         )
-        wealth_group_df = pd.merge(all_combinations, wealth_group_df, on=["full_name", "wealth_category"], how="outer")
+        wealth_group_df = pd.merge(
+            all_combinations, wealth_group_df, on=["full_name", "wealth_group_category"], how="outer"
+        )
 
         # Add the natural key for the livelihood zone baseline and community
         wealth_group_df["livelihood_zone_baseline"] = wealth_group_df["full_name"].apply(

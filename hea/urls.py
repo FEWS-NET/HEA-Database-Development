@@ -24,14 +24,14 @@ from baseline.viewsets import (
     LivelihoodStrategyViewSet,
     LivelihoodZoneBaselineViewSet,
     LivelihoodZoneViewSet,
-    LivestockSalesViewSet,
+    LivestockSaleViewSet,
     MarketPriceViewSet,
     MeatProductionViewSet,
     MilkProductionViewSet,
     OtherCashIncomeViewSet,
-    OtherPurchasesViewSet,
+    OtherPurchaseViewSet,
     PaymentInKindViewSet,
-    ReliefGiftsOtherViewSet,
+    ReliefGiftOtherViewSet,
     ResponseLivelihoodActivityViewSet,
     SeasonalActivityOccurrenceViewSet,
     SeasonalActivityViewSet,
@@ -51,8 +51,8 @@ from metadata.viewsets import (
     LivelihoodCategoryViewSet,
     SeasonalActivityTypeViewSet,
     SeasonViewSet,
-    WealthCategoryViewSet,
     WealthCharacteristicViewSet,
+    WealthGroupCategoryViewSet,
 )
 
 router = routers.DefaultRouter()
@@ -66,7 +66,7 @@ router.register(r"classifiedproduct", ClassifiedProductViewSet)
 # Metadata
 router.register(r"livelihoodcategory", LivelihoodCategoryViewSet)
 router.register(r"wealthcharacteristic", WealthCharacteristicViewSet)
-router.register(r"wealthcategory", WealthCategoryViewSet)
+router.register(r"wealthgroupcategory", WealthGroupCategoryViewSet)
 router.register(r"seasonalactivitytype", SeasonalActivityTypeViewSet)
 router.register(r"hazardcategory", HazardCategoryViewSet)
 router.register(r"season", SeasonViewSet)
@@ -88,15 +88,15 @@ router.register(r"responselivelihoodactivity", ResponseLivelihoodActivityViewSet
 router.register(r"milkproduction", MilkProductionViewSet)
 router.register(r"butterproduction", ButterProductionViewSet)
 router.register(r"meatproduction", MeatProductionViewSet)
-router.register(r"livestocksale", LivestockSalesViewSet)
+router.register(r"livestocksale", LivestockSaleViewSet)
 router.register(r"cropproduction", CropProductionViewSet)
 router.register(r"foodpurchase", FoodPurchaseViewSet)
-router.register(r"paymentsinkind", PaymentInKindViewSet)
-router.register(r"reliefgiftsandotherfood", ReliefGiftsOtherViewSet)
+router.register(r"paymentinkind", PaymentInKindViewSet)
+router.register(r"relief", ReliefGiftOtherViewSet)
 router.register(r"fishing", FishingViewSet)
 router.register(r"wildfoodgathering", WildFoodGatheringViewSet)
 router.register(r"othercashincome", OtherCashIncomeViewSet)
-router.register(r"otherpurchase", OtherPurchasesViewSet)
+router.register(r"otherpurchase", OtherPurchaseViewSet)
 router.register(r"seasonalactivity", SeasonalActivityViewSet)
 router.register(r"seasonalactivityoccurrence", SeasonalActivityOccurrenceViewSet)
 router.register(r"communitycropproduction", CommunityCropProductionViewSet)

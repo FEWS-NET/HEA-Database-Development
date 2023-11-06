@@ -8,15 +8,15 @@ from metadata.admin import (
     HazardCategoryAdmin,
     MarketAdmin,
     SeasonalActivityTypeAdmin,
-    WealthCategoryAdmin,
     WealthCharacteristicAdmin,
+    WealthGroupCategoryAdmin,
 )
 from metadata.models import (
     HazardCategory,
     Market,
     SeasonalActivityType,
-    WealthCategory,
     WealthCharacteristic,
+    WealthGroupCategory,
 )
 
 from .factories import (
@@ -24,8 +24,8 @@ from .factories import (
     MarketFactory,
     SeasonalActivityTypeFactory,
     SeasonFactory,
-    WealthCategoryFactory,
     WealthCharacteristicFactory,
+    WealthGroupCategoryFactory,
 )
 
 
@@ -34,8 +34,8 @@ class ReferenceDataAdminTestCase(TestCase):
     def setUpTestData(cls):
         cls.superuser = User.objects.create_superuser(username="admin", password="admin", email="admin@hea.org")
 
-        cls.wealth_category1 = WealthCategoryFactory(code="TP", name="Très Pauvre", aliases=["vp", "tp"])
-        cls.wealth_category2 = WealthCategoryFactory(code="MV", name="Mieux vaut", aliases=["b/o"])
+        cls.wealth_category1 = WealthGroupCategoryFactory(code="TP", name="Très Pauvre", aliases=["vp", "tp"])
+        cls.wealth_category2 = WealthGroupCategoryFactory(code="MV", name="Mieux vaut", aliases=["b/o"])
         cls.wealth_characteristic1 = WealthCharacteristicFactory(
             code="area cultivated (acres)",
             name="Land area cultivated (acres)",
@@ -68,7 +68,7 @@ class ReferenceDataAdminTestCase(TestCase):
         models = [
             (WealthCharacteristic, WealthCharacteristicAdmin),
             (SeasonalActivityType, SeasonalActivityTypeAdmin),
-            (WealthCategory, WealthCategoryAdmin),
+            (WealthGroupCategory, WealthGroupCategoryAdmin),
             (Market, MarketAdmin),
             (HazardCategory, HazardCategoryAdmin),
         ]
@@ -86,7 +86,7 @@ class ReferenceDataAdminTestCase(TestCase):
         models = [
             WealthCharacteristic,
             SeasonalActivityType,
-            WealthCategory,
+            WealthGroupCategory,
             Market,
             HazardCategory,
         ]
@@ -118,7 +118,7 @@ class ReferenceDataAdminTestCase(TestCase):
                     self.assertContains(response, self.market2.name)
                     self.assertNotContains(response, self.market1.name)
 
-                elif "wealthcategory" in url:
+                elif "WealthGroupCategory" in url:
                     response = self.client.get(url, {"q": self.wealth_category1.name})
                     self.assertContains(response, self.wealth_category1.name)
                     self.assertNotContains(response, self.wealth_category2.name)
