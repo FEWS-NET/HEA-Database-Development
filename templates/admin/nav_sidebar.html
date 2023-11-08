@@ -139,7 +139,7 @@
                     </div>
                 </li>
             {% endif %}
-            {% if 'baseline.view_annualproductionperformance' in perms or 'baseline.view_hazard' in perms or 'baseline.view_event' in perms %}
+            {% if 'baseline.view_seasonalproductionperformance' in perms or 'baseline.view_hazard' in perms or 'baseline.view_event' in perms %}
                 <li class="mb-1">
                     <button class="btn btn-toggle align-items-center rounded collapsed-menu" data-bs-toggle="collapse"
                             data-bs-target="#seascal-collapse" aria-expanded="false">
@@ -147,9 +147,9 @@
                     </button>
                     <div class="collapse-menu" id="seascal-collapse">
                         <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
-                            {% if 'baseline.view_annualproductionperformance' in perms %}
+                            {% if 'baseline.view_seasonalproductionperformance' in perms %}
                                 <li><a class="link-dark rounded"
-                                       href="{% url 'admin:baseline_annualproductionperformance_changelist' %}">{% translate 'Annual Production Performances' %}</a>
+                                       href="{% url 'admin:baseline_seasonalproductionperformance_changelist' %}">{% translate 'Annual Production Performances' %}</a>
                                 </li>
                             {% endif %}
                             {% if 'baseline.view_hazard' in perms %}
