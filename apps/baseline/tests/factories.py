@@ -4,7 +4,6 @@ import factory
 from factory import fuzzy
 
 from baseline.models import (
-    AnnualProductionPerformance,
     BaselineLivelihoodActivity,
     BaselineWealthGroup,
     ButterProduction,
@@ -35,6 +34,7 @@ from baseline.models import (
     ResponseLivelihoodActivity,
     SeasonalActivity,
     SeasonalActivityOccurrence,
+    SeasonalProductionPerformance,
     SourceOrganization,
     WealthGroup,
     WealthGroupCharacteristicValue,
@@ -633,9 +633,9 @@ class MarketPriceFactory(factory.django.DjangoModelFactory):
     high_price = factory.Sequence(lambda n: n + 10)
 
 
-class AnnualProductionPerformanceFactory(factory.django.DjangoModelFactory):
+class SeasonalProductionPerformanceFactory(factory.django.DjangoModelFactory):
     class Meta:
-        model = AnnualProductionPerformance
+        model = SeasonalProductionPerformance
         django_get_or_create = [
             "community",
             "performance_year_start_date",
@@ -644,8 +644,8 @@ class AnnualProductionPerformanceFactory(factory.django.DjangoModelFactory):
     community = factory.SubFactory(CommunityFactory)
     performance_year_start_date = factory.Sequence(lambda n: datetime.date(1900, 1, 1) + datetime.timedelta(days=n))
     performance_year_end_date = factory.Sequence(lambda n: datetime.date(1900, 1, 1) + datetime.timedelta(days=n))
-    annual_performance = factory.Iterator(["1", "2", "3", "4", "5"])
-    description = factory.Sequence(lambda n: f"AnnualProductionPerformance {n} description")
+    seasonal_performance = factory.Iterator(["1", "2", "3", "4", "5"])
+    description = factory.Sequence(lambda n: f"SeasonalProductionPerformance {n} description")
 
 
 class HazardFactory(factory.django.DjangoModelFactory):

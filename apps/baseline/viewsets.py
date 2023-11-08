@@ -3,7 +3,6 @@ from django_filters import rest_framework as filters
 from rest_framework import viewsets
 
 from .models import (
-    AnnualProductionPerformance,
     BaselineLivelihoodActivity,
     BaselineWealthGroup,
     ButterProduction,
@@ -34,13 +33,13 @@ from .models import (
     ResponseLivelihoodActivity,
     SeasonalActivity,
     SeasonalActivityOccurrence,
+    SeasonalProductionPerformance,
     SourceOrganization,
     WealthGroup,
     WealthGroupCharacteristicValue,
     WildFoodGathering,
 )
 from .serializers import (
-    AnnualProductionPerformanceSerializer,
     BaselineLivelihoodActivitySerializer,
     BaselineWealthGroupSerializer,
     ButterProductionSerializer,
@@ -71,6 +70,7 @@ from .serializers import (
     ResponseLivelihoodActivitySerializer,
     SeasonalActivityOccurrenceSerializer,
     SeasonalActivitySerializer,
+    SeasonalProductionPerformanceSerializer,
     SourceOrganizationSerializer,
     WealthGroupCharacteristicValueSerializer,
     WealthGroupSerializer,
@@ -1173,28 +1173,28 @@ class MarketPriceViewSet(viewsets.ModelViewSet):
     ]
 
 
-class AnnualProductionPerformanceFilterSet(filters.FilterSet):
+class SeasonalProductionPerformanceFilterSet(filters.FilterSet):
     class Meta:
-        model = AnnualProductionPerformance
+        model = SeasonalProductionPerformance
         fields = [
             "community",
             "performance_year_start_date",
             "performance_year_end_date",
-            "annual_performance",
+            "seasonal_performance",
         ]
 
 
-class AnnualProductionPerformanceViewSet(viewsets.ModelViewSet):
+class SeasonalProductionPerformanceViewSet(viewsets.ModelViewSet):
     """
-    API endpoint that allows annual production performance to be viewed or edited.
+    API endpoint that allows seasonal production performance to be viewed or edited.
     """
 
-    queryset = AnnualProductionPerformance.objects.select_related(
+    queryset = SeasonalProductionPerformance.objects.select_related(
         "community__livelihood_zone_baseline__livelihood_zone__country",
         "community__livelihood_zone_baseline__source_organization",
     )
-    serializer_class = AnnualProductionPerformanceSerializer
-    filterset_class = AnnualProductionPerformanceFilterSet
+    serializer_class = SeasonalProductionPerformanceSerializer
+    filterset_class = SeasonalProductionPerformanceFilterSet
 
 
 class HazardFilterSet(filters.FilterSet):
