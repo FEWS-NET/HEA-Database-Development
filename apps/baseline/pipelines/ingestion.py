@@ -2,10 +2,10 @@
 # @TODO Review imports
 # import datetime
 # import hashlib
-# import json
 import io
 import itertools
 import logging
+import re
 from collections.abc import Iterable
 from pathlib import Path
 
@@ -24,11 +24,12 @@ from kiluigi.utils import class_from_name, path_from_task
 # from luigi.task import TASK_ID_INVALID_CHAR_REGEX, TASK_ID_TRUNCATE_HASH
 from luigi.util import requires
 from openpyxl.comments import Comment
+from openpyxl.utils import get_column_letter
 from openpyxl.utils.cell import coordinate_to_tuple, rows_from_range
 from xlutils.copy import copy as copy_xls
 
 from baseline.models import WealthGroupCharacteristicValue
-from common.lookups import ClassifiedProductLookup
+from common.lookups import ClassifiedProductLookup, UnitOfMeasureLookup
 from common.pipelines.format import JSON
 from metadata.lookups import WealthCharacteristicLookup, WealthGroupCategoryLookup
 from metadata.models import WealthCharacteristic
@@ -224,6 +225,8 @@ class CorrectBSS(luigi.Task):
         if isinstance(wb, xlrd.book.Book):
             xlrd_wb = wb
             wb = copy_xls(wb)  # a writable workbook to be returned by this method
+        else:
+            xlrd_wb = None  # Required to suppress spurious unbound variable errors from Pyright
         for correction in corrections_df.itertuples():
             for row in rows_from_range(correction.range):
                 for cell in row:
@@ -278,7 +281,10 @@ class NormalizeWB(luigi.Task):
         # Find the <country>/<filename>.<ext> path to the file, relative to the root folder.
         path = f"{Path(self.bss_path).parent.name}/{Path(self.bss_path).name}"
         # Find the metadata for this BSS
-        metadata = metadata_df[metadata_df["bss_path"] == path].iloc[0]
+        try:
+            metadata = metadata_df[metadata_df["bss_path"] == path].iloc[0]
+        except IndexError:
+            raise PipelineError("No entry in BSS Metadata worksheet for %s" % path)
 
         data = self.process(data_df, metadata)
 
@@ -309,27 +315,34 @@ class NormalizeWB(luigi.Task):
             "LivelihoodZone": [
                 {
                     # Get country and code from the filename
-                    "country": metadata.country,
-                    "code": metadata.code,
-                    # Get the name from 'WB':B0
-                    "name": data_df.iloc[0, 1],
+                    "country": metadata["country"],
+                    "code": metadata["code"],
+                    "name": metadata["name"],
                 }
             ],
             "LivelihoodZoneBaseline": [
                 {
-                    "livelihood_zone": metadata.code,
+                    "livelihood_zone": metadata["code"],
+                    "name": metadata["name"],
                     "source_organization": [
-                        metadata.source_organization,
+                        metadata["source_organization"],
                     ],  # natural key is always a list
-                    "main_livelihood_category": str(metadata.main_livelihood_category).lower()
-                    if metadata.main_livelihood_category
-                    else "agro-pastoral",  # @TODO Remove this temporary default after Save have completed BSS Metadata
-                    "reference_year_start_date": metadata.reference_year_start_date.date().isoformat(),
-                    "reference_year_end_date": metadata.reference_year_end_date.date().isoformat(),
-                    "valid_from_date": metadata.valid_from_date.date().isoformat(),
+                    "main_livelihood_category": str(metadata["main_livelihood_category"]).lower(),
+                    "reference_year_start_date": metadata["reference_year_start_date"].date().isoformat(),
+                    "reference_year_end_date": metadata["reference_year_end_date"].date().isoformat(),
+                    "valid_from_date": metadata["valid_from_date"].date().isoformat(),
                     "valid_to_date": None
-                    if pd.isna(metadata.valid_to_date)
-                    else metadata.valid_to_date.date().isoformat(),
+                    if pd.isna(metadata["valid_to_date"])
+                    else metadata["valid_to_date"].date().isoformat(),
+                    "data_collection_start_date": None
+                    if pd.isna(metadata["data_collection_start_date"])
+                    else metadata["data_collection_start_date"].date().isoformat(),
+                    "data_collection_end_date": None
+                    if pd.isna(metadata["data_collection_end_date"])
+                    else metadata["data_collection_end_date"].date().isoformat(),
+                    "publication_date": None
+                    if pd.isna(metadata["publication_date"])
+                    else metadata["publication_date"].date().isoformat(),
                 }
             ],
         }
@@ -339,27 +352,30 @@ class NormalizeWB(luigi.Task):
         community_df = data_df.iloc[2:7].transpose()
         # Check that the columns are what we expect
         expected_column_sets = (["WEALTH GROUP", "District", "Village", "Interview number:", "Interviewers"],)
-        assert any(
-            community_df.iloc[0].str.strip().tolist() == expected_columns for expected_columns in expected_column_sets
-        )
+        found_columns = community_df.iloc[0].str.strip().tolist()
+        if not any(found_columns == expected_columns for expected_columns in expected_column_sets):
+            raise PipelineError("Cannot identify Communities from columns %s" % ", ".join(found_columns))
         # Normalize the column names
         community_df.columns = ["wealth_group_category", "district", "name", "interview_number", "interviewers"]
         community_df = community_df[1:]
         # Find the initial set of Communities by only finding rows that have both a `district` and a `community`,
-        # and don't have a `wealth_category`. Also ignore the `Comments` row.
+        # and don't have a `wealth_group_category`. Also ignore the `Comments` row.
         community_df = (
             community_df[(community_df["district"] != "Comments") & (community_df["wealth_group_category"].isna())][
                 ["district", "name", "interview_number", "interviewers"]
             ]
-            .dropna(subset=["district", "name"])
+            .dropna(subset=["name"])
             .drop_duplicates()
         )
-        # Create the full_name from the community and district
-        community_df["full_name"] = community_df.name.str.cat(community_df.district, sep=", ")
+        # Create the full_name from the community and district, and fall back
+        # to just the community name if the district is empty/nan.
+        community_df["full_name"] = community_df.name.str.cat(community_df.district, sep=", ").fillna(
+            community_df.name
+        )
         community_df = community_df.drop(columns="district")
         # Add the natural key for the livelihood zone baseline
         community_df["livelihood_zone_baseline"] = community_df["full_name"].apply(
-            lambda full_name: [metadata.code, metadata.reference_year_end_date.date().isoformat()]
+            lambda full_name: [metadata["code"], metadata["reference_year_end_date"].date().isoformat()]
         )
 
         # Replace NaN with "" ready for Django
@@ -377,49 +393,89 @@ class NormalizeWB(luigi.Task):
         # up to the summary/from/to columns
         char_df = data_df.iloc[8:, : last_col_index + 1]
 
-        # Set the column names based on the interviewee wealth category (Row 3) and community full name (Rows 4 & 5)
+        # Keep the row number to aid trouble-shooting.
+        char_df["row"] = char_df.index + 1
+
+        # Set the column names based on the interviewee wealth group category (Row 3)
+        # and community full name (Rows 4 & 5)
         row_3_values = data_df.iloc[2, 2 : last_col_index - 2].values
         row_4_values = data_df.iloc[3, 2 : last_col_index - 2].values
         row_5_values = data_df.iloc[4, 2 : last_col_index - 2].values
-        new_column_names = [
-            f'{community_name}, {admin_name}:{"" if pd.isna(wealth_category) else wealth_category}'
-            for wealth_category, admin_name, community_name in zip(row_3_values, row_4_values, row_5_values)
-        ]
-        char_df.columns = (
+        new_column_names = []
+        for wealth_group_category, admin_name, community_name in zip(row_3_values, row_4_values, row_5_values):
+            full_name = f"{community_name}, {admin_name}" if pd.notna(admin_name) else community_name
+            wealth_group_category = wealth_group_category if pd.notna(wealth_group_category) else ""
+            new_column_names.append(f"{full_name}:{wealth_group_category}")
+        new_column_names = (
             ["characteristic_label", "wealth_group_category"]
             + new_column_names
-            + ["summary", "min_value", "max_value"]
+            + ["summary", "min_value", "max_value", "row"]
         )
+        char_df.columns = new_column_names
 
         # Fill NaN values in 'wealth_characteristic' from the previous non-null cell
         char_df["characteristic_label"] = char_df["characteristic_label"].fillna(method="ffill")
 
-        # Split 'characteristic_label' into 'product' and 'characteristic'
-        def get_product(combined: str):
-            product = ""
-            if ":" in combined:
-                product, combined = combined.split(":", 1)
-            for pattern in ["number owned", "nbr possédés"]:
-                if combined.lower().endswith(pattern) and combined[: -len(pattern)].strip():
-                    product = combined[: -len(pattern)]
-            return product.strip()
+        # Get the 'wealth_characteristic', 'product' and 'unit_of_measure' from the 'characteristic_label'
+        # We can't just use a regular WealthCharacteristicLookup.do_lookup() because we need to match the additional
+        # 'product' and 'unit_of_measure' attributes using regexes. Therefore, we use regexes against the aliases to
+        # set the product and/or unit_of_measure for those wealth characteristics where we expect those attributes to
+        # be present, and then we use the regular WealthCharacteristicLookup.do_lookup() to match the remaining items.
 
-        def get_wealth_characteristic(combined: str):
-            characteristic = combined
-            if ":" in combined:
-                product, characteristic = combined.split(":", 1)
-            for pattern in ["number owned", "nbr possédés"]:
-                if combined.lower().endswith(pattern):
-                    characteristic = pattern
-                return characteristic.strip()
+        # Examples:
+        # MWPHA_30Sep15: Land area cultivated - rainfed crops (acres)
+        # NE01(BIL): Anes nbr possédés
+        # NE01(BIL): Volaille nbr possédés
+        # LR02: Oxen (no. owned)
+        # SO18: Donkey number owned
 
-        char_df["product"] = char_df["characteristic_label"].apply(get_product)
-        char_df["wealth_characteristic"] = char_df["characteristic_label"].apply(get_wealth_characteristic)
+        # Build a map of regex strings to the actual characteristic, using the WealthCharacteristic.aliases
+        wealth_characteristic_map = {}
+        for wealth_characteristic in WealthCharacteristic.objects.exclude(
+            has_product=False, has_unit_of_measure=False
+        ).exclude(aliases__isnull=True):
+            for alias in wealth_characteristic.aliases:
+                alias = re.escape(alias)
+                # replace the <product> or <unit_of_measure> placeholders with regex groups
+                for attribute in "product", "unit_of_measure":
+                    if attribute in alias:
+                        alias = alias.replace(f"<{attribute}>", f"(?P<{attribute}>[a-z][a-z']+)")
+                alias = re.compile(alias)
+                wealth_characteristic_map[alias] = wealth_characteristic.code
 
-        # Look up the metadata codes
+        def get_attributes(characteristic_label: str):
+            """
+            Return a tuple of (wealth_characteristic, product, unit_of_measure) from a characteristic label.
+            """
+            for pattern, wealth_characteristic in wealth_characteristic_map.items():
+                match = pattern.fullmatch(characteristic_label.lower().strip())
+                if match:
+                    if "product" in match.groupdict():
+                        product = match.groupdict()["product"]
+                    else:
+                        product = None
+                    if "unit_of_measure" in match.groupdict():
+                        unit_of_measure = match.groupdict()["unit_of_measure"]
+                    else:
+                        unit_of_measure = None
+                    # Return a Series so that Pandas will split the return value into multiple columns
+                    return pd.Series([wealth_characteristic, product, unit_of_measure])
+            # No pattern matched
+            # Return a Series so that Pandas will split the return value into multiple columns
+            return pd.Series([None, None, None])
+
+        # Extract the wealth_characteristic, product and unit_of_measure (if applicable) from the characteristic_label
+        char_df[["wealth_characteristic", "product", "unit_of_measure"]] = char_df["characteristic_label"].apply(
+            get_attributes
+        )
+
+        # Look up the metadata codes for WealthGroupCategory and WealthCharacteristic
         # We need to lookup the WealthCharacteristic before we can use it to mask the 'product' column below
         char_df = WealthGroupCategoryLookup().do_lookup(char_df, "wealth_group_category", "wealth_group_category")
-        char_df = WealthCharacteristicLookup().do_lookup(char_df, "wealth_characteristic", "wealth_characteristic")
+        # Note that we use do_lookup(update=True) so that we ignore the values that we matched using a regex
+        char_df = WealthCharacteristicLookup().do_lookup(
+            char_df, "characteristic_label", "wealth_characteristic", update=True
+        )
 
         # Report any errors, because unmatched WealthCharacteristics that contain a product reference may cause errors
         # when reshaping the dataframe. Note that we don't raise an exception here - ValidateBaseline will do that if
@@ -429,27 +485,60 @@ class NormalizeWB(luigi.Task):
                 f"Unmatched remote metadata for WealthGroupCharacteristicValue with wealth_characteristic '{value}'"
             )  # NOQA: E501
 
-        # Fill NaN values in 'product' from the previous non-null cell
-        # (after setting the relevant cells to NA)
+        # Copy the product from the previous cell for rows that need a product but don't specify it.
+        # We do this by setting the missing values to pd.NA and then using .ffill()
+        # Note that we need to replace the None with something else during the ffill() so that it is only actual pd.NA
+        # values that are replaced
         product_characteristics = WealthCharacteristic.objects.filter(has_product=True).values_list("code", flat=True)
-        char_df["product"] = char_df["product"].mask(
-            (char_df["wealth_characteristic"].isin(list(product_characteristics))) & (char_df["product"] == ""), pd.NA
+        char_df["product"] = (
+            char_df["product"]
+            .replace({None: ""})
+            .mask(
+                char_df["wealth_characteristic"].isin(list(product_characteristics)) & pd.isna(char_df["product"]),
+                pd.NA,
+            )
+            .ffill()
+            .replace({"": None})
         )
-        char_df["product"] = char_df["product"].fillna(method="ffill")
+
+        # Copy the unit_of_measure from the previous cell for rows that need a unit_of_measure but don't specify it.
+        # We do this by setting the missing values to pd.NA and then using .ffill()
+        # Note that we need to replace the None with something else during the ffill() so that it is only actual pd.NA
+        # values that are replaced
+        unit_of_measure_characteristics = WealthCharacteristic.objects.filter(has_unit_of_measure=True).values_list(
+            "code", flat=True
+        )
+        char_df["unit_of_measure"] = (
+            char_df["unit_of_measure"]
+            .replace({None: ""})
+            .mask(
+                char_df["wealth_characteristic"].isin(list(unit_of_measure_characteristics))
+                & pd.isna(char_df["unit_of_measure"]),
+                pd.NA,
+            )
+            .ffill()
+            .replace({"": None})
+        )
 
         # Lookup the CPCv2
         char_df = ClassifiedProductLookup().do_lookup(char_df, "product", "product")
+
+        # Lookup the Unit of Measure
+        char_df = UnitOfMeasureLookup().do_lookup(char_df, "unit_of_measure", "unit_of_measure")
 
         # Melt the dataframe
         char_df = pd.melt(
             char_df,
             id_vars=[
+                "row",
                 "characteristic_label",
                 "product_original",
                 "product",
+                "unit_of_measure_original",
+                "unit_of_measure",
                 "wealth_characteristic_original",
                 "wealth_characteristic",
-                "wealth_category_original",
+                "wealth_group_category_original",
                 "wealth_group_category",
             ],
             value_vars=char_df.columns[2:-1],
@@ -457,8 +546,13 @@ class NormalizeWB(luigi.Task):
             value_name="value",
         )
 
-        # Split 'label' into 'interviewee_wealth_category' and 'full_name'
-        char_df[["full_name", "interviewee_wealth_category"]] = char_df["interview_label"].str.split(
+        # Add a column containing the original column label, to aid trouble-shooting.
+        mapping_dict = {value: get_column_letter(idx + 1) for idx, value in enumerate(new_column_names)}
+        mapping_dict["row"] = None  # column 'row' was added by us and isn't a column in the workbook
+        char_df["column"] = char_df["interview_label"].map(mapping_dict)
+
+        # Split 'label' into 'interviewee_wealth_group_category' and 'full_name'
+        char_df[["full_name", "interviewee_wealth_group_category"]] = char_df["interview_label"].str.split(
             ":", expand=True, n=1
         )
 
@@ -467,24 +561,30 @@ class NormalizeWB(luigi.Task):
         char_df = char_df.dropna(subset=["value", "wealth_group_category"])
 
         # Also drop rows where there is no Community, and which aren't the summary.
-        # These rows came from blank columns in the worksheet.
-        char_df = char_df[~char_df["interview_label"].eq("nan, nan:")]
+        # These rows came from blank columns in the worksheet.from django.core.exceptions import ValidationError
+
+        char_df = char_df[~char_df["interview_label"].eq("nan:")]
+
+        # Drop rows where 'value' is NaN,
+        # or wealth group category is blank (which is the total row for percentage of households)
+        char_df = char_df.dropna(subset=["value", "wealth_group_category"])
 
         # Also drop rows containing the percentage of households estimate from a Wealth Group-level interview,
-        # estimating the percentage for the other Wealth Categories. I.e. for the "VP" Wealth Group interview we only
-        # store the percentage of households estimated for the "VP" Wealth Category, and not those for P, M and B/O.
+        # estimating the percentage for the other Wealth Categories. I.e. for the "VP" Wealth Group interview
+        # we only store the percentage of households estimated for the "VP" Wealth Group Category, and not
+        # those for P, M and B/O.
         char_df = char_df[
             ~(
                 char_df["wealth_characteristic"].eq("percentage of households")
-                & ~char_df["interviewee_wealth_category"].isna()
-                & ~char_df["wealth_category_original"].eq(char_df["interviewee_wealth_category"])
+                & ~char_df["interviewee_wealth_group_category"].isna()
+                & ~char_df["wealth_group_category_original"].eq(char_df["interviewee_wealth_group_category"])
             )
         ]
 
         # Split out the summary data
         summary_df = char_df[char_df["interview_label"].isin(["summary", "min_value", "max_value"])]
         # Drop unwanted columns
-        summary_df = summary_df.drop(["full_name", "interviewee_wealth_category"], axis="columns")
+        summary_df = summary_df.drop(["full_name", "interviewee_wealth_group_category", "column"], axis="columns")
         # Pivot the value, min_value and max_value back into columns
         summary_df = verbose_pivot(
             summary_df,
@@ -495,7 +595,7 @@ class NormalizeWB(luigi.Task):
         summary_df.columns.name = None
         summary_df = summary_df.rename(columns={"summary": "value"})
         # Add the source column
-        summary_df["source"] = WealthGroupCharacteristicValue.CharacteristicSource.SUMMARY
+        summary_df["reference_type"] = WealthGroupCharacteristicValue.CharacteristicReference.SUMMARY
         # Summary Wealth Group Characteristic Values don't have a community
         summary_df["full_name"] = None
 
@@ -503,14 +603,14 @@ class NormalizeWB(luigi.Task):
         char_df = char_df[~char_df["interview_label"].isin(["summary", "min_value", "max_value"])]
 
         # Add the source column to the main dataframe
-        # Rows with an interviewee wealth category are from the Wealth Group-level Form 4 interview.
-        char_df["source"] = char_df["interviewee_wealth_category"].where(
-            char_df["interviewee_wealth_category"] == "",
-            WealthGroupCharacteristicValue.CharacteristicSource.WEALTH_GROUP,
+        # Rows with an interviewee wealth group category are from the Wealth Group-level Form 4 interview.
+        char_df["reference_type"] = char_df["interviewee_wealth_group_category"].where(
+            char_df["interviewee_wealth_group_category"] == "",
+            WealthGroupCharacteristicValue.CharacteristicReference.WEALTH_GROUP,
         )
-        # Rows without an interviewee wealth category are from the Community-level Form 3 interview.
-        char_df["source"] = char_df["source"].mask(
-            char_df["source"] == "", WealthGroupCharacteristicValue.CharacteristicSource.COMMUNITY
+        # Rows without an interviewee wealth group category are from the Community-level Form 3 interview.
+        char_df["reference_type"] = char_df["reference_type"].mask(
+            char_df["reference_type"] == "", WealthGroupCharacteristicValue.CharacteristicReference.COMMUNITY
         )
 
         # Community and Wealth Group interviews don't have min_value or max_value
@@ -532,8 +632,8 @@ class NormalizeWB(luigi.Task):
         # Add the natural key for the Wealth Group
         char_df["wealth_group"] = char_df[["wealth_group_category", "full_name"]].apply(
             lambda row: [
-                metadata.code,
-                metadata.reference_year_end_date.date().isoformat(),
+                metadata["code"],
+                metadata["reference_year_end_date"].date().isoformat(),
                 row["wealth_group_category"],
                 row["full_name"],
             ],
@@ -546,13 +646,29 @@ class NormalizeWB(luigi.Task):
         # or the Summary.
         wealth_group_df = char_df[
             char_df["wealth_characteristic"].isin(["percentage of households", "household size"])
-            & char_df["source"].isin(
+            & char_df["reference_type"].isin(
                 [
-                    WealthGroupCharacteristicValue.CharacteristicSource.WEALTH_GROUP,
-                    WealthGroupCharacteristicValue.CharacteristicSource.SUMMARY,
+                    WealthGroupCharacteristicValue.CharacteristicReference.WEALTH_GROUP,
+                    WealthGroupCharacteristicValue.CharacteristicReference.SUMMARY,
                 ]
             )
         ]
+
+        # Make sure that the names in the Wealth Group-level interviews match
+        # the names in the in the Community-level interviews that were used to
+        # create the Community records
+        unmatched_full_names = wealth_group_df[
+            pd.notna(wealth_group_df["full_name"]) & ~wealth_group_df["full_name"].isin(community_df.full_name)
+        ][["full_name", "column", "row"]]
+        if not unmatched_full_names.empty:
+            raise PipelineError(
+                "Unmatched Community.full_name in Wealth Group interviews:\n%s" % unmatched_full_names.to_markdown()
+            )
+
+        # Drop unwanted columns
+        wealth_group_df = wealth_group_df.drop(
+            ["wealth_characteristic_original", "product", "product_original"], axis="columns"
+        )
 
         # Pivot the percentage of households and household size back into columns
         wealth_group_df = verbose_pivot(
@@ -568,10 +684,10 @@ class NormalizeWB(luigi.Task):
             }
         )
 
-        # Make sure that we have a Wealth Group for every combination of Wealth Category and Community,
+        # Make sure that we have a Wealth Group for every combination of Wealth Group Category and Community,
         # because sometimes there is no Wealth Group-level (Form 4) data but there is Community-level (Form 3)
         # data for the Wealth Group.
-        # Generate all possible combinations of unique 'full_name' and 'wealth_category'
+        # Generate all possible combinations of unique 'full_name' and 'wealth_group_category'
         all_combinations = pd.DataFrame(
             list(
                 itertools.product(
@@ -586,12 +702,12 @@ class NormalizeWB(luigi.Task):
 
         # Add the natural key for the livelihood zone baseline and community
         wealth_group_df["livelihood_zone_baseline"] = wealth_group_df["full_name"].apply(
-            lambda full_name: [metadata.code, metadata.reference_year_end_date.date().isoformat()]
+            lambda full_name: [metadata["code"], metadata["reference_year_end_date"].date().isoformat()]
         )
         wealth_group_df["community"] = wealth_group_df["full_name"].apply(
             lambda full_name: None
             if pd.isna(full_name)
-            else [metadata.code, metadata.reference_year_end_date.date().isoformat(), full_name]
+            else [metadata["code"], metadata["reference_year_end_date"].date().isoformat(), full_name]
         )
         wealth_group_df = wealth_group_df.drop(columns="full_name")
 

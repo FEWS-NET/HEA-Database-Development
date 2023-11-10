@@ -663,6 +663,23 @@ class WealthGroupCharacteristicValue(common_models.Model):
                 _("A Wealth Group Characteristic Value for %s must not have a product" % self.wealth_characteristic)
                 % self.CharacteristicReference(self.reference_type).label
             )
+        # Validate `unit_of_measure`
+        if self.wealth_characteristic.has_unit_of_measure:
+            if not self.unit_of_measure:
+                raise ValidationError(
+                    _(
+                        "A Wealth Group Characteristic Value for %s must have a unit of measure"
+                        % self.wealth_characteristic
+                    )
+                )
+        elif self.unit_of_measure:
+            raise ValidationError(
+                _(
+                    "A Wealth Group Characteristic Value for %s must not have a unit of measure"
+                    % self.wealth_characteristic
+                )
+                % self.CharacteristicReference(self.reference_type).label
+            )
         # Validate `value` is between min_value and max_value, if either are numerics (strings eg "1" not validated)
         if (
             isinstance(self.min_value, numbers.Number)
@@ -1880,20 +1897,16 @@ class MarketPrice(common_models.Model):
 
 
 # @TODO Ask Save what to call this
-class AnnualProductionPerformance(common_models.Model):
+class SeasonalProductionPerformance(common_models.Model):
     """
-    Relative production performance and resulting food security experienced
-    in a recent year prior to the reference year.
+    Relative production performance experienced in a specific season / year.
+
+    Most BSSs contain the performance for the year as a whole and will use a
+    'Main' or 'Annual' season. However, in Livelilood Zones with bimodal
+    rainfall we can capture performance for each season individually.
 
     Stored on the BSS 'Timeline' worksheet based on responses to the Form 3.
     """
-
-    # @TODO SO18 has per-season performance, not Annual.
-    # We need to decide whether the current Annual Production Performance model
-    # should really be Seasonal Production Performance, with a link to Season
-    # - we would need to have an “Annual” season to link to for those cases
-    # where the Production Performance is still given as annual but there are
-    # multiple growing seasons.
 
     class Performance(models.IntegerChoices):
         VERY_POOR = 1, _("Very Poor")
@@ -1903,6 +1916,7 @@ class AnnualProductionPerformance(common_models.Model):
         VERY_GOOD = 5, _("Very Good")
 
     community = models.ForeignKey(Community, on_delete=models.RESTRICT, verbose_name=_("Community or Village"))
+    season = models.ForeignKey(Season, on_delete=models.PROTECT, verbose_name=_("Season"))
     performance_year_start_date = models.DateField(
         verbose_name=_("Performance Year Start Date"),
         help_text=_("The first day of the month of the start month in the performance year"),
@@ -1911,19 +1925,19 @@ class AnnualProductionPerformance(common_models.Model):
         verbose_name=_("Performance Year End Date"),
         help_text=_("The last day of the month of the end month in the performance year"),
     )
-    annual_performance = models.SmallIntegerField(
+    seasonal_performance = models.SmallIntegerField(
         choices=Performance.choices,
         validators=[
             MinValueValidator(1, message="Performance rating must be at least 1."),
             MaxValueValidator(5, message="Performance rating must be at most 5."),
         ],
         verbose_name=_("Seasonal Performance"),
-        help_text=_("Rating of the annual production performance from Very Poor (1) to Very Good (5)"),
+        help_text=_("Rating of the seasonal production performance from Very Poor (1) to Very Good (5)"),
     )
 
     class Meta:
-        verbose_name = _("Annual Production Performance")
-        verbose_name_plural = _("Annual Production Performance")
+        verbose_name = _("Seasonal Production Performance")
+        verbose_name_plural = _("Seasonal Production Performance")
 
 
 class Hazard(common_models.Model):
@@ -1981,7 +1995,7 @@ class Event(common_models.Model):
     """
 
     # See, for example, MG23.
-    # SN05 also contains Events, but they are stored in the Annual Production Performance section.
+    # SN05 also contains Events, but they are stored in the Seasonal Production Performance section.
     # Although logically Events can be split into Shocks and Responses, the way in the data is
     # currently stored in the BSSs doesn't support easy identification of the different types.
     # Therefore we store everything as an Event for now. We may choose to add a discriminator

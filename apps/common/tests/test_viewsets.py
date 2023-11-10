@@ -118,13 +118,13 @@ class UnitOfMeasureViewSetTestCase(APITestCase):
     @classmethod
     def setUpTestData(cls):
         cls.existing_units = UnitOfMeasure.objects.all().count()
-        cls.unit1 = UnitOfMeasureFactory()
-        cls.unit2 = UnitOfMeasureFactory()
-        cls.unit3 = UnitOfMeasureFactory()
+        cls.unit1 = UnitOfMeasureFactory(conversion=None)
+        cls.unit2 = UnitOfMeasureFactory(conversion=None)
+        cls.unit3 = UnitOfMeasureFactory(conversion=None)
 
-        cls.unit4 = UnitOfMeasureFactory(unit_type=UnitOfMeasure.VOLUME)
-        cls.unit5 = UnitOfMeasureFactory(unit_type=UnitOfMeasure.VOLUME)
-        cls.unit6 = UnitOfMeasureFactory(unit_type=UnitOfMeasure.VOLUME)
+        cls.unit4 = UnitOfMeasureFactory(unit_type=UnitOfMeasure.VOLUME, conversion=None)
+        cls.unit5 = UnitOfMeasureFactory(unit_type=UnitOfMeasure.VOLUME, conversion=None)
+        cls.unit6 = UnitOfMeasureFactory(unit_type=UnitOfMeasure.VOLUME, conversion=None)
 
     def setUp(self):
         self.url = reverse("unitofmeasure-list")

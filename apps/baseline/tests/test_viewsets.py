@@ -8,7 +8,6 @@ from django.urls import reverse
 from rest_framework.test import APITestCase
 
 from .factories import (
-    AnnualProductionPerformanceFactory,
     BaselineLivelihoodActivityFactory,
     BaselineWealthGroupFactory,
     ButterProductionFactory,
@@ -39,6 +38,7 @@ from .factories import (
     ResponseLivelihoodActivityFactory,
     SeasonalActivityFactory,
     SeasonalActivityOccurrenceFactory,
+    SeasonalProductionPerformanceFactory,
     SourceOrganizationFactory,
     WealthGroupCharacteristicValueFactory,
     WealthGroupFactory,
@@ -4346,16 +4346,16 @@ class MarketPriceViewSetTestCase(APITestCase):
         self.assertEqual(len(df), self.num_records + 1)
 
 
-class AnnualProductionPerformanceViewSetTestCase(APITestCase):
+class SeasonalProductionPerformanceViewSetTestCase(APITestCase):
     @classmethod
     def setUpTestData(cls):
         cls.num_records = 5
-        cls.data = [AnnualProductionPerformanceFactory() for _ in range(cls.num_records)]
+        cls.data = [SeasonalProductionPerformanceFactory() for _ in range(cls.num_records)]
         cls.user = User.objects.create_superuser("test", "test@test.com", "password")
 
     def setUp(self):
-        self.url = reverse("annualproductionperformance-list")
-        self.url_get = lambda n: reverse("annualproductionperformance-detail", args=(self.data[n].pk,))
+        self.url = reverse("seasonalproductionperformance-list")
+        self.url_get = lambda n: reverse("seasonalproductionperformance-detail", args=(self.data[n].pk,))
 
     def test_get_record(self):
         response = self.client.get(self.url_get(0))
@@ -4375,14 +4375,14 @@ class AnnualProductionPerformanceViewSetTestCase(APITestCase):
             "community_name",
             "performance_year_start_date",
             "performance_year_end_date",
-            "annual_performance",
-            "annual_performance_label",
+            "seasonal_performance",
+            "seasonal_performance_label",
             "description",
         )
         self.assertCountEqual(
             response.json().keys(),
             expected_fields,
-            "AnnualProductionPerformance: "
+            "SeasonalProductionPerformance: "
             f"Fields expected: {expected_fields}. "
             f"Fields found: {response.json().keys()}.",
         )
