@@ -30,6 +30,7 @@ from xlutils.copy import copy as copy_xls
 
 from baseline.models import WealthGroupCharacteristicValue
 from common.lookups import ClassifiedProductLookup, UnitOfMeasureLookup
+from common.management.commands import verbose_load_data
 from common.pipelines.format import JSON
 from metadata.lookups import WealthCharacteristicLookup, WealthGroupCategoryLookup
 from metadata.models import WealthCharacteristic
@@ -865,7 +866,7 @@ class ImportBaseline(luigi.Task):
     def run(self):
         buffer = io.StringIO()
 
-        call_command("loaddata", self.input().path, verbosity=2, format="verbose_json", stdout=buffer)
+        call_command(verbose_load_data.Command(), self.input().path, verbosity=2, format="verbose_json", stdout=buffer)
 
         with self.output().open("w") as output:
             # Data is a JSON object
