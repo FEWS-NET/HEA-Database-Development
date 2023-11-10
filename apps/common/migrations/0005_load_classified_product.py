@@ -72,11 +72,11 @@ def update_classifiedproducts_from_fdw(ClassifiedProduct):
             if fdw_product[0]["aliases"]:
                 aliases = ast.literal_eval(fdw_product[0]["aliases"])
                 if aliases:
-                    classified_product.aliases = {"other_names": aliases}
+                    classified_product.aliases = aliases
             if fdw_product[0]["hs2012"]:
                 hs2012 = ast.literal_eval(fdw_product[0]["hs2012"])
                 if hs2012:
-                    classified_product.hs2012 = {"hs2012_codes": hs2012}
+                    classified_product.hs2012 = hs2012
             classified_product.save()
             records_updated += 1
         else:

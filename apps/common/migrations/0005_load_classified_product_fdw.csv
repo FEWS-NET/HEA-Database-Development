@@ -1162,7 +1162,7 @@ L02140,Swine / pigs,,Swine / pigs,Porcino / cerdos,Porcs,Suínos / porcos,,[],"[
 L02140AA,Swine / pigs,Swine / pigs,Swine / pigs,,,,,"['porc / porcins', 'porc / cochons']",,,[]
 L02140AB,Swine / pigs,"Pig (Adult, Male, Medium-sized)","Pig (Adult, Male, Medium-sized)",,,,,['porc'],,,[]
 L0215,Poultry,,Poultry,,,,,[],,,[]
-L02151,Chickens,,Chickens,Pollos,Poulets,Galinhas,,[],"['0105.11', '0105.94']",,[]
+L02151,Chickens,,Chickens,Pollos,Poulets,Galinhas,,"['chicken', 'hen', 'hens']","['0105.11', '0105.94']",,[]
 L02151AA,Broiler chicken (live),,Broiler chicken (live),,,,,"['02151a', 'chicken (broiler)']",,,[]
 L02151AB,Chickens,Chickens,Chickens,,,,,"['chickens, unspecified']",,,[]
 L02151AC,"Chickens, live",Chickens (Live),Chickens (Live),,,,,"['live chicken', 'chicken']",,,[]
