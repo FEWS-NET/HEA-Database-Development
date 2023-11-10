@@ -642,6 +642,7 @@ class SeasonalProductionPerformanceFactory(factory.django.DjangoModelFactory):
         ]
 
     community = factory.SubFactory(CommunityFactory)
+    season = factory.SubFactory(SeasonFactory)
     performance_year_start_date = factory.Sequence(lambda n: datetime.date(1900, 1, 1) + datetime.timedelta(days=n))
     performance_year_end_date = factory.Sequence(lambda n: datetime.date(1900, 1, 1) + datetime.timedelta(days=n))
     seasonal_performance = factory.Iterator(["1", "2", "3", "4", "5"])
