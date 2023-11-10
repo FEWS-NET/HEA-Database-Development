@@ -33,13 +33,13 @@ else
     echo "CHECK_SAFETY=${CHECK_SAFETY}"
 fi
 
-# Ignore various GDAL issues (42369, 42370, 48545, 51832) as the GDAL version is dependent on the operating system
+# Ignore various GDAL issues (42369, 42370, 48545, 51832, 61143) as the GDAL version is dependent on the operating system
 # @TODO remove the ignore when Debian upgrades to GDAL >= 3.6.0 in the release we are using (currently buster/stable)
 # Jesaja paraphrased: "Installing GDAL 3.6.2 and Python bindings from unstable worked fine, but it upgrades
 # quite a few libraries, including the C standard library."
 
 echo Package Vulnerabilities:
-pip freeze | safety check --stdin --full-report -i 42369 -i 42370 -i 48545 -i 51832
+pip freeze | safety check --stdin --full-report -i 42369 -i 42370 -i 48545 -i 51832 -i 61143
 SAFETY_RESULT=$?
 
 # Suppress SAFETY_RESULT unless CHECK_SAFETY is set
