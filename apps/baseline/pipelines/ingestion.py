@@ -6,10 +6,12 @@
 import io
 import itertools
 import logging
+from collections import Counter
 from collections.abc import Iterable
 from pathlib import Path
 
 import luigi
+import numpy as np
 import openpyxl
 import pandas as pd
 import xlrd
@@ -30,7 +32,12 @@ from xlutils.copy import copy as copy_xls
 from baseline.models import WealthGroupCharacteristicValue
 from common.lookups import ClassifiedProductLookup
 from common.pipelines.format import JSON
-from metadata.lookups import WealthCharacteristicLookup, WealthGroupCategoryLookup
+from metadata.lookups import (
+    SeasonalActivityTypeLookup,
+    SeasonLookup,
+    WealthCharacteristicLookup,
+    WealthGroupCategoryLookup,
+)
 from metadata.models import WealthCharacteristic
 
 # from slugify import slugify
@@ -620,7 +627,208 @@ class NormalizeBaseline(luigi.Task):
             output.write(data)
 
 
-@requires(NormalizeBaseline)
+@requires(bss=CorrectBSS, metadata=GetBSSMetadata)
+class NormalizeSeasonalCalender(luigi.Task):
+    """
+    Some recent BSSs contain seasonal calendar sheet, for those BSSs that contains seasonal calendar,
+    this task Normalizes the data in the sheet
+    """
+
+    def output(self):
+        return IntermediateTarget(path_from_task(self) + ".json", format=JSON, timeout=3600)
+
+    def run(self):
+        with self.input()["bss"].open() as input:
+            data_df = pd.read_excel(input, "Seas Cal", header=None)
+        with self.input()["metadata"].open() as input:
+            metadata_df = pd.read_excel(input, "Metadata")
+
+        # Find the <country>/<filename>.<ext> path to the file, relative to the root folder.
+        path = f"{Path(self.bss_path).parent.name}/{Path(self.bss_path).name}"
+        # Find the metadata for this BSS
+        # metadata = metadata_df[metadata_df["bss_path"] == path].iloc[0]
+
+        df_original = self.process(data_df)
+
+        with self.output().open("w") as output:
+            output.write(df_original)
+
+    def process(self, df_original):
+        """
+        Process the seasonal calendar dataframe to normalize it. The dataframe looks something like below.
+        Rows 0, 1 can be dropped automatically
+        Bottom rows that have values like 'Other' for first column but are empty for the rest can also be deleted
+        Village should be ffill to fill the 12 months values
+        Village/community might be harder to get by natural key as the natural key uses full_name ?
+        The occurrences (the months) are stored as day of the year, so we need to process that and I think for each month we will
+        have one record as opposed to looking for a continuous start and end that can cross months
+        E.g. if occurrence has values for months 3, 4, 5 we can have three entry with start and end dates for each month
+
+
+        """
+        """
+        |SEASONAL CALENDAR                                                                                                 |Fill 1s in the relevant months                                                                                                                                              |
+        |-----------------|--------|------|----|------|------|------|------|------|-------|-------|-------|-------|----------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|
+        |                 |        |      |    |      |      |      |      |      |       |       |       |       |          |       |       |       |       |       |       |       |       |       |       |       |
+        |village -->      |Njobvu  |      |    |      |      |      |      |      |       |       |       |       |Kalikokha |       |       |       |       |       |       |       |       |       |       |       |
+        |month -->        |4       |5     |6   |7     |8     |9     |10    |11    |12     |1      |2      |3      |4         |5      |6      |7      |8      |9      |10     |11     |12     |1      |2      |3      |
+        |Seasons          |        |      |    |      |      |      |      |      |       |       |       |       |          |       |       |       |       |       |       |       |       |       |       |       |
+        |rainy            |        |      |    |      |      |      |      |1     |1      |1      |1      |       |          |       |       |       |       |       |       |1      |1      |1      |1      |1      |
+        |winter           |        |      |    |      |      |      |      |      |       |       |       |       |          |1      |1      |1      |       |       |       |       |       |       |       |       |
+        |hot              |        |      |    |      |      |      |      |      |       |       |       |       |          |       |       |       |       |1      |1      |1      |1      |1      |       |       |
+        |Maize rainfed    |        |      |    |      |      |      |      |      |       |       |       |       |          |       |       |       |       |       |       |       |       |       |       |       |
+        |land preparation |        |      |    |1     |1     |1     |1     |      |       |       |       |       |          |       |       |1      |1      |1      |1      |       |       |       |       |       |
+        |planting         |        |      |    |      |      |      |      |1     |1      |1      |       |       |          |       |       |       |       |       |       |1      |1      |       |       |       |
+        |weeding          |        |      |    |      |      |      |      |      |       |1      |1      |1      |          |       |       |       |       |       |       |       |1      |1      |1      |       |
+        |green consumption|1       |      |    |      |      |      |      |      |       |       |       |1      |          |       |       |       |       |       |       |       |       |       |1      |1      |
+        |harvesting       |        |      |1   |1     |      |      |      |      |       |       |       |       |1         |1      |       |       |       |       |       |       |       |       |       |       |
+        |threshing        |        |      |    |1     |1     |      |      |      |       |       |       |       |1         |1      |1      |1      |       |       |       |       |       |       |       |       |
+        |Tobacco          |        |      |    |      |      |      |      |      |       |       |       |       |          |       |       |       |       |       |       |       |       |       |       |       |
+        |land preparation |        |      |    |1     |1     |1     |      |      |       |       |       |       |1         |1      |1      |1      |       |       |       |       |       |       |       |       |
+        |planting         |        |      |    |      |      |1     |1     |1     |       |       |       |       |          |       |       |       |1      |1      |       |       |       |       |       |       |
+        |weeding          |        |      |    |      |      |      |      |      |1      |       |       |       |          |       |       |       |       |       |1      |1      |       |       |       |       |
+        |green consumption|        |      |    |      |      |      |      |      |       |       |       |       |          |       |       |       |       |       |       |       |       |       |       |       |
+        |harvesting       |        |      |    |      |      |      |      |      |       |1      |1      |1      |1         |       |       |       |       |       |       |       |       |       |1      |1      |
+        |threshing        |        |      |    |      |      |      |      |      |       |       |       |       |          |       |       |       |       |       |       |       |       |       |       |       |
+
+
+        """
+        # Clean up the dataframe, delete the 'Result' columns
+        # Find the index of the 'Results' value in row 3
+        results_index = df_original.loc[2].eq("Results").idxmax()
+        df_original = df_original.loc[:, : results_index - 1]
+
+        # Delete rows 0, 1
+        rows_to_delete = [0, 1]
+        df_original = df_original.drop(rows_to_delete).reset_index(drop=True)
+
+        # Rename village --> to community in 0, 0 cell and month --> to month in 1,0
+        df_original.iloc[0, 0] = "community"
+        df_original.iloc[1, 0] = "month"
+
+        # ffill the community values
+        df_original.iloc[0, 1:] = df_original.iloc[0, 1:].ffill()
+
+        # The first part of the calendar is about season and seasons typically have 3 entries
+        expected_values = [
+            "Seasons",
+            "Saisons",
+        ]
+        assert (
+            df_original.iloc[2, 0] in expected_values,
+            f"Value in seas_cal sheet's row = 2 and first column is expected to be any one of {expected_values}",
+        )
+
+        # Let us copy the season related stuff into another dataframe for ease of manipulation
+        df_seasons = df_original.iloc[0:6, :].copy()
+        # Transpose, set columns and drop na values
+        df_seasons = df_seasons.T
+        df_seasons.columns = df_seasons.iloc[0]
+        df_seasons.columns.values[2] = "season"
+        df_seasons = df_seasons[1:].dropna(subset=df_seasons.columns[2:], how="all")
+
+        def create_new_rows(row):
+            rows = []
+            d = row.to_dict()
+            for column, value in d.items():
+                if column not in ["community", "month", "season"]:
+                    if value == 1:
+                        new_row = row.copy()
+                        new_row["season"] = column
+                        rows.append(new_row)
+            return rows
+
+        result = pd.DataFrame()
+        for index, row in df_seasons.iterrows():
+            for r in create_new_rows(row):
+                result = result._append(r)
+
+        df_seasons = result[["community", "month", "season"]]
+
+        # Extract rows by leaving out the season part and bottom irregular pattern, to manage it separately
+        livestock_migration_index = df_original[
+            df_original.iloc[:, 0].str.contains("Livestock migration|Migration bétail")
+        ].index
+        df_seasonal_activity = df_original.loc[df_original.index < livestock_migration_index[0]]
+        df_seasonal_activity = df_seasonal_activity[
+            ~((df_seasonal_activity.index >= 2) & (df_seasonal_activity.index <= 5))
+        ].reset_index(drop=True)
+
+        # Transpose, extract the product and activity types
+        df_seasonal_activity = df_seasonal_activity.T
+        df_seasonal_activity.columns = df_seasonal_activity.iloc[0]
+
+        # Initialize the product and seaonal_activity columns
+        df_seasonal_activity.insert(2, "product", np.nan)
+        df_seasonal_activity.insert(3, "seasonal_activity_type", np.nan)
+
+        def create_new_activity_rows(row):
+            rows = []
+            # the 4th one is the product
+            row["product"] = row.index.tolist()[4]
+            # then remove it
+            row.pop(row.index.tolist()[4])
+            d = row.to_dict()
+            for column, value in d.items():
+                if column not in ["community", "month", "product", "seasonal_activity_type"]:
+                    if value == 1:
+                        new_row = row.copy()
+                        new_row["seasonal_activity_type"] = column
+                        new_row = new_row.iloc[:4]
+                        rows.append(new_row)
+            return rows
+
+        starting_col = 5
+        df_result = pd.DataFrame()
+
+        counter = Counter(df_seasonal_activity.iloc[0, :])
+        processed = 5
+        for col in range(starting_col, df_seasonal_activity.shape[1]):
+            # check if all values in a given column are NaN except the first row, and the products aren't repeated
+            if (
+                df_seasonal_activity.iloc[1:, col].isna().all()
+                and not pd.isna(df_seasonal_activity.iloc[0, col])
+                and counter[df_seasonal_activity.iloc[0, col]] == 1
+            ):
+                column = 4
+                if df_result.empty:
+                    column = 5
+                df = df_seasonal_activity.iloc[:, list(range(column)) + list(range(starting_col, col))]
+                processed += len(list(range(starting_col, col)))
+                starting_col = col
+                # Drop the first row of a dataframe df
+                df_result = self.extract_seasonal_activity(create_new_activity_rows, df, df_result)
+
+        if processed < df_seasonal_activity.shape[1]:
+            df = df_seasonal_activity.iloc[
+                :, list(range(column)) + list(range(processed, df_seasonal_activity.shape[1]))
+            ]
+            df_result = self.extract_seasonal_activity(create_new_activity_rows, df, df_result)
+
+        df_result = ClassifiedProductLookup().do_lookup(df_result, "product", "product")
+        df_result = SeasonalActivityTypeLookup().do_lookup(
+            df_result, "seasonal_activity_type", "seasonal_activity_type"
+        )
+        df_seasons = SeasonLookup().do_lookup(df_seasons, "season", "season")
+
+        df_result["season"] = np.nan
+        df_seasons["product"] = np.nan
+        df_seasons["seasonal_activity_type"] = np.nan
+
+        df_seasons = df_seasons[["community", "season", "month", "product", "seasonal_activity_type"]]
+        df_result = df_result[["community", "season", "month", "product", "seasonal_activity_type"]]
+        df_result = pd.concat([df_seasons, df_result], ignore_index=True)
+        return df_result
+
+    def extract_seasonal_activity(self, create_new_activity_rows, df, df_result):
+        df = df.drop(df.index[0])
+        for index, _row in df.iterrows():
+            for r in create_new_activity_rows(_row):
+                df_result = df_result._append(r)
+        return df_result
+
+
+@requires(NormalizeBaseline, NormalizeSeasonalCalender)
 class ValidateBaseline(luigi.Task):
     """
     Validate a Baseline read from a BSS, and raise an exception if the BSS cannot be imported.
