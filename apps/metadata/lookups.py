@@ -7,6 +7,8 @@ from common.lookups import Lookup
 from .models import (
     LivelihoodCategory,
     ReferenceData,
+    Season,
+    SeasonalActivityType,
     WealthCharacteristic,
     WealthGroupCategory,
 )
@@ -32,3 +34,16 @@ class WealthCharacteristicLookup(ReferenceDataLookup):
 
 class WealthGroupCategoryLookup(ReferenceDataLookup):
     model = WealthGroupCategory
+
+
+class SeasonalActivityTypeLookup(ReferenceDataLookup):
+    model = SeasonalActivityType
+
+
+class SeasonLookup(Lookup):
+    model = Season
+    id_fields = [
+        "name",
+    ]
+
+    lookup_fields = ["description", "country"]
