@@ -1,7 +1,6 @@
 from rest_framework import serializers
 
 from .models import (
-    AnnualProductionPerformance,
     BaselineLivelihoodActivity,
     BaselineWealthGroup,
     ButterProduction,
@@ -32,6 +31,7 @@ from .models import (
     ResponseLivelihoodActivity,
     SeasonalActivity,
     SeasonalActivityOccurrence,
+    SeasonalProductionPerformance,
     SourceOrganization,
     WealthGroup,
     WealthGroupCharacteristicValue,
@@ -1019,9 +1019,9 @@ class MarketPriceSerializer(serializers.ModelSerializer):
         return str(obj.community.livelihood_zone_baseline)
 
 
-class AnnualProductionPerformanceSerializer(serializers.ModelSerializer):
+class SeasonalProductionPerformanceSerializer(serializers.ModelSerializer):
     class Meta:
-        model = AnnualProductionPerformance
+        model = SeasonalProductionPerformance
         fields = [
             "id",
             "source_organization",
@@ -1036,8 +1036,8 @@ class AnnualProductionPerformanceSerializer(serializers.ModelSerializer):
             "community_name",
             "performance_year_start_date",
             "performance_year_end_date",
-            "annual_performance",
-            "annual_performance_label",
+            "seasonal_performance",
+            "seasonal_performance_label",
         ]
 
     livelihood_zone_baseline = serializers.IntegerField(source="community.livelihood_zone_baseline.pk", read_only=True)
@@ -1065,10 +1065,10 @@ class AnnualProductionPerformanceSerializer(serializers.ModelSerializer):
     def get_livelihood_zone_baseline_label(self, obj):
         return str(obj.community.livelihood_zone_baseline)
 
-    annual_performance_label = serializers.SerializerMethodField()
+    seasonal_performance_label = serializers.SerializerMethodField()
 
-    def get_annual_performance_label(self, obj):
-        return obj.get_annual_performance_display()
+    def get_seasonal_performance_label(self, obj):
+        return obj.get_seasonal_performance_display()
 
 
 class HazardSerializer(serializers.ModelSerializer):

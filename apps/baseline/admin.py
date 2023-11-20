@@ -13,7 +13,6 @@ from .forms import (
     ReliefGiftOtherForm,
 )
 from .models import (
-    AnnualProductionPerformance,
     ButterProduction,
     Community,
     CommunityCropProduction,
@@ -39,6 +38,7 @@ from .models import (
     ReliefGiftOther,
     SeasonalActivity,
     SeasonalActivityOccurrence,
+    SeasonalProductionPerformance,
     SourceOrganization,
     WealthGroup,
     WealthGroupCharacteristicValue,
@@ -542,24 +542,24 @@ class HazardAdmin(admin.ModelAdmin):
     )
 
 
-class AnnualProductionPerformanceAdmin(admin.ModelAdmin):
+class SeasonalProductionPerformanceAdmin(admin.ModelAdmin):
     fields = (
         "community",
         "performance_year_start_date",
         "performance_year_end_date",
-        "annual_performance",
+        "seasonal_performance",
     )
     list_display = (
         "community",
         "performance_year_start_date",
         "performance_year_end_date",
-        "annual_performance",
+        "seasonal_performance",
     )
     search_fields = (
         "community",
         "performance_year_start_date",
         "performance_year_end_date",
-        "annual_performance",
+        "seasonal_performance",
         "description",
     )
     list_filter = (
@@ -644,4 +644,4 @@ admin.site.register(CopingStrategy, CopingStrategyAdmin)
 
 admin.site.register(SeasonalActivity, SeasonalActivityAdmin)
 admin.site.register(SeasonalActivityOccurrence, SeasonalActivityOccurrenceAdmin)
-admin.site.register(AnnualProductionPerformance, AnnualProductionPerformanceAdmin)
+admin.site.register(SeasonalProductionPerformance, SeasonalProductionPerformanceAdmin)
