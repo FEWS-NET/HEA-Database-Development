@@ -43,7 +43,7 @@ class SeasonalActivityTypeLookup(ReferenceDataLookup):
 class SeasonLookup(Lookup):
     model = Season
     id_fields = [
-        "name",
+        "id",
     ]
 
-    lookup_fields = ["description", "country"]
+    lookup_fields = ["name", "description", "country"]
