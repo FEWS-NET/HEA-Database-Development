@@ -396,6 +396,7 @@ class SeasonalActivityAdmin(admin.ModelAdmin):
     list_display = ("livelihood_zone_baseline", "seasonal_activity_type", "product")
     search_fields = ("seasonal_activity_type", "season", "product")
     list_filter = ("livelihood_zone_baseline__livelihood_zone", "seasonal_activity_type", "season", "product")
+    filter_horizontal = ("season",)
 
 
 class SeasonalActivityOccurrenceAdmin(admin.ModelAdmin):
