@@ -1537,6 +1537,28 @@ class OtherPurchase(LivelihoodActivity):
         verbose_name_plural = _("Other Purchases")
 
 
+class SeasonalActivityManager(common_models.IdentifierManager):
+    def get_by_natural_key(
+        self,
+        code: str,
+        reference_year_end_date: str,
+        seasonal_activity_type: str,
+        product: str = "",
+    ):
+        criteria = {
+            "livelihood_zone_baseline__livelihood_zone__code": code,
+            "livelihood_zone_baseline__reference_year_end_date": reference_year_end_date,
+            "seasonal_activity_type__code": seasonal_activity_type,
+        }
+
+        if product:
+            criteria["product__cpcv2"] = product
+        else:
+            criteria["product__isnull"] = True
+
+        return self.get(**criteria)
+
+
 class SeasonalActivity(common_models.Model):
     """
     An activity or event undertaken/experienced by households in a Livelihood Zone at specific periods during the year.
@@ -1583,6 +1605,16 @@ class SeasonalActivity(common_models.Model):
         related_name="baseline_seasonal_activities",
     )
 
+    objects = SeasonalActivityManager()
+
+    def natural_key(self):
+        return (
+            self.livelihood_zone_baseline.livelihood_zone_id,
+            self.livelihood_zone_baseline.reference_year_end_date.isoformat(),
+            self.seasonal_activity_type,
+            self.product_id if self.product_id else "",
+        )
+
     class Meta:
         verbose_name = _("Seasonal Activity")
         verbose_name_plural = _("Seasonal Activities")
@@ -1597,7 +1629,7 @@ class SeasonalActivity(common_models.Model):
         ]
 
     class ExtraMeta:
-        identifier = ["seasonal_activity_type", "season", "product"]
+        identifier = ["seasonal_activity_type", "product"]
 
 
 class SeasonalActivityOccurrence(common_models.Model):
@@ -1638,6 +1670,15 @@ class SeasonalActivityOccurrence(common_models.Model):
     end = models.PositiveSmallIntegerField(
         validators=[MaxValueValidator(365), MinValueValidator(1)], verbose_name=_("End Day")
     )
+
+    def natural_key(self):
+        return (
+            self.livelihood_zone_baseline.livelihood_zone_id,
+            self.livelihood_zone_baseline.reference_year_end_date.isoformat(),
+            self.seasonal_activity,
+            self.start,
+            self.end,
+        )
 
     def start_month(self):
         return get_month_from_day_number(self.start)
