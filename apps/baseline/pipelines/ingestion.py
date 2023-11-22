@@ -17,6 +17,7 @@ import pandas as pd
 import xlrd
 import xlwt
 from django.core.management import call_command
+from django.db import models
 from django.db.models import ForeignKey
 from kiluigi import PipelineError
 from kiluigi.format import Pickle
@@ -154,7 +155,7 @@ class GetBSSCorrections(luigi.Task):
     corrections_path = luigi.Parameter(default="", description="Path to the BSS corrections")
 
     def output(self):
-        return IntermediateTarget(path_from_task(self) + ".pickle", format=Pickle, timeout=3600)
+        return IntermediateTarget(root_path="/tmp", path=path_from_task(self) + ".pickle", format=Pickle, timeout=3600)
 
     def run(self):
         if self.corrections_path:
@@ -191,7 +192,10 @@ class GetBSSCorrections(luigi.Task):
 class CorrectBSS(luigi.Task):
     def output(self):
         return IntermediateTarget(
-            path_from_task(self) + Path(self.input()["bss"].path).suffix, format=luigi.format.Nop, timeout=3600
+            root_path="/tmp",
+            path=path_from_task(self) + Path(self.input()["bss"].path).suffix,
+            format=luigi.format.Nop,
+            timeout=3600,
         )
 
     def run(self):
@@ -274,7 +278,7 @@ class CorrectBSS(luigi.Task):
 @requires(bss=CorrectBSS, metadata=GetBSSMetadata)
 class NormalizeWB(luigi.Task):
     def output(self):
-        return IntermediateTarget(path_from_task(self) + ".json", format=JSON, timeout=3600)
+        return IntermediateTarget(root_path="/tmp", path=path_from_task(self) + ".json", format=JSON, timeout=3600)
 
     def run(self):
         with self.input()["bss"].open() as input:
@@ -456,7 +460,7 @@ class NormalizeWB(luigi.Task):
                 "product",
                 "wealth_characteristic_original",
                 "wealth_characteristic",
-                "wealth_category_original",
+                "wealth_group_category_original",
                 "wealth_group_category",
             ],
             value_vars=char_df.columns[2:-1],
@@ -484,7 +488,7 @@ class NormalizeWB(luigi.Task):
             ~(
                 char_df["wealth_characteristic"].eq("percentage of households")
                 & ~char_df["interviewee_wealth_category"].isna()
-                & ~char_df["wealth_category_original"].eq(char_df["interviewee_wealth_category"])
+                & ~char_df["wealth_group_category_original"].eq(char_df["interviewee_wealth_category"])
             )
         ]
 
@@ -502,7 +506,7 @@ class NormalizeWB(luigi.Task):
         summary_df.columns.name = None
         summary_df = summary_df.rename(columns={"summary": "value"})
         # Add the source column
-        summary_df["source"] = WealthGroupCharacteristicValue.CharacteristicSource.SUMMARY
+        summary_df["source"] = WealthGroupCharacteristicValue.CharacteristicReference.SUMMARY
         # Summary Wealth Group Characteristic Values don't have a community
         summary_df["full_name"] = None
 
@@ -513,11 +517,11 @@ class NormalizeWB(luigi.Task):
         # Rows with an interviewee wealth category are from the Wealth Group-level Form 4 interview.
         char_df["source"] = char_df["interviewee_wealth_category"].where(
             char_df["interviewee_wealth_category"] == "",
-            WealthGroupCharacteristicValue.CharacteristicSource.WEALTH_GROUP,
+            WealthGroupCharacteristicValue.CharacteristicReference.WEALTH_GROUP,
         )
         # Rows without an interviewee wealth category are from the Community-level Form 3 interview.
         char_df["source"] = char_df["source"].mask(
-            char_df["source"] == "", WealthGroupCharacteristicValue.CharacteristicSource.COMMUNITY
+            char_df["source"] == "", WealthGroupCharacteristicValue.CharacteristicReference.COMMUNITY
         )
 
         # Community and Wealth Group interviews don't have min_value or max_value
@@ -555,8 +559,8 @@ class NormalizeWB(luigi.Task):
             char_df["wealth_characteristic"].isin(["percentage of households", "household size"])
             & char_df["source"].isin(
                 [
-                    WealthGroupCharacteristicValue.CharacteristicSource.WEALTH_GROUP,
-                    WealthGroupCharacteristicValue.CharacteristicSource.SUMMARY,
+                    WealthGroupCharacteristicValue.CharacteristicReference.WEALTH_GROUP,
+                    WealthGroupCharacteristicValue.CharacteristicReference.SUMMARY,
                 ]
             )
         ]
@@ -618,7 +622,7 @@ class NormalizeBaseline(luigi.Task):
     """
 
     def output(self):
-        return IntermediateTarget(path_from_task(self) + ".json", format=JSON, timeout=3600)
+        return IntermediateTarget(root_path="/tmp", path=path_from_task(self) + ".json", format=JSON, timeout=3600)
 
     def run(self):
         data = self.input()["normalize_wb"].open().read()
@@ -627,7 +631,7 @@ class NormalizeBaseline(luigi.Task):
             output.write(data)
 
 
-@requires(bss=CorrectBSS, metadata=GetBSSMetadata)
+@requires(bss=CorrectBSS, normalize_wb=NormalizeWB)
 class NormalizeSeasonalCalender(luigi.Task):
     """
     Some recent BSSs contain seasonal calendar sheet, for those BSSs that contains seasonal calendar,
@@ -635,36 +639,40 @@ class NormalizeSeasonalCalender(luigi.Task):
     """
 
     def output(self):
-        return IntermediateTarget(path_from_task(self) + ".json", format=JSON, timeout=3600)
+        return IntermediateTarget(root_path="/tmp", path=path_from_task(self) + ".json", format=JSON, timeout=3600)
 
     def run(self):
         with self.input()["bss"].open() as input:
-            data_df = pd.read_excel(input, "Seas Cal", header=None)
-        with self.input()["metadata"].open() as input:
-            metadata_df = pd.read_excel(input, "Metadata")
+            try:
+                data_df = pd.read_excel(input, "Seas Cal", header=None)
+            except FileNotFoundError:
+                print("The BSS does not seem to contain 'Seas Cal' sheet. Skipping to import seas cal data.")
+                data_df = pd.DataFrame()
+        with self.input()["normalize_wb"].open() as input:
+            normalized_wb = self.input()["normalize_wb"].open().read()
 
-        # Find the <country>/<filename>.<ext> path to the file, relative to the root folder.
-        path = f"{Path(self.bss_path).parent.name}/{Path(self.bss_path).name}"
-        # Find the metadata for this BSS
-        # metadata = metadata_df[metadata_df["bss_path"] == path].iloc[0]
-
-        df_original = self.process(data_df)
+        df_original = self.process(data_df, normalized_wb)
 
         with self.output().open("w") as output:
             output.write(df_original)
 
-    def process(self, df_original):
+    def process(self, df_original, normalized_wb):
         """
         Process the seasonal calendar dataframe to normalize it. The dataframe looks something like below.
         Rows 0, 1 can be dropped automatically
         Bottom rows that have values like 'Other' for first column but are empty for the rest can also be deleted
-        Village should be ffill to fill the 12 months values
-        Village/community might be harder to get by natural key as the natural key uses full_name ?
-        The occurrences (the months) are stored as day of the year, so we need to process that and I think for each month we will
-        have one record as opposed to looking for a continuous start and end that can cross months
-        E.g. if occurrence has values for months 3, 4, 5 we can have three entry with start and end dates for each month
-
-
+        Village should be `ffill` to fill the 12 months values
+        Village/community might be harder to get by natural key as the natural key uses full_name.
+        so use the normalized_wb data
+        The occurrences (the months) are stored as day of the year, so we need to process that and I think
+        for each month we will have one record as opposed to looking for a continuous start and end that
+        can cross months
+        E.g. if occurrence has values for months 3, 4, 5 we can have three entry with start and end dates
+        for each month
+        The first few rows, typically 3 are for the season. We can't store these in the metadata.Season
+        as the community occurrences can't be saved, so we need a placeholder seasonal_activity,
+        may be called 'seasons' to use the SeasonalActivity and SeasonalOccurrence models
+        for these seasons occurrences data
         """
         """
         |SEASONAL CALENDAR                                                                                                 |Fill 1s in the relevant months                                                                                                                                              |
@@ -690,13 +698,17 @@ class NormalizeSeasonalCalender(luigi.Task):
         |green consumption|        |      |    |      |      |      |      |      |       |       |       |       |          |       |       |       |       |       |       |       |       |       |       |       |
         |harvesting       |        |      |    |      |      |      |      |      |       |1      |1      |1      |1         |       |       |       |       |       |       |       |       |       |1      |1      |
         |threshing        |        |      |    |      |      |      |      |      |       |       |       |       |          |       |       |       |       |       |       |       |       |       |       |       |
-
-
-        """
+        """  # NOQA: E501
         # Clean up the dataframe, delete the 'Result' columns
         # Find the index of the 'Results' value in row 3
         results_index = df_original.loc[2].eq("Results").idxmax()
         df_original = df_original.loc[:, : results_index - 1]
+
+        # Also remove the trailing empty rows that have 'other' in the first column
+        last_index = df_original[
+            (df_original.iloc[:, 0] == "other") & df_original.iloc[:, 1:].isnull().all(axis=1)
+        ].index[0]
+        df_original = df_original.loc[: last_index - 1]
 
         # Delete rows 0, 1
         rows_to_delete = [0, 1]
@@ -715,9 +727,8 @@ class NormalizeSeasonalCalender(luigi.Task):
             "Saisons",
         ]
         assert (
-            df_original.iloc[2, 0] in expected_values,
-            f"Value in seas_cal sheet's row = 2 and first column is expected to be any one of {expected_values}",
-        )
+            df_original.iloc[2, 0] in expected_values
+        ), f"Value in seas_cal sheet's row = 2 and first column is expected to be any one of {expected_values}"
 
         # Let us copy the season related stuff into another dataframe for ease of manipulation
         df_seasons = df_original.iloc[0:6, :].copy()
@@ -727,7 +738,7 @@ class NormalizeSeasonalCalender(luigi.Task):
         df_seasons.columns.values[2] = "season"
         df_seasons = df_seasons[1:].dropna(subset=df_seasons.columns[2:], how="all")
 
-        def create_new_rows(row):
+        def create_new_rows_for_season(row):
             rows = []
             d = row.to_dict()
             for column, value in d.items():
@@ -740,7 +751,7 @@ class NormalizeSeasonalCalender(luigi.Task):
 
         result = pd.DataFrame()
         for index, row in df_seasons.iterrows():
-            for r in create_new_rows(row):
+            for r in create_new_rows_for_season(row):
                 result = result._append(r)
 
         df_seasons = result[["community", "month", "season"]]
@@ -750,6 +761,15 @@ class NormalizeSeasonalCalender(luigi.Task):
             df_original.iloc[:, 0].str.contains("Livestock migration|Migration bétail")
         ].index
         df_seasonal_activity = df_original.loc[df_original.index < livestock_migration_index[0]]
+
+        # append the bottom ones after the Livestock migration that have similar pattern
+        other_index = df_original[df_original.iloc[:, 0].str.contains("Other|Autre")].index
+        df_seasonal_activity = pd.concat(
+            [
+                df_seasonal_activity,
+                df_original.loc[(df_original.index >= other_index[0])],
+            ]
+        )
         df_seasonal_activity = df_seasonal_activity[
             ~((df_seasonal_activity.index >= 2) & (df_seasonal_activity.index <= 5))
         ].reset_index(drop=True)
@@ -813,12 +833,94 @@ class NormalizeSeasonalCalender(luigi.Task):
 
         df_result["season"] = np.nan
         df_seasons["product"] = np.nan
-        df_seasons["seasonal_activity_type"] = np.nan
+        df_seasons["seasonal_activity_type"] = "seasons"  # Register the 'Seasons' as an activity type placeholder?
 
         df_seasons = df_seasons[["community", "season", "month", "product", "seasonal_activity_type"]]
-        df_result = df_result[["community", "season", "month", "product", "seasonal_activity_type"]]
-        df_result = pd.concat([df_seasons, df_result], ignore_index=True)
-        return df_result
+        df_result = df_result[["community", "month", "product", "seasonal_activity_type", "season"]]
+
+        # Process the bottom part of the seas cal sheet
+        df_livestock_migration = pd.concat(
+            [
+                df_original.iloc[:2],
+                df_original.loc[
+                    (df_original.index >= livestock_migration_index[0]) & (df_original.index < other_index[0])
+                ],
+            ]
+        )
+        df_livestock_migration = df_livestock_migration.T
+        df_livestock_migration.columns = df_livestock_migration.iloc[0]
+        df_livestock_migration = df_livestock_migration.drop(df_livestock_migration.index[0])
+        df_livestock_migration["product"] = np.nan
+
+        def create_new_seas_activity_rows(row):
+            rows = []
+            d = row.to_dict()
+            for column, value in d.items():
+                if column not in ["community", "month", "product", "seasonal_activity_type"]:
+                    if value == 1:
+                        new_row = row.copy()
+                        new_row["seasonal_activity_type"] = column
+                        rows.append(new_row)
+            return rows
+
+        df = pd.DataFrame()
+        for index, _row in df_livestock_migration.iterrows():
+            for r in create_new_seas_activity_rows(_row):
+                df = df._append(r)
+
+        df_livestock_migration = df[["community", "month", "product", "seasonal_activity_type"]]
+        df_livestock_migration = SeasonalActivityTypeLookup().do_lookup(
+            df_livestock_migration, "seasonal_activity_type", "seasonal_activity_type"
+        )
+        df_livestock_migration["season"] = np.nan
+
+        df_result = pd.concat([df_seasons, df_result, df_livestock_migration], ignore_index=True)
+
+        def create_seasonal_activity_and_start_end_date_columns(row):
+            """
+            Combine seasonal activity natural keys to create the column
+            """
+            columns = ["seasonal_activity_type", "product"]
+            # check any of the identifier cols have value
+            non_null_values = [lz for lz in row["livelihood_zone_baseline"]]
+            non_null_values += [str(row[col]) for col in columns if pd.notna(row[col])]
+            row["seasonal_activity"] = non_null_values
+
+            # compute the start and end days
+            days_in_month = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+            start_day = sum(days_in_month[: int(row["month"])])
+            end_day = start_day + days_in_month[int(row["month"])] - 1
+            row["start"] = start_day
+            row["end"] = end_day
+            return row
+
+        def update_community_with_full_name(row):
+            community = [c for c in normalized_wb["Community"] if c["name"] == row["community"]]
+            identifers = [lz for lz in row["livelihood_zone_baseline"]]
+            identifers.append(community[0]["full_name"])
+            row["community"] = identifers
+            return row
+
+        # Add the livelihoodzonebaseline normalized from previous step
+        livelihoodzonebaseline = [
+            normalized_wb["LivelihoodZoneBaseline"][0]["livelihood_zone"],
+            normalized_wb["LivelihoodZoneBaseline"][0]["reference_year_end_date"],
+        ]
+        df_result["livelihood_zone_baseline"] = [livelihoodzonebaseline] * len(df_result)
+
+        df_result = df_result.dropna(subset=["seasonal_activity_type"])
+        df_result = df_result.apply(create_seasonal_activity_and_start_end_date_columns, axis=1)
+        df_result = df_result.apply(update_community_with_full_name, axis=1)
+
+        seasonal_activities = df_result[
+            ["livelihood_zone_baseline", "seasonal_activity_type", "season", "product"]
+        ].to_dict(orient="records")
+        seasonal_activity_occurrences = df_result[
+            ["livelihood_zone_baseline", "seasonal_activity", "community", "start", "end"]
+        ].to_dict(orient="records")
+        result = {"SeasonalActivity": seasonal_activities, "SeasonalActivityOccurrence": seasonal_activity_occurrences}
+
+        return result
 
     def extract_seasonal_activity(self, create_new_activity_rows, df, df_result):
         df = df.drop(df.index[0])
@@ -838,7 +940,10 @@ class ValidateBaseline(luigi.Task):
         return IntermediateTarget(path_from_task(self) + ".json", format=JSON, timeout=3600)
 
     def run(self):
-        data = self.input().open().read()
+        data1 = self.input()[0].open().read()
+        data2 = self.input()[1].open().read()
+
+        data = {**data1, **data2}
 
         # Run the validation
         self.validate(data)
@@ -867,11 +972,15 @@ class ValidateBaseline(luigi.Task):
                     # same transaction in ImportBaseline below.
                     if isinstance(field, ForeignKey) and field.related_model._meta.app_label != "baseline":
                         column = field.name
-                        if df[column].isnull().values.any():
-                            unmatched_metadata = get_unmatched_metadata(df, column)
-                            for value in unmatched_metadata:
-                                error = f"Unmatched remote metadata for {model_name} with {column} '{value}'"
-                                errors.append(error)
+                        try:
+
+                            if df[column].isnull().values.any():
+                                unmatched_metadata = get_unmatched_metadata(df, column)
+                                for value in unmatched_metadata:
+                                    error = f"Unmatched remote metadata for {model_name} with {column} '{value}'"
+                                    errors.append(error)
+                        except KeyError:
+                            pass
 
         if errors:
             raise PipelineError(f"{self}: Missing or inconsistent metadata in BSS", errors=errors)
@@ -939,7 +1048,13 @@ class BuildFixture(luigi.Task):
                                 # value is a list, probably a natural key, and raises:
                                 # "The truth value of an array with more than one element is ambiguous"
                                 pass
-                            record["fields"][field] = value
+                            if isinstance(model._meta.get_field(field), models.ManyToManyField):
+                                if value:
+                                    record["fields"][field] = [
+                                        value,
+                                    ]
+                            else:
+                                record["fields"][field] = value
                     fixture.append(record)
 
         return fixture
