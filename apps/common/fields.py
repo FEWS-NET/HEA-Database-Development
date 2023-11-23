@@ -142,20 +142,14 @@ def get_language_code():
     return settings.DEFAULT_LANGUAGE
 
 
-def translatable_field(field_name, field):
-    class TranslatableFieldMixin(models.Model):
-        class Meta:
-            abstract = True
-
-        def translate(self, field_name):
-            language_code = get_language_code()
-            return getattr(self, f"{field_name}_{language_code}", "")
-
+def add_translatable_field_to_model(model, field_name, field):
     for code, name in settings.LANGUAGES:
-        TranslatableFieldMixin.add_to_class(f"{field_name}_{code}", field)
+        print(f"adding {field_name}_{code} to {model.__name__}")
+        # model.add_to_class(f"{field_name}_{code}", field)
+        field.clone().contribute_to_class(model, f"{field_name}_{code}")
 
-        def accessor(self):
-            return self.translate(field_name)
+    def accessor(self):
+        language_code = get_language_code()
+        return getattr(self, f"{field_name}_{language_code}", "")
 
-        setattr(TranslatableFieldMixin, field_name, property(accessor))
-    return TranslatableFieldMixin
+    setattr(model, field_name, property(accessor))

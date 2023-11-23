@@ -26,7 +26,7 @@ from .fields import (  # noqa: F401
     DescriptionField,
     NameField,
     PrecisionField,
-    translatable_field,
+    add_translatable_field_to_model,
 )
 
 logger = logging.getLogger(__name__)
@@ -528,7 +528,7 @@ class NonOverlappingDateFramedModel(NonOverlappingMixin, models.Model):
         return date_text
 
 
-class Country(translatable_field("name", NameField(max_length=200, unique=True))):
+class Country(models.Model):
     """
     A Country (or dependent territory or special area of geographical interest) included in ISO 3166.
     """
@@ -591,6 +591,9 @@ class Country(translatable_field("name", NameField(max_length=200, unique=True))
     class Meta:
         verbose_name = _("Country")
         verbose_name_plural = _("Countries")
+
+
+add_translatable_field_to_model(Country, "name", NameField(max_length=200, unique=True))
 
 
 # @TODO Should this be in Metadata and if so, should it be a Unit of Measure
