@@ -142,14 +142,67 @@ def get_language_code():
     return settings.DEFAULT_LANGUAGE
 
 
+def translatable_field(field_name, field):
+    """
+    Decorator to add translated fields and property getter for current language to a Django model.
+
+    Usage example:
+
+        # models.py
+
+        @translatable_field("name", NameField(blank=True, verbose_name=_("common name")))
+        @translatable_field("description", DescriptionField())
+        class Acme(models.Model):
+            code = CodeField()
+
+        # Usage:
+        obj = Acme(code="abc", name_en="English name", name_pt="Nome português")
+        obj.name
+        >> "English name"
+        translation.activate("pt")
+        obj.name
+        >> "Portuguese name"
+    """
+
+    def decorate(model):
+        # Add translated fields to model, eg, name_en
+        # Language code as suffix as users will primarily be looking for field, eg, name, desc, or some value field,
+        # and only then look for a translation if available. Follows naming convention of type -> sub-type, eg, paths.
+        for language_code, name in settings.LANGUAGES:
+            model_field_name = f"{field_name}_{language_code}"
+            field.clone().contribute_to_class(model, model_field_name)
+
+        # Add property that returns local translation, eg, name
+        def local_translation_getter(self):
+            model_field = f"{field_name}_{get_language_code()}"
+            return getattr(self, model_field, "")
+
+        setattr(model, field_name, property(local_translation_getter))
+        return model
+
+    return decorate
+
+
 def add_translatable_field_to_model(model, field_name, field):
+    """
+    TODO: For discussion - this is functionally identical, except usage syntax.
+     I prefer the decorator over this, because it has to appear right next to the model definition, and decorating
+     is a standard way of adding functionality to a class. It is also less verbose and easier to name.
+
+    Example usage:
+
+        # models.py
+        class Acme(models.Model):
+            code = CodeField()
+
+        add_translatable_field_to_model(Acme, "name", NameField(blank=True, verbose_name=_("common name")))
+        add_translatable_field_to_model(Acme, "description", DescriptionField())
+    """
     for code, name in settings.LANGUAGES:
-        print(f"adding {field_name}_{code} to {model.__name__}")
-        # model.add_to_class(f"{field_name}_{code}", field)
         field.clone().contribute_to_class(model, f"{field_name}_{code}")
 
-    def accessor(self):
+    def local_translation_getter(self):
         language_code = get_language_code()
         return getattr(self, f"{field_name}_{language_code}", "")
 
-    setattr(model, field_name, property(accessor))
+    setattr(model, field_name, property(local_translation_getter))

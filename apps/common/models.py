@@ -26,7 +26,7 @@ from .fields import (  # noqa: F401
     DescriptionField,
     NameField,
     PrecisionField,
-    add_translatable_field_to_model,
+    translatable_field,
 )
 
 logger = logging.getLogger(__name__)
@@ -534,7 +534,7 @@ class Country(models.Model):
     """
 
     iso3166a2 = models.CharField(max_length=2, primary_key=True, verbose_name="ISO 3166-1 Alpha-2")
-    # name = NameField(max_length=200, unique=True)
+    name = NameField(max_length=200, unique=True)
     iso3166a3 = models.CharField(max_length=3, unique=True, verbose_name="ISO 3166-1 Alpha-3")
     iso3166n3 = models.IntegerField(
         unique=True,
@@ -591,9 +591,6 @@ class Country(models.Model):
     class Meta:
         verbose_name = _("Country")
         verbose_name_plural = _("Countries")
-
-
-add_translatable_field_to_model(Country, "name", NameField(max_length=200, unique=True))
 
 
 # @TODO Should this be in Metadata and if so, should it be a Unit of Measure
@@ -866,12 +863,13 @@ class UnitOfMeasureConversion(Model):
         super().save(*args, **kwargs)
 
 
+@translatable_field("common_name", NameField(blank=True, verbose_name=_("common name")))
+@translatable_field("description", models.CharField(max_length=800, verbose_name=_("description")))
 class ClassifiedProduct(MP_Node, Model):
     """
     A product such as a commodity or service classified using UN CPC v2 codes.
 
     See http://unstats.un.org/unsd/cr/registry/cpc-2.asp for more information
-
     """
 
     cpcv2 = models.CharField(
@@ -882,8 +880,8 @@ class ClassifiedProduct(MP_Node, Model):
         " prefixed with R, L, P or S, a letter indicating whether the Product is Raw agricultural output,"
         " Live animals, a Processed product or a Service.",
     )
-    description = models.CharField(max_length=800, verbose_name=_("description"))
-    common_name = NameField(blank=True, verbose_name=_("common name"))
+    # description = models.CharField(max_length=800, verbose_name=_("description"))
+    # common_name = NameField(blank=True, verbose_name=_("common name"))
     aliases = models.JSONField(
         blank=True,
         null=True,
@@ -913,6 +911,8 @@ class ClassifiedProduct(MP_Node, Model):
     def display_name(self):
         """
         Return the English display name for the Classified Product.
+
+        TODO: This will now be translated if Django language is set. Should we hardcode to common_name_en?
         """
         if self.common_name:
             return self.common_name
@@ -945,7 +945,7 @@ class ClassifiedProduct(MP_Node, Model):
         ordering = ()  # Required for correct ordering of Treebeard subclasses
 
     class ExtraMeta:
-        identifier = ["cpcv2", "description"]
+        identifier = ["cpcv2", "description_en"]
 
 
 class CountryClassifiedProductAliases(Model):

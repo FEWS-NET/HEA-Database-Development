@@ -77,16 +77,26 @@ class ClassifiedProductFactory(TreebeardFactory):
         model = "common.ClassifiedProduct"
         django_get_or_create = (
             "cpcv2",
-            "description",
-            "common_name",
+            "description_en",
+            "common_name_en",
         )
 
     cpcv2 = factory.Iterator(["R09999AA", "R09999BB", "L09999CB", "R09999DC", "S90999EE"])
-    description = factory.LazyAttribute(lambda o: f"Product Description {o.cpcv2}")
-    common_name = factory.LazyAttribute(lambda o: f"Product {o.cpcv2}")
+    # description = factory.LazyAttribute(lambda o: f"Product Description {o.cpcv2}")
+    # common_name = factory.LazyAttribute(lambda o: f"Product {o.cpcv2}")
     scientific_name = factory.LazyAttribute(lambda o: f"Product Scientific {o.cpcv2}")
     unit_of_measure = factory.SubFactory(UnitOfMeasureFactory)
     kcals_per_unit = fuzzy.FuzzyInteger(50, 7500)
+    description_en = factory.LazyAttribute(lambda o: f"Product Description {o.cpcv2} en")
+    description_fr = factory.LazyAttribute(lambda o: f"Product Description {o.cpcv2} fr")
+    description_es = factory.LazyAttribute(lambda o: f"Product Description {o.cpcv2} es")
+    description_ar = factory.LazyAttribute(lambda o: f"Product Description {o.cpcv2} ar")
+    description_pt = factory.LazyAttribute(lambda o: f"Product Description {o.cpcv2} pt")
+    common_name_en = factory.LazyAttribute(lambda o: f"Product {o.cpcv2} en")
+    common_name_fr = factory.LazyAttribute(lambda o: f"Product {o.cpcv2} fr")
+    common_name_es = factory.LazyAttribute(lambda o: f"Product {o.cpcv2} es")
+    common_name_ar = factory.LazyAttribute(lambda o: f"Product {o.cpcv2} ar")
+    common_name_pt = factory.LazyAttribute(lambda o: f"Product {o.cpcv2} pt")
 
     @classmethod
     def _create(cls, model_class, *args, **kwargs):
@@ -98,7 +108,7 @@ class ClassifiedProductFactory(TreebeardFactory):
                 parent = ClassifiedProduct.objects.get(cpcv2=kwargs["cpcv2"][:-2])
             except ClassifiedProduct.DoesNotExist:
                 parent = ClassifiedProduct(
-                    cpcv2=kwargs["cpcv2"][:-2], description=f'Product Description {kwargs["cpcv2"][:-2]}'
+                    cpcv2=kwargs["cpcv2"][:-2], description_en=f'Product Description {kwargs["cpcv2"][:-2]}'
                 )
                 ClassifiedProduct.add_root(instance=parent)
             kwargs["parent"] = parent
