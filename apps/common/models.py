@@ -21,7 +21,13 @@ from django.utils.translation import gettext_lazy as _
 from model_utils.models import TimeFramedModel, TimeStampedModel
 from treebeard.mp_tree import MP_Node, MP_NodeQuerySet
 
-from .fields import CodeField, DescriptionField, NameField, PrecisionField  # noqa: F401
+from .fields import (  # noqa: F401
+    CodeField,
+    DescriptionField,
+    NameField,
+    PrecisionField,
+    translatable_field,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -522,13 +528,13 @@ class NonOverlappingDateFramedModel(NonOverlappingMixin, models.Model):
         return date_text
 
 
-class Country(models.Model):
+class Country(translatable_field("name", NameField(max_length=200, unique=True))):
     """
     A Country (or dependent territory or special area of geographical interest) included in ISO 3166.
     """
 
     iso3166a2 = models.CharField(max_length=2, primary_key=True, verbose_name="ISO 3166-1 Alpha-2")
-    name = NameField(max_length=200, unique=True)
+    # name = NameField(max_length=200, unique=True)
     iso3166a3 = models.CharField(max_length=3, unique=True, verbose_name="ISO 3166-1 Alpha-3")
     iso3166n3 = models.IntegerField(
         unique=True,

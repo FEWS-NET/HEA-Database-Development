@@ -2,7 +2,9 @@
 Additional Model Fields
 """
 
+from django.conf import settings
 from django.contrib.gis.db import models
+from django.utils import translation
 from django.utils.translation import gettext_lazy as _
 
 
@@ -122,3 +124,38 @@ class BoundaryField(models.MultiPolygonField):
         }
         defaults.update(kwargs)
         super().__init__(*args, **defaults)
+
+
+def get_language_code():
+    """
+    Gets the two letter code of the currently selected language, or the default language if none specified.
+    Language is set by Django LocaleMiddleware and common LanguageMiddleware
+    """
+    language = translation.get_language()
+    if language is None:  # Django >= 1.8
+        return settings.DEFAULT_LANGUAGE
+    available_language_codes = set(code for code, _ in settings.LANGUAGES)
+    if language not in available_language_codes and "-" in language:
+        language = language.split("-")[0]
+    if language in available_language_codes:
+        return language
+    return settings.DEFAULT_LANGUAGE
+
+
+def translatable_field(field_name, field):
+    class TranslatableFieldMixin(models.Model):
+        class Meta:
+            abstract = True
+
+        def translate(self, field_name):
+            language_code = get_language_code()
+            return getattr(self, f"{field_name}_{language_code}", "")
+
+    for code, name in settings.LANGUAGES:
+        TranslatableFieldMixin.add_to_class(f"{field_name}_{code}", field)
+
+        def accessor(self):
+            return self.translate(field_name)
+
+        setattr(TranslatableFieldMixin, field_name, property(accessor))
+    return TranslatableFieldMixin
