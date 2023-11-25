@@ -1,7 +1,6 @@
 from django.test import TestCase
 
 from ..models import (
-    AnnualProductionPerformance,
     BaselineLivelihoodActivity,
     BaselineWealthGroup,
     ButterProduction,
@@ -32,13 +31,13 @@ from ..models import (
     ResponseLivelihoodActivity,
     SeasonalActivity,
     SeasonalActivityOccurrence,
+    SeasonalProductionPerformance,
     SourceOrganization,
     WealthGroup,
     WealthGroupCharacteristicValue,
     WildFoodGathering,
 )
 from .factories import (
-    AnnualProductionPerformanceFactory,
     BaselineLivelihoodActivityFactory,
     BaselineWealthGroupFactory,
     ButterProductionFactory,
@@ -69,6 +68,7 @@ from .factories import (
     ResponseLivelihoodActivityFactory,
     SeasonalActivityFactory,
     SeasonalActivityOccurrenceFactory,
+    SeasonalProductionPerformanceFactory,
     SourceOrganizationFactory,
     WealthGroupCharacteristicValueFactory,
     WealthGroupFactory,
@@ -231,10 +231,10 @@ class FactoryTestCase(TestCase):
             MarketPriceFactory()
         self.assertEqual(MarketPrice.objects.count(), self.num_records)
 
-    def test_annualproductionperformance_factory(self):
+    def test_seasonalproductionperformance_factory(self):
         for _ in range(self.num_records):
-            AnnualProductionPerformanceFactory()
-        self.assertEqual(AnnualProductionPerformance.objects.count(), self.num_records)
+            SeasonalProductionPerformanceFactory()
+        self.assertEqual(SeasonalProductionPerformance.objects.count(), self.num_records)
 
     def test_hazard_factory(self):
         for _ in range(self.num_records):
@@ -288,7 +288,7 @@ class FactoryTestCase(TestCase):
             CommunityCropProductionFactory()
             CommunityLivestockFactory()
             MarketPriceFactory()
-            AnnualProductionPerformanceFactory()
+            SeasonalProductionPerformanceFactory()
             HazardFactory()
             EventFactory()
             ExpandabilityFactorFactory()

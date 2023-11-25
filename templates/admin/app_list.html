@@ -184,16 +184,16 @@
             </div>
         </div>
     {% endif %}
-    {% if 'baseline.view_annualproductionperformance' in perms or 'baseline.view_hazard' in perms or 'baseline.view_event' in perms %}
+    {% if 'baseline.view_seasonalproductionperformance' in perms or 'baseline.view_hazard' in perms or 'baseline.view_event' in perms %}
         <div class="menu-category">
             <h5>{% translate 'Hazards and Events' %}</h5>
             <div class="row row-cols-1 row-cols-md-3 g-4">
                 <!-- Card 1 -->
-                {% if 'baseline.view_annualproductionperformance' in perms %}
+                {% if 'baseline.view_seasonalproductionperformance' in perms %}
                     <div class="col">
                     <div class="card m-2">
                         <div class="card-body">
-                            <a href="{% url 'admin:baseline_annualproductionperformance_changelist' %}"> {% translate 'Annual Production Performances' %}</a>
+                            <a href="{% url 'admin:baseline_seasonalproductionperformance_changelist' %}"> {% translate 'Annual Production Performances' %}</a>
                         </div>
                     </div>
                 {% endif %}

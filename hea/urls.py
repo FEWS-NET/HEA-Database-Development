@@ -4,7 +4,6 @@ from django.urls import include, path
 from rest_framework import routers
 
 from baseline.viewsets import (
-    AnnualProductionPerformanceViewSet,
     BaselineLivelihoodActivityViewSet,
     BaselineWealthGroupViewSet,
     ButterProductionViewSet,
@@ -35,6 +34,7 @@ from baseline.viewsets import (
     ResponseLivelihoodActivityViewSet,
     SeasonalActivityOccurrenceViewSet,
     SeasonalActivityViewSet,
+    SeasonalProductionPerformanceViewSet,
     SourceOrganizationViewSet,
     WealthGroupCharacteristicValueViewSet,
     WealthGroupViewSet,
@@ -102,7 +102,7 @@ router.register(r"seasonalactivityoccurrence", SeasonalActivityOccurrenceViewSet
 router.register(r"communitycropproduction", CommunityCropProductionViewSet)
 router.register(r"communitylivestock", CommunityLivestockViewSet)
 router.register(r"marketprice", MarketPriceViewSet)
-router.register(r"annualproductionperformance", AnnualProductionPerformanceViewSet)
+router.register(r"seasonalproductionperformance", SeasonalProductionPerformanceViewSet)
 router.register(r"hazard", HazardViewSet)
 router.register(r"event", EventViewSet)
 router.register(r"expandabilityfactor", ExpandabilityFactorViewSet)
