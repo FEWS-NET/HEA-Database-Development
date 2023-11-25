@@ -800,6 +800,10 @@ class NormalizeSeasonalCalender(luigi.Task):
 
         starting_col = 5
         df_result = pd.DataFrame()
+        # The pattern is in such a way that seasonal activities have entries for a product row followed
+        # by few rows of the seasonal activity occurrences for that product, since this isn't a strict
+        # pattern we can use Count no of the product cell in the dataframe, it shouldn't be more than one
+        # activity
 
         counter = Counter(df_seasonal_activity.iloc[0, :])
         processed = 5
@@ -816,9 +820,9 @@ class NormalizeSeasonalCalender(luigi.Task):
                 df = df_seasonal_activity.iloc[:, list(range(column)) + list(range(starting_col, col))]
                 processed += len(list(range(starting_col, col)))
                 starting_col = col
-                # Drop the first row of a dataframe df
                 df_result = self.extract_seasonal_activity(create_new_activity_rows, df, df_result)
 
+        # and finally the last groups doesn't have null at the end of the entry, we need to process that separately
         if processed < df_seasonal_activity.shape[1]:
             df = df_seasonal_activity.iloc[
                 :, list(range(column)) + list(range(processed, df_seasonal_activity.shape[1]))
