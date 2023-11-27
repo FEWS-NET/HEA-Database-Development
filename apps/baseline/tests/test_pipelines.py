@@ -5,8 +5,11 @@ from baseline.pipelines.ingestion import ImportBaseline
 from baseline.tests.factories import SourceOrganizationFactory
 from common.tests.factories import ClassifiedProductFactory, CountryFactory
 from common.utils import conditional_logging
+from metadata.models import Season, SeasonalActivityType
 from metadata.tests.factories import (
     LivelihoodCategoryFactory,
+    SeasonalActivityTypeFactory,
+    SeasonFactory,
     WealthCharacteristicFactory,
     WealthGroupCategoryFactory,
 )
@@ -15,7 +18,7 @@ from metadata.tests.factories import (
 class IngestionPipelineTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
-        CountryFactory(iso3166a2="MW", iso3166a3="MWI", iso3166n3=454, iso_en_ro_name="Malawi")
+        cls.country = CountryFactory(iso3166a2="MW", iso3166a3="MWI", iso3166n3=454, iso_en_ro_name="Malawi")
         ClassifiedProductFactory(cpcv2="L02151", description="Chickens", aliases=["chicken", "hen", "hens"]),
         ClassifiedProductFactory(
             cpcv2="L02111AP", description="Cattle, oxen, unspecified", common_name="Oxen", aliases=["ox"]
@@ -211,13 +214,87 @@ class IngestionPipelineTestCase(TestCase):
         )
         SourceOrganizationFactory(name="FEWS NET")
 
+        # Add seasonal calender related metadata
+        SeasonalActivityTypeFactory(
+            code="land preparation",
+            name="land preparation",
+            activity_category=SeasonalActivityType.SeasonalActivityCategory.CROP,
+        )
+        SeasonalActivityTypeFactory(
+            code="weeding",
+            name="weeding",
+            activity_category=SeasonalActivityType.SeasonalActivityCategory.CROP,
+        )
+        SeasonalActivityTypeFactory(
+            code="harvesting",
+            name="harvesting",
+            activity_category=SeasonalActivityType.SeasonalActivityCategory.CROP,
+        )
+        SeasonalActivityTypeFactory(
+            code="threshing",
+            name="threshing",
+            activity_category=SeasonalActivityType.SeasonalActivityCategory.CROP,
+        )
+        SeasonalActivityTypeFactory(
+            code="planting",
+            name="planting",
+            activity_category=SeasonalActivityType.SeasonalActivityCategory.CROP,
+        )
+        SeasonalActivityTypeFactory(
+            code="heat",
+            name="heat",
+            activity_category=SeasonalActivityType.SeasonalActivityCategory.LIVESTOCK,
+        )
+        SeasonalActivityTypeFactory(
+            code="birth",
+            name="birth",
+            activity_category=SeasonalActivityType.SeasonalActivityCategory.LIVESTOCK,
+        )
+        SeasonalActivityTypeFactory(
+            code="milk production",
+            name="milk production",
+            activity_category=SeasonalActivityType.SeasonalActivityCategory.LIVESTOCK,
+        )
+        SeasonalActivityTypeFactory(
+            code="livestock migration",
+            name="livestock migration",
+            activity_category=SeasonalActivityType.SeasonalActivityCategory.LIVESTOCK,
+        )
+        SeasonalActivityTypeFactory(
+            code="livestock disease",
+            name="livestock disease",
+            activity_category=SeasonalActivityType.SeasonalActivityCategory.LIVESTOCK,
+        )
+        # We need a placehodler for seasons to ingest the top part of the cal
+        SeasonalActivityTypeFactory(
+            code="seasons",
+            name="seasons",
+            activity_category=SeasonalActivityType.SeasonalActivityCategory.LIVESTOCK,
+        )
+
+        SeasonFactory(name="rainy", season_type=Season.SeasonType.WET, country=cls.country)
+        SeasonFactory(name="winter", season_type=Season.SeasonType.WINTER, country=cls.country)
+        SeasonFactory(name="hot", season_type=Season.SeasonType.DRY, country=cls.country)
+
+        # Products for the seas cal
+        ClassifiedProductFactory(cpcv2="R01422", description="Ground nuts")
+        ClassifiedProductFactory(cpcv2="R01412", description="Soya beans, other")
+        ClassifiedProductFactory(cpcv2="R01412", description="Soya beans, other")
+        ClassifiedProductFactory(cpcv2="R01701", description=" Beans, dry", common_name="Common beans")
+        ClassifiedProductFactory(cpcv2="R01707", description="Pigeon peas")
+        ClassifiedProductFactory(cpcv2="R01530", description="Sweet potatoes")
+        ClassifiedProductFactory(cpcv2="L02121", description="Camels and camelids", aliases=["Camels"])
+        ClassifiedProductFactory(cpcv2="L02123", description="Goats")
+        ClassifiedProductFactory(cpcv2="L02122", description="Sheep")
+
     def test_import_baseline(self):
         # Capture logging and direct writes to stdout (because loaddata writes
         # to stdout directly), so that unit test output is still clean.
         with conditional_logging():
 
             task = ImportBaseline(
-                bss_path="apps/baseline/tests/bss.xlsx", metadata_path="apps/baseline/tests/metadata.xlsx"
+                bss_path="HEA-Database-Development/apps/baseline/tests/bss.xlsx",
+                metadata_path="HEA-Database-Development/apps/baseline/tests/metadata.xlsx",
             )
             submit_task(task, force=True, cascade=True, local_scheduler=True)
 

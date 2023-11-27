@@ -155,7 +155,7 @@ class GetBSSCorrections(luigi.Task):
     corrections_path = luigi.Parameter(default="", description="Path to the BSS corrections")
 
     def output(self):
-        return IntermediateTarget(root_path="/tmp", path=path_from_task(self) + ".pickle", format=Pickle, timeout=3600)
+        return IntermediateTarget(path_from_task(self) + ".pickle", format=Pickle, timeout=3600)
 
     def run(self):
         if self.corrections_path:
@@ -192,10 +192,7 @@ class GetBSSCorrections(luigi.Task):
 class CorrectBSS(luigi.Task):
     def output(self):
         return IntermediateTarget(
-            root_path="/tmp",
-            path=path_from_task(self) + Path(self.input()["bss"].path).suffix,
-            format=luigi.format.Nop,
-            timeout=3600,
+            path_from_task(self) + Path(self.input()["bss"].path).suffix, format=luigi.format.Nop, timeout=3600
         )
 
     def run(self):
@@ -278,7 +275,7 @@ class CorrectBSS(luigi.Task):
 @requires(bss=CorrectBSS, metadata=GetBSSMetadata)
 class NormalizeWB(luigi.Task):
     def output(self):
-        return IntermediateTarget(root_path="/tmp", path=path_from_task(self) + ".json", format=JSON, timeout=3600)
+        return IntermediateTarget(path_from_task(self) + ".json", format=JSON, timeout=3600)
 
     def run(self):
         with self.input()["bss"].open() as input:
@@ -622,7 +619,7 @@ class NormalizeBaseline(luigi.Task):
     """
 
     def output(self):
-        return IntermediateTarget(root_path="/tmp", path=path_from_task(self) + ".json", format=JSON, timeout=3600)
+        return IntermediateTarget(path_from_task(self) + ".json", format=JSON, timeout=3600)
 
     def run(self):
         data = self.input()["normalize_wb"].open().read()
@@ -976,15 +973,11 @@ class ValidateBaseline(luigi.Task):
                     # same transaction in ImportBaseline below.
                     if isinstance(field, ForeignKey) and field.related_model._meta.app_label != "baseline":
                         column = field.name
-                        try:
-
-                            if df[column].isnull().values.any():
-                                unmatched_metadata = get_unmatched_metadata(df, column)
-                                for value in unmatched_metadata:
-                                    error = f"Unmatched remote metadata for {model_name} with {column} '{value}'"
-                                    errors.append(error)
-                        except KeyError:
-                            pass
+                        if df[column].isnull().values.any():
+                            unmatched_metadata = get_unmatched_metadata(df, column)
+                            for value in unmatched_metadata:
+                                error = f"Unmatched remote metadata for {model_name} with {column} '{value}'"
+                                errors.append(error)
 
         if errors:
             raise PipelineError(f"{self}: Missing or inconsistent metadata in BSS", errors=errors)
