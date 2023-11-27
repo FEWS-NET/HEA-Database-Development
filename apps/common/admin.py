@@ -38,7 +38,11 @@ class ClassifiedProductAdmin(TreeAdmin):
     form = movenodeform_factory(ClassifiedProduct)
     fields = [
         "cpcv2",
-        "common_name",
+        "common_name_en",
+        "common_name_pt",
+        "common_name_ar",
+        "common_name_es",
+        "common_name_fr",
         "scientific_name",
         "unit_of_measure",
         "kcals_per_unit",
@@ -46,13 +50,26 @@ class ClassifiedProductAdmin(TreeAdmin):
         "hs2012",
         "_position",
         "_ref_node_id",
+        "description_en",
+        "description_pt",
+        "description_ar",
+        "description_es",
+        "description_fr",
     ]
     list_display = ("cpcv2", "description", "common_name", "scientific_name")
     ordering = ["cpcv2"]
     search_fields = [
         "^cpcv2",
-        "description",
-        "common_name",
+        "description_en",
+        "description_pt",
+        "description_ar",
+        "description_es",
+        "description_fr",
+        "common_name_en",
+        "common_name_pt",
+        "common_name_ar",
+        "common_name_es",
+        "common_name_fr",
         "scientific_name",
         "per_country_aliases__country__iso_en_ro_name",
         "per_country_aliases__country__iso_en_name",

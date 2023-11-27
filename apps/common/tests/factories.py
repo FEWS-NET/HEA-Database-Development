@@ -82,8 +82,6 @@ class ClassifiedProductFactory(TreebeardFactory):
         )
 
     cpcv2 = factory.Iterator(["R09999AA", "R09999BB", "L09999CB", "R09999DC", "S90999EE"])
-    # description = factory.LazyAttribute(lambda o: f"Product Description {o.cpcv2}")
-    # common_name = factory.LazyAttribute(lambda o: f"Product {o.cpcv2}")
     scientific_name = factory.LazyAttribute(lambda o: f"Product Scientific {o.cpcv2}")
     unit_of_measure = factory.SubFactory(UnitOfMeasureFactory)
     kcals_per_unit = fuzzy.FuzzyInteger(50, 7500)

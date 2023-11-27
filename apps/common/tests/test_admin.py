@@ -121,7 +121,7 @@ class ClassifiedProductAdminTestCase(TestCase):
 
     def test_search_classified_product(self):
         response = self.client.get(
-            reverse("admin:common_classifiedproduct_changelist"), {"q": self.product1.common_name}
+            reverse("admin:common_classifiedproduct_changelist"), {"q": self.product1.common_name_en}
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.product1.cpcv2)
@@ -130,8 +130,12 @@ class ClassifiedProductAdminTestCase(TestCase):
         unit = UnitOfMeasureFactory()
         data = {
             "cpcv2": "020202",
-            "description": "New Test Product",
-            "common_name": "New Test Common Name",
+            "description_en": "New Test Product",
+            "description_pt": "New Test Product",
+            "description_ar": "New Test Product",
+            "description_fr": "New Test Product",
+            "description_es": "New Test Product",
+            "common_name_en": "New Test Common Name",
             "scientific_name": "New Test Scientific Name",
             "unit_of_measure": unit.abbreviation,
             "_position": "first-child",

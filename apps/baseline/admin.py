@@ -153,7 +153,7 @@ class LivelihoodStrategyAdmin(admin.ModelAdmin):
         "product",
         "unit_of_measure",
     )
-    search_fields = ("strategy_type", "livelihood_zone_baseline__livelihood_zone__name", "product__common_name")
+    search_fields = ("strategy_type", "livelihood_zone_baseline__livelihood_zone__name", "product__common_name_en")
     list_filter = (
         "strategy_type",
         "livelihood_zone_baseline__livelihood_zone",
@@ -466,7 +466,7 @@ class CommunityLivestockAdmin(admin.ModelAdmin):
         "wet_season_milk_production",
         "dry_season_milk_production",
     )
-    search_fields = ("livestock__common_name",)
+    search_fields = ("livestock__common_name_en",)
     list_filter = (
         "community__livelihood_zone_baseline__livelihood_zone",
         "community__full_name",

@@ -348,7 +348,20 @@ class ClassifiedProductLookup(Lookup):
     # HEA, then pass `filters={"numchild": 0}` when instantiating the Lookup.
     model = ClassifiedProduct
     id_fields = ["cpcv2"]
-    lookup_fields = ["common_name", "description", "aliases", "hs2012"]
+    lookup_fields = [
+        "common_name_en",
+        "common_name_pt",
+        "common_name_ar",
+        "common_name_es",
+        "common_name_fr",
+        "description_en",
+        "description_pt",
+        "description_ar",
+        "description_es",
+        "description_fr",
+        "aliases",
+        "hs2012",
+    ]
 
     def get_lookup_df(self):
         """

@@ -26,7 +26,7 @@ from .fields import (  # noqa: F401
     DescriptionField,
     NameField,
     PrecisionField,
-    translatable_field,
+    TranslatedField,
 )
 
 logger = logging.getLogger(__name__)
@@ -635,8 +635,8 @@ class ClassifiedProductQuerySet(SearchQueryMixin, MP_NodeQuerySet):
         for part in search_term.split(" - "):
             parts.append(
                 Q(cpcv2__iexact=part)
-                | Q(description__iexact=part)
-                | Q(common_name__iexact=part)
+                | Q(description_en__iexact=part)
+                | Q(common_name_en__iexact=part)
                 | Q(scientific_name__iexact=part)
                 | Q(per_country_aliases__aliases__contains=[part.lower()])
                 | Q(aliases__contains=[part.lower()])
@@ -863,8 +863,6 @@ class UnitOfMeasureConversion(Model):
         super().save(*args, **kwargs)
 
 
-@translatable_field("common_name", NameField(blank=True, verbose_name=_("common name")))
-@translatable_field("description", models.CharField(max_length=800, verbose_name=_("description")))
 class ClassifiedProduct(MP_Node, Model):
     """
     A product such as a commodity or service classified using UN CPC v2 codes.
@@ -880,8 +878,8 @@ class ClassifiedProduct(MP_Node, Model):
         " prefixed with R, L, P or S, a letter indicating whether the Product is Raw agricultural output,"
         " Live animals, a Processed product or a Service.",
     )
-    # description = models.CharField(max_length=800, verbose_name=_("description"))
-    # common_name = NameField(blank=True, verbose_name=_("common name"))
+    description = TranslatedField(models.CharField(max_length=800, verbose_name=_("description")))
+    common_name = TranslatedField(NameField(blank=True, verbose_name=_("common name")))
     aliases = models.JSONField(
         blank=True,
         null=True,

@@ -206,15 +206,15 @@ class ClassifiedProductFilterSet(filters.FilterSet):
 
     Attributes:
         cpcv2: A CharFilter for filtering by the CPCV2 value (case-insensitive contains lookup).
-        description: A CharFilter for filtering by the description (case-insensitive contains lookup).
-        common_name: A CharFilter for filtering by the common name (case-insensitive contains lookup).
+        description_en: A CharFilter for filtering by the description (case-insensitive contains lookup).
+        common_name_en: A CharFilter for filtering by the common name (case-insensitive contains lookup).
         unit_of_measure: A ModelChoiceFilter for filtering by the associated UnitOfMeasure object.
                          The filter will display choices based on the available UnitOfMeasure objects.
     """
 
     cpcv2 = filters.CharFilter(lookup_expr="icontains", label="CPCV2")
-    description = filters.CharFilter(lookup_expr="icontains", label="Description")
-    common_name = filters.CharFilter(lookup_expr="icontains", label="Common Name")
+    description_en = filters.CharFilter(lookup_expr="icontains", label="Description")
+    common_name_en = filters.CharFilter(lookup_expr="icontains", label="Common Name")
     unit_of_measure = filters.ModelChoiceFilter(queryset=UnitOfMeasure.objects.all(), field_name="unit_of_measure")
 
     class Meta:
@@ -229,7 +229,7 @@ class ClassifiedProductFilterSet(filters.FilterSet):
         """
 
         model = ClassifiedProduct
-        fields = ["cpcv2", "description", "common_name", "scientific_name", "unit_of_measure", "kcals_per_unit"]
+        fields = ["cpcv2", "description_en", "common_name_en", "scientific_name", "unit_of_measure", "kcals_per_unit"]
 
 
 class ClassifiedProductViewSet(viewsets.ModelViewSet):
@@ -246,4 +246,16 @@ class ClassifiedProductViewSet(viewsets.ModelViewSet):
     queryset = ClassifiedProduct.objects.all()
     serializer_class = ClassifiedProductSerializer
     filterset_class = ClassifiedProductFilterSet
-    search_fields = ["cpcv2", "description", "common_name"]
+    search_fields = [
+        "cpcv2",
+        "description_en",
+        "description_pt",
+        "description_ar",
+        "description_es",
+        "description_fr",
+        "common_name_en",
+        "common_name_pt",
+        "common_name_ar",
+        "common_name_es",
+        "common_name_fr",
+    ]

@@ -114,6 +114,7 @@ MIDDLEWARE = [
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
+    "common.middleware.language.LanguageMiddleware",
     "django.middleware.common.CommonMiddleware",
     # "common.middleware.RequestLoggingMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -174,7 +175,7 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "en"
 TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
