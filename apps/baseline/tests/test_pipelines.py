@@ -265,7 +265,7 @@ class IngestionPipelineTestCase(TestCase):
             name="livestock disease",
             activity_category=SeasonalActivityType.SeasonalActivityCategory.LIVESTOCK,
         )
-        # We need a placehodler for seasons to ingest the top part of the cal
+        # We need a placeholder for seasons to ingest the top part of the cal
         SeasonalActivityTypeFactory(
             code="seasons",
             name="seasons",
@@ -293,8 +293,7 @@ class IngestionPipelineTestCase(TestCase):
         with conditional_logging():
 
             task = ImportBaseline(
-                bss_path="HEA-Database-Development/apps/baseline/tests/bss.xlsx",
-                metadata_path="HEA-Database-Development/apps/baseline/tests/metadata.xlsx",
+                bss_path="apps/baseline/tests/bss.xlsx", metadata_path="apps/baseline/tests/metadata.xlsx"
             )
             submit_task(task, force=True, cascade=True, local_scheduler=True)
 
