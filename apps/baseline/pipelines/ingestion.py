@@ -636,14 +636,14 @@ class NormalizeSeasonalCalender(luigi.Task):
     """
 
     def output(self):
-        return IntermediateTarget(root_path="/tmp", path=path_from_task(self) + ".json", format=JSON, timeout=3600)
+        return IntermediateTarget(path=path_from_task(self) + ".json", format=JSON, timeout=3600)
 
     def run(self):
         with self.input()["bss"].open() as input:
             try:
                 data_df = pd.read_excel(input, "Seas Cal", header=None)
             except FileNotFoundError:
-                print("The BSS does not seem to contain 'Seas Cal' sheet. Skipping to import seas cal data.")
+                logger.info("The BSS does not seem to contain 'Seas Cal' sheet. Skipping to import seas cal data.")
                 data_df = pd.DataFrame()
         with self.input()["normalize_wb"].open() as input:
             normalized_wb = self.input()["normalize_wb"].open().read()
@@ -711,7 +711,7 @@ class NormalizeSeasonalCalender(luigi.Task):
         rows_to_delete = [0, 1]
         df_original = df_original.drop(rows_to_delete).reset_index(drop=True)
 
-        # Rename village --> to community in 0, 0 cell and month --> to month in 1,0
+        # Rename 'village -->' to community in 0, 0 cell and 'month -->' to month in 1,0
         df_original.iloc[0, 0] = "community"
         df_original.iloc[1, 0] = "month"
 
