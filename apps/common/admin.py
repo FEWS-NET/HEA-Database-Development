@@ -94,7 +94,7 @@ class UnitOfMeasureAdmin(admin.ModelAdmin):
     )
     search_fields = [
         "abbreviation",
-        "description",
+        "description_en",
     ]
     list_filter = ("unit_type",)
     inlines = [UnitOfMeasureConversionInline]

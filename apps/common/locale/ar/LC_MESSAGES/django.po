@@ -1,0 +1,322 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-12-07 08:22+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 "
+"&& n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5;\n"
+#: apps/common/fields.py:62
+msgid "Code"
+msgstr ""
+
+#: apps/common/fields.py:74
+msgid "Name"
+msgstr ""
+
+#: apps/common/fields.py:88
+msgid "Description"
+msgstr ""
+
+#: apps/common/fields.py:90
+msgid "Any extra information or detail that is relevant to the object."
+msgstr ""
+
+#: apps/common/fields.py:104
+msgid "Location"
+msgstr ""
+
+#: apps/common/fields.py:121
+msgid "Boundary"
+msgstr ""
+
+#: apps/common/middleware/language.py:31
+msgid ""
+"Remove the language URL parameter. It is not supported for language-specific "
+"paths. "
+msgstr ""
+
+#: apps/common/middleware/language.py:46
+#, python-brace-format
+msgid ""
+"The language URL parameter is set to invalid language code "
+"\"{language_from_parameter}\". "
+msgstr ""
+
+#: apps/common/models.py:176
+msgid "Spanish name"
+msgstr ""
+
+#: apps/common/models.py:177
+msgid "Spanish name if different from the English name"
+msgstr ""
+
+#: apps/common/models.py:181
+msgid "French name"
+msgstr ""
+
+#: apps/common/models.py:182
+msgid "French name if different from the English name"
+msgstr ""
+
+#: apps/common/models.py:186
+msgid "Portuguese name"
+msgstr ""
+
+#: apps/common/models.py:187
+msgid "Portuguese name if different from the English name"
+msgstr ""
+
+#: apps/common/models.py:191
+msgid "Arabic name"
+msgstr ""
+
+#: apps/common/models.py:192
+msgid "Arabic name if different from the English name"
+msgstr ""
+
+#: apps/common/models.py:211
+msgid "local name"
+msgstr ""
+
+#: apps/common/models.py:370
+msgid "The End of the period must be on or after the Start"
+msgstr ""
+
+#: apps/common/models.py:423
+#, python-format
+msgid ""
+"%(class)s %(pk)s (%(instance)s) has the same %(non_overlapping_fields)s and "
+"has a period that overlaps %(start)s to %(end)s"
+msgstr ""
+
+#: apps/common/models.py:482 apps/common/models.py:516
+msgid "Open Ended"
+msgstr ""
+
+#: apps/common/models.py:484 apps/common/models.py:518
+#, python-format
+msgid "From %(start)s"
+msgstr ""
+
+#: apps/common/models.py:488 apps/common/models.py:522
+#, python-format
+msgid "Until %(end)s"
+msgstr ""
+
+#: apps/common/models.py:490 apps/common/models.py:524
+#, python-format
+msgid "%(start)s - %(end)s"
+msgstr ""
+
+#: apps/common/models.py:505
+msgid "start"
+msgstr ""
+
+#: apps/common/models.py:506
+msgid "end"
+msgstr ""
+
+#: apps/common/models.py:551
+msgid ""
+"The name of the Country approved by the ISO 3166 Maintenance Agency with "
+"accented characters replaced by their ASCII equivalents"
+msgstr ""
+
+#: apps/common/models.py:558
+msgid ""
+"The full formal name of the Country approved by the ISO 3166 Maintenance "
+"Agency with accented characters replaced by their ASCII equivalents"
+msgstr ""
+
+#: apps/common/models.py:565
+msgid "The name of the Country approved by the ISO 3166 Maintenance Agency"
+msgstr ""
+
+#: apps/common/models.py:570
+msgid ""
+"The full formal name of the Country approved by the ISO 3166 Maintenance "
+"Agency"
+msgstr ""
+
+#: apps/common/models.py:574
+msgid "ISO French name"
+msgstr ""
+
+#: apps/common/models.py:575
+msgid ""
+"The name in French of the Country approved by the ISO 3166 Maintenance Agency"
+msgstr ""
+
+#: apps/common/models.py:579
+msgid "ISO French full name"
+msgstr ""
+
+#: apps/common/models.py:580
+msgid ""
+"The full formal name in French of the Country approved by the ISO 3166 "
+"Maintenance Agency"
+msgstr ""
+
+#: apps/common/models.py:584
+msgid "ISO Spanish name"
+msgstr ""
+
+#: apps/common/models.py:585
+msgid ""
+"The name in Spanish of the Country approved by the ISO 3166 Maintenance "
+"Agency"
+msgstr ""
+
+#: apps/common/models.py:592
+msgid "Country"
+msgstr ""
+
+#: apps/common/models.py:593
+msgid "Countries"
+msgstr ""
+
+#: apps/common/models.py:607 apps/common/models.py:932
+msgid "name"
+msgstr ""
+
+#: apps/common/models.py:610
+msgid "Currency"
+msgstr ""
+
+#: apps/common/models.py:611
+msgid "Currencies"
+msgstr ""
+
+#: apps/common/models.py:695
+msgid "Weight"
+msgstr ""
+
+#: apps/common/models.py:696
+msgid "Volume"
+msgstr ""
+
+#: apps/common/models.py:697
+msgid "Item"
+msgstr ""
+
+#: apps/common/models.py:698
+msgid "Area"
+msgstr ""
+
+#: apps/common/models.py:699
+msgid "Yield"
+msgstr ""
+
+#: apps/common/models.py:700
+msgid "Percentage"
+msgstr ""
+
+#: apps/common/models.py:701
+msgid "Length"
+msgstr ""
+
+#: apps/common/models.py:703
+msgid "abbreviation"
+msgstr ""
+
+#: apps/common/models.py:704
+msgid "unit type"
+msgstr ""
+
+#: apps/common/models.py:709 apps/common/models.py:898
+msgid "aliases"
+msgstr ""
+
+#: apps/common/models.py:710 apps/common/models.py:899
+msgid "A list of alternate names for the product."
+msgstr ""
+
+#: apps/common/models.py:725 apps/common/models.py:915
+msgid "Unit of Measure"
+msgstr ""
+
+#: apps/common/models.py:726
+msgid "Units of Measure"
+msgstr ""
+
+#: apps/common/models.py:826
+msgid "from unit"
+msgstr ""
+
+#: apps/common/models.py:833
+msgid "to unit"
+msgstr ""
+
+#: apps/common/models.py:838
+msgid "conversion factor"
+msgstr ""
+
+#: apps/common/models.py:843
+msgid "Unit of Measure Conversion"
+msgstr ""
+
+#: apps/common/models.py:844
+msgid "Unit of Measure Conversions"
+msgstr ""
+
+#: apps/common/models.py:869
+#, python-brace-format
+msgid ""
+"From unit and to unit must have the same unit type, expected unit is of type "
+"{from_unit.unit_type}"
+msgstr ""
+
+#: apps/common/models.py:893
+msgid "description"
+msgstr ""
+
+#: apps/common/models.py:894
+msgid "common name"
+msgstr ""
+
+#: apps/common/models.py:906
+msgid "HS2012"
+msgstr ""
+
+#: apps/common/models.py:908
+msgid ""
+"The 6-digit codes for the Product in the Harmonized Commodity Description "
+"and Coding System (HS), stored as XXXX.YY "
+msgstr ""
+
+#: apps/common/models.py:917
+msgid "Kcals per Unit"
+msgstr ""
+
+#: apps/common/models.py:951 apps/common/models.py:968
+msgid "Product"
+msgstr ""
+
+#: apps/common/models.py:952
+msgid "Products"
+msgstr ""
+
+#: apps/common/models.py:964
+msgid "country"
+msgstr ""
+
+#: apps/common/models.py:978
+msgid "Country Classified Product Alias"
+msgstr ""
+
+#: apps/common/models.py:979
+msgid "Country Classified Product Aliases"
+msgstr ""

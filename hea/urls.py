@@ -115,6 +115,7 @@ urlpatterns = [
     # API
     path("api/", include(router.urls)),
     path("api-auth/", include("rest_framework.urls", namespace="rest_framework")),
+    path("i18n/", include("django.conf.urls.i18n")),
 ] + i18n_patterns(
     ########## LOCALE DEPENDENT PATHS go here. ##########
     path("admin/doc/", include("django.contrib.admindocs.urls")),

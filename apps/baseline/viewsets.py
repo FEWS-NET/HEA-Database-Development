@@ -82,9 +82,21 @@ class SourceOrganizationFilterSet(filters.FilterSet):
     class Meta:
         model = SourceOrganization
         fields = [
-            "name",
-            "full_name",
-            "description",
+            "name_en",
+            "name_pt",
+            "name_es",
+            "name_fr",
+            "name_ar",
+            "full_name_en",
+            "full_name_pt",
+            "full_name_es",
+            "full_name_fr",
+            "full_name_ar",
+            "description_en",
+            "description_pt",
+            "description_es",
+            "description_fr",
+            "description_ar",
         ]
 
 
@@ -97,9 +109,21 @@ class SourceOrganizationViewSet(viewsets.ModelViewSet):
     serializer_class = SourceOrganizationSerializer
     filterset_class = SourceOrganizationFilterSet
     search_fields = [
-        "description",
-        "full_name",
-        "name",
+        "description_en",
+        "description_pt",
+        "description_es",
+        "description_fr",
+        "description_ar",
+        "full_name_en",
+        "full_name_pt",
+        "full_name_es",
+        "full_name_fr",
+        "full_name_ar",
+        "name_en",
+        "name_pt",
+        "name_es",
+        "name_fr",
+        "name_ar",
     ]
 
 
@@ -108,8 +132,16 @@ class LivelihoodZoneFilterSet(filters.FilterSet):
         model = LivelihoodZone
         fields = [
             "code",
-            "name",
-            "description",
+            "name_en",
+            "name_pt",
+            "name_es",
+            "name_fr",
+            "name_ar",
+            "description_en",
+            "description_pt",
+            "description_es",
+            "description_fr",
+            "description_ar",
             "country",
         ]
 
@@ -126,8 +158,16 @@ class LivelihoodZoneViewSet(viewsets.ModelViewSet):
     filterset_class = LivelihoodZoneFilterSet
     search_fields = [
         "code",
-        "description",
-        "name",
+        "description_en",
+        "description_pt",
+        "description_es",
+        "description_fr",
+        "description_ar",
+        "name_en",
+        "name_pt",
+        "name_es",
+        "name_fr",
+        "name_ar",
     ]
 
 
@@ -191,8 +231,16 @@ class CommunityFilterSet(filters.FilterSet):
         model = Community
         fields = [
             "code",
-            "name",
-            "full_name",
+            "name_en",
+            "name_pt",
+            "name_es",
+            "name_fr",
+            "name_ar",
+            "full_name_en",
+            "full_name_pt",
+            "full_name_es",
+            "full_name_fr",
+            "full_name_ar",
             "livelihood_zone_baseline",
         ]
 
@@ -210,7 +258,11 @@ class CommunityViewSet(viewsets.ModelViewSet):
     filterset_class = CommunityFilterSet
     search_fields = [
         "code",
-        "name",
+        "name_en",
+        "name_pt",
+        "name_es",
+        "name_fr",
+        "name_ar",
     ]
 
 
@@ -1142,7 +1194,11 @@ class MarketPriceFilterSet(filters.FilterSet):
             "community",
             "product",
             "market",
-            "description",
+            "description_en",
+            "description_pt",
+            "description_es",
+            "description_fr",
+            "description_ar",
             "currency",
             "unit_of_measure",
             "low_price_start",
@@ -1169,7 +1225,11 @@ class MarketPriceViewSet(viewsets.ModelViewSet):
     serializer_class = MarketPriceSerializer
     filterset_class = MarketPriceFilterSet
     search_fields = [
-        "description",
+        "description_en",
+        "description_pt",
+        "description_es",
+        "description_fr",
+        "description_ar",
     ]
 
 
@@ -1205,7 +1265,11 @@ class HazardFilterSet(filters.FilterSet):
             "chronic_or_periodic",
             "ranking",
             "hazard_category",
-            "description",
+            "description_en",
+            "description_pt",
+            "description_es",
+            "description_fr",
+            "description_ar",
         ]
 
 
@@ -1223,7 +1287,11 @@ class HazardViewSet(viewsets.ModelViewSet):
     filterset_class = HazardFilterSet
     search_fields = [
         "chronic_or_periodic",
-        "description",
+        "description_en",
+        "description_pt",
+        "description_es",
+        "description_fr",
+        "description_ar",
     ]
 
 
@@ -1234,7 +1302,11 @@ class EventFilterSet(filters.FilterSet):
             "community",
             "event_year_start_date",
             "event_year_end_date",
-            "description",
+            "description_en",
+            "description_pt",
+            "description_es",
+            "description_fr",
+            "description_ar",
         ]
 
 
@@ -1250,7 +1322,11 @@ class EventViewSet(viewsets.ModelViewSet):
     serializer_class = EventSerializer
     filterset_class = EventFilterSet
     search_fields = [
-        "description",
+        "description_en",
+        "description_pt",
+        "description_es",
+        "description_fr",
+        "description_ar",
     ]
 
 

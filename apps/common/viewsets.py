@@ -178,7 +178,7 @@ class UnitOfMeasureFilterSet(filters.FilterSet):
         """
 
         model = UnitOfMeasure
-        fields = ["abbreviation", "description", "unit_type"]
+        fields = ["abbreviation", "description_en", "unit_type"]
 
 
 class UnitOfMeasureViewSet(viewsets.ModelViewSet):
@@ -195,7 +195,7 @@ class UnitOfMeasureViewSet(viewsets.ModelViewSet):
     queryset = UnitOfMeasure.objects.all()
     serializer_class = UnitOfMeasureSerializer
     filterset_class = UnitOfMeasureFilterSet
-    search_fields = ["abbreviation", "description", "unit_type"]
+    search_fields = ["abbreviation", "description_en", "unit_type"]
 
 
 class ClassifiedProductFilterSet(filters.FilterSet):

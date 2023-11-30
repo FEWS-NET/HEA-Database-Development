@@ -20,10 +20,8 @@ class LanguageMiddleware(MiddlewareMixin):
     def process_request(self, request):
 
         language_from_parameter = request.POST.get("language", request.GET.get("language", False))
-        if not language_from_parameter:
-            return
-
         language_from_path = translation.get_language_from_path(request.path_info)
+
         if language_from_path:
             if language_from_parameter:
                 # Enforce this strictly, because this touches core Django infrastructure, and because we need
@@ -35,6 +33,9 @@ class LanguageMiddleware(MiddlewareMixin):
                         f"{language_from_parameter} is specified in the parameter."
                     )
                 )
+            return
+
+        if not language_from_parameter:
             return
 
         if language_from_parameter not in (code for code, name in settings.LANGUAGES):
@@ -49,7 +50,3 @@ class LanguageMiddleware(MiddlewareMixin):
 
         translation.activate(language_from_parameter)
         request.LANGUAGE_CODE = translation.get_language()
-
-    def process_response(self, request, response):
-        translation.deactivate()
-        return response

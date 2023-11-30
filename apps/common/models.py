@@ -636,7 +636,15 @@ class ClassifiedProductQuerySet(SearchQueryMixin, MP_NodeQuerySet):
             parts.append(
                 Q(cpcv2__iexact=part)
                 | Q(description_en__iexact=part)
+                | Q(description_pt__iexact=part)
+                | Q(description_es__iexact=part)
+                | Q(description_fr__iexact=part)
+                | Q(description_ar__iexact=part)
                 | Q(common_name_en__iexact=part)
+                | Q(common_name_pt__iexact=part)
+                | Q(common_name_es__iexact=part)
+                | Q(common_name_fr__iexact=part)
+                | Q(common_name_ar__iexact=part)
                 | Q(scientific_name__iexact=part)
                 | Q(per_country_aliases__aliases__contains=[part.lower()])
                 | Q(aliases__contains=[part.lower()])
@@ -661,7 +669,11 @@ class UnitOfMeasureQuerySet(SearchQueryMixin, models.QuerySet):
     def get_search_filter(self, search_term):
         return (
             Q(abbreviation__iexact=search_term)
-            | Q(description__iexact=search_term)
+            | Q(description_en__iexact=search_term)
+            | Q(description_pt__iexact=search_term)
+            | Q(description_es__iexact=search_term)
+            | Q(description_fr__iexact=search_term)
+            | Q(description_ar__iexact=search_term)
             | Q(aliases__contains=[search_term.lower()])
         )
 
@@ -690,7 +702,7 @@ class UnitOfMeasure(Model):
     )
     abbreviation = models.CharField(max_length=12, primary_key=True, verbose_name=_("abbreviation"))
     unit_type = models.CharField(max_length=10, choices=UNIT_TYPE_CHOICES, verbose_name=_("unit type"))
-    description = DescriptionField()
+    description = TranslatedField(DescriptionField())
     aliases = models.JSONField(
         blank=True,
         null=True,
@@ -714,7 +726,7 @@ class UnitOfMeasure(Model):
         verbose_name_plural = _("Units of Measure")
 
     class ExtraMeta:
-        identifier = ["description"]
+        identifier = ["description_en"]
 
 
 class UnitOfMeasureConversionManager(models.Manager):
@@ -878,7 +890,7 @@ class ClassifiedProduct(MP_Node, Model):
         " prefixed with R, L, P or S, a letter indicating whether the Product is Raw agricultural output,"
         " Live animals, a Processed product or a Service.",
     )
-    description = TranslatedField(models.CharField(max_length=800, verbose_name=_("description")))
+    description = TranslatedField(models.CharField(blank=True, max_length=800, verbose_name=_("description")))
     common_name = TranslatedField(NameField(blank=True, verbose_name=_("common name")))
     aliases = models.JSONField(
         blank=True,
@@ -909,8 +921,6 @@ class ClassifiedProduct(MP_Node, Model):
     def display_name(self):
         """
         Return the English display name for the Classified Product.
-
-        TODO: This will now be translated if Django language is set. Should we hardcode to common_name_en?
         """
         if self.common_name:
             return self.common_name

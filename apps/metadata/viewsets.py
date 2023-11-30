@@ -23,70 +23,106 @@ from metadata.serializers import (
 
 
 class ReferenceDataFilterSet(filters.FilterSet):
-    """ """
-
-    name = filters.CharFilter(
-        field_name="name",
+    name_en = filters.CharFilter(
+        field_name="name_en",
         lookup_expr="icontains",
-        label="Name",
+        label="Name (English)",
     )
-    description = filters.CharFilter(
-        field_name="description",
+    description_en = filters.CharFilter(
+        field_name="description_en",
         lookup_expr="icontains",
-        label="Description",
+        label="Description (English)",
     )
 
     class Meta:
         model = ReferenceData
-        fields = ["name", "description"]
+        fields = [
+            "name_en",
+            "name_pt",
+            "name_es",
+            "name_fr",
+            "name_ar",
+            "description_en",
+            "description_pt",
+            "description_es",
+            "description_fr",
+            "description_ar",
+        ]
 
 
 class ReferenceDataViewSet(viewsets.ModelViewSet):
-    """ """
-
     serializer_class = ReferenceDataSerializer
     filterset_class = ReferenceDataFilterSet
-    search_fields = ["code", "name", "description", "aliases"]
+    search_fields = [
+        "code",
+        "name_en",
+        "name_pt",
+        "name_es",
+        "name_fr",
+        "name_ar",
+        "description_en",
+        "description_pt",
+        "description_es",
+        "description_fr",
+        "description_ar",
+        "aliases",
+    ]
 
 
 class LivelihoodCategoryViewSet(ReferenceDataViewSet):
-    """ """
-
     queryset = LivelihoodCategory.objects.all()
     serializer_class = LivelihoodCategorySerializer
 
 
 class WealthGroupCategoryViewSet(ReferenceDataViewSet):
-    """ """
-
     queryset = WealthGroupCategory.objects.all()
     serializer_class = WealthGroupCategorySerializer
 
 
 class WealthCharacteristicFilterSet(ReferenceDataFilterSet):
-    """ """
-
     variable_type = filters.ChoiceFilter(
         choices=WealthCharacteristic.VariableType.choices,
     )
 
     class Meta:
         model = ReferenceData
-        fields = ["name", "description", "variable_type"]
+        fields = [
+            "name_en",
+            "name_pt",
+            "name_es",
+            "name_fr",
+            "name_ar",
+            "description_en",
+            "description_pt",
+            "description_es",
+            "description_fr",
+            "description_ar",
+            "variable_type",
+        ]
 
 
 class WealthCharacteristicViewSet(ReferenceDataViewSet):
-    """ """
-
     queryset = WealthCharacteristic.objects.all()
     serializer_class = WealthCharacteristicSerializer
     filterset_class = WealthCharacteristicFilterSet
-    search_fields = ["code", "name", "description", "variable_type", "aliases"]
+    search_fields = [
+        "code",
+        "name_en",
+        "name_pt",
+        "name_es",
+        "name_fr",
+        "name_ar",
+        "description_en",
+        "description_pt",
+        "description_es",
+        "description_fr",
+        "description_ar",
+        "variable_type",
+        "aliases",
+    ]
 
 
 class SeasonalActivityTypeFilterSet(ReferenceDataFilterSet):
-    """ """
-
     activity_category = filters.ChoiceFilter(
         choices=SeasonalActivityType.SeasonalActivityCategory.choices,
     )
@@ -94,24 +130,42 @@ class SeasonalActivityTypeFilterSet(ReferenceDataFilterSet):
     class Meta:
         model = ReferenceData
         fields = [
-            "name",
-            "description",
+            "name_en",
+            "name_pt",
+            "name_ar",
+            "name_fr",
+            "name_es",
+            "description_en",
+            "description_pt",
+            "description_ar",
+            "description_fr",
+            "description_es",
             "activity_category",
         ]
 
 
 class SeasonalActivityTypeViewSet(ReferenceDataViewSet):
-    """ """
-
     queryset = SeasonalActivityType.objects.all()
     serializer_class = SeasonalActivityTypeSerializer
     filterset_class = SeasonalActivityTypeFilterSet
-    search_fields = ["code", "name", "description", "activity_category", "aliases"]
+    search_fields = [
+        "code",
+        "name_en",
+        "name_pt",
+        "name_es",
+        "name_fr",
+        "name_ar",
+        "description_en",
+        "description_pt",
+        "description_es",
+        "description_fr",
+        "description_ar",
+        "activity_category",
+        "aliases",
+    ]
 
 
 class HazardCategoryViewSet(ReferenceDataViewSet):
-    """ """
-
     queryset = HazardCategory.objects.all()
     serializer_class = HazardCategorySerializer
 
@@ -132,24 +186,48 @@ class SeasonFilterSet(filters.FilterSet):
     season_type = filters.ChoiceFilter(
         choices=Season.SeasonType.choices,
     )
-    name = filters.CharFilter(
-        field_name="name",
+    name_en = filters.CharFilter(
+        field_name="name_en",
         lookup_expr="icontains",
         label="Name",
     )
-    description = filters.CharFilter(
-        field_name="description",
+    description_en = filters.CharFilter(
+        field_name="description_en",
         lookup_expr="icontains",
         label="Description",
     )
 
     class Meta:
         model = Season
-        fields = ("name", "description", "season_type")
+        fields = (
+            "name_en",
+            "name_pt",
+            "name_es",
+            "name_fr",
+            "name_ar",
+            "description_en",
+            "description_pt",
+            "description_es",
+            "description_fr",
+            "description_ar",
+            "season_type",
+        )
 
 
 class SeasonViewSet(viewsets.ModelViewSet):
     queryset = Season.objects.all()
     serializer_class = SeasonSerializer
     filterset_class = SeasonFilterSet
-    search_fields = ["name", "description", "season_type"]
+    search_fields = [
+        "name_en",
+        "name_pt",
+        "name_es",
+        "name_fr",
+        "name_ar",
+        "description_en",
+        "description_pt",
+        "description_es",
+        "description_fr",
+        "description_ar",
+        "season_type",
+    ]

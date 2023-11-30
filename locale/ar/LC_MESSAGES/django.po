@@ -1,0 +1,288 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-12-07 08:22+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 "
+"&& n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5;\n"
+#: hea/settings/base.py:183
+msgid "English"
+msgstr ""
+
+#: hea/settings/base.py:184
+msgid "French"
+msgstr ""
+
+#: hea/settings/base.py:185
+msgid "Spanish"
+msgstr ""
+
+#: hea/settings/base.py:186
+msgid "Arabic"
+msgstr ""
+
+#: hea/settings/base.py:187
+msgid "Portuguese"
+msgstr ""
+
+#: templates/admin/app_list.html:4
+msgid ""
+"\n"
+"        A HEA baseline is a data collection conducted for a country during a "
+"specific reference year.\n"
+"        A typical baseline includes data collected from representative "
+"average households,\n"
+"        serving as a representation of a wealth group within a community in "
+"a given Livelihood zone.\n"
+"\n"
+"        The primary components of common baseline data include wealth "
+"characteristics, asset profiles,\n"
+"        household economy, and numerous other relevant metrics\n"
+"    "
+msgstr ""
+
+#: templates/admin/app_list.html:19 templates/admin/nav_sidebar.html:18
+msgid "BSS Setup"
+msgstr ""
+
+#: templates/admin/app_list.html:27 templates/admin/nav_sidebar.html:24
+msgid "Source Organizations"
+msgstr ""
+
+#: templates/admin/app_list.html:36 templates/admin/nav_sidebar.html:29
+msgid "Livelihood Zones"
+msgstr ""
+
+#: templates/admin/app_list.html:45 templates/admin/nav_sidebar.html:34
+msgid "Livelihood Zone Baselines"
+msgstr ""
+
+#: templates/admin/app_list.html:57 templates/admin/nav_sidebar.html:39
+msgid "Communities"
+msgstr ""
+
+#: templates/admin/app_list.html:69
+msgid "BSS WB,Data,.. Sheets"
+msgstr ""
+
+#: templates/admin/app_list.html:75 templates/admin/nav_sidebar.html:57
+msgid "Wealth Group Data"
+msgstr ""
+
+#: templates/admin/app_list.html:85 templates/admin/nav_sidebar.html:62
+msgid "Livelihood Strategy"
+msgstr ""
+
+#: templates/admin/app_list.html:95
+msgid "BSS Production Sheet"
+msgstr ""
+
+#: templates/admin/app_list.html:102 templates/admin/nav_sidebar.html:80
+msgid "Crop Productions"
+msgstr ""
+
+#: templates/admin/app_list.html:112 templates/admin/nav_sidebar.html:85
+msgid "Livestock Productions"
+msgstr ""
+
+#: templates/admin/app_list.html:123 templates/admin/app_list.html:140
+#: templates/admin/nav_sidebar.html:96 templates/admin/nav_sidebar.html:107
+msgid "Market Prices"
+msgstr ""
+
+#: templates/admin/app_list.html:130
+msgid "Market"
+msgstr ""
+
+#: templates/admin/app_list.html:151 templates/admin/nav_sidebar.html:119
+msgid "Seasonal Calendars"
+msgstr ""
+
+#: templates/admin/app_list.html:158 templates/admin/nav_sidebar.html:125
+msgid "Seasonal Activity Type"
+msgstr ""
+
+#: templates/admin/app_list.html:168 templates/admin/nav_sidebar.html:130
+msgid "Seasonal Activities"
+msgstr ""
+
+#: templates/admin/app_list.html:178 templates/admin/nav_sidebar.html:135
+msgid "Activity Occurrences"
+msgstr ""
+
+#: templates/admin/app_list.html:189 templates/admin/nav_sidebar.html:146
+msgid "Hazards and Events"
+msgstr ""
+
+#: templates/admin/app_list.html:196 templates/admin/nav_sidebar.html:152
+msgid "Annual Production Performances"
+msgstr ""
+
+#: templates/admin/app_list.html:206 templates/admin/nav_sidebar.html:157
+msgid "Hazards"
+msgstr ""
+
+#: templates/admin/app_list.html:216 templates/admin/nav_sidebar.html:162
+msgid "Events"
+msgstr ""
+
+#: templates/admin/app_list.html:228 templates/admin/nav_sidebar.html:175
+msgid "Expandadability and Coping"
+msgstr ""
+
+#: templates/admin/app_list.html:235 templates/admin/nav_sidebar.html:181
+msgid "Expandability Factors"
+msgstr ""
+
+#: templates/admin/app_list.html:245 templates/admin/nav_sidebar.html:186
+msgid "Coping Strategies"
+msgstr ""
+
+#: templates/admin/app_list.html:257 templates/admin/nav_sidebar.html:199
+msgid "Common"
+msgstr ""
+
+#: templates/admin/app_list.html:262 templates/admin/nav_sidebar.html:204
+msgid "Countries"
+msgstr ""
+
+#: templates/admin/app_list.html:269 templates/admin/nav_sidebar.html:207
+msgid "Currencies"
+msgstr ""
+
+#: templates/admin/app_list.html:276 templates/admin/nav_sidebar.html:210
+msgid "Products"
+msgstr ""
+
+#: templates/admin/app_list.html:283 templates/admin/nav_sidebar.html:213
+msgid "Units of Measure"
+msgstr ""
+
+#: templates/admin/app_list.html:292 templates/admin/nav_sidebar.html:225
+msgid "Metadata"
+msgstr ""
+
+#: templates/admin/app_list.html:297 templates/admin/nav_sidebar.html:230
+msgid "Hazard Categories"
+msgstr ""
+
+#: templates/admin/app_list.html:304 templates/admin/nav_sidebar.html:233
+msgid "Livelihood Categories"
+msgstr ""
+
+#: templates/admin/app_list.html:311 templates/admin/nav_sidebar.html:236
+msgid "Seasons"
+msgstr ""
+
+#: templates/admin/app_list.html:318 templates/admin/nav_sidebar.html:239
+msgid "Wealth Categories"
+msgstr ""
+
+#: templates/admin/app_list.html:326 templates/admin/nav_sidebar.html:242
+msgid "Wealth Group Characteristics"
+msgstr ""
+
+#: templates/admin/app_list.html:336 templates/admin/nav_sidebar.html:255
+msgid "User management"
+msgstr ""
+
+#: templates/admin/app_list.html:341 templates/admin/nav_sidebar.html:260
+msgid "Users"
+msgstr ""
+
+#: templates/admin/app_list.html:348 templates/admin/nav_sidebar.html:262
+msgid "Groups"
+msgstr ""
+
+#: templates/admin/app_list.html:355
+msgid "You don’t have permission to view or edit anything."
+msgstr ""
+
+#: templates/admin/base.html:39
+msgid "Skip to main content"
+msgstr ""
+
+#: templates/admin/base.html:55
+msgid "Welcome,"
+msgstr ""
+
+#: templates/admin/base.html:60
+msgid "View site"
+msgstr ""
+
+#: templates/admin/base.html:65
+msgid "Documentation"
+msgstr ""
+
+#: templates/admin/base.html:69
+msgid "Change password"
+msgstr ""
+
+#: templates/admin/base.html:73
+msgid "Log out"
+msgstr ""
+
+#: templates/admin/base.html:97
+msgid "Breadcrumbs"
+msgstr ""
+
+#: templates/admin/base.html:100 templates/admin/nav_sidebar.html:10
+msgid "Home"
+msgstr ""
+
+#: templates/admin/base_site.html:3
+msgid "Django site admin"
+msgstr ""
+
+#: templates/admin/base_site.html:8
+msgid "Django administration"
+msgstr ""
+
+#: templates/admin/index.html:23
+msgid "Recent actions"
+msgstr ""
+
+#: templates/admin/index.html:24
+msgid "My actions"
+msgstr ""
+
+#: templates/admin/index.html:28
+msgid "None available"
+msgstr ""
+
+#: templates/admin/index.html:42
+msgid "Unknown content"
+msgstr ""
+
+#: templates/admin/nav_sidebar.html:3
+msgid "Sidebar"
+msgstr ""
+
+#: templates/admin/nav_sidebar.html:51
+msgid "BSS WB, Data,.. Sheets"
+msgstr ""
+
+#: templates/admin/nav_sidebar.html:74
+msgid "BSS Production Data"
+msgstr ""
+
+#: templates/admin/nav_sidebar.html:102
+msgid "Markets"
+msgstr ""
+
+#: templates/admin/nav_sidebar.html:273
+msgid "Toggle navigation"
+msgstr ""

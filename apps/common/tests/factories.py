@@ -69,7 +69,7 @@ class UnitOfMeasureFactory(factory.django.DjangoModelFactory):
 
     abbreviation = factory.Sequence(lambda n: "U%d" % n)
     unit_type = UnitOfMeasure.WEIGHT
-    description = factory.Sequence(lambda n: "Unit %d" % n)
+    description_en = factory.Sequence(lambda n: "Unit %d" % n)
 
 
 class ClassifiedProductFactory(TreebeardFactory):

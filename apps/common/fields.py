@@ -1,6 +1,7 @@
 """
 Additional Model Fields
 """
+from itertools import chain
 
 from django.conf import settings
 from django.contrib.gis.db import models
@@ -165,10 +166,12 @@ class TranslatedField:
 
         # Add property that returns local translation, eg, obj.name == "Nome português"
         def local_translation_getter(obj):
-            # translation.get_language() returns default (en) if none specified
-            current_language_code = translation.get_language()
-            model_field = f"{name}_{current_language_code}"
-            return getattr(obj, model_field, "")
+            # translation.get_language() returns default (en) if none selected
+            selected_language = translation.get_language()
+            for code in chain((selected_language,), (code for code, n in settings.LANGUAGES)):
+                translated_string = getattr(obj, f"{name}_{code}", "")
+                if translated_string:
+                    return translated_string
+            return ""
 
         setattr(cls, name, property(local_translation_getter))
-        return cls

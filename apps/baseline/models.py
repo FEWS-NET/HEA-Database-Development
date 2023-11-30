@@ -11,6 +11,7 @@ from django.utils.translation import gettext_lazy as _
 from model_utils.managers import InheritanceManager
 
 import common.models as common_models
+from common.fields import TranslatedField
 from common.models import (
     ClassifiedProduct,
     Country,
@@ -42,9 +43,9 @@ class SourceOrganization(common_models.Model):
     An Organization that provides HEA Baselines.
     """
 
-    name = common_models.NameField(max_length=200, unique=True)
-    full_name = common_models.NameField(verbose_name=_("full name"), max_length=300, unique=True)
-    description = common_models.DescriptionField()
+    name = TranslatedField(common_models.NameField(max_length=200, unique=True))
+    full_name = TranslatedField(common_models.NameField(verbose_name=_("full name"), max_length=300, unique=True))
+    description = TranslatedField(common_models.DescriptionField())
 
     objects = SourceOrganizationManager()
 
@@ -56,7 +57,7 @@ class SourceOrganization(common_models.Model):
         verbose_name_plural = _("Source Organizations")
 
     class ExtraMeta:
-        identifier = ["name"]
+        identifier = ["name_en"]
 
 
 class LivelihoodZone(common_models.Model):
@@ -84,8 +85,8 @@ class LivelihoodZone(common_models.Model):
         verbose_name=_("code"),
         help_text=_("Primary identifier for the Livelihood Zone"),
     )
-    name = common_models.NameField(max_length=200, unique=True)
-    description = common_models.DescriptionField()
+    name = TranslatedField(common_models.NameField(max_length=200, unique=True))
+    description = TranslatedField(common_models.DescriptionField())
     country = models.ForeignKey(Country, verbose_name=_("Country"), db_column="country_code", on_delete=models.PROTECT)
 
     class Meta:
@@ -123,8 +124,8 @@ class LivelihoodZoneBaseline(common_models.Model):
     June 2023 for the Sahel countries.
     """
 
-    name = common_models.NameField(max_length=200, unique=True)
-    description = common_models.DescriptionField()
+    name = TranslatedField(common_models.NameField(max_length=200, unique=True))
+    description = TranslatedField(common_models.DescriptionField())
     livelihood_zone = models.ForeignKey(
         LivelihoodZone, db_column="livelihood_zone_code", on_delete=models.RESTRICT, verbose_name=_("Livelihood Zone")
     )
@@ -191,6 +192,7 @@ class LivelihoodZoneBaseline(common_models.Model):
     # Organizations using other sources for the current estimated population
     # may prefer to use the estimate of the population from that source for the
     # reference year rather than the value stored in the here.
+    # TODO: Make population_source translatable?
     population_source = models.CharField(
         max_length=120,
         blank=True,
@@ -282,11 +284,13 @@ class Community(common_models.Model):
         verbose_name=_("Code"),
         help_text=_("A short identifier for the Community"),
     )
-    name = common_models.NameField()
-    full_name = common_models.NameField(
-        max_length=200,
-        verbose_name=_("Full Name"),
-        help_text=_("The full name the Community, including the parent administrative units."),
+    name = TranslatedField(common_models.NameField())
+    full_name = TranslatedField(
+        common_models.NameField(
+            max_length=200,
+            verbose_name=_("Full Name"),
+            help_text=_("The full name the Community, including the parent administrative units."),
+        )
     )
     livelihood_zone_baseline = models.ForeignKey(
         LivelihoodZoneBaseline,
@@ -331,7 +335,7 @@ class Community(common_models.Model):
         verbose_name_plural = _("Communities")
         constraints = [
             models.UniqueConstraint(
-                fields=("livelihood_zone_baseline", "full_name"),
+                fields=("livelihood_zone_baseline", "full_name_en"),
                 name="baseline_community_livelihood_zone_baseline_full_name_uniq",
             ),
             # Create a unique constraint on id and livelihood_zone_baseline, so that we can use it as a target for a
@@ -1836,7 +1840,7 @@ class MarketPrice(common_models.Model):
     # @TODO Should the market be nullable, or should we have a Market with the
     # same name and geography as the Community when that happens.
     market = models.ForeignKey(Market, blank=True, null=True, on_delete=models.RESTRICT)
-    description = common_models.DescriptionField(max_length=100)
+    description = TranslatedField(common_models.DescriptionField(max_length=100))
     currency = models.ForeignKey(
         Currency, db_column="currency_code", on_delete=models.RESTRICT, verbose_name=_("Currency")
     )
@@ -1960,8 +1964,8 @@ class Hazard(common_models.Model):
     )
     # @TODO MG23 https://docs.google.com/spreadsheets/d/18Y85UKXGehudt2YX5Oc_adw2TUxo6nY7/edit#gid=1565100920
     # contains additional information on Events and Responses by year in the Timeline worksheet.
-    description = common_models.DescriptionField(
-        max_length=255, verbose_name=_("Description of Event(s) and/or Response(s)")
+    description = TranslatedField(
+        common_models.DescriptionField(max_length=255, verbose_name=_("Description of Event(s) and/or Response(s)"))
     )
 
     class Meta:
@@ -2001,8 +2005,8 @@ class Event(common_models.Model):
         verbose_name=_("Event Year End Date"),
         help_text=_("The last day of the month of the end month in the event year"),
     )
-    description = common_models.DescriptionField(
-        max_length=255, verbose_name=_("Description of Event(s) and/or Response(s)")
+    description = TranslatedField(
+        common_models.DescriptionField(max_length=255, verbose_name=_("Description of Event(s) and/or Response(s)"))
     )
 
     class Meta:

@@ -173,7 +173,7 @@ class UnitOfMeasureAdminTestCase(TestCase):
         data = {
             "abbreviation": "cm",
             "unit_type": UnitOfMeasure.LENGTH,
-            "description": "Centimeter",
+            "description_en": "Centimeter",
             "from_conversions-TOTAL_FORMS": "0",
             "from_conversions-INITIAL_FORMS": "0",
             "from_conversions-MIN_NUM_FORMS": "0",

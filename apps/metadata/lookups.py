@@ -16,8 +16,8 @@ class ReferenceDataLookup(Lookup):
     model = ReferenceData
     id_fields = ["code"]
     lookup_fields = [
-        "name",
-        "description",
+        "name_en",
+        "description_en",
         "aliases",
     ]
 

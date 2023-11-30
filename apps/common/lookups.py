@@ -387,6 +387,6 @@ class UnitOfMeasureLookup(Lookup):
     model = UnitOfMeasure
     id_fields = ["abbreviation"]
     lookup_fields = [
-        "description",
+        "description_en",
         "aliases",
     ]
