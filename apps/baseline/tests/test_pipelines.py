@@ -3,7 +3,12 @@ from kiluigi.utils import submit_task
 
 from baseline.pipelines.ingestion import ImportBaseline
 from baseline.tests.factories import SourceOrganizationFactory
-from common.tests.factories import ClassifiedProductFactory, CountryFactory
+from common.models import UnitOfMeasure
+from common.tests.factories import (
+    ClassifiedProductFactory,
+    CountryFactory,
+    UnitOfMeasureFactory,
+)
 from common.utils import conditional_logging
 from metadata.tests.factories import (
     LivelihoodCategoryFactory,
@@ -20,6 +25,7 @@ class IngestionPipelineTestCase(TestCase):
         ClassifiedProductFactory(
             cpcv2="L02111AP", description="Cattle, oxen, unspecified", common_name="Oxen", aliases=["ox"]
         )
+        UnitOfMeasureFactory(abbreviation="acre", unit_type=UnitOfMeasure.AREA, aliases=["acres"], conversion=None)
         LivelihoodCategoryFactory(
             code="agropastoral",
             name="Agropastoral",
@@ -35,22 +41,34 @@ class IngestionPipelineTestCase(TestCase):
             code="household size", name="Average Household Size", aliases=["HH size", "HH size (taille)"]
         )
         WealthCharacteristicFactory(
-            code="area owned (acres)", name="Land area owned (acres)", aliases=["land area owned (acres)"]
+            code="area owned",
+            name="Land area owned",
+            has_unit_of_measure=True,
+            aliases=["area owned (<unit_of_measure>)", "land area owned (<unit_of_measure>)"],
         )
         WealthCharacteristicFactory(
-            code="area cultivated (acres)",
-            name="Land area cultivated (acres)",
-            aliases=["land area cultivated (acres)"],
+            code="area cultivated",
+            name="Land area cultivated",
+            has_unit_of_measure=True,
+            aliases=["area cultivated (<unit_of_measure>)", "land area cultivated (<unit_of_measure>)"],
         )
         WealthCharacteristicFactory(
-            code="area cultivated - rainfed (acres)",
-            name="Land area cultivated - rainfed crops (acres)",
-            aliases=["land area cultivated - rainfed crops (acres)"],
+            code="area cultivated - rainfed",
+            name="Land area cultivated - rainfed crops",
+            has_unit_of_measure=True,
+            aliases=[
+                "area cultivated - rainfed (<unit_of_measure>)",
+                "land area cultivated - rainfed crops (<unit_of_measure>)",
+            ],
         )
         WealthCharacteristicFactory(
-            code="area cultivated - irrigated (acres)",
-            name="Land area cultivated - irrigated crops (acres)",
-            aliases=["land area cultivated - irrigated (acres)"],
+            code="area cultivated - irrigated",
+            name="Land area cultivated - irrigated crops",
+            has_unit_of_measure=True,
+            aliases=[
+                "area cultivated - irrigated (<unit_of_measure>)",
+                "land area cultivated - irrigated crops (<unit_of_measure>)",
+            ],
         )
         WealthCharacteristicFactory(
             code="adult females",
@@ -115,6 +133,13 @@ class IngestionPipelineTestCase(TestCase):
             variable_type="float",
         )
         WealthCharacteristicFactory(
+            code="number at start of year",
+            name="no. at start of reference year",
+            variable_type="float",
+            has_product=True,
+            aliases=["<product>: total owned at start of year"],
+        )
+        WealthCharacteristicFactory(
             code="number at end of year",
             name="no. at end of reference year",
             variable_type="float",
@@ -175,6 +200,7 @@ class IngestionPipelineTestCase(TestCase):
             name="number owned",
             variable_type="float",
             has_product=True,
+            aliases=["<product> number owned", "cattle: <product> number owned"],
         )
         WealthCharacteristicFactory(
             code="number slaughtered",

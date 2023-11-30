@@ -663,6 +663,23 @@ class WealthGroupCharacteristicValue(common_models.Model):
                 _("A Wealth Group Characteristic Value for %s must not have a product" % self.wealth_characteristic)
                 % self.CharacteristicReference(self.reference_type).label
             )
+        # Validate `unit_of_measure`
+        if self.wealth_characteristic.has_unit_of_measure:
+            if not self.unit_of_measure:
+                raise ValidationError(
+                    _(
+                        "A Wealth Group Characteristic Value for %s must have a unit of measure"
+                        % self.wealth_characteristic
+                    )
+                )
+        elif self.unit_of_measure:
+            raise ValidationError(
+                _(
+                    "A Wealth Group Characteristic Value for %s must not have a unit of measure"
+                    % self.wealth_characteristic
+                )
+                % self.CharacteristicReference(self.reference_type).label
+            )
         # Validate `value` is between min_value and max_value, if either are numerics (strings eg "1" not validated)
         if (
             isinstance(self.min_value, numbers.Number)
