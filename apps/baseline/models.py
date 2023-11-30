@@ -1675,9 +1675,10 @@ class SeasonalActivityOccurrence(common_models.Model):
         return (
             self.livelihood_zone_baseline.livelihood_zone_id,
             self.livelihood_zone_baseline.reference_year_end_date.isoformat(),
-            self.seasonal_activity,
-            self.start,
-            self.end,
+            self.seasonal_activity.seasonal_activity_type.code,
+            self.seasonal_activity.product_id if self.seasonal_activity.product_id else "",
+            str(self.start),
+            str(self.end),
         )
 
     def start_month(self):
