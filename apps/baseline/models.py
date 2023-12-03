@@ -1765,6 +1765,9 @@ class CommunityCropProduction(common_models.Model):
         )
         super().save(*args, **kwargs)
 
+    class ExtraMeta:
+        identifier = ["community", "crop"]
+
     class Meta:
         verbose_name = _("Community Crop Production")
         verbose_name_plural = _("Community Crop Productions")
@@ -1827,9 +1830,12 @@ class CommunityLivestock(common_models.Model):
         )
         super().save(*args, **kwargs)
 
+    class ExtraMeta:
+        identifier = ["community", "livestock"]
+
     class Meta:
-        verbose_name = _("Wealth Group Attribute")
-        verbose_name_plural = _("Wealth Group Attributes")
+        verbose_name = _("Community Livestock")
+        verbose_name_plural = _("Community livestocks")
 
 
 class MarketPrice(common_models.Model):
