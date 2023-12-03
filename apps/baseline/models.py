@@ -1614,7 +1614,7 @@ class SeasonalActivity(common_models.Model):
         ]
 
     class ExtraMeta:
-        identifier = ["seasonal_activity_type", "season", "product"]
+        identifier = ["livelihood_zone_baseline", "seasonal_activity_type", "product"]
 
 
 class SeasonalActivityOccurrence(common_models.Model):

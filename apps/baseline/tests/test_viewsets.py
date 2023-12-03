@@ -207,7 +207,7 @@ class LivelihoodZoneViewSetTestCase(APITestCase):
 
     def test_patch(self):
         self.client.force_login(self.user)
-        new_value = self.client.get(self.url_get(1)).json()["name"]
+        new_value = f"{self.client.get(self.url_get(1)).json()['name']} - updated"
         logging.disable(logging.CRITICAL)
         response = self.client.patch(self.url_get(0), {"name": new_value})
         logging.disable(logging.NOTSET)
@@ -307,6 +307,7 @@ class LivelihoodZoneBaselineViewSetTestCase(APITestCase):
             "geography",
             "main_livelihood_category",
             "bss",
+            "profile_report",
             "reference_year_start_date",
             "reference_year_end_date",
             "valid_from_date",
@@ -714,7 +715,7 @@ class WealthGroupViewSetTestCase(APITestCase):
             {
                 "livelihood_zone_baseline": self.data[0].livelihood_zone_baseline.pk,
                 "community": self.data[0].community.pk,
-                "wealth_group_category": self.data[0].wealth_category.pk,
+                "wealth_group_category": self.data[0].wealth_group_category.pk,
             },
         )
         self.assertEqual(response.status_code, 200)
@@ -817,7 +818,7 @@ class BaselineWealthGroupViewSetTestCase(APITestCase):
             self.url,
             {
                 "livelihood_zone_baseline": self.data[0].livelihood_zone_baseline.pk,
-                "wealth_group_category": self.data[0].wealth_category.pk,
+                "wealth_group_category": self.data[0].wealth_group_category.pk,
             },
         )
         self.assertEqual(response.status_code, 200)
@@ -924,7 +925,7 @@ class CommunityWealthGroupViewSetTestCase(APITestCase):
             self.url,
             {
                 "livelihood_zone_baseline": self.data[0].livelihood_zone_baseline.pk,
-                "wealth_group_category": self.data[0].wealth_category.pk,
+                "wealth_group_category": self.data[0].wealth_group_category.pk,
             },
         )
         self.assertEqual(response.status_code, 200)
@@ -987,8 +988,8 @@ class WealthGroupCharacteristicValueViewSetTestCase(APITestCase):
             "community",
             "community_name",
             "wealth_group_category",
-            "wealth_category_name",
-            "wealth_category_description",
+            "wealth_group_category_name",
+            "wealth_group_category_description",
             "wealth_characteristic",
             "wealth_characteristic_name",
             "wealth_characteristic_description",
@@ -1119,8 +1120,6 @@ class LivelihoodStrategyViewSetTestCase(APITestCase):
             "unit_of_measure_description",
             "currency",
             "additional_identifier",
-            "household_labor_provider",
-            "household_labor_provider_label",
         )
         self.assertCountEqual(
             response.json().keys(),
@@ -1255,8 +1254,6 @@ class LivelihoodActivityViewSetTestCase(APITestCase):
             "unit_of_measure_description",
             "currency",
             "additional_identifier",
-            "household_labor_provider",
-            "household_labor_provider_label",
             "scenario",
             "scenario_label",
             "wealth_group",
@@ -1264,8 +1261,8 @@ class LivelihoodActivityViewSetTestCase(APITestCase):
             "community",
             "community_name",
             "wealth_group_category",
-            "wealth_category_name",
-            "wealth_category_description",
+            "wealth_group_category_name",
+            "wealth_group_category_description",
             "wealth_group_percentage_of_households",
             "wealth_group_average_household_size",
             "quantity_produced",
@@ -1277,6 +1274,8 @@ class LivelihoodActivityViewSetTestCase(APITestCase):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "household_labor_provider",
+            "household_labor_provider_label",
         )
         self.assertCountEqual(
             response.json().keys(),
@@ -1428,8 +1427,8 @@ class BaselineLivelihoodActivityViewSetTestCase(APITestCase):
             "community",
             "community_name",
             "wealth_group_category",
-            "wealth_category_name",
-            "wealth_category_description",
+            "wealth_group_category_name",
+            "wealth_group_category_description",
             "wealth_group_percentage_of_households",
             "wealth_group_average_household_size",
             "quantity_produced",
@@ -1593,8 +1592,8 @@ class ResponseLivelihoodActivityViewSetTestCase(APITestCase):
             "community",
             "community_name",
             "wealth_group_category",
-            "wealth_category_name",
-            "wealth_category_description",
+            "wealth_group_category_name",
+            "wealth_group_category_description",
             "wealth_group_percentage_of_households",
             "wealth_group_average_household_size",
             "quantity_produced",
@@ -1759,8 +1758,8 @@ class MilkProductionViewSetTestCase(APITestCase):
             "community",
             "community_name",
             "wealth_group_category",
-            "wealth_category_name",
-            "wealth_category_description",
+            "wealth_group_category_name",
+            "wealth_group_category_description",
             "wealth_group_percentage_of_households",
             "wealth_group_average_household_size",
             "quantity_produced",
@@ -1930,8 +1929,8 @@ class ButterProductionViewSetTestCase(APITestCase):
             "community",
             "community_name",
             "wealth_group_category",
-            "wealth_category_name",
-            "wealth_category_description",
+            "wealth_group_category_name",
+            "wealth_group_category_description",
             "wealth_group_percentage_of_households",
             "wealth_group_average_household_size",
             "quantity_produced",
@@ -2094,8 +2093,8 @@ class MeatProductionViewSetTestCase(APITestCase):
             "community",
             "community_name",
             "wealth_group_category",
-            "wealth_category_name",
-            "wealth_category_description",
+            "wealth_group_category_name",
+            "wealth_group_category_description",
             "wealth_group_percentage_of_households",
             "wealth_group_average_household_size",
             "quantity_produced",
@@ -2221,8 +2220,8 @@ class LivestockSalesViewSetTestCase(APITestCase):
         cls.user = User.objects.create_superuser("test", "test@test.com", "password")
 
     def setUp(self):
-        self.url = reverse("livestocksales-list")
-        self.url_get = lambda n: reverse("livestocksales-detail", args=(self.data[n].pk,))
+        self.url = reverse("livestocksale-list")
+        self.url_get = lambda n: reverse("livestocksale-detail", args=(self.data[n].pk,))
 
     def test_get_record(self):
         response = self.client.get(self.url_get(0))
@@ -2262,8 +2261,8 @@ class LivestockSalesViewSetTestCase(APITestCase):
             "community",
             "community_name",
             "wealth_group_category",
-            "wealth_category_name",
-            "wealth_category_description",
+            "wealth_group_category_name",
+            "wealth_group_category_description",
             "wealth_group_percentage_of_households",
             "wealth_group_average_household_size",
             "quantity_produced",
@@ -2426,8 +2425,8 @@ class CropProductionViewSetTestCase(APITestCase):
             "community",
             "community_name",
             "wealth_group_category",
-            "wealth_category_name",
-            "wealth_category_description",
+            "wealth_group_category_name",
+            "wealth_group_category_description",
             "wealth_group_percentage_of_households",
             "wealth_group_average_household_size",
             "quantity_produced",
@@ -2590,8 +2589,8 @@ class FoodPurchaseViewSetTestCase(APITestCase):
             "community",
             "community_name",
             "wealth_group_category",
-            "wealth_category_name",
-            "wealth_category_description",
+            "wealth_group_category_name",
+            "wealth_group_category_description",
             "wealth_group_percentage_of_households",
             "wealth_group_average_household_size",
             "quantity_produced",
@@ -2604,8 +2603,9 @@ class FoodPurchaseViewSetTestCase(APITestCase):
             "kcals_consumed",
             "percentage_kcals",
             "unit_multiple",
-            "purchases_per_month",
             "months_per_year",
+            "times_per_month",
+            "times_per_year",
         )
         self.assertCountEqual(
             response.json().keys(),
@@ -2658,7 +2658,8 @@ class FoodPurchaseViewSetTestCase(APITestCase):
                 "kcals_consumed": self.data[0].kcals_consumed,
                 "percentage_kcals": self.data[0].percentage_kcals,
                 "unit_multiple": self.data[0].unit_multiple,
-                "purchases_per_month": self.data[0].purchases_per_month,
+                "times_per_year": self.data[0].times_per_year,
+                "times_per_month": self.data[0].times_per_month,
                 "months_per_year": self.data[0].months_per_year,
             },
         )
@@ -2760,8 +2761,8 @@ class PaymentInKindViewSetTestCase(APITestCase):
             "community",
             "community_name",
             "wealth_group_category",
-            "wealth_category_name",
-            "wealth_category_description",
+            "wealth_group_category_name",
+            "wealth_group_category_description",
             "wealth_group_percentage_of_households",
             "wealth_group_average_household_size",
             "quantity_produced",
@@ -2774,8 +2775,8 @@ class PaymentInKindViewSetTestCase(APITestCase):
             "kcals_consumed",
             "percentage_kcals",
             "payment_per_time",
-            "people_per_hh",
-            "labor_per_month",
+            "people_per_household",
+            "times_per_month",
             "months_per_year",
         )
         self.assertCountEqual(
@@ -2829,8 +2830,8 @@ class PaymentInKindViewSetTestCase(APITestCase):
                 "kcals_consumed": self.data[0].kcals_consumed,
                 "percentage_kcals": self.data[0].percentage_kcals,
                 "payment_per_time": self.data[0].payment_per_time,
-                "people_per_hh": self.data[0].people_per_hh,
-                "labor_per_month": self.data[0].labor_per_month,
+                "people_per_household": self.data[0].people_per_household,
+                "times_per_month": self.data[0].times_per_month,
                 "months_per_year": self.data[0].months_per_year,
             },
         )
@@ -2891,8 +2892,8 @@ class ReliefGiftsOtherViewSetTestCase(APITestCase):
         cls.user = User.objects.create_superuser("test", "test@test.com", "password")
 
     def setUp(self):
-        self.url = reverse("reliefgiftsother-list")
-        self.url_get = lambda n: reverse("reliefgiftsother-detail", args=(self.data[n].pk,))
+        self.url = reverse("reliefgiftother-list")
+        self.url_get = lambda n: reverse("reliefgiftother-detail", args=(self.data[n].pk,))
 
     def test_get_record(self):
         response = self.client.get(self.url_get(0))
@@ -2932,8 +2933,8 @@ class ReliefGiftsOtherViewSetTestCase(APITestCase):
             "community",
             "community_name",
             "wealth_group_category",
-            "wealth_category_name",
-            "wealth_category_description",
+            "wealth_group_category_name",
+            "wealth_group_category_description",
             "wealth_group_percentage_of_households",
             "wealth_group_average_household_size",
             "quantity_produced",
@@ -2946,7 +2947,9 @@ class ReliefGiftsOtherViewSetTestCase(APITestCase):
             "kcals_consumed",
             "percentage_kcals",
             "unit_multiple",
-            "received_per_year",
+            "months_per_year",
+            "times_per_month",
+            "times_per_year",
         )
         self.assertCountEqual(
             response.json().keys(),
@@ -2999,7 +3002,7 @@ class ReliefGiftsOtherViewSetTestCase(APITestCase):
                 "kcals_consumed": self.data[0].kcals_consumed,
                 "percentage_kcals": self.data[0].percentage_kcals,
                 "unit_multiple": self.data[0].unit_multiple,
-                "received_per_year": self.data[0].received_per_year,
+                "times_per_year": self.data[0].times_per_year,
             },
         )
         self.assertEqual(response.status_code, 200)
@@ -3100,8 +3103,8 @@ class FishingViewSetTestCase(APITestCase):
             "community",
             "community_name",
             "wealth_group_category",
-            "wealth_category_name",
-            "wealth_category_description",
+            "wealth_group_category_name",
+            "wealth_group_category_description",
             "wealth_group_percentage_of_households",
             "wealth_group_average_household_size",
             "quantity_produced",
@@ -3264,8 +3267,8 @@ class WildFoodGatheringViewSetTestCase(APITestCase):
             "community",
             "community_name",
             "wealth_group_category",
-            "wealth_category_name",
-            "wealth_category_description",
+            "wealth_group_category_name",
+            "wealth_group_category_description",
             "wealth_group_percentage_of_households",
             "wealth_group_average_household_size",
             "quantity_produced",
@@ -3428,8 +3431,8 @@ class OtherCashIncomeViewSetTestCase(APITestCase):
             "community",
             "community_name",
             "wealth_group_category",
-            "wealth_category_name",
-            "wealth_category_description",
+            "wealth_group_category_name",
+            "wealth_group_category_description",
             "wealth_group_percentage_of_households",
             "wealth_group_average_household_size",
             "quantity_produced",
@@ -3442,8 +3445,8 @@ class OtherCashIncomeViewSetTestCase(APITestCase):
             "kcals_consumed",
             "percentage_kcals",
             "payment_per_time",
-            "people_per_hh",
-            "labor_per_month",
+            "people_per_household",
+            "times_per_month",
             "months_per_year",
             "times_per_year",
         )
@@ -3498,8 +3501,8 @@ class OtherCashIncomeViewSetTestCase(APITestCase):
                 "kcals_consumed": self.data[0].kcals_consumed,
                 "percentage_kcals": self.data[0].percentage_kcals,
                 "payment_per_time": self.data[0].payment_per_time,
-                "people_per_hh": self.data[0].people_per_hh,
-                "labor_per_month": self.data[0].labor_per_month,
+                "people_per_household": self.data[0].people_per_household,
+                "times_per_month": self.data[0].times_per_month,
                 "months_per_year": self.data[0].months_per_year,
                 "times_per_year": self.data[0].times_per_year,
             },
@@ -3561,8 +3564,8 @@ class OtherPurchasesViewSetTestCase(APITestCase):
         cls.user = User.objects.create_superuser("test", "test@test.com", "password")
 
     def setUp(self):
-        self.url = reverse("otherpurchases-list")
-        self.url_get = lambda n: reverse("otherpurchases-detail", args=(self.data[n].pk,))
+        self.url = reverse("otherpurchase-list")
+        self.url_get = lambda n: reverse("otherpurchase-detail", args=(self.data[n].pk,))
 
     def test_get_record(self):
         response = self.client.get(self.url_get(0))
@@ -3602,8 +3605,8 @@ class OtherPurchasesViewSetTestCase(APITestCase):
             "community",
             "community_name",
             "wealth_group_category",
-            "wealth_category_name",
-            "wealth_category_description",
+            "wealth_group_category_name",
+            "wealth_group_category_description",
             "wealth_group_percentage_of_households",
             "wealth_group_average_household_size",
             "quantity_produced",
@@ -3616,7 +3619,7 @@ class OtherPurchasesViewSetTestCase(APITestCase):
             "kcals_consumed",
             "percentage_kcals",
             "unit_multiple",
-            "purchases_per_month",
+            "times_per_month",
             "months_per_year",
         )
         self.assertCountEqual(
@@ -3670,7 +3673,7 @@ class OtherPurchasesViewSetTestCase(APITestCase):
                 "kcals_consumed": self.data[0].kcals_consumed,
                 "percentage_kcals": self.data[0].percentage_kcals,
                 "unit_multiple": self.data[0].unit_multiple,
-                "purchases_per_month": self.data[0].purchases_per_month,
+                "times_per_month": self.data[0].times_per_month,
                 "months_per_year": self.data[0].months_per_year,
             },
         )
@@ -3748,16 +3751,11 @@ class SeasonalActivityViewSetTestCase(APITestCase):
             "livelihood_zone_name",
             "livelihood_zone_country",
             "livelihood_zone_country_name",
-            "activity_type",
-            "activity_type_name",
-            "activity_type_description",
+            "seasonal_activity_type",
+            "seasonal_activity_type_name",
+            "seasonal_activity_type_description",
             "activity_category",
             "activity_category_label",
-            "season",
-            "season_name",
-            "season_description",
-            "season_type",
-            "season_type_label",
             "product",
             "product_common_name",
             "product_description",
@@ -3790,8 +3788,7 @@ class SeasonalActivityViewSetTestCase(APITestCase):
             self.url,
             {
                 "livelihood_zone_baseline": self.data[0].livelihood_zone_baseline.pk,
-                "activity_type": self.data[0].activity_type.pk,
-                "season": self.data[0].season.pk,
+                "seasonal_activity_type": self.data[0].seasonal_activity_type.pk,
                 "product": self.data[0].product.pk,
             },
         )
@@ -3851,16 +3848,11 @@ class SeasonalActivityOccurrenceViewSetTestCase(APITestCase):
             "livelihood_zone_country",
             "livelihood_zone_country_name",
             "seasonal_activity",
-            "activity_type",
-            "activity_type_name",
-            "activity_type_description",
+            "seasonal_activity_type",
+            "seasonal_activity_type_name",
+            "seasonal_activity_type_description",
             "activity_category",
             "activity_category_label",
-            "season",
-            "season_name",
-            "season_description",
-            "season_type",
-            "season_type_label",
             "product",
             "product_common_name",
             "product_description",
@@ -3986,8 +3978,10 @@ class CommunityCropProductionViewSetTestCase(APITestCase):
             "yield_with_inputs",
             "yield_without_inputs",
             "seed_requirement",
-            "unit_of_measure",
-            "unit_of_measure_description",
+            "crop_unit_of_measure",
+            "crop_unit_of_measure_description",
+            "land_unit_of_measure",
+            "land_unit_of_measure_description",
         )
         self.assertCountEqual(
             response.json().keys(),
@@ -4377,7 +4371,6 @@ class SeasonalProductionPerformanceViewSetTestCase(APITestCase):
             "performance_year_end_date",
             "seasonal_performance",
             "seasonal_performance_label",
-            "description",
         )
         self.assertCountEqual(
             response.json().keys(),
@@ -4420,32 +4413,21 @@ class SeasonalProductionPerformanceViewSetTestCase(APITestCase):
     def test_list_returns_filtered_data(self):
         response = self.client.get(
             self.url,
-            {
-                "id": self.data[0].id,
-                "description": self.data[0].description,
-            },
+            {"id": self.data[0].id, "seasonal_performance": self.data[0].seasonal_performance},
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), 1)
 
-    def test_search(self):
+    def test_filter_by_seasonal_performance(self):
         response = self.client.get(
             self.url,
             {
-                "search": self.data[0].description,
+                "seasonal_performance": self.data[0].seasonal_performance,
             },
         )
         self.assertEqual(response.status_code, 200)
-        self.assertGreater(len(response.json()), 0)
-        self.assertLess(len(response.json()), self.num_records)
-        response = self.client.get(
-            self.url,
-            {
-                "search": self.data[0].description + "xyz",
-            },
-        )
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.json()), 0)
+        self.assertEqual(len(response.json()), 1)
+        self.assertEqual(response.json()[0]["seasonal_performance"], int(self.data[0].seasonal_performance))
 
     def test_json(self):
         response = self.client.get(self.url, {"format": "json"})
@@ -4769,13 +4751,11 @@ class ExpandabilityFactorViewSetTestCase(APITestCase):
             "unit_of_measure_description",
             "currency",
             "additional_identifier",
-            "household_labor_provider",
-            "household_labor_provider_label",
             "wealth_group",
             "wealth_group_label",
             "wealth_group_category",
-            "wealth_category_name",
-            "wealth_category_description",
+            "wealth_group_category_name",
+            "wealth_group_category_description",
             "wealth_group_percentage_of_households",
             "wealth_group_average_household_size",
             "percentage_produced",
@@ -4908,8 +4888,8 @@ class CopingStrategyViewSetTestCase(APITestCase):
             "wealth_group",
             "wealth_group_label",
             "wealth_group_category",
-            "wealth_category_name",
-            "wealth_category_description",
+            "wealth_group_category_name",
+            "wealth_group_category_description",
             "wealth_group_percentage_of_households",
             "wealth_group_average_household_size",
             "livelihood_strategy",
@@ -4935,8 +4915,6 @@ class CopingStrategyViewSetTestCase(APITestCase):
             "unit_of_measure_description",
             "currency",
             "additional_identifier",
-            "household_labor_provider",
-            "household_labor_provider_label",
             "strategy",
             "strategy_label",
             "by_value",

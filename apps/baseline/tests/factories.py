@@ -91,6 +91,7 @@ class LivelihoodZoneBaselineFactory(factory.django.DjangoModelFactory):
             "source_organization",
         ]
 
+    name = factory.LazyAttribute(lambda lz: f"Baseline {lz.livelihood_zone}")
     livelihood_zone = factory.SubFactory(LivelihoodZoneFactory)
     geography = None
     main_livelihood_category = factory.SubFactory(LivelihoodCategoryFactory)
@@ -190,7 +191,7 @@ class WealthGroupCharacteristicValueFactory(factory.django.DjangoModelFactory):
     max_value = factory.LazyAttribute(lambda o: o.value + 5)
 
     @factory.lazy_attribute
-    def source(self):
+    def reference_type(self):
         if not self.wealth_group.community:
             return WealthGroupCharacteristicValue.CharacteristicReference.SUMMARY
         else:
@@ -236,7 +237,6 @@ class LivelihoodStrategyFactory(factory.django.DjangoModelFactory):
     unit_of_measure = factory.SelfAttribute("product.unit_of_measure")
     currency = factory.SubFactory(CurrencyFactory)
     additional_identifier = factory.Sequence(lambda n: f"additional_identifier {n}")
-    household_labor_provider = factory.Iterator(["men", "women", "children", "all"])
 
 
 class LivelihoodActivityFactory(factory.django.DjangoModelFactory):
@@ -287,6 +287,7 @@ class LivelihoodActivityFactory(factory.django.DjangoModelFactory):
         livelihood_zone_baseline=factory.SelfAttribute("..wealth_group.livelihood_zone_baseline"),
         strategy_type=factory.SelfAttribute("..strategy_type"),
     )
+    household_labor_provider = factory.Iterator(["men", "women", "children", "all"])
 
 
 class BaselineLivelihoodActivityFactory(LivelihoodActivityFactory):
@@ -332,6 +333,7 @@ class MilkProductionFactory(LivelihoodActivityFactory):
     milking_animals = fuzzy.FuzzyInteger(1, 20)
     lactation_days = fuzzy.FuzzyInteger(1, 365)
     daily_production = fuzzy.FuzzyInteger(1, 20)
+    type_of_milk_consumed = factory.Iterator(["skim", "whole"])
     type_of_milk_sold_or_other_uses = factory.Iterator(["skim", "whole"])
 
 
@@ -409,6 +411,7 @@ class FoodPurchaseFactory(LivelihoodActivityFactory):
     quantity_produced = factory.LazyAttribute(lambda o: o.unit_multiple * o.times_per_month * o.months_per_year)
     unit_multiple = fuzzy.FuzzyInteger(1, 500)
     times_per_month = fuzzy.FuzzyInteger(10, 50)
+    times_per_year = fuzzy.FuzzyInteger(10, 160)
     months_per_year = fuzzy.FuzzyInteger(1, 12)
 
 
@@ -430,6 +433,7 @@ class PaymentInKindFactory(LivelihoodActivityFactory):
     payment_per_time = fuzzy.FuzzyInteger(10, 200)
     people_per_household = fuzzy.FuzzyInteger(1, 16)
     times_per_month = fuzzy.FuzzyInteger(1, 21)
+    times_per_year = fuzzy.FuzzyInteger(10, 120)
     months_per_year = fuzzy.FuzzyInteger(1, 12)
 
 
@@ -447,7 +451,7 @@ class ReliefGiftOtherFactory(LivelihoodActivityFactory):
     strategy_type = "ReliefGiftOther"
     quantity_produced = factory.LazyAttribute(lambda o: o.unit_multiple * o.times_per_year)
     unit_multiple = fuzzy.FuzzyInteger(1, 500)
-    times_per_year = fuzzy.FuzzyInteger(10, 160)
+    times_per_year = fuzzy.FuzzyInteger(1, 160)
 
 
 class FishingFactory(LivelihoodActivityFactory):
@@ -526,6 +530,7 @@ class OtherPurchaseFactory(LivelihoodActivityFactory):
     unit_multiple = fuzzy.FuzzyInteger(1, 500)
     times_per_month = fuzzy.FuzzyInteger(1, 50)
     months_per_year = fuzzy.FuzzyInteger(1, 12)
+    times_per_year = fuzzy.FuzzyInteger(1, 300)
 
 
 class SeasonalActivityFactory(factory.django.DjangoModelFactory):
@@ -534,14 +539,22 @@ class SeasonalActivityFactory(factory.django.DjangoModelFactory):
         django_get_or_create = [
             "livelihood_zone_baseline",
             "seasonal_activity_type",
-            "season",
             "product",
         ]
 
     livelihood_zone_baseline = factory.SubFactory(LivelihoodZoneBaselineFactory)
     seasonal_activity_type = factory.SubFactory(SeasonalActivityTypeFactory)
-    season = factory.SubFactory(SeasonFactory)
     product = factory.SubFactory(ClassifiedProductFactory)
+
+    @factory.post_generation
+    def seasons(self, create, extracted, **kwargs):
+        if not create:
+            # Simple build, do nothing.
+            return
+
+        if extracted:
+            # A list of dataseries were passed in, use them
+            self.season.set(extracted)
 
 
 class SeasonalActivityOccurrenceFactory(factory.django.DjangoModelFactory):
@@ -583,7 +596,8 @@ class CommunityCropProductionFactory(factory.django.DjangoModelFactory):
     yield_with_inputs = fuzzy.FuzzyInteger(50, 10000)
     yield_without_inputs = fuzzy.FuzzyInteger(1, 10000)
     seed_requirement = fuzzy.FuzzyInteger(1, 100)
-    unit_of_measure = factory.SubFactory(UnitOfMeasureFactory)
+    crop_unit_of_measure = factory.SubFactory(UnitOfMeasureFactory)
+    land_unit_of_measure = factory.SubFactory(UnitOfMeasureFactory)
 
 
 class CommunityLivestockFactory(factory.django.DjangoModelFactory):
@@ -646,7 +660,6 @@ class SeasonalProductionPerformanceFactory(factory.django.DjangoModelFactory):
     performance_year_start_date = factory.Sequence(lambda n: datetime.date(1900, 1, 1) + datetime.timedelta(days=n))
     performance_year_end_date = factory.Sequence(lambda n: datetime.date(1900, 1, 1) + datetime.timedelta(days=n))
     seasonal_performance = factory.Iterator(["1", "2", "3", "4", "5"])
-    description = factory.Sequence(lambda n: f"SeasonalProductionPerformance {n} description")
 
 
 class HazardFactory(factory.django.DjangoModelFactory):

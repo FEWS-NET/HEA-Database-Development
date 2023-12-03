@@ -38,7 +38,7 @@ from .factories import (
     LivelihoodStrategyFactory,
     LivelihoodZoneBaselineFactory,
     LivelihoodZoneFactory,
-    LivestockSalesFactory,
+    LivestockSaleFactory,
     MeatProductionFactory,
     MilkProductionFactory,
     SourceOrganizationFactory,
@@ -401,7 +401,7 @@ class WealthGroupAdminTest(TestCase):
         self.assertContains(response, "animals_slaughtered")
 
     def test_livestock_sales_inline_admin_display(self):
-        livestock_sales = LivestockSalesFactory(wealth_group=self.wealth_group1)
+        livestock_sales = LivestockSaleFactory(wealth_group=self.wealth_group1)
 
         self.site.register(WealthGroup, WealthGroupAdmin)
         url = reverse(self.url, args=[self.wealth_group1.pk])
