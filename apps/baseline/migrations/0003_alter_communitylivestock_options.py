@@ -12,6 +12,6 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AlterModelOptions(
             name="communitylivestock",
-            options={"verbose_name": "Community Livestock", "verbose_name_plural": "Community livestocks"},
+            options={"verbose_name": "Community Livestock", "verbose_name_plural": "Community livestock"},
         ),
     ]

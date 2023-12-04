@@ -1823,7 +1823,7 @@ class CommunityLivestock(common_models.Model):
         super().clean()
 
     def save(self, *args, **kwargs):
-        # No need to enforce foreign keys or uniqueness because database constraints will do it anyway
+        # No need to enforce foreignf keys or uniqueness because database constraints will do it anyway
         self.full_clean(
             exclude=[field.name for field in self._meta.fields if isinstance(field, models.ForeignKey)],
             validate_unique=False,
@@ -1835,7 +1835,7 @@ class CommunityLivestock(common_models.Model):
 
     class Meta:
         verbose_name = _("Community Livestock")
-        verbose_name_plural = _("Community livestocks")
+        verbose_name_plural = _("Community livestock")
 
 
 class MarketPrice(common_models.Model):

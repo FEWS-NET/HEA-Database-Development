@@ -438,9 +438,9 @@ class LivelihoodActivitySerializer(serializers.ModelSerializer):
             "unit_of_measure_description",
             "currency",
             "additional_identifier",
+            # End LivelihoodStrategy
             "household_labor_provider",
             "household_labor_provider_label",
-            # End LivelihoodStrategy
             "scenario",
             "scenario_label",
             # WealthGroup
@@ -488,7 +488,6 @@ class LivelihoodActivitySerializer(serializers.ModelSerializer):
     def get_livelihood_zone_baseline_label(self, obj):
         return str(obj.livelihood_strategy.livelihood_zone_baseline)
 
-    household_labor_provider = serializers.CharField(read_only=True)
     additional_identifier = serializers.CharField(source="livelihood_strategy.additional_identifier", read_only=True)
     currency = serializers.CharField(source="livelihood_strategy.currency.pk", read_only=True)
     community = serializers.IntegerField(source="wealth_group.community.pk", read_only=True)

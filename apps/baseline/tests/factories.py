@@ -435,7 +435,7 @@ class PaymentInKindFactory(LivelihoodActivityFactory):
     people_per_household = fuzzy.FuzzyInteger(1, 16)
     times_per_month = fuzzy.FuzzyInteger(1, 21)
     times_per_year = fuzzy.FuzzyInteger(10, 120)
-    months_per_year = fuzzy.FuzzyInteger(1, 12)
+    months_per_year = fuzzy.FuzzyInteger(10, 12)
 
 
 class ReliefGiftOtherFactory(LivelihoodActivityFactory):
