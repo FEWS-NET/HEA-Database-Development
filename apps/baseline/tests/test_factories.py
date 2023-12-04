@@ -1,6 +1,6 @@
 from django.test import TestCase
 
-from ..models import (
+from baseline.models import (
     BaselineLivelihoodActivity,
     BaselineWealthGroup,
     ButterProduction,
@@ -37,6 +37,7 @@ from ..models import (
     WealthGroupCharacteristicValue,
     WildFoodGathering,
 )
+
 from .factories import (
     BaselineLivelihoodActivityFactory,
     BaselineWealthGroupFactory,
