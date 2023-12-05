@@ -277,7 +277,8 @@ class LivelihoodActivityFactory(factory.django.DjangoModelFactory):
     income = factory.LazyAttribute(lambda o: o.quantity_sold * o.price)
     expenditure = factory.LazyAttribute(lambda o: o.quantity_produced * o.price)
     kcals_consumed = factory.LazyAttribute(
-        lambda o: o.quantity_consumed * o.livelihood_strategy.product.kcals_per_unit
+        lambda o: min(o.quantity_consumed * o.livelihood_strategy.product.kcals_per_unit, 2147483647) # Max allowed
+        # value for int
     )
     percentage_kcals = fuzzy.FuzzyInteger(1, 200)
     wealth_group = factory.SubFactory(
