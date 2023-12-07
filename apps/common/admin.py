@@ -39,6 +39,7 @@ class ClassifiedProductAdmin(TreeAdmin):
     fields = [
         "cpcv2",
         "common_name",
+        "description",
         "scientific_name",
         "unit_of_measure",
         "kcals_per_unit",

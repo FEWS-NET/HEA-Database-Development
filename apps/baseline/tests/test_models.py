@@ -13,15 +13,17 @@ class WealthGroupCharacteristicValueTestCase(TestCase):
     def setUpTestData(cls):
         cls.wealth_group_characteristic_value = WealthGroupCharacteristicValueFactory()
 
-    def test_source(self):
+    def test_reference_type(self):
 
-        # Source = SUMMARY for a Baseline Wealth Group is OK
-        self.wealth_group_characteristic_value.source = WealthGroupCharacteristicValue.CharacteristicReference.SUMMARY
+        # Reference Type = SUMMARY for a Baseline Wealth Group is OK
+        self.wealth_group_characteristic_value.reference_type = (
+            WealthGroupCharacteristicValue.CharacteristicReference.SUMMARY
+        )
         self.wealth_group_characteristic_value.wealth_group.community = None
         self.wealth_group_characteristic_value.save()
 
-        # Source = COMMUNITY for a Community Wealth Group is OK
-        self.wealth_group_characteristic_value.source = (
+        # Reference Type = COMMUNITY for a Community Wealth Group is OK
+        self.wealth_group_characteristic_value.reference_type = (
             WealthGroupCharacteristicValue.CharacteristicReference.COMMUNITY
         )
         self.wealth_group_characteristic_value.wealth_group.community = CommunityFactory(
@@ -29,13 +31,15 @@ class WealthGroupCharacteristicValueTestCase(TestCase):
         )
         self.wealth_group_characteristic_value.save()
 
-        # Source = SUMMARY for a Community Wealth Group is not OK
-        self.wealth_group_characteristic_value.source = WealthGroupCharacteristicValue.CharacteristicReference.SUMMARY
+        # Reference Type = SUMMARY for a Community Wealth Group is not OK
+        self.wealth_group_characteristic_value.reference_type = (
+            WealthGroupCharacteristicValue.CharacteristicReference.SUMMARY
+        )
         with conditional_logging():
             self.assertRaises(ValidationError, self.wealth_group_characteristic_value.save)
 
-        # Source = COMMUNITY for a Baseline Wealth Group is not OK
-        self.wealth_group_characteristic_value.source = (
+        # Reference Type = COMMUNITY for a Baseline Wealth Group is not OK
+        self.wealth_group_characteristic_value.reference_type = (
             WealthGroupCharacteristicValue.CharacteristicReference.COMMUNITY
         )
         self.wealth_group_characteristic_value.wealth_group.community = None

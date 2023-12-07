@@ -349,7 +349,6 @@ class LivelihoodStrategyViewSet(viewsets.ModelViewSet):
     filterset_class = LivelihoodStrategyFilterSet
     search_fields = [
         "additional_identifier",
-        "household_labor_provider",
         "strategy_type",
     ]
 
@@ -1030,8 +1029,7 @@ class SeasonalActivityViewSet(viewsets.ModelViewSet):
         "livelihood_zone_baseline__source_organization",
         "livelihood_zone_baseline__source_organization",
         "product",
-        "season",
-    )
+    ).prefetch_related("season")
     serializer_class = SeasonalActivitySerializer
     filterset_class = SeasonalActivityFilterSet
 
@@ -1058,8 +1056,7 @@ class SeasonalActivityOccurrenceViewSet(viewsets.ModelViewSet):
         "livelihood_zone_baseline__livelihood_zone__country",
         "livelihood_zone_baseline__source_organization",
         "seasonal_activity__product",
-        "seasonal_activity__season",
-    )
+    ).prefetch_related("seasonal_activity__season")
     serializer_class = SeasonalActivityOccurrenceSerializer
     filterset_class = SeasonalActivityOccurrenceFilterSet
 
@@ -1090,7 +1087,8 @@ class CommunityCropProductionViewSet(viewsets.ModelViewSet):
         "community__livelihood_zone_baseline__source_organization",
         "crop",
         "season",
-        "unit_of_measure",
+        "crop_unit_of_measure",
+        "land_unit_of_measure",
     )
     serializer_class = CommunityCropProductionSerializer
     filterset_class = CommunityCropProductionFilterSet

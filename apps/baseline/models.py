@@ -1614,7 +1614,7 @@ class SeasonalActivity(common_models.Model):
         ]
 
     class ExtraMeta:
-        identifier = ["seasonal_activity_type", "season", "product"]
+        identifier = ["livelihood_zone_baseline", "seasonal_activity_type", "product"]
 
 
 class SeasonalActivityOccurrence(common_models.Model):
@@ -1765,6 +1765,9 @@ class CommunityCropProduction(common_models.Model):
         )
         super().save(*args, **kwargs)
 
+    class ExtraMeta:
+        identifier = ["community", "crop"]
+
     class Meta:
         verbose_name = _("Community Crop Production")
         verbose_name_plural = _("Community Crop Productions")
@@ -1820,16 +1823,19 @@ class CommunityLivestock(common_models.Model):
         super().clean()
 
     def save(self, *args, **kwargs):
-        # No need to enforce foreign keys or uniqueness because database constraints will do it anyway
+        # No need to enforce foreignf keys or uniqueness because database constraints will do it anyway
         self.full_clean(
             exclude=[field.name for field in self._meta.fields if isinstance(field, models.ForeignKey)],
             validate_unique=False,
         )
         super().save(*args, **kwargs)
 
+    class ExtraMeta:
+        identifier = ["community", "livestock"]
+
     class Meta:
-        verbose_name = _("Wealth Group Attribute")
-        verbose_name_plural = _("Wealth Group Attributes")
+        verbose_name = _("Community Livestock")
+        verbose_name_plural = _("Community livestock")
 
 
 class MarketPrice(common_models.Model):
