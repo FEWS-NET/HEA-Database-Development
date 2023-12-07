@@ -277,8 +277,7 @@ class LivelihoodActivityFactory(factory.django.DjangoModelFactory):
     income = factory.LazyAttribute(lambda o: o.quantity_sold * o.price)
     expenditure = factory.LazyAttribute(lambda o: o.quantity_produced * o.price)
     kcals_consumed = factory.LazyAttribute(
-        lambda o: min(o.quantity_consumed * o.livelihood_strategy.product.kcals_per_unit, 2147483647)  # Max allowed
-        # value for int
+        lambda o: o.quantity_consumed * o.livelihood_strategy.product.kcals_per_unit
     )
     percentage_kcals = fuzzy.FuzzyInteger(1, 200)
     wealth_group = factory.SubFactory(
@@ -432,9 +431,9 @@ class PaymentInKindFactory(LivelihoodActivityFactory):
     quantity_produced = factory.LazyAttribute(
         lambda o: o.payment_per_time * o.people_per_household * o.times_per_month * o.months_per_year
     )
-    payment_per_time = fuzzy.FuzzyInteger(10, 200)
-    people_per_household = fuzzy.FuzzyInteger(1, 16)
-    times_per_month = fuzzy.FuzzyInteger(1, 21)
+    payment_per_time = fuzzy.FuzzyInteger(10, 50)
+    people_per_household = fuzzy.FuzzyInteger(1, 8)
+    times_per_month = fuzzy.FuzzyInteger(1, 10)
     times_per_year = fuzzy.FuzzyInteger(10, 120)
     months_per_year = fuzzy.FuzzyInteger(10, 12)
 
