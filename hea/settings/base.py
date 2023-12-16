@@ -7,6 +7,7 @@ from os.path import abspath, basename, dirname, join, normpath
 import environ
 import jsonlogging
 import requests
+from django.utils.translation import gettext_lazy as _
 
 # Ignore irrelevant Openpyxl warnings
 messages = [
@@ -113,6 +114,7 @@ MIDDLEWARE = [
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
+    "common.middleware.language.LanguageMiddleware",
     "django.middleware.common.CommonMiddleware",
     # "common.middleware.RequestLoggingMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -167,24 +169,23 @@ TEMPLATES = [
 WSGI_APPLICATION = "hea.wsgi.application"
 
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
-    },
+    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "en"
 TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
+LANGUAGES = (
+    ("en", _("English")),
+    ("fr", _("French")),
+    ("es", _("Spanish")),
+    ("ar", _("Arabic")),
+    ("pt", _("Portuguese")),
+)
 
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 SESSION_ENGINE = "django.contrib.sessions.backends.cached_db"

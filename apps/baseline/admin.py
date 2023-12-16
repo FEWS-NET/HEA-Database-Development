@@ -51,13 +51,29 @@ admin.site.site_title = "Administration"
 
 
 class SourceOrganizationAdmin(admin.ModelAdmin):
-    list_display = ("name", "full_name")
-    search_fields = ["name", "full_name", "description"]
+    list_display = (
+        "name",
+        "full_name",
+    )
+    search_fields = [
+        "name",
+        "full_name",
+        "description",
+    ]
 
 
 class LivelihoodZoneAdmin(admin.ModelAdmin):
-    list_display = ("code", "name", "country")
-    search_fields = ["code", "name", "description", "country__iso_en_ro_name"]
+    list_display = (
+        "code",
+        "name",
+        "country",
+    )
+    search_fields = [
+        "code",
+        "name",
+        "description",
+        "country__iso_en_ro_name",
+    ]
     list_filter = ("country",)
 
 
@@ -105,7 +121,11 @@ class LivelihoodZoneBaselineAdmin(GeoModelAdmin):
     )
     search_fields = [
         "livelihood_zone__name",
-        "main_livelihood_category__name",
+        "main_livelihood_category__name_en",
+        "main_livelihood_category__name_fr",
+        "main_livelihood_category__name_ar",
+        "main_livelihood_category__name_es",
+        "main_livelihood_category__name_ar",
         "source_organization__name",
     ]
     list_filter = [
@@ -129,7 +149,11 @@ class CommunityAdmin(GeoModelAdmin):
         "livelihood_zone_baseline",
         "full_name",
     )
-    search_fields = ("name", "full_name", "livelihood_zone_baseline__livelihood_zone__name")
+    search_fields = (
+        "name",
+        "full_name",
+        "livelihood_zone_baseline__livelihood_zone__name",
+    )
     list_filter = (
         "livelihood_zone_baseline__livelihood_zone__name",
         "livelihood_zone_baseline__livelihood_zone__country",
@@ -153,7 +177,15 @@ class LivelihoodStrategyAdmin(admin.ModelAdmin):
         "product",
         "unit_of_measure",
     )
-    search_fields = ("strategy_type", "livelihood_zone_baseline__livelihood_zone__name", "product__common_name")
+    search_fields = (
+        "strategy_type",
+        "livelihood_zone_baseline__livelihood_zone__name",
+        "product__common_name_en",
+        "product__common_name_fr",
+        "product__common_name_ar",
+        "product__common_name_es",
+        "product__common_name_pt",
+    )
     list_filter = (
         "strategy_type",
         "livelihood_zone_baseline__livelihood_zone",
@@ -257,7 +289,18 @@ class MeatProductionInlineAdmin(LivelihoodActivityInlineAdmin):
 
     def get_fieldsets(self, request, obj=None):
         fieldsets = deepcopy(super().get_fieldsets(request, obj))
-        fieldsets.insert(1, ("Meat source", {"fields": ["animals_slaughtered", "carcass_weight"]}))
+        fieldsets.insert(
+            1,
+            (
+                "Meat source",
+                {
+                    "fields": [
+                        "animals_slaughtered",
+                        "carcass_weight",
+                    ]
+                },
+            ),
+        )
         return fieldsets
 
     def get_queryset(self, request):
@@ -285,7 +328,18 @@ class FoodPurchaseProductionInlineAdmin(LivelihoodActivityInlineAdmin):
     def get_fieldsets(self, request, obj=None):
         fieldsets = deepcopy(super().get_fieldsets(request, obj))
         fieldsets.insert(
-            1, ("Purchases", {"fields": ["unit_multiple", "times_per_month", "months_per_year", "times_per_year"]})
+            1,
+            (
+                "Purchases",
+                {
+                    "fields": [
+                        "unit_multiple",
+                        "times_per_month",
+                        "months_per_year",
+                        "times_per_year",
+                    ]
+                },
+            ),
         )
         return fieldsets
 
@@ -300,7 +354,17 @@ class PaymentInKindInlineAdmin(LivelihoodActivityInlineAdmin):
         fieldsets = deepcopy(super().get_fieldsets(request, obj))
         fieldsets.insert(
             1,
-            ("Payment", {"fields": ["people_per_household", "times_per_month", "months_per_year", "times_per_year"]}),
+            (
+                "Payment",
+                {
+                    "fields": [
+                        "people_per_household",
+                        "times_per_month",
+                        "months_per_year",
+                        "times_per_year",
+                    ]
+                },
+            ),
         )
         return fieldsets
 
@@ -315,7 +379,18 @@ class ReliefGiftOtherInlineAdmin(LivelihoodActivityInlineAdmin):
     def get_fieldsets(self, request, obj=None):
         fieldsets = deepcopy(super().get_fieldsets(request, obj))
         fieldsets.insert(
-            1, ("Relief", {"fields": ["unit_multiple", "times_per_month", "months_per_year", "times_per_year"]})
+            1,
+            (
+                "Relief",
+                {
+                    "fields": [
+                        "unit_multiple",
+                        "times_per_month",
+                        "months_per_year",
+                        "times_per_year",
+                    ]
+                },
+            ),
         )
         return fieldsets
 
@@ -329,7 +404,18 @@ class OtherCashIncomeInlineAdmin(LivelihoodActivityInlineAdmin):
     def get_fieldsets(self, request, obj=None):
         fieldsets = deepcopy(super().get_fieldsets(request, obj))
         fieldsets.insert(
-            1, (None, {"fields": ["people_per_household", "times_per_month", "months_per_year", "times_per_year"]})
+            1,
+            (
+                None,
+                {
+                    "fields": [
+                        "people_per_household",
+                        "times_per_month",
+                        "months_per_year",
+                        "times_per_year",
+                    ]
+                },
+            ),
         )
         return fieldsets
 
@@ -358,7 +444,18 @@ class OtherPurchaseInlineAdmin(LivelihoodActivityInlineAdmin):
     def get_fieldsets(self, request, obj=None):
         fieldsets = deepcopy(super().get_fieldsets(request, obj))
         fieldsets.insert(
-            1, (None, {"fields": ["unit_multiple", "times_per_month", "months_per_year", "times_per_year"]})
+            1,
+            (
+                None,
+                {
+                    "fields": [
+                        "unit_multiple",
+                        "times_per_month",
+                        "months_per_year",
+                        "times_per_year",
+                    ]
+                },
+            ),
         )
         return fieldsets
 
@@ -367,8 +464,15 @@ class OtherPurchaseInlineAdmin(LivelihoodActivityInlineAdmin):
 
 
 class WealthGroupAdmin(admin.ModelAdmin):
-    list_display = ("community", "wealth_group_category", "percentage_of_households")
-    search_fields = ("community__name", "wealth_group_category")
+    list_display = (
+        "community",
+        "wealth_group_category",
+        "percentage_of_households",
+    )
+    search_fields = (
+        "community__name",
+        "wealth_group_category",
+    )
     list_filter = (
         "livelihood_zone_baseline__source_organization",
         "livelihood_zone_baseline__livelihood_zone__country",
@@ -386,20 +490,52 @@ class WealthGroupAdmin(admin.ModelAdmin):
 
 
 class SeasonalActivityTypeAdmin(admin.ModelAdmin):
-    fields = ("name", "activity_category")
-    list_display = ("name", "activity_category")
-    search_fields = ("name", "activity_category")
+    fields = (
+        "name",
+        "activity_category",
+    )
+    list_display = (
+        "name",
+        "activity_category",
+    )
+    search_fields = (
+        "name",
+        "activity_category",
+    )
 
 
 class SeasonalActivityAdmin(admin.ModelAdmin):
-    fields = ("livelihood_zone_baseline", "seasonal_activity_type", "season", "product")
-    list_display = ("livelihood_zone_baseline", "seasonal_activity_type", "product")
-    search_fields = ("seasonal_activity_type", "season", "product")
-    list_filter = ("livelihood_zone_baseline__livelihood_zone", "seasonal_activity_type", "season", "product")
+    fields = (
+        "livelihood_zone_baseline",
+        "seasonal_activity_type",
+        "season",
+        "product",
+    )
+    list_display = (
+        "livelihood_zone_baseline",
+        "seasonal_activity_type",
+        "product",
+    )
+    search_fields = (
+        "seasonal_activity_type",
+        "season",
+        "product",
+    )
+    list_filter = (
+        "livelihood_zone_baseline__livelihood_zone",
+        "seasonal_activity_type",
+        "season",
+        "product",
+    )
 
 
 class SeasonalActivityOccurrenceAdmin(admin.ModelAdmin):
-    list_display = ("seasonal_activity", "community", "start_month", "end_month")
+    list_display = (
+        "seasonal_activity",
+        "community",
+        "start_month",
+        "end_month",
+    )
     search_fields = (
         "seasonal_activity__seasonal_activity_type",
         "seasonal_activity__season",
@@ -436,9 +572,17 @@ class CommunityCropProductionAdmin(admin.ModelAdmin):
         "land_unit_of_measure",
     )
     search_fields = (
-        "crop__description",
+        "crop__description_en",
+        "crop__description_fr",
+        "crop__description_ar",
+        "crop__description_es",
+        "crop__description_pt",
         "crop_purpose",
-        "season__name",
+        "season__name_en",
+        "season__name_fr",
+        "season__name_ar",
+        "season__name_es",
+        "season__name_pt",
     )
     list_filter = (
         "community__livelihood_zone_baseline__livelihood_zone",
@@ -466,7 +610,13 @@ class CommunityLivestockAdmin(admin.ModelAdmin):
         "wet_season_milk_production",
         "dry_season_milk_production",
     )
-    search_fields = ("livestock__common_name",)
+    search_fields = (
+        "livestock__common_name_en",
+        "livestock__common_name_fr",
+        "livestock__common_name_ar",
+        "livestock__common_name_es",
+        "livestock__common_name_pt",
+    )
     list_filter = (
         "community__livelihood_zone_baseline__livelihood_zone",
         "community__full_name",
@@ -614,16 +764,44 @@ class ExpandabilityFactorAdmin(admin.ModelAdmin):
         "percentage_income",
         "percentage_expenditure",
     )
-    search_fields = ("livelihood_strategy", "wealth_group")
-    list_filter = ("livelihood_strategy", "wealth_group")
+    search_fields = (
+        "livelihood_strategy",
+        "wealth_group",
+    )
+    list_filter = (
+        "livelihood_strategy",
+        "wealth_group",
+    )
 
 
 class CopingStrategyAdmin(admin.ModelAdmin):
 
-    fields = ("community", "leaders", "wealth_group", "livelihood_strategy", "strategy", "by_value")
-    list_display = ("community", "leaders", "wealth_group", "livelihood_strategy", "strategy", "by_value")
-    search_fields = ("community", "livelihood_strategy", "wealth_group")
-    list_filter = ("community", "livelihood_strategy", "wealth_group")
+    fields = (
+        "community",
+        "leaders",
+        "wealth_group",
+        "livelihood_strategy",
+        "strategy",
+        "by_value",
+    )
+    list_display = (
+        "community",
+        "leaders",
+        "wealth_group",
+        "livelihood_strategy",
+        "strategy",
+        "by_value",
+    )
+    search_fields = (
+        "community",
+        "livelihood_strategy",
+        "wealth_group",
+    )
+    list_filter = (
+        "community",
+        "livelihood_strategy",
+        "wealth_group",
+    )
 
 
 admin.site.register(SourceOrganization, SourceOrganizationAdmin)

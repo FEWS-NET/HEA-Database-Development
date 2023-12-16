@@ -83,29 +83,36 @@ class ReferenceDataViewSetTestCase(APITestCase):
     def _test_search_by_code(self, model_cls):
         # Test search by code for each model
         url = reverse(f"{model_cls._meta.model_name}-list")
-        response = self.client.get(url, {"search": model_cls.objects.first().code})
+        # Sort queryset, so that test results are deterministic and don't depend on random ordering of query results.
+        # WealthGroupCategoryFactory has single character codes, eg, P, which intermittently match other instances.
+        # Likewise "Poor" matches "Very Poor". Max code is "VP" so shouldn't match other instances or fields, and
+        # because the test is now deterministic, this will reliably fail if a factory change breaks this assumption.
+        sought_instance = model_cls.objects.order_by("-code").first()
+        response = self.client.get(url, {"search": sought_instance.code})
         self.assertEqual(response.status_code, 200)
-        result = json.loads(response.content.decode("utf-8"))
-        self.assertEqual(len(result), 1)
-        self.assertEqual(model_cls.objects.first().code, result[0]["code"])
+        result = response.json()
+        self.assertEqual(len(result), 1, f"Code {sought_instance.code}")
+        self.assertEqual(sought_instance.code, result[0]["code"])
 
     def _test_search_by_name(self, model_cls):
         # Test search by name for each model
         url = reverse(f"{model_cls._meta.model_name}-list")
-        response = self.client.get(url, {"search": model_cls.objects.first().name})
+        sought_instance = model_cls.objects.order_by("-code").first()
+        response = self.client.get(url, {"search": sought_instance.name_pt})
         self.assertEqual(response.status_code, 200)
-        result = json.loads(response.content.decode("utf-8"))
+        result = response.json()
         self.assertEqual(len(result), 1)
-        self.assertEqual(model_cls.objects.first().code, result[0]["code"])
+        self.assertEqual(sought_instance.code, result[0]["code"])
 
     def _test_filter_by_name(self, model_cls):
         # Test filter by name for each model
         url = reverse(f"{model_cls._meta.model_name}-list")
-        response = self.client.get(url, {"name": model_cls.objects.first().name})
+        sought_instance = model_cls.objects.order_by("-code").first()
+        response = self.client.get(url, {"name_pt": sought_instance.name_pt})
         self.assertEqual(response.status_code, 200)
-        result = json.loads(response.content.decode("utf-8"))
+        result = response.json()
         self.assertEqual(len(result), 1)
-        self.assertEqual(model_cls.objects.first().code, result[0]["code"])
+        self.assertEqual(sought_instance.code, result[0]["code"])
 
     def test_search_and_filter(self):
         models_to_test = [

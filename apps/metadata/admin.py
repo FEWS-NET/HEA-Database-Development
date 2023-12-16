@@ -12,11 +12,19 @@ from .models import (
 )
 
 
-class DimensionAdmin(admin.ModelAdmin):
+class ReferenceDataAdmin(admin.ModelAdmin):
     fields = [
         "code",
-        "name",
-        "description",
+        "name_en",
+        "name_pt",
+        "name_ar",
+        "name_es",
+        "name_fr",
+        "description_en",
+        "description_pt",
+        "description_ar",
+        "description_es",
+        "description_fr",
         "aliases",
     ]
     list_display = (
@@ -25,55 +33,79 @@ class DimensionAdmin(admin.ModelAdmin):
         "description",
     )
     search_fields = (
-        "name",
-        "description",
+        "name_en",
+        "name_pt",
+        "name_ar",
+        "name_es",
+        "name_fr",
+        "description_en",
+        "description_pt",
+        "description_ar",
+        "description_es",
+        "description_fr",
         "aliases",
     )
 
 
-class LivelihoodCategoryAdmin(DimensionAdmin):
+class LivelihoodCategoryAdmin(ReferenceDataAdmin):
     """
     A concrete admin for LivelihoodCategory
     """
 
 
-class SeasonalActivityTypeAdmin(DimensionAdmin):
+class SeasonalActivityTypeAdmin(ReferenceDataAdmin):
     """
     A concrete admin for  SeasonalActivityType
     """
 
     fields = (
         "code",
-        "name",
+        "name_en",
+        "name_pt",
+        "name_ar",
+        "name_es",
+        "name_fr",
         "activity_category",
-        "description",
+        "description_en",
+        "description_pt",
+        "description_ar",
+        "description_es",
+        "description_fr",
         "aliases",
     )
 
 
-class WealthGroupCategoryAdmin(DimensionAdmin):
+class WealthGroupCategoryAdmin(ReferenceDataAdmin):
     """
     A concrete admin for WealthGroupCategory
     """
 
 
-class WealthCharacteristicAdmin(DimensionAdmin):
+class WealthCharacteristicAdmin(ReferenceDataAdmin):
     """
     A concrete admin for WealthCharacteristic
     """
 
     fields = (
         "code",
-        "name",
+        "name_en",
+        "name_pt",
+        "name_ar",
+        "name_es",
+        "name_fr",
         "variable_type",
-        "description",
+        "description_en",
+        "description_pt",
+        "description_ar",
+        "description_es",
+        "description_fr",
         "aliases",
     )
 
     list_filter = ("variable_type",)
 
 
-class HazardCategoryAdmin(DimensionAdmin):
+class HazardCategoryAdmin(ReferenceDataAdmin):
     """
     A concrete admin for HazardCategory
     """
@@ -84,9 +116,40 @@ class SeasonAdmin(admin.ModelAdmin):
     A concrete admin for Season
     """
 
-    fields = ("country", "name", "description", "season_type", "start", "end", "alignment", "order")
-    list_display = ("country", "name", "season_type", "start", "end")
-    search_fields = ("country__iso_en_ro_name", "name", "season_type")
+    fields = (
+        "country",
+        "name_en",
+        "name_pt",
+        "name_ar",
+        "name_es",
+        "name_fr",
+        "description_en",
+        "description_pt",
+        "description_ar",
+        "description_es",
+        "description_fr",
+        "season_type",
+        "start",
+        "end",
+        "alignment",
+        "order",
+    )
+    list_display = (
+        "country",
+        "name",
+        "season_type",
+        "start",
+        "end",
+    )
+    search_fields = (
+        "country__iso_en_ro_name",
+        "name_en",
+        "name_pt",
+        "name_ar",
+        "name_es",
+        "name_fr",
+        "season_type",
+    )
     list_filter = (
         ("country", RelatedFieldListFilter),
         "season_type",
@@ -94,13 +157,21 @@ class SeasonAdmin(admin.ModelAdmin):
     ordering = ("order",)
 
 
-class MarketAdmin(DimensionAdmin):
+class MarketAdmin(ReferenceDataAdmin):
 
     fields = [
         "code",
-        "name",
+        "name_en",
+        "name_pt",
+        "name_ar",
+        "name_es",
+        "name_fr",
         "country",
-        "description",
+        "description_en",
+        "description_pt",
+        "description_ar",
+        "description_es",
+        "description_fr",
         "aliases",
     ]
 

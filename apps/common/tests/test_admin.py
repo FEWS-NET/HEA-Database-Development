@@ -1,7 +1,8 @@
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
-from django.utils.translation import activate
+from django.utils import translation
 
 from common.admin import (
     ClassifiedProductAdmin,
@@ -23,7 +24,7 @@ class CurrencyAdminTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
         User.objects.create_superuser(username="admin", password="admin", email="admin@hea.org")
-        activate("en")
+        translation.activate("en")
 
     def setUp(self):
         self.client.login(username="admin", password="admin")
@@ -57,7 +58,7 @@ class CountryAdminTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
         User.objects.create_superuser(username="admin", password="admin", email="admin@hea.org")
-        activate("en")
+        translation.activate("en")
 
     def setUp(self):
         self.client.login(username="admin", password="admin")
@@ -106,7 +107,11 @@ class ClassifiedProductAdminTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
         User.objects.create_superuser(username="admin", password="admin", email="admin@hea.org")
-        activate("en")
+        translation.activate("en")
+
+    def tearDown(self):
+        # Ref: https://docs.djangoproject.com/en/4.2/topics/testing/tools/#setting-the-language
+        translation.activate(settings.LANGUAGE_CODE)
 
     def setUp(self):
         self.client.login(username="admin", password="admin")
@@ -121,7 +126,7 @@ class ClassifiedProductAdminTestCase(TestCase):
 
     def test_search_classified_product(self):
         response = self.client.get(
-            reverse("admin:common_classifiedproduct_changelist"), {"q": self.product1.common_name}
+            reverse("admin:common_classifiedproduct_changelist"), {"q": self.product1.common_name_en}
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.product1.cpcv2)
@@ -130,8 +135,12 @@ class ClassifiedProductAdminTestCase(TestCase):
         unit = UnitOfMeasureFactory()
         data = {
             "cpcv2": "020202",
-            "description": "New Test Product",
-            "common_name": "New Test Common Name",
+            "description_en": "New Test Product",
+            "description_pt": "New Test Product",
+            "description_ar": "New Test Product",
+            "description_fr": "New Test Product",
+            "description_es": "New Test Product",
+            "common_name_en": "New Test Common Name",
             "scientific_name": "New Test Scientific Name",
             "unit_of_measure": unit.abbreviation,
             "_position": "first-child",
@@ -144,7 +153,7 @@ class UnitOfMeasureAdminTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
         User.objects.create_superuser(username="admin", password="admin", email="admin@hea.org")
-        activate("en")
+        translation.activate("en")
 
     def setUp(self):
         self.uom1 = UnitOfMeasureFactory()
@@ -169,7 +178,7 @@ class UnitOfMeasureAdminTestCase(TestCase):
         data = {
             "abbreviation": "cm",
             "unit_type": UnitOfMeasure.LENGTH,
-            "description": "Centimeter",
+            "description_en": "Centimeter",
             "from_conversions-TOTAL_FORMS": "0",
             "from_conversions-INITIAL_FORMS": "0",
             "from_conversions-MIN_NUM_FORMS": "0",

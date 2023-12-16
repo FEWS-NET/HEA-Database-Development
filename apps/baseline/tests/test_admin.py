@@ -20,15 +20,7 @@ from baseline.models import (
     LivelihoodZoneBaseline,
     WealthGroup,
 )
-from common.tests.factories import ClassifiedProductFactory
-from metadata.models import LivelihoodStrategyType
-from metadata.tests.factories import (
-    LivelihoodCategoryFactory,
-    SeasonFactory,
-    WealthGroupCategoryFactory,
-)
-
-from .factories import (
+from baseline.tests.factories import (
     ButterProductionFactory,
     CommunityCropProductionFactory,
     CommunityFactory,
@@ -44,6 +36,13 @@ from .factories import (
     SourceOrganizationFactory,
     WealthGroupCharacteristicValueFactory,
     WealthGroupFactory,
+)
+from common.tests.factories import ClassifiedProductFactory
+from metadata.models import LivelihoodStrategyType
+from metadata.tests.factories import (
+    LivelihoodCategoryFactory,
+    SeasonFactory,
+    WealthGroupCategoryFactory,
 )
 
 
@@ -471,7 +470,7 @@ class CommunityCropProductionAdminTestCase(TestCase):
         cls.url = "admin:baseline_communitycropproduction_changelist"
         cls.community1 = CommunityFactory(name="Test Community")
         cls.season1 = SeasonFactory()
-        cls.cropproduction1 = CommunityCropProductionFactory(community__name=cls.community1, season__name="SeasonQ")
+        cls.cropproduction1 = CommunityCropProductionFactory(community__name=cls.community1, season__name_en="SeasonQ")
         cls.cropproduction2 = CommunityCropProductionFactory()
         cls.cropproduction3 = CommunityCropProductionFactory()
         cls.site = AdminSite()
@@ -516,9 +515,17 @@ class CommunityCropProductionAdminTestCase(TestCase):
 
     def test_search_fields(self):
         search_fields = (
-            "crop__description",
+            "crop__description_en",
+            "crop__description_fr",
+            "crop__description_ar",
+            "crop__description_es",
+            "crop__description_pt",
             "crop_purpose",
-            "season__name",
+            "season__name_en",
+            "season__name_fr",
+            "season__name_ar",
+            "season__name_es",
+            "season__name_pt",
         )
         self.assertTrue(all(element in self.admin.search_fields for element in search_fields))
         response = self.client.get(reverse(self.url), {"q": self.cropproduction1.crop.description})
