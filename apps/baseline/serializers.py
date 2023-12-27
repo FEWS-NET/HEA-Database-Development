@@ -438,9 +438,9 @@ class LivelihoodActivitySerializer(serializers.ModelSerializer):
             "unit_of_measure_description",
             "currency",
             "additional_identifier",
+            # End LivelihoodStrategy
             "household_labor_provider",
             "household_labor_provider_label",
-            # End LivelihoodStrategy
             "scenario",
             "scenario_label",
             # WealthGroup
@@ -488,7 +488,6 @@ class LivelihoodActivitySerializer(serializers.ModelSerializer):
     def get_livelihood_zone_baseline_label(self, obj):
         return str(obj.livelihood_strategy.livelihood_zone_baseline)
 
-    household_labor_provider = serializers.CharField(source="household_labor_provider", read_only=True)
     additional_identifier = serializers.CharField(source="livelihood_strategy.additional_identifier", read_only=True)
     currency = serializers.CharField(source="livelihood_strategy.currency.pk", read_only=True)
     community = serializers.IntegerField(source="wealth_group.community.pk", read_only=True)
@@ -601,6 +600,7 @@ class FoodPurchaseSerializer(LivelihoodActivitySerializer):
             "unit_multiple",
             "times_per_month",
             "months_per_year",
+            "times_per_year",
         ]
 
 
@@ -620,6 +620,8 @@ class ReliefGiftOtherSerializer(LivelihoodActivitySerializer):
         model = ReliefGiftOther
         fields = LivelihoodActivitySerializer.Meta.fields + [
             "unit_multiple",
+            "months_per_year",
+            "times_per_month",
             "times_per_year",
         ]
 
@@ -676,11 +678,6 @@ class SeasonalActivitySerializer(serializers.ModelSerializer):
             "seasonal_activity_type_description",
             "activity_category",
             "activity_category_label",
-            "season",
-            "season_name",
-            "season_description",
-            "season_type",
-            "season_type_label",
             "product",
             "product_common_name",
             "product_description",
@@ -707,14 +704,6 @@ class SeasonalActivitySerializer(serializers.ModelSerializer):
 
     def get_activity_category_label(self, obj):
         return obj.seasonal_activity_type.get_activity_category_display()
-
-    season_name = serializers.CharField(source="season.name", read_only=True)
-    season_description = serializers.CharField(source="season.description", read_only=True)
-    season_type = serializers.CharField(source="season.season_type", read_only=True)
-    season_type_label = serializers.SerializerMethodField()
-
-    def get_season_type_label(self, obj):
-        return obj.season.get_season_type_display()
 
     source_organization = serializers.IntegerField(
         source="livelihood_zone_baseline.source_organization.pk", read_only=True
@@ -748,11 +737,6 @@ class SeasonalActivityOccurrenceSerializer(serializers.ModelSerializer):
             "seasonal_activity_type_description",
             "activity_category",
             "activity_category_label",
-            "season",
-            "season_name",
-            "season_description",
-            "season_type",
-            "season_type_label",
             "product",
             "product_common_name",
             "product_description",
@@ -804,15 +788,6 @@ class SeasonalActivityOccurrenceSerializer(serializers.ModelSerializer):
 
     def get_activity_category_label(self, obj):
         return obj.seasonal_activity.seasonal_activity_type.get_activity_category_display()
-
-    season = serializers.CharField(source="seasonal_activity.season.pk", read_only=True)
-    season_name = serializers.CharField(source="seasonal_activity.season.name", read_only=True)
-    season_description = serializers.CharField(source="seasonal_activity.season.description", read_only=True)
-    season_type = serializers.CharField(source="seasonal_activity.season.season_type", read_only=True)
-    season_type_label = serializers.SerializerMethodField()
-
-    def get_season_type_label(self, obj):
-        return obj.seasonal_activity.season.get_season_type_display()
 
 
 class CommunityCropProductionSerializer(serializers.ModelSerializer):
@@ -1212,8 +1187,6 @@ class ExpandabilityFactorSerializer(serializers.ModelSerializer):
             "unit_of_measure_description",
             "currency",
             "additional_identifier",
-            "household_labor_provider",
-            "household_labor_provider_label",
             # End LivelihoodStrategy
             # WealthGroup
             "wealth_group",
@@ -1260,9 +1233,6 @@ class ExpandabilityFactorSerializer(serializers.ModelSerializer):
     def get_livelihood_zone_baseline_label(self, obj):
         return str(obj.wealth_group.community.livelihood_zone_baseline)
 
-    household_labor_provider = serializers.CharField(
-        source="livelihood_strategy.household_labor_provider", read_only=True
-    )
     additional_identifier = serializers.CharField(source="livelihood_strategy.additional_identifier", read_only=True)
     currency = serializers.CharField(source="livelihood_strategy.currency.pk", read_only=True)
     community = serializers.IntegerField(source="wealth_group.community.pk", read_only=True)
@@ -1302,11 +1272,6 @@ class ExpandabilityFactorSerializer(serializers.ModelSerializer):
 
     def get_strategy_type_label(self, obj):
         return obj.livelihood_strategy.get_strategy_type_display()
-
-    household_labor_provider_label = serializers.SerializerMethodField()
-
-    def get_household_labor_provider_label(self, obj):
-        return obj.livelihood_strategy.get_household_labor_provider_display()
 
     wealth_group_label = serializers.SerializerMethodField()
 
@@ -1356,8 +1321,6 @@ class CopingStrategySerializer(serializers.ModelSerializer):
             "unit_of_measure_description",
             "currency",
             "additional_identifier",
-            "household_labor_provider",
-            "household_labor_provider_label",
             # End LivelihoodStrategy
             "strategy",
             "strategy_label",
@@ -1388,9 +1351,6 @@ class CopingStrategySerializer(serializers.ModelSerializer):
     def get_livelihood_zone_baseline_label(self, obj):
         return str(obj.community.livelihood_zone_baseline)
 
-    household_labor_provider = serializers.CharField(
-        source="livelihood_strategy.household_labor_provider", read_only=True
-    )
     additional_identifier = serializers.CharField(source="livelihood_strategy.additional_identifier", read_only=True)
     currency = serializers.CharField(source="livelihood_strategy.currency.pk", read_only=True)
     unit_of_measure = serializers.CharField(source="livelihood_strategy.unit_of_measure.pk", read_only=True)
@@ -1428,11 +1388,6 @@ class CopingStrategySerializer(serializers.ModelSerializer):
 
     def get_strategy_type_label(self, obj):
         return obj.livelihood_strategy.get_strategy_type_display()
-
-    household_labor_provider_label = serializers.SerializerMethodField()
-
-    def get_household_labor_provider_label(self, obj):
-        return obj.livelihood_strategy.get_household_labor_provider_display()
 
     community_name = serializers.CharField(source="community.name", read_only=True)
     strategy_label = serializers.SerializerMethodField()

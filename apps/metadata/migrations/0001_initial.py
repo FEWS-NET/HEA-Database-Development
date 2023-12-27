@@ -242,7 +242,7 @@ class Migration(migrations.Migration):
                     "has_product",
                     models.BooleanField(
                         default=False,
-                        help_text="Does a value for this characteristic also require a product?",
+                        help_text="Does a value for this characteristic also require a product? If True, then aliases may contain a <product> placeholder.",
                         verbose_name="Has Product?",
                     ),
                 ),
@@ -250,7 +250,7 @@ class Migration(migrations.Migration):
                     "has_unit_of_measure",
                     models.BooleanField(
                         default=False,
-                        help_text="Does a value for this characteristic also require a unit_of_measure?",
+                        help_text="Does a value for this characteristic also require a unit_of_measure? If True, then aliases may contain a <unit_of_measure> placeholder.",
                         verbose_name="Has Unit Of Measure?",
                     ),
                 ),

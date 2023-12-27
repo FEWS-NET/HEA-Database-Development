@@ -11,7 +11,7 @@ class JsonWrapper(TextWrapper):
         return json.loads(super().read())
 
     def write(self, b):
-        super().write(json.dumps(b))
+        super().write(json.dumps(b, indent=4))
 
 
 class JsonFormat(WrappedFormat):

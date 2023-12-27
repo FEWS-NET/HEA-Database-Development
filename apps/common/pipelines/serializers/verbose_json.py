@@ -31,7 +31,7 @@ def Deserializer(stream_or_string, **options):
             try:
                 yield from PythonDeserializer([object], **options)
             except Exception:
-                logging.error("Failed to deserialize object %s" % object)
+                logging.exception("Failed to deserialize object %s" % object)
                 raise
     except (GeneratorExit, DeserializationError):
         raise

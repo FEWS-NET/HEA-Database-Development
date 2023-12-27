@@ -179,7 +179,7 @@ class SeasonViewSetTestCase(APITestCase):
         self.assertEqual(self.season3.name, result[0]["name"])
 
     def test_start_month_and_end_month_fields(self):
-        response = response = self.client.get(f"{self.url}{self.season3.pk}/")
+        response = self.client.get(f"{self.url}{self.season3.pk}/")
         self.assertEqual(response.status_code, 200)
         result = json.loads(response.content.decode("utf-8"))
         self.assertTrue(len(result), 1)

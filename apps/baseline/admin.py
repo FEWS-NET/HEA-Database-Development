@@ -437,13 +437,13 @@ class CommunityCropProductionAdmin(admin.ModelAdmin):
         "land_unit_of_measure",
     )
     search_fields = (
-        "crop",
+        "crop__description",
         "crop_purpose",
-        "season",
+        "season__name",
     )
     list_filter = (
         "community__livelihood_zone_baseline__livelihood_zone",
-        "community",
+        "community__full_name",
         "crop",
         "season",
     )

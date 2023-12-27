@@ -92,12 +92,18 @@ class WealthCharacteristic(ReferenceData):
     has_product = models.BooleanField(
         default=False,
         verbose_name=_("Has Product?"),
-        help_text=_("Does a value for this characteristic also require a product?"),
+        help_text=_(
+            "Does a value for this characteristic also require a product? "
+            "If True, then aliases may contain a <product> placeholder."
+        ),
     )
     has_unit_of_measure = models.BooleanField(
         default=False,
         verbose_name=_("Has Unit Of Measure?"),
-        help_text=_("Does a value for this characteristic also require a unit_of_measure?"),
+        help_text=_(
+            "Does a value for this characteristic also require a unit_of_measure? "
+            "If True, then aliases may contain a <unit_of_measure> placeholder."
+        ),
     )
     variable_type = models.CharField(
         max_length=20,

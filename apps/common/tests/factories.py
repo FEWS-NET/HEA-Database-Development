@@ -36,75 +36,6 @@ class TreebeardFactory(factory.django.DjangoModelFactory):
             return model_class.add_root(instance=instance)
 
 
-class CountryFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = "common.Country"
-        django_get_or_create = ("iso3166a2", "name")
-
-    # Note that we skip XK because it is actually a code in real use for Kosovo
-    iso3166a2 = factory.Iterator(["XA", "XB", "XC", "XD", "XE", "XF", "XG", "XH", "XI", "XJ", "XL", "XM"])
-    iso3166a3 = factory.LazyAttribute(lambda o: f"{o.iso3166a2}{o.iso3166a2[-1]}")
-    iso3166n3 = factory.LazyAttribute(lambda o: 900 + ord(o.iso3166a2[-1]) - 64)
-    iso_en_ro_name = factory.LazyAttribute(lambda o: f"{o.iso3166a2} Country")
-    iso_en_name = factory.LazyAttribute(lambda o: f"{o.iso3166a2} Country")
-    name = factory.LazyAttribute(lambda o: f"{o.iso3166a2} Country")
-
-    @classmethod
-    def _get_manager(cls, target_class):
-        return super()._get_manager(target_class)
-
-
-class CurrencyFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = "common.Currency"
-        django_get_or_create = ("iso4217a3",)
-
-    iso4217a3 = factory.Iterator(["XAC", "XBC", "XCC", "XDC", "XEC", "XFC", "XGC", "XHC", "XIC", "XJC", "XLC", "XMC"])
-
-
-class UnitOfMeasureFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = "common.UnitOfMeasure"
-        django_get_or_create = ("abbreviation",)
-
-    abbreviation = factory.Sequence(lambda n: "U%d" % n)
-    unit_type = UnitOfMeasure.WEIGHT
-    description = factory.Sequence(lambda n: "Unit %d" % n)
-
-
-class ClassifiedProductFactory(TreebeardFactory):
-    class Meta:
-        model = "common.ClassifiedProduct"
-        django_get_or_create = (
-            "cpcv2",
-            "description",
-            "common_name",
-        )
-
-    cpcv2 = factory.Iterator(["R09999AA", "R09999BB", "L09999CB", "R09999DC", "S90999EE"])
-    description = factory.LazyAttribute(lambda o: f"Product Description {o.cpcv2}")
-    common_name = factory.LazyAttribute(lambda o: f"Product {o.cpcv2}")
-    scientific_name = factory.LazyAttribute(lambda o: f"Product Scientific {o.cpcv2}")
-    unit_of_measure = factory.SubFactory(UnitOfMeasureFactory)
-    kcals_per_unit = fuzzy.FuzzyInteger(50, 7500)
-
-    @classmethod
-    def _create(cls, model_class, *args, **kwargs):
-        """
-        Create a parent for "detail" products, e.g. R01234AA.
-        """
-        if kwargs.get("parent", False) is True:
-            try:
-                parent = ClassifiedProduct.objects.get(cpcv2=kwargs["cpcv2"][:-2])
-            except ClassifiedProduct.DoesNotExist:
-                parent = ClassifiedProduct(
-                    cpcv2=kwargs["cpcv2"][:-2], description=f'Product Description {kwargs["cpcv2"][:-2]}'
-                )
-                ClassifiedProduct.add_root(instance=parent)
-            kwargs["parent"] = parent
-        return super()._create(model_class, *args, **kwargs)
-
-
 class UserFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = "auth.User"
@@ -148,6 +79,44 @@ class GroupFactory(factory.django.DjangoModelFactory):
                 self.permissions.add(permission)
 
 
+class CountryFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = "common.Country"
+        django_get_or_create = ("iso3166a2",)
+
+    # Note that we skip XK because it is actually a code in real use for Kosovo
+    iso3166a2 = factory.Iterator(["XA", "XB", "XC", "XD", "XE", "XF", "XG", "XH", "XI", "XJ", "XL", "XM"])
+    iso3166a3 = factory.LazyAttribute(lambda o: f"{o.iso3166a2}{o.iso3166a2[-1]}")
+    iso3166n3 = factory.LazyAttribute(lambda o: 900 + ord(o.iso3166a2[-1]) - 64)
+    iso_en_ro_name = factory.LazyAttribute(lambda o: f"{o.iso3166a2} Country")
+    iso_en_name = factory.LazyAttribute(lambda o: f"{o.iso3166a2} Country")
+    name = factory.LazyAttribute(lambda o: f"{o.iso3166a2} Country")
+
+    @classmethod
+    def _get_manager(cls, target_class):
+        return super()._get_manager(target_class)
+
+
+class CurrencyFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = "common.Currency"
+        django_get_or_create = ("iso4217a3",)
+
+    # Note that we skip XKC because XK because it is actually an iso3166a2 code in real use for Kosovo
+    iso4217a3 = factory.Iterator(["XAC", "XBC", "XCC", "XDC", "XEC", "XFC", "XGC", "XHC", "XIC", "XJC", "XLC", "XMC"])
+
+
+class UnitOfMeasureFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = "common.UnitOfMeasure"
+        django_get_or_create = ("abbreviation",)
+
+    abbreviation = factory.Sequence(lambda n: "U%d" % n)
+    unit_type = UnitOfMeasure.WEIGHT
+    description = factory.Sequence(lambda n: "Unit %d" % n)
+    conversion = factory.RelatedFactory("common.tests.factories.UnitOfMeasureConversionFactory", "from_unit")
+
+
 class UnitOfMeasureConversionFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = UnitOfMeasureConversion
@@ -156,11 +125,51 @@ class UnitOfMeasureConversionFactory(factory.django.DjangoModelFactory):
             "to_unit",
         ]
 
-    from_unit = factory.SubFactory(UnitOfMeasureFactory)
-    to_unit = factory.SubFactory(
-        "common.tests.factories.UnitOfMeasureFactory", unit_type=factory.SelfAttribute("..from_unit.unit_type")
-    )
-    conversion_factor = factory.Sequence(lambda n: 0.1 * (1 + n % 20))
+    from_unit = factory.SubFactory(UnitOfMeasureFactory, conversion=None)
+    conversion_factor = fuzzy.FuzzyInteger(2, 10)
+
+    @factory.lazy_attribute
+    def to_unit(self):
+        if self.from_unit.unit_type == UnitOfMeasure.WEIGHT:
+            return UnitOfMeasure.objects.get_or_create(abbreviation="kg", unit_type=self.from_unit.unit_type)[0]
+        elif self.from_unit.unit_type == UnitOfMeasure.VOLUME:
+            return UnitOfMeasure.objects.get_or_create(abbreviation="L", unit_type=self.from_unit.unit_type)[0]
+        elif self.from_unit.unit_type == UnitOfMeasure.ITEM:
+            return UnitOfMeasure.objects.get_or_create(abbreviation="ea", unit_type=self.from_unit.unit_type)[0]
+        elif self.from_unit.unit_type == UnitOfMeasure.AREA:
+            return UnitOfMeasure.objects.get_or_create(abbreviation="ha", unit_type=self.from_unit.unit_type)[0]
+        elif self.from_unit.unit_type == UnitOfMeasure.YIELD:
+            return UnitOfMeasure.objects.get_or_create(abbreviation="MT/ha", unit_type=self.from_unit.unit_type)[0]
+
+
+class ClassifiedProductFactory(TreebeardFactory):
+    class Meta:
+        model = "common.ClassifiedProduct"
+        django_get_or_create = ("cpcv2",)
+
+    cpcv2 = factory.Iterator(["R09999AA", "R09999BB", "L09999CB", "R09999DC", "S90999EE"])
+    description = factory.LazyAttribute(lambda o: f"Product Description {o.cpcv2}")
+    common_name = factory.LazyAttribute(lambda o: f"Product {o.cpcv2}")
+    aliases = factory.LazyAttribute(lambda o: [f"Prod {o.cpcv2}", f"Crop {o.cpcv2}"])
+    scientific_name = factory.LazyAttribute(lambda o: f"Scientific Name {o.cpcv2}")
+    unit_of_measure = factory.SubFactory(UnitOfMeasureFactory)
+    kcals_per_unit = fuzzy.FuzzyInteger(50, 7500)
+
+    @classmethod
+    def _create(cls, model_class, *args, **kwargs):
+        """
+        Create a parent for "detail" products, e.g. R01234AA.
+        """
+        if kwargs.get("parent", False) is True:
+            try:
+                parent = ClassifiedProduct.objects.get(cpcv2=kwargs["cpcv2"][:-2])
+            except ClassifiedProduct.DoesNotExist:
+                parent = ClassifiedProduct(
+                    cpcv2=kwargs["cpcv2"][:-2], description=f'Product Description {kwargs["cpcv2"][:-2]}'
+                )
+                ClassifiedProduct.add_root(instance=parent)
+            kwargs["parent"] = parent
+        return super()._create(model_class, *args, **kwargs)
 
 
 class CountryClassifiedProductAliasesFactory(factory.django.DjangoModelFactory):
@@ -173,3 +182,12 @@ class CountryClassifiedProductAliasesFactory(factory.django.DjangoModelFactory):
 
     country = factory.SubFactory(CountryFactory)
     product = factory.SubFactory(ClassifiedProductFactory)
+    aliases = factory.LazyAttribute(
+        lambda o: [
+            "{}-{}-{}".format(
+                o.product.cpcv2[0].lower(),
+                o.product.cpcv2[1:6],
+                o.product.cpcv2[6:].lower(),
+            )
+        ]
+    )
