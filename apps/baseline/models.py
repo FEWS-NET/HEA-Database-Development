@@ -1621,6 +1621,12 @@ class SeasonalActivity(common_models.Model):
         help_text=_("Product, e.g. full fat milk"),
         related_name="baseline_seasonal_activities",
     )
+    additional_identifier = models.CharField(
+        max_length=60,
+        blank=True,
+        verbose_name=_("Additional Identifier"),
+        help_text=_("Additional text identifying the seasonal activity"),
+    )
 
     objects = SeasonalActivityManager()
 

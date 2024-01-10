@@ -392,9 +392,9 @@ class SeasonalActivityTypeAdmin(admin.ModelAdmin):
 
 
 class SeasonalActivityAdmin(admin.ModelAdmin):
-    fields = ("livelihood_zone_baseline", "seasonal_activity_type", "season", "product")
+    fields = ("livelihood_zone_baseline", "seasonal_activity_type", "season", "product", "additional_identifier")
     list_display = ("livelihood_zone_baseline", "seasonal_activity_type", "product")
-    search_fields = ("seasonal_activity_type", "season", "product")
+    search_fields = ("seasonal_activity_type", "season", "product", "additional_identifier")
     list_filter = ("livelihood_zone_baseline__livelihood_zone", "seasonal_activity_type", "season", "product")
     filter_horizontal = ("season",)
 
@@ -405,6 +405,7 @@ class SeasonalActivityOccurrenceAdmin(admin.ModelAdmin):
         "seasonal_activity__seasonal_activity_type",
         "seasonal_activity__season",
         "seasonal_activity__product",
+        "seasonal_activity__additional_identifier",
     )
     list_filter = (
         "community",
