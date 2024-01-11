@@ -890,7 +890,7 @@ class ClassifiedProduct(MP_Node, Model):
         " prefixed with R, L, P or S, a letter indicating whether the Product is Raw agricultural output,"
         " Live animals, a Processed product or a Service.",
     )
-    description = TranslatedField(models.CharField(blank=True, max_length=800, verbose_name=_("description")))
+    description = TranslatedField(models.CharField(max_length=800, verbose_name=_("description")))
     common_name = TranslatedField(NameField(blank=True, verbose_name=_("common name")))
     aliases = models.JSONField(
         blank=True,

@@ -163,6 +163,13 @@ class TranslatedField:
             model_field_name = f"{name}_{language_code}"
             field = self.field.clone()
             field.verbose_name = format_lazy("{} ({})", self.field.verbose_name, language_name)
+            if language_code != settings.LANGUAGE_CODE:
+                # If a field is unique or a primary key, apply that only on the default language
+                field._unique = False
+                field.primary_key = False
+                # If a field is non-blank, apply that restriction only on the default language
+                if getattr(field, "blank", None) is False:
+                    field.blank = True
             field.contribute_to_class(cls=cls, name=model_field_name, private_only=private_only)
 
         # Add property that returns local translation, eg, obj.name == "Nome português"
@@ -177,3 +184,7 @@ class TranslatedField:
 
         local_translation_getter.short_description = _(self.field.verbose_name)
         setattr(cls, name, property(local_translation_getter))
+
+
+def translation_fields(base_fieldname):
+    return (f"{base_fieldname}_{code}" for code, name in settings.LANGUAGES)

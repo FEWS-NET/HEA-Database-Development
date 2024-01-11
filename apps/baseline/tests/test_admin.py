@@ -120,7 +120,7 @@ class LivelihoodZoneAdminTestCase(TestCase):
     def test_search_livelihood_zone(self):
         response = self.client.get(
             self.url,
-            {"q": self.livelihood_zone2.name},
+            {"q": self.livelihood_zone2.name_en},
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.livelihood_zone2.name)
@@ -161,7 +161,7 @@ class LivelihoodZoneBaselineAdminTestCase(TestCase):
     def test_search_livelihood_zone_baseline_fields(self):
         response = self.client.get(
             self.url,
-            {"q": self.livelihood_zone_baseline1.livelihood_zone.name},
+            {"q": self.livelihood_zone_baseline1.livelihood_zone.name_en},
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.livelihood_zone_baseline1.livelihood_zone)
@@ -192,10 +192,10 @@ class LivelihoodZoneBaselineAdminTestCase(TestCase):
 
     def test_create_livelihood_zone_baseline(self):
         bss = SimpleUploadedFile("test_bss.xlsx", b"Baseline content placeholder, just to be used for testing ...")
-        livelihood_zone = LivelihoodZoneFactory(name="New Test Zone")
+        livelihood_zone = LivelihoodZoneFactory(name_en="New Test Zone")
         current_count = LivelihoodZoneBaseline.objects.all().count()
         data = {
-            "name": f"{livelihood_zone.code} Baseline",
+            "name_en": f"{livelihood_zone.code} Baseline",
             "description": f"{livelihood_zone.code} Baseline description",
             "livelihood_zone": livelihood_zone.pk,
             "main_livelihood_category": LivelihoodCategoryFactory().pk,
@@ -240,7 +240,7 @@ class LivelihoodStrategyAdminTestCase(TestCase):
     def test_livelihoodstrategy_search_fields(self):
         response = self.client.get(
             self.url,
-            {"q": self.strategy1.livelihood_zone_baseline.livelihood_zone.name},
+            {"q": self.strategy1.livelihood_zone_baseline.livelihood_zone.name_en},
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.strategy1.product.cpcv2)
@@ -514,6 +514,7 @@ class CommunityCropProductionAdminTestCase(TestCase):
         self.assertContains(response, self.cropproduction2.yield_without_inputs)
 
     def test_search_fields(self):
+        # Also confirms translation_fields() is working correctly
         search_fields = (
             "crop__description_en",
             "crop__description_fr",
@@ -527,7 +528,12 @@ class CommunityCropProductionAdminTestCase(TestCase):
             "season__name_es",
             "season__name_pt",
         )
-        self.assertTrue(all(element in self.admin.search_fields for element in search_fields))
+        self.assertCountEqual(
+            self.admin.search_fields,
+            search_fields,
+            "CommunityCropProductionAdmin: "
+            f"Fields expected: {search_fields}. Fields found: {self.admin.search_fields}.",
+        )
         response = self.client.get(reverse(self.url), {"q": self.cropproduction1.crop.description})
         self.assertEqual(response.status_code, 200)
         # Parse the HTML content of the response

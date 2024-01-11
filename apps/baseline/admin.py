@@ -3,6 +3,7 @@ from copy import deepcopy
 from django.contrib import admin
 
 from common.admin import GeoModelAdmin
+from common.fields import translation_fields
 from metadata.models import LivelihoodStrategyType
 
 from .forms import (
@@ -70,8 +71,8 @@ class LivelihoodZoneAdmin(admin.ModelAdmin):
     )
     search_fields = [
         "code",
-        "name",
-        "description",
+        *translation_fields("name"),
+        *translation_fields("description"),
         "country__iso_en_ro_name",
     ]
     list_filter = ("country",)
@@ -84,7 +85,7 @@ class LivelihoodZoneBaselineAdmin(GeoModelAdmin):
             {
                 "fields": [
                     "livelihood_zone",
-                    "name",
+                    *translation_fields("name"),
                     "main_livelihood_category",
                     "source_organization",
                     "bss",
@@ -96,7 +97,7 @@ class LivelihoodZoneBaselineAdmin(GeoModelAdmin):
                     "data_collection_start_date",
                     "data_collection_end_date",
                     "publication_date",
-                    "description",
+                    *translation_fields("description"),
                 ]
             },
         ),
@@ -119,15 +120,11 @@ class LivelihoodZoneBaselineAdmin(GeoModelAdmin):
         "reference_year_start_date",
         "reference_year_end_date",
     )
-    search_fields = [
-        "livelihood_zone__name",
-        "main_livelihood_category__name_en",
-        "main_livelihood_category__name_fr",
-        "main_livelihood_category__name_ar",
-        "main_livelihood_category__name_es",
-        "main_livelihood_category__name_ar",
+    search_fields = (
+        *translation_fields("livelihood_zone__name"),
+        *translation_fields("main_livelihood_category__name"),
         "source_organization__name",
-    ]
+    )
     list_filter = [
         "source_organization",
         "livelihood_zone__country",
@@ -152,10 +149,10 @@ class CommunityAdmin(GeoModelAdmin):
     search_fields = (
         "name",
         "full_name",
-        "livelihood_zone_baseline__livelihood_zone__name",
+        *translation_fields("livelihood_zone_baseline__livelihood_zone__name"),
     )
     list_filter = (
-        "livelihood_zone_baseline__livelihood_zone__name",
+        *translation_fields("livelihood_zone_baseline__livelihood_zone__name"),
         "livelihood_zone_baseline__livelihood_zone__country",
     )
 
@@ -179,13 +176,10 @@ class LivelihoodStrategyAdmin(admin.ModelAdmin):
     )
     search_fields = (
         "strategy_type",
-        "livelihood_zone_baseline__livelihood_zone__name",
-        "product__common_name_en",
-        "product__common_name_fr",
-        "product__common_name_ar",
-        "product__common_name_es",
-        "product__common_name_pt",
+        *translation_fields("livelihood_zone_baseline__livelihood_zone__name"),
+        *translation_fields("product__common_name"),
     )
+
     list_filter = (
         "strategy_type",
         "livelihood_zone_baseline__livelihood_zone",
@@ -476,7 +470,7 @@ class WealthGroupAdmin(admin.ModelAdmin):
     list_filter = (
         "livelihood_zone_baseline__source_organization",
         "livelihood_zone_baseline__livelihood_zone__country",
-        "livelihood_zone_baseline__livelihood_zone__name",
+        *translation_fields("livelihood_zone_baseline__livelihood_zone__name"),
         "community",
         "wealth_group_category",
     )
@@ -572,18 +566,11 @@ class CommunityCropProductionAdmin(admin.ModelAdmin):
         "land_unit_of_measure",
     )
     search_fields = (
-        "crop__description_en",
-        "crop__description_fr",
-        "crop__description_ar",
-        "crop__description_es",
-        "crop__description_pt",
+        *translation_fields("crop__description"),
         "crop_purpose",
-        "season__name_en",
-        "season__name_fr",
-        "season__name_ar",
-        "season__name_es",
-        "season__name_pt",
+        *translation_fields("season__name"),
     )
+
     list_filter = (
         "community__livelihood_zone_baseline__livelihood_zone",
         "community__full_name",
@@ -610,13 +597,7 @@ class CommunityLivestockAdmin(admin.ModelAdmin):
         "wet_season_milk_production",
         "dry_season_milk_production",
     )
-    search_fields = (
-        "livestock__common_name_en",
-        "livestock__common_name_fr",
-        "livestock__common_name_ar",
-        "livestock__common_name_es",
-        "livestock__common_name_pt",
-    )
+    search_fields = (*translation_fields("livestock__common_name"),)
     list_filter = (
         "community__livelihood_zone_baseline__livelihood_zone",
         "community__full_name",

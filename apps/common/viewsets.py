@@ -3,6 +3,7 @@ from django.utils.translation import gettext_lazy as _
 from django_filters import rest_framework as filters
 from rest_framework import viewsets
 
+from .fields import translation_fields
 from .filters import MultiFieldFilter
 from .models import ClassifiedProduct, Country, Currency, UnitOfMeasure
 from .serializers import (
@@ -180,15 +181,11 @@ class UnitOfMeasureFilterSet(filters.FilterSet):
         """
 
         model = UnitOfMeasure
-        fields = [
+        fields = (
             "abbreviation",
-            "description_en",
-            "description_fr",
-            "description_es",
-            "description_ar",
-            "description_pt",
+            *translation_fields("description"),
             "unit_type",
-        ]
+        )
 
 
 class UnitOfMeasureViewSet(viewsets.ModelViewSet):
@@ -205,15 +202,11 @@ class UnitOfMeasureViewSet(viewsets.ModelViewSet):
     queryset = UnitOfMeasure.objects.all()
     serializer_class = UnitOfMeasureSerializer
     filterset_class = UnitOfMeasureFilterSet
-    search_fields = [
+    search_fields = (
         "abbreviation",
-        "description_en",
-        "description_fr",
-        "description_es",
-        "description_ar",
-        "description_pt",
+        *translation_fields("description"),
         "unit_type",
-    ]
+    )
 
 
 class ClassifiedProductFilterSet(filters.FilterSet):
@@ -275,22 +268,14 @@ class ClassifiedProductFilterSet(filters.FilterSet):
         """
 
         model = ClassifiedProduct
-        fields = [
+        fields = (
             "cpcv2",
-            "description_en",
-            "description_fr",
-            "description_es",
-            "description_ar",
-            "description_pt",
-            "common_name_en",
-            "common_name_fr",
-            "common_name_es",
-            "common_name_ar",
-            "common_name_pt",
+            *translation_fields("description"),
+            *translation_fields("common_name"),
             "scientific_name",
             "unit_of_measure",
             "kcals_per_unit",
-        ]
+        )
 
 
 class ClassifiedProductViewSet(viewsets.ModelViewSet):
@@ -307,16 +292,8 @@ class ClassifiedProductViewSet(viewsets.ModelViewSet):
     queryset = ClassifiedProduct.objects.all()
     serializer_class = ClassifiedProductSerializer
     filterset_class = ClassifiedProductFilterSet
-    search_fields = [
+    search_fields = (
         "cpcv2",
-        "description_en",
-        "description_pt",
-        "description_ar",
-        "description_es",
-        "description_fr",
-        "common_name_en",
-        "common_name_pt",
-        "common_name_ar",
-        "common_name_es",
-        "common_name_fr",
-    ]
+        *translation_fields("description"),
+        *translation_fields("common_name"),
+    )

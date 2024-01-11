@@ -1,6 +1,8 @@
 from django.contrib import admin
 from django.contrib.admin import RelatedFieldListFilter
 
+from common.fields import translation_fields
+
 from .models import (
     HazardCategory,
     LivelihoodCategory,
@@ -13,36 +15,20 @@ from .models import (
 
 
 class ReferenceDataAdmin(admin.ModelAdmin):
-    fields = [
+    fields = (
         "code",
-        "name_en",
-        "name_pt",
-        "name_ar",
-        "name_es",
-        "name_fr",
-        "description_en",
-        "description_pt",
-        "description_ar",
-        "description_es",
-        "description_fr",
+        *translation_fields("name"),
+        *translation_fields("description"),
         "aliases",
-    ]
+    )
     list_display = (
         "code",
         "name",
         "description",
     )
     search_fields = (
-        "name_en",
-        "name_pt",
-        "name_ar",
-        "name_es",
-        "name_fr",
-        "description_en",
-        "description_pt",
-        "description_ar",
-        "description_es",
-        "description_fr",
+        *translation_fields("name"),
+        *translation_fields("description"),
         "aliases",
     )
 
@@ -60,17 +46,9 @@ class SeasonalActivityTypeAdmin(ReferenceDataAdmin):
 
     fields = (
         "code",
-        "name_en",
-        "name_pt",
-        "name_ar",
-        "name_es",
-        "name_fr",
+        *translation_fields("name"),
         "activity_category",
-        "description_en",
-        "description_pt",
-        "description_ar",
-        "description_es",
-        "description_fr",
+        *translation_fields("description"),
         "aliases",
     )
 
@@ -88,20 +66,11 @@ class WealthCharacteristicAdmin(ReferenceDataAdmin):
 
     fields = (
         "code",
-        "name_en",
-        "name_pt",
-        "name_ar",
-        "name_es",
-        "name_fr",
+        *translation_fields("name"),
         "variable_type",
-        "description_en",
-        "description_pt",
-        "description_ar",
-        "description_es",
-        "description_fr",
+        *translation_fields("description"),
         "aliases",
     )
-
     list_filter = ("variable_type",)
 
 
@@ -118,16 +87,8 @@ class SeasonAdmin(admin.ModelAdmin):
 
     fields = (
         "country",
-        "name_en",
-        "name_pt",
-        "name_ar",
-        "name_es",
-        "name_fr",
-        "description_en",
-        "description_pt",
-        "description_ar",
-        "description_es",
-        "description_fr",
+        *translation_fields("name"),
+        *translation_fields("description"),
         "season_type",
         "start",
         "end",
@@ -143,11 +104,7 @@ class SeasonAdmin(admin.ModelAdmin):
     )
     search_fields = (
         "country__iso_en_ro_name",
-        "name_en",
-        "name_pt",
-        "name_ar",
-        "name_es",
-        "name_fr",
+        *translation_fields("name"),
         "season_type",
     )
     list_filter = (
@@ -159,21 +116,13 @@ class SeasonAdmin(admin.ModelAdmin):
 
 class MarketAdmin(ReferenceDataAdmin):
 
-    fields = [
+    fields = (
         "code",
-        "name_en",
-        "name_pt",
-        "name_ar",
-        "name_es",
-        "name_fr",
+        *translation_fields("name"),
         "country",
-        "description_en",
-        "description_pt",
-        "description_ar",
-        "description_es",
-        "description_fr",
+        *translation_fields("description"),
         "aliases",
-    ]
+    )
 
     list_filter = (("country", RelatedFieldListFilter),)
 

@@ -25,11 +25,6 @@ class Migration(migrations.Migration):
             old_name="description",
             new_name="description_en",
         ),
-        migrations.AlterField(
-            model_name="classifiedproduct",
-            name="description_en",
-            field=models.CharField(blank=True, max_length=800, verbose_name="description"),
-        ),
         migrations.AddField(
             model_name="classifiedproduct",
             name="common_name_ar",
@@ -53,26 +48,22 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="classifiedproduct",
             name="description_ar",
-            field=models.CharField(blank=True, default="", max_length=800, verbose_name="description"),
-            preserve_default=False,
+            field=models.CharField(blank=True, max_length=800, verbose_name="description"),
         ),
         migrations.AddField(
             model_name="classifiedproduct",
             name="description_es",
-            field=models.CharField(blank=True, default="", max_length=800, verbose_name="description"),
-            preserve_default=False,
+            field=models.CharField(blank=True, max_length=800, verbose_name="description"),
         ),
         migrations.AddField(
             model_name="classifiedproduct",
             name="description_fr",
-            field=models.CharField(blank=True, default="", max_length=800, verbose_name="description"),
-            preserve_default=False,
+            field=models.CharField(blank=True, max_length=800, verbose_name="description"),
         ),
         migrations.AddField(
             model_name="classifiedproduct",
             name="description_pt",
-            field=models.CharField(blank=True, default="", max_length=800, verbose_name="description"),
-            preserve_default=False,
+            field=models.CharField(blank=True, max_length=800, verbose_name="description"),
         ),
         migrations.AddField(
             model_name="unitofmeasure",

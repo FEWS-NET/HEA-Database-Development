@@ -3,6 +3,7 @@ from django.utils.translation import gettext_lazy as _
 from django_filters import rest_framework as filters
 from rest_framework import viewsets
 
+from common.fields import translation_fields
 from common.models import Country
 from metadata.models import (
     HazardCategory,
@@ -48,37 +49,21 @@ class ReferenceDataFilterSet(filters.FilterSet):
 
     class Meta:
         model = ReferenceData
-        fields = [
-            "name_en",
-            "name_pt",
-            "name_es",
-            "name_fr",
-            "name_ar",
-            "description_en",
-            "description_pt",
-            "description_es",
-            "description_fr",
-            "description_ar",
-        ]
+        fields = (
+            *translation_fields("name"),
+            *translation_fields("description"),
+        )
 
 
 class ReferenceDataViewSet(viewsets.ModelViewSet):
     serializer_class = ReferenceDataSerializer
     filterset_class = ReferenceDataFilterSet
-    search_fields = [
+    search_fields = (
         "code",
-        "name_en",
-        "name_pt",
-        "name_es",
-        "name_fr",
-        "name_ar",
-        "description_en",
-        "description_pt",
-        "description_es",
-        "description_fr",
-        "description_ar",
+        *translation_fields("name"),
+        *translation_fields("description"),
         "aliases",
-    ]
+    )
 
 
 class LivelihoodCategoryViewSet(ReferenceDataViewSet):
@@ -98,40 +83,24 @@ class WealthCharacteristicFilterSet(ReferenceDataFilterSet):
 
     class Meta:
         model = ReferenceData
-        fields = [
-            "name_en",
-            "name_pt",
-            "name_es",
-            "name_fr",
-            "name_ar",
-            "description_en",
-            "description_pt",
-            "description_es",
-            "description_fr",
-            "description_ar",
+        fields = (
+            *translation_fields("name"),
+            *translation_fields("description"),
             "variable_type",
-        ]
+        )
 
 
 class WealthCharacteristicViewSet(ReferenceDataViewSet):
     queryset = WealthCharacteristic.objects.all()
     serializer_class = WealthCharacteristicSerializer
     filterset_class = WealthCharacteristicFilterSet
-    search_fields = [
+    search_fields = (
         "code",
-        "name_en",
-        "name_pt",
-        "name_es",
-        "name_fr",
-        "name_ar",
-        "description_en",
-        "description_pt",
-        "description_es",
-        "description_fr",
-        "description_ar",
+        *translation_fields("name"),
+        *translation_fields("description"),
         "variable_type",
         "aliases",
-    ]
+    )
 
 
 class SeasonalActivityTypeFilterSet(ReferenceDataFilterSet):
@@ -141,40 +110,24 @@ class SeasonalActivityTypeFilterSet(ReferenceDataFilterSet):
 
     class Meta:
         model = ReferenceData
-        fields = [
-            "name_en",
-            "name_pt",
-            "name_ar",
-            "name_fr",
-            "name_es",
-            "description_en",
-            "description_pt",
-            "description_ar",
-            "description_fr",
-            "description_es",
+        fields = (
+            *translation_fields("name"),
+            *translation_fields("description"),
             "activity_category",
-        ]
+        )
 
 
 class SeasonalActivityTypeViewSet(ReferenceDataViewSet):
     queryset = SeasonalActivityType.objects.all()
     serializer_class = SeasonalActivityTypeSerializer
     filterset_class = SeasonalActivityTypeFilterSet
-    search_fields = [
+    search_fields = (
         "code",
-        "name_en",
-        "name_pt",
-        "name_es",
-        "name_fr",
-        "name_ar",
-        "description_en",
-        "description_pt",
-        "description_es",
-        "description_fr",
-        "description_ar",
+        *translation_fields("name"),
+        *translation_fields("description"),
         "activity_category",
         "aliases",
-    ]
+    )
 
 
 class HazardCategoryViewSet(ReferenceDataViewSet):
@@ -222,16 +175,8 @@ class SeasonFilterSet(filters.FilterSet):
     class Meta:
         model = Season
         fields = (
-            "name_en",
-            "name_pt",
-            "name_es",
-            "name_fr",
-            "name_ar",
-            "description_en",
-            "description_pt",
-            "description_es",
-            "description_fr",
-            "description_ar",
+            *translation_fields("name"),
+            *translation_fields("description"),
             "season_type",
         )
 
@@ -240,16 +185,8 @@ class SeasonViewSet(viewsets.ModelViewSet):
     queryset = Season.objects.all()
     serializer_class = SeasonSerializer
     filterset_class = SeasonFilterSet
-    search_fields = [
-        "name_en",
-        "name_pt",
-        "name_es",
-        "name_fr",
-        "name_ar",
-        "description_en",
-        "description_pt",
-        "description_es",
-        "description_fr",
-        "description_ar",
+    search_fields = (
+        *translation_fields("name"),
+        *translation_fields("description"),
         "season_type",
-    ]
+    )

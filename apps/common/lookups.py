@@ -6,6 +6,7 @@ from abc import ABC
 
 import pandas as pd
 
+from .fields import translation_fields
 from .models import (
     ClassifiedProduct,
     Country,
@@ -348,20 +349,12 @@ class ClassifiedProductLookup(Lookup):
     # HEA, then pass `filters={"numchild": 0}` when instantiating the Lookup.
     model = ClassifiedProduct
     id_fields = ["cpcv2"]
-    lookup_fields = [
-        "common_name_en",
-        "common_name_pt",
-        "common_name_ar",
-        "common_name_es",
-        "common_name_fr",
-        "description_en",
-        "description_pt",
-        "description_ar",
-        "description_es",
-        "description_fr",
+    lookup_fields = (
+        *translation_fields("common_name"),
+        *translation_fields("description"),
         "aliases",
         "hs2012",
-    ]
+    )
 
     def get_lookup_df(self):
         """
@@ -386,11 +379,7 @@ class ClassifiedProductLookup(Lookup):
 class UnitOfMeasureLookup(Lookup):
     model = UnitOfMeasure
     id_fields = ["abbreviation"]
-    lookup_fields = [
-        "description_en",
-        "description_fr",
-        "description_es",
-        "description_ar",
-        "description_pt",
+    lookup_fields = (
+        *translation_fields("description"),
         "aliases",
-    ]
+    )

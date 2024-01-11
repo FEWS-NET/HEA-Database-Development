@@ -11,6 +11,7 @@ from django.utils.translation import gettext_lazy as _
 from model_utils.managers import InheritanceManager
 
 import common.models as common_models
+from common.fields import TranslatedField
 from common.models import (
     ClassifiedProduct,
     Country,
@@ -84,8 +85,8 @@ class LivelihoodZone(common_models.Model):
         verbose_name=_("code"),
         help_text=_("Primary identifier for the Livelihood Zone"),
     )
-    name = common_models.NameField(max_length=200, unique=True)
-    description = common_models.DescriptionField()
+    name = TranslatedField(common_models.NameField(max_length=200, unique=True))
+    description = TranslatedField(common_models.DescriptionField())
     country = models.ForeignKey(Country, verbose_name=_("Country"), db_column="country_code", on_delete=models.PROTECT)
 
     class Meta:
@@ -123,8 +124,8 @@ class LivelihoodZoneBaseline(common_models.Model):
     June 2023 for the Sahel countries.
     """
 
-    name = common_models.NameField(max_length=200, unique=True)
-    description = common_models.DescriptionField()
+    name = TranslatedField(common_models.NameField(max_length=200, unique=True))
+    description = TranslatedField(common_models.DescriptionField())
     livelihood_zone = models.ForeignKey(
         LivelihoodZone, db_column="livelihood_zone_code", on_delete=models.RESTRICT, verbose_name=_("Livelihood Zone")
     )

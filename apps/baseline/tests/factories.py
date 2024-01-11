@@ -78,8 +78,16 @@ class LivelihoodZoneFactory(factory.django.DjangoModelFactory):
         ]
 
     code = factory.LazyAttributeSequence(lambda o, n: f"{o.country.pk}{n:04d}")
-    name = factory.LazyAttribute(lambda o: f"{o.code} name")
-    description = factory.LazyAttribute(lambda o: f"{o.code} description")
+    name_en = factory.LazyAttribute(lambda o: f"{o.code} name EN")
+    name_fr = factory.LazyAttribute(lambda o: f"{o.code} name FR")
+    name_es = factory.LazyAttribute(lambda o: f"{o.code} name ES")
+    name_pt = factory.LazyAttribute(lambda o: f"{o.code} name PT")
+    name_ar = factory.LazyAttribute(lambda o: f"{o.code} name AR")
+    description_en = factory.LazyAttribute(lambda o: f"{o.code} description EN")
+    description_fr = factory.LazyAttribute(lambda o: f"{o.code} description FR")
+    description_es = factory.LazyAttribute(lambda o: f"{o.code} description ES")
+    description_pt = factory.LazyAttribute(lambda o: f"{o.code} description PT")
+    description_ar = factory.LazyAttribute(lambda o: f"{o.code} description AR")
     country = factory.SubFactory(CountryFactory)
 
 
@@ -91,7 +99,11 @@ class LivelihoodZoneBaselineFactory(factory.django.DjangoModelFactory):
             "source_organization",
         ]
 
-    name = factory.LazyAttribute(lambda lz: f"Baseline {lz.livelihood_zone}")
+    name_en = factory.LazyAttribute(lambda lz: f"Baseline {lz.livelihood_zone}")
+    name_fr = factory.LazyAttribute(lambda lz: f"Baseline {lz.livelihood_zone}")
+    name_es = factory.LazyAttribute(lambda lz: f"Baseline {lz.livelihood_zone}")
+    name_pt = factory.LazyAttribute(lambda lz: f"Baseline {lz.livelihood_zone}")
+    name_ar = factory.LazyAttribute(lambda lz: f"Baseline {lz.livelihood_zone}")
     livelihood_zone = factory.SubFactory(LivelihoodZoneFactory)
     geography = None
     main_livelihood_category = factory.SubFactory(LivelihoodCategoryFactory)

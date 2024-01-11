@@ -183,8 +183,8 @@ LANGUAGES = (
     ("en", _("English")),
     ("fr", _("French")),
     ("es", _("Spanish")),
-    ("ar", _("Arabic")),
     ("pt", _("Portuguese")),
+    ("ar", _("Arabic")),
 )
 
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"

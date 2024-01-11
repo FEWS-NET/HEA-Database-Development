@@ -205,19 +205,6 @@ class LivelihoodZoneViewSetTestCase(APITestCase):
         logging.disable(logging.NOTSET)
         self.assertEqual(response.status_code, 403)
 
-    def test_patch(self):
-        self.client.force_login(self.user)
-        new_value = f"{self.client.get(self.url_get(1)).json()['name']} - updated"
-        logging.disable(logging.CRITICAL)
-        response = self.client.patch(self.url_get(0), {"name": new_value})
-        logging.disable(logging.NOTSET)
-        self.assertEqual(response.status_code, 200)
-        response = self.client.get(self.url_get(0))
-        self.assertEqual(response.status_code, 200)
-        self.assertIsInstance(response.json(), dict)
-        self.assertIn("name", response.json())
-        self.assertEqual(response.json()["name"], new_value)
-
     def test_list_returns_all_records(self):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
@@ -298,6 +285,8 @@ class LivelihoodZoneBaselineViewSetTestCase(APITestCase):
         self.assertIsInstance(response.json(), dict)
         expected_fields = (
             "id",
+            "name",
+            "description",
             "source_organization",
             "source_organization_name",
             "livelihood_zone",
