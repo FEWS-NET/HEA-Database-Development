@@ -71,7 +71,7 @@ class Lookup(ABC):
 
     def __init__(self, filters: dict = {}):
         # Make sure we don't have any fields in multiple categories
-        assert len(set(self.id_fields + self.parent_fields + self.lookup_fields)) == len(self.id_fields) + len(
+        assert len(set((*self.id_fields, *self.parent_fields, *self.lookup_fields))) == len(self.id_fields) + len(
             self.parent_fields
         ) + len(self.lookup_fields), "id_fields, parent_fields and lookup_fields must not contain duplicate entries"
 
@@ -80,7 +80,7 @@ class Lookup(ABC):
         self.filters = filters
 
     def get_queryset_columns(self):
-        return self.lookup_fields + self.parent_fields + self.id_fields
+        return [*self.lookup_fields, *self.parent_fields, *self.id_fields]
 
     def get_queryset(self):
         """
@@ -127,7 +127,7 @@ class Lookup(ABC):
         df = self.get_lookup_df()
 
         # Melt the non-id columns
-        df = df.melt(id_vars=self.id_fields + self.parent_fields, value_name="lookup_key").drop(
+        df = df.melt(id_vars=[*self.id_fields, *self.parent_fields], value_name="lookup_key").drop(
             ["variable"], axis="columns"
         )
 
@@ -147,7 +147,7 @@ class Lookup(ABC):
 
         df = df.drop_duplicates()
 
-        df = df.sort_values(by=self.id_fields + self.parent_fields)
+        df = df.sort_values(by=[*self.id_fields, *self.parent_fields])
 
         if not self.composite_key:
             df = df.rename(columns={self.id_fields[0]: "lookup_value"})
@@ -216,7 +216,7 @@ class Lookup(ABC):
             right_fields.append("lookup_key")
 
         # Set up the fields we need in the lookup dataframe
-        lookup_fields = ["lookup_value"] + right_fields
+        lookup_fields = ["lookup_value", *right_fields]
 
         # Get the lookup dataframe, dropping duplicates to eliminate duplicates caused by
         # lookup key and primary key when there isn't actually a lookup_column to need them
