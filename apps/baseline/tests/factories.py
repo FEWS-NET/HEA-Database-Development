@@ -558,6 +558,7 @@ class SeasonalActivityFactory(factory.django.DjangoModelFactory):
     livelihood_zone_baseline = factory.SubFactory(LivelihoodZoneBaselineFactory)
     seasonal_activity_type = factory.SubFactory(SeasonalActivityTypeFactory)
     product = factory.SubFactory(ClassifiedProductFactory)
+    additional_identifier = factory.Sequence(lambda n: f"additional_identifier {n}")
 
     @factory.post_generation
     def seasons(self, create, extracted, **kwargs):

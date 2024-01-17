@@ -3748,6 +3748,7 @@ class SeasonalActivityViewSetTestCase(APITestCase):
             "product",
             "product_common_name",
             "product_description",
+            "additional_identifier",
         )
         self.assertCountEqual(
             response.json().keys(),
@@ -3845,6 +3846,7 @@ class SeasonalActivityOccurrenceViewSetTestCase(APITestCase):
             "product",
             "product_common_name",
             "product_description",
+            "additional_identifier",
             "community",
             "community_name",
             "start",

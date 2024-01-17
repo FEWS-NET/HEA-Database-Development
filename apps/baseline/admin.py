@@ -504,6 +504,7 @@ class SeasonalActivityAdmin(admin.ModelAdmin):
         "seasonal_activity_type",
         "season",
         "product",
+        "additional_identifier",
     )
     list_display = (
         "livelihood_zone_baseline",
@@ -514,6 +515,7 @@ class SeasonalActivityAdmin(admin.ModelAdmin):
         "seasonal_activity_type",
         "season",
         "product",
+        "additional_identifier",
     )
     list_filter = (
         "livelihood_zone_baseline__livelihood_zone",
@@ -534,6 +536,7 @@ class SeasonalActivityOccurrenceAdmin(admin.ModelAdmin):
         "seasonal_activity__seasonal_activity_type",
         "seasonal_activity__season",
         "seasonal_activity__product",
+        "seasonal_activity__additional_identifier",
     )
     list_filter = (
         "community",

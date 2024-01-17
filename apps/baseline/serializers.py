@@ -683,6 +683,7 @@ class SeasonalActivitySerializer(serializers.ModelSerializer):
             "product",
             "product_common_name",
             "product_description",
+            "additional_identifier",
         ]
 
     livelihood_zone_name = serializers.CharField(
@@ -703,6 +704,7 @@ class SeasonalActivitySerializer(serializers.ModelSerializer):
     )
     activity_category = serializers.CharField(source="seasonal_activity_type.activity_category", read_only=True)
     activity_category_label = serializers.SerializerMethodField()
+    additional_identifier = serializers.CharField(read_only=True)
 
     def get_activity_category_label(self, obj):
         return obj.seasonal_activity_type.get_activity_category_display()
@@ -742,6 +744,7 @@ class SeasonalActivityOccurrenceSerializer(serializers.ModelSerializer):
             "product",
             "product_common_name",
             "product_description",
+            "additional_identifier",
             # End SeasonalActivity
             "community",
             "community_name",
@@ -774,6 +777,7 @@ class SeasonalActivityOccurrenceSerializer(serializers.ModelSerializer):
     product = serializers.CharField(source="seasonal_activity.product.pk", read_only=True)
     product_common_name = serializers.CharField(source="seasonal_activity.product.common_name", read_only=True)
     product_description = serializers.CharField(source="seasonal_activity.product.description", read_only=True)
+    additional_identifier = serializers.CharField(source="seasonal_activity.additional_identifier", read_only=True)
     seasonal_activity_type = serializers.CharField(
         source="seasonal_activity.seasonal_activity_type.pk", read_only=True
     )
