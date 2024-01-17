@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("baseline", "0003_alter_communitylivestock_options"),
+        ("baseline", "0004_add_translation_fields"),
     ]
 
     operations = [

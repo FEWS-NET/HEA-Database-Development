@@ -2,6 +2,8 @@ from django.db import models
 from django_filters import rest_framework as filters
 from rest_framework import viewsets
 
+from common.fields import translation_fields
+
 from .models import (
     BaselineLivelihoodActivity,
     BaselineWealthGroup,
@@ -106,12 +108,12 @@ class SourceOrganizationViewSet(viewsets.ModelViewSet):
 class LivelihoodZoneFilterSet(filters.FilterSet):
     class Meta:
         model = LivelihoodZone
-        fields = [
+        fields = (
             "code",
-            "name",
-            "description",
+            *translation_fields("description"),
+            *translation_fields("name"),
             "country",
-        ]
+        )
 
 
 class LivelihoodZoneViewSet(viewsets.ModelViewSet):
@@ -124,17 +126,17 @@ class LivelihoodZoneViewSet(viewsets.ModelViewSet):
     )
     serializer_class = LivelihoodZoneSerializer
     filterset_class = LivelihoodZoneFilterSet
-    search_fields = [
+    search_fields = (
         "code",
-        "description",
-        "name",
-    ]
+        *translation_fields("description"),
+        *translation_fields("name"),
+    )
 
 
 class LivelihoodZoneBaselineFilterSet(filters.FilterSet):
     class Meta:
         model = LivelihoodZoneBaseline
-        fields = [
+        fields = (
             "livelihood_zone",
             "main_livelihood_category",
             "source_organization",
@@ -144,7 +146,9 @@ class LivelihoodZoneBaselineFilterSet(filters.FilterSet):
             "valid_to_date",
             "population_source",
             "population_estimate",
-        ]
+            *translation_fields("description"),
+            *translation_fields("name"),
+        )
 
 
 class LivelihoodZoneBaselineViewSet(viewsets.ModelViewSet):
@@ -158,9 +162,11 @@ class LivelihoodZoneBaselineViewSet(viewsets.ModelViewSet):
     )
     serializer_class = LivelihoodZoneBaselineSerializer
     filterset_class = LivelihoodZoneBaselineFilterSet
-    search_fields = [
+    search_fields = (
+        *translation_fields("description"),
+        *translation_fields("name"),
         "population_source",
-    ]
+    )
 
 
 class LivelihoodProductCategoryFilterSet(filters.FilterSet):

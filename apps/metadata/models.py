@@ -6,6 +6,7 @@ from django.utils.translation import gettext_lazy as _
 from django.utils.translation import pgettext_lazy
 
 import common.models as common_models
+from common.fields import TranslatedField
 from common.models import Country
 
 logger = logging.getLogger(__name__)
@@ -20,8 +21,8 @@ class ReferenceData(common_models.Model):
     """
 
     code = common_models.CodeField(primary_key=True, verbose_name=_("Code"))
-    name = common_models.NameField()
-    description = common_models.DescriptionField()
+    name = TranslatedField(common_models.NameField())
+    description = TranslatedField(common_models.DescriptionField())
     # Some reference data needs to be sorted in a custom (i.e. non-alphabetic) order.
     # For example, WealthGroupCategory needs to be VP, P, M, BO in most cases.
     ordering = models.PositiveSmallIntegerField(
@@ -58,7 +59,7 @@ class ReferenceData(common_models.Model):
         abstract = True
 
     class ExtraMeta:
-        identifier = ["name"]
+        identifier = ["name_en"]
 
 
 class LivelihoodCategory(ReferenceData):
@@ -203,7 +204,7 @@ class Market(common_models.Model):
     country = models.ForeignKey(
         Country, db_column="country_code", blank=True, null=True, verbose_name=_("country"), on_delete=models.CASCADE
     )
-    name = common_models.NameField(max_length=250)
+    name = TranslatedField(common_models.NameField(max_length=250))
     code = models.CharField(
         max_length=25,
         blank=True,
@@ -212,8 +213,8 @@ class Market(common_models.Model):
         verbose_name=_("code"),
         help_text=_("An identifier for the Unit, such as the FNID"),
     )
-    full_name = common_models.NameField(max_length=200, unique=True, verbose_name=_("full name"))
-    description = common_models.DescriptionField()
+    full_name = TranslatedField(common_models.NameField(max_length=200, unique=True, verbose_name=_("full name")))
+    description = TranslatedField(common_models.DescriptionField())
     aliases = models.JSONField(
         blank=True,
         null=True,
@@ -285,8 +286,8 @@ class Season(common_models.Model):
     country = models.ForeignKey(Country, verbose_name=_("Country"), db_column="country_code", on_delete=models.PROTECT)
     # @TODO Uncomment if we have a full Spatial app.
     # geographic_unit - models.ForeignKey(GeographicUnit, verbose_name=_("Geographic Unit"), on_delete=models.RESTRICT)
-    name = models.CharField(max_length=50, verbose_name=_("Name"))
-    description = models.TextField(max_length=255, verbose_name=_("Description"))
+    name = TranslatedField(models.CharField(max_length=50, verbose_name=_("Name")))
+    description = TranslatedField(models.TextField(max_length=255, verbose_name=_("Description")))
     season_type = models.CharField(
         max_length=20,
         choices=SeasonType.choices,
@@ -316,7 +317,7 @@ class Season(common_models.Model):
     )
 
     class ExtraMeta:
-        identifier = ["name"]
+        identifier = ["name_en"]
 
     # @TODO Do we need `SeasonYear` or `SeasonGroup`to act as a parent of consecutive seasons that make up a 12 month period.  # NOQA: E501
     order = models.IntegerField(

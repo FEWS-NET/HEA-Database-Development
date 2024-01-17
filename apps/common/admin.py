@@ -5,6 +5,7 @@ from django.contrib.gis.admin import OSMGeoAdmin
 from treebeard.admin import TreeAdmin
 from treebeard.forms import movenodeform_factory
 
+from .fields import translation_fields
 from .models import (
     ClassifiedProduct,
     Country,
@@ -36,10 +37,9 @@ class CountryClassifiedProductAliasesInline(InlineModelAdmin):
 
 class ClassifiedProductAdmin(TreeAdmin):
     form = movenodeform_factory(ClassifiedProduct)
-    fields = [
+    fields = (
         "cpcv2",
-        "common_name",
-        "description",
+        *translation_fields("common_name"),
         "scientific_name",
         "unit_of_measure",
         "kcals_per_unit",
@@ -47,13 +47,14 @@ class ClassifiedProductAdmin(TreeAdmin):
         "hs2012",
         "_position",
         "_ref_node_id",
-    ]
+        *translation_fields("description"),
+    )
     list_display = ("cpcv2", "description", "common_name", "scientific_name")
     ordering = ["cpcv2"]
-    search_fields = [
+    search_fields = (
         "^cpcv2",
-        "description",
-        "common_name",
+        *translation_fields("description"),
+        *translation_fields("common_name"),
         "scientific_name",
         "per_country_aliases__country__iso_en_ro_name",
         "per_country_aliases__country__iso_en_name",
@@ -62,7 +63,7 @@ class ClassifiedProductAdmin(TreeAdmin):
         "per_country_aliases__country__iso_fr_name",
         "per_country_aliases__country__iso_fr_proper",
         "per_country_aliases__country__iso_es_name",
-    ]
+    )
 
 
 class UnitOfMeasureConversionInline(admin.TabularInline):
@@ -76,10 +77,10 @@ class UnitOfMeasureAdmin(admin.ModelAdmin):
         "abbreviation",
         "description",
     )
-    search_fields = [
+    search_fields = (
         "abbreviation",
-        "description",
-    ]
+        *translation_fields("description"),
+    )
     list_filter = ("unit_type",)
     inlines = [UnitOfMeasureConversionInline]
 

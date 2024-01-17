@@ -1,8 +1,9 @@
+from django.conf import settings
 from django.contrib.admin.sites import AdminSite
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
-from django.utils.translation import activate
+from django.utils import translation
 
 from metadata.admin import (
     HazardCategoryAdmin,
@@ -34,34 +35,37 @@ class ReferenceDataAdminTestCase(TestCase):
     def setUpTestData(cls):
         cls.superuser = User.objects.create_superuser(username="admin", password="admin", email="admin@hea.org")
 
-        cls.wealth_category1 = WealthGroupCategoryFactory(code="TP", name="Très Pauvre", aliases=["vp", "tp"])
-        cls.wealth_category2 = WealthGroupCategoryFactory(code="MV", name="Mieux vaut", aliases=["b/o"])
+        cls.wealth_category1 = WealthGroupCategoryFactory(code="TP", name_en="Très Pauvre", aliases=["vp", "tp"])
+        cls.wealth_category2 = WealthGroupCategoryFactory(code="MV", name_en="Mieux vaut", aliases=["b/o"])
         cls.wealth_characteristic1 = WealthCharacteristicFactory(
             code="area cultivated (acres)",
-            name="Land area cultivated (acres)",
+            name_en="Land area cultivated (acres)",
             aliases=["land area cultivated (acres)"],
         )
         cls.wealth_characteristic2 = WealthCharacteristicFactory(
             code="fruit tree",
-            name="Fruit Tree",
+            name_en="Fruit Tree",
             aliases=["fruit trees", "other (fruit tree)"],
         )
 
         cls.seasonal_activity_type1 = SeasonalActivityTypeFactory(
-            code="LP", name="land preparation", description="Preparation of land for crop", aliases=["Land prep"]
+            code="LP", name_en="land preparation", description_en="Preparation of land for crop", aliases=["Land prep"]
         )
         cls.seasonal_activity_type2 = SeasonalActivityTypeFactory(
-            code="P", name="planting", description="planting", aliases=["seeding"]
+            code="P", name_en="planting", description_en="planting", aliases=["seeding"]
         )
-        cls.market1 = MarketFactory(name="Waamo market", aliases=["wa`mo"])
-        cls.market2 = MarketFactory(name="Farjano maret", aliases=["franjo"])
-        cls.hazard_category1 = HazardCategoryFactory(name="Drought", description="Drought")
-        cls.hazard_category2 = HazardCategoryFactory(name="Frost", description="Frost")
+        cls.market1 = MarketFactory(name_en="Waamo market", aliases=["wa`mo"])
+        cls.market2 = MarketFactory(name_en="Farjano maret", aliases=["franjo"])
+        cls.hazard_category1 = HazardCategoryFactory(name_en="Drought", description_en="Drought")
+        cls.hazard_category2 = HazardCategoryFactory(name_en="Frost", description_en="Frost")
 
     def setUp(self):
         self.client.force_login(self.superuser)
         self.site = AdminSite()
-        activate("en")
+
+    def tearDown(self):
+        # Ref: https://docs.djangoproject.com/en/4.2/topics/testing/tools/#setting-the-language
+        translation.activate(settings.LANGUAGE_CODE)
 
     def test_common_admin_functionality(self):
         # Test common admin functionality for all child model admins
@@ -92,47 +96,48 @@ class ReferenceDataAdminTestCase(TestCase):
         ]
 
         for model in models:
-            with self.subTest(model=model):
-                url = reverse(f"admin:metadata_{model._meta.model_name}_changelist")
-                if "wealthcharacteristic" in url:
-                    response = self.client.get(url, {"q": self.wealth_characteristic1.name})
-                    self.assertContains(response, self.wealth_characteristic1.name)
-                    self.assertNotContains(response, self.wealth_characteristic2.name)
-                    response = self.client.get(url, {"q": self.wealth_characteristic2.aliases})
-                    self.assertContains(response, self.wealth_characteristic2.name)
-                    self.assertNotContains(response, self.wealth_characteristic1.name)
+            for code, _ in settings.LANGUAGES:
+                with self.subTest(model=model, language=code):
+                    url = reverse(f"admin:metadata_{model._meta.model_name}_changelist")
+                    if "wealthcharacteristic" in url:
+                        response = self.client.get(url, {"q": self.wealth_characteristic1.name})
+                        self.assertContains(response, self.wealth_characteristic1.name)
+                        self.assertNotContains(response, self.wealth_characteristic2.name)
+                        response = self.client.get(url, {"q": self.wealth_characteristic2.aliases})
+                        self.assertContains(response, self.wealth_characteristic2.name)
+                        self.assertNotContains(response, self.wealth_characteristic1.name)
 
-                elif "seasonalactivitytype" in url:
-                    response = self.client.get(url, {"q": self.seasonal_activity_type1.name})
-                    self.assertContains(response, self.seasonal_activity_type1.name)
-                    self.assertNotContains(response, self.seasonal_activity_type2.name)
-                    response = self.client.get(url, {"q": self.seasonal_activity_type2.aliases})
-                    self.assertContains(response, self.seasonal_activity_type2.name)
-                    self.assertNotContains(response, self.seasonal_activity_type1.name)
+                    elif "seasonalactivitytype" in url:
+                        response = self.client.get(url, {"q": self.seasonal_activity_type1.name})
+                        self.assertContains(response, self.seasonal_activity_type1.name)
+                        self.assertNotContains(response, self.seasonal_activity_type2.name)
+                        response = self.client.get(url, {"q": self.seasonal_activity_type2.aliases})
+                        self.assertContains(response, self.seasonal_activity_type2.name)
+                        self.assertNotContains(response, self.seasonal_activity_type1.name)
 
-                elif "market" in url:
-                    response = self.client.get(url, {"q": self.market1.name})
-                    self.assertContains(response, self.market1.name)
-                    self.assertNotContains(response, self.market2.name)
-                    response = self.client.get(url, {"q": self.market2.aliases})
-                    self.assertContains(response, self.market2.name)
-                    self.assertNotContains(response, self.market1.name)
+                    elif "market" in url:
+                        response = self.client.get(url, {"q": self.market1.name})
+                        self.assertContains(response, self.market1.name)
+                        self.assertNotContains(response, self.market2.name)
+                        response = self.client.get(url, {"q": self.market2.aliases})
+                        self.assertContains(response, self.market2.name)
+                        self.assertNotContains(response, self.market1.name)
 
-                elif "WealthGroupCategory" in url:
-                    response = self.client.get(url, {"q": self.wealth_category1.name})
-                    self.assertContains(response, self.wealth_category1.name)
-                    self.assertNotContains(response, self.wealth_category2.name)
-                    response = self.client.get(url, {"q": self.wealth_category2.aliases})
-                    self.assertContains(response, self.wealth_category2.name)
-                    self.assertNotContains(response, self.wealth_category1.name)
+                    elif "WealthGroupCategory" in url:
+                        response = self.client.get(url, {"q": self.wealth_category1.name})
+                        self.assertContains(response, self.wealth_category1.name)
+                        self.assertNotContains(response, self.wealth_category2.name)
+                        response = self.client.get(url, {"q": self.wealth_category2.aliases})
+                        self.assertContains(response, self.wealth_category2.name)
+                        self.assertNotContains(response, self.wealth_category1.name)
 
-                elif "hazardcategory" in url:
-                    response = self.client.get(url, {"q": self.hazard_category1.name})
-                    self.assertContains(response, self.hazard_category1.name)
-                    self.assertNotContains(response, self.hazard_category2.name)
-                    response = self.client.get(url, {"q": self.hazard_category2.description})
-                    self.assertContains(response, self.hazard_category2.name)
-                    self.assertNotContains(response, self.hazard_category1.name)
+                    elif "hazardcategory" in url:
+                        response = self.client.get(url, {"q": self.hazard_category1.name})
+                        self.assertContains(response, self.hazard_category1.name)
+                        self.assertNotContains(response, self.hazard_category2.name)
+                        response = self.client.get(url, {"q": self.hazard_category2.description})
+                        self.assertContains(response, self.hazard_category2.name)
+                        self.assertNotContains(response, self.hazard_category1.name)
 
     def test_filter_by_variable_type(self):
         # Test filter by variable_type for WealthCharacteristic
@@ -164,7 +169,7 @@ class SeasonAdminTestCase(TestCase):
     def setUp(self):
         self.client.force_login(self.superuser)
         self.site = AdminSite()
-        activate("en")
+        translation.activate("en")
 
     def test_list_display(self):
         url = reverse("admin:metadata_season_changelist")

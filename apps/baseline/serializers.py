@@ -53,13 +53,13 @@ class SourceOrganizationSerializer(serializers.ModelSerializer):
 class LivelihoodZoneSerializer(serializers.ModelSerializer):
     class Meta:
         model = LivelihoodZone
-        fields = [
+        fields = (
             "code",
             "name",
             "description",
             "country",
             "country_name",
-        ]
+        )
 
     country_name = serializers.CharField(source="country.iso_en_ro_name", read_only=True)
 
@@ -67,8 +67,10 @@ class LivelihoodZoneSerializer(serializers.ModelSerializer):
 class LivelihoodZoneBaselineSerializer(serializers.ModelSerializer):
     class Meta:
         model = LivelihoodZoneBaseline
-        fields = [
+        fields = (
             "id",
+            "name",
+            "description",
             "source_organization",
             "source_organization_name",
             "livelihood_zone",
@@ -85,7 +87,7 @@ class LivelihoodZoneBaselineSerializer(serializers.ModelSerializer):
             "valid_to_date",
             "population_source",
             "population_estimate",
-        ]
+        )
 
     livelihood_zone_name = serializers.CharField(source="livelihood_zone.name", read_only=True)
     source_organization_name = serializers.CharField(source="source_organization.pk", read_only=True)

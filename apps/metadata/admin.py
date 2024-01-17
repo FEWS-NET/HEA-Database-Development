@@ -1,6 +1,8 @@
 from django.contrib import admin
 from django.contrib.admin import RelatedFieldListFilter
 
+from common.fields import translation_fields
+
 from .models import (
     HazardCategory,
     LivelihoodCategory,
@@ -12,68 +14,67 @@ from .models import (
 )
 
 
-class DimensionAdmin(admin.ModelAdmin):
-    fields = [
+class ReferenceDataAdmin(admin.ModelAdmin):
+    fields = (
         "code",
-        "name",
-        "description",
+        *translation_fields("name"),
+        *translation_fields("description"),
         "aliases",
-    ]
+    )
     list_display = (
         "code",
         "name",
         "description",
     )
     search_fields = (
-        "name",
-        "description",
+        *translation_fields("name"),
+        *translation_fields("description"),
         "aliases",
     )
 
 
-class LivelihoodCategoryAdmin(DimensionAdmin):
+class LivelihoodCategoryAdmin(ReferenceDataAdmin):
     """
     A concrete admin for LivelihoodCategory
     """
 
 
-class SeasonalActivityTypeAdmin(DimensionAdmin):
+class SeasonalActivityTypeAdmin(ReferenceDataAdmin):
     """
     A concrete admin for  SeasonalActivityType
     """
 
     fields = (
         "code",
-        "name",
+        *translation_fields("name"),
         "activity_category",
-        "description",
+        *translation_fields("description"),
         "aliases",
     )
 
 
-class WealthGroupCategoryAdmin(DimensionAdmin):
+class WealthGroupCategoryAdmin(ReferenceDataAdmin):
     """
     A concrete admin for WealthGroupCategory
     """
 
 
-class WealthCharacteristicAdmin(DimensionAdmin):
+class WealthCharacteristicAdmin(ReferenceDataAdmin):
     """
     A concrete admin for WealthCharacteristic
     """
 
     fields = (
         "code",
-        "name",
+        *translation_fields("name"),
         "variable_type",
-        "description",
+        *translation_fields("description"),
         "aliases",
     )
-
     list_filter = ("variable_type",)
 
 
-class HazardCategoryAdmin(DimensionAdmin):
+class HazardCategoryAdmin(ReferenceDataAdmin):
     """
     A concrete admin for HazardCategory
     """
@@ -84,9 +85,28 @@ class SeasonAdmin(admin.ModelAdmin):
     A concrete admin for Season
     """
 
-    fields = ("country", "name", "description", "season_type", "start", "end", "alignment", "order")
-    list_display = ("country", "name", "season_type", "start", "end")
-    search_fields = ("country__iso_en_ro_name", "name", "season_type")
+    fields = (
+        "country",
+        *translation_fields("name"),
+        *translation_fields("description"),
+        "season_type",
+        "start",
+        "end",
+        "alignment",
+        "order",
+    )
+    list_display = (
+        "country",
+        "name",
+        "season_type",
+        "start",
+        "end",
+    )
+    search_fields = (
+        "country__iso_en_ro_name",
+        *translation_fields("name"),
+        "season_type",
+    )
     list_filter = (
         ("country", RelatedFieldListFilter),
         "season_type",
@@ -94,15 +114,15 @@ class SeasonAdmin(admin.ModelAdmin):
     ordering = ("order",)
 
 
-class MarketAdmin(DimensionAdmin):
+class MarketAdmin(ReferenceDataAdmin):
 
-    fields = [
+    fields = (
         "code",
-        "name",
+        *translation_fields("name"),
         "country",
-        "description",
+        *translation_fields("description"),
         "aliases",
-    ]
+    )
 
     list_filter = (("country", RelatedFieldListFilter),)
 

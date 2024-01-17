@@ -1,6 +1,9 @@
+from django.utils.text import format_lazy
+from django.utils.translation import gettext_lazy as _
 from django_filters import rest_framework as filters
 from rest_framework import viewsets
 
+from common.fields import translation_fields
 from common.models import Country
 from metadata.models import (
     HazardCategory,
@@ -23,95 +26,111 @@ from metadata.serializers import (
 
 
 class ReferenceDataFilterSet(filters.FilterSet):
-    """ """
-
-    name = filters.CharFilter(
-        field_name="name",
-        lookup_expr="icontains",
-        label="Name",
+    name_en = filters.CharFilter(lookup_expr="icontains", label=format_lazy("{} ({})", _("Name"), _("English")))
+    name_fr = filters.CharFilter(lookup_expr="icontains", label=format_lazy("{} ({})", _("Name"), _("French")))
+    name_es = filters.CharFilter(lookup_expr="icontains", label=format_lazy("{} ({})", _("Name"), _("Spanish")))
+    name_ar = filters.CharFilter(lookup_expr="icontains", label=format_lazy("{} ({})", _("Name"), _("Arabic")))
+    name_pt = filters.CharFilter(lookup_expr="icontains", label=format_lazy("{} ({})", _("Name"), _("Portuguese")))
+    description_en = filters.CharFilter(
+        lookup_expr="icontains", label=format_lazy("{} ({})", _("Description"), _("English"))
     )
-    description = filters.CharFilter(
-        field_name="description",
-        lookup_expr="icontains",
-        label="Description",
+    description_fr = filters.CharFilter(
+        lookup_expr="icontains", label=format_lazy("{} ({})", _("Description"), _("French"))
+    )
+    description_es = filters.CharFilter(
+        lookup_expr="icontains", label=format_lazy("{} ({})", _("Description"), _("Spanish"))
+    )
+    description_ar = filters.CharFilter(
+        lookup_expr="icontains", label=format_lazy("{} ({})", _("Description"), _("Arabic"))
+    )
+    description_pt = filters.CharFilter(
+        lookup_expr="icontains", label=format_lazy("{} ({})", _("Description"), _("Portuguese"))
     )
 
     class Meta:
         model = ReferenceData
-        fields = ["name", "description"]
+        fields = (
+            *translation_fields("name"),
+            *translation_fields("description"),
+        )
 
 
 class ReferenceDataViewSet(viewsets.ModelViewSet):
-    """ """
-
     serializer_class = ReferenceDataSerializer
     filterset_class = ReferenceDataFilterSet
-    search_fields = ["code", "name", "description", "aliases"]
+    search_fields = (
+        "code",
+        *translation_fields("name"),
+        *translation_fields("description"),
+        "aliases",
+    )
 
 
 class LivelihoodCategoryViewSet(ReferenceDataViewSet):
-    """ """
-
     queryset = LivelihoodCategory.objects.all()
     serializer_class = LivelihoodCategorySerializer
 
 
 class WealthGroupCategoryViewSet(ReferenceDataViewSet):
-    """ """
-
     queryset = WealthGroupCategory.objects.all()
     serializer_class = WealthGroupCategorySerializer
 
 
 class WealthCharacteristicFilterSet(ReferenceDataFilterSet):
-    """ """
-
     variable_type = filters.ChoiceFilter(
         choices=WealthCharacteristic.VariableType.choices,
     )
 
     class Meta:
         model = ReferenceData
-        fields = ["name", "description", "variable_type"]
+        fields = (
+            *translation_fields("name"),
+            *translation_fields("description"),
+            "variable_type",
+        )
 
 
 class WealthCharacteristicViewSet(ReferenceDataViewSet):
-    """ """
-
     queryset = WealthCharacteristic.objects.all()
     serializer_class = WealthCharacteristicSerializer
     filterset_class = WealthCharacteristicFilterSet
-    search_fields = ["code", "name", "description", "variable_type", "aliases"]
+    search_fields = (
+        "code",
+        *translation_fields("name"),
+        *translation_fields("description"),
+        "variable_type",
+        "aliases",
+    )
 
 
 class SeasonalActivityTypeFilterSet(ReferenceDataFilterSet):
-    """ """
-
     activity_category = filters.ChoiceFilter(
         choices=SeasonalActivityType.SeasonalActivityCategory.choices,
     )
 
     class Meta:
         model = ReferenceData
-        fields = [
-            "name",
-            "description",
+        fields = (
+            *translation_fields("name"),
+            *translation_fields("description"),
             "activity_category",
-        ]
+        )
 
 
 class SeasonalActivityTypeViewSet(ReferenceDataViewSet):
-    """ """
-
     queryset = SeasonalActivityType.objects.all()
     serializer_class = SeasonalActivityTypeSerializer
     filterset_class = SeasonalActivityTypeFilterSet
-    search_fields = ["code", "name", "description", "activity_category", "aliases"]
+    search_fields = (
+        "code",
+        *translation_fields("name"),
+        *translation_fields("description"),
+        "activity_category",
+        "aliases",
+    )
 
 
 class HazardCategoryViewSet(ReferenceDataViewSet):
-    """ """
-
     queryset = HazardCategory.objects.all()
     serializer_class = HazardCategorySerializer
 
@@ -132,24 +151,42 @@ class SeasonFilterSet(filters.FilterSet):
     season_type = filters.ChoiceFilter(
         choices=Season.SeasonType.choices,
     )
-    name = filters.CharFilter(
-        field_name="name",
-        lookup_expr="icontains",
-        label="Name",
+    name_en = filters.CharFilter(lookup_expr="icontains", label=format_lazy("{} ({})", _("Name"), _("English")))
+    name_fr = filters.CharFilter(lookup_expr="icontains", label=format_lazy("{} ({})", _("Name"), _("French")))
+    name_es = filters.CharFilter(lookup_expr="icontains", label=format_lazy("{} ({})", _("Name"), _("Spanish")))
+    name_ar = filters.CharFilter(lookup_expr="icontains", label=format_lazy("{} ({})", _("Name"), _("Arabic")))
+    name_pt = filters.CharFilter(lookup_expr="icontains", label=format_lazy("{} ({})", _("Name"), _("Portuguese")))
+    description_en = filters.CharFilter(
+        lookup_expr="icontains", label=format_lazy("{} ({})", _("Description"), _("English"))
     )
-    description = filters.CharFilter(
-        field_name="description",
-        lookup_expr="icontains",
-        label="Description",
+    description_fr = filters.CharFilter(
+        lookup_expr="icontains", label=format_lazy("{} ({})", _("Description"), _("French"))
+    )
+    description_es = filters.CharFilter(
+        lookup_expr="icontains", label=format_lazy("{} ({})", _("Description"), _("Spanish"))
+    )
+    description_ar = filters.CharFilter(
+        lookup_expr="icontains", label=format_lazy("{} ({})", _("Description"), _("Arabic"))
+    )
+    description_pt = filters.CharFilter(
+        lookup_expr="icontains", label=format_lazy("{} ({})", _("Description"), _("Portuguese"))
     )
 
     class Meta:
         model = Season
-        fields = ("name", "description", "season_type")
+        fields = (
+            *translation_fields("name"),
+            *translation_fields("description"),
+            "season_type",
+        )
 
 
 class SeasonViewSet(viewsets.ModelViewSet):
     queryset = Season.objects.all()
     serializer_class = SeasonSerializer
     filterset_class = SeasonFilterSet
-    search_fields = ["name", "description", "season_type"]
+    search_fields = (
+        *translation_fields("name"),
+        *translation_fields("description"),
+        "season_type",
+    )
