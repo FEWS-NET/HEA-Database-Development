@@ -2,6 +2,7 @@ from django.conf import settings
 from django.test import TestCase
 from django.utils import translation
 
+from common.fields import translation_fields
 from common.tests.factories import ClassifiedProductFactory
 
 
@@ -21,7 +22,21 @@ class TranslatedFieldsTestCase(TestCase):
             description_pt="description pt",
         )
 
-    def test_translated_fields(self):
+    def test_blank_permission(self):
+        # ClassifiedProduct common_name is blank=True, so all variants can be blank.
+        # ClassifiedProduct description is blank=False. This validation should be applied to default language only.
+        # So this tests that description_en blank=False, other languages, and all common_name variants blank=True.
+        for translated_field in ("common_name", "description"):
+            for field_name in translation_fields(translated_field):
+                blankable = field_name != "description_en"
+                with self.subTest(field=field_name):
+                    self.assertEqual(
+                        self.product._meta.get_field(field_name).blank,
+                        blankable,
+                        f"Field {field_name} blank is {self.product._meta.get_field(field_name).blank}",
+                    )
+
+    def test_translation(self):
         self.assertEqual(self.product.common_name_en, "common_name en")
         self.assertEqual(self.product.description_en, "description en")
         # Check properties return default language
