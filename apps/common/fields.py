@@ -152,6 +152,16 @@ class TranslatedField:
     """
 
     def __init__(self, field):
+        # Check that the field is of a string type.
+        # The existing code is expected to work for other field types, but they are not currently supported
+        # because they haven't been tested. If additional field types are required in the future, then they can
+        # be added to this list and then tested. They may require selective application of properties on the
+        # translation fields, as already done in `contribute_to_class` for .blank, .null, ._unique and .primary_key.
+        # For example, non-text fields that have `null=False` may need to allow null in the non-default language
+        # fields if sometimes not all are populated.
+        assert isinstance(
+            field, (models.CharField, models.TextField)
+        ), f"Field {str(field)} is of unsupported type {str(type(field))}"
         self.field = field
 
     def contribute_to_class(self, cls, name, private_only=False):
@@ -187,4 +197,9 @@ class TranslatedField:
 
 
 def translation_fields(base_fieldname):
+    """
+    Return a list of the language-specific field names for a base field.
+
+    Convenience function for use in Admin and Viewset subclasses.
+    """
     return (f"{base_fieldname}_{code}" for code, name in settings.LANGUAGES)

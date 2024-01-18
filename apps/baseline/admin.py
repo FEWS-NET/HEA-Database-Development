@@ -483,21 +483,6 @@ class WealthGroupAdmin(admin.ModelAdmin):
         return queryset
 
 
-class SeasonalActivityTypeAdmin(admin.ModelAdmin):
-    fields = (
-        "name",
-        "activity_category",
-    )
-    list_display = (
-        "name",
-        "activity_category",
-    )
-    search_fields = (
-        "name",
-        "activity_category",
-    )
-
-
 class SeasonalActivityAdmin(admin.ModelAdmin):
     fields = (
         "livelihood_zone_baseline",
