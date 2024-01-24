@@ -39,6 +39,7 @@ class ClassifiedProductAdmin(TreeAdmin):
     form = movenodeform_factory(ClassifiedProduct)
     fields = (
         "cpcv2",
+        *translation_fields("description"),
         *translation_fields("common_name"),
         "scientific_name",
         "unit_of_measure",
@@ -47,7 +48,6 @@ class ClassifiedProductAdmin(TreeAdmin):
         "hs2012",
         "_position",
         "_ref_node_id",
-        *translation_fields("description"),
     )
     list_display = ("cpcv2", "description", "common_name", "scientific_name")
     ordering = ["cpcv2"]

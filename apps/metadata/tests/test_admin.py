@@ -35,8 +35,8 @@ class ReferenceDataAdminTestCase(TestCase):
     def setUpTestData(cls):
         cls.superuser = User.objects.create_superuser(username="admin", password="admin", email="admin@hea.org")
 
-        cls.wealth_category1 = WealthGroupCategoryFactory(code="TP", name_en="Très Pauvre", aliases=["vp", "tp"])
-        cls.wealth_category2 = WealthGroupCategoryFactory(code="MV", name_en="Mieux vaut", aliases=["b/o"])
+        cls.wealth_category1 = WealthGroupCategoryFactory(code="VP", name_en="Very Poor", aliases=["vp", "tp"])
+        cls.wealth_category2 = WealthGroupCategoryFactory(code="BO", name_en="Better Off", aliases=["b/o"])
         cls.wealth_characteristic1 = WealthCharacteristicFactory(
             code="area cultivated (acres)",
             name_en="Land area cultivated (acres)",
@@ -49,10 +49,10 @@ class ReferenceDataAdminTestCase(TestCase):
         )
 
         cls.seasonal_activity_type1 = SeasonalActivityTypeFactory(
-            code="LP", name_en="land preparation", description_en="Preparation of land for crop", aliases=["Land prep"]
+            name_en="land preparation", description_en="Preparation of land for crop", aliases=["Land prep"]
         )
         cls.seasonal_activity_type2 = SeasonalActivityTypeFactory(
-            code="P", name_en="planting", description_en="planting", aliases=["seeding"]
+            name_en="planting", description_en="planting", aliases=["seeding"]
         )
         cls.market1 = MarketFactory(name_en="Waamo market", aliases=["wa`mo"])
         cls.market2 = MarketFactory(name_en="Farjano maret", aliases=["franjo"])
@@ -97,6 +97,7 @@ class ReferenceDataAdminTestCase(TestCase):
 
         for model in models:
             for code, _ in settings.LANGUAGES:
+                translation.activate(code)  # .name will now return local translation
                 with self.subTest(model=model, language=code):
                     url = reverse(f"admin:metadata_{model._meta.model_name}_changelist")
                     if "wealthcharacteristic" in url:
