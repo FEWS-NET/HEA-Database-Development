@@ -1,6 +1,9 @@
+from django.conf import settings
 from django.conf.urls.i18n import i18n_patterns
 from django.contrib import admin
 from django.urls import include, path
+from django.views.decorators.cache import cache_page
+from django.views.i18n import JavaScriptCatalog
 from rest_framework import routers
 
 from baseline.viewsets import (
@@ -121,4 +124,11 @@ urlpatterns = [
     ########## LOCALE DEPENDENT PATHS go here. ##########
     path("admin/doc/", include("django.contrib.admindocs.urls")),
     path("admin/", admin.site.urls),
+    # Provides gettext translation functionality for Javascript clients (and ngettext, pgettext, iterpolate, etc.)
+    # See: https://docs.djangoproject.com/en/4.2/topics/i18n/translation/#using-the-javascript-translation-catalog
+    path(
+        "jsi18n/",
+        cache_page(60 * 60 * 24 * 30, key_prefix=f"jsi18n-{settings.APP_VERSION}")(JavaScriptCatalog.as_view()),
+        name="javascript-catalog",
+    ),
 )

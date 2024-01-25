@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import translation
+from django.utils.html import escape
 
 from common.admin import (
     ClassifiedProductAdmin,
@@ -117,6 +118,54 @@ class ClassifiedProductAdminTestCase(TestCase):
         self.client.login(username="admin", password="admin")
         self.product1 = ClassifiedProductFactory(cpcv2="A00001AA")
         self.product2 = ClassifiedProductFactory(cpcv2="A00002AA")
+
+    def test_translations(self):
+        # These strings are an interpolation of two translations each. "Description" and the langauge names are
+        # translated separately in the po files and so must be interpolated lazily at render time. So this covers
+        # a more complex case than average.
+        translations = {
+            "en": (
+                "Description (English):",
+                "Description (Spanish):",
+                "Description (French):",
+                "Description (Arabic):",
+                "Description (Portuguese):",
+            ),
+            "es": (
+                "Descripción (Inglés):",
+                "Descripción (Portugués):",
+                "Descripción (Árabe):",
+                "Descripción (Español):",
+                "Descripción (Francés):",
+            ),
+            "fr": (
+                "Description (Anglais):",
+                "Description (Portugais):",
+                "Description (Arabe):",
+                "Description (Espagnol):",
+                "Description (Français):",
+            ),
+            "ar": (
+                "وصف (الإنجليزيّة):",
+                "وصف (البرتغاليّة):",
+                "وصف (العربيّة):",
+                "وصف (الإسبانيّة):",
+                "وصف (الفرنسيّة):",
+            ),
+            "pt": (
+                "Descrição (Inglês):",
+                "Descrição (Português):",
+                "Descrição (Árabe):",
+                "Descrição (Espanhol):",
+                "Descrição (Francês):",
+            ),
+        }
+        for code in translations:
+            translation.activate(code)
+            response = self.client.get(reverse("admin:common_classifiedproduct_add"))
+            for trans in translations[code]:
+                with self.subTest(language=code, trans=trans):
+                    self.assertContains(response, escape(trans), msg_prefix=response.content.decode())
 
     def test_list_classified_product(self):
         response = self.client.get(reverse("admin:common_classifiedproduct_changelist"))

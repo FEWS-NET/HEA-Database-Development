@@ -78,12 +78,14 @@ class ReferenceDataAdminTestCase(TestCase):
         ]
 
         for model, admin_class in models:
-            with self.subTest(model=model):
-                url = reverse(f"admin:metadata_{model._meta.model_name}_changelist")
-                response = self.client.get(url)
-                self.assertEqual(response.status_code, 200)
-                self.assertContains(response, "name")
-                self.assertContains(response, "description")
+            for code, _ in settings.LANGUAGES:
+                with self.subTest(model=model, language=code):
+                    translation.activate(code)
+                    url = reverse(f"admin:metadata_{model._meta.model_name}_changelist")
+                    response = self.client.get(url)
+                    self.assertEqual(response.status_code, 200)
+                    self.assertContains(response, translation.gettext("Name"))
+                    self.assertContains(response, getattr(model.objects.first(), f"name_{code}"))
 
     def test_search_by_name_description_aliases(self):
         # Test search by name, description, and aliases for all child model admins

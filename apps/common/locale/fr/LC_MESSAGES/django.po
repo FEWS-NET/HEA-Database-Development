@@ -1,0 +1,392 @@
+# HEA FR Translations
+# Copyright (C) 2024 USAID
+# This file is distributed under the same license as the HEA system.
+# FEWS NET <help@fews.net>, 2024.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-01-25 14:29+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 "
+"&& n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5;\n"
+
+#: apps/common/apps.py:8
+msgid "common"
+msgstr "commun"
+
+#: apps/common/fields.py:63
+msgid "Code"
+msgstr "Code"
+
+#: apps/common/fields.py:75
+msgid "Name"
+msgstr "Nom"
+
+#: apps/common/fields.py:89 apps/common/viewsets.py:235
+#: apps/common/viewsets.py:238 apps/common/viewsets.py:241
+#: apps/common/viewsets.py:244 apps/common/viewsets.py:247
+msgid "Description"
+msgstr "Description"
+
+#: apps/common/fields.py:91
+msgid "Any extra information or detail that is relevant to the object."
+msgstr ""
+"Toute information ou détail supplémentaire qui est pertinent pour l'objet."
+
+#: apps/common/fields.py:105
+msgid "Location"
+msgstr "Emplacement"
+
+#: apps/common/fields.py:122
+msgid "Boundary"
+msgstr "Frontière"
+
+#: apps/common/middleware/language.py:31
+msgid ""
+"Remove the language URL parameter. It is not supported for language-specific "
+"paths. "
+msgstr ""
+"Supprimez le paramètre URL de langue. Il n'est pas pris en charge pour les "
+"chemins spécifiques à la langue."
+
+#: apps/common/middleware/language.py:46
+#, fuzzy, python-format
+#| msgid ""
+#| "The language URL parameter requests language %(lang_code)s. Supported "
+#| "language codes are %(lang_codes)s."
+msgid ""
+"The language URL parameter requests language %(lang_code)s. Supported "
+"language codes are %(lang_codes)s."
+msgstr ""
+"Le paramètre URL de langue demande le langage% (Lang_code)s. Les codes "
+"linguistiques pris en charge sont% (Lang_codes)s."
+
+#: apps/common/models.py:176
+msgid "Spanish name"
+msgstr "Nom espagnol"
+
+#: apps/common/models.py:177
+msgid "Spanish name if different from the English name"
+msgstr "Nom espagnol si différent du nom anglais"
+
+#: apps/common/models.py:181
+msgid "French name"
+msgstr "Nom français"
+
+#: apps/common/models.py:182
+msgid "French name if different from the English name"
+msgstr "Nom français s'il est différent du nom anglais"
+
+#: apps/common/models.py:186
+msgid "Portuguese name"
+msgstr "Nom portugais"
+
+#: apps/common/models.py:187
+msgid "Portuguese name if different from the English name"
+msgstr "Nom portugais si différent du nom anglais"
+
+#: apps/common/models.py:191
+msgid "Arabic name"
+msgstr "Nom arabe"
+
+#: apps/common/models.py:192
+msgid "Arabic name if different from the English name"
+msgstr "Nom arabe s'il est différent du nom anglais"
+
+#: apps/common/models.py:211
+msgid "local name"
+msgstr "nom local"
+
+#: apps/common/models.py:370
+msgid "The End of the period must be on or after the Start"
+msgstr "La fin de la période doit être sur ou après le début"
+
+#: apps/common/models.py:423
+#, python-format
+msgid ""
+"%(class)s %(pk)s (%(instance)s) has the same %(non_overlapping_fields)s and "
+"has a period that overlaps %(start)s to %(end)s"
+msgstr ""
+"%(class)s %(pk)s (%(instance)s) a le même %(non_overlapping_fields)s et a "
+"une période qui chevauche %(start)s à %(end)s"
+
+#: apps/common/models.py:482 apps/common/models.py:516
+msgid "Open Ended"
+msgstr "Fin ouvert"
+
+#: apps/common/models.py:484 apps/common/models.py:518
+#, python-format
+msgid "From %(start)s"
+msgstr "À partir de %(start)s"
+
+#: apps/common/models.py:488 apps/common/models.py:522
+#, python-format
+msgid "Until %(end)s"
+msgstr "Jusqu'à %(end)s"
+
+#: apps/common/models.py:490 apps/common/models.py:524
+#, python-format
+msgid "%(start)s - %(end)s"
+msgstr "%(start)s - %(end)s"
+
+#: apps/common/models.py:505
+msgid "start"
+msgstr "commencer"
+
+#: apps/common/models.py:506
+msgid "end"
+msgstr "fin"
+
+#: apps/common/models.py:551
+msgid ""
+"The name of the Country approved by the ISO 3166 Maintenance Agency with "
+"accented characters replaced by their ASCII equivalents"
+msgstr ""
+"Le nom du pays approuvé par l'agence de maintenance ISO 3166 avec des "
+"caractères accentués remplacés par leurs équivalents ASCII"
+
+#: apps/common/models.py:558
+msgid ""
+"The full formal name of the Country approved by the ISO 3166 Maintenance "
+"Agency with accented characters replaced by their ASCII equivalents"
+msgstr ""
+"Le nom formel complet du pays approuvé par l'agence de maintenance ISO 3166 "
+"avec des caractères accentués remplacés par leurs équivalents ASCII"
+
+#: apps/common/models.py:565
+msgid "The name of the Country approved by the ISO 3166 Maintenance Agency"
+msgstr "Le nom du pays approuvé par l'agence de maintenance ISO 3166"
+
+#: apps/common/models.py:570
+msgid ""
+"The full formal name of the Country approved by the ISO 3166 Maintenance "
+"Agency"
+msgstr ""
+"Le nom formel complet du pays approuvé par l'agence de maintenance ISO 3166"
+
+#: apps/common/models.py:574
+msgid "ISO French name"
+msgstr "Nom français iso"
+
+#: apps/common/models.py:575
+msgid ""
+"The name in French of the Country approved by the ISO 3166 Maintenance Agency"
+msgstr ""
+
+#: apps/common/models.py:579
+msgid "ISO French full name"
+msgstr "Nom complet ISO français"
+
+#: apps/common/models.py:580
+msgid ""
+"The full formal name in French of the Country approved by the ISO 3166 "
+"Maintenance Agency"
+msgstr ""
+"Le nom formel complet en français du pays approuvé par l'agence de "
+"maintenance ISO 3166"
+
+#: apps/common/models.py:584
+msgid "ISO Spanish name"
+msgstr "Nom espagnol ISO"
+
+#: apps/common/models.py:585
+msgid ""
+"The name in Spanish of the Country approved by the ISO 3166 Maintenance "
+"Agency"
+msgstr ""
+"Le nom en espagnol du pays approuvé par l'agence de maintenance ISO 3166"
+
+#: apps/common/models.py:592
+msgid "Country"
+msgstr "Pays"
+
+#: apps/common/models.py:593
+msgid "Countries"
+msgstr "Des pays"
+
+#: apps/common/models.py:607 apps/common/models.py:938
+msgid "name"
+msgstr "nom"
+
+#: apps/common/models.py:610
+msgid "Currency"
+msgstr "Devise"
+
+#: apps/common/models.py:611
+msgid "Currencies"
+msgstr "Devises"
+
+#: apps/common/models.py:695
+msgid "Weight"
+msgstr "Poids"
+
+#: apps/common/models.py:696
+msgid "Volume"
+msgstr "Volume"
+
+#: apps/common/models.py:697
+msgid "Item"
+msgstr "Article"
+
+#: apps/common/models.py:698
+msgid "Area"
+msgstr "Zone"
+
+#: apps/common/models.py:699
+msgid "Yield"
+msgstr "Rendement"
+
+#: apps/common/models.py:700
+msgid "Percentage"
+msgstr "Pourcentage"
+
+#: apps/common/models.py:701
+msgid "Length"
+msgstr "Longueur"
+
+#: apps/common/models.py:703
+msgid "abbreviation"
+msgstr "abréviation"
+
+#: apps/common/models.py:704
+msgid "unit type"
+msgstr "type d'unité"
+
+#: apps/common/models.py:709 apps/common/models.py:904
+msgid "aliases"
+msgstr "alias"
+
+#: apps/common/models.py:710 apps/common/models.py:905
+msgid "A list of alternate names for the product."
+msgstr "Une liste de noms alternatifs pour le produit."
+
+#: apps/common/models.py:725 apps/common/models.py:921
+msgid "Unit of Measure"
+msgstr "Unité de mesure"
+
+#: apps/common/models.py:726
+msgid "Units of Measure"
+msgstr "Unités de mesure"
+
+#: apps/common/models.py:829
+msgid "from unit"
+msgstr "de l'unité"
+
+#: apps/common/models.py:836
+msgid "to unit"
+msgstr "à l'unité"
+
+#: apps/common/models.py:841
+msgid "conversion factor"
+msgstr "facteur de conversion"
+
+#: apps/common/models.py:846
+msgid "Unit of Measure Conversion"
+msgstr "Conversion de l'unité de mesure"
+
+#: apps/common/models.py:847
+msgid "Unit of Measure Conversions"
+msgstr "Conversions d'unité de mesure"
+
+#: apps/common/models.py:872
+#, python-format
+msgid ""
+"From unit and to unit must have the same unit type, expected unit is of type "
+"%(from_unit_type)s"
+msgstr ""
+"De l'unité et de l'unité doit avoir le même type d'unité, l'unité attendue "
+"est de type %(from_unit_type)s"
+
+#: apps/common/models.py:894
+msgid ""
+"classification structure of products based on the UN’s Central Product "
+"Classification rules, prefixed with R, L, P or S, a letter indicating "
+"whether the Product is Raw agricultural output, Live animals, a Processed "
+"product or a Service."
+msgstr ""
+"structure de classification des produits basée sur les règles de "
+"classification centrale des produits de l'ONU, préfixée par R, L, P ou S, "
+"une lettre indiquant si le produit est une production agricole brute, des "
+"animaux vivants, un produit transformé ou un service."
+
+#: apps/common/models.py:899
+msgid "description"
+msgstr "description"
+
+#: apps/common/models.py:900
+msgid "common name"
+msgstr "Nom commun"
+
+#: apps/common/models.py:912
+msgid "HS2012"
+msgstr "HS2012"
+
+#: apps/common/models.py:914
+msgid ""
+"The 6-digit codes for the Product in the Harmonized Commodity Description "
+"and Coding System (HS), stored as XXXX.YY "
+msgstr ""
+"Les codes à 6 chiffres pour le produit dans le système de description et de "
+"codage des marchandises harmonisées (HS), stocké comme xxxx.yy"
+
+#: apps/common/models.py:918
+msgid "scientific name"
+msgstr "nom scientifique"
+
+#: apps/common/models.py:923
+msgid "Kcals per Unit"
+msgstr "Kcals par unité"
+
+#: apps/common/models.py:957 apps/common/models.py:974
+msgid "Product"
+msgstr "Produit"
+
+#: apps/common/models.py:958
+msgid "Products"
+msgstr "Des produits"
+
+#: apps/common/models.py:970
+msgid "country"
+msgstr "pays"
+
+#: apps/common/models.py:984
+msgid "Country Classified Product Alias"
+msgstr "Alias ​​de produit classifié du pays"
+
+#: apps/common/models.py:985
+msgid "Country Classified Product Aliases"
+msgstr "Alias ​​de produits classifiés par pays"
+
+#: apps/common/viewsets.py:235 apps/common/viewsets.py:250
+msgid "English"
+msgstr "Anglais"
+
+#: apps/common/viewsets.py:238 apps/common/viewsets.py:253
+msgid "French"
+msgstr "Français"
+
+#: apps/common/viewsets.py:241 apps/common/viewsets.py:256
+msgid "Spanish"
+msgstr "Espagnol"
+
+#: apps/common/viewsets.py:244 apps/common/viewsets.py:259
+msgid "Arabic"
+msgstr "Arabe"
+
+#: apps/common/viewsets.py:247 apps/common/viewsets.py:262
+msgid "Portuguese"
+msgstr "Portugais"
+
+#: apps/common/viewsets.py:250 apps/common/viewsets.py:253
+#: apps/common/viewsets.py:256 apps/common/viewsets.py:259
+#: apps/common/viewsets.py:262
+msgid "Common Name"
+msgstr "Nom commun"

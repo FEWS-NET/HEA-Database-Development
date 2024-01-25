@@ -728,6 +728,10 @@ class UnitOfMeasure(Model):
     class ExtraMeta:
         identifier = ["description_en"]
 
+    def __str__(self):
+        # Use locale-sensitive property getter for UI, eg, translated drop-downs
+        return self.description
+
 
 class UnitOfMeasureConversionManager(models.Manager):
     def get_conversion_factor(self, from_unit, to_unit):
@@ -866,7 +870,8 @@ class UnitOfMeasureConversion(Model):
             if from_unit.unit_type != to_unit.unit_type:
                 raise ValidationError(
                     _(
-                        f"From unit and to unit must have the same unit type, expected unit is of type {from_unit.unit_type}"  # NOQA: E501
+                        "From unit and to unit must have the same unit type, expected unit is of type "
+                        "%(from_unit_type)s" % {"from_unit_type": from_unit.unit_type}
                     )
                 )
 
@@ -886,9 +891,11 @@ class ClassifiedProduct(MP_Node, Model):
         max_length=8,
         primary_key=True,
         verbose_name="CPC V2",
-        help_text="classification structure of products based on the UN’s Central Product Classification rules,"
-        " prefixed with R, L, P or S, a letter indicating whether the Product is Raw agricultural output,"
-        " Live animals, a Processed product or a Service.",
+        help_text=_(
+            "classification structure of products based on the UN’s Central Product Classification rules,"
+            " prefixed with R, L, P or S, a letter indicating whether the Product is Raw agricultural output,"
+            " Live animals, a Processed product or a Service."
+        ),
     )
     description = TranslatedField(models.CharField(max_length=800, verbose_name=_("description")))
     common_name = TranslatedField(NameField(blank=True, verbose_name=_("common name")))

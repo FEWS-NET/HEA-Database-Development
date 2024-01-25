@@ -1,14 +1,14 @@
 {% load i18n %}
 
 <p class="lead">
-    {% blocktrans %}
+    {% blocktranslate %}
         A HEA baseline is a data collection conducted for a country during a specific reference year.
         A typical baseline includes data collected from representative average households,
         serving as a representation of a wealth group within a community in a given Livelihood zone.
 
         The primary components of common baseline data include wealth characteristics, asset profiles,
         household economy, and numerous other relevant metrics
-    {% endblocktrans %}
+    {% endblocktranslate %}
 
 </p>
 
@@ -99,7 +99,7 @@
                     <div class="col">
                         <div class="card m-2">
                             <div class="card-body">
-                                <a href="{% url 'admin:baseline_communitycropproduction_changelist' %}"> {% translate 'Crop Productions' %}</a>
+                                <a href="{% url 'admin:baseline_communitycropproduction_changelist' %}"> {% translate 'Crop Production' %}</a>
                             </div>
                         </div>
                     </div>
@@ -109,7 +109,7 @@
                     <div class="col">
                         <div class="card m-2">
                             <div class="card-body">
-                                <a href="{% url 'admin:baseline_communitylivestock_changelist' %}">{% translate 'Livestock Productions' %}</a>
+                                <a href="{% url 'admin:baseline_communitylivestock_changelist' %}">{% translate 'Livestock Production' %}</a>
                             </div>
                         </div>
                     </div>
@@ -148,7 +148,7 @@
     {% endif %}
     {% if 'metadata.view_seasonalactivitytype' in perms or  'baseline.view_seasonalactivity'  in perms or  'baseline.view_seasonalactivityoccurrence'  in perms %}
         <div class="menu-category">
-            <h5>{% translate 'Seasonal Calendars' %}</h5>
+            <h5>{% translate "Seasonal Calendars" %}</h5>
             <div class="row row-cols-1 row-cols-md-3 g-4">
                 <!-- Card 1 -->
                 {% if 'metadata.view_seasonalactivitytype' in perms %}
@@ -225,7 +225,7 @@
     {% endif %}
     {% if 'baseline.view_expandabilityfactor' in perms or 'baseline.view_copingstrategy' in perms %}
         <div class="menu-category">
-            <h5>{% translate 'Expandadability and Coping' %}</h5>
+            <h5>{% translate 'Expandability and Coping' %}</h5>
             <div class="row row-cols-1 row-cols-md-3 g-4">
                 <!-- Card 1 -->
                 {% if 'baseline.view_expandabilityfactor' in perms %}
