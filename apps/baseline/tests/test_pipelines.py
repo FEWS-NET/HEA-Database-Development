@@ -1,4 +1,3 @@
-import pandas as pd
 from django.test import TestCase
 from kiluigi.utils import submit_task
 
