@@ -23,7 +23,7 @@ class IngestionPipelineTestCase(TestCase):
         CountryFactory(iso3166a2="MW", iso3166a3="MWI", iso3166n3=454, iso_en_ro_name="Malawi")
         ClassifiedProductFactory(cpc="L02151", description="Chickens", aliases=["chicken", "hen", "hens"]),
         ClassifiedProductFactory(
-            cpc="L02111AP", description_en="Cattle, oxen, unspecified", common_name_en="Oxen", aliases=["ox"]
+            cpc="L02111HA", description_en="Cattle, oxen, unspecified", common_name_en="Oxen", aliases=["ox"]
         )
         UnitOfMeasureFactory(abbreviation="acre", unit_type=UnitOfMeasure.AREA, aliases=["acres"], conversion=None)
         LivelihoodCategoryFactory(

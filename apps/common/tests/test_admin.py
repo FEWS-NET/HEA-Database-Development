@@ -156,22 +156,26 @@ class UnitOfMeasureAdminTestCase(TestCase):
         translation.activate("en")
 
     def setUp(self):
-        self.uom1 = UnitOfMeasureFactory()
-        self.uom2 = UnitOfMeasureFactory()
+        self.uom1 = UnitOfMeasureFactory(aliases=["alias1"])
+        self.uom2 = UnitOfMeasureFactory(aliases=["alias2"])
         self.client.login(username="admin", password="admin")
 
-    def test_unit_of_measure_filter(self):
+    def test_list_returns_all_records(self):
         response = self.client.get(reverse("admin:common_unitofmeasure_changelist"))
-        for attr in UnitOfMeasureAdmin.list_display:
-            self.assertContains(response, getattr(self.uom1, attr))
-            self.assertContains(response, getattr(self.uom2, attr))
-
         self.assertContains(response, self.uom1.abbreviation)
+        self.assertContains(response, self.uom2.abbreviation)
+        self.assertContains(response, self.uom1.description)
+        self.assertContains(response, self.uom2.description)
+        self.assertContains(response, "alias1")
+        self.assertContains(response, "alias2")
 
     def test_unit_of_measure_search(self):
         response = self.client.get(reverse("admin:common_unitofmeasure_changelist"), {"q": self.uom1.abbreviation})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.uom1.abbreviation)
+        self.assertContains(response, self.uom1.description)
+        self.assertContains(response, "alias1")
+        self.assertNotContains(response, self.uom2.abbreviation)
 
     def test_unit_of_measure_creation(self):
         data = {
