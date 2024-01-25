@@ -159,12 +159,12 @@ class ClassifiedProductViewSetTestCase(APITestCase):
         result = json.loads(response.content.decode("utf-8"))
         self.assertEqual(len(result), ClassifiedProduct.objects.count())
 
-    def test_filter_by_cpcv2(self):
-        response = self.client.get(self.url, {"cpcv2": self.product1.cpcv2})
+    def test_filter_by_cpc(self):
+        response = self.client.get(self.url, {"cpc": self.product1.cpc})
         self.assertEqual(response.status_code, 200)
         result = json.loads(response.content.decode("utf-8"))
         self.assertEqual(len(result), 1)
-        self.assertEqual(result[0]["cpcv2"], self.product1.cpcv2)
+        self.assertEqual(result[0]["cpc"], self.product1.cpc)
 
     def test_filter_by_description(self):
         response = self.client.get(self.url, {"description_en": self.product2.description})

@@ -288,7 +288,7 @@ class Lookup(ABC):
 
 class CountryClassifiedProductAliasesLookup(Lookup):
     model = CountryClassifiedProductAliases
-    id_fields = ["product__cpcv2"]
+    id_fields = ["product__cpc"]
     parent_fields = ["country"]
     lookup_fields = ["aliases"]
     require_match = False
@@ -348,11 +348,12 @@ class ClassifiedProductLookup(Lookup):
     # products to be leaf nodes in the tree.  If that behavior is required in
     # HEA, then pass `filters={"numchild": 0}` when instantiating the Lookup.
     model = ClassifiedProduct
-    id_fields = ["cpcv2"]
+    id_fields = ["cpc"]
     lookup_fields = (
         *translation_fields("common_name"),
         *translation_fields("description"),
         "aliases",
+        "cpcv2",
         "hs2012",
     )
 
@@ -367,12 +368,36 @@ class ClassifiedProductLookup(Lookup):
         """
         df = super().get_lookup_df()
 
-        # Split hs2012 into columns
+        # Split hs2012 and cpcv2 into columns
         # Start by replacing None/null alias values with an empty list
+        df["cpcv2"] = df["cpcv2"].apply(lambda x: x if x else [])
         df["hs2012"] = df["hs2012"].apply(lambda x: x if x else [])
         # Append the hs2012 codes as separate columns
+        df = pd.concat([df.drop("cpcv2", axis="columns"), pd.DataFrame(df["cpcv2"].tolist())], axis="columns")
         df = pd.concat([df.drop("hs2012", axis="columns"), pd.DataFrame(df["hs2012"].tolist())], axis="columns")
 
+        return df
+
+    def prepare_lookup_df(self):
+        """
+        Remove parent nodes with a single child to avoid spurious multiple match errors.
+
+        Some Classified Product parent nodes have a single child that is the identical to the parent. For example:
+            - R015	Edible roots and tubers with high starch or inulin content
+              - R0151	Potatoes
+                - R01510	Potatoes
+
+        In this case, a search for "potatoes" should return the leaf node, R01510, and ignore the parent R0151. To do
+        this we need to remove the R0151 row from the lookup_df, otherwise the search raises:
+            ValueError: ClassifiedProductLookup found multiple ClassifiedProduct matches for some rows
+        """
+        df = super().prepare_lookup_df()
+        # Drop any rows where the lookup_key is duplicated but there is another row in the dataframe with the same
+        # lookup_value suffixed with "0", which is the convention CPC uses for a parent with a single child.
+        unwanted_parents = df[
+            (df["lookup_key"].duplicated(keep=False)) & (df["lookup_value"] + "0").isin(df["lookup_value"])
+        ]
+        df = pd.concat([df, unwanted_parents]).drop_duplicates(keep=False)
         return df
 
 

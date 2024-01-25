@@ -634,7 +634,7 @@ class ClassifiedProductQuerySet(SearchQueryMixin, MP_NodeQuerySet):
         parts = []
         for part in search_term.split(" - "):
             parts.append(
-                Q(cpcv2__iexact=part)
+                Q(cpc__iexact=part)
                 | Q(description_en__iexact=part)
                 | Q(description_pt__iexact=part)
                 | Q(description_es__iexact=part)
@@ -648,6 +648,7 @@ class ClassifiedProductQuerySet(SearchQueryMixin, MP_NodeQuerySet):
                 | Q(scientific_name__iexact=part)
                 | Q(per_country_aliases__aliases__contains=[part.lower()])
                 | Q(aliases__contains=[part.lower()])
+                | Q(cpcv2__contains=[part])
                 | Q(hs2012__contains=[part])
             )
         return reduce(operator.and_, parts)
@@ -882,13 +883,15 @@ class ClassifiedProduct(MP_Node, Model):
     See http://unstats.un.org/unsd/cr/registry/cpc-2.asp for more information
     """
 
-    cpcv2 = models.CharField(
+    # Note that we call the code cpc rather than cpcv21 so that we can upgrade to cpc v3 in due course without
+    # needing to refactor.
+    cpc = models.CharField(
         max_length=8,
         primary_key=True,
-        verbose_name="CPC V2",
-        help_text="classification structure of products based on the UN’s Central Product Classification rules,"
-        " prefixed with R, L, P or S, a letter indicating whether the Product is Raw agricultural output,"
-        " Live animals, a Processed product or a Service.",
+        verbose_name=_("CPC v2.1"),
+        help_text="classification structure of products based on version 2.1 of the UN’s Central Product"
+        " Classification rules, prefixed with R, L, P or S, a letter indicating whether the Product is Raw"
+        " agricultural output, Live animals, a Processed product or a Service.",
     )
     description = TranslatedField(models.CharField(max_length=800, verbose_name=_("description")))
     common_name = TranslatedField(NameField(blank=True, verbose_name=_("common name")))
@@ -898,8 +901,17 @@ class ClassifiedProduct(MP_Node, Model):
         verbose_name=_("aliases"),
         help_text=_("A list of alternate names for the product."),
     )
+    # FDW has not upgraded to CPC v2.1 yet, so store the CPC v2 codes to enable lookups
+    cpcv2 = models.JSONField(
+        blank=True,
+        null=True,
+        verbose_name=_("CPC v2"),
+        help_text="classification structure of products based on version 2 of the UN’s Central Product"
+        " Classification rules, prefixed with R, L, P or S, a letter indicating whether the Product is Raw"
+        " agricultural output, Live animals, a Processed product or a Service.",
+    )
     # Note that we store and look up HS2012 values as xxxx.yy, e.g. Durum Wheat is 1001.19 rather than 100119,
-    # because it avoids confusion between the CPCv2 and HS2012 codes.
+    # because it avoids confusion between the CPC code and HS2012 codes.
     hs2012 = models.JSONField(
         blank=True,
         null=True,
@@ -932,7 +944,7 @@ class ClassifiedProduct(MP_Node, Model):
     display_name.short_description = _("name")
 
     def __str__(self):
-        return "%s / %s" % (self.cpcv2, self.display_name())
+        return "%s / %s" % (self.cpc, self.display_name())
 
     def calculate_fields(self):
         """
@@ -953,7 +965,7 @@ class ClassifiedProduct(MP_Node, Model):
         ordering = ()  # Required for correct ordering of Treebeard subclasses
 
     class ExtraMeta:
-        identifier = ["cpcv2", "description_en"]
+        identifier = ["cpc", "description_en"]
 
 
 class CountryClassifiedProductAliases(Model):
