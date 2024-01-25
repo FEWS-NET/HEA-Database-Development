@@ -4,12 +4,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import translation
 
-from common.admin import (
-    ClassifiedProductAdmin,
-    CountryAdmin,
-    CurrencyAdmin,
-    UnitOfMeasureAdmin,
-)
+from common.admin import ClassifiedProductAdmin, CountryAdmin, CurrencyAdmin
 from common.models import ClassifiedProduct, Country, Currency, UnitOfMeasure
 
 from .factories import (
