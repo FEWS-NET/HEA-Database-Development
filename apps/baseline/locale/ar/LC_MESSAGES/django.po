@@ -1,0 +1,1244 @@
+# HEA AR Translations
+# Copyright (C) 2024 USAID
+# This file is distributed under the same license as the HEA system.
+# FEWS NET <help@fews.net>, 2024.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-01-25 15:31+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 "
+"&& n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5;\n"
+
+#: apps/baseline/admin.py:49
+msgid "HEA Baseline Database Administration"
+msgstr "إدارة قاعدة البيانات الأساسية لـ HEA"
+
+#: apps/baseline/admin.py:50
+msgid "HEA Baseline"
+msgstr "هيا خط الأساس"
+
+#: apps/baseline/admin.py:51
+msgid "Administration"
+msgstr "إدارة"
+
+#: apps/baseline/apps.py:8
+msgid "baseline"
+msgstr "هيا خط الأساس"
+
+#: apps/baseline/forms.py:24
+msgid "Produced"
+msgstr "أنتجت"
+
+#: apps/baseline/forms.py:25
+msgid "Purchased"
+msgstr "تم شراؤها"
+
+#: apps/baseline/forms.py:26
+msgid "Sold"
+msgstr "مُباع"
+
+#: apps/baseline/forms.py:27
+msgid "Consumed"
+msgstr "مستهلك"
+
+#: apps/baseline/forms.py:28
+msgid "Other uses"
+msgstr "استخدامات اخرى"
+
+#: apps/baseline/forms.py:29
+msgid "Percentage"
+msgstr "نسبة مئوية"
+
+#: apps/baseline/forms.py:43
+msgid "Butter Production"
+msgstr "إنتاج الزبدة"
+
+#: apps/baseline/forms.py:57 apps/baseline/forms.py:85
+msgid "Purchase size"
+msgstr "حجم الشراء"
+
+#: apps/baseline/forms.py:71
+msgid "Relief size"
+msgstr "حجم الإغاثة"
+
+#: apps/baseline/models.py:46
+msgid "full name"
+msgstr "الاسم الكامل"
+
+#: apps/baseline/models.py:55 apps/baseline/models.py:140
+msgid "Source Organization"
+msgstr "منظمة المصدر"
+
+#: apps/baseline/models.py:56
+msgid "Source Organizations"
+msgstr "منظمات المصدر"
+
+#: apps/baseline/models.py:84
+msgid "code"
+msgstr "شفرة"
+
+#: apps/baseline/models.py:85
+msgid "Primary identifier for the Livelihood Zone"
+msgstr "المعرف الأساسي لمنطقة الرزق"
+
+#: apps/baseline/models.py:89
+msgid "Country"
+msgstr "دولة"
+
+#: apps/baseline/models.py:92 apps/baseline/models.py:129
+msgid "Livelihood Zone"
+msgstr "منطقة رزق"
+
+#: apps/baseline/models.py:93
+msgid "Livelihood Zones"
+msgstr "مناطق الرزق"
+
+#: apps/baseline/models.py:131 apps/baseline/models.py:297
+msgid "geography"
+msgstr "جغرافية"
+
+#: apps/baseline/models.py:137
+msgid "Livelihood Zone Type"
+msgstr "نوع منطقة سبل العيش"
+
+#: apps/baseline/models.py:142
+msgid "BSS Excel file"
+msgstr "ملف BSS Excel"
+
+#: apps/baseline/models.py:147
+msgid "Profile Report PDF file"
+msgstr "ملف تعريف ملف pdf"
+
+#: apps/baseline/models.py:150
+msgid "Reference Year Start Date"
+msgstr "تاريخ بدء السنة المرجعية"
+
+#: apps/baseline/models.py:151
+msgid "The first day of the month of the start month in the reference year"
+msgstr "اليوم الأول من شهر الشهر في السنة المرجعية"
+
+#: apps/baseline/models.py:154
+msgid "Reference Year End Date"
+msgstr "تاريخ نهاية السنة المرجعية"
+
+#: apps/baseline/models.py:155
+msgid "The last day of the month of the end month in the reference year"
+msgstr "آخر يوم من شهر الشهر في السنة المرجعية"
+
+#: apps/baseline/models.py:160
+msgid "Valid From Date"
+msgstr "صالح من تاريخ"
+
+#: apps/baseline/models.py:161
+msgid "The first day of the month that this baseline is valid from"
+msgstr "اليوم الأول من الشهر الذي يكون هذا الأساس صالحًا من"
+
+#: apps/baseline/models.py:166
+msgid "Valid To Date"
+msgstr "صالح حتى الآن"
+
+#: apps/baseline/models.py:167
+msgid "The last day of the month that this baseline is valid until"
+msgstr "آخر يوم من الشهر الذي يكون هذا الأساس صالحًا حتى"
+
+#: apps/baseline/models.py:172
+msgid "Data Collection Start Date"
+msgstr "تاريخ بدء جمع البيانات"
+
+#: apps/baseline/models.py:173
+msgid "The first day of data collection period"
+msgstr "اليوم الأول من فترة جمع البيانات"
+
+#: apps/baseline/models.py:178
+msgid "Data Collection End Date"
+msgstr "تاريخ نهاية جمع البيانات"
+
+#: apps/baseline/models.py:179
+msgid "The last day of the data collection period"
+msgstr "آخر يوم من فترة جمع البيانات"
+
+#: apps/baseline/models.py:184
+msgid "Publication Date"
+msgstr "تاريخ النشر"
+
+#: apps/baseline/models.py:185
+msgid "The day that the baseline was published"
+msgstr "اليوم الذي نُشر فيه خط الأساس"
+
+#: apps/baseline/models.py:197
+msgid "Population Source"
+msgstr "مصدر السكان"
+
+#: apps/baseline/models.py:198
+msgid ""
+"The data source for the Population Estimate, e.g. National Bureau of "
+"Statistics"
+msgstr "مصدر البيانات لتقدير السكان ، على سبيل المثال المكتب الوطني للإحصاء"
+
+#: apps/baseline/models.py:203
+msgid "Population Estimate"
+msgstr "تقدير السكان"
+
+#: apps/baseline/models.py:204
+msgid ""
+"The estimated population of the Livelihood Zone during the reference year"
+msgstr ""
+
+#: apps/baseline/models.py:217 apps/baseline/models.py:243
+#: apps/baseline/models.py:295 apps/baseline/models.py:388
+#: apps/baseline/models.py:769 apps/baseline/models.py:880
+#: apps/baseline/models.py:1572 apps/baseline/models.py:1633
+msgid "Livelihood Zone Baseline"
+msgstr "سبل المعيشة الأساس الأساس"
+
+#: apps/baseline/models.py:218
+msgid "Livelihood Zone Baselines"
+msgstr "سبل العيش في منطقة الأساس"
+
+#: apps/baseline/models.py:234
+msgid "Main Staple"
+msgstr "العنصر الأساسي الرئيسي"
+
+#: apps/baseline/models.py:235
+msgid "Other Staple"
+msgstr "عنصر أساسي آخر"
+
+#: apps/baseline/models.py:236
+msgid "Non-food survival"
+msgstr "البقاء على قيد الحياة غير الغذائي"
+
+#: apps/baseline/models.py:237
+msgid "Livelihoods Protection"
+msgstr "حماية سبل العيش"
+
+#: apps/baseline/models.py:250 apps/baseline/models.py:600
+#: apps/baseline/models.py:791 apps/baseline/models.py:1594
+#: apps/baseline/models.py:1850
+msgid "Product"
+msgstr "منتج"
+
+#: apps/baseline/models.py:252
+msgid "Product Basket"
+msgstr "سلة المنتج"
+
+#: apps/baseline/models.py:255
+msgid "Livelihood Product Category"
+msgstr "فئة منتج الرزق"
+
+#: apps/baseline/models.py:256
+msgid "Livelihood Product Categories"
+msgstr "فئات منتجات الرزق"
+
+#: apps/baseline/models.py:282
+msgid "Code"
+msgstr "شفرة"
+
+#: apps/baseline/models.py:283
+msgid "A short identifier for the Community"
+msgstr "معرف قصير للمجتمع"
+
+#: apps/baseline/models.py:288
+msgid "Full Name"
+msgstr "الاسم الكامل"
+
+#: apps/baseline/models.py:289
+msgid "The full name the Community, including the parent administrative units."
+msgstr "الاسم الكامل للمجتمع ، بما في ذلك الوحدات الإدارية الوالدين."
+
+#: apps/baseline/models.py:305
+msgid "Interview Number"
+msgstr "رقم المقابلة"
+
+#: apps/baseline/models.py:306
+msgid "The interview number or interview code assigned to the Community"
+msgstr "رقم المقابلة أو رمز المقابلة المعين للمجتمع"
+
+#: apps/baseline/models.py:311
+msgid "Community Interview Date"
+msgstr "تاريخ مقابلة المجتمع"
+
+#: apps/baseline/models.py:312
+msgid "The date that the Community Interview (Form 3) was conducted."
+msgstr "تاريخ إجراء مقابلة المجتمع (النموذج 3)."
+
+#: apps/baseline/models.py:317
+msgid "Wealth Group Interview Date"
+msgstr "تاريخ مقابلة مجموعة الثروة"
+
+#: apps/baseline/models.py:318
+msgid "The date that the Wealth Group Interviews (Form 4) were conducted."
+msgstr "تاريخ إجراء مقابلات مجموعة الثروة (النموذج 4)."
+
+#: apps/baseline/models.py:330 apps/baseline/models.py:403
+msgid "Community"
+msgstr "مجتمع"
+
+#: apps/baseline/models.py:331
+msgid "Communities"
+msgstr "مجتمعات"
+
+#: apps/baseline/models.py:409
+msgid "Wealth Group Category"
+msgstr "فئة مجموعة الثروة"
+
+#: apps/baseline/models.py:410
+msgid "Wealth Group Category, e.g. Poor or Better Off"
+msgstr "فئة مجموعة الثروة ، على سبيل المثال فقير أو أفضل حالا"
+
+#: apps/baseline/models.py:415
+msgid "Percentage of households"
+msgstr "نسبة الأسر"
+
+#: apps/baseline/models.py:416
+msgid ""
+"Percentage of households in the Community or Livelihood Zone that are in "
+"this Wealth Group"
+msgstr ""
+"النسبة المئوية للأسر في المجتمع أو منطقة سبل العيش الموجودة في هذه المجموعة "
+"الثروة"
+
+#: apps/baseline/models.py:419
+msgid "Average household size"
+msgstr "متوسط ​​حجم الأسرة"
+
+#: apps/baseline/models.py:453 apps/baseline/models.py:577
+#: apps/baseline/models.py:896 apps/baseline/models.py:1786
+#: apps/baseline/models.py:2043 apps/baseline/models.py:2098
+msgid "Wealth Group"
+msgstr "مجموعة الثروة"
+
+#: apps/baseline/models.py:454
+msgid "Wealth Groups"
+msgstr "مجموعات الثروة"
+
+#: apps/baseline/models.py:484
+msgid "A Baseline Wealth Group cannot have a Community"
+msgstr "لا يمكن لمجموعة الثروة الأساسية أن يكون لها مجتمع"
+
+#: apps/baseline/models.py:488
+msgid "Baseline Wealth Group"
+msgstr "مجموعة الثروة الأساسية"
+
+#: apps/baseline/models.py:489
+msgid "Baseline Wealth Groups"
+msgstr "مجموعات الثروة الأساسية"
+
+#: apps/baseline/models.py:507
+msgid "A Community Wealth Group must have a Community"
+msgstr "يجب أن يكون لدى مجموعة ثروة المجتمع مجتمع"
+
+#: apps/baseline/models.py:511
+msgid "Community Wealth Group"
+msgstr "مجموعة ثروة المجتمع"
+
+#: apps/baseline/models.py:512
+msgid "Community Wealth Groups"
+msgstr "مجموعات ثروة المجتمع"
+
+#: apps/baseline/models.py:573
+msgid "Community Interview (Form 3)"
+msgstr "مقابلة المجتمع (النموذج 3)"
+
+#: apps/baseline/models.py:574
+msgid "Wealth Group Interview (Form 4)"
+msgstr "مقابلة مجموعة الثروة (النموذج 4)"
+
+#: apps/baseline/models.py:575
+msgid "Baseline Summary"
+msgstr "ملخص خط الأساس"
+
+#: apps/baseline/models.py:582
+msgid "Wealth Characteristic"
+msgstr "سمة الثروة"
+
+#: apps/baseline/models.py:588
+msgid "Reference Type"
+msgstr "نوع مرجع"
+
+#: apps/baseline/models.py:590
+msgid ""
+"The reference type of this Wealth Group Characteristic Value, such as a "
+"Community Interview (Form 3), Wealth Group Interview (Form 4) or the "
+"Baseline Summary"
+msgstr ""
+"النوع المرجعي لقيمة مميزة مجموعة الثروة هذه ، مثل مقابلة المجتمع (النموذج "
+"3) ، أو مقابلة مجموعة الثروة (النموذج 4) أو ملخص خط الأساس"
+
+#: apps/baseline/models.py:601
+msgid "Product, e.g. Cattle"
+msgstr "المنتج ، على سبيل المثال ماشية"
+
+#: apps/baseline/models.py:610 apps/baseline/models.py:799
+#: apps/baseline/models.py:1863
+msgid "Unit of Measure"
+msgstr "وحدة القياس"
+
+#: apps/baseline/models.py:622
+msgid "value"
+msgstr "قيمة"
+
+#: apps/baseline/models.py:622
+msgid "A single property value, eg, a float, str or list, not a dict of props."
+msgstr ""
+"قيمة خاصية واحدة ، على سبيل المثال ، تعويم ، STR أو قائمة ، وليس قول الدعائم."
+
+#: apps/baseline/models.py:627
+msgid "min_value"
+msgstr "min_value"
+
+#: apps/baseline/models.py:630
+msgid "The minimum value of the possible range for this value."
+msgstr "الحد الأدنى لقيمة النطاق المحتمل لهذه القيمة."
+
+#: apps/baseline/models.py:633
+msgid "max_value"
+msgstr "قيمة الحد الأقصى"
+
+#: apps/baseline/models.py:636
+msgid "The maximum value of the possible range for this value."
+msgstr "الحد الأقصى لقيمة النطاق المحتمل لهذه القيمة."
+
+#: apps/baseline/models.py:647
+msgid ""
+"A Wealth Group Characteristic Value from a Baseline Summary must be for a "
+"Baseline Wealth Group"
+msgstr ""
+"يجب أن تكون القيمة المميزة لمجموعة الثروة من ملخص أساسي لمجموعة ثروة أساسية"
+
+#: apps/baseline/models.py:652
+#, python-format
+msgid ""
+"A Wealth Group Characteristic Value from a %(ref)s must be for a Community "
+"Wealth Group"
+msgstr ""
+"يجب أن تكون القيمة المميزة لمجموعة الثروة من %(ref)s لمجموعة ثروة المجتمع"
+
+#: apps/baseline/models.py:659
+#, python-format
+msgid "A Wealth Group Characteristic Value for %(charac)s must have a product"
+msgstr "يجب أن يكون لقيمة مجموعة ثروة للثروة نسبة %(charac)s منتج"
+
+#: apps/baseline/models.py:664
+#, python-format
+msgid ""
+"A Wealth Group Characteristic Value for %(charac)s must not have a product"
+msgstr "يجب ألا تحتوي قيمة مجموعة ثروة على %(charac)s"
+
+#: apps/baseline/models.py:671
+#, python-format
+msgid ""
+"A Wealth Group Characteristic Value for %(charac)s must have a unit of "
+"measure"
+msgstr "يجب أن يكون لقيمة مجموعة ثروة للثروة نسبة %(charac)s منتج"
+
+#: apps/baseline/models.py:676
+#, python-format
+msgid ""
+"A Wealth Group Characteristic Value for %(charac)s must not have a unit of "
+"measure"
+msgstr "يجب ألا تحتوي قيمة مجموعة ثروة على %(charac)s"
+
+#: apps/baseline/models.py:685
+msgid "Value must be higher than min_value."
+msgstr "يجب أن تكون القيمة أعلى من min_value."
+
+#: apps/baseline/models.py:691
+msgid "Value must be lower than max_value."
+msgstr "يجب أن تكون القيمة أقل من max_value."
+
+#: apps/baseline/models.py:714
+msgid "Wealth Characteristic Value"
+msgstr "قيمة مميزة للثروة"
+
+#: apps/baseline/models.py:715
+msgid "Wealth Characteristic Values"
+msgstr "قيم مميزة للثروة"
+
+#: apps/baseline/models.py:776 apps/baseline/models.py:887
+msgid "Strategy Type"
+msgstr "نوع الإستراتيجية"
+
+#: apps/baseline/models.py:777 apps/baseline/models.py:888
+msgid ""
+"The type of livelihood strategy, such as crop production, or wild food "
+"gathering."
+msgstr "نوع استراتيجية سبل العيش ، مثل إنتاج المحاصيل ، أو جمع الأغذية البرية."
+
+#: apps/baseline/models.py:781 apps/baseline/models.py:1587
+#: apps/baseline/models.py:1717 apps/baseline/models.py:1921
+msgid "Season"
+msgstr "موسم"
+
+#: apps/baseline/models.py:792 apps/baseline/models.py:1595
+#: apps/baseline/models.py:1851
+msgid "Product, e.g. full fat milk"
+msgstr "المنتج ، على سبيل المثال حليب كامل الدسم"
+
+#: apps/baseline/models.py:800
+msgid "Unit used to measure production from this Livelihood Strategy"
+msgstr "الوحدة المستخدمة لقياس الإنتاج من استراتيجية سبل العيش هذه"
+
+#: apps/baseline/models.py:806 apps/baseline/models.py:1860
+msgid "Currency"
+msgstr "عملة"
+
+#: apps/baseline/models.py:807
+msgid "Currency of income or expenditure from this Livelihood Strategy"
+msgstr "عملة الدخل أو الإنفاق من استراتيجية سبل المعيشة هذه"
+
+#: apps/baseline/models.py:816
+msgid "Additional Identifer"
+msgstr "معرف إضافي"
+
+#: apps/baseline/models.py:817
+msgid "Additional text identifying the livelihood strategy"
+msgstr "نص إضافي يحدد استراتيجية رزقه"
+
+#: apps/baseline/models.py:833 apps/baseline/models.py:871
+#: apps/baseline/models.py:2041 apps/baseline/models.py:2100
+msgid "Livelihood Strategy"
+msgstr "استراتيجية سبل العيش"
+
+#: apps/baseline/models.py:834
+msgid "Livelihood Strategies"
+msgstr "استراتيجيات رزق"
+
+#: apps/baseline/models.py:893
+msgid "Scenario"
+msgstr "سيناريو"
+
+#: apps/baseline/models.py:894
+msgid ""
+"The scenario in which the outputs of this Livelihood Activity apply, e.g. "
+"baseline or response."
+msgstr ""
+"السيناريو الذي تنطبق فيه مخرجات نشاط سبل العيش ، على سبيل المثال خط الأساس "
+"أو الاستجابة."
+
+#: apps/baseline/models.py:898 apps/baseline/models.py:2046
+msgid "Quantity Produced"
+msgstr "الكمية المنتجة"
+
+#: apps/baseline/models.py:899
+msgid "Quantity Purchased"
+msgstr "الكمية المشتراة"
+
+#: apps/baseline/models.py:900 apps/baseline/models.py:2047
+msgid "Quantity Sold/Exchanged"
+msgstr "المباعة/تبادل الكمية"
+
+#: apps/baseline/models.py:901 apps/baseline/models.py:2048
+msgid "Quantity Other Uses"
+msgstr "كمية الاستخدامات الأخرى"
+
+#: apps/baseline/models.py:904 apps/baseline/models.py:2050
+msgid "Quantity Consumed"
+msgstr "الكمية المستهلكة"
+
+#: apps/baseline/models.py:906
+msgid "Price"
+msgstr "سعر"
+
+#: apps/baseline/models.py:906
+msgid "Price per unit"
+msgstr "السعر لكل وحدة"
+
+#: apps/baseline/models.py:909 apps/baseline/models.py:2054
+msgid "Income"
+msgstr "دخل"
+
+#: apps/baseline/models.py:912 apps/baseline/models.py:2057
+msgid "Expenditure"
+msgstr "المصروفات"
+
+#: apps/baseline/models.py:918
+msgid "Total kcals consumed"
+msgstr "إجمالي kcals المستهلكة"
+
+#: apps/baseline/models.py:919
+msgid ""
+"Total kcals consumed by a household in the reference year from this "
+"livelihood strategy"
+msgstr ""
+"إجمالي KCALS تستهلكه أسرة في السنة المرجعية من استراتيجية سبل العيش هذه"
+
+#: apps/baseline/models.py:929
+msgid "Percentage of required kcals"
+msgstr "النسبة المئوية من kcals المطلوبة"
+
+#: apps/baseline/models.py:930
+msgid ""
+"Percentage of annual household kcal requirement provided by this livelihood "
+"strategy"
+msgstr ""
+"النسبة المئوية للمتطلبات السنوية لـ KCAL التي توفرها استراتيجية سبل العيش هذه"
+
+#: apps/baseline/models.py:947
+msgid "Mainly Men"
+msgstr "الرجال بشكل رئيسي"
+
+#: apps/baseline/models.py:948
+msgid "Mainly Women"
+msgstr "النساء أساسا"
+
+#: apps/baseline/models.py:949
+msgid "Mainly Children"
+msgstr "بشكل رئيسي الأطفال"
+
+#: apps/baseline/models.py:950
+msgid "All Together"
+msgstr "جميعا"
+
+#: apps/baseline/models.py:953
+msgid "Activity done by"
+msgstr "النشاط الذي قام به"
+
+#: apps/baseline/models.py:986
+msgid ""
+"Quantity consumed for a Livelihood Activity must be quantity produced - "
+"quantity sold - quantity used for other things"
+msgstr ""
+"يجب أن تكون الكمية المستهلكة لنشاط رزق الكمية المنتجة - الكمية المباعة - "
+"الكمية المستخدمة في أشياء أخرى"
+
+#: apps/baseline/models.py:992
+msgid ""
+"Income for a Livelihood Activity must be quantity sold multiplied by price"
+msgstr ""
+
+#: apps/baseline/models.py:1008
+msgid ""
+"Expenditure for a Livelihood Activity must be quantity produced multiplied "
+"by price"
+msgstr "يجب أن يكون النفقات لنشاط رزق الكمية التي يتم إنتاجها مضروبة في السعر"
+
+#: apps/baseline/models.py:1019
+msgid ""
+"Kcals consumed for a Livelihood Activity must be quantity consumed "
+"multiplied by kcals per unit"
+msgstr "يجب أن يتم استهلاك kcals المستهلكة لنشاط رزق"
+
+#: apps/baseline/models.py:1029
+#, python-brace-format
+msgid ""
+"Incorrect Livelihood Activity strategy type. Found {self.strategy_type}. "
+"Expected {self._meta.object_name}."
+msgstr ""
+"نوع استراتيجية النشاط غير الصحيح للنشاط. وجدت {self.strategy_type}. المتوقع "
+"{self._meta.object_name}."
+
+#: apps/baseline/models.py:1041
+msgid ""
+"Wealth Group and Livelihood Strategy for a Livelihood Activity must belong "
+"to the same Livelihood Zone Baseline"
+msgstr ""
+"يجب أن تنتمي مجموعة الثروة واستراتيجية سبل المعيشة لنشاط سبل العيش إلى نفس "
+"خط الأساس لمنطقة سبل المعيشة"
+
+#: apps/baseline/models.py:1067
+msgid "Livelihood Activity"
+msgstr "نشاط رزق"
+
+#: apps/baseline/models.py:1068
+msgid "Livelihood Activities"
+msgstr "أنشطة رزق"
+
+#: apps/baseline/models.py:1098
+msgid "A Baseline Livelihood Activity must use the Baseline Scenario"
+msgstr "يجب أن يستخدم نشاط سبل العيش الأساسي سيناريو خط الأساس"
+
+#: apps/baseline/models.py:1102
+msgid "Baseline Livelihood Activity"
+msgstr "نشاط سبل العيش الأساسي"
+
+#: apps/baseline/models.py:1103
+msgid "Baseline Livelihood Activities"
+msgstr "أنشطة سبل المعيشة الأساسية"
+
+#: apps/baseline/models.py:1131
+msgid "A Response Livelihood Activity must use the Response Scenario"
+msgstr "يجب أن يستخدم نشاط رزق الاستجابة سيناريو الاستجابة"
+
+#: apps/baseline/models.py:1135
+msgid "Response Livelihood Activity"
+msgstr "نشاط رزق الاستجابة"
+
+#: apps/baseline/models.py:1136
+msgid "Response Livelihood Activities"
+msgstr "أنشطة رزق الاستجابة"
+
+#: apps/baseline/models.py:1148
+msgid "Skim"
+msgstr "المقشود"
+
+#: apps/baseline/models.py:1149
+msgid "whole"
+msgstr "جميع"
+
+#: apps/baseline/models.py:1152
+msgid "Number of milking animals"
+msgstr "عدد حيوانات الحلب"
+
+#: apps/baseline/models.py:1153
+msgid "Average number of days of lactation"
+msgstr "متوسط ​​عدد أيام الرضاعة"
+
+#: apps/baseline/models.py:1154
+msgid "Average daily milk production per animal"
+msgstr "متوسط ​​إنتاج الحليب اليومي لكل حيوان"
+
+#: apps/baseline/models.py:1177
+msgid "Quantity used for Butter Production"
+msgstr "الكمية المستخدمة لإنتاج الزبدة"
+
+#: apps/baseline/models.py:1180
+msgid "Skim or whole milk consumed"
+msgstr "المستهلك الخالي من الدسم أو الحليب بالكامل"
+
+#: apps/baseline/models.py:1183
+msgid "Skim or whole milk sold or used for other purposes"
+msgstr "تم بيع الدسم أو الحليب بالكامل أو يستخدم لأغراض أخرى"
+
+#: apps/baseline/models.py:1259
+msgid "Number of animals slaughtered"
+msgstr "ذبح عدد الحيوانات"
+
+#: apps/baseline/models.py:1260
+msgid "Carcass weight per animal"
+msgstr "وزن الذبيحة لكل حيوان"
+
+#: apps/baseline/models.py:1265
+msgid ""
+"Quantity Produced for a Meat Production must be animals slaughtered "
+"multiplied by carcass weight"
+msgstr ""
+"يجب أن تكون الكمية المنتجة لإنتاج اللحوم هي الحيوانات المذبح مضروبة في وزن "
+"الذبيحة"
+
+#: apps/baseline/models.py:1284
+msgid "Livestock Sales"
+msgstr "مبيعات الماشية"
+
+#: apps/baseline/models.py:1315 apps/baseline/models.py:1392
+#: apps/baseline/models.py:1523
+msgid "Unit Multiple"
+msgstr "وحدة متعددة"
+
+#: apps/baseline/models.py:1315 apps/baseline/models.py:1524
+msgid "Multiple of the unit of measure in a single purchase"
+msgstr "مضاعف وحدة القياس في عملية شراء واحدة"
+
+#: apps/baseline/models.py:1319 apps/baseline/models.py:1528
+msgid "Purchases per month"
+msgstr "عمليات الشراء في الشهر"
+
+#: apps/baseline/models.py:1321 apps/baseline/models.py:1359
+#: apps/baseline/models.py:1402 apps/baseline/models.py:1475
+#: apps/baseline/models.py:1532
+msgid "Months per year"
+msgstr "أشهر في السنة"
+
+#: apps/baseline/models.py:1321 apps/baseline/models.py:1533
+msgid "Number of months in a year that the product is purchased"
+msgstr "عدد الأشهر في السنة التي يتم فيها شراء المنتج"
+
+#: apps/baseline/models.py:1324 apps/baseline/models.py:1362
+#: apps/baseline/models.py:1406 apps/baseline/models.py:1479
+#: apps/baseline/models.py:1536
+msgid "Times per year"
+msgstr "مرات في السنة"
+
+#: apps/baseline/models.py:1325
+msgid "Number of times in a year that the purchase is made"
+msgstr "عدد المرات في السنة التي يتم فيها الشراء"
+
+#: apps/baseline/models.py:1332
+msgid ""
+"Quantity produced for a Food Purchase must be purchase amount * purchases "
+"per month * months per year"
+msgstr ""
+"يجب أن تكون الكمية التي يتم إنتاجها لشراء الطعام مبلغًا مشتريات * شهريًا * "
+"شهور في السنة"
+
+#: apps/baseline/models.py:1338
+msgid "Food Purchases"
+msgstr "شراء المواد الغذائية"
+
+#: apps/baseline/models.py:1350 apps/baseline/models.py:1461
+msgid "Payment per time"
+msgstr "الدفع لكل وقت"
+
+#: apps/baseline/models.py:1350
+msgid "Amount of item received each time the labor is performed"
+msgstr "مبلغ العنصر الذي تم استلامه في كل مرة يتم تنفيذ المخاض"
+
+#: apps/baseline/models.py:1353 apps/baseline/models.py:1464
+msgid "People per household"
+msgstr "الناس لكل منزل"
+
+#: apps/baseline/models.py:1353 apps/baseline/models.py:1467
+msgid "Number of household members who perform the labor"
+msgstr "عدد أفراد الأسرة الذين يؤدون العمل"
+
+#: apps/baseline/models.py:1357 apps/baseline/models.py:1471
+msgid "Labor per month"
+msgstr "العمل في الشهر"
+
+#: apps/baseline/models.py:1359 apps/baseline/models.py:1476
+msgid "Number of months in a year that the labor is performed"
+msgstr "عدد الأشهر في السنة التي يتم فيها تنفيذ المخاض"
+
+#: apps/baseline/models.py:1363
+msgid "Number of times in a year that the labor is performed"
+msgstr "عدد المرات في السنة التي يتم فيها تنفيذ المخاض"
+
+#: apps/baseline/models.py:1373
+msgid ""
+"Quantity produced for Payment In Kind must be payment per time * number of "
+"people * labor per month * months per year"
+msgstr ""
+"يجب أن تكون الكمية التي يتم إنتاجها للدفع بالنوع في وقت واحد * عدد الأشخاص * "
+"العمل شهريًا * شهور في السنة"
+
+#: apps/baseline/models.py:1379
+msgid "Payments in Kind"
+msgstr "المدفوعات العينية"
+
+#: apps/baseline/models.py:1392
+msgid "Multiple of the unit of measure received each time"
+msgstr "مضاعف وحدة القياس التي تم استلامها في كل مرة"
+
+#: apps/baseline/models.py:1397
+msgid "Number of times per month the item is received"
+msgstr "عدد المرات في الشهر يتم استلام العنصر"
+
+#: apps/baseline/models.py:1403
+msgid "Number of months in a year that the item is received"
+msgstr "عدد الأشهر في السنة التي يتم استلام العنصر"
+
+#: apps/baseline/models.py:1406
+msgid "Number of times in a year that the item is received"
+msgstr "عدد المرات في السنة التي يتم استلام العنصر"
+
+#: apps/baseline/models.py:1412
+msgid ""
+"Quantity produced for Relief, Gifts, Other must be amount received * times "
+"per year"
+msgstr ""
+"الكمية التي يتم إنتاجها للإغاثة والهدايا ، يجب أن يتم استلام المبلغ الآخر * "
+"مرات في السنة"
+
+#: apps/baseline/models.py:1417
+msgid "Relief, Gifts and Other Food"
+msgstr "الإغاثة والهدايا وغيرها من الأطعمة"
+
+#: apps/baseline/models.py:1461
+msgid "Amount of money received each time the labor is performed"
+msgstr "مبلغ الأموال المستلمة في كل مرة يتم فيها تنفيذ العمالة"
+
+#: apps/baseline/models.py:1480
+msgid "Number of times in a year that the income is received"
+msgstr "عدد المرات في السنة التي يتم استلام الدخل"
+
+#: apps/baseline/models.py:1491
+msgid ""
+"Quantity produced for Other Cash Income must be payment per time * number of "
+"people * labor per month * months per year"
+msgstr ""
+"يجب أن تكون الكمية المنتجة للدخل النقدي الآخر مدفوعًا في وقت * عدد الأشخاص * "
+"العمالة شهريًا *"
+
+#: apps/baseline/models.py:1496
+msgid ""
+"Quantity produced for Other Cash Income must be payment per time * times per "
+"year"
+msgstr ""
+"يجب أن تكون الكمية المنتجة للدخل النقدي الآخر الدفع لكل مرة * مرات في السنة"
+
+#: apps/baseline/models.py:1537
+msgid "Number of times in a year that the product is purchased"
+msgstr "عدد المرات في السنة التي يتم فيها شراء المنتج"
+
+#: apps/baseline/models.py:1544
+msgid ""
+"Expenditure for Other Purchases must be price * unit multiple * purchases "
+"per month * months per year"
+msgstr ""
+"يجب أن تكون النفقات للمشتريات الأخرى سعرًا * وحدة متعددة * مشتريات شهريًا * "
+"شهور في السنة"
+
+#: apps/baseline/models.py:1550
+msgid "Other Purchases"
+msgstr "عمليات شراء أخرى"
+
+#: apps/baseline/models.py:1578
+msgid "Seasonal Activity Type"
+msgstr "نوع النشاط الموسمي"
+
+#: apps/baseline/models.py:1600 apps/baseline/models.py:1624
+msgid "Seasonal Activity"
+msgstr "النشاط الموسمي"
+
+#: apps/baseline/models.py:1601
+msgid "Seasonal Activities"
+msgstr "الأنشطة الموسمية"
+
+#: apps/baseline/models.py:1641 apps/baseline/models.py:1709
+#: apps/baseline/models.py:1844 apps/baseline/models.py:1920
+#: apps/baseline/models.py:1965 apps/baseline/models.py:2010
+#: apps/baseline/models.py:2096
+msgid "Community or Village"
+msgstr "المجتمع أو القرية"
+
+#: apps/baseline/models.py:1649
+msgid "Start Day"
+msgstr "تبدأ اليوم"
+
+#: apps/baseline/models.py:1652
+msgid "End Day"
+msgstr "نهاية اليوم"
+
+#: apps/baseline/models.py:1671
+msgid ""
+"Community and Seasonal Activity for a Seasonal Activity Occurrence must "
+"belong to the same Livelihood Zone Baseline"
+msgstr ""
+"يجب أن ينتمي النشاط المجتمعي والموسمي لحدوث نشاط موسمي إلى نفس خط الأساس "
+"لمنطقة سبل العيش"
+
+#: apps/baseline/models.py:1686
+msgid "Seasonal Activity Occurrence"
+msgstr "حدوث النشاط الموسمي"
+
+#: apps/baseline/models.py:1687
+msgid "Seasonal Activity Occurrences"
+msgstr "حوادث النشاط الموسمي"
+
+#: apps/baseline/models.py:1706
+msgid "Main Food Crop"
+msgstr "محصول الطعام الرئيسي"
+
+#: apps/baseline/models.py:1707
+msgid "Cash Crop"
+msgstr "المحاصيل النقدية"
+
+#: apps/baseline/models.py:1711
+msgid "Crop Type"
+msgstr "نوع المحاصيل"
+
+#: apps/baseline/models.py:1713
+msgid "Crop purpose"
+msgstr "الغرض من المحاصيل"
+
+#: apps/baseline/models.py:1719
+msgid "Yield with inputs"
+msgstr "العائد مع المدخلات"
+
+#: apps/baseline/models.py:1720
+msgid "Yield in reference period with inputs (seeds and fertilizer)"
+msgstr "العائد في الفترة المرجعية مع المدخلات (البذور والأسمدة)"
+
+#: apps/baseline/models.py:1723
+msgid "Yield without inputs"
+msgstr "العائد بدون مدخلات"
+
+#: apps/baseline/models.py:1724
+msgid "Yield in reference period without inputs (seeds and fertilizer)"
+msgstr "العائد في الفترة المرجعية بدون مدخلات (البذور والأسمدة)"
+
+#: apps/baseline/models.py:1726
+msgid "Seed requirement"
+msgstr "متطلبات البذور"
+
+#: apps/baseline/models.py:1732
+msgid "Crop Unit of Measure"
+msgstr "وحدة قياس المحاصيل"
+
+#: apps/baseline/models.py:1739
+msgid "Land Unit of Measure"
+msgstr "وحدة قياس الأراضي"
+
+#: apps/baseline/models.py:1751
+msgid ""
+"Crop type for Community Crop Production must have a CPCv2 code beginning R01 "
+"(Agriculture Products)"
+msgstr ""
+"يجب أن يحتوي نوع المحاصيل لإنتاج المحاصيل المجتمعية على رمز CPCV2 يبدأ R01 "
+"(منتجات الزراعة)"
+
+#: apps/baseline/models.py:1768
+msgid "Community Crop Production"
+msgstr "إنتاج المحاصيل المجتمعية"
+
+#: apps/baseline/models.py:1769
+msgid "Community Crop Productions"
+msgstr "إنتاجات المحاصيل المجتمعية"
+
+#: apps/baseline/models.py:1788
+msgid "Livestock Type"
+msgstr "نوع الماشية"
+
+#: apps/baseline/models.py:1791
+msgid "Birth Interval"
+msgstr "فاصل الولادة"
+
+#: apps/baseline/models.py:1791
+msgid "Number of months between Births"
+msgstr "عدد الأشهر بين الولادات"
+
+#: apps/baseline/models.py:1794
+msgid "Wet Season Lactation Period"
+msgstr "فترة الرضاعة في الموسم الرطب"
+
+#: apps/baseline/models.py:1794
+msgid "Number of days of lactation during the wet season"
+msgstr "عدد أيام الرضاعة خلال موسم الرطب"
+
+#: apps/baseline/models.py:1797
+msgid "Wet Season Milk Production"
+msgstr "إنتاج الحليب في الموسم الرطب"
+
+#: apps/baseline/models.py:1798
+msgid "Number of litres produced each day during the wet season"
+msgstr "عدد اللترات التي يتم إنتاجها كل يوم خلال موسم الرطب"
+
+#: apps/baseline/models.py:1801
+msgid "Dry Season Lactation Period"
+msgstr "فترة الرضاعة في موسم الجفاف"
+
+#: apps/baseline/models.py:1801
+msgid "Number of days of lactation during the dry season"
+msgstr "عدد أيام الرضاعة خلال موسم الجفاف"
+
+#: apps/baseline/models.py:1804
+msgid "Dry Season Milk Production"
+msgstr "إنتاج الحليب في موسم الجفاف"
+
+#: apps/baseline/models.py:1805
+msgid "Number of litres produced each day during the dry season"
+msgstr "عدد لترات المنتج كل يوم خلال موسم الجفاف"
+
+#: apps/baseline/models.py:1808
+msgid "Age at Sale"
+msgstr "العمر في البيع"
+
+#: apps/baseline/models.py:1808
+msgid "Age in months at which the animal is typically sold/exchanged"
+msgstr "العمر في الأشهر التي يتم فيها بيع/تبادل الحيوان عادة"
+
+#: apps/baseline/models.py:1812
+msgid "Additional Attributes"
+msgstr "سمات إضافية"
+
+#: apps/baseline/models.py:1817
+msgid ""
+"Livestock type for Community Livestock must have a CPCv2 code beginning L021 "
+"(Live animals)"
+msgstr ""
+"يجب أن يحتوي نوع الماشية على الماشية المجتمعية على رمز CPCV2 يبدأ L021 "
+"(الحيوانات الحية)"
+
+#: apps/baseline/models.py:1833
+msgid "Community Livestock"
+msgstr "مجتمعات"
+
+#: apps/baseline/models.py:1834
+msgid "Community livestock"
+msgstr "مجتمعات"
+
+#: apps/baseline/models.py:1870
+msgid "Low Price Start Day"
+msgstr "يوم بدء السعر المنخفض"
+
+#: apps/baseline/models.py:1873
+msgid "Low Price End Day"
+msgstr "يوم نهاية انخفاض السعر"
+
+#: apps/baseline/models.py:1875
+msgid "Low price"
+msgstr "سعر منخفض"
+
+#: apps/baseline/models.py:1877
+msgid "High Price Start Day"
+msgstr "يوم بدء السعر المرتفع"
+
+#: apps/baseline/models.py:1880
+msgid "High Price End Day"
+msgstr "يوم نهاية السعر المرتفع"
+
+#: apps/baseline/models.py:1882
+msgid "High price"
+msgstr "غالي السعر"
+
+#: apps/baseline/models.py:1897
+msgid "Market Price"
+msgstr "سعر السوق"
+
+#: apps/baseline/models.py:1898
+msgid "Market Prices"
+msgstr "أسعار السوق"
+
+#: apps/baseline/models.py:1914
+msgid "Very Poor"
+msgstr "فقير جدا"
+
+#: apps/baseline/models.py:1915
+msgid "Poor"
+msgstr "فقير"
+
+#: apps/baseline/models.py:1916
+msgid "Medium"
+msgstr "واسطة"
+
+#: apps/baseline/models.py:1917
+msgid "Good"
+msgstr "جيد"
+
+#: apps/baseline/models.py:1918
+msgid "Very Good"
+msgstr "جيد جدًا"
+
+#: apps/baseline/models.py:1923
+msgid "Performance Year Start Date"
+msgstr "تاريخ بدء سنة الأداء"
+
+#: apps/baseline/models.py:1924
+msgid "The first day of the month of the start month in the performance year"
+msgstr "اليوم الأول من شهر الشهر في سنة الأداء"
+
+#: apps/baseline/models.py:1927
+msgid "Performance Year End Date"
+msgstr "تاريخ نهاية سنة الأداء"
+
+#: apps/baseline/models.py:1928
+msgid "The last day of the month of the end month in the performance year"
+msgstr "آخر يوم من شهر الشهر النهائي في سنة الأداء"
+
+#: apps/baseline/models.py:1936
+msgid "Seasonal Performance"
+msgstr "الأداء الموسمي"
+
+#: apps/baseline/models.py:1937
+msgid ""
+"Rating of the seasonal production performance from Very Poor (1) to Very "
+"Good (5)"
+msgstr "تصنيف أداء الإنتاج الموسمي من الفقراء للغاية (1) إلى جيد جدا (5)"
+
+#: apps/baseline/models.py:1941 apps/baseline/models.py:1942
+msgid "Seasonal Production Performance"
+msgstr "أداء الإنتاج الموسمي"
+
+#: apps/baseline/models.py:1956
+msgid "Chronic"
+msgstr "مزمن"
+
+#: apps/baseline/models.py:1957
+msgid "Periodic"
+msgstr "دورية"
+
+#: apps/baseline/models.py:1961
+msgid "Most Important"
+msgstr "الأهم"
+
+#: apps/baseline/models.py:1962
+msgid "Important"
+msgstr "مهم"
+
+#: apps/baseline/models.py:1963
+msgid "Less Important"
+msgstr "اقل اهمية"
+
+#: apps/baseline/models.py:1967
+msgid "Chronic or Periodic"
+msgstr "مزمن أو دوري"
+
+#: apps/baseline/models.py:1975
+msgid "Ranking"
+msgstr "تصنيف"
+
+#: apps/baseline/models.py:1978
+msgid "Hazard Category"
+msgstr "فئة الخطر"
+
+#: apps/baseline/models.py:1983 apps/baseline/models.py:2024
+msgid "Description of Event(s) and/or Response(s)"
+msgstr "وصف الأحداث (الأحداث) و/أو الاستجابة (ق)"
+
+#: apps/baseline/models.py:1987
+msgid "Hazard"
+msgstr "خطر"
+
+#: apps/baseline/models.py:1988
+msgid "Hazards"
+msgstr "المخاطر"
+
+#: apps/baseline/models.py:2016
+msgid "Event Year Start Date"
+msgstr "تاريخ بدء سنة الحدث"
+
+#: apps/baseline/models.py:2017
+msgid "The first day of the month of the start month in the event year"
+msgstr "اليوم الأول من شهر الشهر في عام الحدث"
+
+#: apps/baseline/models.py:2020
+msgid "Event Year End Date"
+msgstr "تاريخ نهاية عام الحدث"
+
+#: apps/baseline/models.py:2021
+msgid "The last day of the month of the end month in the event year"
+msgstr "آخر يوم من شهر الشهر في عام الحدث"
+
+#: apps/baseline/models.py:2028
+msgid "Event"
+msgstr "حدث"
+
+#: apps/baseline/models.py:2029
+msgid "Events"
+msgstr "الأحداث"
+
+#: apps/baseline/models.py:2060
+msgid "Remark"
+msgstr "ملاحظة"
+
+#: apps/baseline/models.py:2063 apps/baseline/models.py:2064
+msgid "Expandability Factor"
+msgstr "عامل التوسيع"
+
+#: apps/baseline/models.py:2093
+msgid "Reduce"
+msgstr "يقلل"
+
+#: apps/baseline/models.py:2094
+msgid "Increase"
+msgstr "يزيد"
+
+#: apps/baseline/models.py:2102
+msgid "Strategy"
+msgstr "إستراتيجية"
+
+#: apps/baseline/models.py:2104
+msgid "Reduce or increase by"
+msgstr "تقليل أو زيادة"
+
+#: apps/baseline/models.py:2108
+msgid "Coping Strategy"
+msgstr "استراتيجية المواجهة"
+
+#: apps/baseline/models.py:2109
+msgid "Coping Strategies"
+msgstr "استراتيجيات المواجهة"
+
+#~ msgid "Wealth Group Attribute"
+#~ msgstr "سمة مجموعة الثروة"
+
+#~ msgid "Wealth Group Attributes"
+#~ msgstr "سمات مجموعة الثروة"

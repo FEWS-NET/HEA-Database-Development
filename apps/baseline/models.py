@@ -650,36 +650,32 @@ class WealthGroupCharacteristicValue(common_models.Model):
                 )
         elif not self.wealth_group.community:
             raise ValidationError(
-                _("A Wealth Group Characteristic Value from a %s must be for a Community Wealth Group")
-                % self.CharacteristicReference(self.reference_type).label
+                _("A Wealth Group Characteristic Value from a %(ref)s must be for a Community Wealth Group")
+                % {"ref": self.CharacteristicReference(self.reference_type).label}
             )
         # Validate `product`
         if self.wealth_characteristic.has_product:
             if not self.product:
                 raise ValidationError(
-                    _("A Wealth Group Characteristic Value for %s must have a product" % self.wealth_characteristic)
+                    _("A Wealth Group Characteristic Value for %(charac)s must have a product")
+                    % {"charac": self.wealth_characteristic}
                 )
         elif self.product:
             raise ValidationError(
-                _("A Wealth Group Characteristic Value for %s must not have a product" % self.wealth_characteristic)
-                % self.CharacteristicReference(self.reference_type).label
+                _("A Wealth Group Characteristic Value for %(charac)s must not have a product")
+                % {"charac": self.wealth_characteristic}
             )
         # Validate `unit_of_measure`
         if self.wealth_characteristic.has_unit_of_measure:
             if not self.unit_of_measure:
                 raise ValidationError(
-                    _(
-                        "A Wealth Group Characteristic Value for %s must have a unit of measure"
-                        % self.wealth_characteristic
-                    )
+                    _("A Wealth Group Characteristic Value for %(charac)s must have a unit of measure")
+                    % {"charac": self.wealth_characteristic}
                 )
         elif self.unit_of_measure:
             raise ValidationError(
-                _(
-                    "A Wealth Group Characteristic Value for %s must not have a unit of measure"
-                    % self.wealth_characteristic
-                )
-                % self.CharacteristicReference(self.reference_type).label
+                _("A Wealth Group Characteristic Value for %(charac)s must not have a unit of measure")
+                % {"charac": self.CharacteristicReference(self.reference_type).label}
             )
         # Validate `value` is between min_value and max_value, if either are numerics (strings eg "1" not validated)
         if (

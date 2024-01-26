@@ -77,12 +77,12 @@
                         <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
                             {% if perms.baseline.view_communitycropproduction %}
                                 <li><a class="link-dark rounded"
-                                       href="{% url 'admin:baseline_communitycropproduction_changelist' %}">{% translate 'Crop Productions' %}</a>
+                                       href="{% url 'admin:baseline_communitycropproduction_changelist' %}">{% translate 'Crop Production' %}</a>
                                 </li>
                             {% endif %}
                             {% if perms.baseline.view_communitylivestock %}
                                 <li><a class="link-dark rounded"
-                                       href="{% url 'admin:baseline_communitylivestock_changelist' %}">{% translate 'Livestock Productions' %}</a>
+                                       href="{% url 'admin:baseline_communitylivestock_changelist' %}">{% translate 'Livestock Production' %}</a>
                                 </li>
                             {% endif %}
                         </ul>
@@ -116,7 +116,7 @@
                 <li class="mb-1">
                     <button class="btn btn-toggle align-items-center rounded collapsed-menu" data-bs-toggle="collapse"
                             data-bs-target="#seascal-collapse" aria-expanded="false">
-                        {% translate 'Seasonal Calendars' %}
+                        {% translate "Seasonal Calendars" %}
                     </button>
                     <div class="collapse-menu" id="seascal-collapse">
                         <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
@@ -172,7 +172,7 @@
                     <button class="btn btn-toggle align-items-center rounded collapsed-menu"
                             data-bs-toggle="collapse"
                             data-bs-target="#production-collapse" aria-expanded="false">
-                        {% translate 'Expandadability and Coping' %}
+                        {% translate 'Expandability and Coping' %}
                     </button>
                     <div class="collapse-menu" id="production-collapse">
                         <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">

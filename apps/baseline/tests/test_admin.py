@@ -514,7 +514,7 @@ class CommunityCropProductionAdminTestCase(TestCase):
         self.assertContains(response, self.cropproduction2.yield_without_inputs)
 
     def test_search_fields(self):
-        # Also confirms translation_fields() is working correctly
+        # Also confirms *translation_fields() is working correctly
         search_fields = (
             "crop__description_en",
             "crop__description_fr",
