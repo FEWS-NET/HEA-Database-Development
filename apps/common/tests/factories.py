@@ -149,23 +149,23 @@ class UnitOfMeasureConversionFactory(factory.django.DjangoModelFactory):
 class ClassifiedProductFactory(TreebeardFactory):
     class Meta:
         model = "common.ClassifiedProduct"
-        django_get_or_create = ("cpcv2",)
+        django_get_or_create = ("cpc",)
 
-    cpcv2 = factory.Iterator(["R09999AA", "R09999BB", "L09999CB", "R09999DC", "S90999EE"])
-    scientific_name = factory.LazyAttribute(lambda o: f"Scientific Name {o.cpcv2}")
-    aliases = factory.LazyAttribute(lambda o: [f"Prod {o.cpcv2}", f"Crop {o.cpcv2}"])
+    cpc = factory.Iterator(["R09999AA", "R09999BB", "L09999CB", "R09999DC", "S90999EE"])
+    scientific_name = factory.LazyAttribute(lambda o: f"Scientific Name {o.cpc}")
+    aliases = factory.LazyAttribute(lambda o: [f"Prod {o.cpc}", f"Crop {o.cpc}"])
     unit_of_measure = factory.SubFactory(UnitOfMeasureFactory)
     kcals_per_unit = fuzzy.FuzzyInteger(50, 7500)
-    description_en = factory.LazyAttribute(lambda o: f"Product Description {o.cpcv2} en")
-    description_fr = factory.LazyAttribute(lambda o: f"Product Description {o.cpcv2} fr")
-    description_es = factory.LazyAttribute(lambda o: f"Product Description {o.cpcv2} es")
-    description_ar = factory.LazyAttribute(lambda o: f"Product Description {o.cpcv2} ar")
-    description_pt = factory.LazyAttribute(lambda o: f"Product Description {o.cpcv2} pt")
-    common_name_en = factory.LazyAttribute(lambda o: f"Product {o.cpcv2} en")
-    common_name_fr = factory.LazyAttribute(lambda o: f"Product {o.cpcv2} fr")
-    common_name_es = factory.LazyAttribute(lambda o: f"Product {o.cpcv2} es")
-    common_name_ar = factory.LazyAttribute(lambda o: f"Product {o.cpcv2} ar")
-    common_name_pt = factory.LazyAttribute(lambda o: f"Product {o.cpcv2} pt")
+    description_en = factory.LazyAttribute(lambda o: f"Product Description {o.cpc} en")
+    description_fr = factory.LazyAttribute(lambda o: f"Product Description {o.cpc} fr")
+    description_es = factory.LazyAttribute(lambda o: f"Product Description {o.cpc} es")
+    description_ar = factory.LazyAttribute(lambda o: f"Product Description {o.cpc} ar")
+    description_pt = factory.LazyAttribute(lambda o: f"Product Description {o.cpc} pt")
+    common_name_en = factory.LazyAttribute(lambda o: f"Product {o.cpc} en")
+    common_name_fr = factory.LazyAttribute(lambda o: f"Product {o.cpc} fr")
+    common_name_es = factory.LazyAttribute(lambda o: f"Product {o.cpc} es")
+    common_name_ar = factory.LazyAttribute(lambda o: f"Product {o.cpc} ar")
+    common_name_pt = factory.LazyAttribute(lambda o: f"Product {o.cpc} pt")
 
     @classmethod
     def _create(cls, model_class, *args, **kwargs):
@@ -174,10 +174,10 @@ class ClassifiedProductFactory(TreebeardFactory):
         """
         if kwargs.get("parent", False) is True:
             try:
-                parent = ClassifiedProduct.objects.get(cpcv2=kwargs["cpcv2"][:-2])
+                parent = ClassifiedProduct.objects.get(cpc=kwargs["cpc"][:-2])
             except ClassifiedProduct.DoesNotExist:
                 parent = ClassifiedProduct(
-                    cpcv2=kwargs["cpcv2"][:-2], description_en=f'Product Description {kwargs["cpcv2"][:-2]}'
+                    cpc=kwargs["cpc"][:-2], description_en=f'Product Description {kwargs["cpc"][:-2]}'
                 )
                 ClassifiedProduct.add_root(instance=parent)
             kwargs["parent"] = parent
@@ -197,9 +197,9 @@ class CountryClassifiedProductAliasesFactory(factory.django.DjangoModelFactory):
     aliases = factory.LazyAttribute(
         lambda o: [
             "{}-{}-{}".format(
-                o.product.cpcv2[0].lower(),
-                o.product.cpcv2[1:6],
-                o.product.cpcv2[6:].lower(),
+                o.product.cpc[0].lower(),
+                o.product.cpc[1:6],
+                o.product.cpc[6:].lower(),
             )
         ]
     )

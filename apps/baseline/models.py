@@ -537,7 +537,7 @@ class WealthGroupCharacteristicValueManager(common_models.IdentifierManager):
         else:
             criteria["wealth_group__community__isnull"] = True
         if product:
-            criteria["product__cpcv2"] = product
+            criteria["product__cpc"] = product
         else:
             criteria["product__isnull"] = True
 
@@ -1759,7 +1759,7 @@ class CommunityCropProduction(common_models.Model):
         if not self.crop_id.startswith("R01"):
             raise ValidationError(
                 _(
-                    "Crop type for Community Crop Production must have a CPCv2 code beginning R01 (Agriculture Products)"  # NOQA: E501
+                    "Crop type for Community Crop Production must have a CPC code code beginning R01 (Agriculture Products)"  # NOQA: E501
                 )
             )
         super().clean()
@@ -1825,7 +1825,7 @@ class CommunityLivestock(common_models.Model):
     def clean(self):
         if not self.livestock_id.startswith("L021"):
             raise ValidationError(
-                _("Livestock type for Community Livestock must have a CPCv2 code beginning L021 (Live animals)")
+                _("Livestock type for Community Livestock must have a CPC code code beginning L021 (Live animals)")
             )
         super().clean()
 

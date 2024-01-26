@@ -118,6 +118,7 @@ class UnitOfMeasureViewSetTestCase(APITestCase):
     @classmethod
     def setUpTestData(cls):
         cls.existing_units = UnitOfMeasure.objects.all().count()
+        cls.existing_volume_units = UnitOfMeasure.objects.filter(unit_type=UnitOfMeasure.VOLUME).count()
         cls.unit1 = UnitOfMeasureFactory(conversion=None)
         cls.unit2 = UnitOfMeasureFactory(conversion=None)
         cls.unit3 = UnitOfMeasureFactory(conversion=None)
@@ -139,7 +140,7 @@ class UnitOfMeasureViewSetTestCase(APITestCase):
         response = self.client.get(self.url, {"unit_type": UnitOfMeasure.VOLUME})
         self.assertEqual(response.status_code, 200)
         result = json.loads(response.content.decode("utf-8"))
-        self.assertEqual(len(result), 3)
+        self.assertEqual(len(result), self.existing_volume_units + 3)
 
 
 class ClassifiedProductViewSetTestCase(APITestCase):
@@ -159,12 +160,12 @@ class ClassifiedProductViewSetTestCase(APITestCase):
         result = json.loads(response.content.decode("utf-8"))
         self.assertEqual(len(result), ClassifiedProduct.objects.count())
 
-    def test_filter_by_cpcv2(self):
-        response = self.client.get(self.url, {"cpcv2": self.product1.cpcv2})
+    def test_filter_by_cpc(self):
+        response = self.client.get(self.url, {"cpc": self.product1.cpc})
         self.assertEqual(response.status_code, 200)
         result = json.loads(response.content.decode("utf-8"))
         self.assertEqual(len(result), 1)
-        self.assertEqual(result[0]["cpcv2"], self.product1.cpcv2)
+        self.assertEqual(result[0]["cpc"], self.product1.cpc)
 
     def test_filter_by_description(self):
         response = self.client.get(self.url, {"description_en": self.product2.description})

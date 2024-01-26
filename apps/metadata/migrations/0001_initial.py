@@ -11,11 +11,10 @@ import common.fields
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ("common", "0006_unitofmeasure_aliases"),
+        ("common", "0001_initial"),
     ]
 
     operations = [

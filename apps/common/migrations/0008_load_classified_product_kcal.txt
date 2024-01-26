@@ -1,0 +1,64 @@
+cpc;index_from_kcal_table;category_from_kcal_table;name_from_kcal_table;kcal_per_kg;unit_of_measure
+R01152;1;Cereals;barley;3390;kg
+P23130HA;2;Cereals;bulgur wheat;3500;kg
+R01122;3;Cereals;maize, white, whole;3630;kg
+P23130;4;Cereals;maize meal, refined 60-80%;3600;kg
+P23120AB;5;Cereals;millet flour;3650;kg
+R01181;6;Cereals;millet, whole grain;3630;kg
+R01172;7;Cereals;oats;3880;kg
+P23710;8;Cereals;pasta;3420;kg
+P23161AT;9;Cereals;rice, parboiled, lightly milled;3540;kg
+P23130HB;10;Cereals;rolled oats;3630;kg
+R01142;11;Cereals;sorghum;3550;kg
+P23120AA;12;Cereals;sorghum flour;3530;kg
+R01199AA;13;Cereals;teff, whole grains;3450;kg
+R01112;14;Cereals;wheat, whole;3440;kg
+P23110;15;Cereals;wheat flour;3480;kg
+P23170AA;16;Roots and tubers;cassava flour;3420;kg
+R01520;17;Roots and tubers;cassava, fresh;1530;kg
+R01313;18;Roots and tubers;plantain, ripe, raw;1280;kg
+R01510;19;Roots and tubers;potato raw;750;kg
+R01530;20;Roots and tubers;sweet potato, pale raw;1140;kg
+R01550;21;Roots and tubers;taro;1130;kg
+P23170HA;22;Roots and tubers;yam, flour;3170;kg
+R01540;23;Roots and tubers;yam, fresh;1040;kg
+R01701;24;Grain legumes;beans, dried;3390;kg
+R01706;25;Grain legumes;cowpeas, dried;3400;kg
+R01704;26;Grain legumes;lentil, dried;3390;kg
+R01412;27;Grain legumes;soya bean, dried;3820;kg
+R01219HA;28;Vegetables;leaves, dark green;480;kg
+R01219HB;29;Vegetables;leaves, medium green;280;kg
+R01219HC;30;Vegetables;leaves, light green;230;kg
+R01122;31;Vegetables;maize, immature on cob;1230;kg
+R01253;32;Vegetables;onions;480;kg
+R01235;33;Vegetables;pumpkin;360;kg
+R01234;34;Vegetables;tomato;200;kg
+P23511;35;Sugars;sugar;4000;kg
+P24490HA;36;Sugars;soft drinks, commercial;450;L
+P21111HA;37;Meat, poultry, eggs, fish;beef, mod fat;2350;kg
+P21111HB;38;Meat, poultry, eggs, fish;beef, lean;2020;kg
+P21116;39;Meat, poultry, eggs, fish;goat meat;1450;kg
+P21113;40;Meat, poultry, eggs, fish;pork, lean;3710;kg
+P2112;41;Meat, poultry, eggs, fish;poultry;1390;kg
+P02312;42;Meat, poultry, eggs, fish;eggs;1580;kg
+P21231;43;Meat, poultry, eggs, fish;fish, dried;3090;kg
+P042;44;Meat, poultry, eggs, fish;fish, fresh;950;kg
+R01341;45;Fruit;apple;610;kg
+R01311;46;Fruit;avocado;1650;kg
+R01312;47;Fruit;banana;1160;kg
+R0132;48;Fruit;citrus;530;kg
+R01316;49;Fruit;mango;630;kg
+R01317;50;Fruit;papaya;390;kg
+P02211;51;Milk;milk, cow whole;640;L
+P02292;52;Milk;milk, goat whole;710;L
+P02291;53;Milk;milk, sheep whole;1080;L
+P22212;54;Milk;DSM vit A-enriched;3550;kg
+P2224;55;Oils and fats;butter;7450;kg
+P2224HA;56;Oils and fats;ghee;8280;kg
+P21700;57;Oils and fats;margarine;7650;kg
+P216;58;Oils and fats;vegetable oil;9000;L
+P24310;59;Other;beer, local;350;L
+P02910;60;Oils and fats;honey;2860;kg
+P21495HA;61;Nuts and seeds;groundnut, dried;5790;kg
+P21421;62;Nuts and seeds;groundnuts, fresh;3320;kg
+P21495HB;63;Nuts and seeds;pumpkin seeds (no coat);6100;kg

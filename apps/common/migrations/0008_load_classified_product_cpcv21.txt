@@ -1,4 +1,4 @@
-cpcv2;description;common_name
+cpc;description_en;common_name_en
 R0;Agriculture, forestry and fishery products;
 R01;Products of agriculture, horticulture and market gardening;
 R011;Cereals;

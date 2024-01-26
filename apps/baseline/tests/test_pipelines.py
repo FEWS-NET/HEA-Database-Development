@@ -21,9 +21,9 @@ class IngestionPipelineTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
         CountryFactory(iso3166a2="MW", iso3166a3="MWI", iso3166n3=454, iso_en_ro_name="Malawi")
-        ClassifiedProductFactory(cpcv2="L02151", description="Chickens", aliases=["chicken", "hen", "hens"]),
+        ClassifiedProductFactory(cpc="L02151", description="Chickens", aliases=["chicken", "hen", "hens"]),
         ClassifiedProductFactory(
-            cpcv2="L02111AP", description_en="Cattle, oxen, unspecified", common_name_en="Oxen", aliases=["ox"]
+            cpc="L02111HA", description_en="Cattle, oxen, unspecified", common_name_en="Oxen", aliases=["ox"]
         )
         UnitOfMeasureFactory(abbreviation="acre", unit_type=UnitOfMeasure.AREA, aliases=["acres"], conversion=None)
         LivelihoodCategoryFactory(
@@ -241,7 +241,6 @@ class IngestionPipelineTestCase(TestCase):
         # Capture logging and direct writes to stdout (because loaddata writes
         # to stdout directly), so that unit test output is still clean.
         with conditional_logging():
-
             task = ImportBaseline(
                 bss_path="apps/baseline/tests/bss.xlsx", metadata_path="apps/baseline/tests/metadata.xlsx"
             )

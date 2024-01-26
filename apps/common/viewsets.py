@@ -216,14 +216,14 @@ class ClassifiedProductFilterSet(filters.FilterSet):
     This FilterSet is used to apply filtering on the ClassifiedProduct model based on various filter fields.
 
     Attributes:
-        cpcv2: A CharFilter for filtering by the CPCV2 value (case-insensitive contains lookup).
+        cpc: A CharFilter for filtering by the CPC value (case-insensitive contains lookup).
         description_en: A CharFilter for filtering by the description (case-insensitive contains lookup).
         common_name_en: A CharFilter for filtering by the common name (case-insensitive contains lookup).
         unit_of_measure: A ModelChoiceFilter for filtering by the associated UnitOfMeasure object.
                          The filter will display choices based on the available UnitOfMeasure objects.
     """
 
-    cpcv2 = filters.CharFilter(lookup_expr="icontains", label="CPCV2")
+    cpc = filters.CharFilter(lookup_expr="icontains", label="CPC v2.1")
     description_en = filters.CharFilter(
         lookup_expr="icontains", label=format_lazy("{} ({})", _("Description"), _("English"))
     )
@@ -269,7 +269,7 @@ class ClassifiedProductFilterSet(filters.FilterSet):
 
         model = ClassifiedProduct
         fields = (
-            "cpcv2",
+            "cpc",
             *translation_fields("description"),
             *translation_fields("common_name"),
             "scientific_name",
@@ -293,7 +293,7 @@ class ClassifiedProductViewSet(viewsets.ModelViewSet):
     serializer_class = ClassifiedProductSerializer
     filterset_class = ClassifiedProductFilterSet
     search_fields = (
-        "cpcv2",
+        "cpc",
         *translation_fields("description"),
         *translation_fields("common_name"),
     )

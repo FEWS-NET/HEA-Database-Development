@@ -17,7 +17,6 @@ from .models import (
 
 
 class CurrencyAdmin(admin.ModelAdmin):
-
     list_display = ("iso4217a3", "iso4217n3", "iso_en_name")
     search_fields = ["iso4217a3", "iso4217n3", "iso_en_name"]
 
@@ -38,24 +37,27 @@ class CountryClassifiedProductAliasesInline(InlineModelAdmin):
 class ClassifiedProductAdmin(TreeAdmin):
     form = movenodeform_factory(ClassifiedProduct)
     fields = (
-        "cpcv2",
+        "cpc",
         *translation_fields("description"),
         *translation_fields("common_name"),
         "scientific_name",
         "unit_of_measure",
         "kcals_per_unit",
         "aliases",
+        "cpcv2",
         "hs2012",
         "_position",
         "_ref_node_id",
     )
-    list_display = ("cpcv2", "description", "common_name", "scientific_name")
-    ordering = ["cpcv2"]
+    list_display = ("cpc", "description", "common_name", "scientific_name")
+    ordering = ["cpc"]
     search_fields = (
-        "^cpcv2",
+        "^cpc",
         *translation_fields("description"),
         *translation_fields("common_name"),
         "scientific_name",
+        "cpcv2",
+        "hs2012",
         "per_country_aliases__country__iso_en_ro_name",
         "per_country_aliases__country__iso_en_name",
         "per_country_aliases__country__iso_en_ro_proper",
@@ -76,10 +78,12 @@ class UnitOfMeasureAdmin(admin.ModelAdmin):
     list_display = (
         "abbreviation",
         "description",
+        "aliases",
     )
     search_fields = (
         "abbreviation",
         *translation_fields("description"),
+        "aliases",
     )
     list_filter = ("unit_type",)
     inlines = [UnitOfMeasureConversionInline]

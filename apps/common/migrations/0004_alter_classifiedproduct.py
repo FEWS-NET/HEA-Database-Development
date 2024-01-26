@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("common", "0003_load_currencies"),
     ]
@@ -16,6 +15,7 @@ class Migration(migrations.Migration):
             name="unit_of_measure",
             field=models.ForeignKey(
                 db_column="unit_code",
+                blank=True,
                 null=True,
                 on_delete=django.db.models.deletion.PROTECT,
                 to="common.unitofmeasure",
