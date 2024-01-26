@@ -924,7 +924,12 @@ class ClassifiedProduct(MP_Node, Model):
     scientific_name = models.CharField(max_length=100, verbose_name="scientific name", blank=True, null=True)
 
     unit_of_measure = models.ForeignKey(
-        UnitOfMeasure, db_column="unit_code", null=True, on_delete=models.PROTECT, verbose_name=_("Unit of Measure")
+        UnitOfMeasure,
+        db_column="unit_code",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        verbose_name=_("Unit of Measure"),
     )
     kcals_per_unit = models.PositiveSmallIntegerField(blank=True, null=True, verbose_name=_("Kcals per Unit"))
 
