@@ -4,9 +4,8 @@ import common.fields
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ("common", "0006_unitofmeasure_aliases"),
+        ("common", "0005_unitofmeasure_aliases_and_rename_cpc"),
     ]
 
     operations = [

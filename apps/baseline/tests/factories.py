@@ -603,7 +603,7 @@ class CommunityCropProductionFactory(factory.django.DjangoModelFactory):
     community = factory.SubFactory(CommunityFactory)
     crop = factory.SubFactory(
         "common.tests.factories.ClassifiedProductFactory",
-        cpcv2=factory.Iterator([f"R019{n}" for n in range(1, 10)]),
+        cpc=factory.Iterator([f"R019{n}" for n in range(1, 10)]),
     )
     crop_purpose = factory.Iterator(["food", "cash"])
     season = factory.SubFactory(SeasonFactory)
@@ -627,7 +627,7 @@ class CommunityLivestockFactory(factory.django.DjangoModelFactory):
     community = factory.SubFactory(CommunityFactory)
     livestock = factory.SubFactory(
         "common.tests.factories.ClassifiedProductFactory",
-        cpcv2=factory.Iterator([f"L021{n}" for n in range(1, 10)]),
+        cpc=factory.Iterator([f"L021{n}" for n in range(1, 10)]),
     )
     birth_interval = factory.Sequence(lambda n: n + 1)
     wet_season_lactation_period = fuzzy.FuzzyInteger(1, 80)

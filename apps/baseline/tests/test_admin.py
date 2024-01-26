@@ -243,8 +243,8 @@ class LivelihoodStrategyAdminTestCase(TestCase):
             {"q": self.strategy1.livelihood_zone_baseline.livelihood_zone.name_en},
         )
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, self.strategy1.product.cpcv2)
-        self.assertNotContains(response, self.strategy2.product.cpcv2)
+        self.assertContains(response, self.strategy1.product.cpc)
+        self.assertNotContains(response, self.strategy2.product.cpc)
 
     def test_livelihoodstrategy_list_filter(self):
         response = self.client.get(
@@ -252,8 +252,8 @@ class LivelihoodStrategyAdminTestCase(TestCase):
             {"strategy_type": self.strategy2.strategy_type},
         )
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, self.strategy2.product.cpcv2)
-        self.assertNotContains(response, self.strategy1.product.cpcv2)
+        self.assertContains(response, self.strategy2.product.cpc)
+        self.assertNotContains(response, self.strategy1.product.cpc)
 
 
 class WealthGroupAdminTest(TestCase):
@@ -570,9 +570,9 @@ class CommunityLivestockAdminTestCase(TestCase):
         cls.url = "admin:baseline_communitylivestock_changelist"
         cls.community1 = CommunityFactory(name="Test Community")
         cls.livestockproduction1 = CommunityLivestockFactory(
-            community=cls.community1, livestock=ClassifiedProductFactory(cpcv2="L021001")
+            community=cls.community1, livestock=ClassifiedProductFactory(cpc="L021001")
         )
-        cls.livestockproduction2 = CommunityLivestockFactory(livestock=ClassifiedProductFactory(cpcv2="L021002"))
+        cls.livestockproduction2 = CommunityLivestockFactory(livestock=ClassifiedProductFactory(cpc="L021002"))
         cls.site = AdminSite()
         activate("en")
 
