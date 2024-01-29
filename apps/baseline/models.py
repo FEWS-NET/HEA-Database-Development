@@ -89,7 +89,7 @@ class LivelihoodZone(common_models.Model):
         max_length=25,
         blank=True,
         verbose_name=_("alternate code"),
-        help_text=_("Alternate identifier for the Livelihood Zone, a more Meaningful code if users have it"),
+        help_text=_("Alternate identifier for the Livelihood Zone, typically a meaningful code based on the name of the Zone."),
     )
     name = TranslatedField(common_models.NameField(max_length=200, unique=True))
     description = TranslatedField(common_models.DescriptionField())
