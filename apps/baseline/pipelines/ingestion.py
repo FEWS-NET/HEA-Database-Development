@@ -31,7 +31,8 @@ from openpyxl.utils import get_column_letter
 from openpyxl.utils.cell import coordinate_to_tuple, rows_from_range
 from xlutils.copy import copy as copy_xls
 
-from baseline.models import WealthGroupCharacteristicValue
+from baseline.lookups import SeasonalActivityLookup
+from baseline.models import SeasonalActivity, WealthGroupCharacteristicValue
 from common.lookups import ClassifiedProductLookup, UnitOfMeasureLookup
 from common.management.commands import verbose_load_data
 from common.pipelines.format import JSON
@@ -84,7 +85,12 @@ def get_unmatched_metadata(df: pd.DataFrame, column: str) -> pd.Series:
     return unmatched_metadata
 
 
-def verbose_pivot(df: pd.DataFrame, values: str | list[str], index: str | list[str], columns: str | list[str]):
+def verbose_pivot(
+    df: pd.DataFrame,
+    values: str | list[str],
+    index: str | list[str],
+    columns: str | list[str],
+):
     """
     Pivot a DataFrame, or log a detailed exception in the event of a failure
 
@@ -161,7 +167,10 @@ class GetBSSCorrections(luigi.Task):
 
     def run(self):
         if self.corrections_path:
-            target = LocalTarget(Path(self.corrections_path).expanduser().absolute(), format=luigi.format.Nop)
+            target = LocalTarget(
+                Path(self.corrections_path).expanduser().absolute(),
+                format=luigi.format.Nop,
+            )
             if not target.exists():
                 target = GoogleDriveTarget(
                     self.corrections_path,
@@ -194,7 +203,9 @@ class GetBSSCorrections(luigi.Task):
 class CorrectBSS(luigi.Task):
     def output(self):
         return IntermediateTarget(
-            path_from_task(self) + Path(self.input()["bss"].path).suffix, format=luigi.format.Nop, timeout=3600
+            path_from_task(self) + Path(self.input()["bss"].path).suffix,
+            format=luigi.format.Nop,
+            timeout=3600,
         )
 
     def run(self):
@@ -360,12 +371,26 @@ class NormalizeWB(luigi.Task):
         # Transpose to get data in columns
         community_df = data_df.iloc[2:7].transpose()
         # Check that the columns are what we expect
-        expected_column_sets = (["WEALTH GROUP", "District", "Village", "Interview number:", "Interviewers"],)
+        expected_column_sets = (
+            [
+                "WEALTH GROUP",
+                "District",
+                "Village",
+                "Interview number:",
+                "Interviewers",
+            ],
+        )
         found_columns = community_df.iloc[0].str.strip().tolist()
         if not any(found_columns == expected_columns for expected_columns in expected_column_sets):
             raise PipelineError("Cannot identify Communities from columns %s" % ", ".join(found_columns))
         # Normalize the column names
-        community_df.columns = ["wealth_group_category", "district", "name", "interview_number", "interviewers"]
+        community_df.columns = [
+            "wealth_group_category",
+            "district",
+            "name",
+            "interview_number",
+            "interviewers",
+        ]
         community_df = community_df[1:]
         # Find the initial set of Communities by only finding rows that have both a `district` and a `community`,
         # and don't have a `wealth_group_category`. Also ignore the `Comments` row.
@@ -384,7 +409,10 @@ class NormalizeWB(luigi.Task):
         community_df = community_df.drop(columns="district")
         # Add the natural key for the livelihood zone baseline
         community_df["livelihood_zone_baseline"] = community_df["full_name"].apply(
-            lambda full_name: [metadata["code"], metadata["reference_year_end_date"].date().isoformat()]
+            lambda full_name: [
+                metadata["code"],
+                metadata["reference_year_end_date"].date().isoformat(),
+            ]
         )
 
         # Replace NaN with "" ready for Django
@@ -458,6 +486,7 @@ class NormalizeWB(luigi.Task):
             """
             for pattern, wealth_characteristic in wealth_characteristic_map.items():
                 match = pattern.fullmatch(characteristic_label.lower().strip())
+
                 if match:
                     if "product" in match.groupdict():
                         product = match.groupdict()["product"]
@@ -619,7 +648,8 @@ class NormalizeWB(luigi.Task):
         )
         # Rows without an interviewee wealth group category are from the Community-level Form 3 interview.
         char_df["reference_type"] = char_df["reference_type"].mask(
-            char_df["reference_type"] == "", WealthGroupCharacteristicValue.CharacteristicReference.COMMUNITY
+            char_df["reference_type"] == "",
+            WealthGroupCharacteristicValue.CharacteristicReference.COMMUNITY,
         )
 
         # Community and Wealth Group interviews don't have min_value or max_value
@@ -676,7 +706,8 @@ class NormalizeWB(luigi.Task):
 
         # Drop unwanted columns
         wealth_group_df = wealth_group_df.drop(
-            ["wealth_characteristic_original", "product", "product_original"], axis="columns"
+            ["wealth_characteristic_original", "product", "product_original"],
+            axis="columns",
         )
 
         # Pivot the percentage of households and household size back into columns
@@ -700,23 +731,34 @@ class NormalizeWB(luigi.Task):
         all_combinations = pd.DataFrame(
             list(
                 itertools.product(
-                    wealth_group_df["full_name"].unique(), wealth_group_df["wealth_group_category"].unique()
+                    wealth_group_df["full_name"].unique(),
+                    wealth_group_df["wealth_group_category"].unique(),
                 )
             ),
             columns=["full_name", "wealth_group_category"],
         )
         wealth_group_df = pd.merge(
-            all_combinations, wealth_group_df, on=["full_name", "wealth_group_category"], how="outer"
+            all_combinations,
+            wealth_group_df,
+            on=["full_name", "wealth_group_category"],
+            how="outer",
         )
 
         # Add the natural key for the livelihood zone baseline and community
         wealth_group_df["livelihood_zone_baseline"] = wealth_group_df["full_name"].apply(
-            lambda full_name: [metadata["code"], metadata["reference_year_end_date"].date().isoformat()]
+            lambda full_name: [
+                metadata["code"],
+                metadata["reference_year_end_date"].date().isoformat(),
+            ]
         )
         wealth_group_df["community"] = wealth_group_df["full_name"].apply(
             lambda full_name: None
             if pd.isna(full_name)
-            else [metadata["code"], metadata["reference_year_end_date"].date().isoformat(), full_name]
+            else [
+                metadata["code"],
+                metadata["reference_year_end_date"].date().isoformat(),
+                full_name,
+            ]
         )
         wealth_group_df = wealth_group_df.drop(columns="full_name")
 
@@ -778,11 +820,6 @@ class NormalizeSeasonalCalender(luigi.Task):
         Village should be `ffill` to fill the 12 months values
         Village/community might be harder to get by natural key as the natural key uses full_name.
         so use the normalized_wb data
-        The occurrences (the months) are stored as day of the year, so we need to process that and I think
-        for each month we will have one record as opposed to looking for a continuous start and end that
-        can cross months
-        E.g. if occurrence has values for months 3, 4, 5 we can have three entry with start and end dates
-        for each month
         The first few rows, typically 3 are for the season. We can't store these in the metadata.Season
         as the community occurrences can't be saved, so we need a placeholder seasonal_activity,
         may be called 'seasons' to use the SeasonalActivity and SeasonalOccurrence models
@@ -860,6 +897,8 @@ class NormalizeSeasonalCalender(luigi.Task):
                     if value == 1:
                         new_row = row.copy()
                         new_row["season"] = column
+                        # Register the 'seasons' as an activity type placeholder?
+                        new_row["seasonal_activity_type"] = f"seasons: {column}"
                         rows.append(new_row)
             return rows
 
@@ -868,22 +907,38 @@ class NormalizeSeasonalCalender(luigi.Task):
             for r in create_new_rows_for_season(row):
                 result = result._append(r)
 
-        df_seasons = result[["community", "month", "season"]]
+        df_seasons = result[["community", "month", "season", "seasonal_activity_type"]]
+        df_seasons = SeasonLookup().do_lookup(df_seasons, "season", "season")
+        df_seasons = self.prepare_start_end_dates(df_seasons, ["community", "season", "month"])
+        df_seasons["block"] = (
+            (df_seasons["month"] != df_seasons["month"].shift(1) + 1)
+            | (df_seasons["community"] != df_seasons["community"].shift(1))
+            | (df_seasons["season"] != df_seasons["season"].shift(1))
+        )
+        df_seasons["block"] = df_seasons["block"].cumsum()
+        df_seasons = (
+            df_seasons.groupby(["community", "season", "seasonal_activity_type", "block"])
+            .agg(start=("start_day_of_year", "min"), end=("end_day_of_year", "max"))
+            .reset_index()
+        )
+        df_seasons["product"] = np.nan
+        df_seasons = df_seasons[["community", "season", "product", "seasonal_activity_type", "start", "end"]]
 
         # Extract rows by leaving out the season part and bottom irregular pattern, to manage it separately
+        # We can look for a text Livestock migration which happen to be pretty consistently available around
+        # rows 86 ...
         livestock_migration_index = df_original[
             df_original.iloc[:, 0].str.contains("Livestock migration|Migration bétail")
         ].index
         df_seasonal_activity = df_original.loc[df_original.index < livestock_migration_index[0]]
 
-        # append the bottom ones after the Livestock migration that have similar pattern
-        other_index = df_original[df_original.iloc[:, 0].str.contains("Other|Autre")].index
         df_seasonal_activity = pd.concat(
             [
                 df_seasonal_activity,
-                df_original.loc[(df_original.index >= other_index[0])],
+                # df_original.loc[(df_original.index >= other_index[0])],
             ]
         )
+        # remove the season part
         df_seasonal_activity = df_seasonal_activity[
             ~((df_seasonal_activity.index >= 2) & (df_seasonal_activity.index <= 5))
         ].reset_index(drop=True)
@@ -892,9 +947,54 @@ class NormalizeSeasonalCalender(luigi.Task):
         df_seasonal_activity = df_seasonal_activity.T
         df_seasonal_activity.columns = df_seasonal_activity.iloc[0]
 
-        # Initialize the product and seaonal_activity columns
+        # Initialize the product and seasonal_activity columns
         df_seasonal_activity.insert(2, "product", np.nan)
         df_seasonal_activity.insert(3, "seasonal_activity_type", np.nan)
+
+        # Process the bottom 'other' category in a separate dataframe
+        other_index = df_original[df_original.iloc[:, 0].str.contains("Other|Autre")].index
+        other_df = df_original.loc[(df_original.index >= other_index[0])]
+        other_df = pd.concat([df_original.iloc[[0, 1]], other_df])
+
+        other_df = other_df.T
+        other_df.columns = other_df.iloc[0]
+        other_df.insert(1, "seasonal_activity_type", np.nan)
+
+        def create_new_rows_for_other(row):
+            rows = []
+            d = row.to_dict()
+            for column, value in d.items():
+                if column not in ["community", "month", "seasonal_activity_type"]:
+                    if value == 1:
+                        new_row = row.copy()
+                        new_row["seasonal_activity_type"] = column
+                        rows.append(new_row)
+            return rows
+
+        df_result = pd.DataFrame()
+        for index, row in other_df.iterrows():
+            for r in create_new_rows_for_other(row):
+                df_result = df_result._append(r)
+
+        other_df = df_result[["community", "month", "seasonal_activity_type"]]
+        other_df = SeasonalActivityTypeLookup().do_lookup(other_df, "seasonal_activity_type", "seasonal_activity_type")
+        other_df = self.prepare_start_end_dates(other_df, ["community", "seasonal_activity_type", "month"])
+        other_df["block"] = (
+            (other_df["month"] != other_df["month"].shift(1) + 1)
+            | (other_df["community"] != other_df["community"].shift(1))
+            | (other_df["seasonal_activity_type"] != other_df["seasonal_activity_type"].shift(1))
+        )
+        other_df["block"] = other_df["block"].cumsum()
+
+        other_df = (
+            other_df.groupby(["community", "seasonal_activity_type", "block"])
+            .agg(start=("start_day_of_year", "min"), end=("end_day_of_year", "max"))
+            .reset_index()
+        )
+
+        other_df["product"] = np.nan
+        other_df["season"] = np.nan
+        other_df = other_df[["community", "season", "product", "seasonal_activity_type", "start", "end"]]
 
         def create_new_activity_rows(row):
             rows = []
@@ -904,7 +1004,12 @@ class NormalizeSeasonalCalender(luigi.Task):
             row.pop(row.index.tolist()[4])
             d = row.to_dict()
             for column, value in d.items():
-                if column not in ["community", "month", "product", "seasonal_activity_type"]:
+                if column not in [
+                    "community",
+                    "month",
+                    "product",
+                    "seasonal_activity_type",
+                ]:
                     if value == 1:
                         new_row = row.copy()
                         new_row["seasonal_activity_type"] = column
@@ -939,22 +1044,41 @@ class NormalizeSeasonalCalender(luigi.Task):
         # and finally the last groups doesn't have null at the end of the entry, we need to process that separately
         if processed < df_seasonal_activity.shape[1]:
             df = df_seasonal_activity.iloc[
-                :, list(range(column)) + list(range(processed, df_seasonal_activity.shape[1]))
+                :,
+                list(range(column)) + list(range(processed, df_seasonal_activity.shape[1])),
             ]
             df_result = self.extract_seasonal_activity(create_new_activity_rows, df, df_result)
 
-        df_result = ClassifiedProductLookup().do_lookup(df_result, "product", "product")
-        df_result = SeasonalActivityTypeLookup().do_lookup(
-            df_result, "seasonal_activity_type", "seasonal_activity_type"
+        # Perform the lookups on product and seasonal activity types
+        df_regular_ones = ClassifiedProductLookup().do_lookup(df_result, "product", "product")
+
+        df_regular_ones = SeasonalActivityTypeLookup().do_lookup(
+            df_regular_ones, "seasonal_activity_type", "seasonal_activity_type"
         )
-        df_seasons = SeasonLookup().do_lookup(df_seasons, "season", "season")
+        # Initialize the outlier dataframe, which are those that can be matched using Seasonal Activity additional
+        # identifier, down below
+        df_outliers = pd.DataFrame(df_regular_ones)
 
-        df_result["season"] = np.nan
-        df_seasons["product"] = np.nan
-        df_seasons["seasonal_activity_type"] = "seasons"  # Register the 'Seasons' as an activity type placeholder?
+        # Convert months to day-of-year
+        df_regular_ones = self.prepare_start_end_dates(
+            df_regular_ones, ["community", "product", "seasonal_activity_type", "month"]
+        )
+        df_regular_ones["block"] = (
+            (df_regular_ones["month"] != df_regular_ones["month"].shift(1) + 1)
+            | (df_regular_ones["community"] != df_regular_ones["community"].shift(1))
+            | (df_regular_ones["product"] != df_regular_ones["product"].shift(1))
+            | (df_regular_ones["seasonal_activity_type"] != df_regular_ones["seasonal_activity_type"].shift(1))
+        )
+        df_regular_ones["block"] = df_regular_ones["block"].cumsum()
 
-        df_seasons = df_seasons[["community", "season", "month", "product", "seasonal_activity_type"]]
-        df_result = df_result[["community", "month", "product", "seasonal_activity_type", "season"]]
+        df_regular_ones = (
+            df_regular_ones.groupby(["community", "product", "seasonal_activity_type", "block"])
+            .agg(start=("start_day_of_year", "min"), end=("end_day_of_year", "max"))
+            .reset_index()
+        )
+
+        df_regular_ones["season"] = np.nan
+        df_regular_ones = df_regular_ones[["community", "season", "product", "seasonal_activity_type", "start", "end"]]
 
         # Process the bottom part of the seas cal sheet
         df_livestock_migration = pd.concat(
@@ -974,7 +1098,12 @@ class NormalizeSeasonalCalender(luigi.Task):
             rows = []
             d = row.to_dict()
             for column, value in d.items():
-                if column not in ["community", "month", "product", "seasonal_activity_type"]:
+                if column not in [
+                    "community",
+                    "month",
+                    "product",
+                    "seasonal_activity_type",
+                ]:
                     if value == 1:
                         new_row = row.copy()
                         new_row["seasonal_activity_type"] = column
@@ -990,26 +1119,86 @@ class NormalizeSeasonalCalender(luigi.Task):
         df_livestock_migration = SeasonalActivityTypeLookup().do_lookup(
             df_livestock_migration, "seasonal_activity_type", "seasonal_activity_type"
         )
+
+        # Convert months to day-of-year
+
+        # Identify contiguous blocks of months within each group
+        df_livestock_migration = self.prepare_start_end_dates(
+            df_livestock_migration, ["community", "seasonal_activity_type", "month"]
+        )
+        df_livestock_migration = (
+            df_livestock_migration.groupby(["community", "seasonal_activity_type", "block"])
+            .agg(start=("start_day_of_year", "min"), end=("end_day_of_year", "max"))
+            .reset_index()
+        )
+
         df_livestock_migration["season"] = np.nan
+        df_livestock_migration["product"] = np.nan
+        df_livestock_migration = df_livestock_migration[
+            ["community", "season", "product", "seasonal_activity_type", "start", "end"]
+        ]
 
-        df_result = pd.concat([df_seasons, df_result, df_livestock_migration], ignore_index=True)
+        # We wanted to look for Seasonal activities that don't have a product match but can be found
+        # from a setup using 'additional_identifier', something like Maize Irrigated, Maize Cultivated ...
+        df_outliers = df_outliers[df_outliers["product"].isna()]
+        df_outliers = df_outliers[["community", "month", "product_original"]]
+        df_outliers = SeasonalActivityLookup().do_lookup(
+            df_outliers, "product_original", "seasonal_activity", exact_match=False
+        )
+        df_outliers = df_outliers[df_outliers["seasonal_activity"].notna()]
 
-        def create_seasonal_activity_and_start_end_date_columns(row):
+        # Look for the metadata seasonal activity, season and product from the activity
+        def get_metadata(row):
+            seasonal_activity = SeasonalActivity.objects.get(pk=row["seasonal_activity"])
+            row["seasonal_activity_type"] = seasonal_activity.seasonal_activity_type.code
+            row["additional_identifier"] = seasonal_activity.additional_identifier
+            return row
+
+        df_outliers = df_outliers.apply(get_metadata, axis=1)
+        df_outliers = df_outliers[
+            ["community", "month", "seasonal_activity_type", "additional_identifier"]
+        ].drop_duplicates()
+
+        # Convert months to day-of-year
+        df_outliers = self.prepare_start_end_dates(
+            df_outliers, ["community", "product", "seasonal_activity_type", "month"]
+        )
+        df_outliers["block"] = (
+            (df_outliers["month"] != df_outliers["month"].shift(1) + 1)
+            | (df_outliers["community"] != df_outliers["community"].shift(1))
+            | (df_outliers["additional_identifier"] != df_outliers["additional_identifier"].shift(1))
+            | (df_outliers["seasonal_activity_type"] != df_outliers["seasonal_activity_type"].shift(1))
+        )
+        df_outliers["block"] = df_outliers["block"].cumsum()
+
+        df_outliers = (
+            df_outliers.groupby(["community", "additional_identifier", "seasonal_activity_type", "block"])
+            .agg(start=("start_day_of_year", "min"), end=("end_day_of_year", "max"))
+            .reset_index()
+        )
+
+        df_outliers["season"] = np.nan
+        df_outliers["product"] = np.nan
+        df_outliers = df_outliers[
+            ["community", "season", "product", "seasonal_activity_type", "additional_identifier", "start", "end"]
+        ]
+        # Combine all dfs
+        df_livestock_migration["additional_identifier"] = np.nan
+        df_normalized = pd.concat(
+            [df_seasons, df_regular_ones, df_livestock_migration, df_outliers, other_df], ignore_index=True
+        )
+        df_normalized = df_normalized.drop_duplicates()
+
+        def create_seasonal_activity_column(row):
             """
             Combine seasonal activity natural keys to create the column
             """
-            columns = ["seasonal_activity_type", "product"]
+            columns = ["seasonal_activity_type", "product", "additional_identifier"]
             # check any of the identifier cols have value
             non_null_values = [lz for lz in row["livelihood_zone_baseline"]]
             non_null_values += [str(row[col]) for col in columns if pd.notna(row[col])]
             row["seasonal_activity"] = non_null_values
 
-            # compute the start and end days
-            days_in_month = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-            start_day = sum(days_in_month[: int(row["month"])])
-            end_day = start_day + days_in_month[int(row["month"])] - 1
-            row["start"] = start_day
-            row["end"] = end_day
             return row
 
         def update_community_with_full_name(row):
@@ -1024,21 +1213,44 @@ class NormalizeSeasonalCalender(luigi.Task):
             normalized_wb["LivelihoodZoneBaseline"][0]["livelihood_zone"],
             normalized_wb["LivelihoodZoneBaseline"][0]["reference_year_end_date"],
         ]
-        df_result["livelihood_zone_baseline"] = [livelihoodzonebaseline] * len(df_result)
+        df_normalized["livelihood_zone_baseline"] = [livelihoodzonebaseline] * len(df_normalized)
 
-        df_result = df_result.dropna(subset=["seasonal_activity_type"])
-        df_result = df_result.apply(create_seasonal_activity_and_start_end_date_columns, axis=1)
-        df_result = df_result.apply(update_community_with_full_name, axis=1)
+        df_normalized = df_normalized.dropna(subset=["seasonal_activity_type"])
+        df_normalized = df_normalized.apply(create_seasonal_activity_column, axis=1)
+        df_normalized = df_normalized.apply(update_community_with_full_name, axis=1)
 
-        seasonal_activities = df_result[
-            ["livelihood_zone_baseline", "seasonal_activity_type", "season", "product"]
+        seasonal_activities = df_normalized[
+            ["livelihood_zone_baseline", "seasonal_activity_type", "additional_identifier", "season", "product"]
         ].to_dict(orient="records")
-        seasonal_activity_occurrences = df_result[
-            ["livelihood_zone_baseline", "seasonal_activity", "community", "start", "end"]
+        seasonal_activity_occurrences = df_normalized[
+            [
+                "livelihood_zone_baseline",
+                "seasonal_activity",
+                "community",
+                "start",
+                "end",
+            ]
         ].to_dict(orient="records")
-        result = {"SeasonalActivity": seasonal_activities, "SeasonalActivityOccurrence": seasonal_activity_occurrences}
-
+        result = {
+            "SeasonalActivity": seasonal_activities,
+            "SeasonalActivityOccurrence": seasonal_activity_occurrences,
+        }
         return result
+
+    def prepare_start_end_dates(self, df: pd.DataFrame, sort_columns: list):
+        # Convert months to day-of-year
+        df["start_date"] = pd.to_datetime(df["month"], format="%m", errors="coerce")
+        # Get the day of the year for the start of the month
+        df["start_day_of_year"] = df["start_date"].dt.dayofyear
+        # Calculate the end of the month by adding one month and subtracting one day
+        df["end_date"] = df["start_date"] + pd.offsets.MonthEnd(0)
+        # Get the day of the year for the end of the month
+        df["end_day_of_year"] = df["end_date"].dt.dayofyear
+        df = df.drop(["start_date", "end_date"], axis=1)
+        # Sort before creating the blocks and group
+        df = df.sort_values(by=sort_columns, ascending=[True] * len(sort_columns))
+
+        return df
 
     def extract_seasonal_activity(self, create_new_activity_rows, df, df_result):
         df = df.drop(df.index[0])
@@ -1088,7 +1300,11 @@ class ValidateBaseline(luigi.Task):
                     # The data can contain natural key references to parent models within
                     # baseline, and the fixture will load the parent and the child in the
                     # same transaction in ImportBaseline below.
-                    if isinstance(field, ForeignKey) and field.related_model._meta.app_label != "baseline":
+                    if (
+                        isinstance(field, ForeignKey)
+                        and field.related_model._meta.app_label != "baseline"
+                        and not field.null
+                    ):
                         column = field.name
                         if df[column].isnull().values.any():
                             unmatched_metadata = get_unmatched_metadata(df, column)
@@ -1186,7 +1402,13 @@ class ImportBaseline(luigi.Task):
     def run(self):
         buffer = io.StringIO()
 
-        call_command(verbose_load_data.Command(), self.input().path, verbosity=2, format="verbose_json", stdout=buffer)
+        call_command(
+            verbose_load_data.Command(),
+            self.input().path,
+            verbosity=2,
+            format="verbose_json",
+            stdout=buffer,
+        )
 
         with self.output().open("w") as output:
             # Data is a JSON object
@@ -1204,7 +1426,11 @@ class ImportBaselines(luigi.WrapperTask):
 
     def requires(self):
         return [
-            ImportBaseline(bss_path=bss_path, metadata_path=self.metadata_path, corrections_path=self.corrections_path)
+            ImportBaseline(
+                bss_path=bss_path,
+                metadata_path=self.metadata_path,
+                corrections_path=self.corrections_path,
+            )
             for bss_path in self.bss_paths
         ]
 
@@ -1230,5 +1456,7 @@ class ImportAllBaselines(luigi.WrapperTask):
                 raise PipelineError("No local or Google Drive folder matching %s" % self.root_path)
         for path in root_target.fs.listdir(self.root_path):
             yield ImportBaseline(
-                bss_path=path, metadata_path=self.metadata_path, corrections_path=self.corrections_path
+                bss_path=path,
+                metadata_path=self.metadata_path,
+                corrections_path=self.corrections_path,
             )

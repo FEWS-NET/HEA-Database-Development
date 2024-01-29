@@ -241,7 +241,7 @@ class Model(TimeStampedModel):
                 components.append(component)
             return ": ".join([component for component in components if component])
         elif hasattr(self, "natural_key"):
-            return ": ".join([component for component in self.natural_key()])
+            return ": ".join([component for component in self.natural_key() if component])
         else:
             return super().__str__()
 

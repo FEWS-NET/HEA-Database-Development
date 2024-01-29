@@ -114,8 +114,7 @@ class Lookup(ABC):
             # Start by replacing None/null alias values with an empty list
             df["aliases"] = df["aliases"].apply(lambda x: x if x else [])
             # Append the aliases as separate columns
-            df = pd.concat([df.drop("aliases", axis="columns"), pd.DataFrame(df["aliases"].tolist())], axis="columns")
-
+            df = pd.concat([df.drop("aliases", axis="columns"), pd.DataFrame(df["aliases"])], axis="columns")
         return df
 
     def prepare_lookup_df(self):
@@ -365,8 +364,7 @@ class ClassifiedProductLookup(Lookup):
         # Start by replacing None/null alias values with an empty list
         df["hs2012"] = df["hs2012"].apply(lambda x: x if x else [])
         # Append the hs2012 codes as separate columns
-        df = pd.concat([df.drop("hs2012", axis="columns"), pd.DataFrame(df["hs2012"].tolist())], axis="columns")
-
+        df = pd.concat([df.drop("hs2012", axis="columns"), pd.DataFrame(df["hs2012"])], axis="columns")
         return df
 
 

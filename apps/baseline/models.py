@@ -86,7 +86,12 @@ class LivelihoodZone(common_models.Model):
     )
     name = common_models.NameField(max_length=200, unique=True)
     description = common_models.DescriptionField()
-    country = models.ForeignKey(Country, verbose_name=_("Country"), db_column="country_code", on_delete=models.PROTECT)
+    country = models.ForeignKey(
+        Country,
+        verbose_name=_("Country"),
+        db_column="country_code",
+        on_delete=models.PROTECT,
+    )
 
     class Meta:
         verbose_name = _("Livelihood Zone")
@@ -126,7 +131,10 @@ class LivelihoodZoneBaseline(common_models.Model):
     name = common_models.NameField(max_length=200, unique=True)
     description = common_models.DescriptionField()
     livelihood_zone = models.ForeignKey(
-        LivelihoodZone, db_column="livelihood_zone_code", on_delete=models.RESTRICT, verbose_name=_("Livelihood Zone")
+        LivelihoodZone,
+        db_column="livelihood_zone_code",
+        on_delete=models.RESTRICT,
+        verbose_name=_("Livelihood Zone"),
     )
     geography = models.MultiPolygonField(geography=True, dim=2, blank=True, null=True, verbose_name=_("geography"))
 
@@ -137,7 +145,9 @@ class LivelihoodZoneBaseline(common_models.Model):
         verbose_name=_("Livelihood Zone Type"),
     )
     source_organization = models.ForeignKey(
-        SourceOrganization, on_delete=models.RESTRICT, verbose_name=_("Source Organization")
+        SourceOrganization,
+        on_delete=models.RESTRICT,
+        verbose_name=_("Source Organization"),
     )
     bss = models.FileField(upload_to="livelihoodzonebaseline/bss", verbose_name=_("BSS Excel file"))
     profile_report = models.FileField(
@@ -346,7 +356,13 @@ class Community(common_models.Model):
 
 
 class WealthGroupManager(common_models.IdentifierManager):
-    def get_by_natural_key(self, code: str, reference_year_end_date: str, wealth_group_category: str, full_name: str):
+    def get_by_natural_key(
+        self,
+        code: str,
+        reference_year_end_date: str,
+        wealth_group_category: str,
+        full_name: str,
+    ):
         if full_name:
             return self.get(
                 livelihood_zone_baseline__livelihood_zone__code=code,
@@ -400,7 +416,11 @@ class WealthGroup(common_models.Model):
     # and it would be less obvious whether a WealthGroup is a BaselineWealthGroup or a CommunityWealthGroup.
     # Therefore, I think that the current approach with an optional `community` is preferable.
     community = models.ForeignKey(
-        Community, blank=True, null=True, on_delete=models.CASCADE, verbose_name=_("Community")
+        Community,
+        blank=True,
+        null=True,
+        on_delete=models.CASCADE,
+        verbose_name=_("Community"),
     )
     wealth_group_category = models.ForeignKey(
         WealthGroupCategory,
@@ -454,7 +474,11 @@ class WealthGroup(common_models.Model):
         verbose_name_plural = _("Wealth Groups")
         constraints = [
             models.UniqueConstraint(
-                fields=("livelihood_zone_baseline", "wealth_group_category", "community"),
+                fields=(
+                    "livelihood_zone_baseline",
+                    "wealth_group_category",
+                    "community",
+                ),
                 name="baseline_wealthgroup_livelihood_zone_baseline_wealth_group_category_community_uniq",
             ),
             # Create a unique constraint on id and livelihood_zone_baseline, so that we can use it as a target for a
@@ -619,7 +643,8 @@ class WealthGroupCharacteristicValue(common_models.Model):
     # "main_cash_crops" (many from ClassifiedProduct, e.g. maize,coffee)
     # "land_area" (1 decimal point numeric value, maybe with a unit of measure, e.g. 10.3 acres)
     value = models.JSONField(
-        verbose_name=_("value"), help_text=_("A single property value, eg, a float, str or list, not a dict of props.")
+        verbose_name=_("value"),
+        help_text=_("A single property value, eg, a float, str or list, not a dict of props."),
     )
     # The Summary value for a Baseline Wealth Group also contains a min and max value for the Wealth Characteristic
     # E..g. See CD09_Final 'WB':$AS:$AT
@@ -722,7 +747,12 @@ class WealthGroupCharacteristicValue(common_models.Model):
             # We can only have one value from each reference_type (Form 3, Form 4, Summary) for each Wealth Group
             # for each Characteristic (including the Product if appropriate).
             models.UniqueConstraint(
-                fields=["wealth_group", "wealth_characteristic", "reference_type", "product"],
+                fields=[
+                    "wealth_group",
+                    "wealth_characteristic",
+                    "reference_type",
+                    "product",
+                ],
                 name="baseline_wealthgroupcharacteristicvalue_group_characteristic_reference_type_product_uniq",
             ),
         ]
@@ -782,7 +812,13 @@ class LivelihoodStrategy(common_models.Model):
     )
     # Season is optional to allow for Livelihood Strategies that have equal distribution across the year,
     # such as purchase of tea and sugar, or remittances.
-    season = models.ForeignKey(Season, blank=True, null=True, on_delete=models.PROTECT, verbose_name=_("Season"))
+    season = models.ForeignKey(
+        Season,
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        verbose_name=_("Season"),
+    )
     # Product is optional to allow for Livelihood Strategies that don't have an obvious Product.
     # For example, many of the labor types in OtherCaseIncome are very specific and won't benefit from being
     # Products if we don't have any other data to cross-reference them with.
@@ -838,7 +874,13 @@ class LivelihoodStrategy(common_models.Model):
         verbose_name_plural = _("Livelihood Strategies")
         constraints = [
             models.UniqueConstraint(
-                fields=["livelihood_zone_baseline", "strategy_type", "season", "product", "additional_identifier"],
+                fields=[
+                    "livelihood_zone_baseline",
+                    "strategy_type",
+                    "season",
+                    "product",
+                    "additional_identifier",
+                ],
                 name="baseline_livelihoodstrategy_uniq",
             ),
             # Create a unique constraint on id and livelihood_zone_baseline, so that we can use it as a target for a
@@ -954,7 +996,10 @@ class LivelihoodActivity(common_models.Model):
         ALL = "all", _("All Together")
 
     household_labor_provider = models.CharField(
-        max_length=10, choices=HouseholdLaborProvider.choices, blank=True, verbose_name=_("Activity done by")
+        max_length=10,
+        choices=HouseholdLaborProvider.choices,
+        blank=True,
+        verbose_name=_("Activity done by"),
     )
 
     def calculate_fields(self):
@@ -1025,7 +1070,12 @@ class LivelihoodActivity(common_models.Model):
 
     def validate_strategy_type(self):
         if (
-            type(self) not in {LivelihoodActivity, BaselineLivelihoodActivity, ResponseLivelihoodActivity}
+            type(self)
+            not in {
+                LivelihoodActivity,
+                BaselineLivelihoodActivity,
+                ResponseLivelihoodActivity,
+            }
             and self.strategy_type != self._meta.object_name
         ):
             raise ValidationError(
@@ -1181,10 +1231,14 @@ class MilkProduction(LivelihoodActivity):
         blank=True, null=True, verbose_name=_("Quantity used for Butter Production")
     )  # NOQA: E501
     type_of_milk_consumed = models.CharField(
-        max_length=10, choices=MilkType.choices, verbose_name=_("Skim or whole milk consumed")
+        max_length=10,
+        choices=MilkType.choices,
+        verbose_name=_("Skim or whole milk consumed"),
     )
     type_of_milk_sold_or_other_uses = models.CharField(
-        max_length=10, choices=MilkType.choices, verbose_name=_("Skim or whole milk sold or used for other purposes")
+        max_length=10,
+        choices=MilkType.choices,
+        verbose_name=_("Skim or whole milk sold or used for other purposes"),
     )
 
     # @TODO See https://fewsnet.atlassian.net/browse/HEA-65
@@ -1316,13 +1370,15 @@ class FoodPurchase(LivelihoodActivity):
     # Do we need this, or can we use combined units of measure like FDW, e.g. 5kg
     # NIO93 Row B422 tia = 2.5kg
     unit_multiple = models.PositiveSmallIntegerField(
-        verbose_name=_("Unit Multiple"), help_text=_("Multiple of the unit of measure in a single purchase")
+        verbose_name=_("Unit Multiple"),
+        help_text=_("Multiple of the unit of measure in a single purchase"),
     )
     # This is a float field because data may be captured as "once per week",
     # which equates to "52 per year", which is "4.33 per month".
     times_per_month = models.FloatField(verbose_name=_("Purchases per month"))
     months_per_year = models.PositiveSmallIntegerField(
-        verbose_name=_("Months per year"), help_text=_("Number of months in a year that the product is purchased")
+        verbose_name=_("Months per year"),
+        help_text=_("Number of months in a year that the product is purchased"),
     )
     times_per_year = models.PositiveSmallIntegerField(
         verbose_name=_("Times per year"),
@@ -1351,16 +1407,19 @@ class PaymentInKind(LivelihoodActivity):
 
     # Production calculation/validation is `people_per_household * times_per_month * months_per_year`
     payment_per_time = models.PositiveSmallIntegerField(
-        verbose_name=_("Payment per time"), help_text=_("Amount of item received each time the labor is performed")
+        verbose_name=_("Payment per time"),
+        help_text=_("Amount of item received each time the labor is performed"),
     )
     people_per_household = models.PositiveSmallIntegerField(
-        verbose_name=_("People per household"), help_text=_("Number of household members who perform the labor")
+        verbose_name=_("People per household"),
+        help_text=_("Number of household members who perform the labor"),
     )
     # This is a float field because data may be captured as "once per week",
     # which equates to "52 per year", which is "4.33 per month".
     times_per_month = models.FloatField(verbose_name=_("Labor per month"))
     months_per_year = models.PositiveSmallIntegerField(
-        verbose_name=_("Months per year"), help_text=_("Number of months in a year that the labor is performed")
+        verbose_name=_("Months per year"),
+        help_text=_("Number of months in a year that the labor is performed"),
     )
     times_per_year = models.PositiveSmallIntegerField(
         verbose_name=_("Times per year"),
@@ -1393,12 +1452,15 @@ class ReliefGiftOther(LivelihoodActivity):
 
     # Production calculation /validation is `unit_of_measure * unit_multiple * times_per_year`
     unit_multiple = models.PositiveSmallIntegerField(
-        verbose_name=_("Unit Multiple"), help_text=_("Multiple of the unit of measure received each time")
+        verbose_name=_("Unit Multiple"),
+        help_text=_("Multiple of the unit of measure received each time"),
     )
     # This is a float field because data may be captured as "once per week",
     # which equates to "52 per year", which is "4.33 per month".
     times_per_month = models.FloatField(
-        blank=True, null=True, verbose_name=_("Number of times per month the item is received")
+        blank=True,
+        null=True,
+        verbose_name=_("Number of times per month the item is received"),
     )
     months_per_year = models.PositiveSmallIntegerField(
         blank=True,
@@ -1407,7 +1469,8 @@ class ReliefGiftOther(LivelihoodActivity):
         help_text=_("Number of months in a year that the item is received"),
     )
     times_per_year = models.PositiveSmallIntegerField(
-        verbose_name=_("Times per year"), help_text=_("Number of times in a year that the item is received")
+        verbose_name=_("Times per year"),
+        help_text=_("Number of times in a year that the item is received"),
     )
 
     def validate_quantity_produced(self):
@@ -1462,7 +1525,8 @@ class OtherCashIncome(LivelihoodActivity):
     # people_per_household, etc. Therefore those fields must be nullable, and we must store the total number of times
     # per year as a separate field
     payment_per_time = models.PositiveSmallIntegerField(
-        verbose_name=_("Payment per time"), help_text=_("Amount of money received each time the labor is performed")
+        verbose_name=_("Payment per time"),
+        help_text=_("Amount of money received each time the labor is performed"),
     )
     people_per_household = models.PositiveSmallIntegerField(
         verbose_name=_("People per household"),
@@ -1561,6 +1625,7 @@ class SeasonalActivityManager(common_models.IdentifierManager):
         reference_year_end_date: str,
         seasonal_activity_type: str,
         product: str = "",
+        additional_identifier: str = "",
     ):
         criteria = {
             "livelihood_zone_baseline__livelihood_zone__code": code,
@@ -1568,10 +1633,16 @@ class SeasonalActivityManager(common_models.IdentifierManager):
             "seasonal_activity_type__code": seasonal_activity_type,
         }
 
-        if product:
+        if product and product not in ["Maize rainfed", "Maize Irrigated"]:
             criteria["product__cpcv2"] = product
         else:
             criteria["product__isnull"] = True
+
+        if additional_identifier or product in ["Maize rainfed", "Maize Irrigated"]:
+            if additional_identifier:
+                criteria["additional_identifier__iexact"] = additional_identifier
+            else:
+                criteria["additional_identifier__iexact"] = product
 
         return self.get(**criteria)
 
@@ -1636,6 +1707,7 @@ class SeasonalActivity(common_models.Model):
             self.livelihood_zone_baseline.reference_year_end_date.isoformat(),
             self.seasonal_activity_type,
             self.product_id if self.product_id else "",
+            self.additional_identifier if self.additional_identifier else "",
         )
 
     class Meta:
@@ -1652,7 +1724,7 @@ class SeasonalActivity(common_models.Model):
         ]
 
     class ExtraMeta:
-        identifier = ["livelihood_zone_baseline", "seasonal_activity_type", "product"]
+        identifier = ["livelihood_zone_baseline", "seasonal_activity_type", "product", "additional_identifier"]
 
 
 class SeasonalActivityOccurrence(common_models.Model):
@@ -1680,7 +1752,11 @@ class SeasonalActivityOccurrence(common_models.Model):
     # then the Seasonal Activity Occurrence represents the consolidated and reconciled period
     # for that Seasonal Activity that is representative for the Livelihood Zone Baseline.
     community = models.ForeignKey(
-        Community, blank=True, null=True, on_delete=models.RESTRICT, verbose_name=_("Community or Village")
+        Community,
+        blank=True,
+        null=True,
+        on_delete=models.RESTRICT,
+        verbose_name=_("Community or Village"),
     )
 
     # We use day in the year instead of month to allow greater granularity,
@@ -1688,10 +1764,12 @@ class SeasonalActivityOccurrence(common_models.Model):
     # Note that if the occurrence goes over the year end, then the start day
     # will be larger than the end day.
     start = models.PositiveSmallIntegerField(
-        validators=[MaxValueValidator(365), MinValueValidator(1)], verbose_name=_("Start Day")
+        validators=[MaxValueValidator(365), MinValueValidator(1)],
+        verbose_name=_("Start Day"),
     )
     end = models.PositiveSmallIntegerField(
-        validators=[MaxValueValidator(365), MinValueValidator(1)], verbose_name=_("End Day")
+        validators=[MaxValueValidator(365), MinValueValidator(1)],
+        verbose_name=_("End Day"),
     )
 
     def natural_key(self):
@@ -1700,6 +1778,7 @@ class SeasonalActivityOccurrence(common_models.Model):
             self.livelihood_zone_baseline.reference_year_end_date.isoformat(),
             self.seasonal_activity.seasonal_activity_type.code,
             self.seasonal_activity.product_id if self.seasonal_activity.product_id else "",
+            self.seasonal_activity.additional_identifier,
             str(self.start),
             str(self.end),
         )
@@ -1760,13 +1839,22 @@ class CommunityCropProduction(common_models.Model):
 
     community = models.ForeignKey(Community, on_delete=models.RESTRICT, verbose_name=_("Community or Village"))
     crop = models.ForeignKey(
-        ClassifiedProduct, db_column="crop_code", on_delete=models.RESTRICT, verbose_name=_("Crop Type")
+        ClassifiedProduct,
+        db_column="crop_code",
+        on_delete=models.RESTRICT,
+        verbose_name=_("Crop Type"),
     )
     crop_purpose = models.CharField(max_length=20, choices=CropPurpose.choices, verbose_name=_("Crop purpose"))
     # Although logically Crop Production must belong to a specific Season, that
     # link is not explicit in historic BSS, and therefore we may choose not to
     # load it, at least to start with. Therefore, the relationship must be optional.
-    season = models.ForeignKey(Season, blank=True, null=True, on_delete=models.RESTRICT, verbose_name=_("Season"))
+    season = models.ForeignKey(
+        Season,
+        blank=True,
+        null=True,
+        on_delete=models.RESTRICT,
+        verbose_name=_("Season"),
+    )
     yield_with_inputs = models.FloatField(
         verbose_name=_("Yield with inputs"),
         help_text=_("Yield in reference period with inputs (seeds and fertilizer)"),
@@ -1837,27 +1925,33 @@ class CommunityLivestock(common_models.Model):
 
     community = models.ForeignKey(Community, on_delete=models.CASCADE, verbose_name=_("Wealth Group"))
     livestock = models.ForeignKey(
-        ClassifiedProduct, db_column="livestock_code", on_delete=models.RESTRICT, verbose_name=_("Livestock Type")
+        ClassifiedProduct,
+        db_column="livestock_code",
+        on_delete=models.RESTRICT,
+        verbose_name=_("Livestock Type"),
     )
     birth_interval = models.PositiveSmallIntegerField(
         verbose_name=_("Birth Interval"), help_text=_("Number of months between Births")
     )
     wet_season_lactation_period = models.PositiveSmallIntegerField(
-        verbose_name=_("Wet Season Lactation Period"), help_text=_("Number of days of lactation during the wet season")
+        verbose_name=_("Wet Season Lactation Period"),
+        help_text=_("Number of days of lactation during the wet season"),
     )
     wet_season_milk_production = models.PositiveSmallIntegerField(
         verbose_name=_("Wet Season Milk Production"),
         help_text=_("Number of litres produced each day during the wet season"),
     )
     dry_season_lactation_period = models.PositiveSmallIntegerField(
-        verbose_name=_("Dry Season Lactation Period"), help_text=_("Number of days of lactation during the dry season")
+        verbose_name=_("Dry Season Lactation Period"),
+        help_text=_("Number of days of lactation during the dry season"),
     )
     dry_season_milk_production = models.PositiveSmallIntegerField(
         verbose_name=_("Dry Season Milk Production"),
         help_text=_("Number of litres produced each day during the dry season"),
     )
     age_at_sale = models.PositiveSmallIntegerField(
-        verbose_name=_("Age at Sale"), help_text=_("Age in months at which the animal is typically sold/exchanged")
+        verbose_name=_("Age at Sale"),
+        help_text=_("Age in months at which the animal is typically sold/exchanged"),
     )
     # @TODO At implementation we need to ensure consistency across records
     # that means we either need a EAV table or validation at data entry.
@@ -1909,27 +2003,37 @@ class MarketPrice(common_models.Model):
     market = models.ForeignKey(Market, blank=True, null=True, on_delete=models.RESTRICT)
     description = common_models.DescriptionField(max_length=100)
     currency = models.ForeignKey(
-        Currency, db_column="currency_code", on_delete=models.RESTRICT, verbose_name=_("Currency")
+        Currency,
+        db_column="currency_code",
+        on_delete=models.RESTRICT,
+        verbose_name=_("Currency"),
     )
     unit_of_measure = models.ForeignKey(
-        UnitOfMeasure, db_column="unit_code", on_delete=models.RESTRICT, verbose_name=_("Unit of Measure")
+        UnitOfMeasure,
+        db_column="unit_code",
+        on_delete=models.RESTRICT,
+        verbose_name=_("Unit of Measure"),
     )
     # We use day in the year instead of month to allow greater granularity,
     # and compatibility with the potential FDW Enhanced Crop Calendar output.
     # Note that if the occurrence goes over the year end, then the start day
     # will be larger than the end day.
     low_price_start = models.PositiveSmallIntegerField(
-        validators=[MaxValueValidator(365), MinValueValidator(1)], verbose_name=_("Low Price Start Day")
+        validators=[MaxValueValidator(365), MinValueValidator(1)],
+        verbose_name=_("Low Price Start Day"),
     )
     low_price_end = models.PositiveSmallIntegerField(
-        validators=[MaxValueValidator(365), MinValueValidator(1)], verbose_name=_("Low Price End Day")
+        validators=[MaxValueValidator(365), MinValueValidator(1)],
+        verbose_name=_("Low Price End Day"),
     )
     low_price = models.FloatField(verbose_name=_("Low price"))
     high_price_start = models.PositiveSmallIntegerField(
-        validators=[MaxValueValidator(365), MinValueValidator(1)], verbose_name=_("High Price Start Day")
+        validators=[MaxValueValidator(365), MinValueValidator(1)],
+        verbose_name=_("High Price Start Day"),
     )
     high_price_end = models.PositiveSmallIntegerField(
-        validators=[MaxValueValidator(365), MinValueValidator(1)], verbose_name=_("High Price End Day")
+        validators=[MaxValueValidator(365), MinValueValidator(1)],
+        verbose_name=_("High Price End Day"),
     )
     high_price = models.FloatField(verbose_name=_("High price"))
 
@@ -2016,7 +2120,9 @@ class Hazard(common_models.Model):
 
     community = models.ForeignKey(Community, on_delete=models.RESTRICT, verbose_name=_("Community or Village"))
     chronic_or_periodic = models.CharField(
-        max_length=10, choices=ChronicOrPeriodic.choices, verbose_name=_("Chronic or Periodic")
+        max_length=10,
+        choices=ChronicOrPeriodic.choices,
+        verbose_name=_("Chronic or Periodic"),
     )
     ranking = models.PositiveSmallIntegerField(
         choices=HazardRanking.choices,
@@ -2027,7 +2133,10 @@ class Hazard(common_models.Model):
         verbose_name=_("Ranking"),
     )
     hazard_category = models.ForeignKey(
-        HazardCategory, db_column="hazard_category_code", on_delete=models.RESTRICT, verbose_name=_("Hazard Category")
+        HazardCategory,
+        db_column="hazard_category_code",
+        on_delete=models.RESTRICT,
+        verbose_name=_("Hazard Category"),
     )
     # @TODO MG23 https://docs.google.com/spreadsheets/d/18Y85UKXGehudt2YX5Oc_adw2TUxo6nY7/edit#gid=1565100920
     # contains additional information on Events and Responses by year in the Timeline worksheet.

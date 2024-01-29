@@ -67,10 +67,16 @@ class WealthCharacteristicAdmin(DimensionAdmin):
         "name",
         "variable_type",
         "description",
+        "has_product",
+        "has_unit_of_measure",
         "aliases",
     )
 
-    list_filter = ("variable_type",)
+    list_filter = (
+        "variable_type",
+        "has_product",
+        "has_unit_of_measure",
+    )
 
 
 class HazardCategoryAdmin(DimensionAdmin):

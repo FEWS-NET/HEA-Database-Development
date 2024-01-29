@@ -26,9 +26,17 @@ class IngestionPipelineTestCase(TestCase):
         cls.country = CountryFactory(iso3166a2="MW", iso3166a3="MWI", iso3166n3=454, iso_en_ro_name="Malawi")
         ClassifiedProductFactory(cpcv2="L02151", description="Chickens", aliases=["chicken", "hen", "hens"]),
         ClassifiedProductFactory(
-            cpcv2="L02111AP", description="Cattle, oxen, unspecified", common_name="Oxen", aliases=["ox"]
+            cpcv2="L02111AP",
+            description="Cattle, oxen, unspecified",
+            common_name="Oxen",
+            aliases=["ox"],
         )
-        UnitOfMeasureFactory(abbreviation="acre", unit_type=UnitOfMeasure.AREA, aliases=["acres"], conversion=None)
+        UnitOfMeasureFactory(
+            abbreviation="acres",
+            unit_type=UnitOfMeasure.AREA,
+            aliases=["acres"],
+            conversion=None,
+        )
         LivelihoodCategoryFactory(
             code="agropastoral",
             name="Agropastoral",
@@ -38,22 +46,32 @@ class IngestionPipelineTestCase(TestCase):
         WealthGroupCategoryFactory(code="M", name="Medium", aliases=["m"])
         WealthGroupCategoryFactory(code="B/O", name="Better Off", aliases=["b/o", "r", "a"])
         WealthCharacteristicFactory(
-            code="percentage of households", name="Wealth breakdown (% of households)", aliases=["wealth breakdown"]
+            code="percentage of households",
+            name="Wealth breakdown (% of households)",
+            aliases=["wealth breakdown"],
         )
         WealthCharacteristicFactory(
-            code="household size", name="Average Household Size", aliases=["HH size", "HH size (taille)"]
+            code="household size",
+            name="Average Household Size",
+            aliases=["HH size", "HH size (taille)"],
         )
         WealthCharacteristicFactory(
             code="area owned",
             name="Land area owned",
             has_unit_of_measure=True,
-            aliases=["area owned (<unit_of_measure>)", "land area owned (<unit_of_measure>)"],
+            aliases=[
+                "area owned (<unit_of_measure>)",
+                "land area owned (<unit_of_measure>)",
+            ],
         )
         WealthCharacteristicFactory(
             code="area cultivated",
             name="Land area cultivated",
             has_unit_of_measure=True,
-            aliases=["area cultivated (<unit_of_measure>)", "land area cultivated (<unit_of_measure>)"],
+            aliases=[
+                "area cultivated (<unit_of_measure>)",
+                "land area cultivated (<unit_of_measure>)",
+            ],
         )
         WealthCharacteristicFactory(
             code="area cultivated - rainfed",
@@ -319,7 +337,8 @@ class IngestionPipelineTestCase(TestCase):
         with conditional_logging():
 
             task = ImportBaseline(
-                bss_path="apps/baseline/tests/bss.xlsx", metadata_path="apps/baseline/tests/metadata.xlsx"
+                bss_path="HEA-Database-Development/apps/baseline/tests/bss.xlsx",
+                metadata_path="HEA-Database-Development/apps/baseline/tests/metadata.xlsx",
             )
             submit_task(task, force=True, cascade=True, local_scheduler=True)
 

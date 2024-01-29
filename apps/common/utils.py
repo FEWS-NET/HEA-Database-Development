@@ -219,7 +219,7 @@ def conditional_logging(logger=None, flush_level=logging.ERROR, capacity=500):
 
 def get_month_from_day_number(day_number):
     first_day_of_year = datetime(datetime.today().year, 1, 1)
-    _date = first_day_of_year + timedelta(days=day_number - 1)  # timedelta uses 0 based index
+    _date = first_day_of_year + timedelta(days=day_number)  # timedelta uses 0 based index
     return _date.month
 
 
