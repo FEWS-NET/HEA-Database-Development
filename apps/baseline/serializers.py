@@ -55,6 +55,7 @@ class LivelihoodZoneSerializer(serializers.ModelSerializer):
         model = LivelihoodZone
         fields = (
             "code",
+            "alternate_code",
             "name",
             "description",
             "country",

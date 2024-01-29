@@ -66,11 +66,13 @@ class SourceOrganizationAdmin(admin.ModelAdmin):
 class LivelihoodZoneAdmin(admin.ModelAdmin):
     list_display = (
         "code",
+        "alternate_code",
         "name",
         "country",
     )
     search_fields = [
         "code",
+        "alternate_code",
         *translation_fields("name"),
         *translation_fields("description"),
         "country__iso_en_ro_name",
