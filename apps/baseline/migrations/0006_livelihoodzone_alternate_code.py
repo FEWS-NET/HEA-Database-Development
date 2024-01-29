@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
             name="alternate_code",
             field=models.CharField(
                 blank=True,
-                help_text="Alternate identifier for the Livelihood Zone, a more Meaningful code if users have it",
+                help_text="Alternate identifier for the Livelihood Zone, typically a meaningful code based on the name of the Zone.",
                 max_length=25,
                 verbose_name="alternate code",
             ),
