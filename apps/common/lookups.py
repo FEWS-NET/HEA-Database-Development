@@ -2,6 +2,7 @@
 Lookup classes that support data ingestion by matching data in a Pandas DataFrame against
 reference data in Django Models.
 """
+import functools
 from abc import ABC
 
 import pandas as pd
@@ -69,7 +70,7 @@ class Lookup(ABC):
     # Related models to also instantiate
     related_models = []
 
-    def __init__(self, filters: dict = {}):
+    def __init__(self, filters: dict = {}, require_match=None):
         # Make sure we don't have any fields in multiple categories
         assert len(set((*self.id_fields, *self.parent_fields, *self.lookup_fields))) == len(self.id_fields) + len(
             self.parent_fields
@@ -78,6 +79,10 @@ class Lookup(ABC):
         self.composite_key = len(self.id_fields) > 1
 
         self.filters = filters
+
+        # Override the require_match if necessary
+        if require_match is not None:
+            self.require_match = require_match
 
     def get_queryset_columns(self):
         return [*self.lookup_fields, *self.parent_fields, *self.id_fields]
@@ -284,6 +289,29 @@ class Lookup(ABC):
         model_map = {instance.pk: instance for instance in queryset.iterator()}
         df[column] = df[column].map(model_map)
         return df
+
+    @functools.cache
+    def get(self, value: str) -> str | None:
+        """
+        Return the lookup value for a single string, or None if there is no match.
+
+        Used to do a lookup for a single value instead of a dataframe.
+
+        Unlike `do_lookup()` this is a cached property to avoid repeated database queries.
+        Note that this cache is per-instance of the Lookup class, so the class should be instantiated outside a loop
+        performing repeated lookups:
+
+            lookup = MyLookup()
+            for dict_item in very_long_list:
+                item["id"] = lookup.get(item["other_name"])
+        """
+        df = pd.DataFrame({"value": [value]})
+        try:
+            df = self.do_lookup(df, "value", "result")
+            result = df.iloc[0, 1]
+            return result if pd.notna(result) else None
+        except ValueError:
+            return None
 
 
 class CountryClassifiedProductAliasesLookup(Lookup):
