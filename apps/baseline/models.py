@@ -12,6 +12,7 @@ from model_utils.managers import InheritanceManager
 
 import common.models as common_models
 from common.fields import TranslatedField
+from common.importers import LivelihoodStrategyImporter
 from common.models import (
     ClassifiedProduct,
     Country,
@@ -204,8 +205,11 @@ class LivelihoodZoneBaseline(common_models.Model):
         verbose_name=_("Population Estimate"),
         help_text=_("The estimated population of the Livelihood Zone during the reference year"),
     )
+    # Regardless of how we import, we may as well store back references to the original cell/s
+    spreadsheet_reference = models.ForeignKey("common.SpreadsheetReference", on_delete=models.DO_NOTHING)
 
     objects = LivelihoodZoneBaselineManager()
+    importer = LivelihoodStrategyImporter
 
     def natural_key(self):
         try:
@@ -223,6 +227,20 @@ class LivelihoodZoneBaseline(common_models.Model):
                 name="baseline_livelihoodzonebaseline_livelihood_zone_reference_year_end_date_uniq",
             )
         ]
+
+    def bss_to_db(self):
+        instances = {
+            SourceOrganization: self.source_organization,
+            LivelihoodZone: self.livelihood_zone,
+            LivelihoodZoneBaseline: self,
+        }
+        for model in [
+            LivelihoodStrategy,
+            Community,
+            WealthGroup,
+            # ...
+        ]:
+            instances[model] = model.importer.save_from_bss(instances)
 
 
 # @TODO Can we have a better name.

@@ -61,6 +61,10 @@ class ReferenceData(common_models.Model):
     class ExtraMeta:
         identifier = ["name_en"]
 
+    @classmethod
+    def get_model(cls, model, field):
+        return "look up appropriate model from foreign key field def"
+
 
 class LivelihoodCategory(ReferenceData):
     """
