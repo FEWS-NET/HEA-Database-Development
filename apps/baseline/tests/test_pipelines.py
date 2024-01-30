@@ -1,7 +1,10 @@
+from unittest import skip
+
+import pandas as pd
 from django.test import TestCase
 from kiluigi.utils import submit_task
 
-from baseline.pipelines.ingestion import ImportBaseline
+from baseline.pipelines.ingestion import ImportBaseline, NormalizeData
 from baseline.tests.factories import SourceOrganizationFactory
 from common.models import UnitOfMeasure
 from common.tests.factories import (
@@ -248,3 +251,85 @@ class IngestionPipelineTestCase(TestCase):
 
             result = task.output().open().read()
             self.assertRegex(result, r"Installed (\d+) object\(s\) from 1 fixture\(s\)")
+
+    # Skip this test because it currently doesn't work for all strings. For example, 'Pig sales - local: no. sold'
+    # needs to match L02140HA: Swine / pigs, local quality, but we haven't set up "Pig sales - local" as an alias for
+    # L02140HA. There are other similar examples where the metadata is not set up properly and it isn't clear that this
+    # approach will ultimately be successful.  For example, should we match the string "Gifts: type" even though this
+    # indicates a blank entry in the Livelihood Strategy list - and actual entry would have corrected "type" with the
+    # actual gift.
+    @skip("Currently not working")
+    def test_livelihood_strategy_map(self):
+        test_string_dict = {
+            "MilkProduction": ["season 1: lactation period (days)", "season 1: no. milking animals"],
+            "ButterProduction": ["ghee/butter production (kg)", "milk+ghee/butter kcals (%) - 2nd season"],
+            "MeatProduction": ["Cow meat: no. animals slaughtered"],
+            "LivestockSale": [
+                "Pig sales - local: no. sold",
+                "Other (Eggs): quantity",
+                "Other Eggs: quantity",
+                "Other (Eggs) quantity",
+                "Other Eggs quantity",
+                "Other: quantity",
+                "Eggs: quantity",
+                "Eggs quantity",
+                "Other (Eggs): quantity",
+                "Other: quantity",
+                "Vente de moutons - locale: nb  venduss",
+                "Vente de poules: nb  venduses",
+            ],
+            "CropProduction": [
+                "Green cons - rainfed: no of months",
+                "Green cons - irrigated: no of months",
+                "Green maize sold: quantity",
+                "Maize rainfed: kg produced",
+                "Groundnuts (dry): no. local meas",
+                "Other crop: Ground beans",
+                "Other crop: type",
+                "Cotton: kg sold",
+                "Other cash crop: type",
+            ],
+            "FoodPurchase": [
+                "Maize grain: name of meas.",
+                "Cassava dried: name of meas.",
+                "Sugar purchase: kg",
+                "Meat purchase: quantity (kg)",
+                "Dried fish purchase: quantity (kg)",
+            ],
+            "ReliefGiftOther": [
+                "School feeding (cooked): no. children",
+                "Relief - grain: quantity (kg)",
+                "Other food: school feeding take-home ration",
+                "Other food: type",
+                "School feeding (cooked): no. children",
+                "Relief - pulses: quantity (kg)",
+                "Gifts: type",
+                "Safety Nets: no. people per HH",
+            ],
+            "OtherCashIncome": [
+                "Construction cash income (brick making, fencing )",
+                "Self-employment (firewood sales, pett trade/ trade)",
+                "Remittances: no. times per year",
+            ],
+            # Some rows in column A are duplicated for both the PaymentInKind
+            # and OtherCashIncome strategy types, and so in those cases
+            # get_activity_attributes doesn't return a strategy_type, and
+            # instead we rely on the strategy_type detected from the section
+            # header in column A, e.g. "PAYMENT IN KIND"
+            None: [
+                "Labour: pre-harvest",
+                "Labour: type",
+            ],
+        }
+
+        for strategy_type, test_strings in test_string_dict.items():
+            for test_string in test_strings:
+                with self.subTest(test_string=test_string):
+                    attributes = NormalizeData.get_activity_attributes(test_string)
+                    self.assertIsInstance(attributes, dict, "Test string was not matched")
+                    self.assertFalse(all([pd.isna(attribute) for attribute in attributes]))
+                    self.assertEqual(
+                        attributes["strategy_type"],
+                        strategy_type,
+                        f'Incorrect strategy type {attributes["strategy_type"]} from pattern {attributes["pattern"]}',
+                    )

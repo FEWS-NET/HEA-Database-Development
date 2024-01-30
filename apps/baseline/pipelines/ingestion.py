@@ -270,6 +270,17 @@ class CorrectBSS(luigi.Task):
 
 @requires(bss=CorrectBSS, metadata=GetBSSMetadata)
 class NormalizeWB(luigi.Task):
+    """
+    Normalize the WB worksheet.
+
+    Reads the WB worksheet and turns it into a nested dict that lists the LivelihoodZone, LivelihoodZoneBaseline,
+    Community, WealthGroup and WealthGroupCharacteristicValue records, in the correct format for loading into the
+    application via a Django Fixture.
+
+    It uses Lookups to convert free text entries from the BSS into the correct metadata codes for WealthGroupCategory,
+    WealthCharacteristic, Product, etc.
+    """
+
     def output(self):
         return IntermediateTarget(path_from_task(self) + ".json", format=JSON, timeout=3600)
 
@@ -430,8 +441,9 @@ class NormalizeWB(luigi.Task):
         # LR02: Oxen (no. owned)
         # SO18: Donkey number owned
 
-        # Build a map of regex strings to the actual characteristic, using the WealthCharacteristic.aliases
-        wealth_characteristic_map = {}
+        # Build a list of regex strings that map to a wealth characteristic, using the WealthCharacteristic.aliases
+        # Each entry in the list is a tuple of the compiled regex and the code for the WealthCharacteristic.
+        wealth_characteristic_regexes = []
         for wealth_characteristic in WealthCharacteristic.objects.exclude(
             has_product=False, has_unit_of_measure=False
         ).exclude(aliases__isnull=True):
@@ -440,30 +452,30 @@ class NormalizeWB(luigi.Task):
                 # replace the <product> or <unit_of_measure> placeholders with regex groups
                 for attribute in "product", "unit_of_measure":
                     if attribute in alias:
-                        alias = alias.replace(f"<{attribute}>", f"(?P<{attribute}>[a-z][a-z']+)")
+                        alias = alias.replace(f"<{attribute}>", f"(?P<{attribute}>[a-z][a-z',/ \>\-\(\)]+)")
                 alias = re.compile(alias)
-                wealth_characteristic_map[alias] = wealth_characteristic.code
+                wealth_characteristic_regexes.append((alias, wealth_characteristic.code))
 
+        # Define a function to return the wealth_characteristic, product and/or unit_of_measure from the label
         def get_attributes(characteristic_label: str):
             """
             Return a tuple of (wealth_characteristic, product, unit_of_measure) from a characteristic label.
             """
-            for pattern, wealth_characteristic in wealth_characteristic_map.items():
+            attributes = {
+                "wealth_characteristic": None,
+                "product": None,
+                "unit_of_measure": None,
+            }
+            for pattern, wealth_characteristic in wealth_characteristic_regexes:
                 match = pattern.fullmatch(characteristic_label.lower().strip())
                 if match:
-                    if "product" in match.groupdict():
-                        product = match.groupdict()["product"]
-                    else:
-                        product = None
-                    if "unit_of_measure" in match.groupdict():
-                        unit_of_measure = match.groupdict()["unit_of_measure"]
-                    else:
-                        unit_of_measure = None
+                    attributes.update(match.groupdict())
+                    attributes["wealth_characteristic"] = wealth_characteristic
                     # Return a Series so that Pandas will split the return value into multiple columns
-                    return pd.Series([wealth_characteristic, product, unit_of_measure])
+                    return pd.Series(attributes)
             # No pattern matched
             # Return a Series so that Pandas will split the return value into multiple columns
-            return pd.Series([None, None, None])
+            return pd.Series(attributes)
 
         # Extract the wealth_characteristic, product and unit_of_measure (if applicable) from the characteristic_label
         char_df[["wealth_characteristic", "product", "unit_of_measure"]] = char_df["characteristic_label"].apply(
@@ -473,7 +485,11 @@ class NormalizeWB(luigi.Task):
         # Look up the metadata codes for WealthGroupCategory and WealthCharacteristic
         # We need to lookup the WealthCharacteristic before we can use it to mask the 'product' column below
         char_df = WealthGroupCategoryLookup().do_lookup(char_df, "wealth_group_category", "wealth_group_category")
-        # Note that we use do_lookup(update=True) so that we ignore the values that we matched using a regex
+        # Note that we use do_lookup(update=True) so that we don't overwrite the values that we matched using a regex
+        # if there is no match. Also note that because the lookup runs after we have done the regex match, a wealth
+        # characteristic that matches the characteristic label directly will overwrite a wealth characteristic that was
+        # matched using a regex. This ensures that, for example, `Other: Motor Cycle` will match "Motor Cycle" and not
+        # "Number Owned" (which has a regex to match "Other: <product>").
         char_df = WealthCharacteristicLookup().do_lookup(
             char_df, "characteristic_label", "wealth_characteristic", update=True
         )
@@ -483,7 +499,7 @@ class NormalizeWB(luigi.Task):
         # we get that far. But we do print the error message to help with troubleshooting.
         for value in get_unmatched_metadata(char_df, "wealth_characteristic"):
             logger.warning(
-                f"Unmatched remote metadata for WealthGroupCharacteristicValue with wealth_characteristic '{value}'"
+                f"Unmatched imported metadata for WealthGroupCharacteristicValue with wealth_characteristic '{value}'"
             )  # NOQA: E501
 
         # Copy the product from the previous cell for rows that need a product but don't specify it.
@@ -521,7 +537,22 @@ class NormalizeWB(luigi.Task):
             .replace({"": None})
         )
 
-        # Lookup the CPCv2
+        # It is possible that the characteristic label is just a bare product, e.g. "Chickens".
+        # Note that we use do_lookup(update=True) so that we don't overwrite the values that we matched using a regex
+        # if there is no match, and we set require_match=False because there may be no labels that are a bare product.
+        char_df = ClassifiedProductLookup(require_match=False).do_lookup(
+            char_df, "characteristic_label", "product", update=True
+        )
+        # Drop product_original to avoid "ValueError: Per-column arrays must each be 1-dimensional" caused by duplicate
+        # product_original columns when applying pd.melt below.
+        char_df = char_df.drop(columns="product_original")
+        # If we matched a product but we haven't found a wealth characteristic yet, then the wealth characteristic is
+        # "number owned".
+        char_df["wealth_characteristic"] = char_df["wealth_characteristic"].mask(
+            char_df["wealth_characteristic"].isna() & char_df["product"].notna(), "number owned"
+        )
+
+        # Lookup the CPC code from the product label
         char_df = ClassifiedProductLookup().do_lookup(char_df, "product", "product")
 
         # Lookup the Unit of Measure
@@ -721,7 +752,459 @@ class NormalizeWB(luigi.Task):
         return result
 
 
-@requires(normalize_wb=NormalizeWB)
+@requires(bss=CorrectBSS, metadata=GetBSSMetadata)
+class NormalizeData(luigi.Task):
+    """
+    Normalize the Data worksheet.
+
+    Reads the WB worksheet and turns it into a nested dict that lists the LivelihoodStrategy and LivelihoodActivity
+    records, in the correct format for loading into the application via a Django Fixture.
+
+    It uses Lookups to convert free text entries from the BSS into the correct metadata codes for WealthGroupCategory,
+    Product, UnitOfMeasure, etc.
+    """
+
+    def output(self):
+        return IntermediateTarget(path_from_task(self) + ".json", format=JSON, timeout=3600)
+
+    def run(self):
+        with self.input()["bss"].open() as input:
+            data_df = pd.read_excel(input, "Data", header=None)
+        with self.input()["metadata"].open() as input:
+            metadata_df = pd.read_excel(input, "Metadata")
+
+        # Find the <country>/<filename>.<ext> path to the file, relative to the root folder.
+        path = f"{Path(self.bss_path).parent.name}/{Path(self.bss_path).name}"
+        # Find the metadata for this BSS
+        metadata = metadata_df[metadata_df["bss_path"] == path].iloc[0]
+
+        data = self.process(data_df, metadata)
+
+        with self.output().open("w") as output:
+            output.write(data)
+
+    def process(self, data_df: pd.DataFrame, metadata: pd.Series) -> dict:
+        """
+        Process the Data worksheet and return a Python dict of normalized data.
+
+        The Data worksheet contains Livelihood Stategy and Livelihood Activity data for the Baseline.
+
+        The first rows of the sheet contain the Wealth Group metadata. The immediately following
+        rows contains some summary information, and then data on the Livelihood Activities and
+        Livelihood Strategies starts around row 57.
+
+        |     | A                                             | M               | N               | O               | P               |
+        |-----|-----------------------------------------------|-----------------|-----------------|-----------------|-----------------|
+        | 0   | MALAWI HEA BASELINES 2015                     |                 |                 |                 |                 |
+        | 1   |                                               |                 |                 |                 |                 |
+        | 2   | WEALTH GROUP                                  | Middle          | Middle          | Middle          | Middle          |
+        | 3   | District/Ward number                          | Kasungu         | Kasungu         | Mchinji         | Mchinji         |
+        | 4   | Village                                       | Kalikokha       | Njobvu          | Maole           | Chikomeni       |
+        | 5   | Interview number                              |                 |                 |                 |                 |
+        | 6   | Interviewers                                  | Joseph Dimisoni | Joseph Dimisoni | Joseph Dimisoni | Joseph Dimisoni |
+        | 7   | Reference year                                |                 |                 |                 |                 |
+        | 8   | Currency                                      |                 |                 |                 |                 |
+        | 57  | LIVESTOCK PRODUCTION:                         |                 |                 |                 |                 |
+        | 85  | Cows' milk                                    |                 |                 |                 |                 |
+        | 86  | no. milking animals                           | 2               | 0               | 1               | 2               |
+        | 87  | season 1: lactation period (days)             | 120             |                 | 120             | 120             |
+        | 88  | daily milk production per animal (litres)     | 2               |                 | 3               | 2               |
+        | 89  | total production (litres)                     | 480             |                 | 360             | 480             |
+        | 90  | sold/exchanged (litres)                       | 240             | 0               | 300             | 240             |
+        | 91  | price (cash)                                  | 150             |                 | 65              | 500             |
+        | 92  | income (cash)                                 | 36,000          | 0               | 19,500          | 120,000         |
+        | 93  | type of milk sold/other use (skim=0, whole=1) | 1               | 1               | 1               | 1               |
+        | 94  | other use (liters)                            | 0               |                 | 0               | 0               |
+        | 95  | season 2: lactation period (days)             |                 |                 | 60              | 90              |
+        | 96  | daily milk production per animal (litres)     |                 |                 | 2               | 1               |
+        | 97  | total production (litres)                     |                 |                 | 120             | 180             |
+        | 98  | sold/exchanged (litres)                       | 0               |                 | 100             | 90              |
+        | 99  | price (cash)                                  |                 |                 | 70              | 500             |
+        | 100 | income (cash)                                 | 0               |                 | 7,000           | 45,000          |
+        | 101 | type of milk sold/other use (skim=0, whole=1) | 1               | 1               | 1               | 1               |
+        | 102 | other use (liters)                            |                 |                 | 0               | 0               |
+        | 103 | % cows' milk sold                             | 50%             |                 | 83%             | 50%             |
+        | 104 | ghee/butter production (kg)                   | 9.6             |                 | 3.2             | 13.2            |
+        | 105 | ghee/butter (other use)                       |                 |                 |                 |                 |
+        | 106 | ghee/butter sales: kg sold                    |                 |                 |                 |                 |
+        | 107 | ghee/butter price (cash)                      |                 |                 |                 |                 |
+        | 108 | ghee/butter income (cash)                     |                 |                 |                 |                 |
+        | 109 | milk+ghee/butter kcals (%) - 1st season       | 3%              |                 | 1%              | 3%              |
+        | 110 | milk+ghee/butter kcals (%) - 2nd season       | 0%              |                 | 0%              | 1%              |
+        | 111 | % cows' ghee/butter sold: ref year            | 0%              |                 | 0%              | 0%              |
+        """  # NOQA: E501
+
+        # Key in the result dict must match the name of the model class they will be imported to.
+        # The value must be a list of instances to import into that model, where each instance
+        # is a dict of field names and values.
+        # If the field is a foreign key to a model that supports a natural key (i.e. the model has a `natural_key`
+        # method), then the field value should be a list of components to the natural key.
+
+        # Process the main part of the sheet to find the Livelihood Strategies and Livelihood Activities.
+
+        # Replace NaN with "" ready for Django
+        data_df = data_df.fillna("")
+
+        # Find the column index of the first summary column, which is in row 2
+        summary_start_col = get_index(["Summary", "SYNTHÈSE"], data_df.iloc[1])
+
+        # Find the last column with data we need to capture, which is the last summary col.
+        # There will be one summary column for each wealth category
+        end_col = summary_start_col + data_df.iloc[2, 1:summary_start_col].dropna().nunique()
+
+        # Find the row index of the start of the Livelihood Activities
+        start_row = get_index(["LIVESTOCK PRODUCTION:"], data_df.iloc[:, 0]) + 1
+
+        # Find the row index of the end of the Livelihood Activities
+        end_row = get_index(["income minus expenditure", "Revenus moins dépenses"], data_df.iloc[start_row:, 0])
+
+        # Prepare the lookups, so they cache the individual results
+        wealthgroupcategorylookup = WealthGroupCategoryLookup()
+        classifiedproductlookup = ClassifiedProductLookup()
+        unitofmeasurelookup = UnitOfMeasureLookup()
+
+        # The LivelihoodActivity is the intersection of a LivelihoodStrategy and a WealthGroup,
+        # so build a list of the natural keys for the WealthGroups.
+        wealth_groups = []
+        for column in range(1, end_col):
+            wealth_groups.append(
+                [
+                    metadata["code"],
+                    metadata["reference_year_end_date"].date().isoformat(),
+                    wealthgroupcategorylookup.get(data_df.iloc[2, column]),
+                    ", ".join([str(data_df.iloc[4, column]), str(data_df.iloc[3, column])]),
+                ]
+            )
+
+        # We can't easily recognize all the rows at once by applying functions to the DataFrame
+        # because some values in Column A can appear in more than one LivelihoodStrategy, such as
+        # PaymentInKind and OtherCashIncome - the labor description is the same but the compensation
+        # is different. Therefore we read the rows in turn and take action based on the type of row
+        strategy_type = None
+        livelihood_strategy = None
+        livelihood_strategies = []
+        livelihood_activities = []
+        livelihood_activities_for_strategy = []
+        for row in range(start_row, end_row):
+            attribute = data_df.iloc[row, 0]
+            # A row might be the start of a new strategy type, or the start of a Livelihood Activity,
+            # or additional attributes for the current Livelihood Activity
+            if self.get_strategy_type(attribute):
+                # We are starting a group of a Livelihood Strategies for a new Strategy Type
+                strategy_type = attribute
+            else:
+                attributes = self.get_activity_attributes(attribute)
+                if attributes:
+                    # Some attributes imply a strategy type.
+                    # For example, MilkProduction, ButterProduction, MeatProduction and LivestockSales
+                    if attributes["strategy_type"]:
+                        strategy_type = attributes.pop("strategy_type")
+                    if attributes["product"]:
+                        attributes["product_original"] = attributes["product"]
+                        attributes["product"] = classifiedproductlookup.get(attributes["product"])
+                    if attributes["unit_of_measure"]:
+                        attributes["unit_of_measure_original"] = attributes["unit_of_measure"]
+                        attributes["unit_of_measure"] = unitofmeasurelookup.get(attributes["unit_of_measure"])
+                    # Some attributes signal the start of a new LivelihoodStrategy
+                    start = attributes.pop("start")
+                    if not start:
+                        # We are adding additional attributes to the current LivelhoodStrategy
+                        assert (
+                            livelihood_strategy
+                        ), f"Found additional attributes {attributes} from row {row} without an existing LivelihoodStrategy"  # NOQA: E501
+                        # Only update expected keys, and only if we found a value for that attribute.
+                        for key, value in attributes.items():
+                            if key in livelihood_strategy and value:
+                                if not livelihood_strategy[key]:
+                                    livelihood_strategy[key] = value
+                                else:
+                                    # This value replacing an existing value, so it is a new LivelihoodStrategy
+                                    start = True
+                                    new_livelihood_strategy = livelihood_strategy.copy()
+                                    for key, value in attributes.items():
+                                        if key in new_livelihood_strategy and value:
+                                            livelihood_strategy["key"] = value
+                                    attributes = new_livelihood_strategy
+                                    break
+                    if start:
+                        # We are starting a new livelihood activity, so append the previous livelihood strategy
+                        # to the list, provided that it has at least one Livelihood Activity
+                        if livelihood_strategy and livelihood_activities_for_strategy:
+                            livelihood_strategies.append(livelihood_strategy)
+                            # Add the natural keys for the livelihood strategy and the wealth group
+                            # to the livelihood activities
+                            for i, livelihood_activity in enumerate(livelihood_activities_for_strategy):
+                                livelihood_activity["livelihood_strategy"] = [
+                                    metadata["code"],
+                                    metadata["reference_year_end_date"].date().isoformat(),
+                                    livelihood_strategy["strategy_type"],
+                                    livelihood_strategy["season_number"]
+                                    if livelihood_strategy["season_number"]
+                                    else "",
+                                    livelihood_strategy["product"] if livelihood_strategy["product"] else "",
+                                    livelihood_strategy["additional_identifier"],
+                                ]
+                                livelihood_activity["wealth_group"] = wealth_groups[i]
+
+                            livelihood_activities += livelihood_activities_for_strategy
+                        # and then initialize the new livelihood strategy from the attributes
+                        livelihood_strategy = attributes
+                        # Inherit the livelihood strategy from the current group
+                        livelihood_strategy["strategy_type"] = strategy_type
+                        # Set the natural key to the livelihood zone baseline
+                        livelihood_strategy["livelihood_zone_baseline"] = [
+                            metadata["code"],
+                            metadata["reference_year_end_date"].date().isoformat(),
+                        ]
+                        # Save the row for this Activity, to aid trouble-shooting
+                        livelihood_strategy["row"] = row
+                        # Iniitialize the list of livelihood activities for this strategy
+                        livelihood_activities_for_strategy = []
+                    # When we get the values for the LivelihoodActivity records, we just want the actual attribute
+                    # that the values in the row are for
+                    attribute = attributes["attribute"]
+                # Create the LivelihoodActivity records
+                if any(value for value in data_df.iloc[row, 1:end_col]):
+                    # Default the list of livelihood activities for this strategy if necessary
+                    if not livelihood_activities_for_strategy:
+                        livelihood_activities_for_strategy = []
+                        for i, value in enumerate(data_df.iloc[row, 1:end_col]):
+                            livelihood_activity = {attribute: value}
+                            # Save the column and row, to aid trouble-shooting
+                            # We need col_index + 1 to get the letter, and the enumerate is already starting from col B
+                            livelihood_activity["column"] = get_column_letter(i + 2)
+                            livelihood_activity["row"] = row
+
+                            livelihood_activities_for_strategy.append(livelihood_activity)
+                    else:
+                        for i, livelihood_activity in enumerate(livelihood_activities_for_strategy):
+                            livelihood_activity[attribute] = data_df.iloc[row, i + 1]
+
+        result = {
+            "LivelihoodStrategy": livelihood_strategies,
+            "LivelihoodActivity": livelihood_activities,
+        }
+        return result
+
+    @staticmethod
+    def get_strategy_type(value: str) -> str | None:
+        """
+        Return the strategy_type for a header row within Column A of the 'Data' worksheet in a BSS.
+
+        Note that this doesn't process the LivestockProduction header, because that needs
+        to be split into MilkProduction, ButterProduction, MeatProduction and LivestockSales
+        based on the actual values in the actual rows that make up the LivelihoodStrategy
+        """
+        value = value.strip(":").strip().lower()
+        strategy_type_map = {
+            "crop production": "CropProduction",
+            "food purchase": "FoodPurchase",
+            "payment in kind": "PaymentInKind",
+            "relief, gifts and other": "ReliefGiftsOther",
+            "fishing -- see worksheet data 3": "Fishing",
+            "wild foods -- see worksheet data 3": "WildFoodGathering",
+            "other cash income": "OtherCashIncome",
+            "other purchase": "OtherPurchase",
+        }
+        return strategy_type_map.get(value, None)
+
+    def get_livelihood_strategy_regexes() -> list:
+        """
+        Return a list of regex strings that identify the start of a Livelihood Strategy or other important metadata.
+
+        Each entry in the list is a tuple of the compiled regex, the strategy_type and a True/False value
+        that indicates whether the regex marks the start of a new Livelihood Activity.
+        """
+        # Create regex patterns for metadata attributes
+        label_pattern = "[a-z][a-z',/ \>\-\(\)]+?"
+        attribute_pattern = r"(?P<attribute>[a-z \.\(\)]+)"
+        product_pattern = rf"(?P<product>{label_pattern})"
+        season_number_pattern = r"(?P<season_number>[0-9])"
+        additional_identifier_pattern = r"(?P<additional_identifier>rainfed|irrigated)"
+        unit_of_measure_pattern = r"(?P<unit_of_measure>[a-z]+)"
+
+        # Build the list of regexes, strategy types and start flags
+        livelihood_strategy_regexes = [
+            # Camels' milk
+            (rf"(?P<product>{label_pattern} milk)", "MilkProduction", True),
+            # season 1: lactation period (days)
+            # season 2: no. milking animals
+            (rf"season (?P<season_number>1): {attribute_pattern}", "MilkProduction", False),
+            # Season 2 has to be a new Livelihood Strategy, so start=True
+            (rf"season (?P<season_number>2): {attribute_pattern}", "MilkProduction", True),
+            # ghee/butter production (kg)
+            (r"ghee/butter (?P<attribute>production) \((?P<unit_of_measure>kg)\)", "ButterProduction", True),
+            # ghee/butter sales: kg sold
+            (r"ghee/butter (?P<attribute>sales): (?P<unit_of_measure>kg) sold", "ButterProduction", True),
+            # milk+ghee/butter kcals (%) - 2nd season
+            (
+                rf"milk\+ghee/butter (?P<attribute>kcals \(%\)) - {season_number_pattern}(?:st|nd|rd) season",
+                "ButterProduction",
+                True,
+            ),
+            # Cow meat: no. animals slaughtered
+            (rf"{product_pattern} meat: no. animals slaughtered", "MeatProduction", True),
+            # Pig sales - local: no. sold
+            (
+                rf"{product_pattern} sales - {additional_identifier_pattern}: (?P<attribute>no. sold)",
+                "LivestockSale",
+                True,
+            ),
+            # Vente de moutons - locale: nb  venduss
+            (
+                rf"vente de {product_pattern} - {additional_identifier_pattern}: (?P<attribute>nb  venduss)",
+                "LivestockSale",
+                True,
+            ),
+            # Vente de poules: nb  venduses
+            (rf"vente de {product_pattern}: (?P<attribute>nb  venduses)", "LivestockSale", True),
+            # Green maize sold: quantity
+            # This is actually a crop production string, but we need to include it here so that it can be
+            # matched before the more generic "<product>: quantity" that is a LivestockSale (e.g. for eggs)
+            (rf"(?P<product>green {label_pattern}):? (?P<attribute>quantity)", "CropProduction", True),
+            # Other (Eggs): quantity
+            # Other Eggs: quantity
+            # Other (Eggs) quantity
+            # Other Eggs quantity
+            (rf"other \(?{product_pattern}\)?:? (?P<attribute>quantity)", "LivestockSale", True),
+            # Other: quantity
+            # Eggs: quantity
+            # Eggs quantity
+            (rf"{product_pattern}:? (?P<attribute>quantity)", "LivestockSale", True),
+            # Crop Production
+            (
+                rf"{product_pattern} {additional_identifier_pattern}: {unit_of_measure_pattern} produced",
+                "CropProduction",
+                True,
+            ),
+            (rf"{product_pattern}: {unit_of_measure_pattern} produced", "CropProduction", True),
+            (rf"{product_pattern} - {additional_identifier_pattern}: no of months", "CropProduction", True),
+            (rf"{product_pattern}: no. local meas", "CropProduction", True),
+            (rf"{product_pattern}: no. local measure", "CropProduction", True),
+            (rf"other crop: \(?{product_pattern}\)?", "CropProduction", True),
+            (rf"other cash crop: \(?{product_pattern}\)?", "CropProduction", True),
+            (rf"{product_pattern}: ([a-z]+) sold", "CropProduction", True),
+            (rf"{product_pattern}: ([a-z]+) sold: quantity", "CropProduction", True),
+            # Food Purchase
+            (rf"{product_pattern}: name of meas\.", "FoodPurchase", True),
+            (rf"{product_pattern} purchase: {unit_of_measure_pattern}", "FoodPurchase", True),
+            (rf"{product_pattern} purchase: quantity \({unit_of_measure_pattern}\)", "FoodPurchase", True),
+            # Other Purchase
+            (rf"other purchase: {product_pattern}", "OtherPurchase", True),
+            (rf"other purchase: {additional_identifier_pattern}", "OtherPurchase", True),
+            # Payment in Kind
+            # Some rows in column A are duplicated for both the PaymentInKind
+            # and OtherCashIncome strategy types, and so in those cases
+            # get_activity_attributes doesn't return a strategy_type, and
+            # instead we rely on the strategy_type detected from the section
+            # header in column A, e.g. "PAYMENT IN KIND"
+            (rf"labour: {additional_identifier_pattern}", None, True),
+            # Relief, Gifts and Other
+            (
+                r"(?P<additional_identifier>school feeding \(cooked\)): no ?\. children",
+                "ReliefGiftOther",
+                True,
+            ),
+            (rf"other food: {additional_identifier_pattern}", "ReliefGiftOther", True),
+            (
+                rf"relief - {additional_identifier_pattern}: quantity \({unit_of_measure_pattern}\)?",
+                "ReliefGiftOther",
+                True,
+            ),
+            (rf"safety nets: {attribute_pattern}", "ReliefGiftOther", True),
+            (rf"gifts: {additional_identifier_pattern}", "ReliefGiftOther", True),
+            # Other Cash  Income
+            (rf"(?P<additional_identifier>construction cash income \({label_pattern}\))", "OtherCashIncome", True),
+            (
+                rf"(?P<additional_identifier>self-employment \({label_pattern}\))",
+                "OtherCashIncome",
+                True,
+            ),
+            ("(?P<additional_identifier>remittances): (?P<attribute>no. times per year)", "OtherCashIncome", True),
+        ]
+
+        # Compile the regexes
+        livelihood_strategy_regexes = [
+            (re.compile(pattern), strategy_type, start)
+            for pattern, strategy_type, start in livelihood_strategy_regexes
+        ]
+
+        return livelihood_strategy_regexes
+
+    @classmethod
+    def get_activity_attributes(cls, column_a_value: str) -> dict | None:
+        """
+        Return the attributes for a new LivelihoodActivity.
+
+        Check a string from Column A of a Data worksheet to see if it marks the
+        start of a new Livelihood Activity, and return a dict containing the
+        matched attributes, including the strategy_type, and the product if
+        applicable.
+
+        If the string doesn't mark the start of a new LivelihoodActivity
+        or contain any additional metadata, then return None.
+        """
+        attributes = {
+            "strategy_type": None,
+            "start": None,
+            "attribute": None,
+            "additional_identifier": None,
+            "product": None,
+            "unit_of_measure": None,
+            "season_number": None,
+        }
+        for pattern, strategy_type, start in cls.get_livelihood_strategy_regexes():
+            match = pattern.fullmatch(str(column_a_value).lower().strip())
+            if match:
+                attributes.update(match.groupdict())
+                attributes["strategy_type"] = strategy_type
+                attributes["start"] = start
+                # Save the actual text to aid trouble-shooting
+                attributes["text"] = str(column_a_value)
+                # Cast the pattern to a string, so that it can be serialized
+                attributes["pattern"] = str(pattern)
+                return attributes
+        # No pattern matched
+        return None
+
+    @staticmethod
+    def get_product(str) -> str:
+        """
+        Return the CPC code for a product name or alias.
+
+        Uses the ClassifiedProductLookup, but caches the result because this
+        gets called for a single
+        """
+        # Lookup the CPC code
+
+    @staticmethod
+    def apply_strategy_lookups(livelihood_strategies: list[dict]) -> list[dict]:
+        """
+        Process the list of dicts containing LivelihoodStrategy records and return them with correct metadata codes.
+        """
+        df = pd.DataFrame.from_records(livelihood_strategies)
+
+        # Lookup the CPC code
+        df = ClassifiedProductLookup().do_lookup(df, "product", "product")
+
+        # Lookup the Unit of Measure
+        df = UnitOfMeasureLookup().do_lookup(df, "unit_of_measure", "unit_of_measure")
+
+        livelihood_strategies = df.to_records("records")
+        return livelihood_strategies
+
+    @staticmethod
+    def apply_activity_lookups(livelihood_activities: list[dict]) -> list[dict]:
+        """
+        Process the list of dicts containing LivelihoodActivity records and return them with correct metadata codes.
+        """
+        df = pd.DataFrame.from_records(livelihood_activities)
+
+        livelihood_activities = df.to_records("records")
+        return livelihood_activities
+
+
+@requires(normalize_wb=NormalizeWB, normalize_data=NormalizeData)
 class NormalizeBaseline(luigi.Task):
     """
     Normalize a Baseline read from a BSS into a standard format.
@@ -770,16 +1253,20 @@ class ValidateBaseline(luigi.Task):
                 df = pd.DataFrame.from_records(instances)
 
                 for field in model._meta.get_fields():
-                    # Only validate foreign keys to model that aren't in the baseline app.
+                    # Only validate mandatory foreign keys to models that aren't in the baseline app.
                     # The data can contain natural key references to parent models within
                     # baseline, and the fixture will load the parent and the child in the
                     # same transaction in ImportBaseline below.
-                    if isinstance(field, ForeignKey) and field.related_model._meta.app_label != "baseline":
+                    if (
+                        not field.null
+                        and isinstance(field, ForeignKey)
+                        and field.related_model._meta.app_label != "baseline"
+                    ):
                         column = field.name
                         if df[column].isnull().values.any():
                             unmatched_metadata = get_unmatched_metadata(df, column)
                             for value in unmatched_metadata:
-                                error = f"Unmatched remote metadata for {model_name} with {column} '{value}'"
+                                error = f"Unmatched imported metadata for {model_name} with {column} '{value}'"
                                 errors.append(error)
 
         if errors:
