@@ -559,6 +559,9 @@ class WealthGroupCharacteristicValue(common_models.Model):
     but a Characteristic Value for a Community Wealth Group could be either from a
     Community Interview (Form 3) or a Wealth Group Interview (Form 4) with members
     of that specific Wealth Group.
+
+    A Wealth Group Characteristic Value may have a Product and/or a Unit of Measure. For example, Wealth
+    Characteristics related to the numbers or livestock owned will have a Product indicating the type of livestock.
     """
 
     # Note that the current model doesn't support data collected from a Wealth Group (Form 4) interview about a
@@ -731,7 +734,7 @@ class LivelihoodStrategyManager(common_models.IdentifierManager):
         code: str,
         reference_year_end_date: str,
         strategy_type: str,
-        season_name: str,
+        season: str,
         product: str = "",
         additional_identifier: str = "",
     ):
@@ -741,13 +744,13 @@ class LivelihoodStrategyManager(common_models.IdentifierManager):
             "strategy_type": strategy_type,
             "additional_identifier": additional_identifier,
         }
-        if season_name:
-            criteria["season__name"] = season_name
+        if season:
+            criteria["season__name"] = season
             criteria["season__country"] = F("livelihood_zone_baseline__livelihood_zone__country")
         else:
             criteria["season__isnull"] = True
         if product:
-            criteria["product__cpcv2"] = product
+            criteria["product__cpc"] = product
         else:
             criteria["product__isnull"] = True
 
@@ -820,6 +823,28 @@ class LivelihoodStrategy(common_models.Model):
 
     objects = LivelihoodStrategyManager()
 
+    def clean(self):
+        """
+        Validate that product and season are not null for Livelihood Strategies that require them.
+        """
+        if (
+            self.strategy_type
+            in ["MilkProduction", "ButterProduction", "MeatProduction", "LivestockSale", "CropProduction"]
+            and not self.product
+        ):
+            raise ValidationError(_("A %s Livelihood Strategy must have a Product" % self.strategy_type))
+        if self.strategy_type in ["MilkProduction", "ButterProduction"] and not self.season:
+            raise ValidationError(_("A %s Livelihood Strategy must have a Season" % self.strategy_type))
+        super().clean()
+
+    def save(self, *args, **kwargs):
+        # No need to enforce foreign keys or uniqueness because database constraints will do it anyway
+        self.full_clean(
+            exclude=[field.name for field in self._meta.fields if isinstance(field, models.ForeignKey)],
+            validate_unique=False,
+        )
+        super().save(*args, **kwargs)
+
     def natural_key(self):
         return (
             self.livelihood_zone_baseline.livelihood_zone_id,
@@ -853,6 +878,42 @@ class LivelihoodStrategy(common_models.Model):
                 name="baseline_livelihoodstrategy_id_season_uniq",
             ),
         ]
+
+
+class LivelihoodActivityManager(common_models.IdentifierManager):
+    def get_by_natural_key(
+        self,
+        code: str,
+        reference_year_end_date: str,
+        wealth_group_category: str,
+        strategy_type: str,
+        season: str = "",
+        product: str = "",
+        additional_identifier: str = "",
+        full_name: str = "",
+    ):
+        criteria = {
+            "livelihood_zone_baseline__livelihood_zone__code": code,
+            "livelihood_zone_baseline__reference_year_end_date": reference_year_end_date,
+            "wealth_group__wealth_group_category__code": wealth_group_category,
+            "strategy_type": strategy_type,
+            "additional_identifier": additional_identifier,
+        }
+        if season:
+            criteria["season__name"] = season
+            criteria["season__country"] = F("livelihood_zone_baseline__livelihood_zone__country")
+        else:
+            criteria["season__isnull"] = True
+        if product:
+            criteria["product__cpc"] = product
+        else:
+            criteria["product__isnull"] = True
+        if full_name:
+            criteria["wealth_group__community__full_name"] = full_name
+        else:
+            criteria["wealth_group__community__isnull"] = True
+
+        return self.get(**criteria)
 
 
 class LivelihoodActivity(common_models.Model):
@@ -1063,6 +1124,18 @@ class LivelihoodActivity(common_models.Model):
             validate_unique=False,
         )
         super().save(*args, **kwargs)
+
+    def natural_key(self):
+        return (
+            self.livelihood_zone_baseline.livelihood_zone_id,
+            self.livelihood_zone_baseline.reference_year_end_date.isoformat(),
+            self.strategy_type,
+            self.season.name if self.season else "",
+            self.product_id if self.product_id else "",
+            self.additional_identifier,
+            self.wealth_group.wealth_group_category.code,
+            self.wealth_group.community.full_name if self.wealth_group.community else "",
+        )
 
     class Meta:
         verbose_name = _("Livelihood Activity")
