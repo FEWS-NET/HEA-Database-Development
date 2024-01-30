@@ -16,7 +16,7 @@ class FormattedCSVRenderer(BaseRenderer):
     charset = "utf-8-sig"
 
     # Override the following fields in subclasses
-    filename = "fdwdata.csv"
+    filename = "headata.csv"
 
     def prepare_data(self, data, accepted_media_type=None, renderer_context=None):
         """
@@ -26,10 +26,12 @@ class FormattedCSVRenderer(BaseRenderer):
         return data
 
     def render(self, data, accepted_media_type=None, renderer_context=None):
+        data = self.prepare_data(data, accepted_media_type, renderer_context)
+        data = data if isinstance(data, (list, tuple)) else [data]
         csv_buffer = TextIOWrapper(BytesIO(), encoding=self.charset)
         writer = csv.writer(csv_buffer)
         first_row = True
-        for row in self.prepare_data(data, accepted_media_type, renderer_context):
+        for row in data:
             if first_row:
                 writer.writerow(row.keys())
                 first_row = False
@@ -69,6 +71,7 @@ class HtmlTableRenderer(BaseRenderer):
             "</head><body>"
         )
         data = self.prepare_data(data, accepted_media_type, renderer_context)
+        data = data if isinstance(data, (list, tuple)) else [data]
         if data and len(data) > 0:
             html += '<div class="row"><div class="span-12"><table class="table table-bordered"><tbody>\n'
         first_row = True
