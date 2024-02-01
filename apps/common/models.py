@@ -6,8 +6,10 @@ import datetime
 import inspect
 import logging
 import operator
+import re
 from functools import reduce
 
+import pandas as pd
 from django.core import validators
 from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
@@ -1004,3 +1006,39 @@ class CountryClassifiedProductAliases(Model):
                 fields=["country", "product"], name="common_countryclassified_country_code_product_code_uniq"
             )
         ]
+
+
+# These would go into a dedicated app
+
+
+class SpreadsheetPointOfInterest(Model):
+    name = NameField(max_length=200, unique=True, on_delete=models.RESTRICT)
+
+    # Or we could address every field in every instance - I like this as the import becomes completely generic
+    # Just iterate over the instances and fields and ref.get()
+    # Roger's existing code probably identifies most of these already
+    model = models.CharField(max_length=100, blank=True, null=True)
+    field = models.CharField(max_length=100, blank=True, null=True)
+
+
+class SpreadsheetReference(Model):
+    bss = models.ForeignKey("baseline.LivelihoodZoneBaseline", on_delete=models.DO_NOTHING)
+    spreadsheet_point_of_interest = models.ForeignKey(SpreadsheetPointOfInterest, on_delete=models.DO_NOTHING)
+    sequence = models.PositiveIntegerField()  # possibly not useful
+    reference = models.CharField(max_length=800)
+    regex = models.CharField(max_length=800)  # only applicable if reference is a single cell
+
+    # if using exhaustive approach of addressing every field
+    instance_number = models.PositiveIntegerField()
+
+    def get(self):
+        ss = pd.read_excel(self.bss.bss)
+        val = ss[self.reference]
+        if self.regex:
+            val = re.findall(self.regex, val)
+        return val
+
+    def below(self, i):
+        # return a reference i rows below self.reference (currently assumes row index is 2 chars which obv needs fixing)
+        # but this is an example of locating this functionality somewhere intuitive
+        return self.reference[:-2] + str(self.reference[-2:] + i)
