@@ -379,3 +379,47 @@ class ActivityLabel(common_models.Model):
     class Meta:
         verbose_name = _("Activity Label")
         verbose_name_plural = _("Activity Labels")
+
+
+class WealthCharacteristicLabel(common_models.Model):
+    """
+    A label from Column A of the 'WB' worksheet in a BSS and associated attributes.
+
+    Used by the ingestion pipeline for WealthCharacteristicValue to determine the attributes for a given row in a BSS.
+    """
+
+    wealth_characteristic_label = common_models.NameField(unique=True, verbose_name=_("Wealth Characteristic Label"))
+    wealth_characteristic = models.ForeignKey(
+        WealthCharacteristic,
+        db_column="wealth_characteristic_code",
+        null=True,
+        blank=True,
+        on_delete=models.RESTRICT,
+        related_name="wealth_characteristics",
+        verbose_name=_("Wealth Characteristic"),
+    )
+    product = models.ForeignKey(
+        ClassifiedProduct,
+        db_column="product_code",
+        null=True,
+        blank=True,
+        on_delete=models.RESTRICT,
+        related_name="wealth_characteristics",
+        verbose_name=_("Product"),
+    )
+    unit_of_measure = models.ForeignKey(
+        UnitOfMeasure,
+        db_column="unit_code",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        verbose_name=_("Unit of Measure"),
+        related_name="wealth_characteristics",
+    )
+
+    class ExtraMeta:
+        identifier = ["wealth_characteristic_label"]
+
+    class Meta:
+        verbose_name = _("Wealth Characteristic")
+        verbose_name_plural = _("Wealth Characteristics")

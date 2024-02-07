@@ -21,6 +21,7 @@ from .assets.wealth_characteristic import (
     wealth_characteristic_dataframe,
     wealth_characteristic_label_dataframe,
 )
+from .jobs.metadata import update_metadata
 from .resources import (
     DataFrameCSVIOManager,
     GoogleClientResource,
@@ -48,6 +49,7 @@ defs = Definitions(
         wealth_characteristic_label_dataframe,
         all_wealth_characteristic_labels_dataframe,
     ],
+    jobs=[update_metadata],
     resources={
         "google_client": GoogleClientResource(credentials_json=EnvVar("GOOGLE_APPLICATION_CREDENTIALS")),
         "io_manager": PickleIOManager(),  # Used by default

@@ -1,6 +1,33 @@
+import importlib
 from collections.abc import Iterable
 
 import pandas as pd
+
+
+def name_from_class(obj):
+    """
+    Get the fully qualified dot-notation string name for an object or class
+    """
+    if not hasattr(obj, "__qualname__") or not hasattr(obj, "__module__"):
+        # o is not a class, so we need to get the class from the object
+        obj = obj.__class__
+    module = "" if obj.__module__ in (None, str.__module__) else obj.__module__ + "."
+    return module + obj.__qualname__
+
+
+def class_from_name(full_name):
+    """
+    Load a class from a dot-notation string name
+    """
+    try:
+        module_name, class_name = full_name.rsplit(".", 1)
+    except ValueError as e:
+        raise ValueError(f"Can't extract separate module and class names from '{full_name}'") from e
+    # load the module, will raise ImportError if module cannot be loaded
+    m = importlib.import_module(module_name)
+    # get the class, will raise AttributeError if class cannot be found
+    c = getattr(m, class_name)
+    return c
 
 
 def get_index(search_text: str | list[str], data: pd.Series, offset: int = 0):
