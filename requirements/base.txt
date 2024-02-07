@@ -1,4 +1,5 @@
 # Do not pip freeze into this file. Add only the packages you need so pip can align dependencies.
+dagster==1.6.1
 ddtrace==1.14.0
 Django==4.2.7
 git+https://github.com/kimetrica/django-binary-database-files.git@1.0.17#egg
@@ -12,6 +13,7 @@ djangorestframework==3.14.0
 djangorestframework-xml==2.0.0
 docutils
 factory-boy==3.2.1
+gspread==6.0.0
 gunicorn==20.1.0
 html5lib==1.1
 json-logging-py==0.2
@@ -19,7 +21,7 @@ jupyterlab==4.0.5
 git+https://gitlab.com/kimetrica/kimetrica-public-projects/kiluigi.git@913f44b528fe289a6ff1135895d7be229c4a0109#egg
 lxml==4.9.3
 # Make sure that same version of numpy is specified here and in docker/app/Dockerfile
-numpy==1.23.5
+numpy==1.26.2
 openpyxl==3.1.2
 pandas==2.0.3
 # Upgrade to psycopg>=3 once ddtrace supports it.

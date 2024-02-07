@@ -7,7 +7,7 @@ from django.utils.translation import pgettext_lazy
 
 import common.models as common_models
 from common.fields import TranslatedField
-from common.models import Country
+from common.models import ClassifiedProduct, Country, UnitOfMeasure
 
 logger = logging.getLogger(__name__)
 
@@ -328,3 +328,54 @@ class Season(common_models.Model):
     class Meta:
         verbose_name = _("Season")
         verbose_name_plural = _("Seasons")
+
+
+class ActivityLabel(common_models.Model):
+    """
+    A label from Column A of the 'Data' worksheet in a BSS and associated attributes.
+
+    Used by the data ingestion pipeline for LivelihoodStrategy and LivelihoodActivity to determine the attributes for
+    the LivelihoodStrategy and/or LivelihoodActivity for a given row in a BSS.
+    """
+
+    activity_label = common_models.NameField(unique=True, verbose_name=_("Activity Label"))
+    is_start = models.BooleanField(
+        default=False,
+        verbose_name=_("Is Start?"),
+        help_text=_("Indicates whether this Activity Label marks the start of a new Livelihood Strategy"),
+    )
+    strategy_type = models.CharField(
+        max_length=30,
+        blank=True,
+        choices=LivelihoodStrategyType.choices,
+        verbose_name=_("Strategy Type"),
+        help_text=_("The type of livelihood strategy, such as crop production, or wild food gathering."),
+    )
+    product = models.ForeignKey(
+        ClassifiedProduct,
+        db_column="product_code",
+        null=True,
+        blank=True,
+        on_delete=models.RESTRICT,
+        related_name="activity_labels",
+        verbose_name=_("Product"),
+    )
+    unit_of_measure = models.ForeignKey(
+        UnitOfMeasure,
+        db_column="unit_code",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        verbose_name=_("Unit of Measure"),
+        related_name="activity_labels",
+    )
+    season = models.CharField(max_length=60, blank=True, verbose_name=_("Season"))
+    additional_identifier = models.CharField(max_length=60, blank=True, verbose_name=_("Season"))
+    attribute = models.CharField(max_length=60, blank=True, verbose_name=_("Attribute"))
+
+    class ExtraMeta:
+        identifier = ["activity_label"]
+
+    class Meta:
+        verbose_name = _("Activity Label")
+        verbose_name_plural = _("Activity Labels")
