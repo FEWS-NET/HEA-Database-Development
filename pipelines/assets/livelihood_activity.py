@@ -214,7 +214,7 @@ def livelihood_activity_fixture(
     # Find the metadata for this BSS
     partition_key = context.asset_partition_key_for_output()
     try:
-        metadata = completed_bss_metadata[completed_bss_metadata["bss_path"] == partition_key].iloc[0]
+        metadata = completed_bss_metadata[completed_bss_metadata["bss_path"].str.startswith(partition_key)].iloc[0]
     except IndexError:
         raise ValueError("No complete entry in the BSS Metadata worksheet for %s" % partition_key)
     livelihoodzonebaseline = [metadata["code"], metadata["reference_year_end_date"]]
@@ -436,6 +436,6 @@ def livelihood_activity_fixture(
         metadata={
             "num_livelihood_strategies": len(livelihood_strategies),
             "num_livelihood_activities": len(livelihood_activities),
-            "preview": MetadataValue.md(f"```\n{json.dumps(result, indent=4)}\n```"),
+            "preview": MetadataValue.md(f"```json\n{json.dumps(result, indent=4)}\n```"),
         },
     )

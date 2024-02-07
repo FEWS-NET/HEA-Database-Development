@@ -108,6 +108,7 @@ def corrected_files(context: AssetExecutionContext, config: BSSMetadataConfig, b
     for extension in [".xls", ".xlsx"]:
         if file_path.with_suffix(extension).exists():
             file_path = file_path.with_suffix(extension)
+            break
 
     def validate_previous_value(cell, expected_prev_value, prev_value):
         """
@@ -124,7 +125,7 @@ def corrected_files(context: AssetExecutionContext, config: BSSMetadataConfig, b
             )
 
     # Find the corrections for this BSS
-    corrections_df = bss_corrections[bss_corrections["bss_path"] == partition_key]
+    corrections_df = bss_corrections[bss_corrections["bss_path"] == file_path]
 
     # Prepare the metadata for the output
     output_metadata = {"bss_path": file_path, "num_corrections": len(corrections_df)}
@@ -172,7 +173,7 @@ def corrected_files(context: AssetExecutionContext, config: BSSMetadataConfig, b
         return Output(buffer, metadata=output_metadata)
 
 
-@asset(partitions_def=bss_files_partitions_def)
+@asset(partitions_def=bss_files_partitions_def, io_manager_key="json_io_manager")
 def baseline_fixture(
     context: AssetExecutionContext, config: BSSMetadataConfig, completed_bss_metadata, corrected_files
 ) -> Output[dict]:
@@ -196,7 +197,7 @@ def baseline_fixture(
 
     # Find the metadata for this BSS
     try:
-        metadata = completed_bss_metadata[completed_bss_metadata["bss_path"] == partition_key].iloc[0]
+        metadata = completed_bss_metadata[completed_bss_metadata["bss_path"].str.startswith(partition_key)].iloc[0]
     except IndexError:
         raise ValueError("No complete entry in the BSS Metadata worksheet for %s" % partition_key)
 
@@ -290,5 +291,8 @@ def baseline_fixture(
 
     return Output(
         result,
-        metadata={"num_communities": len(community_df), "preview": json.dumps(result, indent=4)},
+        metadata={
+            "num_communities": len(community_df),
+            "preview": MetadataValue.md(f"```json\n{json.dumps(result, indent=4)}\n```"),
+        },
     )
