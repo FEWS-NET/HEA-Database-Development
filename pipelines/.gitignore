@@ -1,0 +1,2 @@
+# Ensure that Dagster Assets are not ignored
+!assets/
