@@ -1,7 +1,6 @@
 import json
 import os
 import warnings
-from collections import defaultdict
 
 import django
 import pandas as pd
@@ -296,19 +295,19 @@ def livelihood_activity_fixture(
             if not label:
                 # Ignore blank rows
                 continue
-            # Get the attributes, taking a copy so that we can pop() some of the attributes without altering the original
+            # Get the attributes, taking a copy so that we can pop() some attributes without altering the original
             attributes = label_map.get(label, {}).copy()
             if not any(attributes.values()):
                 # Ignore rows that don't contain any relevant data (or which aren't in the label_map)
                 continue
             # Headings like CROP PRODUCTION: set the strategy type for subsequent rows.
-            # Some other attributes imply specific strategy types, such as MilkProduction, MeatProduction or LivestockSales
+            # Some attributes imply specific strategy types, such as MilkProduction, MeatProduction or LivestockSales
             if attributes["strategy_type"]:
                 strategy_type = attributes.pop("strategy_type")
             if attributes.pop("is_start"):
                 # We are starting a new livelihood activity, so append the previous livelihood strategy
                 # to the list, provided that it has at least one Livelihood Activity
-                # First, add the natural keys for the livelihood strategy and the wealth group to the livelihood activities
+                # First, add the natural keys for the livelihood strategy and the wealth group to the activities
                 for i, livelihood_activity in enumerate(livelihood_activities_for_strategy):
                     livelihood_activity["livelihood_strategy"] = livelihoodzonebaseline + [
                         livelihood_strategy["strategy_type"],
@@ -317,9 +316,8 @@ def livelihood_activity_fixture(
                         livelihood_strategy["additional_identifier"],
                     ]
                     livelihood_activity["wealth_group"] = wealth_groups[i]
-                # Next, reduce the livelihood activities to those where there is some income, expediture or consumption.
-                # We do this because otherwise we want to ignore empty livelihood activities that only contain attributes
-                # for `type_of_milk_sold_or_other_uses`, for example.
+                # Next, reduce the activities to those where there is some income, expediture or consumption.
+                # This excludes empty activities that only contain attributes for, e.g. type_of_milk_sold_or_other_uses
                 non_empty_livelihood_actities = [
                     livelihood_activity
                     for livelihood_activity in livelihood_activities_for_strategy
@@ -418,8 +416,8 @@ def livelihood_activity_fixture(
 
                         livelihood_activities_for_strategy.append(livelihood_activity)
                     column = None
-                # Ignore duplicate attributes, which occurs when we don't recognize the activity label that indicates the
-                # start of the LivelihoodStrategy that follows the current LivelihoodStrategy.
+                # Ignore duplicate attributes, which occur when we don't recognize the activity label that indicates
+                # the start of the LivelihoodStrategy that follows the current LivelihoodStrategy.
                 elif attribute not in livelihood_activities_for_strategy[0]:
                     for i, value in enumerate(df.loc[row, "B":]):
                         # Save the column and row, to aid trouble-shooting

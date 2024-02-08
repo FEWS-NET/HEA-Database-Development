@@ -1,4 +1,5 @@
 import json
+import numbers
 from io import BytesIO
 from pathlib import Path
 
@@ -115,8 +116,9 @@ def corrected_files(context: AssetExecutionContext, config: BSSMetadataConfig, b
         Inline function to validate the existing value of a cell is the expected one, prior to correcting it.
         """
         # "#N/A" is inconsistently loaded as nan, even when copied and pasted in Excel or GSheets
-        prev_value = str(prev_value).replace("None", "").replace("nan", "#N/A").strip()
-        expected_prev_value = str(expected_prev_value)
+        if not isinstance(prev_value, numbers.Number):
+            prev_value = str(prev_value).replace("None", "").replace("nan", "#N/A").strip()
+            expected_prev_value = str(expected_prev_value)
         if expected_prev_value != prev_value:
             raise ValueError(
                 "Unexpected prior value in source BSS. "
@@ -125,7 +127,7 @@ def corrected_files(context: AssetExecutionContext, config: BSSMetadataConfig, b
             )
 
     # Find the corrections for this BSS
-    corrections_df = bss_corrections[bss_corrections["bss_path"] == file_path]
+    corrections_df = bss_corrections[bss_corrections["bss_path"] == partition_key + extension]
 
     # Prepare the metadata for the output
     output_metadata = {"bss_path": file_path, "num_corrections": len(corrections_df)}
