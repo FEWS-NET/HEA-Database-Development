@@ -19,6 +19,7 @@ from .assets.livelihood_activity import (
 from .assets.wealth_characteristic import (
     all_wealth_characteristic_labels_dataframe,
     wealth_characteristic_dataframe,
+    wealth_characteristic_fixture,
     wealth_characteristic_label_dataframe,
 )
 from .jobs.metadata import update_metadata
@@ -48,6 +49,7 @@ defs = Definitions(
         wealth_characteristic_dataframe,
         wealth_characteristic_label_dataframe,
         all_wealth_characteristic_labels_dataframe,
+        wealth_characteristic_fixture,
     ],
     jobs=[update_metadata],
     resources={

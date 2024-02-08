@@ -143,7 +143,8 @@ def corrected_files(context: AssetExecutionContext, config: BSSMetadataConfig, b
             wb = copy_xls(xlrd_wb)
         else:
             xlrd_wb = None  # Required to suppress spurious unbound variable errors from Pyright
-            wb = openpyxl.load_workbook(file_path)
+            # Need data_only=True to get the values of cells that contain formulas
+            wb = openpyxl.load_workbook(file_path, data_only=True)
         for correction in corrections_df.itertuples():
             for row in rows_from_range(correction.range):
                 for cell in row:
@@ -247,12 +248,12 @@ def baseline_fixture(
                 "reference_year_end_date": metadata["reference_year_end_date"],
                 "valid_from_date": metadata["valid_from_date"],
                 "valid_to_date": None if pd.isna(metadata["valid_to_date"]) else metadata["valid_to_date"],
-                "data_collection_start_date": None
-                if pd.isna(metadata["data_collection_start_date"])
-                else metadata["data_collection_start_date"],
-                "data_collection_end_date": None
-                if pd.isna(metadata["data_collection_end_date"])
-                else metadata["data_collection_end_date"],
+                "data_collection_start_date": (
+                    None if pd.isna(metadata["data_collection_start_date"]) else metadata["data_collection_start_date"]
+                ),
+                "data_collection_end_date": (
+                    None if pd.isna(metadata["data_collection_end_date"]) else metadata["data_collection_end_date"]
+                ),
                 "publication_date": None if pd.isna(metadata["publication_date"]) else metadata["publication_date"],
             }
         ],
