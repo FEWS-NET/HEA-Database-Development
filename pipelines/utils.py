@@ -52,3 +52,28 @@ def get_index(search_text: str | list[str], data: pd.Series, offset: int = 0):
     if offset:
         index = data.index[data.index.get_loc(index) + offset]
     return index
+
+
+def verbose_pivot(df: pd.DataFrame, values: str | list[str], index: str | list[str], columns: str | list[str]):
+    """
+    Pivot a DataFrame, or log a detailed exception in the event of a failure
+
+    Failures are typically caused by duplicate entries in the index.
+    """
+    # Make sure index and columns are lists so we can concatenate them in the error handler, if needed.
+    if isinstance(index, str):
+        index = [index]
+    if isinstance(columns, str):
+        columns = [columns]
+    try:
+        return pd.pivot(df, values=values, index=index, columns=columns).reset_index()
+    except ValueError as e:
+        # Need to fillna, otherwise the groupby returns an empty dataframe
+        duplicates = df.fillna("").groupby(index + columns).size().reset_index(name="count")
+
+        # Filter for the entries that appear more than once, i.e., duplicates
+        duplicates = duplicates[duplicates["count"] > 1]
+
+        error_df = pd.merge(df.fillna(""), duplicates[index + columns], on=index + columns)
+
+        raise ValueError(str(e) + "\n" + error_df.to_markdown()) from e

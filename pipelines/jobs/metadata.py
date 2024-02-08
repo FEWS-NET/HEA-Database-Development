@@ -78,6 +78,14 @@ def load_all_metadata(context: OpExecutionContext):
                         df["unit_of_measure_id"] = df["unit_of_measure_id"].replace("", None)
                         if "unit_of_measure" in field_names and "unit_of_measure_id" not in field_names:
                             field_names.append("unit_of_measure_id")
+                    if "currency_id" in df:
+                        df["currency_id"] = df["currency_id"].replace("", None)
+                        if "currency" in field_names and "currency_id" not in field_names:
+                            field_names.append("currency_id")
+                    if "wealth_characteristic_id" in df:
+                        df["wealth_characteristic_id"] = df["wealth_characteristic_id"].replace("", None)
+                        if "wealth_characteristic" in field_names and "wealth_characteristic_id" not in field_names:
+                            field_names.append("wealth_characteristic_id")
                     if "ordering" in df:
                         df["ordering"] = df["ordering"].replace("", None)
 

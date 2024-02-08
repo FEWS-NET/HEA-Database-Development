@@ -7,7 +7,7 @@ from django.utils.translation import pgettext_lazy
 
 import common.models as common_models
 from common.fields import TranslatedField
-from common.models import ClassifiedProduct, Country, UnitOfMeasure
+from common.models import ClassifiedProduct, Country, Currency, UnitOfMeasure
 
 logger = logging.getLogger(__name__)
 
@@ -369,6 +369,14 @@ class ActivityLabel(common_models.Model):
         verbose_name=_("Unit of Measure"),
         related_name="activity_labels",
     )
+    currency = models.ForeignKey(
+        Currency,
+        db_column="currency_code",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        verbose_name=_("Currency"),
+    )
     season = models.CharField(max_length=60, blank=True, verbose_name=_("Season"))
     additional_identifier = models.CharField(max_length=60, blank=True, verbose_name=_("Season"))
     attribute = models.CharField(max_length=60, blank=True, verbose_name=_("Attribute"))
@@ -392,8 +400,6 @@ class WealthCharacteristicLabel(common_models.Model):
     wealth_characteristic = models.ForeignKey(
         WealthCharacteristic,
         db_column="wealth_characteristic_code",
-        null=True,
-        blank=True,
         on_delete=models.RESTRICT,
         related_name="wealth_characteristics",
         verbose_name=_("Wealth Characteristic"),

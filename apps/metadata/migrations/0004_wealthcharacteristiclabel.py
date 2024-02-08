@@ -62,9 +62,7 @@ class Migration(migrations.Migration):
                 (
                     "wealth_characteristic",
                     models.ForeignKey(
-                        blank=True,
                         db_column="wealth_characteristic_code",
-                        null=True,
                         on_delete=django.db.models.deletion.RESTRICT,
                         related_name="wealth_characteristics",
                         to="metadata.wealthcharacteristic",

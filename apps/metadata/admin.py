@@ -4,12 +4,14 @@ from django.contrib.admin import RelatedFieldListFilter
 from common.fields import translation_fields
 
 from .models import (
+    ActivityLabel,
     HazardCategory,
     LivelihoodCategory,
     Market,
     Season,
     SeasonalActivityType,
     WealthCharacteristic,
+    WealthCharacteristicLabel,
     WealthGroupCategory,
 )
 
@@ -115,7 +117,6 @@ class SeasonAdmin(admin.ModelAdmin):
 
 
 class MarketAdmin(ReferenceDataAdmin):
-
     fields = (
         "code",
         *translation_fields("name"),
@@ -127,6 +128,61 @@ class MarketAdmin(ReferenceDataAdmin):
     list_filter = (("country", RelatedFieldListFilter),)
 
 
+class ActivityLabelAdmin(admin.ModelAdmin):
+    fields = (
+        "activity_label",
+        "is_start",
+        "strategy_type",
+        "product",
+        "unit_of_measure",
+        "currency",
+        "season",
+        "additional_identifier",
+        "attribute",
+    )
+    list_display = (
+        "activity_label",
+        "is_start",
+        "strategy_type",
+        "product",
+        "unit_of_measure",
+        "currency",
+        "season",
+        "additional_identifier",
+        "attribute",
+    )
+    search_fields = (
+        "activity_label",
+        "product__cpc",
+        *translation_fields("product__common_name"),
+        *translation_fields("product__description"),
+    )
+    list_filter = ("strategy_type",)
+
+
+class WealthCharacteristicLabelAdmin(admin.ModelAdmin):
+    fields = (
+        "wealth_characteristic_label",
+        "wealth_characteristic",
+        "product",
+        "unit_of_measure",
+    )
+    list_display = (
+        "wealth_characteristic_label",
+        "wealth_characteristic",
+        "product",
+        "unit_of_measure",
+    )
+    search_fields = (
+        "wealth_characteristic_label",
+        "wealth_characteristic__code",
+        *translation_fields("wealth_characteristic__name"),
+        *translation_fields("product__common_name"),
+        *translation_fields("product__description"),
+    )
+    list_filter = ("wealth_characteristic",)
+
+
 admin.site.register(LivelihoodCategory, LivelihoodCategoryAdmin)
 admin.site.register(WealthGroupCategory, WealthGroupCategoryAdmin)
 admin.site.register(SeasonalActivityType, SeasonalActivityTypeAdmin)
@@ -135,3 +191,5 @@ admin.site.register(Market, MarketAdmin)
 admin.site.register(WealthCharacteristic, WealthCharacteristicAdmin)
 admin.site.register(HazardCategory, HazardCategoryAdmin)
 admin.site.register(Season, SeasonAdmin)
+admin.site.register(ActivityLabel, ActivityLabelAdmin)
+admin.site.register(WealthCharacteristicLabel, WealthCharacteristicLabelAdmin)

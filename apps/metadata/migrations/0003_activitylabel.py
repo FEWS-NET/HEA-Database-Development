@@ -90,6 +90,17 @@ class Migration(migrations.Migration):
                         verbose_name="Unit of Measure",
                     ),
                 ),
+                (
+                    "currency",
+                    models.ForeignKey(
+                        blank=True,
+                        db_column="currency_code",
+                        null=True,
+                        on_delete=django.db.models.deletion.PROTECT,
+                        to="common.currency",
+                        verbose_name="Currency",
+                    ),
+                ),
             ],
             options={
                 "verbose_name": "Activity Label",

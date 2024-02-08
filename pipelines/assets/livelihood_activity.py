@@ -224,7 +224,7 @@ def livelihood_activity_fixture(
 
     # Prepare the lookups, so they cache the individual results
     wealthgroupcategorylookup = WealthGroupCategoryLookup()
-    activity_label_map = {
+    label_map = {
         instance.pop("activity_label").lower(): instance
         for instance in ActivityLabel.objects.values(
             "activity_label",
@@ -255,16 +255,18 @@ def livelihood_activity_fixture(
         )
 
     # Check that we recognize all of the activity labels
-    unrecognized_labels = defaultdict(list)
     allow_unrecognized_labels = True
-    for row in df.iloc[header_rows:].index:  # Ignore the Wealth Group header rows
-        activity_label = df.loc[row, "A"]
-        if activity_label.strip() and activity_label.strip().lower() not in activity_label_map:
-            unrecognized_labels[activity_label].append(str(row))
-    if unrecognized_labels:
-        message = "Unrecognized activity labels:\n" + "\n".join(
-            f'{activity_label} (rows {", ".join(rows)})' for activity_label, rows in unrecognized_labels.items()
-        )
+    unrecognized_labels = (
+        df.iloc[header_rows:][
+            ~df.iloc[header_rows:]["A"].str.lower().isin(label_map) & (df.iloc[header_rows:]["A"].str.strip() != "")
+        ]
+        .groupby("A")
+        .apply(lambda x: ", ".join(x.index.astype(str)))
+        .reset_index()
+    )
+    unrecognized_labels.columns = ["label", "rows"]
+    if not unrecognized_labels.empty:
+        message = "Unrecognized activity labels:\n\n" + unrecognized_labels.to_markdown()
         if allow_unrecognized_labels:
             warnings.warn(message)
         else:
@@ -288,135 +290,141 @@ def livelihood_activity_fixture(
     livelihood_activities = []
     livelihood_activities_for_strategy = []
     for row in df.iloc[header_rows:].index:  # Ignore the Wealth Group header rows
-        activity_label = df.loc[row, "A"].strip()
-        if not activity_label:
-            # Ignore blank rows
-            continue
-        # Get the attributes, taking a copy so that we can pop() some of the attributes without altering the original
-        attributes = activity_label_map.get(activity_label.lower(), {}).copy()
-        if not any(attributes.values()):
-            # Ignore rows that don't contain any relevant data (or which aren't in the activity_label_map)
-            continue
-        # Headings like CROP PRODUCTION: set the strategy type for subsequent rows.
-        # Some other attributes imply specific strategy types, such as MilkProduction, MeatProduction or LivestockSales
-        if attributes["strategy_type"]:
-            strategy_type = attributes.pop("strategy_type")
-        if attributes.pop("is_start"):
-            # We are starting a new livelihood activity, so append the previous livelihood strategy
-            # to the list, provided that it has at least one Livelihood Activity
-            # First, add the natural keys for the livelihood strategy and the wealth group to the livelihood activities
-            for i, livelihood_activity in enumerate(livelihood_activities_for_strategy):
-                livelihood_activity["livelihood_strategy"] = livelihoodzonebaseline + [
-                    livelihood_strategy["strategy_type"],
-                    livelihood_strategy["season"] if livelihood_strategy["season"] else "",
-                    livelihood_strategy["product_id"] if livelihood_strategy["product_id"] else "",
-                    livelihood_strategy["additional_identifier"],
-                ]
-                livelihood_activity["wealth_group"] = wealth_groups[i]
-            # Next, reduce the livelihood activities to those where there is some income, expediture or consumption.
-            # We do this because otherwise we want to ignore empty livelihood activities that only contain attributes
-            # for `type_of_milk_sold_or_other_uses`, for example.
-            non_empty_livelihood_actities = [
-                livelihood_activity
-                for livelihood_activity in livelihood_activities_for_strategy
-                if any(
-                    (field in livelihood_activity and livelihood_activity[field])
-                    for field in ["income", "expenditure", "kcals_consumed", "percentage_kcals"]
-                )
-            ]
-
-            if livelihood_strategy and non_empty_livelihood_actities:
-                livelihood_strategies.append(livelihood_strategy)
-                livelihood_activities += non_empty_livelihood_actities
-            # There are cases where attributes get copied to the new livelihood strategy,
-            # notably the product_id for MilkProduction for camels and cattle.
-            if (
-                strategy_type == "MilkProduction"
-                and livelihood_strategy
-                and livelihood_strategy["product_id"]
-                and not attributes["product_id"]
-                and attributes["season"] == "Season 2"
-            ):
-                attributes["product_id"] = livelihood_strategy["product_id"]
-            # And then initialize the new livelihood strategy from the attributes
-            livelihood_strategy = {
-                k: v
-                for k, v in attributes.items()
-                if k
-                in [
-                    "product_id",
-                    "unit_of_measure_id",
-                    "season",
-                    "additional_identifier",
-                ]
-            }
-            # Set the strategy type from the current group
-            livelihood_strategy["strategy_type"] = strategy_type
-            # Set the currency from metadata
-            livelihood_strategy["currency_id"] = metadata["currency"]
-            # Set the natural key to the livelihood zone baseline
-            livelihood_strategy["livelihood_zone_baseline"] = livelihoodzonebaseline
-            # Save the starting row for this Strategy, to aid trouble-shooting
-            livelihood_strategy["row"] = row
-            # There are cases where attributes get copied to the new livelihood activities,
-            # notably milking_animals for camels and cattle.
-            if (
-                strategy_type == "MilkProduction"
-                and livelihood_activities_for_strategy
-                and "milking_animals" in livelihood_activities_for_strategy[0]
-                and attributes["attribute"] != "milking_animals"
-            ):
-                livelihood_activities_for_strategy = [
-                    {
-                        "milking_animals": livelihood_activity["milking_animals"],
-                        "column": livelihood_activity["column"],
-                        "row": row,
-                    }
+        column = None
+        try:
+            label = df.loc[row, "A"].strip().lower()
+            if not label:
+                # Ignore blank rows
+                continue
+            # Get the attributes, taking a copy so that we can pop() some of the attributes without altering the original
+            attributes = label_map.get(label, {}).copy()
+            if not any(attributes.values()):
+                # Ignore rows that don't contain any relevant data (or which aren't in the label_map)
+                continue
+            # Headings like CROP PRODUCTION: set the strategy type for subsequent rows.
+            # Some other attributes imply specific strategy types, such as MilkProduction, MeatProduction or LivestockSales
+            if attributes["strategy_type"]:
+                strategy_type = attributes.pop("strategy_type")
+            if attributes.pop("is_start"):
+                # We are starting a new livelihood activity, so append the previous livelihood strategy
+                # to the list, provided that it has at least one Livelihood Activity
+                # First, add the natural keys for the livelihood strategy and the wealth group to the livelihood activities
+                for i, livelihood_activity in enumerate(livelihood_activities_for_strategy):
+                    livelihood_activity["livelihood_strategy"] = livelihoodzonebaseline + [
+                        livelihood_strategy["strategy_type"],
+                        livelihood_strategy["season"] if livelihood_strategy["season"] else "",
+                        livelihood_strategy["product_id"] if livelihood_strategy["product_id"] else "",
+                        livelihood_strategy["additional_identifier"],
+                    ]
+                    livelihood_activity["wealth_group"] = wealth_groups[i]
+                # Next, reduce the livelihood activities to those where there is some income, expediture or consumption.
+                # We do this because otherwise we want to ignore empty livelihood activities that only contain attributes
+                # for `type_of_milk_sold_or_other_uses`, for example.
+                non_empty_livelihood_actities = [
+                    livelihood_activity
                     for livelihood_activity in livelihood_activities_for_strategy
+                    if any(
+                        (field in livelihood_activity and livelihood_activity[field])
+                        for field in ["income", "expenditure", "kcals_consumed", "percentage_kcals"]
+                    )
                 ]
+
+                if livelihood_strategy and non_empty_livelihood_actities:
+                    livelihood_strategies.append(livelihood_strategy)
+                    livelihood_activities += non_empty_livelihood_actities
+                # There are cases where attributes get copied to the new livelihood strategy,
+                # notably the product_id for MilkProduction for camels and cattle.
+                if (
+                    strategy_type == "MilkProduction"
+                    and livelihood_strategy
+                    and livelihood_strategy["product_id"]
+                    and not attributes["product_id"]
+                    and attributes["season"] == "Season 2"
+                ):
+                    attributes["product_id"] = livelihood_strategy["product_id"]
+                # And then initialize the new livelihood strategy from the attributes
+                livelihood_strategy = {
+                    k: v
+                    for k, v in attributes.items()
+                    if k
+                    in [
+                        "product_id",
+                        "unit_of_measure_id",
+                        "season",
+                        "additional_identifier",
+                    ]
+                }
+                # Set the strategy type from the current group
+                livelihood_strategy["strategy_type"] = strategy_type
+                # Set the currency from metadata
+                livelihood_strategy["currency_id"] = metadata["currency"]
+                # Set the natural key to the livelihood zone baseline
+                livelihood_strategy["livelihood_zone_baseline"] = livelihoodzonebaseline
+                # Save the starting row for this Strategy, to aid trouble-shooting
+                livelihood_strategy["row"] = row
+                # There are cases where attributes get copied to the new livelihood activities,
+                # notably milking_animals for camels and cattle.
+                if (
+                    strategy_type == "MilkProduction"
+                    and livelihood_activities_for_strategy
+                    and "milking_animals" in livelihood_activities_for_strategy[0]
+                    and attributes["attribute"] != "milking_animals"
+                ):
+                    livelihood_activities_for_strategy = [
+                        {
+                            "milking_animals": livelihood_activity["milking_animals"],
+                            "column": livelihood_activity["column"],
+                            "row": row,
+                        }
+                        for livelihood_activity in livelihood_activities_for_strategy
+                    ]
+                else:
+                    # Initialize the list of livelihood activities for the new livelihood strategy
+                    livelihood_activities_for_strategy = []
             else:
-                # Initialize the list of livelihood activities for the new livelihood strategy
-                livelihood_activities_for_strategy = []
-        else:
-            # We are not starting a new Livelihood Strategy, but there may be
-            # additional attributes that need to be added to the current one.
-            if not livelihood_strategy:
-                raise ValueError(
-                    "Found additional attributes %s from row %s without an existing LivelihoodStrategy"
-                    % (attributes, row)
-                )
-            # Only update expected keys, and only if we found a value for that attribute.
-            for key, value in attributes.items():
-                if key in livelihood_strategy and value:
-                    if not livelihood_strategy[key]:
-                        livelihood_strategy[key] = value
-                    elif livelihood_strategy[key] != value:
-                        raise ValueError(
-                            "Found duplicate value %s from row %s for existing attribute %s with value %s"
-                            % (value, row, key, livelihood_strategy[key])
-                        )
+                # We are not starting a new Livelihood Strategy, but there may be
+                # additional attributes that need to be added to the current one.
+                if not livelihood_strategy:
+                    raise ValueError(
+                        "Found additional attributes %s from row %s without an existing LivelihoodStrategy"
+                        % (attributes, row)
+                    )
+                # Only update expected keys, and only if we found a value for that attribute.
+                for key, value in attributes.items():
+                    if key in livelihood_strategy and value:
+                        if not livelihood_strategy[key]:
+                            livelihood_strategy[key] = value
+                        elif livelihood_strategy[key] != value:
+                            raise ValueError(
+                                "Found duplicate value %s from row %s for existing attribute %s with value %s"
+                                % (value, row, key, livelihood_strategy[key])
+                            )
 
-        # When we get the values for the LivelihoodActivity records, we just want the actual attribute
-        # that the values in the row are for
-        attribute = attributes["attribute"]
-        # Create the LivelihoodActivity records
-        if any(value for value in df.loc[row, "B":]):
-            # Default the list of livelihood activities for this strategy if necessary
-            if not livelihood_activities_for_strategy:
-                livelihood_activities_for_strategy = []
-                for i, value in enumerate(df.loc[row, "B":]):
-                    livelihood_activity = {attribute: value}
-                    # Save the column and row, to aid trouble-shooting
-                    # We need col_index + 1 to get the letter, and the enumerate is already starting from col B
-                    livelihood_activity["column"] = get_column_letter(i + 2)
-                    livelihood_activity["row"] = row
+            # When we get the values for the LivelihoodActivity records, we just want the actual attribute
+            # that the values in the row are for
+            attribute = attributes["attribute"]
+            # Create the LivelihoodActivity records
+            if any(value for value in df.loc[row, "B":]):
+                # Default the list of livelihood activities for this strategy if necessary
+                if not livelihood_activities_for_strategy:
+                    livelihood_activities_for_strategy = []
+                    for i, value in enumerate(df.loc[row, "B":]):
+                        # Save the column and row, to aid trouble-shooting
+                        # We need col_index + 1 to get the letter, and the enumerate is already starting from col B
+                        column = get_column_letter(i + 2)
+                        livelihood_activity = {attribute: value}
+                        livelihood_activity["column"] = column
+                        livelihood_activity["row"] = row
 
-                    livelihood_activities_for_strategy.append(livelihood_activity)
-            # Ignore duplicate attributes, which occurs when we don't recognize the activity label that indicates the
-            # start of the LivelihoodStrategy that follows the current LivelihoodStrategy.
-            elif attribute not in livelihood_activities_for_strategy[0]:
-                for i, value in enumerate(df.loc[row, "B":]):
-                    try:
+                        livelihood_activities_for_strategy.append(livelihood_activity)
+                    column = None
+                # Ignore duplicate attributes, which occurs when we don't recognize the activity label that indicates the
+                # start of the LivelihoodStrategy that follows the current LivelihoodStrategy.
+                elif attribute not in livelihood_activities_for_strategy[0]:
+                    for i, value in enumerate(df.loc[row, "B":]):
+                        # Save the column and row, to aid trouble-shooting
+                        # We need col_index + 1 to get the letter, and the enumerate is already starting from col B
+                        column = get_column_letter(i + 2)
                         livelihood_activities_for_strategy[i][attribute] = value
                         # The BSS does not store the kcals_consumed for ButterProduction, only the percentage_kcals,
                         # so derive it by multiplying by:
@@ -425,17 +433,27 @@ def livelihood_activity_fixture(
                             livelihood_activities_for_strategy[i]["kcals_consumed"] = (
                                 value * 2100 * 365 * df.loc[40, df.columns[i + 1]] if value else ""
                             )
-                    except Exception:
-                        raise
+                    column = None
+        except Exception as e:
+            if column:
+                raise RuntimeError("Unhandled error processing cell %s%s" % (column, row)) from e
+            else:
+                raise RuntimeError("Unhandled error processing row %s" % row) from e
+
     result = {
         "LivelihoodStrategy": livelihood_strategies,
         "LivelihoodActivity": livelihood_activities,
     }
+    metadata = {
+        "num_livelihood_strategies": len(livelihood_strategies),
+        "num_livelihood_activities": len(livelihood_activities),
+        "num_unrecognized_labels": len(unrecognized_labels),
+        "preview": MetadataValue.md(f"```json\n{json.dumps(result, indent=4)}\n```"),
+    }
+    if not unrecognized_labels.empty:
+        metadata["unrecognized_labels"] = MetadataValue.md(unrecognized_labels.to_markdown())
+
     return Output(
         result,
-        metadata={
-            "num_livelihood_strategies": len(livelihood_strategies),
-            "num_livelihood_activities": len(livelihood_activities),
-            "preview": MetadataValue.md(f"```json\n{json.dumps(result, indent=4)}\n```"),
-        },
+        metadata=metadata,
     )
