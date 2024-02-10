@@ -96,6 +96,7 @@ class SeasonAdmin(admin.ModelAdmin):
         "end",
         "alignment",
         "order",
+        "aliases",
     )
     list_display = (
         "country",
@@ -103,6 +104,7 @@ class SeasonAdmin(admin.ModelAdmin):
         "season_type",
         "start",
         "end",
+        "aliases",
     )
     search_fields = (
         "country__iso_en_ro_name",
