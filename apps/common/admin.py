@@ -49,7 +49,7 @@ class ClassifiedProductAdmin(TreeAdmin):
         "_position",
         "_ref_node_id",
     )
-    list_display = ("cpc", "description", "common_name", "scientific_name")
+    list_display = ("cpc", "description", "common_name", "aliases")
     ordering = ["cpc"]
     search_fields = (
         "^cpc",

@@ -52,4 +52,12 @@ class ClassifiedProductSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ClassifiedProduct
-        fields = ["cpc", "description", "common_name", "scientific_name", "unit_of_measure", "kcals_per_unit"]
+        fields = [
+            "cpc",
+            "description",
+            "common_name",
+            "scientific_name",
+            "unit_of_measure",
+            "kcals_per_unit",
+            "aliases",
+        ]
