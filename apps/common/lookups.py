@@ -416,16 +416,43 @@ class ClassifiedProductLookup(Lookup):
               - R0151	Potatoes
                 - R01510	Potatoes
 
-        In this case, a search for "potatoes" should return the leaf node, R01510, and ignore the parent R0151. To do
-        this we need to remove the R0151 row from the lookup_df, otherwise the search raises:
+        In this case, a search for "potatoes" should return the leaf node, R01510, and ignore the parent R0151.
+
+        Some other Classified Product reuse the Description of the parent node as the Common Name of a child node.
+        This allows to ensure that a search for the common name returns the preferred leaf node. For example:
+            - R0141     Soya beans
+                - R01411    Soya beans, seed for planting
+                - R01412    Soya beans, other	            Soya beans
+
+        In this case, a search for "soya beans" should return the leaf node, R01412, and ignore the parent R0141.
+
+        To achieve this we need to remove the parent rows from the lookup_df, otherwise the search raises:
             ValueError: ClassifiedProductLookup found multiple ClassifiedProduct matches for some rows
         """
         df = super().prepare_lookup_df()
-        # Drop any rows where the lookup_key is duplicated but there is another row in the dataframe with the same
-        # lookup_value suffixed with "0", which is the convention CPC uses for a parent with a single child.
-        unwanted_parents = df[
-            (df["lookup_key"].duplicated(keep=False)) & (df["lookup_value"] + "0").isin(df["lookup_value"])
-        ]
+
+        # Create a DataFrame that just contains the single digits 0 through 9.
+        df_digit = pd.DataFrame(range(10), columns=["digit"])
+
+        # Create a Cartesian product of df and df_digit
+        df_all = pd.merge(df.assign(key=1), df_digit.assign(key=1), on="key").drop("key", axis=1)
+
+        # Create the "child_candidate" column that adds the 0-9 to the end of the lookup_value
+        df_all["child_candidate"] = df_all["lookup_value"] + df_all["digit"].astype(str)
+
+        # Merge with the original DataFrame on the child_candidate column and lookup_key to find only the rows
+        # that contain valid child codes where the lookup_key in the child is the same as the lookup_key in the parent.
+        unwanted_parents = df_all.merge(
+            df,
+            left_on=["child_candidate", "lookup_key"],
+            right_on=["lookup_value", "lookup_key"],
+            suffixes=[None, "_child"],
+        )
+
+        # Drop the extra columns so the shape matches the original dataframe.
+        unwanted_parents = unwanted_parents[["lookup_value", "lookup_key"]]
+
+        # Drop the unwanted parents from the original DataFrame
         df = pd.concat([df, unwanted_parents]).drop_duplicates(keep=False)
         return df
 
