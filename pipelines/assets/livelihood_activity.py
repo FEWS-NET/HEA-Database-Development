@@ -23,8 +23,8 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hea.settings.production")
 # Configure Django with our custom settings before importing any Django classes
 django.setup()
 
-from metadata.lookups import WealthGroupCategoryLookup  # NOQA: E402
-from metadata.models import ActivityLabel  # NOQA: E402
+from metadata.lookups import SeasonNameLookup, WealthGroupCategoryLookup  # NOQA: E402
+from metadata.models import ActivityLabel, LivelihoodActivityScenario  # NOQA: E402
 
 
 @asset(partitions_def=bss_files_partitions_def)
@@ -222,6 +222,7 @@ def livelihood_activity_fixture(
     header_rows = 4  # wealth group category, district, village, household size
 
     # Prepare the lookups, so they cache the individual results
+    seasonnamelookup = SeasonNameLookup()
     wealthgroupcategorylookup = WealthGroupCategoryLookup()
     label_map = {
         instance.pop("activity_label").lower(): instance
@@ -247,9 +248,11 @@ def livelihood_activity_fixture(
             livelihoodzonebaseline
             + [
                 wealthgroupcategorylookup.get(df.loc[3, column]) or wealthgroupcategorylookup.get(df.loc[4, column]),
-                ""
-                if wealthgroupcategorylookup.get(df.loc[4, column])
-                else ", ".join([df.loc[5, column], df.loc[4, column]]),
+                (
+                    ""
+                    if wealthgroupcategorylookup.get(df.loc[4, column])
+                    else ", ".join([df.loc[5, column], df.loc[4, column]])
+                ),
             ]
         )
 
@@ -306,18 +309,9 @@ def livelihood_activity_fixture(
                 strategy_type = attributes.pop("strategy_type")
             if attributes.pop("is_start"):
                 # We are starting a new livelihood activity, so append the previous livelihood strategy
-                # to the list, provided that it has at least one Livelihood Activity
-                # First, add the natural keys for the livelihood strategy and the wealth group to the activities
-                for i, livelihood_activity in enumerate(livelihood_activities_for_strategy):
-                    livelihood_activity["livelihood_strategy"] = livelihoodzonebaseline + [
-                        livelihood_strategy["strategy_type"],
-                        livelihood_strategy["season"] if livelihood_strategy["season"] else "",
-                        livelihood_strategy["product_id"] if livelihood_strategy["product_id"] else "",
-                        livelihood_strategy["additional_identifier"],
-                    ]
-                    livelihood_activity["wealth_group"] = wealth_groups[i]
-                # Next, reduce the activities to those where there is some income, expediture or consumption.
-                # This excludes empty activities that only contain attributes for, e.g. type_of_milk_sold_or_other_uses
+                # to the list, provided that it has at least one Livelihood Activity where there is some income,
+                # expediture or consumption. This excludes empty activities that only contain attributes for,
+                # for example, 'type_of_milk_sold_or_other_uses'
                 non_empty_livelihood_actities = [
                     livelihood_activity
                     for livelihood_activity in livelihood_activities_for_strategy
@@ -327,20 +321,48 @@ def livelihood_activity_fixture(
                     )
                 ]
 
-                if livelihood_strategy and non_empty_livelihood_actities:
+                if non_empty_livelihood_actities:
+
+                    # Lookup the season name from the alias used in the BSS to create the natural key
+                    livelihood_strategy["season"] = (
+                        [seasonnamelookup.get(livelihood_strategy["season"], country_id=metadata["country_id"])]
+                        if livelihood_strategy["season"]
+                        else None
+                    )
+
+                    # Add the natural keys for the livelihood_zone_baseline, livelihood strategy and the wealth group
+                    # to the activities. Note that we have to enumerate livelihood_activities_for_strategy rather than
+                    # non_empty_livelihood_actities so we set the correct wealth_group for each livelihood_activity.
+                    for i, livelihood_activity in enumerate(livelihood_activities_for_strategy):
+                        livelihood_activity["livelihood_strategy"] = livelihoodzonebaseline + [
+                            livelihood_strategy["strategy_type"],
+                            livelihood_strategy["season"][0] if livelihood_strategy["season"] else "",
+                            livelihood_strategy["product_id"] if livelihood_strategy["product_id"] else "",
+                            livelihood_strategy["additional_identifier"],
+                        ]
+                        livelihood_activity["livelihood_zone_baseline"] = livelihoodzonebaseline
+                        livelihood_activity["strategy_type"] = livelihood_strategy["strategy_type"]
+                        livelihood_activity["scenario"] = LivelihoodActivityScenario.BASELINE
+                        livelihood_activity["wealth_group"] = wealth_groups[i]
+
+                    # Append the stategies and activities to the lists of instances to create.
                     livelihood_strategies.append(livelihood_strategy)
                     livelihood_activities += non_empty_livelihood_actities
+
+                # Now that we have saved the previous livelihood strategy and activities, we can start a new one.
+
                 # There are cases where attributes get copied to the new livelihood strategy,
-                # notably the product_id for MilkProduction for camels and cattle.
+                # notably the product_id for MilkProduction and ButterProduction for camels and cattle.
                 if (
-                    strategy_type == "MilkProduction"
+                    strategy_type in ["MilkProduction", "ButterProduction"]
                     and livelihood_strategy
                     and livelihood_strategy["product_id"]
                     and not attributes["product_id"]
                     and attributes["season"] == "Season 2"
                 ):
                     attributes["product_id"] = livelihood_strategy["product_id"]
-                # And then initialize the new livelihood strategy from the attributes
+
+                # Initialize the new livelihood strategy from the attributes
                 livelihood_strategy = {
                     k: v
                     for k, v in attributes.items()
@@ -355,11 +377,12 @@ def livelihood_activity_fixture(
                 # Set the strategy type from the current group
                 livelihood_strategy["strategy_type"] = strategy_type
                 # Set the currency from metadata
-                livelihood_strategy["currency_id"] = metadata["currency"]
+                livelihood_strategy["currency_id"] = metadata["currency_id"]
                 # Set the natural key to the livelihood zone baseline
                 livelihood_strategy["livelihood_zone_baseline"] = livelihoodzonebaseline
                 # Save the starting row for this Strategy, to aid trouble-shooting
                 livelihood_strategy["row"] = row
+
                 # There are cases where attributes get copied to the new livelihood activities,
                 # notably milking_animals for camels and cattle.
                 if (

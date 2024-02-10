@@ -8,7 +8,11 @@ from .assets.baseline import (
     bss_files_metadata,
     bss_metadata,
     completed_bss_metadata,
+    consolidated_fixture,
+    consolidated_instances,
     corrected_files,
+    imported_baseline,
+    validated_instances,
 )
 from .assets.livelihood_activity import (
     activity_label_dataframe,
@@ -50,6 +54,10 @@ defs = Definitions(
         wealth_characteristic_label_dataframe,
         all_wealth_characteristic_labels_dataframe,
         wealth_characteristic_fixture,
+        consolidated_instances,
+        validated_instances,
+        consolidated_fixture,
+        imported_baseline,
     ],
     jobs=[update_metadata],
     resources={

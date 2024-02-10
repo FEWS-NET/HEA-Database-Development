@@ -1,6 +1,7 @@
 """
 Load metadata from Google Sheets
 """
+
 import os
 
 import django
@@ -53,7 +54,13 @@ def load_all_metadata(context: OpExecutionContext):
                     except AttributeError:
                         continue
                 if model:
-                    field_names = [f.name for f in model._meta.get_fields()]
+                    valid_field_names = [field.name for field in model._meta.concrete_fields]
+                    # Also include values that point directly to the primary key of related objects
+                    valid_field_names += [
+                        field.get_attname()
+                        for field in model._meta.concrete_fields
+                        if field.get_attname() not in valid_field_names
+                    ]
                     # If we found a model, then update the model from the contents of the Referemce Data worksheet
                     df = pd.read_excel(f, sheet_name).fillna("")
                     if "status" in df:
@@ -70,22 +77,16 @@ def load_all_metadata(context: OpExecutionContext):
                         df["is_start"] = df["is_start"].replace("", False)
                     if "product_name" in df:
                         df = ClassifiedProductLookup().do_lookup(df, "product_name", "product_id")
+                    if "country_id" in df:
+                        df["country_id"] = df["country_id"].replace(pd.NA, None)
                     if "product_id" in df:
                         df["product_id"] = df["product_id"].replace(pd.NA, None)
-                        if "product" in field_names and "product_id" not in field_names:
-                            field_names.append("product_id")
                     if "unit_of_measure_id" in df:
                         df["unit_of_measure_id"] = df["unit_of_measure_id"].replace("", None)
-                        if "unit_of_measure" in field_names and "unit_of_measure_id" not in field_names:
-                            field_names.append("unit_of_measure_id")
                     if "currency_id" in df:
                         df["currency_id"] = df["currency_id"].replace("", None)
-                        if "currency" in field_names and "currency_id" not in field_names:
-                            field_names.append("currency_id")
                     if "wealth_characteristic_id" in df:
                         df["wealth_characteristic_id"] = df["wealth_characteristic_id"].replace("", None)
-                        if "wealth_characteristic" in field_names and "wealth_characteristic_id" not in field_names:
-                            field_names.append("wealth_characteristic_id")
                     if "ordering" in df:
                         df["ordering"] = df["ordering"].replace("", None)
 
@@ -95,7 +96,7 @@ def load_all_metadata(context: OpExecutionContext):
                             try:
                                 instance = model.objects.get(pk=cpc)
                                 for k, v in record.items():
-                                    if k in field_names and v:
+                                    if k in valid_field_names and v:
                                         expected = getattr(instance, k)
                                         if isinstance(expected, list):
                                             expected = sorted(expected)
@@ -119,7 +120,7 @@ def load_all_metadata(context: OpExecutionContext):
                                 if cpc[1:].isnumeric():
                                     raise ValueError("Missing real CPC code %s" % cpc)
                                 parent_instance = model.objects.get(pk=cpc[:-2])
-                                record = {k: v for k, v in record.items() if k in field_names}
+                                record = {k: v for k, v in record.items() if k in valid_field_names}
                                 record["cpc"] = cpc
                                 instance = parent_instance.add_child(**record)
                                 context.log.info(
@@ -127,19 +128,28 @@ def load_all_metadata(context: OpExecutionContext):
                                 )
                     else:
                         if sheet_name == "SourceOrganization":
-                            id_field = "name"
+                            id_fields = "name"
+                        elif sheet_name == "Season":
+                            id_fields = "name_en"
                         elif sheet_name == "ActivityLabel":
-                            id_field = "activity_label"
+                            id_fields = "activity_label"
                         elif sheet_name == "WealthCharacteristicLabel":
-                            id_field = "wealth_characteristic_label"
+                            id_fields = "wealth_characteristic_label"
                         else:
-                            id_field = "code"
+                            id_fields = "code"
                         for record in df.to_dict(orient="records"):
-                            id_value = record.pop(id_field)
-                            record = {k: v for k, v in record.items() if k in field_names}
-                            instance, created = model.objects.update_or_create(
-                                **{"defaults": record, id_field: id_value}
-                            )
+                            if isinstance(id_fields, str):
+                                id_fields = [id_fields]
+
+                            id_values = [record.pop(k) for k in id_fields]
+                            keys = dict(zip(id_fields, id_values))
+                            record = {k: v for k, v in record.items() if k in valid_field_names}
+                            try:
+                                instance, created = model.objects.update_or_create(**{"defaults": record, **keys})
+                            except Exception as e:
+                                raise RuntimeError(
+                                    "Failed to create or update %s %s with %s" % (sheet_name, keys, record)
+                                ) from e
                             context.log.info(f'{"Created" if created else "Updated"} {sheet_name} {str(instance)}')
 
 

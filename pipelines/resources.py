@@ -1,4 +1,3 @@
-import io
 import json
 import os
 import pickle
@@ -6,6 +5,7 @@ import posixpath
 import tempfile
 from abc import abstractmethod
 from functools import cached_property
+from io import FileIO
 from typing import Any, Optional, Type
 
 import dagster._check as check
@@ -28,7 +28,7 @@ from pydantic.fields import Field
 from upath import UPath
 
 
-class _DeleteOnCloseFile(io.FileIO):
+class _DeleteOnCloseFile(FileIO):
     def close(self):
         super().close()
         try:
