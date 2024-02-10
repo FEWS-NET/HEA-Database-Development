@@ -964,6 +964,13 @@ class LivelihoodActivity(common_models.Model):
     household_labor_provider = models.CharField(
         max_length=10, choices=HouseholdLaborProvider.choices, blank=True, verbose_name=_("Activity done by")
     )
+    extra = models.JSONField(
+        default=dict,
+        blank=True,
+        null=True,
+        verbose_name=_("Extra attributes"),
+        help_text=_("Additional attributes from the BSS for this Livelihood Activity"),
+    )
 
     def calculate_fields(self):
         self.livelihood_zone_baseline = self.livelihood_strategy.livelihood_zone_baseline
