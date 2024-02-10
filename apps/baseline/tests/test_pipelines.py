@@ -243,7 +243,7 @@ class IngestionPipelineTestCase(TestCase):
     def test_import_baseline(self):
         # Capture logging and direct writes to stdout (because loaddata writes
         # to stdout directly), so that unit test output is still clean.
-        with conditional_logging():
+        with conditional_logging(capacity=2000):
             task = ImportBaseline(
                 bss_path="apps/baseline/tests/bss.xlsx", metadata_path="apps/baseline/tests/metadata.xlsx"
             )

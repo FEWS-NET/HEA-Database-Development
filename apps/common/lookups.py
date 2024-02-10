@@ -2,6 +2,7 @@
 Lookup classes that support data ingestion by matching data in a Pandas DataFrame against
 reference data in Django Models.
 """
+
 import functools
 from abc import ABC
 
@@ -100,6 +101,7 @@ class Lookup(ABC):
         queryset = self.model.objects.filter(**self.filters).values_list(*self.get_queryset_columns())
         return queryset
 
+    @functools.cache
     def get_lookup_df(self):
         """
         Build a dataframe for a model that can be used to lookup the primary key.
@@ -107,7 +109,8 @@ class Lookup(ABC):
         Create a dataframe that contains the primary key, and all the columns that
         can be used to lookup the primary key, e.g. the name, description, aliases, etc.
 
-        Use the queryset.iterator() to prevent Django from caching the queryset.
+        Use the queryset.iterator() to prevent Django from caching the queryset, and instead use functools.cache to
+        cache the dataframe returned from this function.
         """
         df = pd.DataFrame(list(self.get_queryset().iterator()), columns=self.get_queryset_columns())
 
@@ -291,7 +294,7 @@ class Lookup(ABC):
         return df
 
     @functools.cache
-    def get(self, value: str) -> str | None:
+    def get(self, value: str, **parent_values) -> str | None:
         """
         Return the lookup value for a single string, or None if there is no match.
 
@@ -306,9 +309,11 @@ class Lookup(ABC):
                 item["id"] = lookup.get(item["other_name"])
         """
         df = pd.DataFrame({"value": [value]})
+        for parent_field in self.parent_fields:
+            df[parent_field] = [parent_values[parent_field]]
         try:
             df = self.do_lookup(df, "value", "result")
-            result = df.iloc[0, 1]
+            result = df.iloc[0, -1]
             return result if pd.notna(result) else None
         except ValueError:
             return None

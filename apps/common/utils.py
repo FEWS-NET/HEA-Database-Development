@@ -2,13 +2,17 @@ import contextlib
 import csv
 import importlib
 import logging
+import re
 from copy import deepcopy
 from datetime import datetime, timedelta
+from io import BytesIO, StringIO
 from pathlib import Path
 
+import pandas as pd
 from django.apps import apps
 from django.db.migrations.operations.base import Operation
 from django.forms.models import modelform_factory
+from openpyxl.utils import get_column_letter
 from treebeard.mp_tree import MP_Node
 
 logger = logging.getLogger(__name__)
@@ -234,3 +238,80 @@ def b74encode(n):
         n, r = divmod(n, len(alphabet))
         encoded = alphabet[r] + encoded
     return encoded
+
+
+def markdown_to_data(table: str):
+    """
+    Convert a Markdown table to list of rows.
+    """
+    data = []
+    for line in StringIO(table).readlines():
+        line = line.strip()
+        # Ignore blank lines, they aren't part of the table, just part of the string formatting
+        # And lines consisting only of |-:, which are a Markdown table header
+        if line and not re.match(r"^[\|:-]+$", line):
+            # Remove the trailing \n and split the line on the cell separator, dropping the first and last columns
+            # (which are before and after the actual data)
+            line = line.split("|")[1:-1]
+            row = [float(x.strip(" ")) if x.strip(" ").isnumeric() else x.strip(" ") for x in line]
+            data.append(row)
+    return data
+
+
+def markdown_to_dataframe(table: str):
+    """
+    Return a Pandas DataFrame dataset converted from a Markdown table.
+
+    Typically used to prepare test data for unit tests based on spreadsheets.
+    """
+    return pd.DataFrame(markdown_to_data(table))
+
+
+def markdown_to_excel(tables: str | list[str] | dict[str, str]):
+    """
+    Return a BytesIO containing .xlsx workbook converted from an iterable of Markdown tables, or a single table.
+
+    Typically used to prepare test data for unit tests based on spreadsheets.
+    """
+    if isinstance(tables, str):
+        # single table
+        tables = {"Sheet1": tables}
+    elif not isinstance(tables, dict):
+        # A list or other iterable, so enumerate the sheets
+        tables = {f"Sheet{i+1}": table for i, table in enumerate(tables)}
+
+    with BytesIO() as book:
+        writer = pd.ExcelWriter(book, engine="openpyxl")
+        for name, table in tables.items():
+            df = markdown_to_dataframe(table)
+            # Write the dataframe to the buffer
+            df.to_excel(writer, sheet_name=name, header=False, index=False)
+        writer.save()
+        return book.getvalue()
+
+
+def excel_to_markdown(
+    filepath_or_buffer, sheet_name=None, rows: int = 10, columns: int = 10, include_row_number=False
+):
+    """
+    Convert an Excel workbook to a dict of Markdown table strings
+
+    Typically used to prepare test data for unit tests based on spreadsheets.
+
+    Usage:
+        tables = excel_to_markdown(filename)
+        print(list(tables.values())[0])
+        print(tables["Other Sheet"])
+    """
+    tables = {}
+    with pd.ExcelFile(filepath_or_buffer) as book:
+        sheet_names = [sheet_name] if sheet_name else book.sheet_names
+        for sheet_name in sheet_names:
+            df = pd.read_excel(book, sheet_name=sheet_name, header=None).fillna("")
+            # Set the column names to match Excel
+            df.columns = [get_column_letter(col + 1) for col in df.columns]
+            # Use a 1-based index to match the Excel Row Number
+            df.index += 1
+            tables[sheet_name] = df.iloc[:rows, :columns].to_markdown(index=include_row_number)
+
+    return tables[sheet_names[0]] if len(sheet_names) == 1 else tables
