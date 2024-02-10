@@ -1,7 +1,8 @@
 import pandas as pd
 from django.test import TestCase
 
-from ..lookups import ClassifiedProductLookup
+from common.lookups import ClassifiedProductLookup
+
 from .factories import ClassifiedProductFactory
 
 
