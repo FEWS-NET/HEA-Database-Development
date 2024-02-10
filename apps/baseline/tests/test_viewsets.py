@@ -182,6 +182,7 @@ class LivelihoodZoneViewSetTestCase(APITestCase):
         self.assertIsInstance(response.json(), dict)
         expected_fields = (
             "code",
+            "alternate_code",
             "name",
             "description",
             "country",

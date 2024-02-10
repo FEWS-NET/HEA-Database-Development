@@ -1,4 +1,6 @@
 import datetime
+import random
+import string
 
 import factory
 from factory import fuzzy
@@ -78,6 +80,9 @@ class LivelihoodZoneFactory(factory.django.DjangoModelFactory):
         ]
 
     code = factory.LazyAttributeSequence(lambda o, n: f"{o.country.pk}{n:04d}")
+    alternate_code = factory.LazyAttribute(
+        lambda o: f"{o.country.pk}{''.join(random.choice(string.ascii_uppercase) for _ in range(3))}"
+    )
     name_en = factory.LazyAttribute(lambda o: f"{o.code} name EN")
     name_fr = factory.LazyAttribute(lambda o: f"{o.code} name FR")
     name_es = factory.LazyAttribute(lambda o: f"{o.code} name ES")

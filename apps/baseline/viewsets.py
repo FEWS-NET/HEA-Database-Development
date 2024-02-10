@@ -128,6 +128,7 @@ class LivelihoodZoneViewSet(viewsets.ModelViewSet):
     filterset_class = LivelihoodZoneFilterSet
     search_fields = (
         "code",
+        "alternate_code",
         *translation_fields("description"),
         *translation_fields("name"),
     )

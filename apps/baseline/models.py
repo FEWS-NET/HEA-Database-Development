@@ -85,6 +85,14 @@ class LivelihoodZone(common_models.Model):
         verbose_name=_("code"),
         help_text=_("Primary identifier for the Livelihood Zone"),
     )
+    alternate_code = models.CharField(
+        max_length=25,
+        blank=True,
+        verbose_name=_("alternate code"),
+        help_text=_(
+            "Alternate identifier for the Livelihood Zone, typically a meaningful code based on the name of the Zone."
+        ),  # NOQA: E501
+    )
     name = TranslatedField(common_models.NameField(max_length=200, unique=True))
     description = TranslatedField(common_models.DescriptionField())
     country = models.ForeignKey(Country, verbose_name=_("Country"), db_column="country_code", on_delete=models.PROTECT)
