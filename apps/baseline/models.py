@@ -1,6 +1,7 @@
 """
 Models for managing HEA Baseline Surveys
 """
+
 import numbers
 
 from django.contrib.gis.db import models
@@ -217,7 +218,7 @@ class LivelihoodZoneBaseline(common_models.Model):
 
     def natural_key(self):
         try:
-            return (self.livelihood_zone.code, self.reference_year_end_date.isoformat())
+            return (self.livelihood_zone_id, self.reference_year_end_date.isoformat())
         except Exception:
             print(self.__dict__)
             raise
@@ -583,7 +584,7 @@ class WealthGroupCharacteristicValue(common_models.Model):
         WEALTH_GROUP = "wealth_group_interview", _("Wealth Group Interview (Form 4)")
         SUMMARY = "baseline_summary", _("Baseline Summary")
 
-    wealth_group = models.ForeignKey(WealthGroup, on_delete=models.RESTRICT, verbose_name=_("Wealth Group"))
+    wealth_group = models.ForeignKey(WealthGroup, on_delete=models.CASCADE, verbose_name=_("Wealth Group"))
     wealth_characteristic = models.ForeignKey(
         WealthCharacteristic,
         db_column="wealth_characteristic_code",
@@ -605,7 +606,7 @@ class WealthGroupCharacteristicValue(common_models.Model):
         db_column="product_code",
         blank=True,
         null=True,
-        on_delete=models.PROTECT,
+        on_delete=models.RESTRICT,
         verbose_name=_("Product"),
         help_text=_("Product, e.g. Cattle"),
         related_name="wealth_group_characteristic_values",
@@ -615,7 +616,7 @@ class WealthGroupCharacteristicValue(common_models.Model):
         db_column="unit_code",
         blank=True,
         null=True,
-        on_delete=models.PROTECT,
+        on_delete=models.RESTRICT,
         verbose_name=_("Unit of Measure"),
         related_name="wealth_group_characteristic_values",
     )
@@ -739,7 +740,7 @@ class LivelihoodStrategyManager(common_models.IdentifierManager):
         code: str,
         reference_year_end_date: str,
         strategy_type: str,
-        season_name: str,
+        season_name_en: str,
         product: str = "",
         additional_identifier: str = "",
     ):
@@ -749,8 +750,8 @@ class LivelihoodStrategyManager(common_models.IdentifierManager):
             "strategy_type": strategy_type,
             "additional_identifier": additional_identifier,
         }
-        if season_name:
-            criteria["season__name"] = season_name
+        if season_name_en:
+            criteria["season__name_en"] = season_name_en
             criteria["season__country"] = F("livelihood_zone_baseline__livelihood_zone__country")
         else:
             criteria["season__isnull"] = True
@@ -804,6 +805,8 @@ class LivelihoodStrategy(common_models.Model):
     unit_of_measure = models.ForeignKey(
         UnitOfMeasure,
         db_column="unit_code",
+        blank=True,
+        null=True,
         on_delete=models.PROTECT,
         verbose_name=_("Unit of Measure"),
         help_text=_("Unit used to measure production from this Livelihood Strategy"),
@@ -960,6 +963,13 @@ class LivelihoodActivity(common_models.Model):
 
     household_labor_provider = models.CharField(
         max_length=10, choices=HouseholdLaborProvider.choices, blank=True, verbose_name=_("Activity done by")
+    )
+    extra = models.JSONField(
+        default=dict,
+        blank=True,
+        null=True,
+        verbose_name=_("Extra attributes"),
+        help_text=_("Additional attributes from the BSS for this Livelihood Activity"),
     )
 
     def calculate_fields(self):
