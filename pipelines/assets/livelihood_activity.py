@@ -14,7 +14,8 @@ from dagster import (
 )
 from openpyxl.utils import get_column_letter
 
-from ..utils import get_index
+from ..resources import DataFrameExcelIOManager
+from ..utils import class_from_name, get_index
 from .baseline import BSSMetadataConfig, bss_files_partitions_def
 
 # set the default Django settings module
@@ -307,7 +308,17 @@ def livelihood_activity_fixture(
             # Some attributes imply specific strategy types, such as MilkProduction, MeatProduction or LivestockSales
             if attributes["strategy_type"]:
                 strategy_type = attributes.pop("strategy_type")
-            if attributes.pop("is_start"):
+                # Get the valid fields names so we can determine if the attribute is stored in LivelihoodActivity.extra
+                model = class_from_name(f"baseline.models.{strategy_type}")
+                valid_field_names = [field.name for field in model._meta.concrete_fields]
+                # Also include values that point directly to the primary key of related objects
+                valid_field_names += [
+                    field.get_attname()
+                    for field in model._meta.concrete_fields
+                    if field.get_attname() not in valid_field_names
+                ]
+
+            if attributes["is_start"]:
                 # We are starting a new livelihood activity, so append the previous livelihood strategy
                 # to the list, provided that it has at least one Livelihood Activity where there is some income,
                 # expediture or consumption. This excludes empty activities that only contain attributes for,
@@ -372,6 +383,7 @@ def livelihood_activity_fixture(
                         "unit_of_measure_id",
                         "season",
                         "additional_identifier",
+                        "activity_label",
                     ]
                 }
                 # Set the strategy type from the current group
@@ -382,6 +394,8 @@ def livelihood_activity_fixture(
                 livelihood_strategy["livelihood_zone_baseline"] = livelihoodzonebaseline
                 # Save the starting row for this Strategy, to aid trouble-shooting
                 livelihood_strategy["row"] = row
+                # Save the label for this Strategy, to aid trouble-shooting
+                livelihood_strategy["activity_label"] = label
 
                 # There are cases where attributes get copied to the new livelihood activities,
                 # notably milking_animals for camels and cattle.
@@ -396,6 +410,9 @@ def livelihood_activity_fixture(
                             "milking_animals": livelihood_activity["milking_animals"],
                             "column": livelihood_activity["column"],
                             "row": row,
+                            "activity_label": label,
+                            "is_start": attributes["is_start"],
+                            "attribute_rows": {},
                         }
                         for livelihood_activity in livelihood_activities_for_strategy
                     ]
@@ -436,6 +453,9 @@ def livelihood_activity_fixture(
                         livelihood_activity = {attribute: value}
                         livelihood_activity["column"] = column
                         livelihood_activity["row"] = row
+                        livelihood_activity["activity_label"] = label
+                        livelihood_activity["is_start"] = attributes["is_start"]
+                        livelihood_activity["attribute_rows"] = {attribute: row}
 
                         livelihood_activities_for_strategy.append(livelihood_activity)
                     column = None
@@ -446,7 +466,14 @@ def livelihood_activity_fixture(
                         # Save the column and row, to aid trouble-shooting
                         # We need col_index + 1 to get the letter, and the enumerate is already starting from col B
                         column = get_column_letter(i + 2)
-                        livelihood_activities_for_strategy[i][attribute] = value
+                        livelihood_activity["attribute_rows"][attribute] = row
+                        # Some attributes are stored in LivelihoodActivity.extra rather than in separate columns
+                        if attribute not in valid_field_names:
+                            if "extra" not in livelihood_activities_for_strategy[i]:
+                                livelihood_activities_for_strategy[i]["extra"] = {}
+                            livelihood_activities_for_strategy[i]["extra"][attribute] = value
+                        else:
+                            livelihood_activities_for_strategy[i][attribute] = value
                         # The BSS does not store the kcals_consumed for ButterProduction, only the percentage_kcals,
                         # so derive it by multiplying by:
                         # 2100 (kcals per person per day) * 365 (days per year) * average_household_size (from Row 40)
@@ -469,6 +496,14 @@ def livelihood_activity_fixture(
         "num_livelihood_strategies": len(livelihood_strategies),
         "num_livelihood_activities": len(livelihood_activities),
         "num_unrecognized_labels": len(unrecognized_labels),
+        "pct_rows_recognized": round(
+            (
+                1
+                - len(df.iloc[header_rows:][df.iloc[header_rows:]["A"].isin(unrecognized_labels["label"])])
+                / len(df.iloc[header_rows:])
+            )
+            * 100
+        ),
         "preview": MetadataValue.md(f"```json\n{json.dumps(result, indent=4)}\n```"),
     }
     if not unrecognized_labels.empty:

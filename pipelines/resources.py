@@ -252,8 +252,69 @@ class DataFrameCSVFilesystemIOManager(UPathIOManager):
         return pd.read_csv(path)
 
 
+class DataFrameExcelFilesystemIOManager(UPathIOManager):
+    """
+    Dagster I/O Manager that serializes DataFrames to Excel .xlsx using the OpenPyXL engine.
+
+    It accepts a single DataFrame or a list of DataFrames or a dict of sheet names to DataFrames,
+    and writes them to a single Excel file. If the file already exists, it will be appended to,
+    replacing any existing sheets with the same name but leaving other sheets untouched.
+    """
+
+    extension = ".xlsx"
+
+    def __init__(
+        self,
+        base_path: UPath,
+        to_excel_kwargs: Optional[dict] = None,
+        if_sheet_exists: Optional[bool] = None,
+        engine_kwargs: Optional[dict] = None,
+    ):
+        super().__init__(base_path)
+        self.to_excel_kwargs = to_excel_kwargs or {"index": False}
+        self.if_sheet_exists = if_sheet_exists
+        self.engine_kwargs = engine_kwargs or {}
+
+    def dump_to_path(
+        self, context: OutputContext, obj: dict[str, pd.DataFrame] | list[pd.DataFrame] | pd.DataFrame, path: UPath
+    ) -> None:
+        if isinstance(obj, pd.DataFrame):
+            obj = {"Sheet1": obj}
+        elif isinstance(obj, list):
+            obj = {f"Sheet{i+1}": df for i, df in enumerate(obj)}
+
+        # Set the ExcelWriter parameters
+        mode = "w"
+        if self.path_exists(path):
+            mode = "a"
+            if self.if_sheet_exists is None:
+                self.if_sheet_exists = "replace"
+            if "keep_vba" not in self.engine_kwargs:
+                self.engine_kwargs["keep_vba"] = True
+
+        # Write the DataFrames to the Excel file
+        with pd.ExcelWriter(
+            path,
+            engine="openpyxl",
+            mode=mode,
+            if_sheet_exists=self.if_sheet_exists,
+            engine_kwargs=self.engine_kwargs,
+        ) as writer:
+            for sheet_name, df in obj.items():
+                df.to_excel(writer, sheet_name=sheet_name, **self.to_excel_kwargs)
+
+    def load_from_path(self, context: InputContext, path: UPath) -> dict[str, pd.DataFrame]:
+        with pd.ExcelFile(path, engine="openpyxl") as xls:
+            return xls.parse(sheet_name=None)  # Get all sheets as a dict
+
+
 class ConfigurableUPathIOManagerFactory(
-    ConfigurableIOManagerFactory[PickleFilesystemIOManager | JSONFilesystemIOManager | DataFrameCSVFilesystemIOManager]
+    ConfigurableIOManagerFactory[
+        PickleFilesystemIOManager
+        | JSONFilesystemIOManager
+        | DataFrameCSVFilesystemIOManager
+        | DataFrameExcelFilesystemIOManager
+    ]
 ):
     base_path: Optional[str] = Field(default=None, description="Base path for storing files.")
 
@@ -270,6 +331,22 @@ class ConfigurableUPathIOManagerFactory(
         return self.get_iomanager_class()(base_path=UPath(base_path))
 
 
+class ConfigurableDataFrameExcelFilesystemIOManagerFactory(ConfigurableUPathIOManagerFactory):
+    to_excel_kwargs: Optional[dict] = Field(
+        default=None, description="Additional arguments passed DataFrame.to_excel()"
+    )
+    engine_kwargs: Optional[dict] = Field(default=None, description="Additional arguments passed the OpenPyXL engine")
+
+    def get_iomanager_class(self) -> Type[UPathIOManager]:
+        return DataFrameExcelFilesystemIOManager
+
+    def create_io_manager(self, context: InitResourceContext) -> UPathIOManager:
+        base_path = self.base_path or check.not_none(context.instance).storage_directory()
+        return self.get_iomanager_class()(
+            base_path=UPath(base_path), to_excel_kwargs=self.to_excel_kwargs, engine_kwargs=self.engine_kwargs
+        )
+
+
 class PickleIOManager(ConfigurableUPathIOManagerFactory):
     def get_iomanager_class(self) -> Type[UPathIOManager]:
         return PickleFilesystemIOManager
@@ -283,3 +360,7 @@ class JSONIOManager(ConfigurableUPathIOManagerFactory):
 class DataFrameCSVIOManager(ConfigurableUPathIOManagerFactory):
     def get_iomanager_class(self) -> Type[UPathIOManager]:
         return DataFrameCSVFilesystemIOManager
+
+
+class DataFrameExcelIOManager(ConfigurableDataFrameExcelFilesystemIOManagerFactory):
+    pass

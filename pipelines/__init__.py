@@ -8,9 +8,11 @@ from .assets.baseline import (
     bss_files_metadata,
     bss_metadata,
     completed_bss_metadata,
+    corrected_files,
+)
+from .assets.fixtures import (
     consolidated_fixture,
     consolidated_instances,
-    corrected_files,
     imported_baseline,
     validated_instances,
 )
@@ -19,6 +21,7 @@ from .assets.livelihood_activity import (
     all_activity_labels_dataframe,
     livelihood_activity_dataframe,
     livelihood_activity_fixture,
+    livelihood_activity_report,
 )
 from .assets.wealth_characteristic import (
     all_wealth_characteristic_labels_dataframe,
@@ -29,6 +32,7 @@ from .assets.wealth_characteristic import (
 from .jobs.metadata import update_metadata
 from .resources import (
     DataFrameCSVIOManager,
+    DataFrameExcelIOManager,
     GoogleClientResource,
     JSONIOManager,
     PickleIOManager,
@@ -50,6 +54,7 @@ defs = Definitions(
         activity_label_dataframe,
         all_activity_labels_dataframe,
         livelihood_activity_fixture,
+        livelihood_activity_report,
         wealth_characteristic_dataframe,
         wealth_characteristic_label_dataframe,
         all_wealth_characteristic_labels_dataframe,
@@ -65,6 +70,7 @@ defs = Definitions(
         "io_manager": PickleIOManager(),  # Used by default
         "json_io_manager": JSONIOManager(),
         "dataframe_csv_io_manager": DataFrameCSVIOManager(),
+        "dataframe_excel_io_manager": DataFrameExcelIOManager(),
     },
     sensors=[bss_file_sensor],
 )

@@ -509,6 +509,14 @@ def wealth_characteristic_fixture(
         "num_wealth_groups": len(wealth_group_df),
         "num_wealth_group_characteristic_values": len(wealth_group_characteristic_values),
         "num_unrecognized_labels": len(unrecognized_labels),
+        "pct_rows_recognized": round(
+            (
+                1
+                - len(df.iloc[header_rows:][df.iloc[header_rows:]["A"].isin(unrecognized_labels["label"])])
+                / len(df.iloc[header_rows:])
+            )
+            * 100
+        ),
         "preview": MetadataValue.md(f"```json\n{json.dumps(result, indent=4)}\n```"),
     }
     if not unrecognized_labels.empty:

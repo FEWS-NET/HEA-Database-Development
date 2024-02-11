@@ -96,11 +96,11 @@ def load_all_metadata(context: OpExecutionContext):
                             try:
                                 instance = model.objects.get(pk=cpc)
                                 for k, v in record.items():
-                                    if k in valid_field_names and v:
-                                        expected = getattr(instance, k)
-                                        if isinstance(expected, list):
-                                            expected = sorted(expected)
-                                        if v != expected:
+                                    if k in valid_field_names:
+                                        current = getattr(instance, k)
+                                        if isinstance(current, list):
+                                            current = sorted(current)
+                                        if v != current:
                                             if cpc[-2] != "H" and k not in [
                                                 "aliases",
                                                 "common_name_en",
@@ -109,10 +109,13 @@ def load_all_metadata(context: OpExecutionContext):
                                                 "common_name_pt",
                                                 "common_name_ar",
                                             ]:
-                                                raise RuntimeError(
-                                                    "Attempted to update field %s for non-HEA product %s from %s to %s"
-                                                    % (k, cpc, getattr(instance, k), v)
-                                                )
+                                                if v:
+                                                    raise RuntimeError(
+                                                        "Attempted to update field %s for non-HEA product %s from %s to %s"  # NOQA: E501
+                                                        % (k, cpc, getattr(instance, k), v)
+                                                    )
+                                                else:
+                                                    continue
                                             setattr(instance, k, v)
                                 instance.save()
                                 context.log.info(f"Updated {sheet_name} {str(instance)}")
