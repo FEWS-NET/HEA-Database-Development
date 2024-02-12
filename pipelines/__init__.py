@@ -21,7 +21,6 @@ from .assets.livelihood_activity import (
     all_activity_labels_dataframe,
     livelihood_activity_dataframe,
     livelihood_activity_fixture,
-    livelihood_activity_report,
 )
 from .assets.wealth_characteristic import (
     all_wealth_characteristic_labels_dataframe,
@@ -54,7 +53,6 @@ defs = Definitions(
         activity_label_dataframe,
         all_activity_labels_dataframe,
         livelihood_activity_fixture,
-        livelihood_activity_report,
         wealth_characteristic_dataframe,
         wealth_characteristic_label_dataframe,
         all_wealth_characteristic_labels_dataframe,
