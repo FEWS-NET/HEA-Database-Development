@@ -50,7 +50,7 @@ class ClassifiedProductAdmin(TreeAdmin):
         "_ref_node_id",
     )
     list_display = ("cpc", "description", "common_name", "aliases")
-    ordering = ["cpc"]
+    ordering = ["path"]  # Required for correct ordering of the hierarchical tree
     search_fields = (
         "^cpc",
         *translation_fields("description"),
