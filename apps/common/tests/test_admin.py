@@ -3,7 +3,6 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import translation
-from django.utils.html import escape
 
 from common.admin import ClassifiedProductAdmin, CountryAdmin, CurrencyAdmin
 from common.models import ClassifiedProduct, Country, Currency, UnitOfMeasure
@@ -118,6 +117,7 @@ class ClassifiedProductAdminTestCase(TestCase):
         # These strings are an interpolation of two translations each. "Description" and the langauge names are
         # translated separately in the po files and so must be interpolated lazily at render time. So this covers
         # a more complex case than average.
+        # Note that this test may fail if `./manage.py compilemessages` has not been run.
         translations = {
             "en": (
                 "Description (English):",
@@ -160,13 +160,20 @@ class ClassifiedProductAdminTestCase(TestCase):
             response = self.client.get(reverse("admin:common_classifiedproduct_add"))
             for trans in translations[code]:
                 with self.subTest(language=code, trans=trans):
-                    self.assertContains(response, escape(trans), msg_prefix=response.content.decode())
+                    self.assertContains(response, trans, msg_prefix=f"Language={code}")
 
     def test_list_classified_product(self):
-        response = self.client.get(reverse("admin:common_classifiedproduct_changelist"))
+        # There are many products, so filter by the prefix, to guarantee that the product appears on the first page
+        response = self.client.get(reverse("admin:common_classifiedproduct_changelist"), {"q": "A0"})
         for attr in ClassifiedProductAdmin.list_display:
-            self.assertContains(response, getattr(self.product1, attr))
-            self.assertContains(response, getattr(self.product2, attr))
+            for product in [self.product1, self.product2]:
+                expected = getattr(product, attr)
+                if isinstance(expected, list) and expected:
+                    # When testing the aliases, just check for the first entry in the list, because the representation
+                    # of the aliases in the admin may be different.
+                    expected = expected[0]
+                with self.subTest(attr=attr, product=product):
+                    self.assertContains(response, expected, msg_prefix=f"attr={attr}, product={product}")
 
     def test_search_classified_product(self):
         response = self.client.get(
