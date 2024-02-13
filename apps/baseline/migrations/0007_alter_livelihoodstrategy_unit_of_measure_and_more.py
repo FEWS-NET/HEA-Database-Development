@@ -13,19 +13,6 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.AlterField(
-            model_name="livelihoodstrategy",
-            name="unit_of_measure",
-            field=models.ForeignKey(
-                blank=True,
-                db_column="unit_code",
-                help_text="Unit used to measure production from this Livelihood Strategy",
-                null=True,
-                on_delete=django.db.models.deletion.PROTECT,
-                to="common.unitofmeasure",
-                verbose_name="Unit of Measure",
-            ),
-        ),
-        migrations.AlterField(
             model_name="wealthgroupcharacteristicvalue",
             name="product",
             field=models.ForeignKey(
@@ -57,6 +44,35 @@ class Migration(migrations.Migration):
             name="wealth_group",
             field=models.ForeignKey(
                 on_delete=django.db.models.deletion.CASCADE, to="baseline.wealthgroup", verbose_name="Wealth Group"
+            ),
+        ),
+        migrations.AlterField(
+            model_name="livelihoodstrategy",
+            name="unit_of_measure",
+            field=models.ForeignKey(
+                blank=True,
+                db_column="unit_code",
+                help_text="Unit used to measure production from this Livelihood Strategy",
+                null=True,
+                on_delete=django.db.models.deletion.PROTECT,
+                to="common.unitofmeasure",
+                verbose_name="Unit of Measure",
+            ),
+        ),
+        migrations.AlterField(
+            model_name="livelihoodactivity",
+            name="livelihood_strategy",
+            field=models.ForeignKey(
+                help_text="Livelihood Strategy",
+                on_delete=django.db.models.deletion.CASCADE,
+                to="baseline.livelihoodstrategy",
+            ),
+        ),
+        migrations.AlterField(
+            model_name="livelihoodactivity",
+            name="wealth_group",
+            field=models.ForeignKey(
+                help_text="Wealth Group", on_delete=django.db.models.deletion.CASCADE, to="baseline.wealthgroup"
             ),
         ),
     ]

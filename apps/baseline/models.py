@@ -743,7 +743,7 @@ class LivelihoodStrategyManager(common_models.IdentifierManager):
         code: str,
         reference_year_end_date: str,
         strategy_type: str,
-        season_name_en: str,
+        season: str,
         product: str = "",
         additional_identifier: str = "",
     ):
@@ -753,8 +753,8 @@ class LivelihoodStrategyManager(common_models.IdentifierManager):
             "strategy_type": strategy_type,
             "additional_identifier": additional_identifier,
         }
-        if season_name_en:
-            criteria["season__name_en"] = season_name_en
+        if season:
+            criteria["season__name_en"] = season
             criteria["season__country"] = F("livelihood_zone_baseline__livelihood_zone__country")
         else:
             criteria["season__isnull"] = True
@@ -908,17 +908,17 @@ class LivelihoodActivityManager(common_models.IdentifierManager):
             "livelihood_zone_baseline__reference_year_end_date": reference_year_end_date,
             "wealth_group__wealth_group_category__code": wealth_group_category,
             "strategy_type": strategy_type,
-            "additional_identifier": additional_identifier,
+            "livelihood_strategy__additional_identifier": additional_identifier,
         }
         if season:
-            criteria["season__name"] = season
-            criteria["season__country"] = F("livelihood_zone_baseline__livelihood_zone__country")
+            criteria["livelihood_strategy__season__name_en"] = season
+            criteria["livelihood_strategy__season__country"] = F("livelihood_zone_baseline__livelihood_zone__country")
         else:
-            criteria["season__isnull"] = True
+            criteria["livelihood_strategy__season__isnull"] = True
         if product:
-            criteria["product__cpc"] = product
+            criteria["livelihood_strategy__product__cpc"] = product
         else:
-            criteria["product__isnull"] = True
+            criteria["livelihood_strategy__product__isnull"] = True
         if full_name:
             criteria["wealth_group__community__full_name"] = full_name
         else:
@@ -941,7 +941,7 @@ class LivelihoodActivity(common_models.Model):
     """
 
     livelihood_strategy = models.ForeignKey(
-        LivelihoodStrategy, on_delete=models.PROTECT, help_text=_("Livelihood Strategy")
+        LivelihoodStrategy, on_delete=models.CASCADE, help_text=_("Livelihood Strategy")
     )
     # Inherited from Livelihood Strategy, the denormalization is necessary to
     # ensure that the Livelihood Strategy and the Wealth Group belong to the
@@ -966,7 +966,7 @@ class LivelihoodActivity(common_models.Model):
         verbose_name=_("Scenario"),
         help_text=_("The scenario in which the outputs of this Livelihood Activity apply, e.g. baseline or response."),
     )
-    wealth_group = models.ForeignKey(WealthGroup, on_delete=models.PROTECT, help_text=_("Wealth Group"))
+    wealth_group = models.ForeignKey(WealthGroup, on_delete=models.CASCADE, help_text=_("Wealth Group"))
 
     quantity_produced = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Produced"))
     quantity_purchased = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Purchased"))
@@ -1032,6 +1032,8 @@ class LivelihoodActivity(common_models.Model):
         verbose_name=_("Extra attributes"),
         help_text=_("Additional attributes from the BSS for this Livelihood Activity"),
     )
+
+    objects = LivelihoodActivityManager()
 
     def calculate_fields(self):
         self.livelihood_zone_baseline = self.livelihood_strategy.livelihood_zone_baseline
@@ -1147,11 +1149,11 @@ class LivelihoodActivity(common_models.Model):
         return (
             self.livelihood_zone_baseline.livelihood_zone_id,
             self.livelihood_zone_baseline.reference_year_end_date.isoformat(),
-            self.strategy_type,
-            self.season.name if self.season else "",
-            self.product_id if self.product_id else "",
-            self.additional_identifier,
             self.wealth_group.wealth_group_category.code,
+            self.strategy_type,
+            self.livelihood_strategy.season.name_en if self.livelihood_strategy.season else "",
+            self.livelihood_strategy.product_id if self.livelihood_strategy.product_id else "",
+            self.livelihood_strategy.additional_identifier,
             self.wealth_group.community.full_name if self.wealth_group.community else "",
         )
 
