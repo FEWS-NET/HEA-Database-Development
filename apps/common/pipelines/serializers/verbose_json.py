@@ -1,6 +1,7 @@
 """
 Customized version of django.core.serializers.json that provided additional logging.
 """
+
 import json
 import logging
 
@@ -29,10 +30,11 @@ def Deserializer(stream_or_string, **options):
         objects = json.loads(stream_or_string)
         for object in objects:
             try:
+                logger.debug("Deserializing %s" % str(object))
                 yield from PythonDeserializer([object], **options)
-            except Exception:
-                logging.exception("Failed to deserialize object %s" % object)
-                raise
+            except Exception as e:
+                raise RuntimeError("Failed to deserialize object %s" % object) from e
+
     except (GeneratorExit, DeserializationError):
         raise
     except Exception as exc:
