@@ -861,7 +861,7 @@ class LivelihoodStrategy(common_models.Model):
             self.livelihood_zone_baseline.livelihood_zone_id,
             self.livelihood_zone_baseline.reference_year_end_date.isoformat(),
             self.strategy_type,
-            self.season.name if self.season else "",
+            self.season.name_en if self.season else "",
             self.product_id if self.product_id else "",
             self.additional_identifier,
         )
