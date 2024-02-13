@@ -3,7 +3,6 @@
 import django.core.validators
 import django.db.models.deletion
 import django.utils.timezone
-import model_utils.fields
 from django.db import migrations, models
 
 import common.fields
@@ -21,15 +20,11 @@ class Migration(migrations.Migration):
             fields=[
                 (
                     "created",
-                    model_utils.fields.AutoCreatedField(
-                        default=django.utils.timezone.now, editable=False, verbose_name="created"
-                    ),
+                    models.DateTimeField(auto_now_add=True, verbose_name="created"),
                 ),
                 (
                     "modified",
-                    model_utils.fields.AutoLastModifiedField(
-                        default=django.utils.timezone.now, editable=False, verbose_name="modified"
-                    ),
+                    models.DateTimeField(auto_now=True, verbose_name="modified"),
                 ),
                 ("path", models.CharField(max_length=255, unique=True)),
                 ("depth", models.PositiveIntegerField()),
@@ -174,15 +169,11 @@ class Migration(migrations.Migration):
             fields=[
                 (
                     "created",
-                    model_utils.fields.AutoCreatedField(
-                        default=django.utils.timezone.now, editable=False, verbose_name="created"
-                    ),
+                    models.DateTimeField(auto_now_add=True, verbose_name="created"),
                 ),
                 (
                     "modified",
-                    model_utils.fields.AutoLastModifiedField(
-                        default=django.utils.timezone.now, editable=False, verbose_name="modified"
-                    ),
+                    models.DateTimeField(auto_now=True, verbose_name="modified"),
                 ),
                 (
                     "abbreviation",
@@ -225,15 +216,11 @@ class Migration(migrations.Migration):
                 ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
                 (
                     "created",
-                    model_utils.fields.AutoCreatedField(
-                        default=django.utils.timezone.now, editable=False, verbose_name="created"
-                    ),
+                    models.DateTimeField(auto_now_add=True, verbose_name="created"),
                 ),
                 (
                     "modified",
-                    model_utils.fields.AutoLastModifiedField(
-                        default=django.utils.timezone.now, editable=False, verbose_name="modified"
-                    ),
+                    models.DateTimeField(auto_now=True, verbose_name="modified"),
                 ),
                 (
                     "conversion_factor",
@@ -271,15 +258,11 @@ class Migration(migrations.Migration):
                 ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
                 (
                     "created",
-                    model_utils.fields.AutoCreatedField(
-                        default=django.utils.timezone.now, editable=False, verbose_name="created"
-                    ),
+                    models.DateTimeField(auto_now_add=True, verbose_name="created"),
                 ),
                 (
                     "modified",
-                    model_utils.fields.AutoLastModifiedField(
-                        default=django.utils.timezone.now, editable=False, verbose_name="modified"
-                    ),
+                    models.DateTimeField(auto_now=True, verbose_name="modified"),
                 ),
                 (
                     "country",

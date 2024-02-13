@@ -18,7 +18,7 @@ from django.utils.formats import date_format
 from django.utils.timezone import now
 from django.utils.translation import get_language
 from django.utils.translation import gettext_lazy as _
-from model_utils.models import TimeFramedModel, TimeStampedModel
+from model_utils.models import TimeFramedModel
 from treebeard.mp_tree import MP_Node, MP_NodeQuerySet
 
 from .fields import (  # noqa: F401
@@ -215,20 +215,23 @@ class TranslatableModel(models.Model):
 
 
 # @TODO Should this be in Metadata
-class Model(TimeStampedModel):
+class Model(models.Model):
     """
     An abstract base class model that provides:
     * created and modified timestamps
     * named identifier attributes
     """
 
+    created = models.DateTimeField(auto_now_add=True, verbose_name=_("created"))
+    modified = models.DateTimeField(auto_now=True, verbose_name=_("modified"))
+
+    objects = IdentifierManager()
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Order by identifier if no other ordering is specified
         if self._meta.ordering == []:
             self._meta.ordering = self.ExtraMeta.identifier
-
-    objects = IdentifierManager()
 
     class Meta:
         abstract = True
@@ -353,9 +356,11 @@ class NonOverlappingMixin(models.Model):
         setattr(
             self,
             self.get_end_field(),
-            now()
-            if isinstance(self._meta.get_field(self.get_end_field()), models.DateTimeField)
-            else datetime.date.today(),
+            (
+                now()
+                if isinstance(self._meta.get_field(self.get_end_field()), models.DateTimeField)
+                else datetime.date.today()
+            ),
         )
         self.save()
 
@@ -427,12 +432,14 @@ class NonOverlappingMixin(models.Model):
                     "class": self._meta.verbose_name.title(),
                     "pk": evaluation_queryset[0].pk,
                     "instance": str(evaluation_queryset[0]),
-                    "non_overlapping_fields": "{} and {}".format(
-                        ", ".join(list(non_overlapping_fields)[:-1]),
-                        list(non_overlapping_fields)[-1],
-                    )
-                    if len(non_overlapping_fields) > 1
-                    else list(non_overlapping_fields)[0],
+                    "non_overlapping_fields": (
+                        "{} and {}".format(
+                            ", ".join(list(non_overlapping_fields)[:-1]),
+                            list(non_overlapping_fields)[-1],
+                        )
+                        if len(non_overlapping_fields) > 1
+                        else list(non_overlapping_fields)[0]
+                    ),
                     "start": start,
                     "end": end,
                 },
