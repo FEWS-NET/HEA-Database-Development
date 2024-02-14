@@ -1,17 +1,13 @@
+import datetime
 import json
 import os
 import tempfile
+from collections import defaultdict
 from io import StringIO
 
 import django
 import pandas as pd
-from dagster import (
-    AssetExecutionContext,
-    AssetMaterialization,
-    MetadataValue,
-    Output,
-    asset,
-)
+from dagster import AssetExecutionContext, MetadataValue, Output, asset
 from django.core.management import call_command
 from django.db import models
 
@@ -24,6 +20,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hea.settings.production")
 # Configure Django with our custom settings before importing any Django classes
 django.setup()
 
+from common.lookups import ClassifiedProductLookup  # NOQA: E402
 from common.management.commands import verbose_load_data  # NOQA: E402
 
 
@@ -65,6 +62,13 @@ def validated_instances(
     dfs = {}
     for model_name, instances in consolidated_instances.items():
         model = class_from_name(f"baseline.models.{model_name}")
+        valid_field_names = [field.name for field in model._meta.concrete_fields]
+        # Also include values that point directly to the primary key of related objects
+        valid_field_names += [
+            field.get_attname()
+            for field in model._meta.concrete_fields
+            if field.get_attname() not in valid_field_names
+        ]
         df = pd.DataFrame.from_records(instances)
 
         # Add the key to the instances for this model, so we can validate foreign keys within the fixture
@@ -85,13 +89,30 @@ def validated_instances(
                 ["livelihood_zone_baseline", "strategy_type", "season", "product_id", "additional_identifier"]
             ].apply(lambda x: x[0] + [x[1], x[2][0] if x[2] else "", x[3], x[4]], axis="columns")
 
+        # Apply some model-level defaults
+        if "created" in valid_field_names and "created" not in df:
+            df["created"] = pd.Timestamp.now(datetime.timezone.utc)
+        if "modified" in valid_field_names and "modified" not in df:
+            df["modified"] = pd.Timestamp.now(datetime.timezone.utc)
+
         # Save the model and dataframe so we can use them validate natural foreign keys later
         dfs[model_name] = (model, df)
 
-        # Ensure the consolidated instances contain valid parent references for foreign keys
+        # Apply field-level checks
         for field in model._meta.concrete_fields:
+            column = field.name if field.name in df else field.get_attname()
+            # Ensure that mandatory fields have values
+            if not field.blank:
+                if column not in df:
+                    error = f"Missing mandatory field {field.name} for {model_name}"
+                    errors.append(error)
+                    continue
+                else:
+                    for row in df[df[column].isnull()].itertuples():
+                        error = f"Missing value for mandatory field {column} for {model_name} in row {row.Index} {row._asdict()}"  # NOQA: E501
+                        errors.append(error)
+            # Ensure the consolidated instances contain valid parent references for foreign keys
             if isinstance(field, models.ForeignKey):
-                column = field.name if field.name in df else field.get_attname()
                 if column not in df:
                     error = f"Missing mandatory foreign key {column} for {model_name}"
                     errors.append(error)
@@ -118,6 +139,21 @@ def validated_instances(
                     )
                     errors.append(error)
 
+        # Check that the kcals/kg matches the values in the ClassifiedProduct model, if it's present in the BSS
+        if model_name == "LivelihoodActivity" and "product__kcals_per_unit" in df:
+            df["product"] = df["livelihood_strategy"].apply(lambda x: x[4])
+            df = ClassifiedProductLookup().get_instances(df, "product", "product")
+            df["reference_kcals_per_unit"] = df["product"].apply(lambda x: x.kcals_per_unit)
+            df["reference_unit_of_measure"] = df["product"].apply(lambda x: x.unit_of_measure)
+            for row in df[df["product__kcals_per_unit"] != df["reference_kcals_per_unit"]].itertuples():
+                error = (
+                    f"Non-standard value {row.product__kcals_per_unit} "
+                    f"in '{row.column}{row.row}' for {model_name} instance "
+                    f'{str({k: v for k,v in row._asdict().items() if k != "Index"})}. '
+                    f"Expected {row.reference_kcals_per_unit}/{row.reference_unit_of_measure} for {row.product}"
+                )
+                errors.append(error)
+
     if errors:
         errors = "\n".join(errors)
         raise RuntimeError("Missing or inconsistent metadata in BSS:\n%s" % errors)
@@ -140,9 +176,20 @@ def consolidated_fixture(
     """
     Consolidated Django fixture for a BSS, including Livelihood Activities and Wealth Group Characteristic Values.
     """
-    # Concatenate the individual fixtures into a single dict
+    # For Livelihood Activities we need to create instances of the subclass, as well as the base class
+    # so create an additional list of instances for each subclass.
+    livelihood_activities = defaultdict(list)
+    for instance in validated_instances["LivelihoodActivity"]:
+        # The subclass instances also need a pointer to the base class instance
+        instance["livelihoodactivity_ptr"] = (
+            instance["wealth_group"][:3] + instance["livelihood_strategy"][2:] + [instance["wealth_group"][3]]
+        )
+        livelihood_activities[instance["strategy_type"]].append(instance)
+
+    # Concatenate the separate lists of instances for each model into a single list of records
     fixture = []
-    for model_name, instances in validated_instances.items():
+    metadata = defaultdict(int)
+    for model_name, instances in {**validated_instances, **livelihood_activities}.items():
         try:
             model = class_from_name(f"baseline.models.{model_name}")
             valid_field_names = [field.name for field in model._meta.concrete_fields]
@@ -161,11 +208,12 @@ def consolidated_fixture(
             raise
 
         for field_values in instances:
+            # Start building the record for the  model instance.
             record = {
                 "model": str(model._meta),  # returns, e.g; baseline.livelihoodzone
             }
+            # If the model doesn't use a natural key, we need to specify the primary key separately
             if not hasattr(model, "natural_key"):
-                # This model doesn't use a natural key, so we need to specify the primary key separately
                 try:
                     record["pk"] = field_values.pop(model._meta.pk.name)
                 except KeyError:
@@ -193,8 +241,8 @@ def consolidated_fixture(
                         pass
                     record["fields"][field] = value
             fixture.append(record)
+            metadata[f'num_{str(model._meta).split(".")[-1]}'] += 1
 
-    metadata = {f"num_{key.lower()}": len(value) for key, value in validated_instances.items()}
     metadata["total_instances"] = len(fixture)
     metadata["preview"] = MetadataValue.md(f"```json\n{json.dumps(fixture, indent=4)}\n```")
     return Output(
@@ -207,29 +255,27 @@ def consolidated_fixture(
 def imported_baseline(
     context: AssetExecutionContext,
     consolidated_fixture,
-):
+) -> Output[None]:
     """
     Imported Django fixtures for a BSS, added to the Django database.
     """
     output_buffer = StringIO()
 
-    # We need to use a .verbose_json format for Django to use the correct serializer.
+    # We need to use a .verbose_json file extension for Django to use the correct serializer.
     with tempfile.NamedTemporaryFile(mode="w+", suffix=".verbose_json") as f:
         # Write the fixture to a temporary file so that Django can access it
         f.write(json.dumps(consolidated_fixture))
         f.seek(0)
         call_command(verbose_load_data.Command(), f.name, verbosity=2, format="verbose_json", stdout=output_buffer)
 
-    # Emit an AssetMaterialization to provide runtime metadata
-    asset_key = context.asset_key
-    partition_key = context.partition_key
+    # Create the metadata reporting the number of instances created for each model
+    metadata = defaultdict(int)
+    for instance in consolidated_fixture:
+        metadata[f'num_{instance["model"].split(".")[-1]}'] += 1
+    metadata["total_instances"] = len(consolidated_fixture)
+    metadata["output"] = MetadataValue.md(f"```\n{output_buffer.getvalue()}\n```")
 
-    yield AssetMaterialization(
-        asset_key=asset_key,
-        partition=partition_key,
-        description="Loaded Django fixture for the BSS into the database.",
-        metadata={
-            "instances_created": len(consolidated_fixture),
-            "output": MetadataValue.md(f"```\n{output_buffer.getvalue()}\n```"),
-        },
+    return Output(
+        None,
+        metadata=metadata,
     )
