@@ -652,11 +652,15 @@ class Migration(migrations.Migration):
                 ("milking_animals", models.PositiveSmallIntegerField(verbose_name="Number of milking animals")),
                 (
                     "lactation_days",
-                    models.PositiveSmallIntegerField(verbose_name="Average number of days of lactation"),
+                    models.PositiveSmallIntegerField(
+                        blank=True, null=True, verbose_name="Average number of days of lactation"
+                    ),
                 ),
                 (
                     "daily_production",
-                    models.PositiveSmallIntegerField(verbose_name="Average daily milk production per animal"),
+                    models.PositiveSmallIntegerField(
+                        blank=True, null=True, verbose_name="Average daily milk production per animal"
+                    ),
                 ),
                 (
                     "quantity_butter_production",
