@@ -366,9 +366,9 @@ def livelihood_activity_fixture(
                     ):
                         for i in range(len(previous_livelihood_activities_for_strategy)):
                             if "milking_animals" in previous_livelihood_activities_for_strategy[i]:
-                                livelihood_activities_for_strategy[i]["milking_animals"] = (
-                                    previous_livelihood_activities_for_strategy[i]["milking_animals"]
-                                )
+                                livelihood_activities_for_strategy[i][
+                                    "milking_animals"
+                                ] = previous_livelihood_activities_for_strategy[i]["milking_animals"]
 
                     # Calculated kcals_consumed if the livelihood activity only contains the percentage_kcals.
                     # This is typical for ButterProduction. Derive it by multiplying percentage_kcals by:
