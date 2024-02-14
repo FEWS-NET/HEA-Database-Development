@@ -385,25 +385,25 @@ def wealth_characteristic_fixture(
                 # We need col_index + 1 to get the letter, and the enumerate is already starting from col C
                 column = get_column_letter(i + 3)
                 try:
-                    # Add find the characteristic_type:
+                    # Add find the reference_type:
                     # Wealth Group (Form 4) values will have a full name and a wealth group category from Row 3
                     if community_full_names[i] and wealth_group_categories[i]:
-                        characteristic_type = WealthGroupCharacteristicValue.CharacteristicReference.WEALTH_GROUP
+                        reference_type = WealthGroupCharacteristicValue.CharacteristicReference.WEALTH_GROUP
                     # Community (Form 3) values will have a full name from Rows 4 and 5, but no wealth group category
                     elif community_full_names[i]:
-                        characteristic_type = WealthGroupCharacteristicValue.CharacteristicReference.COMMUNITY
+                        reference_type = WealthGroupCharacteristicValue.CharacteristicReference.COMMUNITY
                     # Summary values will not have full name or a wealth category, and will be in the last 3 columns
                     # Check for len(df.columns) -5 because the Summary col is 3rd from end, and i starts at Column C.
                     elif i == len(df.columns) - 5:
-                        characteristic_type = WealthGroupCharacteristicValue.CharacteristicReference.SUMMARY
+                        reference_type = WealthGroupCharacteristicValue.CharacteristicReference.SUMMARY
                     # There is no full name, and this isn't the summary, so we can ignore this column. This happens
                     # because there are typically blank columns in BSS between each wealth group category. For example,
                     # in MWKAS_30Sep15.xlsx they are in columns L, V, AF, AP and AZ
                     else:
-                        characteristic_type = None
+                        reference_type = None
 
                     # Only store Wealth Group Characteristic Values that have a value (which might be zero).
-                    # Ignore columns where we couldn't determine the characteristic_type. Even though these are
+                    # Ignore columns where we couldn't determine the reference_type. Even though these are
                     # supposed to be blank columns, they sometimes contain 0 values for some rows, particularly where
                     # the Wealth Characteristic Value for the adjacent columns is also 0.
                     # Ignore Form 4 Wealth Group Characteristic Values where the Value is for a different Wealth Group
@@ -411,7 +411,7 @@ def wealth_characteristic_fixture(
                     # Wealth Group Category in Column B.
                     if (
                         value != ""
-                        and characteristic_type
+                        and reference_type
                         and (not wealth_group_categories[i] or wealth_group_categories[i] == wealth_group_category)
                     ):
                         wealth_group_characteristic_value = attributes.copy()
@@ -423,7 +423,7 @@ def wealth_characteristic_fixture(
                             community_full_names[i],
                         ]
 
-                        wealth_group_characteristic_value["characteristic_type"] = characteristic_type
+                        wealth_group_characteristic_value["reference_type"] = reference_type
 
                         # The percentage of households should be stored as a number between 1 and 100,
                         # but may be stored in the BSS (particularly in the summary column) as a
@@ -438,7 +438,7 @@ def wealth_characteristic_fixture(
                         wealth_group_characteristic_value["value"] = value
 
                         # If this is the summary, then also save the min and max values
-                        if characteristic_type == WealthGroupCharacteristicValue.CharacteristicReference.SUMMARY:
+                        if reference_type == WealthGroupCharacteristicValue.CharacteristicReference.SUMMARY:
                             min_value = df.loc[row, df.columns[-2]]
                             if min_value != "" and float(min_value) < 1:
                                 min_value = float(min_value) * 100
@@ -449,24 +449,25 @@ def wealth_characteristic_fixture(
                             wealth_group_characteristic_value["max_value"] = max_value
 
                         # Save the column and row, to aid trouble-shooting
-                        wealth_group_characteristic_value["column"] = column
-                        wealth_group_characteristic_value["row"] = row
+                        wealth_group_characteristic_value["bss_sheet"] = "WB"
+                        wealth_group_characteristic_value["bss_column"] = column
+                        wealth_group_characteristic_value["bss_row"] = row
                         wealth_group_characteristic_values.append(wealth_group_characteristic_value)
                 except Exception as e:
                     raise RuntimeError("Unhandled error processing cell %s%s" % (column, row)) from e
 
     # Create a dataframe of the Wealth Group Characteristic Values so that we can extract the
-    # precentage of households and average household size, and run additional validation.
+    # percentage of households and average household size, and run additional validation.
     value_df = pd.DataFrame.from_records(wealth_group_characteristic_values)
     value_df["wealth_group_category"] = value_df["wealth_group"].apply(lambda wealth_group: wealth_group[2])
     value_df["full_name"] = value_df["wealth_group"].apply(lambda wealth_group: wealth_group[3])
 
-    # Make sure that the names in the Wealth Group-level interviews match
-    # the names in the in the Community-level interviews that were used to
+    # Make sure that the names in the Wealth Group-level interviews (e.g. columns $M:$AZ) match
+    # the names in the in the Community-level interviews (e.g. columns $C:$K) that were used to
     # create the Wealth Group records
     unmatched_full_names = value_df[
         pd.notna(value_df["full_name"]) & ~value_df["full_name"].isin(wealth_group_df.full_name)
-    ][["full_name", "column", "row"]]
+    ][["full_name", "bss_column", "bss_row"]]
     if not unmatched_full_names.empty:
         raise ValueError(
             "Unmatched Community full_name in Wealth Group interviews:\n%s" % unmatched_full_names.to_markdown()
@@ -478,7 +479,7 @@ def wealth_characteristic_fixture(
     # (The Community Interview values aren't used for the Wealth Group household size or percentage of households).
     extra_attributes_df = value_df[
         value_df["wealth_characteristic_id"].isin(["percentage of households", "household size"])
-        & value_df["characteristic_type"].isin(
+        & value_df["reference_type"].isin(
             [
                 WealthGroupCharacteristicValue.CharacteristicReference.WEALTH_GROUP,
                 WealthGroupCharacteristicValue.CharacteristicReference.SUMMARY,
