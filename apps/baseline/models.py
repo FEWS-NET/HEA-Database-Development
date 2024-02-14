@@ -1169,8 +1169,12 @@ class MilkProduction(LivelihoodActivity):
 
     # Production calculation /validation is `lactation days * daily_production`
     milking_animals = models.PositiveSmallIntegerField(verbose_name=_("Number of milking animals"))
-    lactation_days = models.PositiveSmallIntegerField(verbose_name=_("Average number of days of lactation"))
-    daily_production = models.PositiveSmallIntegerField(verbose_name=_("Average daily milk production per animal"))
+    lactation_days = models.PositiveSmallIntegerField(
+        blank=True, null=True, verbose_name=_("Average number of days of lactation")
+    )
+    daily_production = models.PositiveSmallIntegerField(
+        blank=True, null=True, verbose_name=_("Average daily milk production per animal")
+    )
 
     # @TODO see https://fewsnet.atlassian.net/browse/HEA-65
     # This is currently not required for scenario development and is only used for the kcal calculations in the BSS.
@@ -1214,6 +1218,13 @@ class MilkProduction(LivelihoodActivity):
     def validate_quantity_produced(self):
         # @TODO Add validation
         pass
+
+    def clean(self):
+        super().clean()
+        if self.milking_animals and not self.lactation_days:
+            raise ValidationError(_("Lactation days must be provided if there are milking animals"))
+        if self.milking_animals and not self.daily_production:
+            raise ValidationError(_("Daily production must be provided if there are milking animals"))
 
     class Meta:
         verbose_name = LivelihoodStrategyType.MILK_PRODUCTION.label
