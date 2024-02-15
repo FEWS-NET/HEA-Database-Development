@@ -426,8 +426,10 @@ class FoodPurchaseFactory(LivelihoodActivityFactory):
         ]
 
     strategy_type = "FoodPurchase"
+    quantity_sold = fuzzy.FuzzyInteger(0, 10)
+    quantity_other_uses = fuzzy.FuzzyInteger(0, 10)
     quantity_produced = factory.LazyAttribute(lambda o: o.unit_multiple * o.times_per_month * o.months_per_year)
-    unit_multiple = fuzzy.FuzzyInteger(1, 500)
+    unit_multiple = fuzzy.FuzzyInteger(2, 500)
     times_per_month = fuzzy.FuzzyInteger(10, 50)
     times_per_year = fuzzy.FuzzyInteger(10, 160)
     months_per_year = fuzzy.FuzzyInteger(1, 12)
@@ -445,6 +447,8 @@ class PaymentInKindFactory(LivelihoodActivityFactory):
         ]
 
     strategy_type = "PaymentInKind"
+    quantity_sold = fuzzy.FuzzyInteger(0, 25)
+    quantity_other_uses = fuzzy.FuzzyInteger(0, 25)
     quantity_produced = factory.LazyAttribute(
         lambda o: o.payment_per_time * o.people_per_household * o.times_per_month * o.months_per_year
     )
@@ -467,8 +471,10 @@ class ReliefGiftOtherFactory(LivelihoodActivityFactory):
         ]
 
     strategy_type = "ReliefGiftOther"
+    quantity_sold = 0
+    quantity_other_uses = 0
     quantity_produced = factory.LazyAttribute(lambda o: o.unit_multiple * o.times_per_year)
-    unit_multiple = fuzzy.FuzzyInteger(1, 500)
+    unit_multiple = fuzzy.FuzzyInteger(10, 500)
     times_per_year = fuzzy.FuzzyInteger(1, 160)
 
 
