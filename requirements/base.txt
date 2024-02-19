@@ -1,7 +1,7 @@
 # Do not pip freeze into this file. Add only the packages you need so pip can align dependencies.
 ddtrace==1.14.0
-Django==4.2.7
-git+https://github.com/kimetrica/django-binary-database-files.git@1.0.17#egg
+Django==5.0.2
+django-binary-database-files==1.0.18
 django-environ==0.10.0
 django-extensions==3.2.3
 django-filter==23.2

@@ -1,11 +1,11 @@
-FROM --platform=linux/amd64 python:3.10-bullseye as base
-
+FROM --platform=linux/amd64 python:3.11-bookworm as base
 # set up apt repositories for postgres installation
 RUN curl -s https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor | tee /usr/share/keyrings/pgdg.gpg >/dev/null && \
-    echo "deb [signed-by=/usr/share/keyrings/pgdg.gpg] http://apt.postgresql.org/pub/repos/apt bullseye-pgdg main" > /etc/apt/sources.list.d/pgdg.list && \
+    echo "deb [signed-by=/usr/share/keyrings/pgdg.gpg] http://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" > /etc/apt/sources.list.d/pgdg.list && \
     apt-get -qq update && \
     apt-get -qq upgrade -y && \
     apt-get -qq install -y --no-install-recommends \
+        python3-distutils \
         ca-certificates \
         curl \
         gdal-bin \
@@ -43,7 +43,7 @@ RUN pip install --quiet --no-cache-dir --upgrade pip
 # Install pyGDAL based on the version of GDAL available in the OS.
 # Currently, the version of GDAL in use conflicts with current setuptools,
 # so pin an older version - see https://github.com/pypa/setuptools/issues/2781
-RUN pip --quiet --no-cache-dir install "setuptools<58.0.0"
+RUN pip --quiet --no-cache-dir install "setuptools==69.1.0"
 # GDAL requires numpy for some extensions to build, make sure the numpy version
 # specified here matches requirements/base.txt
 RUN VERSION=$(gdal-config --version); CFLAGS=$(gdal-config --cflags) pip install --quiet --no-cache-dir numpy==1.23.5 GDAL[numpy]==${VERSION}
