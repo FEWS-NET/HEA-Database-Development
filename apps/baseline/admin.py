@@ -1,8 +1,8 @@
 from copy import deepcopy
 
 from django.contrib import admin
+from django.contrib.gis.admin import GISModelAdmin
 
-from common.admin import GeoModelAdmin
 from common.fields import translation_fields
 from metadata.models import LivelihoodStrategyType
 
@@ -80,7 +80,7 @@ class LivelihoodZoneAdmin(admin.ModelAdmin):
     list_filter = ("country",)
 
 
-class LivelihoodZoneBaselineAdmin(GeoModelAdmin):
+class LivelihoodZoneBaselineAdmin(GISModelAdmin):
     fieldsets = [
         (
             None,
@@ -134,7 +134,7 @@ class LivelihoodZoneBaselineAdmin(GeoModelAdmin):
     date_hierarchy = "reference_year_start_date"
 
 
-class CommunityAdmin(GeoModelAdmin):
+class CommunityAdmin(GISModelAdmin):
     fields = (
         "name",
         "full_name",

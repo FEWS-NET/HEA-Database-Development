@@ -1,7 +1,6 @@
 # Register your models here.
 from django.contrib import admin
 from django.contrib.admin.options import InlineModelAdmin
-from django.contrib.gis.admin import OSMGeoAdmin
 from treebeard.admin import TreeAdmin
 from treebeard.forms import movenodeform_factory
 
@@ -87,17 +86,6 @@ class UnitOfMeasureAdmin(admin.ModelAdmin):
     )
     list_filter = ("unit_type",)
     inlines = [UnitOfMeasureConversionInline]
-
-
-class GeoModelAdmin(OSMGeoAdmin, admin.ModelAdmin):
-    """
-    Enhanced OSMGeoAdmin class that:
-    * Uses https connections to the CDN for OpenLayers JavaScript if the original
-      page was requested using https
-
-    """
-
-    openlayers_url = "https://cdnjs.cloudflare.com/ajax/libs/openlayers/2.11/OpenLayers.js"
 
 
 admin.site.register(Currency, CurrencyAdmin)
