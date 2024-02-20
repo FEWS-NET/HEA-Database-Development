@@ -410,9 +410,14 @@ class WealthCharacteristicLabel(common_models.Model):
     """
 
     wealth_characteristic_label = common_models.NameField(unique=True, verbose_name=_("Wealth Characteristic Label"))
+    # wealth_characteristic has to be nullable because there are some labels that we want to recognize
+    # i.e. they need an entry in this table, but that we want to ignore completely. For example, sample text in blank
+    # rows, etc. Those labels will have an entry in this table, but no other metadata items.
     wealth_characteristic = models.ForeignKey(
         WealthCharacteristic,
         db_column="wealth_characteristic_code",
+        null=True,
+        blank=True,
         on_delete=models.RESTRICT,
         related_name="wealth_characteristics",
         verbose_name=_("Wealth Characteristic"),
