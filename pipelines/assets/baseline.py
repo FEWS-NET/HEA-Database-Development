@@ -1,208 +1,40 @@
+"""
+Dagster assets related to the Livelihood Zone and Community, read from the 'WB' worksheet in a BSS.
+
+An example of relevant rows from the worksheet:
+    | Row | A                         | B                   | C                                          | D                                          | E                                          | F                                          | G                |
+    |-----|---------------------------|---------------------|--------------------------------------------|--------------------------------------------|--------------------------------------------|--------------------------------------------|------------------|
+    |   0 | MALAWI HEA BASELINES 2015 | Southern Lakeshore  | Southern Lakeshore                         |                                            |                                            |                                            |                  |
+    |   1 |                           |                     | Community interviews                       |                                            |                                            |                                            |                  |
+    |   2 | WEALTH GROUP              |                     |                                            |                                            |                                            |                                            |                  |
+    |   3 | District                  | Salima and Mangochi | Salima                                     | Salima                                     | Salima                                     | Salima                                     | Dedza            |
+    |   4 | Village                   |                     | Mtika                                      | Pemba                                      | Ndembo                                     | Makanjira                                  | Kasakala         |
+    |   5 | Interview number:         |                     | 1                                          | 2                                          | 3                                          | 4                                          | 5                |
+    |   6 | Interviewers              |                     | Kandiwo, Ethel, Fyawupi, Daniel, Chipiliro | Kandiwo, Ethel, Fyawupi, Daniel, Chipiliro | Kandiwo, Ethel, Fyawupi, Chipiliro, Daniel | Kandiwo, Ethel, Fyawupi, Chipiliro, Daniel | Chipiliro, Imran |
+"""  # NOQA: E501
+
 import json
-import numbers
-from io import BytesIO
-from pathlib import Path
 
-import openpyxl
 import pandas as pd
-import xlrd
-import xlwt
-from dagster import (
-    AssetExecutionContext,
-    Config,
-    DynamicPartitionsDefinition,
-    MetadataValue,
-    Output,
-    asset,
-)
-from openpyxl.comments import Comment
-from openpyxl.utils.cell import coordinate_to_tuple, rows_from_range
-from pydantic import Field
-from xlutils.copy import copy as copy_xls
+from dagster import AssetExecutionContext, MetadataValue, Output, asset
 
-bss_files_partitions_def = DynamicPartitionsDefinition(name="bss_files")
-
-
-class BSSMetadataConfig(Config):
-    gdrive_id: str = Field(
-        default="15XVXFjbom1sScVXbsetnbgAnPpRux2AgNy8w5U8bXdI", description="The id of the BSS Metadata Google Sheet."
-    )
-    bss_root_folder: str = Field(
-        default="/home/roger/Temp/Baseline Storage Sheets (BSS)",
-        description="The path of the root folder containing the BSSs",
-    )
-    preview_rows: int = Field(default=10, description="The number of rows to show in DataFrame previews")
-
-
-@asset(required_resource_keys={"google_client"})
-def bss_metadata(context: AssetExecutionContext, config: BSSMetadataConfig) -> Output[pd.DataFrame]:
-    """
-    A DataFrame containing the BSS Metadata.
-    """
-    gc = context.resources.google_client.get_gspread_client()
-    sh = gc.open_by_key(config.gdrive_id)
-    worksheet = sh.worksheet("Metadata")
-    data = worksheet.get_all_records()
-    df = pd.DataFrame(data)
-    return Output(df, metadata={"num_baselines": len(df)})
-
-
-@asset
-def completed_bss_metadata(config: BSSMetadataConfig, bss_metadata) -> Output[pd.DataFrame]:
-    """
-    A DataFrame containing the BSS Metadata that has been completed sufficiently to allow the BSS to be loaded.
-    """
-    required_columns = [
-        "bss_path",
-        "code",
-        "country_id",
-        "source_organization",
-        "name_en",
-        "main_livelihood_category_id",
-        "currency_id",
-        "reference_year_start_date",
-        "reference_year_end_date",
-        "valid_from_date",
-    ]
-    mask = bss_metadata[required_columns].applymap(lambda x: x == "")
-
-    # Drop rows where any of the specified columns have empty strings
-    df = bss_metadata[~mask.any(axis="columns")]
-    return Output(
-        df,
-        metadata={"num_baselines": len(df), "preview": MetadataValue.md(df.head(config.preview_rows).to_markdown())},
-    )
-
-
-@asset(required_resource_keys={"google_client"})
-def bss_corrections(context: AssetExecutionContext, config: BSSMetadataConfig) -> Output[pd.DataFrame]:
-    """
-    A DataFrame containing approved corrections to cells in BSS spreadsheets.
-    """
-    gc = context.resources.google_client.get_gspread_client()
-    sh = gc.open_by_key(config.gdrive_id)
-    worksheet = sh.worksheet("Corrections")
-    data = worksheet.get_all_records()
-    df = pd.DataFrame(data)
-    return Output(
-        df,
-        metadata={
-            "num_baselines": df["bss_path"].nunique(),
-            "num_corrections": len(df),
-            "preview": MetadataValue.md(df.head(config.preview_rows).to_markdown()),
-        },
-    )
-
-
-@asset(partitions_def=bss_files_partitions_def)
-def bss_files_metadata():
-    pass
-
-
-@asset(partitions_def=bss_files_partitions_def)
-def corrected_files(context: AssetExecutionContext, config: BSSMetadataConfig, bss_corrections) -> Output[BytesIO]:
-    """
-    BSS files with any necessary corrections applied.
-    """
-    partition_key = context.asset_partition_key_for_output()
-    file_path = Path(config.bss_root_folder, partition_key)
-    extension = None
-    for extension in [".xls", ".xlsx"]:
-        if file_path.with_suffix(extension).exists():
-            file_path = file_path.with_suffix(extension)
-            break
-    assert extension, f"No BSS file found for {partition_key} in {config.bss_root_folder}"
-
-    def validate_previous_value(cell, expected_prev_value, prev_value):
-        """
-        Inline function to validate the existing value of a cell is the expected one, prior to correcting it.
-        """
-        # "#N/A" is inconsistently loaded as nan, even when copied and pasted in Excel or GSheets
-        if not isinstance(prev_value, numbers.Number):
-            prev_value = str(prev_value).replace("None", "").replace("nan", "#N/A").strip()
-            expected_prev_value = str(expected_prev_value)
-        if expected_prev_value != prev_value:
-            raise ValueError(
-                "Unexpected prior value in source BSS. "
-                f"BSS `{partition_key}`, cell `{cell}`, "
-                f"value found `{prev_value}`, expected `{expected_prev_value}`."
-            )
-
-    # Find the corrections for this BSS
-    corrections_df = bss_corrections[bss_corrections["bss_path"] == partition_key + extension]
-
-    # Prepare the metadata for the output
-    output_metadata = {"bss_path": file_path, "num_corrections": len(corrections_df)}
-
-    if corrections_df.empty:
-        # No corrections, so just leave the file unaltered
-        with open(file_path, "rb") as fh:
-            return Output(BytesIO(fh.read()), metadata=output_metadata)
-    else:
-        if file_path.suffix == ".xls":
-            # xlrd can only read XLS files, so we need to use xlutils.copy_xls to create something we can edit
-            xlrd_wb = xlrd.open_workbook(file_path, formatting_info=True, on_demand=True)
-            wb = copy_xls(xlrd_wb)
-        else:
-            xlrd_wb = None  # Required to suppress spurious unbound variable errors from Pyright
-            # Need data_only=True to get the values of cells that contain formulas
-            wb = openpyxl.load_workbook(file_path, data_only=True)
-        for correction in corrections_df.itertuples():
-            for row in rows_from_range(correction.range):
-                for cell in row:
-                    if isinstance(wb, xlwt.Workbook):
-                        row, col = coordinate_to_tuple(cell)
-                        prev_value = xlrd_wb.sheet_by_name(correction.worksheet_name).cell_value(row - 1, col - 1)
-                        if (
-                            xlrd_wb.sheet_by_name(correction.worksheet_name).cell(row - 1, col - 1).ctype
-                            == xlrd.XL_CELL_ERROR
-                        ):
-                            # xlrd.error_text_from_code returns, eg, "#N/A"
-                            prev_value = xlrd.error_text_from_code[
-                                xlrd_wb.sheet_by_name(correction.worksheet_name).cell_value(row - 1, col - 1)
-                            ]
-                        validate_previous_value(cell, correction.prev_value, prev_value)
-                        # xlwt uses 0-based indexes, but coordinate_to_tuple uses 1-based, so offset the values
-                        wb.get_sheet(correction.worksheet_name).write(row - 1, col - 1, correction.value)
-                    else:
-                        cell = wb[correction.worksheet_name][cell]
-                        validate_previous_value(cell, correction.prev_value, cell.value)
-                        cell.value = correction.value
-                        cell.comment = Comment(
-                            f"{correction.author} on {correction.correction_date}: {correction.comment}",  # NOQA: E501
-                            author=correction.author,
-                        )
-
-        buffer = BytesIO()
-        wb.save(buffer)
-        return Output(buffer, metadata=output_metadata)
+from .base import BSSMetadataConfig, bss_files_partitions_def
 
 
 @asset(partitions_def=bss_files_partitions_def, io_manager_key="json_io_manager")
-def baseline_fixture(
+def baseline_instances(
     context: AssetExecutionContext, config: BSSMetadataConfig, completed_bss_metadata, corrected_files
 ) -> Output[dict]:
     """
-    Django fixtures for the LivelihoodZone, LivelihoodZoneBaseline and Community records in the BSSs.
-
-    The first rows of the sheet look like:
-        | Row | A                         | B                   | C                                          | D                                          | E                                          | F                                          | G                |
-        |-----|---------------------------|---------------------|--------------------------------------------|--------------------------------------------|--------------------------------------------|--------------------------------------------|------------------|
-        |   0 | MALAWI HEA BASELINES 2015 | Southern Lakeshore  | Southern Lakeshore                         |                                            |                                            |                                            |                  |
-        |   1 |                           |                     | Community interviews                       |                                            |                                            |                                            |                  |
-        |   2 | WEALTH GROUP              |                     |                                            |                                            |                                            |                                            |                  |
-        |   3 | District                  | Salima and Mangochi | Salima                                     | Salima                                     | Salima                                     | Salima                                     | Dedza            |
-        |   4 | Village                   |                     | Mtika                                      | Pemba                                      | Ndembo                                     | Makanjira                                  | Kasakala         |
-        |   5 | Interview number:         |                     | 1                                          | 2                                          | 3                                          | 4                                          | 5                |
-        |   6 | Interviewers              |                     | Kandiwo, Ethel, Fyawupi, Daniel, Chipiliro | Kandiwo, Ethel, Fyawupi, Daniel, Chipiliro | Kandiwo, Ethel, Fyawupi, Chipiliro, Daniel | Kandiwo, Ethel, Fyawupi, Chipiliro, Daniel | Chipiliro, Imran |
-    """  # NOQA: E501
+    LivelihoodZone, LivelihoodZoneBaseline and Community instances extracted from the BSS.
+    """
     partition_key = context.asset_partition_key_for_output()
 
     data_df = pd.read_excel(corrected_files, "WB", header=None)
 
     # Find the metadata for this BSS
     try:
-        metadata = completed_bss_metadata[completed_bss_metadata["bss_path"].str.startswith(partition_key)].iloc[0]
+        metadata = completed_bss_metadata[completed_bss_metadata["partition_key"] == partition_key].iloc[0]
     except IndexError:
         raise ValueError("No complete entry in the BSS Metadata worksheet for %s" % partition_key)
 
@@ -257,7 +89,7 @@ def baseline_fixture(
                     metadata["data_collection_end_date"] if metadata["data_collection_end_date"] else None
                 ),
                 "publication_date": metadata["publication_date"] if metadata["publication_date"] else None,
-                "bss": partition_key,
+                "bss": metadata["bss_path"],
             }
         ],
     }
@@ -266,7 +98,13 @@ def baseline_fixture(
     # Transpose to get data in columns
     community_df = data_df.iloc[2:7].transpose()
     # Check that the columns are what we expect
-    expected_column_sets = (["WEALTH GROUP", "District", "Village", "Interview number:", "Interviewers"],)
+    expected_column_sets = (
+        ["WEALTH GROUP", "District", "Village", "Interview number:", "Interviewers"],
+        ["GROUPE SOCIO-ECONOMIQUE", "Arrondissement", "Quartier", "Numéro d'entretien", "Enquetêur(s)"],
+        ["GROUPE SOCIO-ECONOMIQUE", "Département", "Village ou site", "Numéro d'entretien", "Enquetêur(s)"],
+        ["GROUPE DE RICHESSE", "Département", "Village ou location:", "Numero d'entretien", "Intervieweurs"],
+        ["WEALTH GROUP", "District", "Village or settlement", "Interview number:", "Interviewers"],
+    )
     found_columns = community_df.iloc[0].str.strip().tolist()
     if not any(found_columns == expected_columns for expected_columns in expected_column_sets):
         raise ValueError("Cannot identify Communities from columns %s" % ", ".join(found_columns))

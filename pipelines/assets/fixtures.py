@@ -8,11 +8,16 @@ from io import StringIO
 import django
 import pandas as pd
 from dagster import AssetExecutionContext, MetadataValue, Output, asset
+from django.core.files import File
 from django.core.management import call_command
 from django.db import models
 
 from ..utils import class_from_name
-from .baseline import BSSMetadataConfig, bss_files_partitions_def
+from .base import (
+    BSSMetadataConfig,
+    bss_files_partitions_def,
+    bss_instances_partitions_def,
+)
 
 # set the default Django settings module
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hea.settings.production")
@@ -20,26 +25,91 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hea.settings.production")
 # Configure Django with our custom settings before importing any Django classes
 django.setup()
 
+from baseline.models import LivelihoodZoneBaseline  # NOQA: E402
 from common.lookups import ClassifiedProductLookup  # NOQA: E402
 from common.management.commands import verbose_load_data  # NOQA: E402
 
 
-@asset(partitions_def=bss_files_partitions_def, io_manager_key="json_io_manager")
+def get_fixture_from_instances(instance_dict: dict[str, list[dict]]) -> list[dict]:
+    """
+    Convert a dict containing a list of instances for each model into a Django fixture.
+    """
+
+    # Concatenate the separate lists of instances for each model into a single list of records
+    fixture = []
+    metadata = defaultdict(int)
+    for model_name, instances in instance_dict.items():
+        try:
+            model = class_from_name(f"baseline.models.{model_name}")
+            valid_field_names = [field.name for field in model._meta.concrete_fields]
+            # Also include values that point directly to the primary key of related objects
+            valid_field_names += [
+                field.get_attname()
+                for field in model._meta.concrete_fields
+                if field.get_attname() not in valid_field_names
+            ]
+        except ModuleNotFoundError:
+            # Ignore non-`baseline` models.
+            # The validated data can include other models, e.g. from `metadata`,
+            # but those records must be loaded separately to ensure that they are properly reviewed.
+            continue
+        except Exception:
+            raise
+
+        for field_values in instances:
+            # Start building the record for the  model instance.
+            record = {
+                "model": str(model._meta),  # returns, e.g; baseline.livelihoodzone
+            }
+            # If the model doesn't use a natural key, we need to specify the primary key separately
+            if not hasattr(model, "natural_key"):
+                try:
+                    record["pk"] = field_values.pop(model._meta.pk.name)
+                except KeyError:
+                    raise ValueError(
+                        "Model %s doesn't support natural keys, and the data doesn't contain the primary key field '%s'"  # NOQA: E501
+                        % (model_name, model._meta.pk.name)
+                    )
+            # Discard any fields that aren't in model - they are probably left over from dataframe
+            # manipulation, such as the "_original" fields from metadata lookups, or trouble-shooting fields like
+            # "column" and "row". Django raises FieldDoesNotExist if it encounters an unexpected field.
+            record["fields"] = {}
+            for field, value in field_values.items():
+                if field in valid_field_names:
+                    try:
+                        # In Django, blank char fields should contain "" but blank numeric fields should contain None,
+                        # so replace NaN, or numeric fields containing "", with None.
+                        if pd.isna(value) or (
+                            value == ""
+                            and model._meta.get_field(field).get_internal_type() not in ["CharField", "TextField"]
+                        ):
+                            value = None
+                    except ValueError:
+                        # value is a list, probably a natural key, and raises:
+                        # "The truth value of an array with more than one element is ambiguous"
+                        pass
+                    record["fields"][field] = value
+            fixture.append(record)
+            metadata[f'num_{str(model._meta).split(".")[-1]}'] += 1
+
+    metadata["total_instances"] = len(fixture)
+    return metadata, fixture
+
+
+@asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
 def consolidated_instances(
-    baseline_fixture,
-    livelihood_activity_fixture,
-    wealth_characteristic_fixture,
+    livelihood_activity_instances,
+    wealth_characteristic_instances,
 ) -> Output[dict]:
     """
     Consolidated record instances from a BSS, ready to be validated.
     """
     # Build a dict of all the models, and their instances, that are to be loaded
     consolidated_instances = {
-        **baseline_fixture,
-        # Put the wealth_characteristic_fixture immediately after the baseline_fixture, because it loads the
+        # Put the wealth_characteristic_fixture first, because it loads the
         # WealthGroup instances, which are needed as a foreign key from LivelihoodActivity, etc.
-        **wealth_characteristic_fixture,
-        **livelihood_activity_fixture,
+        **wealth_characteristic_instances,
+        **livelihood_activity_instances,
     }
     metadata = {f"num_{key.lower()}": len(value) for key, value in consolidated_instances.items()}
     metadata["total_instances"] = sum(len(value) for value in consolidated_instances.values())
@@ -50,7 +120,7 @@ def consolidated_instances(
     )
 
 
-@asset(partitions_def=bss_files_partitions_def, io_manager_key="json_io_manager")
+@asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
 def validated_instances(
     consolidated_instances,
 ) -> Output[dict]:
@@ -167,7 +237,7 @@ def validated_instances(
     )
 
 
-@asset(partitions_def=bss_files_partitions_def, io_manager_key="json_io_manager")
+@asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
 def consolidated_fixture(
     context: AssetExecutionContext,
     config: BSSMetadataConfig,
@@ -186,64 +256,7 @@ def consolidated_fixture(
         )
         livelihood_activities[instance["strategy_type"]].append(instance)
 
-    # Concatenate the separate lists of instances for each model into a single list of records
-    fixture = []
-    metadata = defaultdict(int)
-    for model_name, instances in {**validated_instances, **livelihood_activities}.items():
-        try:
-            model = class_from_name(f"baseline.models.{model_name}")
-            valid_field_names = [field.name for field in model._meta.concrete_fields]
-            # Also include values that point directly to the primary key of related objects
-            valid_field_names += [
-                field.get_attname()
-                for field in model._meta.concrete_fields
-                if field.get_attname() not in valid_field_names
-            ]
-        except ModuleNotFoundError:
-            # Ignore non-`baseline` models.
-            # The validated data can include other models, e.g. from `metadata`,
-            # but those records must be loaded separately to ensure that they are properly reviewed.
-            continue
-        except Exception:
-            raise
-
-        for field_values in instances:
-            # Start building the record for the  model instance.
-            record = {
-                "model": str(model._meta),  # returns, e.g; baseline.livelihoodzone
-            }
-            # If the model doesn't use a natural key, we need to specify the primary key separately
-            if not hasattr(model, "natural_key"):
-                try:
-                    record["pk"] = field_values.pop(model._meta.pk.name)
-                except KeyError:
-                    raise ValueError(
-                        "Model %s doesn't support natural keys, and the data doesn't contain the primary key field '%s'"  # NOQA: E501
-                        % (model_name, model._meta.pk.name)
-                    )
-            # Discard any fields that aren't in model - they are probably left over from dataframe
-            # manipulation, such as the "_original" fields from metadata lookups, or trouble-shooting fields like
-            # "column" and "row". Django raises FieldDoesNotExist if it encounters an unexpected field.
-            record["fields"] = {}
-            for field, value in field_values.items():
-                if field in valid_field_names:
-                    try:
-                        # In Django, blank char fields should contain "" but blank numeric fields should contain None,
-                        # so replace NaN, or numeric fields containing "", with None.
-                        if pd.isna(value) or (
-                            value == ""
-                            and model._meta.get_field(field).get_internal_type() not in ["CharField", "TextField"]
-                        ):
-                            value = None
-                    except ValueError:
-                        # value is a list, probably a natural key, and raises:
-                        # "The truth value of an array with more than one element is ambiguous"
-                        pass
-                    record["fields"][field] = value
-            fixture.append(record)
-            metadata[f'num_{str(model._meta).split(".")[-1]}'] += 1
-
-    metadata["total_instances"] = len(fixture)
+    metadata, fixture = get_fixture_from_instances({**validated_instances, **livelihood_activities})
     metadata["preview"] = MetadataValue.md(f"```json\n{json.dumps(fixture, indent=4)}\n```")
     return Output(
         fixture,
@@ -252,6 +265,42 @@ def consolidated_fixture(
 
 
 @asset(partitions_def=bss_files_partitions_def)
+def uploaded_baseline(
+    context: AssetExecutionContext,
+    baseline_instances,
+    corrected_files,
+) -> Output[None]:
+    """
+    Imported Django fixtures for a BSS, added to the Django database.
+    """
+    metadata, fixture = get_fixture_from_instances(baseline_instances)
+    output_buffer = StringIO()
+
+    # We need to use a .verbose_json file extension for Django to use the correct serializer.
+    with tempfile.NamedTemporaryFile(mode="w+", suffix=".verbose_json") as f:
+        # Write the fixture to a temporary file so that Django can access it
+        f.write(json.dumps(fixture))
+        f.seek(0)
+        call_command(verbose_load_data.Command(), f.name, verbosity=2, format="verbose_json", stdout=output_buffer)
+
+    # Create the metadata reporting the number of instances created for each model
+    metadata["output"] = MetadataValue.md(f"```\n{output_buffer.getvalue()}\n```")
+
+    # Add the file objects `bss` and `profile_report` FileFields to the model instances
+    instance = baseline_instances["LivelihoodZoneBaseline"][0]
+    livelihood_zone_baseline = LivelihoodZoneBaseline.objects.get_by_natural_key(
+        instance["livelihood_zone_id"], instance["reference_year_end_date"]
+    )
+    livelihood_zone_baseline.bss = File(corrected_files, name=instance["bss"])
+    livelihood_zone_baseline.save()
+
+    return Output(
+        None,
+        metadata=metadata,
+    )
+
+
+@asset(partitions_def=bss_instances_partitions_def)
 def imported_baseline(
     context: AssetExecutionContext,
     consolidated_fixture,

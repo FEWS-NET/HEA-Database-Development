@@ -1,21 +1,72 @@
+"""
+Dagster assets related to the main Livelihood Activities, read from the 'Data' worksheet in a BSS.
+
+An example of relevant rows from the worksheet:
+    |     | A                                             | B                                | C                    | D             | E              | F                  | G             |
+    |----:|:----------------------------------------------|:---------------------------------|:---------------------|:--------------|:---------------|:-------------------|:--------------|
+    |   1 | MALAWI HEA BASELINES 2015                     | Southern Lakeshore               |                      |               |                |                    |               |
+    |   2 |                                               |                                  |                      |               |                |                    |               |
+    |   3 | WEALTH GROUP                                  | V.Poor                           | V.Poor               | V.Poor        | V.Poor         | V.Poor             | V.Poor        |
+    |   4 | District/Ward number                          | Salima                           | Salima               | Salima        | Salima         | Dedza              | Mangochi      |
+    |   5 | Village                                       | Mtika                            | Pemba                | Ndembo        | Makanjira      | Kasakala           | Kalanje       |
+    |  58 | LIVESTOCK PRODUCTION:                         |                                  |                      |               |                |                    |               |
+    |  86 | Cows' milk                                    |                                  |                      |               |                |                    |               |
+    |  87 | no. milking animals                           | 0                                | 0                    | 0             | 0              | 0                  |               |
+    |  88 | season 1: lactation period (days)             |                                  |                      |               |                |                    |               |
+    |  89 | daily milk production per animal (litres)     | 0                                | 0                    | 0             | 0              |                    |               |
+    |  90 | total production (litres)                     | 0                                | 0                    | 0             | 0              |                    |               |
+    |  91 | sold/exchanged (litres)                       | 0                                | 0                    | 0             | 0              |                    |               |
+    |  92 | price (cash)                                  |                                  |                      |               |                |                    |               |
+    |  93 | income (cash)                                 | 0                                | 0                    | 0             | 0              |                    |               |
+    |  94 | type of milk sold/other use (skim=0, whole=1) | 1                                | 1                    | 1             | 1              | 1                  | 1             |
+    |  95 | other use (liters)                            | 0                                | 0                    | 0             | 0              |                    | 0             |
+    |  96 | season 2: lactation period (days)             |                                  |                      |               |                |                    |               |
+    |  97 | daily milk production per animal (litres)     | 0                                | 0                    | 0             | 0              |                    | 0             |
+    |  98 | total production (litres)                     | 0                                | 0                    | 0             | 0              |                    | 0             |
+    |  99 | sold/exchanged (litres)                       | 0                                | 0                    | 0             | 0              |                    | 0             |
+    | 100 | price (cash)                                  |                                  |                      |               |                |                    |               |
+    | 101 | income (cash)                                 | 0                                | 0                    | 0             | 0              |                    | 0             |
+    | 102 | type of milk sold/other use (skim=0, whole=1) | 1                                | 1                    | 1             | 1              | 1                  | 1             |
+    | 103 | other use (liters)                            | 0                                | 0                    | 0             | 0              |                    | 0             |
+    | 104 | % cows' milk sold                             |                                  |                      |               |                |                    |               |
+    | 105 | ghee/butter production (kg)                   |                                  |                      |               |                |                    |               |
+    | 106 | ghee/butter (other use)                       |                                  |                      |               |                |                    |               |
+    | 107 | ghee/butter sales: kg sold                    |                                  |                      |               |                |                    |               |
+    | 108 | ghee/butter price (cash)                      |                                  |                      |               |                |                    |               |
+    | 109 | ghee/butter income (cash)                     |                                  |                      |               |                |                    |               |
+    | 110 | milk+ghee/butter kcals (%) - 1st season       |                                  |                      |               |                |                    |               |
+    | 111 | milk+ghee/butter kcals (%) - 2nd season       |                                  |                      |               |                |                    |               |
+    | 112 | % cows' ghee/butter sold: ref year            |                                  |                      |               |                |                    |               |
+    | 172 | Cow meat: no. animals slaughtered             | 0                                | 0                    | 0             | 0              |                    | 0             |
+    | 173 | carcass weight per animal (kg)                | 0                                | 0                    | 0             | 0              |                    | 0             |
+    | 174 | kcals (%)                                     | 0                                | 0                    | 0             | 0              |                    | 0             |
+    | 189 | Cattle sales - export: no. sold               | 0                                | 0                    | 0             | 0              |                    | 0             |
+    | 190 | price (cash)                                  |                                  |                      |               |                |                    |               |
+    | 191 | income (cash)                                 | 0                                | 0                    | 0             | 0              |                    | 0             |
+    | 192 | Cattle sales - local: no. sold                | 0                                | 0                    | 0             | 0              |                    | 0             |
+    | 193 | price (cash)                                  |                                  |                      |               |                |                    |               |
+    | 194 | income (cash)                                 | 0                                | 0                    | 0             | 0              |                    | 0             |
+    | 195 | cattle offtake (% sold/slaughtered)           |                                  |                      |               |                |                    |               |
+"""  # NOQA: E501
+
 import json
 import os
 import warnings
 
 import django
 import pandas as pd
-from dagster import (
-    AssetExecutionContext,
-    DagsterEventType,
-    EventRecordsFilter,
-    MetadataValue,
-    Output,
-    asset,
-)
-from openpyxl.utils import get_column_letter
+from dagster import AssetExecutionContext, MetadataValue, Output, asset
 
-from ..utils import class_from_name, get_index
-from .baseline import BSSMetadataConfig, bss_files_partitions_def
+from ..utils import class_from_name
+from .base import (
+    BSSMetadataConfig,
+    bss_files_partitions_def,
+    bss_instances_partitions_def,
+    get_all_bss_labels_dataframe,
+    get_bss_dataframe,
+    get_bss_label_dataframe,
+    get_summary_bss_label_dataframe,
+)
 
 # set the default Django settings module
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hea.settings.production")
@@ -27,194 +78,74 @@ from baseline.models import MilkProduction  # NOQA: E402
 from metadata.lookups import SeasonNameLookup, WealthGroupCategoryLookup  # NOQA: E402
 from metadata.models import ActivityLabel, LivelihoodActivityScenario  # NOQA: E402
 
+# Indexes of header rows in the Data3 dataframe (wealth_group_category, district, village, household size)
+# The household size is included in the header rows because it is used to calculate the kcals_consumed
+HEADER_ROWS = [3, 4, 5, 40]
+
 
 @asset(partitions_def=bss_files_partitions_def)
 def livelihood_activity_dataframe(config: BSSMetadataConfig, corrected_files) -> Output[pd.DataFrame]:
     """
     DataFrame of Livelihood Activities from a BSS
-
-    Read from the 'Data' worksheet in the BSS.
-
-    An example of relevant rows from the worksheet:
-        |     | A                                             | B                                | C                    | D             | E              | F                  | G             |
-        |----:|:----------------------------------------------|:---------------------------------|:---------------------|:--------------|:---------------|:-------------------|:--------------|
-        |   1 | MALAWI HEA BASELINES 2015                     | Southern Lakeshore               |                      |               |                |                    |               |
-        |   2 |                                               |                                  |                      |               |                |                    |               |
-        |   3 | WEALTH GROUP                                  | V.Poor                           | V.Poor               | V.Poor        | V.Poor         | V.Poor             | V.Poor        |
-        |   4 | District/Ward number                          | Salima                           | Salima               | Salima        | Salima         | Dedza              | Mangochi      |
-        |   5 | Village                                       | Mtika                            | Pemba                | Ndembo        | Makanjira      | Kasakala           | Kalanje       |
-        |  58 | LIVESTOCK PRODUCTION:                         |                                  |                      |               |                |                    |               |
-        |  86 | Cows' milk                                    |                                  |                      |               |                |                    |               |
-        |  87 | no. milking animals                           | 0                                | 0                    | 0             | 0              | 0                  |               |
-        |  88 | season 1: lactation period (days)             |                                  |                      |               |                |                    |               |
-        |  89 | daily milk production per animal (litres)     | 0                                | 0                    | 0             | 0              |                    |               |
-        |  90 | total production (litres)                     | 0                                | 0                    | 0             | 0              |                    |               |
-        |  91 | sold/exchanged (litres)                       | 0                                | 0                    | 0             | 0              |                    |               |
-        |  92 | price (cash)                                  |                                  |                      |               |                |                    |               |
-        |  93 | income (cash)                                 | 0                                | 0                    | 0             | 0              |                    |               |
-        |  94 | type of milk sold/other use (skim=0, whole=1) | 1                                | 1                    | 1             | 1              | 1                  | 1             |
-        |  95 | other use (liters)                            | 0                                | 0                    | 0             | 0              |                    | 0             |
-        |  96 | season 2: lactation period (days)             |                                  |                      |               |                |                    |               |
-        |  97 | daily milk production per animal (litres)     | 0                                | 0                    | 0             | 0              |                    | 0             |
-        |  98 | total production (litres)                     | 0                                | 0                    | 0             | 0              |                    | 0             |
-        |  99 | sold/exchanged (litres)                       | 0                                | 0                    | 0             | 0              |                    | 0             |
-        | 100 | price (cash)                                  |                                  |                      |               |                |                    |               |
-        | 101 | income (cash)                                 | 0                                | 0                    | 0             | 0              |                    | 0             |
-        | 102 | type of milk sold/other use (skim=0, whole=1) | 1                                | 1                    | 1             | 1              | 1                  | 1             |
-        | 103 | other use (liters)                            | 0                                | 0                    | 0             | 0              |                    | 0             |
-        | 104 | % cows' milk sold                             |                                  |                      |               |                |                    |               |
-        | 105 | ghee/butter production (kg)                   |                                  |                      |               |                |                    |               |
-        | 106 | ghee/butter (other use)                       |                                  |                      |               |                |                    |               |
-        | 107 | ghee/butter sales: kg sold                    |                                  |                      |               |                |                    |               |
-        | 108 | ghee/butter price (cash)                      |                                  |                      |               |                |                    |               |
-        | 109 | ghee/butter income (cash)                     |                                  |                      |               |                |                    |               |
-        | 110 | milk+ghee/butter kcals (%) - 1st season       |                                  |                      |               |                |                    |               |
-        | 111 | milk+ghee/butter kcals (%) - 2nd season       |                                  |                      |               |                |                    |               |
-        | 112 | % cows' ghee/butter sold: ref year            |                                  |                      |               |                |                    |               |
-        | 172 | Cow meat: no. animals slaughtered             | 0                                | 0                    | 0             | 0              |                    | 0             |
-        | 173 | carcass weight per animal (kg)                | 0                                | 0                    | 0             | 0              |                    | 0             |
-        | 174 | kcals (%)                                     | 0                                | 0                    | 0             | 0              |                    | 0             |
-        | 189 | Cattle sales - export: no. sold               | 0                                | 0                    | 0             | 0              |                    | 0             |
-        | 190 | price (cash)                                  |                                  |                      |               |                |                    |               |
-        | 191 | income (cash)                                 | 0                                | 0                    | 0             | 0              |                    | 0             |
-        | 192 | Cattle sales - local: no. sold                | 0                                | 0                    | 0             | 0              |                    | 0             |
-        | 193 | price (cash)                                  |                                  |                      |               |                |                    |               |
-        | 194 | income (cash)                                 | 0                                | 0                    | 0             | 0              |                    | 0             |
-        | 195 | cattle offtake (% sold/slaughtered)           |                                  |                      |               |                |                    |               |
-    """  # NOQA: E501
-    df = pd.read_excel(corrected_files, "Data", header=None)
-    # Use a 1-based index to match the Excel Row Number
-    df.index += 1
-    # Set the column names to match Excel
-    df.columns = [get_column_letter(col + 1) for col in df.columns]
-
-    # Find the last column before the summary column, which is in row 2
-    end_col = get_index(["Summary", "SYNTHÈSE", "RESUME"], df.loc[2], offset=-1)
-
-    # There will also be one summary column for each wealth category, which are in row 3
-    num_wealth_categories = df.loc[3, "B":end_col].dropna().nunique()
-    end_col = df.columns[df.columns.get_loc(end_col) + num_wealth_categories]
-
-    # Find the row index of the start of the Livelihood Activities
-    start_row = get_index(["LIVESTOCK PRODUCTION:", "production animale:"], df.loc[:, "A"])
-
-    # Find the row index of the end of the Livelihood Activities
-    end_row = get_index(
-        ["income minus expenditure", "Revenus moins dépenses", "Revenu moins dépense"],
-        df.loc[start_row:, "A"],
-        offset=-1,
-    )
-
-    # Find the language based on the value in cell A3
-    langs = {
-        "wealth group": "en",
-        "group de richesse": "fr",
-        "groupe de richesse": "fr",
-        "groupe socio-economique": "fr",
-    }
-    lang = langs[df.loc[3, "A"].strip().lower()]
-
-    # Filter to just the Wealth Group header rows (including household size from row 40) and the Livelihood Activities
-    df = pd.concat([df.loc[3:5, :end_col], df.loc[[40], :end_col], df.loc[start_row:end_row, :end_col]])
-
-    # Replace NaN with "" ready for Django
-    df = df.fillna("")
-
-    return Output(
-        df,
-        metadata={
-            "worksheet": "Data",
-            "lang": lang,
-            "row_count": len(df),
-            "datapoint_count": int(
-                df.loc[:, "B":].apply(lambda row: sum((row != 0) & (row != "")), axis="columns").sum()
-            ),
-            "preview": MetadataValue.md(df.head(config.preview_rows).to_markdown()),
-            "sample": MetadataValue.md(
-                df[df.loc[:, "B":].apply(lambda row: sum((row != 0) & (row != "")), axis="columns") > 0]
-                .sample(config.preview_rows)
-                .to_markdown()
-            ),
-        },
+    """
+    return get_bss_dataframe(
+        config,
+        corrected_files,
+        "Data",
+        start_strings=["LIVESTOCK PRODUCTION:", "production animale:"],
+        end_strings=["income minus expenditure", "Revenus moins dépenses", "Revenu moins dépense"],
+        header_rows=HEADER_ROWS,
     )
 
 
 @asset(partitions_def=bss_files_partitions_def)
-def activity_label_dataframe(
+def livelihood_activity_label_dataframe(
     context: AssetExecutionContext,
     config: BSSMetadataConfig,
     livelihood_activity_dataframe,
 ) -> Output[pd.DataFrame]:
     """
-    Activity Label References
+    Dataframe of Livelihood Activity Label References
     """
-    df = livelihood_activity_dataframe.iloc[3:]  # Ignore the Wealth Group header rows
-    instance = context.instance
-    livelihood_activity_dataframe_materialization = instance.get_event_records(
-        event_records_filter=EventRecordsFilter(
-            event_type=DagsterEventType.ASSET_MATERIALIZATION,
-            asset_key=context.asset_key_for_input("livelihood_activity_dataframe"),
-            asset_partitions=[context.asset_partition_key_for_input("livelihood_activity_dataframe")],
-        ),
-        limit=1,
-    )[0].asset_materialization
-
-    label_df = pd.DataFrame()
-    label_df["activity_label"] = df["A"]
-    label_df["activity_label_lower"] = label_df["activity_label"].str.lower()
-    label_df["filename"] = context.asset_partition_key_for_output()
-    label_df["lang"] = livelihood_activity_dataframe_materialization.metadata["lang"].text
-    label_df["worksheet"] = livelihood_activity_dataframe_materialization.metadata["worksheet"].text
-    label_df["row_number"] = df.index
-    label_df["datapoint_count"] = df.loc[:, "B":].apply(lambda row: sum((row != 0) & (row != "")), axis="columns")
-    return Output(
-        label_df,
-        metadata={
-            "num_labels": len(label_df),
-            "num_datapoints": int(label_df["datapoint_count"].sum()),
-            "preview": MetadataValue.md(label_df.head(config.preview_rows).to_markdown()),
-            "sample": MetadataValue.md(
-                label_df[label_df["datapoint_count"] > 0].sample(config.preview_rows).to_markdown()
-            ),
-        },
+    return get_bss_label_dataframe(
+        context, config, livelihood_activity_dataframe, "livelihood_activity_dataframe", HEADER_ROWS
     )
 
 
 @asset(io_manager_key="dataframe_csv_io_manager")
-def all_activity_labels_dataframe(
-    config: BSSMetadataConfig, activity_label_dataframe: dict[str, pd.DataFrame]
+def all_livelihood_activity_labels_dataframe(
+    config: BSSMetadataConfig, livelihood_activity_label_dataframe: dict[str, pd.DataFrame]
 ) -> Output[pd.DataFrame]:
     """
-    Combined dataframe of the activity labels in use across all BSSs.
+    Combined dataframe of the Livelihood Activity labels in use across all BSSs.
     """
-    df = pd.concat(list(activity_label_dataframe.values()))
-    return Output(
-        df,
-        metadata={
-            "num_labels": len(df),
-            "num_datapoints": int(df["datapoint_count"].sum()),
-            "preview": MetadataValue.md(df.sample(config.preview_rows).to_markdown()),
-            "datapoint_preview": MetadataValue.md(
-                df[df["datapoint_count"] > 0].sample(config.preview_rows).to_markdown()
-            ),
-        },
-    )
+    return get_all_bss_labels_dataframe(config, livelihood_activity_label_dataframe)
 
 
-@asset(partitions_def=bss_files_partitions_def, io_manager_key="json_io_manager")
-def livelihood_activity_fixture(
+@asset(io_manager_key="dataframe_csv_io_manager")
+def summary_livelihood_activity_labels_dataframe(
+    config: BSSMetadataConfig, all_livelihood_activity_labels_dataframe: pd.DataFrame
+) -> Output[pd.DataFrame]:
+    """
+    Summary of the Livelihood Activity labels in use across all BSSs.
+    """
+    return get_summary_bss_label_dataframe(config, all_livelihood_activity_labels_dataframe)
+
+
+@asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
+def livelihood_activity_instances(
     context: AssetExecutionContext,
     config: BSSMetadataConfig,
     completed_bss_metadata,
     livelihood_activity_dataframe,
 ) -> Output[dict]:
     """
-    Django fixtures for the LivelihoodStrategy and LivelihoodActivity records in the BSS.
+    LivelhoodStrategy and LivelihoodActivity instances extracted from the BSS.
     """
     # Find the metadata for this BSS
     partition_key = context.asset_partition_key_for_output()
     try:
-        metadata = completed_bss_metadata[completed_bss_metadata["bss_path"].str.startswith(partition_key)].iloc[0]
+        metadata = completed_bss_metadata[completed_bss_metadata["partition_key"] == partition_key].iloc[0]
     except IndexError:
         raise ValueError("No complete entry in the BSS Metadata worksheet for %s" % partition_key)
     livelihoodzonebaseline = [metadata["code"], metadata["reference_year_end_date"]]
@@ -366,9 +297,9 @@ def livelihood_activity_fixture(
                     ):
                         for i in range(len(previous_livelihood_activities_for_strategy)):
                             if "milking_animals" in previous_livelihood_activities_for_strategy[i]:
-                                livelihood_activities_for_strategy[i][
-                                    "milking_animals"
-                                ] = previous_livelihood_activities_for_strategy[i]["milking_animals"]
+                                livelihood_activities_for_strategy[i]["milking_animals"] = (
+                                    previous_livelihood_activities_for_strategy[i]["milking_animals"]
+                                )
 
                     # Calculated kcals_consumed if the livelihood activity only contains the percentage_kcals.
                     # This is typical for ButterProduction. Derive it by multiplying percentage_kcals by:

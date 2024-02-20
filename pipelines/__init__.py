@@ -2,30 +2,32 @@ import warnings
 
 from dagster import Definitions, EnvVar
 
-from .assets.baseline import (
-    baseline_fixture,
+from .assets.base import (
     bss_corrections,
-    bss_files_metadata,
     bss_metadata,
     completed_bss_metadata,
     corrected_files,
 )
+from .assets.baseline import baseline_instances
 from .assets.fixtures import (
     consolidated_fixture,
     consolidated_instances,
     imported_baseline,
+    uploaded_baseline,
     validated_instances,
 )
 from .assets.livelihood_activity import (
-    activity_label_dataframe,
-    all_activity_labels_dataframe,
+    all_livelihood_activity_labels_dataframe,
     livelihood_activity_dataframe,
-    livelihood_activity_fixture,
+    livelihood_activity_instances,
+    livelihood_activity_label_dataframe,
+    summary_livelihood_activity_labels_dataframe,
 )
 from .assets.wealth_characteristic import (
     all_wealth_characteristic_labels_dataframe,
+    summary_wealth_characteristic_labels_dataframe,
     wealth_characteristic_dataframe,
-    wealth_characteristic_fixture,
+    wealth_characteristic_instances,
     wealth_characteristic_label_dataframe,
 )
 from .jobs.metadata import update_metadata
@@ -36,7 +38,7 @@ from .resources import (
     JSONIOManager,
     PickleIOManager,
 )
-from .sensors import bss_file_sensor
+from .sensors import bss_instance_sensor
 
 # Ignore ExperimentalWarning: Function `DagsterInstance.report_runless_asset_event`
 warnings.filterwarnings("ignore", r"Function `DagsterInstance.report_runless_asset_event` is experimental")
@@ -46,20 +48,22 @@ defs = Definitions(
         bss_metadata,
         completed_bss_metadata,
         bss_corrections,
-        bss_files_metadata,
         corrected_files,
-        baseline_fixture,
+        baseline_instances,
         livelihood_activity_dataframe,
-        activity_label_dataframe,
-        all_activity_labels_dataframe,
-        livelihood_activity_fixture,
+        livelihood_activity_label_dataframe,
+        all_livelihood_activity_labels_dataframe,
+        summary_livelihood_activity_labels_dataframe,
+        livelihood_activity_instances,
         wealth_characteristic_dataframe,
         wealth_characteristic_label_dataframe,
         all_wealth_characteristic_labels_dataframe,
-        wealth_characteristic_fixture,
+        wealth_characteristic_instances,
+        summary_wealth_characteristic_labels_dataframe,
         consolidated_instances,
         validated_instances,
         consolidated_fixture,
+        uploaded_baseline,
         imported_baseline,
     ],
     jobs=[update_metadata],
@@ -70,5 +74,5 @@ defs = Definitions(
         "dataframe_csv_io_manager": DataFrameCSVIOManager(),
         "dataframe_excel_io_manager": DataFrameExcelIOManager(),
     },
-    sensors=[bss_file_sensor],
+    sensors=[bss_instance_sensor],
 )
