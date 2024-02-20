@@ -44,8 +44,11 @@ def load_all_metadata(context: OpExecutionContext):
         with pd.ExcelFile(f) as reference_data:
             model = None
             sheet_name = None
-            # Check whether the ReferenceData worksheet matches a Django model.
-            for sheet_name in reference_data.sheet_names[1:]:
+            sheet_names = reference_data.sheet_names[1:]
+            # Iterate over the sheets in the ReferenceData workbook, in reverse order (because the Label sheets that
+            # need Subject Matter Expert input are at beginning, and depend on the sheets at the end).
+            for sheet_name in reversed(sheet_names):
+                # Check whether the ReferenceData worksheet matches a Django model.
                 model = None
                 for app in ["common", "metadata", "baseline"]:
                     try:
@@ -109,10 +112,10 @@ def load_all_metadata(context: OpExecutionContext):
                                                 "common_name_pt",
                                                 "common_name_ar",
                                             ]:
-                                                if v:
+                                                if v and current:
                                                     raise RuntimeError(
                                                         "Attempted to update field %s for non-HEA product %s from %s to %s"  # NOQA: E501
-                                                        % (k, cpc, getattr(instance, k), v)
+                                                        % (k, cpc, current, v)
                                                     )
                                                 else:
                                                     continue
@@ -134,6 +137,8 @@ def load_all_metadata(context: OpExecutionContext):
                             id_fields = "name"
                         elif sheet_name == "Season":
                             id_fields = "name_en"
+                        elif sheet_name == "UnitOfMeasure":
+                            id_fields = "abbreviation"
                         elif sheet_name == "ActivityLabel":
                             id_fields = "activity_label"
                         elif sheet_name == "WealthCharacteristicLabel":
