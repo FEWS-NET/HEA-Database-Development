@@ -1,6 +1,16 @@
 storage:
-  sqlite:
-    base_dir: "media/pipelines/storage"
+  postgres:
+    postgres_db:
+      username:
+        env: DAGSTER_PGUSER
+      password:
+        env: DAGSTER_PGPASSWORD
+      hostname:
+        env: PGHOST
+      db_name:
+        env: PGDATABASE
+      port:
+        env: PGPORT
 
 local_artifact_storage:
   module: dagster.core.storage.root
@@ -15,11 +25,11 @@ telemetry:
   enabled: false
 
 # Use the QueuedRunCoordinator to avoid warning messages when launching large backfills, or in production settings.
-#run_coordinator:
-#  module: dagster.core.run_coordinator
-#  class: QueuedRunCoordinator
-#  config:
-#    max_concurrent_runs: 20
-#    tag_concurrency_limits:
-#      - key: "dagster/backfill"
-#        limit: 10
+run_coordinator:
+  module: dagster.core.run_coordinator
+  class: QueuedRunCoordinator
+  config:
+    max_concurrent_runs: 20
+    tag_concurrency_limits:
+      - key: "dagster/backfill"
+        limit: 10
