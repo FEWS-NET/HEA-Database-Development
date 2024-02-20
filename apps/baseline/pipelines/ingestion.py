@@ -415,7 +415,7 @@ class NormalizeWB(luigi.Task):
         char_df.columns = new_column_names
 
         # Fill NaN values in 'wealth_characteristic' from the previous non-null cell
-        char_df["characteristic_label"] = char_df["characteristic_label"].fillna(method="ffill")
+        char_df["characteristic_title"] = char_df["characteristic_title"].ffill()
 
         # Get the 'wealth_characteristic', 'product' and 'unit_of_measure' from the 'characteristic_label'
         # We can't just use a regular WealthCharacteristicLookup.do_lookup() because we need to match the additional
