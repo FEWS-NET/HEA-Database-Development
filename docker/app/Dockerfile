@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 python:3.11-bookworm as base
+FROM --platform=linux/amd64 python:3.12-bookworm as base
 # set up apt repositories for postgres installation
 RUN curl -s https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor | tee /usr/share/keyrings/pgdg.gpg >/dev/null && \
     echo "deb [signed-by=/usr/share/keyrings/pgdg.gpg] http://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" > /etc/apt/sources.list.d/pgdg.list && \
@@ -41,12 +41,9 @@ ARG PIP_INDEX_URL=https://pypi.python.org/simple/
 RUN pip install --quiet --no-cache-dir --upgrade pip
 
 # Install pyGDAL based on the version of GDAL available in the OS.
-# Currently, the version of GDAL in use conflicts with current setuptools,
-# so pin an older version - see https://github.com/pypa/setuptools/issues/2781
-RUN pip --quiet --no-cache-dir install "setuptools==69.1.0"
 # GDAL requires numpy for some extensions to build, make sure the numpy version
 # specified here matches requirements/base.txt
-RUN VERSION=$(gdal-config --version); CFLAGS=$(gdal-config --cflags) pip install --quiet --no-cache-dir numpy==1.23.5 GDAL[numpy]==${VERSION}
+RUN VERSION=$(gdal-config --version); CFLAGS=$(gdal-config --cflags) pip install --quiet --no-cache-dir numpy==1.26.4 GDAL[numpy]==${VERSION}
 
 # Install the Python requirements
 COPY requirements /usr/src/app/requirements
