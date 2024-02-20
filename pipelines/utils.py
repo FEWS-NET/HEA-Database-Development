@@ -1,5 +1,8 @@
 import importlib
+import logging
 from collections.abc import Iterable
+from contextlib import contextmanager
+from io import StringIO
 
 import pandas as pd
 
@@ -42,12 +45,12 @@ def get_index(search_text: str | list[str], data: pd.Series, offset: int = 0):
     # Make sure we have an iterable that we can pass to `.isin()`
     if isinstance(search_text, str) or not isinstance(search_text, Iterable):
         search_text = [str(search_text)]
-    # Make sure that the search terms are lowercase
-    search_text = [str(search_term).lower() for search_term in search_text]
+    # Make sure that the search terms are lowercase and stripped of leading/trailing whitespace
+    search_text = [str(search_term).lower().strip() for search_term in search_text]
     # Convert the Series to a set of True/False values based on whether they match one of the
     # search_text values, and use idxmax to return the index of the first match.
     # This works because in Pandas True > False, so idxmax() returns the index of the first True.
-    index = data.str.lower().isin(search_text).idxmax()
+    index = data.str.lower().str.strip().isin(search_text).idxmax()
     # Offset the index if necessary
     if offset:
         index = data.index[data.index.get_loc(index) + offset]
