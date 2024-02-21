@@ -29,7 +29,7 @@ def bss_instance_sensor(context):
         "~".join(livelihoood_zone_baseline[:2] + (livelihoood_zone_baseline[2].isoformat(),))
         for livelihoood_zone_baseline in LivelihoodZoneBaseline.objects.all()
         .order_by("livelihood_zone__country__iso_en_ro_name", "livelihood_zone__code", "reference_year_end_date")
-        .values_list("livelihood_zone__country__iso_en_ro_name", "livelihood_zone__code", "reference_year_end_date")
+        .values_list("livelihood_zone__country__iso_en_ro_proper", "livelihood_zone__code", "reference_year_end_date")
     ]
 
     partitions = bss_instances_partitions_def.get_partition_keys(dynamic_partitions_store=dagster_instance)

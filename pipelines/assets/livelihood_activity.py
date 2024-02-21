@@ -421,11 +421,12 @@ def livelihood_activity_instances(
             # that the values in the row are for
             attribute = attributes["attribute"]
             # Update the LivelihoodActivity records
-            if any(value for value in df.loc[row, "B":]):
+            if any(value for value in df.loc[row, "B":].str.strip()):
                 # Make sure we have an attribute!
                 if not attribute:
                     raise ValueError(
-                        "Found values in row %s for label %s without an identified attribute" % (row, label)
+                        "Found values in row %s for label '%s' without an identified attribute:\n%s"
+                        % (row, label, df.loc[row, "B":].replace("", pd.NA).dropna().transpose().to_markdown())
                     )
                 # If the activity label that marks the start of a Livelihood Strategy is not in the
                 # `ActivityLabel.objects.all()`, and hence not in the  `activity_label_map`, then repeated
@@ -455,9 +456,11 @@ def livelihood_activity_instances(
 
         except Exception as e:
             if column:
-                raise RuntimeError("Unhandled error processing cell %s%s" % (column, row)) from e
+                raise RuntimeError(
+                    "Unhandled error in %s processing cell 'Data'!%s%s" % (partition_key, column, row)
+                ) from e
             else:
-                raise RuntimeError("Unhandled error processing row %s" % row) from e
+                raise RuntimeError("Unhandled error in %s processing row 'Data'!%s" % (partition_key, row)) from e
 
     result = {
         "LivelihoodStrategy": livelihood_strategies,

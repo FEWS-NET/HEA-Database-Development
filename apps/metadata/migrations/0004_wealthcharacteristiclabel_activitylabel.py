@@ -34,7 +34,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "wealth_characteristic_label",
-                    common.fields.NameField(max_length=60, unique=True, verbose_name="Wealth Characteristic Label"),
+                    common.fields.NameField(max_length=100, unique=True, verbose_name="Wealth Characteristic Label"),
                 ),
                 (
                     "product",
@@ -94,7 +94,10 @@ class Migration(migrations.Migration):
                         default=django.utils.timezone.now, editable=False, verbose_name="modified"
                     ),
                 ),
-                ("activity_label", common.fields.NameField(max_length=60, unique=True, verbose_name="Activity Label")),
+                (
+                    "activity_label",
+                    common.fields.NameField(max_length=100, unique=True, verbose_name="Activity Label"),
+                ),
                 (
                     "is_start",
                     models.BooleanField(

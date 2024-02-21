@@ -351,7 +351,7 @@ class ActivityLabel(common_models.Model):
     the LivelihoodStrategy and/or LivelihoodActivity for a given row in a BSS.
     """
 
-    activity_label = common_models.NameField(unique=True, verbose_name=_("Activity Label"))
+    activity_label = common_models.NameField(max_length=100, unique=True, verbose_name=_("Activity Label"))
     is_start = models.BooleanField(
         default=False,
         verbose_name=_("Is Start?"),
@@ -409,7 +409,9 @@ class WealthCharacteristicLabel(common_models.Model):
     Used by the ingestion pipeline for WealthCharacteristicValue to determine the attributes for a given row in a BSS.
     """
 
-    wealth_characteristic_label = common_models.NameField(unique=True, verbose_name=_("Wealth Characteristic Label"))
+    wealth_characteristic_label = common_models.NameField(
+        max_length=100, unique=True, verbose_name=_("Wealth Characteristic Label")
+    )
     # wealth_characteristic has to be nullable because there are some labels that we want to recognize
     # i.e. they need an entry in this table, but that we want to ignore completely. For example, sample text in blank
     # rows, etc. Those labels will have an entry in this table, but no other metadata items.

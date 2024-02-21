@@ -205,23 +205,26 @@ def wealth_characteristic_instances(
     row3_categories = df.loc[3, "B":].unique()
     row3_categories = row3_categories[row3_categories != ""]
     last_form3_col = get_index(row3_categories, df.loc[3, "C":], offset=-1)
-    df.loc[4] = df.loc[4].str.strip()
-    df.loc[5] = df.loc[5].str.strip()
-    full_names = [
-        ", ".join([df.loc[5, column], df.loc[4, column]])
-        for column in df.loc[4:5, "C":last_form3_col].replace("", pd.NA).dropna(how="all", axis="columns")
+    df.loc[4] = df.loc[4].str.strip().replace("", pd.NA)
+    df.loc[5] = df.loc[5].str.strip().replace("", pd.NA)
+    form3_full_names = [
+        ", ".join(df.loc[4:5, column].sort_index(ascending=False).dropna())
+        for column in df.loc[4:5, "C":last_form3_col].dropna(how="all", axis="columns")
     ]
     wealth_group_categories = [
-        wealthgroupcategorylookup.get(wealth_group_category)
-        for wealth_group_category in df.loc[:, "B"].replace("", pd.NA).dropna().unique()
+        wealth_group_category for wealth_group_category in df.loc[:, "B"].replace("", pd.NA).dropna().unique()
     ]
     wealth_group_df = pd.DataFrame(
-        list(itertools.product(wealth_group_categories, full_names)),
+        list(itertools.product(wealth_group_categories, form3_full_names)),
         columns=["wealth_group_category", "full_name"],
     )
     # There is also a set of Summary Wealth Groups that don't contain a Community
     wealth_group_df = pd.concat(
         [wealth_group_df, pd.DataFrame({"wealth_group_category": wealth_group_categories, "full_name": ""})]
+    ).reset_index(drop=True)
+    # Lookup the wealth group category
+    wealth_group_df = WealthGroupCategoryLookup().do_lookup(
+        wealth_group_df, "wealth_group_category", "wealth_group_category"
     )
     # Add the natural key for the Livelihood Zone Baseline to the Wealth Groups
     wealth_group_df["livelihood_zone_baseline"] = [livelihoodzonebaseline] * len(wealth_group_df)
@@ -232,11 +235,14 @@ def wealth_characteristic_instances(
 
     # Build a list of the Community Full Name for each column, based on the values from Rows 4 and 5. For rows that
     # don't have a value in either row 4 or row 5, and the last 3 columns that are the Summary, return ""
-    community_full_names = (
-        df.loc[4:5, "C":]
-        .transpose()
-        .apply(lambda x: ", ".join([x[5], x[4]]) if x.any() and x.name not in df.columns[-3:] else "", axis="columns")
-    )
+    community_full_names = [
+        (
+            ", ".join(df.loc[4:5, column].sort_index(ascending=False).dropna())
+            if df.loc[4:5, column].any() and column not in df.columns[-3:]
+            else ""
+        )
+        for column in df.loc[4:5, "C":]
+    ]
 
     # Build a list of the Wealth Group Categories for each column, based on the values from Row 3.
     wealth_group_categories = [
@@ -286,6 +292,11 @@ def wealth_characteristic_instances(
             continue
         # Lookup the Wealth Group Category from Column B
         wealth_group_category = wealthgroupcategorylookup.get(df.loc[row, "B"])
+        if not wealth_group_category:
+            # Ignore rows that don't contain a Wealth Group Category, which are typically calculated totals of the
+            # per-Wealth Group Category values, e.g. MWKAS_30Sep15.xlsx has a row 13 that contains the sum of the
+            # percentage of households data in rows 9-12.
+            continue
 
         # Create the WealthGroupCharacteristic records
         if any(value for value in df.loc[row, "C":]):
@@ -366,7 +377,9 @@ def wealth_characteristic_instances(
                         wealth_group_characteristic_value["bss_row"] = row
                         wealth_group_characteristic_values.append(wealth_group_characteristic_value)
                 except Exception as e:
-                    raise RuntimeError("Unhandled error processing cell %s%s" % (column, row)) from e
+                    raise RuntimeError(
+                        "Unhandled error in %s processing cell 'WB'!%s%s" % (partition_key, column, row)
+                    ) from e
 
     # Create a dataframe of the Wealth Group Characteristic Values so that we can extract the
     # percentage of households and average household size, and run additional validation.
@@ -377,14 +390,20 @@ def wealth_characteristic_instances(
     # Make sure that the names in the Wealth Group-level interviews (e.g. columns $M:$AZ) match
     # the names in the in the Community-level interviews (e.g. columns $C:$K) that were used to
     # create the Wealth Group records
+    form3_full_names_df = pd.DataFrame(form3_full_names, columns=["full_name"])
+    form3_full_names_df["bss_column"] = [get_column_letter(x + 3) for x in form3_full_names_df.index]
     unmatched_full_names = value_df[
-        pd.notna(value_df["full_name"])
-        & ~value_df["full_name"].str.lower().isin(wealth_group_df.full_name.str.lower())
+        pd.notna(value_df["full_name"].replace("", pd.NA))
+        & ~value_df["full_name"].str.lower().isin(form3_full_names_df.full_name.str.lower())
     ][["full_name", "bss_column"]].drop_duplicates()
     if not unmatched_full_names.empty:
         raise ValueError(
-            "Unmatched Community full_name in Wealth Group interviews:\n%s\n\nExpected names:\n%s"
-            % (unmatched_full_names.to_markdown(), wealth_group_df.full_name.to_frame().to_markdown())
+            "%s contains unmatched Community full_name values in Wealth Group interviews:\n%s\n\nExpected names:\n%s"
+            % (
+                partition_key,
+                unmatched_full_names.to_markdown(),
+                form3_full_names_df.to_markdown(),
+            )
         )
 
     # Add the percentage of households and average household size to the wealth groups

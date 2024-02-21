@@ -92,7 +92,7 @@ def bss_metadata(context: AssetExecutionContext, config: BSSMetadataConfig) -> O
     partition_key_df = df[["country_id", "code", "reference_year_end_date"]]
     partition_key_df = CountryLookup().get_instances(partition_key_df, "country_id")
     df["partition_key"] = partition_key_df[["country_id", "code", "reference_year_end_date"]].apply(
-        lambda x: f"{x[0].iso_en_ro_name}~{x[1]}~{x[2]}", axis=1
+        lambda x: f"{x[0].iso_en_ro_proper}~{x[1]}~{x[2]}", axis=1
     )
     df["bss_exists"] = df["bss_path"].apply(lambda x: Path(config.bss_root_folder, *x.split("/")).is_file())
 

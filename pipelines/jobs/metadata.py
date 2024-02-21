@@ -69,7 +69,7 @@ def load_all_metadata(context: OpExecutionContext):
                     if "status" in df:
                         df = df[df["status"] == "Complete"]
                     if "aliases" in df:
-                        df["aliases"] = df["aliases"].apply(lambda x: sorted(x.split("~")) if x else None)
+                        df["aliases"] = df["aliases"].apply(lambda x: sorted(x.lower().split("~")) if x else None)
                     if "cpcv2" in df:
                         df["cpcv2"] = df["cpcv2"].apply(lambda x: sorted(x.split("~")) if x else None)
                     if "hs2012" in df:

@@ -122,11 +122,13 @@ def consolidated_instances(
 
 @asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
 def validated_instances(
+    context: AssetExecutionContext,
     consolidated_instances,
 ) -> Output[dict]:
     """
     Validated record instances from a BSS, ready to be loaded via a Django fixture.
     """
+    partition_key = context.asset_partition_key_for_output()
     # Create a dict of all the models, and a dataframe of their instances
     errors = []
     dfs = {}
@@ -226,7 +228,7 @@ def validated_instances(
 
     if errors:
         errors = "\n".join(errors)
-        raise RuntimeError("Missing or inconsistent metadata in BSS:\n%s" % errors)
+        raise RuntimeError("Missing or inconsistent metadata in BSS %s:\n%s" % (partition_key, errors))
 
     metadata = {f"num_{key.lower()}": len(value) for key, value in consolidated_instances.items()}
     metadata["total_instances"] = sum(len(value) for value in consolidated_instances.values())
