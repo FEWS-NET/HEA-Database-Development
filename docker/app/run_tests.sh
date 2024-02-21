@@ -39,7 +39,7 @@ fi
 # quite a few libraries, including the C standard library."
 
 echo Package Vulnerabilities:
-pip freeze | safety check --stdin --full-report -i 42369 -i 42370 -i 48545 -i 51832 -i 61143
+pip freeze | safety check --stdin --full-report -i 62283
 SAFETY_RESULT=$?
 
 # Suppress SAFETY_RESULT unless CHECK_SAFETY is set

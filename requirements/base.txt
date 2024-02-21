@@ -1,13 +1,13 @@
 # Do not pip freeze into this file. Add only the packages you need so pip can align dependencies.
 ddtrace==1.14.0
-Django==4.2.7
-git+https://github.com/kimetrica/django-binary-database-files.git@1.0.17#egg
-django-environ==0.10.0
+Django==5.0.2
+django-binary-database-files==1.0.18
+django-environ==0.11.2
 django-extensions==3.2.3
-django-filter==23.2
+django-filter==23.5
 django-guardian==2.4.0
-django_model_utils==4.3.1
-django-treebeard==4.7
+django_model_utils==4.4.0
+django-treebeard==4.7.1
 djangorestframework==3.14.0
 djangorestframework-xml==2.0.0
 docutils
@@ -16,12 +16,12 @@ gunicorn==20.1.0
 html5lib==1.1
 json-logging-py==0.2
 jupyterlab==4.0.5
-git+https://gitlab.com/kimetrica/kimetrica-public-projects/kiluigi.git@913f44b528fe289a6ff1135895d7be229c4a0109#egg
+git+https://gitlab.com/kimetrica/kimetrica-public-projects/kiluigi.git@6cf8ef8fcfb50c6e5eb1b9e023dc2b7fea03997e#egg
 lxml==4.9.3
 # Make sure that same version of numpy is specified here and in docker/app/Dockerfile
-numpy==1.23.5
+numpy==1.26.4
 openpyxl==3.1.2
-pandas==2.0.3
+pandas==2.2.0
 # Upgrade to psycopg>=3 once ddtrace supports it.
 # See https://github.com/DataDog/dd-trace-py/issues/4393
 psycopg2-binary==2.9.7
