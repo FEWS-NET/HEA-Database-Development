@@ -261,6 +261,11 @@ class HazardCategory(ReferenceData):
         verbose_name_plural = _("Hazard Categories")
 
 
+class SeasonManager(common_models.IdentifierManager):
+    def get_by_natural_key(self, name_en: str) -> "Season":
+        return self.get(name_en=name_en)
+
+
 class Season(common_models.Model):
     """
     A division of the year, marked by changes in weather, ecology, and associated livelihood zone
@@ -286,7 +291,7 @@ class Season(common_models.Model):
     country = models.ForeignKey(Country, verbose_name=_("Country"), db_column="country_code", on_delete=models.PROTECT)
     # @TODO Uncomment if we have a full Spatial app.
     # geographic_unit - models.ForeignKey(GeographicUnit, verbose_name=_("Geographic Unit"), on_delete=models.RESTRICT)
-    name = TranslatedField(models.CharField(max_length=50, verbose_name=_("Name")))
+    name = TranslatedField(models.CharField(max_length=100, unique=True, verbose_name=_("Name")))
     description = TranslatedField(models.TextField(max_length=255, verbose_name=_("Description")))
     season_type = models.CharField(
         max_length=20,
@@ -316,14 +321,22 @@ class Season(common_models.Model):
         ),
     )
 
-    class ExtraMeta:
-        identifier = ["name_en"]
-
     # @TODO Do we need `SeasonYear` or `SeasonGroup`to act as a parent of consecutive seasons that make up a 12 month period.  # NOQA: E501
     order = models.IntegerField(
         verbose_name=_("Order"),
         help_text=_("The order of the Season within the Season Year"),
     )
+    aliases = models.JSONField(
+        blank=True,
+        null=True,
+        verbose_name=_("aliases"),
+        help_text=_("A list of alternate names for the Season."),
+    )
+
+    objects = SeasonManager()
+
+    def natural_key(self):
+        return (self.name_en,)
 
     class Meta:
         verbose_name = _("Season")

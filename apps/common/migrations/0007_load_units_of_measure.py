@@ -16,6 +16,7 @@ UNITS = [
     Unit("m2", "square metre", "Area", ["square meter"]),
     Unit("ha", "hectare", "Area", ""),
     Unit("acre", "acre", "Area", ["acres"]),
+    Unit("cda", "cuerda", "Area", ["cuerdas"]),
     Unit("km2", "square kilometre", "Area", ["square kilometer"]),
     Unit("hg", "hectogram", "Weight", ""),
     Unit("kg/ha", "kilograms per hectare", "Yield", ""),
@@ -30,6 +31,11 @@ CONVS = [
     Conv("gal", "L", 3.785411784),
     Conv("ha", "m2", 10000),
     Conv("acre", "m2", 4046.8564224),
+    # 16 cuerdas = 1 ha, see GT06_4jun20 'WB'!A19.
+    # This is 10000/16 = 625 m2/cda
+    # According to https://en.wikipedia.org/wiki/Cuerda:
+    #   One cuerda of 30 x 30 varas = 628.87 square meters
+    Conv("cda", "m2", 628.87),
     Conv("km2", "m2", 1000000),
     Conv("hg", "kg", 0.1),
     Conv("hg/ha", "kg/ha", 0.1),

@@ -114,11 +114,11 @@ class SeasonFactory(factory.django.DjangoModelFactory):
         model = Season
         django_get_or_create = ("country", "name_en")
 
-    name_en = factory.Iterator(["Season 1 en", "Season 2 en", "Season 3 en"])
-    name_pt = factory.Iterator(["Season 1 pt", "Season 2 pt", "Season 3 pt"])
-    name_es = factory.Iterator(["Season 1 es", "Season 2 es", "Season 3 es"])
-    name_fr = factory.Iterator(["Season 1 fr", "Season 2 fr", "Season 3 fr"])
-    name_ar = factory.Iterator(["Season 1 ar", "Season 2 ar", "Season 3 ar"])
+    name_en = factory.LazyAttributeSequence(lambda o, n: f"{o.country.iso_en_ro_name}, Season {n}")
+    name_es = factory.LazyAttributeSequence(lambda o, n: f"{o.country.iso_en_ro_name}, Season {n} es")
+    name_fr = factory.LazyAttributeSequence(lambda o, n: f"{o.country.iso_en_ro_name}, Season {n} fr")
+    name_pt = factory.LazyAttributeSequence(lambda o, n: f"{o.country.iso_en_ro_name}, Season {n} pt")
+    name_ar = factory.LazyAttributeSequence(lambda o, n: f"{o.country.iso_en_ro_name}, Season {n} ar")
     description_en = factory.LazyAttribute(lambda o: f"Description {o.name_en} {o.season_type}")
     description_pt = factory.LazyAttribute(lambda o: f"Description {o.name_pt} {o.season_type}")
     description_es = factory.LazyAttribute(lambda o: f"Description {o.name_es} {o.season_type}")
