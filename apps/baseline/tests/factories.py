@@ -289,12 +289,14 @@ class LivelihoodActivityFactory(factory.django.DjangoModelFactory):
     quantity_produced = fuzzy.FuzzyInteger(201, 300)
     quantity_sold = fuzzy.FuzzyInteger(0, 50)
     quantity_other_uses = fuzzy.FuzzyInteger(0, 50)
-    quantity_consumed = factory.LazyAttribute(lambda o: o.quantity_produced - o.quantity_sold - o.quantity_other_uses)
+    quantity_consumed = factory.LazyAttribute(
+        lambda o: (o.quantity_produced or 0) - (o.quantity_sold or 0) - (o.quantity_other_uses or 0)
+    )
     price = factory.Sequence(lambda n: n + 1)
-    income = factory.LazyAttribute(lambda o: o.quantity_sold * o.price)
-    expenditure = factory.LazyAttribute(lambda o: o.quantity_produced * o.price)
+    income = factory.LazyAttribute(lambda o: (o.quantity_sold or 0) * o.price)
+    expenditure = factory.LazyAttribute(lambda o: (o.quantity_produced or 0) * o.price)
     kcals_consumed = factory.LazyAttribute(
-        lambda o: o.quantity_consumed * o.livelihood_strategy.product.kcals_per_unit
+        lambda o: (o.quantity_consumed or 0) * o.livelihood_strategy.product.kcals_per_unit
     )
     percentage_kcals = fuzzy.FuzzyInteger(1, 200)
     wealth_group = factory.SubFactory(
@@ -381,7 +383,7 @@ class MeatProductionFactory(LivelihoodActivityFactory):
         ]
 
     strategy_type = "MeatProduction"
-    quantity_produced = factory.LazyAttribute(lambda o: o.animals_slaughtered * o.carcass_weight)
+    quantity_produced = factory.LazyAttribute(lambda o: (o.animals_slaughtered or 0) * (o.carcass_weight or 0))
     animals_slaughtered = fuzzy.FuzzyInteger(2, 200)
     carcass_weight = fuzzy.FuzzyInteger(100, 150)
 
@@ -426,10 +428,13 @@ class FoodPurchaseFactory(LivelihoodActivityFactory):
         ]
 
     strategy_type = "FoodPurchase"
-    quantity_sold = fuzzy.FuzzyInteger(0, 10)
-    quantity_other_uses = fuzzy.FuzzyInteger(0, 10)
+    quantity_sold = None
+    quantity_other_uses = None
     quantity_produced = factory.LazyAttribute(lambda o: o.unit_multiple * o.times_per_month * o.months_per_year)
-    unit_multiple = fuzzy.FuzzyInteger(2, 500)
+    quantity_consumed = factory.LazyAttribute(
+        lambda o: (o.quantity_produced or 0) - (o.quantity_sold or 0) - (o.quantity_other_uses or 0)
+    )
+    unit_multiple = fuzzy.FuzzyInteger(1, 500)
     times_per_month = fuzzy.FuzzyInteger(10, 50)
     times_per_year = fuzzy.FuzzyInteger(10, 160)
     months_per_year = fuzzy.FuzzyInteger(1, 12)
@@ -447,8 +452,8 @@ class PaymentInKindFactory(LivelihoodActivityFactory):
         ]
 
     strategy_type = "PaymentInKind"
-    quantity_sold = fuzzy.FuzzyInteger(0, 25)
-    quantity_other_uses = fuzzy.FuzzyInteger(0, 25)
+    quantity_sold = fuzzy.FuzzyInteger(1, 25)
+    quantity_other_uses = fuzzy.FuzzyInteger(1, 25)
     quantity_produced = factory.LazyAttribute(
         lambda o: o.payment_per_time * o.people_per_household * o.times_per_month * o.months_per_year
     )
@@ -471,8 +476,8 @@ class ReliefGiftOtherFactory(LivelihoodActivityFactory):
         ]
 
     strategy_type = "ReliefGiftOther"
-    quantity_sold = 0
-    quantity_other_uses = 0
+    quantity_sold = None
+    quantity_other_uses = None
     quantity_produced = factory.LazyAttribute(lambda o: o.unit_multiple * o.times_per_year)
     unit_multiple = fuzzy.FuzzyInteger(10, 500)
     times_per_year = fuzzy.FuzzyInteger(1, 160)
@@ -521,9 +526,9 @@ class OtherCashIncomeFactory(LivelihoodActivityFactory):
     income = factory.LazyAttribute(
         lambda o: o.payment_per_time * o.people_per_household * o.times_per_month * o.months_per_year
     )
-    expenditure = factory.LazyAttribute(lambda o: o.quantity_produced * o.price)
+    expenditure = factory.LazyAttribute(lambda o: (o.quantity_produced or 0) * o.price)
     kcals_consumed = factory.LazyAttribute(
-        lambda o: o.quantity_consumed * o.livelihood_strategy.product.kcals_per_unit
+        lambda o: (o.quantity_consumed or 0) * o.livelihood_strategy.product.kcals_per_unit
     )
     percentage_kcals = fuzzy.FuzzyInteger(1, 200)
     payment_per_time = fuzzy.FuzzyInteger(1, 10000)
@@ -548,7 +553,7 @@ class OtherPurchaseFactory(LivelihoodActivityFactory):
     income = factory.LazyAttribute(lambda o: o.quantity_sold * o.price)
     expenditure = factory.LazyAttribute(lambda o: o.price * o.unit_multiple * o.times_per_month * o.months_per_year)
     kcals_consumed = factory.LazyAttribute(
-        lambda o: o.quantity_consumed * o.livelihood_strategy.product.kcals_per_unit
+        lambda o: (o.quantity_consumed or 0) * o.livelihood_strategy.product.kcals_per_unit
     )
     percentage_kcals = fuzzy.FuzzyInteger(1, 200)
     unit_multiple = fuzzy.FuzzyInteger(1, 500)
