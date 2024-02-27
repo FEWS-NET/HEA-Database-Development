@@ -2639,8 +2639,6 @@ class FoodPurchaseViewSetTestCase(APITestCase):
             {
                 "id": self.data[0].id,
                 "quantity_produced": self.data[0].quantity_produced,
-                "quantity_sold": self.data[0].quantity_sold,
-                "quantity_other_uses": self.data[0].quantity_other_uses,
                 "quantity_consumed": self.data[0].quantity_consumed,
                 "price": self.data[0].price,
                 "income": self.data[0].income,
@@ -2983,8 +2981,6 @@ class ReliefGiftsOtherViewSetTestCase(APITestCase):
             {
                 "id": self.data[0].id,
                 "quantity_produced": self.data[0].quantity_produced,
-                "quantity_sold": self.data[0].quantity_sold,
-                "quantity_other_uses": self.data[0].quantity_other_uses,
                 "quantity_consumed": self.data[0].quantity_consumed,
                 "price": self.data[0].price,
                 "income": self.data[0].income,
