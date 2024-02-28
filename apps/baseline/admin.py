@@ -152,6 +152,7 @@ class CommunityAdmin(GISModelAdmin):
         "name",
         "full_name",
         *translation_fields("livelihood_zone_baseline__livelihood_zone__name"),
+        "livelihood_zone_baseline__livelihood_zone__code",
     )
     list_filter = (
         *translation_fields("livelihood_zone_baseline__livelihood_zone__name"),
@@ -180,6 +181,7 @@ class LivelihoodStrategyAdmin(admin.ModelAdmin):
         "strategy_type",
         *translation_fields("livelihood_zone_baseline__livelihood_zone__name"),
         *translation_fields("product__common_name"),
+        "livelihood_zone_baseline__livelihood_zone__code",
     )
 
     list_filter = (
