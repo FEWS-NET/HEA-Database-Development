@@ -18,6 +18,12 @@ local_artifact_storage:
   config:
     base_dir: "media/pipelines/artifacts"
 
+compute_logs:
+  module: dagster.core.storage.local_compute_log_manager
+  class: LocalComputeLogManager
+  config:
+    base_dir: "media/pipelines/storage/runs"
+
 # Telemetry files are created in the ./logs directory prior to submitting to Dagster.
 # There is no way to change this directory through configuration, but our containers have a
 # ./log directory rather than a ./logs directory, so it raises unwanted warning messages. 
