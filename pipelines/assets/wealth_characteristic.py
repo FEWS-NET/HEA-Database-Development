@@ -141,7 +141,7 @@ def wealth_characteristic_label_dataframe(
     Dataframe of Wealth Group Characteristic Label References
     """
     return get_bss_label_dataframe(
-        context, config, wealth_characteristic_dataframe, "wealth_characteristic_dataframe", HEADER_ROWS
+        context, config, wealth_characteristic_dataframe, "wealth_characteristic_dataframe", len(HEADER_ROWS)
     )
 
 

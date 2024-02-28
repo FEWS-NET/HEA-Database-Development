@@ -373,11 +373,7 @@ def get_bss_dataframe(
 
 
 def get_bss_label_dataframe(
-    context: AssetExecutionContext,
-    config: BSSMetadataConfig,
-    df: pd.DataFrame,
-    asset_key: str,
-    header_rows: list[int] = [3, 4, 5],  # List of row indexes that contain the Wealth Group and other headers
+    context: AssetExecutionContext, config: BSSMetadataConfig, df: pd.DataFrame, asset_key: str, num_header_rows: int
 ) -> Output[pd.DataFrame]:
     """
     Dataframe of Label References for a worksheet in a BSS.
@@ -390,7 +386,7 @@ def get_bss_label_dataframe(
             },
         )
 
-    df = df.iloc[len(header_rows) :]  # Ignore the header rows
+    df = df.iloc[num_header_rows:]  # Ignore the header rows
     instance = context.instance
     dataframe_materialization = instance.get_event_records(
         event_records_filter=EventRecordsFilter(
@@ -403,7 +399,7 @@ def get_bss_label_dataframe(
 
     label_df = pd.DataFrame()
     label_df["label"] = df["A"]
-    label_df["label_lower"] = label_df["label"].str.lower()
+    label_df["label_lower"] = label_df["label"].str.lower().str.strip()
     label_df["filename"] = context.asset_partition_key_for_output()
     label_df["lang"] = dataframe_materialization.metadata["lang"].text
     label_df["worksheet"] = dataframe_materialization.metadata["worksheet"].text

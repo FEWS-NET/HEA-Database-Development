@@ -52,6 +52,7 @@ An example of relevant rows from the worksheet:
 import json
 import os
 import warnings
+from typing import Any
 
 import django
 import pandas as pd
@@ -108,7 +109,7 @@ def livelihood_activity_label_dataframe(
     Dataframe of Livelihood Activity Label References
     """
     return get_bss_label_dataframe(
-        context, config, livelihood_activity_dataframe, "livelihood_activity_dataframe", HEADER_ROWS
+        context, config, livelihood_activity_dataframe, "livelihood_activity_dataframe", len(HEADER_ROWS)
     )
 
 
@@ -132,33 +133,21 @@ def summary_livelihood_activity_labels_dataframe(
     return get_summary_bss_label_dataframe(config, all_livelihood_activity_labels_dataframe)
 
 
-@asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
-def livelihood_activity_instances(
-    context: AssetExecutionContext,
-    config: BSSMetadataConfig,
-    completed_bss_metadata,
-    livelihood_activity_dataframe,
+def get_instances_from_dataframe(
+    df: pd.DataFrame, metadata: dict[str:Any], activity_type: str, num_header_rows: int, partition_key: str
 ) -> Output[dict]:
     """
-    LivelhoodStrategy and LivelihoodActivity instances extracted from the BSS.
+    LivelhoodStrategy and LivelihoodActivity instances extracted from the BSS from the Data, Data2 or Data3 worksheets.
     """
-    # Find the metadata for this BSS
-    partition_key = context.asset_partition_key_for_output()
-    try:
-        metadata = completed_bss_metadata[completed_bss_metadata["partition_key"] == partition_key].iloc[0]
-    except IndexError:
-        raise ValueError("No complete entry in the BSS Metadata worksheet for %s" % partition_key)
+    # Save the natural key to the livelihood zone baseline for later use.
     livelihoodzonebaseline = [metadata["code"], metadata["reference_year_end_date"]]
-
-    df = livelihood_activity_dataframe
-    header_rows = 4  # wealth group category, district, village, household size
 
     # Prepare the lookups, so they cache the individual results
     seasonnamelookup = SeasonNameLookup()
     wealthgroupcategorylookup = WealthGroupCategoryLookup()
     label_map = {
         instance.pop("activity_label").lower(): instance
-        for instance in ActivityLabel.objects.values(
+        for instance in ActivityLabel.objects.filter(activity_type=activity_type).values(
             "activity_label",
             "strategy_type",
             "is_start",
@@ -191,16 +180,19 @@ def livelihood_activity_instances(
     # Check that we recognize all of the activity labels
     allow_unrecognized_labels = True
     unrecognized_labels = (
-        df.iloc[header_rows:][
-            ~df.iloc[header_rows:]["A"].str.lower().isin(label_map) & (df.iloc[header_rows:]["A"].str.strip() != "")
+        df.iloc[num_header_rows:][
+            ~df.iloc[num_header_rows:]["A"].str.strip().str.lower().isin(label_map)
+            & (df.iloc[num_header_rows:]["A"].str.strip() != "")
         ]
         .groupby("A")
         .apply(lambda x: ", ".join(x.index.astype(str)))
-        .reset_index()
     )
-    unrecognized_labels.columns = ["label", "rows"]
-    if not unrecognized_labels.empty:
-        message = "Unrecognized activity labels:\n\n" + unrecognized_labels.to_markdown()
+    if unrecognized_labels.empty:
+        unrecognized_labels = pd.DataFrame(columns=["label", "rows"])
+    else:
+        unrecognized_labels = unrecognized_labels.reset_index()
+        unrecognized_labels.columns = ["label", "rows"]
+        message = "Unrecognized activity labels:\n\n" + unrecognized_labels.to_markdown(index=False)
         if allow_unrecognized_labels:
             warnings.warn(message)
         else:
@@ -219,11 +211,12 @@ def livelihood_activity_instances(
 
     # Iterate over the rows
     strategy_type = None
+    activity_field_names = None
     livelihood_strategy = previous_livelihood_strategy = None
     livelihood_strategies = []
     livelihood_activities = []
     livelihood_activities_for_strategy = previous_livelihood_activities_for_strategy = []
-    for row in df.iloc[header_rows:].index:  # Ignore the Wealth Group header rows
+    for row in df.iloc[num_header_rows:].index:  # Ignore the Wealth Group header rows
         column = None
         try:
             label = df.loc[row, "A"].strip().lower()
@@ -248,6 +241,9 @@ def livelihood_activity_instances(
                     for field in model._meta.concrete_fields
                     if field.get_attname() not in activity_field_names
                 ]
+
+            if not strategy_type:
+                raise ValueError("Found attributes %s from row %s without a strategy_type set" % (attributes, row))
 
             if attributes["is_start"]:
                 # We are starting a new livelihood activity, so append the previous livelihood strategy
@@ -308,10 +304,14 @@ def livelihood_activity_instances(
                         "percentage_kcals" in livelihood_strategy["attribute_rows"]
                         and "kcals_consumed" not in livelihood_strategy["attribute_rows"]
                     ):
-                        for livelihood_activity in livelihood_activities_for_strategy:
+                        for i, livelihood_activity in enumerate(livelihood_activities_for_strategy):
+                            # The household size will always be the 4th header row in the dataframe, even though the
+                            # original row number (which is the index) will be different between the Data and Data3
+                            # worksheets
+                            household_size = df.iloc[3, i + 1]
                             livelihood_activity["kcals_consumed"] = (
-                                livelihood_activity["percentage_kcals"] * 2100 * 365 * df.loc[40, df.columns[i + 1]]
-                                if livelihood_activity["percentage_kcals"]
+                                livelihood_activity["percentage_kcals"] * 2100 * 365 * household_size
+                                if livelihood_activity["percentage_kcals"] and household_size
                                 else ""
                             )
 
@@ -421,7 +421,7 @@ def livelihood_activity_instances(
             # that the values in the row are for
             attribute = attributes["attribute"]
             # Update the LivelihoodActivity records
-            if any(value for value in df.loc[row, "B":].str.strip()):
+            if any(value for value in df.loc[row, "B":].astype(str).str.strip()):
                 # Make sure we have an attribute!
                 if not attribute:
                     raise ValueError(
@@ -457,10 +457,13 @@ def livelihood_activity_instances(
         except Exception as e:
             if column:
                 raise RuntimeError(
-                    "Unhandled error in %s processing cell 'Data'!%s%s" % (partition_key, column, row)
+                    "Unhandled error in %s processing cell 'Data'!%s%s for label '%s'"
+                    % (partition_key, column, row, label)
                 ) from e
             else:
-                raise RuntimeError("Unhandled error in %s processing row 'Data'!%s" % (partition_key, row)) from e
+                raise RuntimeError(
+                    "Unhandled error in %s processing row 'Data'!%s with label '%s'" % (partition_key, row, label)
+                ) from e
 
     result = {
         "LivelihoodStrategy": livelihood_strategies,
@@ -473,17 +476,42 @@ def livelihood_activity_instances(
         "pct_rows_recognized": round(
             (
                 1
-                - len(df.iloc[header_rows:][df.iloc[header_rows:]["A"].isin(unrecognized_labels["label"])])
-                / len(df.iloc[header_rows:])
+                - len(df.iloc[num_header_rows:][df.iloc[num_header_rows:]["A"].isin(unrecognized_labels["label"])])
+                / len(df.iloc[num_header_rows:])
             )
             * 100
         ),
         "preview": MetadataValue.md(f"```json\n{json.dumps(result, indent=4)}\n```"),
     }
     if not unrecognized_labels.empty:
-        metadata["unrecognized_labels"] = MetadataValue.md(unrecognized_labels.to_markdown())
+        metadata["unrecognized_labels"] = MetadataValue.md(unrecognized_labels.to_markdown(index=False))
 
     return Output(
         result,
         metadata=metadata,
     )
+
+
+@asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
+def livelihood_activity_instances(
+    context: AssetExecutionContext,
+    completed_bss_metadata,
+    livelihood_activity_dataframe,
+) -> Output[dict]:
+    """
+    LivelhoodStrategy and LivelihoodActivity instances extracted from the BSS.
+    """
+    # Find the metadata for this BSS
+    partition_key = context.asset_partition_key_for_output()
+    try:
+        metadata = completed_bss_metadata[completed_bss_metadata["partition_key"] == partition_key].iloc[0]
+    except IndexError:
+        raise ValueError("No complete entry in the BSS Metadata worksheet for %s" % partition_key)
+    output = get_instances_from_dataframe(
+        livelihood_activity_dataframe,
+        metadata,
+        ActivityLabel.LivelihoodActivityType.LIVELIHOOD_ACTIVITY,
+        len(HEADER_ROWS),
+        partition_key,
+    )
+    return output

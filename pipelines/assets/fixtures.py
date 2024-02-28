@@ -98,8 +98,10 @@ def get_fixture_from_instances(instance_dict: dict[str, list[dict]]) -> list[dic
 
 @asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
 def consolidated_instances(
-    livelihood_activity_instances,
     wealth_characteristic_instances,
+    livelihood_activity_instances,
+    other_cash_income_instances,
+    wild_foods_instances,
 ) -> Output[dict]:
     """
     Consolidated record instances from a BSS, ready to be validated.
@@ -111,6 +113,11 @@ def consolidated_instances(
         **wealth_characteristic_instances,
         **livelihood_activity_instances,
     }
+    # Add the wild foods and other cash income instances, if they are present
+    for model_name, instances in {**other_cash_income_instances, **wild_foods_instances}.items():
+        if instances:
+            consolidated_instances[model_name] += instances
+
     metadata = {f"num_{key.lower()}": len(value) for key, value in consolidated_instances.items()}
     metadata["total_instances"] = sum(len(value) for value in consolidated_instances.values())
     metadata["preview"] = MetadataValue.md(f"```json\n{json.dumps(consolidated_instances, indent=4)}\n```")

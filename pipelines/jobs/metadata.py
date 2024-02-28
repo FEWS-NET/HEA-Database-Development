@@ -20,6 +20,7 @@ django.setup()
 
 from common.lookups import ClassifiedProductLookup  # NOQA: E402
 from common.models import ClassifiedProduct  # NOQA: E402
+from metadata.models import ActivityLabel  # NOQA: E402
 
 
 @op
@@ -42,20 +43,22 @@ def load_all_metadata(context: OpExecutionContext):
     )
     with target.open() as f:
         with pd.ExcelFile(f) as reference_data:
-            model = None
             sheet_name = None
             sheet_names = reference_data.sheet_names[1:]
             # Iterate over the sheets in the ReferenceData workbook, in reverse order (because the Label sheets that
             # need Subject Matter Expert input are at beginning, and depend on the sheets at the end).
             for sheet_name in reversed(sheet_names):
-                # Check whether the ReferenceData worksheet matches a Django model.
-                model = None
-                for app in ["common", "metadata", "baseline"]:
-                    try:
-                        model = class_from_name(f"{app}.models.{sheet_name}")
-                        break
-                    except AttributeError:
-                        continue
+                if sheet_name in ["ActivityLabel", "OtherCashIncomeLabel", "WildFoodsLabel"]:
+                    model = ActivityLabel
+                else:
+                    # Check whether the ReferenceData worksheet matches a Django model.
+                    model = None
+                    for app in ["common", "metadata", "baseline"]:
+                        try:
+                            model = class_from_name(f"{app}.models.{sheet_name}")
+                            break
+                        except AttributeError:
+                            continue
                 if model:
                     valid_field_names = [field.name for field in model._meta.concrete_fields]
                     # Also include values that point directly to the primary key of related objects
@@ -79,7 +82,7 @@ def load_all_metadata(context: OpExecutionContext):
                     if "is_start" in df:
                         df["is_start"] = df["is_start"].replace("", False)
                     if "product_name" in df:
-                        df = ClassifiedProductLookup().do_lookup(df, "product_name", "product_id")
+                        df = ClassifiedProductLookup(require_match=False).do_lookup(df, "product_name", "product_id")
                     if "country_id" in df:
                         df["country_id"] = df["country_id"].replace(pd.NA, None)
                     if "product_id" in df:
@@ -139,8 +142,8 @@ def load_all_metadata(context: OpExecutionContext):
                             id_fields = "name_en"
                         elif sheet_name == "UnitOfMeasure":
                             id_fields = "abbreviation"
-                        elif sheet_name == "ActivityLabel":
-                            id_fields = "activity_label"
+                        elif sheet_name in ["ActivityLabel", "OtherCashIncomeLabel", "WildFoodsLabel"]:
+                            id_fields = ["activity_label", "activity_type"]
                         elif sheet_name == "WealthCharacteristicLabel":
                             id_fields = "wealth_characteristic_label"
                         else:

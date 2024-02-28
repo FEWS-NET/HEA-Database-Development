@@ -2,6 +2,7 @@ import logging
 
 from django.contrib.gis.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db.models.functions import Lower
 from django.utils.translation import gettext_lazy as _
 from django.utils.translation import pgettext_lazy
 
@@ -345,13 +346,29 @@ class Season(common_models.Model):
 
 class ActivityLabel(common_models.Model):
     """
-    A label from Column A of the 'Data' worksheet in a BSS and associated attributes.
+    A label from Column A of the 'Data', 'Data2' or 'Data3' worksheet in a BSS and associated attributes.
 
     Used by the data ingestion pipeline for LivelihoodStrategy and LivelihoodActivity to determine the attributes for
     the LivelihoodStrategy and/or LivelihoodActivity for a given row in a BSS.
     """
 
-    activity_label = common_models.NameField(max_length=100, unique=True, verbose_name=_("Activity Label"))
+    class LivelihoodActivityType(models.TextChoices):
+        LIVELIHOOD_ACTIVITY = "LivelihoodActivity", _("Livelihod Activity")  # Labels from the 'Data' worksheet
+        OTHER_CASH_INCOME = "OtherCashIncome", _("Other Cash Income")  # Labels from the 'Data2' worksheet
+        WILD_FOODS = "WildFoods", _("Wild Foods")  # Labels from the 'Data3' worksheet
+
+    activity_label = common_models.NameField(max_length=100, verbose_name=_("Activity Label"))
+    activity_type = models.CharField(
+        max_length=20,
+        verbose_name=_("Activity Type"),
+        choices=LivelihoodActivityType.choices,
+        default=LivelihoodActivityType.LIVELIHOOD_ACTIVITY,
+        help_text=_(
+            "The type of Livelihood Activity, either a general Livelihood Activity, or an Other Cash Income "
+            "activity from the 'Data2' worksheet, or a Wild Foods, Fishing or Hunting activity from the "
+            "'Data3' worksheet."
+        ),
+    )
     is_start = models.BooleanField(
         default=False,
         verbose_name=_("Is Start?"),
@@ -400,6 +417,9 @@ class ActivityLabel(common_models.Model):
     class Meta:
         verbose_name = _("Activity Label")
         verbose_name_plural = _("Activity Labels")
+        constraints = [
+            models.UniqueConstraint(Lower("activity_label"), "activity_type", name="unique_lower_name_category"),
+        ]
 
 
 class WealthCharacteristicLabel(common_models.Model):

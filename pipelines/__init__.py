@@ -21,7 +21,15 @@ from .assets.livelihood_activity import (
     livelihood_activity_dataframe,
     livelihood_activity_instances,
     livelihood_activity_label_dataframe,
+    livelihood_activity_report,
     summary_livelihood_activity_labels_dataframe,
+)
+from .assets.other_cash_income import (
+    all_other_cash_income_labels_dataframe,
+    other_cash_income_dataframe,
+    other_cash_income_instances,
+    other_cash_income_label_dataframe,
+    summary_other_cash_income_labels_dataframe,
 )
 from .assets.wealth_characteristic import (
     all_wealth_characteristic_labels_dataframe,
@@ -29,6 +37,13 @@ from .assets.wealth_characteristic import (
     wealth_characteristic_dataframe,
     wealth_characteristic_instances,
     wealth_characteristic_label_dataframe,
+)
+from .assets.wild_foods import (
+    all_wild_foods_labels_dataframe,
+    summary_wild_foods_labels_dataframe,
+    wild_foods_dataframe,
+    wild_foods_instances,
+    wild_foods_label_dataframe,
 )
 from .jobs.metadata import update_metadata
 from .resources import (
@@ -55,6 +70,17 @@ defs = Definitions(
         all_livelihood_activity_labels_dataframe,
         summary_livelihood_activity_labels_dataframe,
         livelihood_activity_instances,
+        livelihood_activity_report,
+        other_cash_income_dataframe,
+        other_cash_income_label_dataframe,
+        all_other_cash_income_labels_dataframe,
+        summary_other_cash_income_labels_dataframe,
+        other_cash_income_instances,
+        wild_foods_dataframe,
+        wild_foods_label_dataframe,
+        all_wild_foods_labels_dataframe,
+        summary_wild_foods_labels_dataframe,
+        wild_foods_instances,
         wealth_characteristic_dataframe,
         wealth_characteristic_label_dataframe,
         all_wealth_characteristic_labels_dataframe,
