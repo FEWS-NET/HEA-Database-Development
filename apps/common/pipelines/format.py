@@ -1,6 +1,7 @@
 """
 Custom Luigi Formats
 """
+
 import json
 
 from luigi.format import TextWrapper, WrappedFormat

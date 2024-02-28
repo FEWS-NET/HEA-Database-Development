@@ -1,6 +1,7 @@
 """
 Filter that enhance Django Filters, generally used for the REST API
 """
+
 import logging
 
 from django.core.exceptions import FieldDoesNotExist, ValidationError

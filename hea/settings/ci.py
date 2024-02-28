@@ -1,4 +1,5 @@
 """Settings and globals for the CI environment"""
+
 import warnings
 
 from .base import *  # NOQA
