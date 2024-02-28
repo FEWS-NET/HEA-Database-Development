@@ -21,7 +21,6 @@ from .assets.livelihood_activity import (
     livelihood_activity_dataframe,
     livelihood_activity_instances,
     livelihood_activity_label_dataframe,
-    livelihood_activity_report,
     summary_livelihood_activity_labels_dataframe,
 )
 from .assets.other_cash_income import (
@@ -70,7 +69,6 @@ defs = Definitions(
         all_livelihood_activity_labels_dataframe,
         summary_livelihood_activity_labels_dataframe,
         livelihood_activity_instances,
-        livelihood_activity_report,
         other_cash_income_dataframe,
         other_cash_income_label_dataframe,
         all_other_cash_income_labels_dataframe,
