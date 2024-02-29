@@ -54,15 +54,15 @@ msgid ""
 "    "
 msgstr ""
 "\n"
-"Une base de base est une collecte de données réalisée pour un pays lors "
-"d'une ligne de référence A Hea est une collecte de données réalisée pour un "
-"pays au cours d'une année de référence spécifique. Une ligne de base typique "
+"Un profil de référence  est une collecte de données réalisée pour un pays lors "
+"d'un profil de référence  Hea est une collecte de données réalisée pour un "
+"pays au cours d'une année de référence spécifique. Un profil de référence typique "
 "comprend les données collectées auprès des ménages moyens représentatifs, "
-"servant de représentation de la représentation de Un groupe de richesse au "
+"servant de représentation d' un groupe de richesse au "
 "sein d'une communauté dans une zone de subsistance donnée. Les principales "
 "composantes des données de base commune comprennent les caractéristiques de "
 "richesse, les profils d'actifs, économie des ménages et de nombreuses autres "
-"métriques pertinentes."
+"mésures pertinentes."
 
 #: templates/admin/app_list.html:19 templates/admin/nav_sidebar.html:18
 msgid "BSS Setup"
@@ -78,7 +78,7 @@ msgstr "Zones de subsistance"
 
 #: templates/admin/app_list.html:45 templates/admin/nav_sidebar.html:34
 msgid "Livelihood Zone Baselines"
-msgstr "Bâlines de la zone de moyens de subsistance"
+msgstr "Profil de référence de la zone de moyens de subsistance"
 
 #: templates/admin/app_list.html:57 templates/admin/nav_sidebar.html:39
 msgid "Communities"
@@ -151,7 +151,7 @@ msgstr "Événements"
 
 #: templates/admin/app_list.html:228 templates/admin/nav_sidebar.html:175
 msgid "Expandability and Coping"
-msgstr "Étendabilité et adaptation"
+msgstr "Extensibilité et adaptation"
 
 #: templates/admin/app_list.html:235 templates/admin/nav_sidebar.html:181
 msgid "Expandability Factors"
@@ -219,7 +219,7 @@ msgstr "Groupes"
 
 #: templates/admin/app_list.html:355
 msgid "You don’t have permission to view or edit anything."
-msgstr "Vous n'avez pas la permission de voir ou de modifier quoi que ce soit."
+msgstr "Vous n'êtes pas autorisé à afficher ou modifier quoi que ce soit"
 
 #: templates/admin/base.html:39
 msgid "Skip to main content"
@@ -227,7 +227,7 @@ msgstr "Passez au contenu principal"
 
 #: templates/admin/base.html:55
 msgid "Welcome,"
-msgstr "Accueillir,"
+msgstr "Accueil,"
 
 #: templates/admin/base.html:60
 msgid "View site"
@@ -296,3 +296,5 @@ msgstr "Marchés"
 #: templates/admin/nav_sidebar.html:273
 msgid "Toggle navigation"
 msgstr "Basculer la navigation"
+
+
