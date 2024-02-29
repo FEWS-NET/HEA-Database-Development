@@ -43,12 +43,26 @@
                     </div>
                 </li>
             {% endif %}
-
+            {% if 'baseline.view_livelihoodactivity' in perms %}
+                <li class="mb-1">
+                    <button class="btn btn-toggle align-items-center rounded collapsed-menu" data-bs-toggle="collapse"
+                            data-bs-target="#wg-collapse" aria-expanded="false">
+                        {% translate 'Livelihood Activities' %}
+                    </button>
+                    <div class="collapse-menu" id="wg-collapse">
+                        <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+                            <li><a class="link-dark rounded"
+                                   href="{% url 'admin:baseline_livelihoodactivity_changelist' %}">{% translate 'Livelihood Activity' %}</a>
+                            </li>
+                        </ul>
+                    </div>
+                </li>
+            {% endif %}
             {% if 'baseline.view_wealthgroup' in perms or 'metadata.view_livelihoodstrategy' in perms %}
                 <li class="mb-1">
                     <button class="btn btn-toggle align-items-center rounded collapsed-menu" data-bs-toggle="collapse"
                             data-bs-target="#wg-collapse" aria-expanded="false">
-                       {% translate 'BSS WB, Data,.. Sheets' %}
+                        {% translate 'BSS WB, Data,.. Sheets' %}
                     </button>
                     <div class="collapse-menu" id="wg-collapse">
                         <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
