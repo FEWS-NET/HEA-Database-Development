@@ -222,11 +222,11 @@ class LivelihoodActivityAdmin(admin.ModelAdmin):
         "strategy_type",
         "livelihood_strategy__additional_identifier",
         "livelihood_zone_baseline__livelihood_zone__code",
-        *translation_fields("livelihood_zone_baseline__livelihood_zone__common_name"),
+        *translation_fields("livelihood_strategy__product__common_name"),
         "livelihood_strategy__product__cpc",
         "livelihood_strategy__product__aliases",
         "livelihood_strategy__season__aliases",
-        *translation_fields("livelihood_strategy__season__common_name"),
+        *translation_fields("livelihood_strategy__season__name"),
     )
 
     def get_queryset(self, request):
@@ -248,7 +248,7 @@ class LivelihoodActivityAdmin(admin.ModelAdmin):
                 | Q(livelihood_strategy__product__aliases__icontains=search_term)
                 | Q(livelihood_strategy__season__aliases__icontains=search_term)
             )
-            queryset |= self.model.objects.filter(custom_queries)
+            queryset = queryset.filter(custom_queries).distinct()
 
         return queryset, use_distinct
 
