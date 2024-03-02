@@ -40,6 +40,7 @@ from baseline.tests.factories import (
     SourceOrganizationFactory,
     WealthGroupCharacteristicValueFactory,
     WealthGroupFactory,
+    WealthCharacteristicFactory,
 )
 from common.tests.factories import ClassifiedProductFactory
 from metadata.models import LivelihoodStrategyType
@@ -726,7 +727,7 @@ class LivelihoodActivityAdminTest(TestCase):
             "strategy_type": self.livelihood_strategy1.strategy_type,
             "scenario": self.activity3.scenario,
             "livelihood_strategy__product__cpc": self.livelihood_strategy1.product.cpc,
-            "livelihood_strategy__season__id__exact": self.livelihood_strategy2.season.pk,  # This will be an int
+            "livelihood_strategy__season__id__exact": self.livelihood_strategy2.season.pk,
             "livelihood_zone_baseline__livelihood_zone__country__name": country_name,
         }
 
@@ -740,4 +741,53 @@ class LivelihoodActivityAdminTest(TestCase):
                 result_list = soup.find(id="result_list")
                 result_list_str = str(result_list)
 
+                self.assertIn(str(filter_value), result_list_str)
+
+
+class WealthGroupCharacteristicValueAdminTest(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        User.objects.create_superuser(username="admin", password="password", email="hea@test.com")
+        cls.wealth_group = WealthGroupFactory()
+        cls.wealth_characteristic = WealthCharacteristicFactory()
+        cls.wealth_group_characteristic_value = WealthGroupCharacteristicValueFactory(
+            wealth_group=cls.wealth_group, wealth_characteristic=cls.wealth_characteristic
+        )
+        cls.site = AdminSite()
+
+    def setUp(self):
+        self.client.login(username="admin", password="password")
+
+    def test_search(self):
+        url = (
+            reverse("admin:baseline_wealthgroupcharacteristicvalue_changelist")
+            + "?q="
+            + self.wealth_characteristic.name
+        )
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        soup = BeautifulSoup(response.content, "html.parser")
+        result_list = soup.find(id="result_list")
+        result_list_str = str(result_list)
+        self.assertIn(self.wealth_characteristic.name, result_list_str)
+
+    def test_filters(self):
+        base_url = reverse("admin:baseline_wealthgroupcharacteristicvalue_changelist")
+        country_name = self.wealth_group.livelihood_zone_baseline.livelihood_zone.country.name
+        filters = {
+            "wealth_group__wealth_group_category": self.wealth_group.wealth_group_category,
+            "wealth_characteristic__has_product": self.wealth_characteristic.has_product,
+            "wealth_characteristic__has_unit_of_measure": self.wealth_characteristic.has_unit_of_measure,
+            "wealth_group__wealth_group_category__code": self.wealth_group.wealth_group_category.code,
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__name": country_name,
+        }
+
+        for filter_name, filter_value in filters.items():
+            with self.subTest(filter=filter_name):
+                query_string = f"?{filter_name}={filter_value}"
+                response = self.client.get(base_url + query_string)
+                self.assertEqual(response.status_code, 200)
+                soup = BeautifulSoup(response.content, "html.parser")
+                result_list = soup.find(id="result_list")
+                result_list_str = str(result_list)
                 self.assertIn(str(filter_value), result_list_str)

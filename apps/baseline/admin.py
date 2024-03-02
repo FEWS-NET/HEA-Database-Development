@@ -222,6 +222,7 @@ class LivelihoodActivityAdmin(admin.ModelAdmin):
         "strategy_type",
         "livelihood_strategy__additional_identifier",
         "livelihood_zone_baseline__livelihood_zone__code",
+        "livelihood_zone_baseline__livelihood_zone__alternate_code",
         *translation_fields("livelihood_strategy__product__common_name"),
         "livelihood_strategy__product__cpc",
         "livelihood_strategy__product__aliases",
@@ -244,6 +245,7 @@ class LivelihoodActivityAdmin(admin.ModelAdmin):
                 Q(strategy_type__icontains=search_term)
                 | Q(livelihood_strategy__additional_identifier__icontains=search_term)
                 | Q(livelihood_zone_baseline__livelihood_zone__code__icontains=search_term)
+                | Q(livelihood_zone_baseline__livelihood_zone__alternate_code__icontains=search_term)
                 | Q(livelihood_strategy__product__cpc__icontains=search_term)
                 | Q(livelihood_strategy__product__aliases__icontains=search_term)
                 | Q(livelihood_strategy__season__aliases__icontains=search_term)
@@ -307,6 +309,45 @@ class LivelihoodActivityAdmin(admin.ModelAdmin):
             {"fields": ["price", "income", "expenditure", "household_labor_provider"]},
         ),
     ]
+
+
+class WealthGroupCharacteristicValueAdmin(admin.ModelAdmin):
+    list_display = ["get_wealth_characteristic_common_name", "get_country_name", "wealth_group", "value"]
+    model = WealthGroupCharacteristicValue
+
+    list_filter = (
+        "wealth_group__wealth_group_category",
+        "wealth_characteristic__has_product",
+        "wealth_characteristic__has_unit_of_measure",
+        "wealth_group__wealth_group_category",
+        "wealth_group__livelihood_zone_baseline__livelihood_zone__country__name",
+    )
+
+    search_fields = (
+        *translation_fields("wealth_characteristic__name"),
+        *translation_fields("wealth_group__wealth_group_category__name"),
+        "wealth_group__livelihood_zone_baseline__livelihood_zone__code",
+        "wealth_group__livelihood_zone_baseline__livelihood_zone__alternate_code",
+        "wealth_group__livelihood_zone_baseline__livelihood_zone__country__name",
+    )
+
+    def get_country_name(self, obj):
+        return obj.wealth_group.livelihood_zone_baseline.livelihood_zone.country.name
+
+    get_country_name.admin_order_field = "wealth_group__livelihood_zone_baseline__livelihood_zone__country__name"
+    get_country_name.short_description = "Country Name"
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.select_related(
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country",
+        )
+
+    def get_wealth_characteristic_common_name(self, obj):
+        return obj.wealth_characteristic.name
+
+    get_wealth_characteristic_common_name.admin_order_field = "wealth_characteristic.name"
+    get_wealth_characteristic_common_name.short_description = "Wealth characteristic name"
 
 
 class LivelihoodActivityInlineAdmin(admin.StackedInline):
@@ -906,3 +947,4 @@ admin.site.register(SeasonalActivityOccurrence, SeasonalActivityOccurrenceAdmin)
 admin.site.register(SeasonalProductionPerformance, SeasonalProductionPerformanceAdmin)
 
 admin.site.register(LivelihoodActivity, LivelihoodActivityAdmin)
+admin.site.register(WealthGroupCharacteristicValue, WealthGroupCharacteristicValueAdmin)
