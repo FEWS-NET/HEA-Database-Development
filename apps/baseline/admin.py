@@ -312,15 +312,23 @@ class LivelihoodActivityAdmin(admin.ModelAdmin):
 
 
 class WealthGroupCharacteristicValueAdmin(admin.ModelAdmin):
-    list_display = ["get_wealth_characteristic_common_name", "get_country_name", "wealth_group", "value"]
+    list_display = [
+        "get_wealth_characteristic_common_name",
+        "wealth_group",
+        "get_wealth_group_category",
+        "get_country_name",
+        "product",
+        "value",
+    ]
     model = WealthGroupCharacteristicValue
 
     list_filter = (
         "wealth_group__wealth_group_category",
+        "wealth_group__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_characteristic__has_product",
+        "product",
         "wealth_characteristic__has_unit_of_measure",
-        "wealth_group__wealth_group_category",
-        "wealth_group__livelihood_zone_baseline__livelihood_zone__country__name",
+        "unit_of_measure",
     )
 
     search_fields = (
@@ -329,7 +337,16 @@ class WealthGroupCharacteristicValueAdmin(admin.ModelAdmin):
         "wealth_group__livelihood_zone_baseline__livelihood_zone__code",
         "wealth_group__livelihood_zone_baseline__livelihood_zone__alternate_code",
         "wealth_group__livelihood_zone_baseline__livelihood_zone__country__name",
+        *translation_fields("product__common_name"),
+        "product__cpc",
+        "product__aliases",
     )
+
+    def get_wealth_group_category(self, obj):
+        return obj.wealth_group.wealth_group_category.name
+
+    get_wealth_group_category.admin_order_field = "wealth_group__category__name"
+    get_wealth_group_category.short_description = "Wealth group category"
 
     def get_country_name(self, obj):
         return obj.wealth_group.livelihood_zone_baseline.livelihood_zone.country.name
@@ -340,7 +357,7 @@ class WealthGroupCharacteristicValueAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         return qs.select_related(
-            "wealth_group__livelihood_zone_baseline__livelihood_zone__country",
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country", "product", "unit_of_measure"
         )
 
     def get_wealth_characteristic_common_name(self, obj):
