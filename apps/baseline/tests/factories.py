@@ -222,6 +222,13 @@ class WealthGroupCharacteristicValueFactory(factory.django.DjangoModelFactory):
         else:
             return None
 
+    @factory.lazy_attribute
+    def unit_of_measure(self):
+        if self.wealth_characteristic.has_unit_of_measure:
+            return UnitOfMeasureFactory()
+        else:
+            return None
+
 
 class LivelihoodStrategyFactory(factory.django.DjangoModelFactory):
     class Meta:
