@@ -343,18 +343,24 @@ class NormalizeWB(luigi.Task):
                     "reference_year_start_date": metadata["reference_year_start_date"].date().isoformat(),
                     "reference_year_end_date": metadata["reference_year_end_date"].date().isoformat(),
                     "valid_from_date": metadata["valid_from_date"].date().isoformat(),
-                    "valid_to_date": None
-                    if pd.isna(metadata["valid_to_date"])
-                    else metadata["valid_to_date"].date().isoformat(),
-                    "data_collection_start_date": None
-                    if pd.isna(metadata["data_collection_start_date"])
-                    else metadata["data_collection_start_date"].date().isoformat(),
-                    "data_collection_end_date": None
-                    if pd.isna(metadata["data_collection_end_date"])
-                    else metadata["data_collection_end_date"].date().isoformat(),
-                    "publication_date": None
-                    if pd.isna(metadata["publication_date"])
-                    else metadata["publication_date"].date().isoformat(),
+                    "valid_to_date": (
+                        None if pd.isna(metadata["valid_to_date"]) else metadata["valid_to_date"].date().isoformat()
+                    ),
+                    "data_collection_start_date": (
+                        None
+                        if pd.isna(metadata["data_collection_start_date"])
+                        else metadata["data_collection_start_date"].date().isoformat()
+                    ),
+                    "data_collection_end_date": (
+                        None
+                        if pd.isna(metadata["data_collection_end_date"])
+                        else metadata["data_collection_end_date"].date().isoformat()
+                    ),
+                    "publication_date": (
+                        None
+                        if pd.isna(metadata["publication_date"])
+                        else metadata["publication_date"].date().isoformat()
+                    ),
                 }
             ],
         }
@@ -737,9 +743,11 @@ class NormalizeWB(luigi.Task):
             lambda full_name: [metadata["code"], metadata["reference_year_end_date"].date().isoformat()]
         )
         wealth_group_df["community"] = wealth_group_df["full_name"].apply(
-            lambda full_name: None
-            if pd.isna(full_name)
-            else [metadata["code"], metadata["reference_year_end_date"].date().isoformat(), full_name]
+            lambda full_name: (
+                None
+                if pd.isna(full_name)
+                else [metadata["code"], metadata["reference_year_end_date"].date().isoformat(), full_name]
+            )
         )
         wealth_group_df = wealth_group_df.drop(columns="full_name")
 
@@ -938,9 +946,11 @@ class NormalizeData(luigi.Task):
                                     metadata["code"],
                                     metadata["reference_year_end_date"].date().isoformat(),
                                     livelihood_strategy["strategy_type"],
-                                    livelihood_strategy["season_number"]
-                                    if livelihood_strategy["season_number"]
-                                    else "",
+                                    (
+                                        livelihood_strategy["season_number"]
+                                        if livelihood_strategy["season_number"]
+                                        else ""
+                                    ),
                                     livelihood_strategy["product"] if livelihood_strategy["product"] else "",
                                     livelihood_strategy["additional_identifier"],
                                 ]
