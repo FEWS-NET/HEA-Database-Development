@@ -641,6 +641,7 @@ class LivelihoodActivityAdminTest(TestCase):
         cls.livelihood_strategy1 = LivelihoodStrategyFactory(
             livelihood_zone_baseline=cls.livelihood_zone_baseline1,
             strategy_type=LivelihoodStrategyType.MILK_PRODUCTION,
+            additional_identifier="mukera",
         )
         cls.livelihood_strategy2 = LivelihoodStrategyFactory(
             livelihood_zone_baseline=cls.livelihood_zone_baseline2, strategy_type=LivelihoodStrategyType.FISHING
