@@ -2,10 +2,10 @@
 Base functions for performing operations on BSS spreadsheets.
 """
 
+import json
 import numbers
 import os
 from io import BytesIO
-from pathlib import Path
 from typing import Optional
 
 import django
@@ -18,15 +18,18 @@ from dagster import (
     Config,
     DagsterEventType,
     DynamicPartitionsDefinition,
+    EnvVar,
     EventRecordsFilter,
     MetadataValue,
     Output,
     asset,
 )
+from gdrivefs.core import GoogleDriveFile
 from openpyxl.comments import Comment
 from openpyxl.utils import get_column_letter
 from openpyxl.utils.cell import coordinate_to_tuple, rows_from_range
 from pydantic import Field
+from upath import UPath
 from xlutils.copy import copy as copy_xls
 
 from ..utils import get_index
@@ -67,34 +70,48 @@ bss_instances_partitions_def = DynamicPartitionsDefinition(name="bss_instances")
 
 
 class BSSMetadataConfig(Config):
-    gdrive_id: str = Field(
-        default="15XVXFjbom1sScVXbsetnbgAnPpRux2AgNy8w5U8bXdI", description="The id of the BSS Metadata Google Sheet."
-    )
-    bss_root_folder: str = Field(
-        default="/home/roger/Temp/Baseline Storage Sheets (BSS)",
-        description="The path of the root folder containing the BSSs",
-    )
+    # The fspec path of the spreadsheet containing the BSS Metadata and Corrections
+    bss_metadata_workbook: str = EnvVar("BSS_METADATA_WORKBOOK")
+    # The fsspec storage options for the BSS metadata spreadsheet
+    bss_metadata_storage_options: dict = json.loads(EnvVar("BSS_METADATA_STORAGE_OPTIONS").get_value("{}"))
+    # The fspec path of the root folder containing the BSSs
+    # For example:
+    # "/home/user/Temp/Baseline Storage Sheets (BSS)"
+    # or "gdrive://Discovery Folder/Baseline Storage Sheets (BSS)"
+    bss_files_folder: str = EnvVar("BSS_FILES_FOLDER")
+    # The fsspec storage options for the BSS root folder
+    bss_files_storage_options: dict = json.loads(EnvVar("BSS_FILES_STORAGE_OPTIONS").get_value("{}"))
     preview_rows: int = Field(default=10, description="The number of rows to show in DataFrame previews")
 
 
-@asset(required_resource_keys={"google_client"})
+@asset
 def bss_metadata(context: AssetExecutionContext, config: BSSMetadataConfig) -> Output[pd.DataFrame]:
     """
     A DataFrame containing the BSS Metadata.
     """
-    gc = context.resources.google_client.get_gspread_client()
-    sh = gc.open_by_key(config.gdrive_id)
-    worksheet = sh.worksheet("Metadata")
-    data = worksheet.get_all_records()
-    df = pd.DataFrame(data)
+    p = UPath(config.bss_metadata_workbook, **config.bss_metadata_storage_options)
+
+    with p.fs.open(p.path, mode="rb", cache_type="bytes") as f:
+        # Google Sheets have to exported rather than read directly
+        if isinstance(f, GoogleDriveFile) and (f.details["mimeType"] == "application/vnd.google-apps.spreadsheet"):
+            f = BytesIO(p.fs.export(p.path, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+
+        df = pd.read_excel(f, sheet_name="Metadata", engine="openpyxl")
+
+    df["reference_year_start_date"] = df["reference_year_start_date"].dt.date
+    df["reference_year_end_date"] = df["reference_year_end_date"].dt.date
+    df["valid_from_date"] = df["valid_from_date"].dt.date
+    df["valid_to_date"] = df["valid_to_date"].dt.date
+    df["data_collection_start_date"] = df["data_collection_start_date"].dt.date
+    df["data_collection_end_date"] = df["data_collection_end_date"].dt.date
+    df["publication_date"] = df["publication_date"].dt.date
 
     # Add the partition key and a flag indicating whether the BSS file exists
     partition_key_df = df[["country_id", "code", "reference_year_end_date"]]
     partition_key_df = CountryLookup().get_instances(partition_key_df, "country_id")
     df["partition_key"] = partition_key_df[["country_id", "code", "reference_year_end_date"]].apply(
-        lambda x: f"{x[0].iso_en_ro_proper}~{x[1]}~{x[2]}", axis=1
+        lambda x: f"{x.iloc[0].iso_en_ro_proper}~{x.iloc[1]}~{x.iloc[2]}", axis="columns"
     )
-    df["bss_exists"] = df["bss_path"].apply(lambda x: Path(config.bss_root_folder, *x.split("/")).is_file())
 
     partitions = bss_files_partitions_def.get_partition_keys(dynamic_partitions_store=context.instance)
 
@@ -110,9 +127,10 @@ def bss_metadata(context: AssetExecutionContext, config: BSSMetadataConfig) -> O
         metadata={
             "num_baselines": len(df),
             "preview": MetadataValue.md(
-                df[["bss_path", "status", "name_en", "main_livelihood_category_id"]]
+                df[["partition_key", "bss_path", "status", "name_en", "main_livelihood_category_id"]]
                 .head(config.preview_rows)
-                .to_markdown()
+                .to_markdown(index=False)
+                .replace("~", "\\~")  # Escape the ~ in the partition_key, otherwise it is rendered as strikethrough
             ),
         },
     )
@@ -163,16 +181,20 @@ def completed_bss_metadata(config: BSSMetadataConfig, bss_metadata) -> Output[pd
     )
 
 
-@asset(required_resource_keys={"google_client"})
+@asset
 def bss_corrections(context: AssetExecutionContext, config: BSSMetadataConfig) -> Output[pd.DataFrame]:
     """
     A DataFrame containing approved corrections to cells in BSS spreadsheets.
     """
-    gc = context.resources.google_client.get_gspread_client()
-    sh = gc.open_by_key(config.gdrive_id)
-    worksheet = sh.worksheet("Corrections")
-    data = worksheet.get_all_records()
-    df = pd.DataFrame(data)
+    p = UPath(config.bss_metadata_workbook, **config.bss_metadata_storage_options)
+
+    with p.fs.open(p.path, mode="rb", cache_type="bytes") as f:
+        # Google Sheets have to exported rather than read directly
+        if isinstance(f, GoogleDriveFile) and (f.details["mimeType"] == "application/vnd.google-apps.spreadsheet"):
+            f = BytesIO(p.fs.export(p.path, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+
+        df = pd.read_excel(f, sheet_name="Corrections", engine="openpyxl")
+
     return Output(
         df,
         metadata={
@@ -184,15 +206,33 @@ def bss_corrections(context: AssetExecutionContext, config: BSSMetadataConfig) -
 
 
 @asset(partitions_def=bss_files_partitions_def)
+def original_files(context: AssetExecutionContext, config: BSSMetadataConfig, bss_metadata) -> Output[BytesIO]:
+    """
+    Original BSS files as used by the HEA community.
+    """
+    partition_key = context.asset_partition_key_for_output()
+    partition_metadata = bss_metadata[bss_metadata["partition_key"] == partition_key]
+    if partition_metadata.empty:
+        raise ValueError(f"No BSS metadata found for partition key `{partition_key}`")
+    bss_path = partition_metadata["bss_path"].iloc[0]
+    p = UPath(config.bss_files_folder, bss_path, **config.bss_files_storage_options)
+
+    # Prepare the metadata for the output
+    output_metadata = {"bss_path": p.path}
+
+    with p.fs.open(p.path, mode="rb") as f:
+        return Output(BytesIO(f.read()), metadata=output_metadata)
+
+
+@asset(partitions_def=bss_files_partitions_def)
 def corrected_files(
-    context: AssetExecutionContext, config: BSSMetadataConfig, bss_metadata, bss_corrections
+    context: AssetExecutionContext, config: BSSMetadataConfig, original_files, bss_metadata, bss_corrections
 ) -> Output[BytesIO]:
     """
     BSS files with any necessary corrections applied.
     """
     partition_key = context.asset_partition_key_for_output()
     bss_path = bss_metadata[bss_metadata["partition_key"] == partition_key]["bss_path"].iloc[0]
-    file_path = Path(config.bss_root_folder, bss_path)
 
     def validate_previous_value(cell, expected_prev_value, prev_value):
         """
@@ -213,21 +253,21 @@ def corrected_files(
     corrections_df = bss_corrections[bss_corrections["bss_path"] == bss_path]
 
     # Prepare the metadata for the output
-    output_metadata = {"bss_path": file_path, "num_corrections": len(corrections_df)}
+    output_metadata = {"num_corrections": len(corrections_df)}
 
     if corrections_df.empty:
         # No corrections, so just leave the file unaltered
-        with open(file_path, "rb") as fh:
-            return Output(BytesIO(fh.read()), metadata=output_metadata)
+        return Output(original_files, metadata=output_metadata)
+
     else:
-        if file_path.suffix == ".xls":
+        try:
             # xlrd can only read XLS files, so we need to use xlutils.copy_xls to create something we can edit
-            xlrd_wb = xlrd.open_workbook(file_path, formatting_info=True, on_demand=True)
+            xlrd_wb = xlrd.open_workbook(file_contents=original_files.getvalue(), formatting_info=True, on_demand=True)
             wb = copy_xls(xlrd_wb)
-        else:
+        except xlrd.biffh.XLRDError:
             xlrd_wb = None  # Required to suppress spurious unbound variable errors from Pyright
             # Need data_only=True to get the values of cells that contain formulas
-            wb = openpyxl.load_workbook(file_path, data_only=True)
+            wb = openpyxl.load_workbook(original_files, data_only=True)
         for correction in corrections_df.itertuples():
             for row in rows_from_range(correction.range):
                 for cell in row:

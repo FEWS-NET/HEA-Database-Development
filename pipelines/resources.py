@@ -1,19 +1,12 @@
 import json
-import os
 import pickle
-import posixpath
-import tempfile
 from abc import abstractmethod
-from functools import cached_property
-from io import FileIO
 from typing import Any, Optional, Type
 
 import dagster._check as check
-import gspread
 import pandas as pd
 from dagster import (
     ConfigurableIOManagerFactory,
-    ConfigurableResource,
     DagsterInvariantViolationError,
     InitResourceContext,
     InputContext,
@@ -21,158 +14,8 @@ from dagster import (
 )
 from dagster._core.storage.upath_io_manager import UPathIOManager
 from dagster._utils import PICKLE_PROTOCOL
-from google.oauth2 import service_account
-from googleapiclient import discovery, http
-from googleapiclient.errors import HttpError
 from pydantic.fields import Field
 from upath import UPath
-
-
-class _DeleteOnCloseFile(FileIO):
-    def close(self):
-        super().close()
-        try:
-            os.remove(self.name)
-        except OSError:
-            # Catch a potential threading race condition and also allow this
-            # method to be called multiple times.
-            pass
-
-    def readable(self):
-        return True
-
-    def writable(self):
-        return False
-
-    def seekable(self):
-        return True
-
-
-class GoogleClientResource(ConfigurableResource):
-    credentials_json: str
-
-    def get_gspread_client(self) -> gspread.Client:
-        client = gspread.service_account_from_dict(json.loads(self.credentials_json))
-        return client
-
-    @cached_property
-    def client(self):
-        # Convert the credentials_json string to a scoped credentials object
-        scopes = [
-            "https://spreadsheets.google.com/feeds",
-            "https://www.googleapis.com/auth/spreadsheets",
-            "https://www.googleapis.com/auth/drive.file",
-            "https://www.googleapis.com/auth/drive",
-        ]
-        oauth_credentials = service_account.Credentials.from_service_account_info(
-            json.loads(self.credentials_json)
-        ).with_scopes(scopes)
-
-        client = discovery.build("drive", "v3", credentials=oauth_credentials)
-        return client
-
-    def get_id_from_path(self, path: str, create_folders: bool = False):
-        """
-        Convert a path potentially containing subfolders to a Google Drive folder or file id.
-
-        By default find an existing folder id, but optionally (if create_folders=True) create the subfolders.
-        """
-        components = path.strip(posixpath.sep).split(posixpath.sep)
-        # The first component must be an actual Google Folder id
-        file_or_folder_id = components.pop(0)
-        while components:
-            name = components.pop(0)
-            # Find an object in this parent directory with the correct name
-            query = f"name = '{name}' and parents='{file_or_folder_id}'"
-            # If there are still components left, then this component must be a directory
-            if components:
-                query += "and mimeType='application/vnd.google-apps.folder'"
-            try:
-                response = (
-                    self.client.files().list(q=query, includeItemsFromAllDrives=True, supportsAllDrives=True).execute()
-                )
-                if response and response.get("files"):
-                    assert (
-                        len(response.get("files")) == 1
-                    ), f"There are multiple files called {name} in folder {file_or_folder_id}"  # NOQA: E501
-                    file_or_folder_id = response.get("files")[0].get("id")
-                else:
-                    if create_folders:
-                        metadata = {
-                            "name": name,
-                            "parents": [file_or_folder_id],
-                            "mimeType": "application/vnd.google-apps.folder",
-                        }
-                        folder = (
-                            self.client.files()
-                            .create(
-                                body=metadata,
-                                fields="id",
-                                supportsAllDrives=True,
-                            )
-                            .execute()
-                        )
-                        file_or_folder_id = folder.get("id")
-                    else:
-                        return None
-            except HttpError as http_error:
-                if http_error.status_code == 404 and create_folders:
-                    metadata = {
-                        "name": name,
-                        "parents": [file_or_folder_id],
-                        "mimeType": "application/vnd.google-apps.folder",
-                    }
-                    folder = (
-                        self.client.files()
-                        .create(
-                            body=metadata,
-                            fields="id",
-                            supportsAllDrives=True,
-                        )
-                        .execute()
-                    )
-                    file_or_folder_id = folder.get("id")
-                else:
-                    raise
-        return file_or_folder_id
-
-    def download(
-        self,
-        path,
-        chunksize: Optional[int] = None,
-        chunk_callback=lambda _: False,
-        mimetype: Optional[str] = None,
-    ):
-        """
-        Downloads a file from Google Drive given the file_id to a temporary local file
-        and returns the local file for processing
-        """
-        chunksize = chunksize or self.chunksize
-        file_id = self.get_id_from_path(path)
-        if not file_id:
-            raise Exception("File %s not found" % path)
-        # As per https://developers.google.com/drive/api/v3/manage-downloads#download_a_document
-        # export_media method should be used if the file is Google Workspace Document
-        file_obj = self.client.files().get(fileId=file_id, supportsAllDrives=True).execute()
-        # Assuming we only need to deal with spreadsheet types from google workspace docs
-        if file_obj.get("mimeType") == "application/vnd.google-apps.spreadsheet":
-            mimetype = mimetype or "application/x-vnd.oasis.opendocument.spreadsheet"
-            request = self.client.files().export_media(
-                fileId=file_id,
-                mimeType=mimetype,
-            )
-        else:
-            request = self.client.files().get_media(fileId=file_id)
-
-        done = False
-        with tempfile.NamedTemporaryFile(delete=False) as fp:
-            downloader = http.MediaIoBaseDownload(fp, request, chunksize=chunksize)
-            return_fp = _DeleteOnCloseFile(fp.name, "r")
-            while done is False:
-                _, done = downloader.next_chunk()
-                if chunk_callback(fp):
-                    done = True
-        return return_fp
 
 
 class PickleFilesystemIOManager(UPathIOManager):

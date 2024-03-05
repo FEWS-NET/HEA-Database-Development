@@ -75,7 +75,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hea.settings.production")
 # Configure Django with our custom settings before importing any Django classes
 django.setup()
 
-from baseline.models import MilkProduction  # NOQA: E402
+from baseline.models import LivelihoodStrategy, MilkProduction  # NOQA: E402
 from metadata.lookups import SeasonNameLookup, WealthGroupCategoryLookup  # NOQA: E402
 from metadata.models import ActivityLabel, LivelihoodActivityScenario  # NOQA: E402
 
@@ -140,7 +140,7 @@ def get_instances_from_dataframe(
     LivelhoodStrategy and LivelihoodActivity instances extracted from the BSS from the Data, Data2 or Data3 worksheets.
     """
     # Save the natural key to the livelihood zone baseline for later use.
-    livelihoodzonebaseline = [metadata["code"], metadata["reference_year_end_date"]]
+    livelihoodzonebaseline = [metadata["code"], metadata["reference_year_end_date"].isoformat()]
 
     # Prepare the lookups, so they cache the individual results
     seasonnamelookup = SeasonNameLookup()
@@ -172,7 +172,7 @@ def get_instances_from_dataframe(
                 (
                     ""
                     if wealthgroupcategorylookup.get(df.loc[4, column])
-                    else ", ".join([df.loc[5, column], df.loc[4, column]])
+                    else ", ".join([df.loc[5, column].strip(), df.loc[4, column].strip()])
                 ),
             ]
         )
@@ -249,7 +249,7 @@ def get_instances_from_dataframe(
                 # We are starting a new livelihood activity, so append the previous livelihood strategy
                 # to the list, provided that it has at least one Livelihood Activity where there is some income,
                 # expediture or consumption. This excludes empty activities that only contain attributes for,
-                # for example, 'type_of_milk_sold_or_other_uses'
+                # for example, 'type_of_milk_sold_or_other_uses'.
                 non_empty_livelihood_activities = [
                     livelihood_activity
                     for livelihood_activity in livelihood_activities_for_strategy
@@ -267,20 +267,14 @@ def get_instances_from_dataframe(
 
                     # Copy the product_id for MilkProduction and ButterProduction the previous livelihood strategy if
                     # necessary.
-                    if livelihood_strategy["strategy_type"] in ["MilkProduction", "ButterProduction"] and (
-                        "product_id" not in livelihood_strategy or not livelihood_strategy["product_id"]
+                    if (
+                        livelihood_strategy["strategy_type"] in ["MilkProduction", "ButterProduction"]
+                        and ("product_id" not in livelihood_strategy or not livelihood_strategy["product_id"])
+                        and livelihood_strategy["season"] == "Season 2"
+                        and previous_livelihood_strategy
+                        and previous_livelihood_strategy["product_id"]
                     ):
-                        if (
-                            livelihood_strategy["season"] == "Season 2"
-                            and previous_livelihood_strategy
-                            and previous_livelihood_strategy["product_id"]
-                        ):
-                            livelihood_strategy["product_id"] = previous_livelihood_strategy["product_id"]
-                        else:
-                            raise ValueError(
-                                "Cannot determine product_id for %s %s on row %s"
-                                % (livelihood_strategy["strategy_type"], livelihood_strategy["activity_label"], row)
-                            )
+                        livelihood_strategy["product_id"] = previous_livelihood_strategy["product_id"]
 
                     # Copy the milking_animals for camels and cattle from the previous livelihood activities if
                     # necessary.
@@ -341,9 +335,37 @@ def get_instances_from_dataframe(
                             livelihood_strategy["additional_identifier"],
                         ]
 
-                    # Append the stategies and activities to the lists of instances to create.
-                    livelihood_strategies.append(livelihood_strategy)
-                    livelihood_activities += non_empty_livelihood_activities
+                    # Some Livelihood Activities are only partially defined and have data for the Wealth Groups,
+                    # but not for the Summary. In these cases, we can ignore the Wealth Group-level Livelihood Activity
+                    # data. Note that if there is Summary data, then we need to include the Livelihood Strategy and
+                    # Activities in the fixture, or raise an exception.
+                    strategy_is_valid = True
+
+                    # Check the Livelihood Strategy has a product_id if one is required.
+                    if livelihood_strategy["strategy_type"] in LivelihoodStrategy.REQUIRES_PRODUCT and (
+                        "product_id" not in livelihood_strategy or not livelihood_strategy["product_id"]
+                    ):
+                        strategy_is_valid = False
+
+                    non_empty_summary_activities = [
+                        livelihood_activity
+                        for livelihood_activity in livelihood_activities_for_strategy
+                        if livelihood_activity["wealth_group"][3] == ""
+                        and any(
+                            (
+                                field in livelihood_activity
+                                and (livelihood_activity[field] or livelihood_activity[field] == 0)
+                            )
+                            for field in ["income", "expenditure", "kcals_consumed", "percentage_kcals"]
+                        )
+                    ]
+
+                    # For invalid strategies, we only proceed if there are Summary Livelihood Activities
+                    if strategy_is_valid or non_empty_summary_activities:
+
+                        # Append the stategies and activities to the lists of instances to create.
+                        livelihood_strategies.append(livelihood_strategy)
+                        livelihood_activities += non_empty_livelihood_activities
 
                 # Now that we have saved the previous livelihood strategy and activities, we can start a new one.
 
@@ -464,6 +486,27 @@ def get_instances_from_dataframe(
                 raise RuntimeError(
                     "Unhandled error in %s processing row 'Data'!%s with label '%s'" % (partition_key, row, label)
                 ) from e
+
+    # Basic checks to ensure that the metadata is consistent and complete
+    errors = []
+
+    for livelihood_strategy in livelihood_strategies:
+        # Check the Livelihood Strategy has a product_id if one is required.
+        if livelihood_strategy["strategy_type"] in LivelihoodStrategy.REQUIRES_PRODUCT and (
+            "product_id" not in livelihood_strategy or not livelihood_strategy["product_id"]
+        ):
+            errors.append(
+                "Cannot determine product_id for %s %s on row %s"
+                % (
+                    livelihood_strategy["strategy_type"],
+                    livelihood_strategy["activity_label"],
+                    livelihood_strategy["row"],
+                )
+            )
+
+    if errors:
+        errors = "\n".join(errors)
+        raise RuntimeError("Missing or inconsistent metadata in BSS %s:\n%s" % (partition_key, errors))
 
     result = {
         "LivelihoodStrategy": livelihood_strategies,

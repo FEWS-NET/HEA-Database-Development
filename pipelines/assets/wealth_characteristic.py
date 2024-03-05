@@ -82,7 +82,6 @@ An example of relevant rows from the worksheet:
 import itertools
 import json
 import os
-import warnings
 
 import django
 import pandas as pd
@@ -181,7 +180,7 @@ def wealth_characteristic_instances(
         metadata = completed_bss_metadata[completed_bss_metadata["partition_key"] == partition_key].iloc[0]
     except IndexError:
         raise ValueError("No complete entry in the BSS Metadata worksheet for %s" % partition_key)
-    livelihoodzonebaseline = [metadata["code"], metadata["reference_year_end_date"]]
+    livelihoodzonebaseline = [metadata["code"], metadata["reference_year_end_date"].isoformat()]
 
     df = wealth_characteristic_dataframe
     header_rows = 3  # wealth group category, district, village
@@ -197,6 +196,7 @@ def wealth_characteristic_instances(
             "unit_of_measure_id",
         )
     }
+    context.log.info("Loaded %d Wealth Characteristic Labels", len(label_map))
 
     # Create the Wealth Groups from the combination of Wealth Group Categories from column B and Communities from
     # Rows 4 and 5. The Communities are repeated for each Wealth Group Category, so only use the values until the
@@ -230,7 +230,7 @@ def wealth_characteristic_instances(
     wealth_group_df["livelihood_zone_baseline"] = [livelihoodzonebaseline] * len(wealth_group_df)
     # Add the natural key for the Community to the Wealth Groups
     wealth_group_df["community"] = wealth_group_df[["livelihood_zone_baseline", "full_name"]].apply(
-        lambda x: x[0] + [x[1]] if x[1] else None, axis="columns"
+        lambda x: x.iloc[0] + [x.iloc[1]] if x.iloc[1] else None, axis="columns"
     )
 
     # Build a list of the Community Full Name for each column, based on the values from Rows 4 and 5. For rows that
@@ -264,7 +264,7 @@ def wealth_characteristic_instances(
     if not unrecognized_labels.empty:
         message = "Unrecognized activity labels:\n\n" + unrecognized_labels.to_markdown()
         if allow_unrecognized_labels:
-            warnings.warn(message)
+            context.log.warning(message)
         else:
             raise ValueError(message)
 
@@ -401,8 +401,8 @@ def wealth_characteristic_instances(
             "%s contains unmatched Community full_name values in Wealth Group interviews:\n%s\n\nExpected names:\n%s"
             % (
                 partition_key,
-                unmatched_full_names.to_markdown(),
-                form3_full_names_df.to_markdown(),
+                unmatched_full_names.to_markdown(index=False),
+                form3_full_names_df.to_markdown(index=False),
             )
         )
 
@@ -454,7 +454,7 @@ def wealth_characteristic_instances(
         "preview": MetadataValue.md(f"```json\n{json.dumps(result, indent=4)}\n```"),
     }
     if not unrecognized_labels.empty:
-        metadata["unrecognized_labels"] = MetadataValue.md(unrecognized_labels.to_markdown())
+        metadata["unrecognized_labels"] = MetadataValue.md(unrecognized_labels.to_markdown(index=False))
 
     return Output(
         result,

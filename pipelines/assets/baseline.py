@@ -38,6 +38,35 @@ def baseline_instances(
     except IndexError:
         raise ValueError("No complete entry in the BSS Metadata worksheet for %s" % partition_key)
 
+    # Prepare the dataframe for converting to a JSON fixture
+    # Convert date columns to isoformat strings
+    for column in [
+        "reference_year_start_date",
+        "reference_year_end_date",
+        "valid_from_date",
+        "valid_to_date",
+        "data_collection_start_date",
+        "data_collection_end_date",
+        "publication_date",
+    ]:
+        metadata[column] = metadata[column].isoformat() if pd.notna(metadata[column]) and metadata[column] else None
+    # Ensure pd.NA char columns contain empty strings
+    for column in [
+        "name_en",
+        "name_es",
+        "name_fr",
+        "name_pt",
+        "name_ar",
+        "description_en",
+        "description_es",
+        "description_fr",
+        "description_pt",
+        "description_ar",
+    ]:
+        metadata[column] = metadata[column] if pd.notna(metadata[column]) else ""
+    # Make sure the livelihood_category_id is lowercase
+    metadata["main_livelihood_category_id"] = metadata["main_livelihood_category_id"].lower()
+
     # Key in the result dict must match the name of the model class they will be imported to.
     # The value must be a list of instances to import into that model, where each instance
     # is a dict of field names and values.
@@ -77,18 +106,14 @@ def baseline_instances(
                 "source_organization": [
                     metadata["source_organization"],
                 ],  # natural key is always a list
-                "main_livelihood_category_id": str(metadata["main_livelihood_category_id"]).lower(),
+                "main_livelihood_category_id": metadata["main_livelihood_category_id"],
                 "reference_year_start_date": metadata["reference_year_start_date"],
                 "reference_year_end_date": metadata["reference_year_end_date"],
                 "valid_from_date": metadata["valid_from_date"],
-                "valid_to_date": metadata["valid_to_date"] if metadata["valid_to_date"] else None,
-                "data_collection_start_date": (
-                    metadata["data_collection_start_date"] if metadata["data_collection_start_date"] else None
-                ),
-                "data_collection_end_date": (
-                    metadata["data_collection_end_date"] if metadata["data_collection_end_date"] else None
-                ),
-                "publication_date": metadata["publication_date"] if metadata["publication_date"] else None,
+                "valid_to_date": metadata["valid_to_date"],
+                "data_collection_start_date": metadata["data_collection_start_date"],
+                "data_collection_end_date": metadata["data_collection_end_date"],
+                "publication_date": metadata["publication_date"],
                 "bss": metadata["bss_path"],
             }
         ],
@@ -133,10 +158,15 @@ def baseline_instances(
     community_df = community_df.fillna("")
     result["Community"] = community_df.to_dict(orient="records")
 
+    try:
+        preview = json.dumps(result, indent=4)
+    except TypeError as e:
+        raise ValueError("Cannot serialize baseline fixture to JSON. Failing dict is\n %s" % result) from e
+
     return Output(
         result,
         metadata={
             "num_communities": len(community_df),
-            "preview": MetadataValue.md(f"```json\n{json.dumps(result, indent=4)}\n```"),
+            "preview": MetadataValue.md(f"```json\n{preview}\n```"),
         },
     )

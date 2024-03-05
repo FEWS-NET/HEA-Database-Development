@@ -277,7 +277,7 @@ def consolidated_fixture(
 def uploaded_baseline(
     context: AssetExecutionContext,
     baseline_instances,
-    corrected_files,
+    original_files,
 ) -> Output[None]:
     """
     Imported Django fixtures for a BSS, added to the Django database.
@@ -300,7 +300,7 @@ def uploaded_baseline(
     livelihood_zone_baseline = LivelihoodZoneBaseline.objects.get_by_natural_key(
         instance["livelihood_zone_id"], instance["reference_year_end_date"]
     )
-    livelihood_zone_baseline.bss = File(corrected_files, name=instance["bss"])
+    livelihood_zone_baseline.bss = File(original_files, name=instance["bss"])
     livelihood_zone_baseline.save()
 
     return Output(

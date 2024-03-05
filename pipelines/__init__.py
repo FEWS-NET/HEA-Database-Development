@@ -7,6 +7,7 @@ from .assets.base import (
     bss_metadata,
     completed_bss_metadata,
     corrected_files,
+    original_files,
 )
 from .assets.baseline import baseline_instances
 from .assets.fixtures import (
@@ -48,7 +49,6 @@ from .jobs.metadata import update_metadata
 from .resources import (
     DataFrameCSVIOManager,
     DataFrameExcelIOManager,
-    GoogleClientResource,
     JSONIOManager,
     PickleIOManager,
 )
@@ -62,6 +62,7 @@ defs = Definitions(
         bss_metadata,
         completed_bss_metadata,
         bss_corrections,
+        original_files,
         corrected_files,
         baseline_instances,
         livelihood_activity_dataframe,
@@ -92,11 +93,10 @@ defs = Definitions(
     ],
     jobs=[update_metadata],
     resources={
-        "google_client": GoogleClientResource(credentials_json=EnvVar("GOOGLE_APPLICATION_CREDENTIALS")),
-        "io_manager": PickleIOManager(),  # Used by default
-        "json_io_manager": JSONIOManager(),
-        "dataframe_csv_io_manager": DataFrameCSVIOManager(),
-        "dataframe_excel_io_manager": DataFrameExcelIOManager(),
+        "io_manager": PickleIOManager(base_path=EnvVar("DAGSTER_ASSET_BASE_PATH")),  # Used by default
+        "json_io_manager": JSONIOManager(base_path=EnvVar("DAGSTER_ASSET_BASE_PATH")),
+        "dataframe_csv_io_manager": DataFrameCSVIOManager(base_path=EnvVar("DAGSTER_ASSET_BASE_PATH")),
+        "dataframe_excel_io_manager": DataFrameExcelIOManager(base_path=EnvVar("DAGSTER_ASSET_BASE_PATH")),
     },
     sensors=[bss_instance_sensor],
 )
