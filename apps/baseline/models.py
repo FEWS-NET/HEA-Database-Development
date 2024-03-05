@@ -296,7 +296,7 @@ class Community(common_models.Model):
     full_name = common_models.NameField(
         max_length=200,
         verbose_name=_("Full Name"),
-        help_text=_("The full name the Community, including the parent administrative units."),
+        help_text=_("The full name of the Community, including the parent administrative units."),
     )
     livelihood_zone_baseline = models.ForeignKey(
         LivelihoodZoneBaseline,
