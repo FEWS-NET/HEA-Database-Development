@@ -14,4 +14,4 @@ touch log/django.log
 chown -R django:django log/*
 
 echo Starting Dagster with ddtrace to ${DD_TRACE_AGENT_URL}
-gosu django ddtrace-run dagster-webserver -h 0.0.0.0 -p 3000 -m pipelines $*
+gosu django ddtrace-run dagster-webserver -h 0.0.0.0 -p 3000 -m pipelines --path-prefix /${DAGSTER_WEBSERVER_PREFIX} $*
