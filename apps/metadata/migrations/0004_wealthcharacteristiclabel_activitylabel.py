@@ -75,8 +75,8 @@ class Migration(migrations.Migration):
                 ),
             ],
             options={
-                "verbose_name": "Wealth Characteristic",
-                "verbose_name_plural": "Wealth Characteristics",
+                "verbose_name": "Wealth Characteristic Label",
+                "verbose_name_plural": "Wealth Characteristics Labels",
             },
         ),
         migrations.CreateModel(

@@ -1,5 +1,4 @@
 from django.contrib import admin
-from django.contrib.admin import RelatedFieldListFilter
 
 from common.fields import translation_fields
 
@@ -112,7 +111,7 @@ class SeasonAdmin(admin.ModelAdmin):
         "season_type",
     )
     list_filter = (
-        ("country", RelatedFieldListFilter),
+        ("country", admin.RelatedOnlyFieldListFilter),
         "season_type",
     )
     ordering = ("order",)
@@ -127,12 +126,13 @@ class MarketAdmin(ReferenceDataAdmin):
         "aliases",
     )
 
-    list_filter = (("country", RelatedFieldListFilter),)
+    list_filter = (("country", admin.RelatedOnlyFieldListFilter),)
 
 
 class ActivityLabelAdmin(admin.ModelAdmin):
     fields = (
         "activity_label",
+        "activity_type",
         "is_start",
         "strategy_type",
         "product",
@@ -144,11 +144,10 @@ class ActivityLabelAdmin(admin.ModelAdmin):
     )
     list_display = (
         "activity_label",
+        "activity_type",
         "is_start",
         "strategy_type",
         "product",
-        "unit_of_measure",
-        "currency",
         "season",
         "additional_identifier",
         "attribute",
@@ -159,7 +158,10 @@ class ActivityLabelAdmin(admin.ModelAdmin):
         *translation_fields("product__common_name"),
         *translation_fields("product__description"),
     )
-    list_filter = ("strategy_type",)
+    list_filter = (
+        "activity_type",
+        "strategy_type",
+    )
 
 
 class WealthCharacteristicLabelAdmin(admin.ModelAdmin):

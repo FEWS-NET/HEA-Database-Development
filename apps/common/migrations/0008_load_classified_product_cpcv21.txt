@@ -153,7 +153,7 @@ R01530;Sweet potatoes;
 R0154;Yams;
 R01540;Yams;
 R0155;Taro;
-R01550;Taro ;
+R01550;Taro;
 R0159;Other edible roots and tubers with high starch or inulin content;
 R01591;Yautia;
 R01599;Other edible roots and tubers with high starch or inulin content, n.e.c.;

@@ -77,7 +77,7 @@ class LivelihoodZoneAdmin(admin.ModelAdmin):
         *translation_fields("description"),
         "country__iso_en_ro_name",
     ]
-    list_filter = ("country",)
+    list_filter = (("country", admin.RelatedOnlyFieldListFilter),)
 
 
 class LivelihoodZoneBaselineAdmin(GISModelAdmin):

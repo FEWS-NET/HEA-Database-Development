@@ -467,5 +467,5 @@ class WealthCharacteristicLabel(common_models.Model):
         identifier = ["wealth_characteristic_label"]
 
     class Meta:
-        verbose_name = _("Wealth Characteristic")
-        verbose_name_plural = _("Wealth Characteristics")
+        verbose_name = _("Wealth Characteristic Label")
+        verbose_name_plural = _("Wealth Characteristics Labels")
