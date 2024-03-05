@@ -19,10 +19,13 @@ local_artifact_storage:
     base_dir: "media/pipelines/artifacts"
 
 compute_logs:
-  module: dagster.core.storage.local_compute_log_manager
-  class: LocalComputeLogManager
+  module: dagster_aws.s3.compute_log_manager
+  class: S3ComputeLogManager
   config:
-    base_dir: "media/pipelines/storage/runs"
+    bucket:
+      env: DAGSTER_S3_BUCKET
+    prefix: 
+      env: DAGSTER_S3_LOG_PATH
 
 # Telemetry files are created in the ./logs directory prior to submitting to Dagster.
 # There is no way to change this directory through configuration, but our containers have a
