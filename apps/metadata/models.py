@@ -134,6 +134,7 @@ class LivelihoodStrategyType(models.TextChoices):
     FOOD_PURCHASE = "FoodPurchase", _("Food Purchase")
     PAYMENT_IN_KIND = "PaymentInKind", _("Payment in Kind")
     RELIEF_GIFT_OTHER = "ReliefGiftOther", _("Relief, Gift or Other Food")
+    HUNTING = "Hunting", _("Hunting")
     FISHING = "Fishing", _("Fishing")
     WILD_FOOD_GATHERING = "WildFoodGathering", _("Wild Food Gathering")
     OTHER_CASH_INCOME = "OtherCashIncome", _("Other Cash Income")

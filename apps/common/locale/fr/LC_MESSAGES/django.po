@@ -107,7 +107,7 @@ msgstr "nom local"
 
 #: apps/common/models.py:370
 msgid "The End of the period must be on or after the Start"
-msgstr "La fin de la période doit être sur ou après le début"
+msgstr "La Fin de la période doit être au Début ou après le Début"
 
 #: apps/common/models.py:423
 #, python-format
@@ -302,7 +302,7 @@ msgid ""
 "From unit and to unit must have the same unit type, expected unit is of type "
 "%(from_unit_type)s"
 msgstr ""
-"De l'unité et de l'unité doit avoir le même type d'unité, l'unité attendue "
+"De l'unité à l'unité, doit avoir le même type d'unité, l'unité attendue "
 "est de type %(from_unit_type)s"
 
 #: apps/common/models.py:894
@@ -334,8 +334,8 @@ msgid ""
 "The 6-digit codes for the Product in the Harmonized Commodity Description "
 "and Coding System (HS), stored as XXXX.YY "
 msgstr ""
-"Les codes à 6 chiffres pour le produit dans le système de description et de "
-"codage des marchandises harmonisées (HS), stocké comme xxxx.yy"
+"Les codes à 6 chiffres du produit dans la description harmonisée des marchandises"
+"et système de codage (HS), stocké sous XXXX.YY "
 
 #: apps/common/models.py:918
 msgid "scientific name"
@@ -390,3 +390,4 @@ msgstr "Portugais"
 #: apps/common/viewsets.py:262
 msgid "Common Name"
 msgstr "Nom commun"
+

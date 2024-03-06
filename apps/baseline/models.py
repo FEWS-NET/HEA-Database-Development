@@ -296,7 +296,7 @@ class Community(common_models.Model):
     full_name = common_models.NameField(
         max_length=200,
         verbose_name=_("Full Name"),
-        help_text=_("The full name the Community, including the parent administrative units."),
+        help_text=_("The full name of the Community, including the parent administrative units."),
     )
     livelihood_zone_baseline = models.ForeignKey(
         LivelihoodZoneBaseline,
@@ -1547,6 +1547,20 @@ class ReliefGiftOther(LivelihoodActivity):
     class Meta:
         verbose_name = LivelihoodStrategyType.RELIEF_GIFT_OTHER.label
         verbose_name_plural = _("Relief, Gifts and Other Food")
+
+
+class Hunting(LivelihoodActivity):
+    """
+    Hunting by some households in a Wealth Group for their own consumption, for sale and for other uses.
+    Some BSS have hunting on the Data3 tab, for example, Madagascar/MG23
+
+    Stored on the BSS 'Data3' worksheet in the 'Hunting' (Chasse) section, typically starting around Row 48
+    """
+
+    class Meta:
+        verbose_name = LivelihoodStrategyType.HUNTING.label
+        verbose_name_plural = LivelihoodStrategyType.HUNTING.label
+        proxy = True
 
 
 class Fishing(LivelihoodActivity):
