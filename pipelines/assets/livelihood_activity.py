@@ -224,14 +224,14 @@ def get_instances_from_dataframe(
                 # Ignore blank rows
                 continue
             # Get the attributes, taking a copy so that we can pop() some attributes without altering the original
-            attributes = label_map.get(label, {}).copy()
-            if not any(attributes.values()):
+            label_attributes = label_map.get(label, {}).copy()
+            if not any(label_attributes.values()):
                 # Ignore rows that don't contain any relevant data (or which aren't in the label_map)
                 continue
             # Headings like CROP PRODUCTION: set the strategy type for subsequent rows.
             # Some attributes imply specific strategy types, such as MilkProduction, MeatProduction or LivestockSales
-            if attributes["strategy_type"]:
-                strategy_type = attributes.pop("strategy_type")
+            if label_attributes["strategy_type"]:
+                strategy_type = label_attributes.pop("strategy_type")
                 # Get the valid fields names so we can determine if the attribute is stored in LivelihoodActivity.extra
                 model = class_from_name(f"baseline.models.{strategy_type}")
                 activity_field_names = [field.name for field in model._meta.concrete_fields]
@@ -243,9 +243,11 @@ def get_instances_from_dataframe(
                 ]
 
             if not strategy_type:
-                raise ValueError("Found attributes %s from row %s without a strategy_type set" % (attributes, row))
+                raise ValueError(
+                    "Found attributes %s from row %s without a strategy_type set" % (label_attributes, row)
+                )
 
-            if attributes["is_start"]:
+            if label_attributes["is_start"]:
                 # We are starting a new livelihood activity, so append the previous livelihood strategy
                 # to the list, provided that it has at least one Livelihood Activity where there is some income,
                 # expediture or consumption. This excludes empty activities that only contain attributes for,
@@ -381,11 +383,11 @@ def get_instances_from_dataframe(
                 livelihood_strategy = {
                     "livelihood_zone_baseline": livelihoodzonebaseline,
                     "strategy_type": strategy_type,
-                    "season": attributes.get("season", None),
-                    "product_id": attributes.get("product_id", None),
-                    "unit_of_measure_id": attributes.get("unit_of_measure_id", None),
+                    "season": label_attributes.get("season", None),
+                    "product_id": label_attributes.get("product_id", None),
+                    "unit_of_measure_id": label_attributes.get("unit_of_measure_id", None),
                     "currency_id": metadata["currency_id"],
-                    "additional_identifier": attributes.get("additional_identifier", None),
+                    "additional_identifier": label_attributes.get("additional_identifier", None),
                     # Save the row, label and attribute/row map, to aid trouble-shooting
                     "row": row,
                     "activity_label": label,
@@ -415,11 +417,11 @@ def get_instances_from_dataframe(
                 if not livelihood_strategy:
                     raise ValueError(
                         "Found additional attributes %s from row %s without an existing LivelihoodStrategy"
-                        % (attributes, row)
+                        % (label_attributes, row)
                     )
 
                 # Only update expected keys, and only if we found a value for that attribute.
-                for key, value in attributes.items():
+                for key, value in label_attributes.items():
                     if key in livelihood_strategy and value:
                         if not livelihood_strategy[key]:
                             livelihood_strategy[key] = value
@@ -441,11 +443,11 @@ def get_instances_from_dataframe(
 
             # When we get the values for the LivelihoodActivity records, we just want the actual attribute
             # that the values in the row are for
-            attribute = attributes["attribute"]
+            activity_attribute = label_attributes["attribute"]
             # Update the LivelihoodActivity records
             if any(value for value in df.loc[row, "B":].astype(str).str.strip()):
                 # Make sure we have an attribute!
-                if not attribute:
+                if not activity_attribute:
                     raise ValueError(
                         "Found values in row %s for label '%s' without an identified attribute:\n%s"
                         % (row, label, df.loc[row, "B":].replace("", pd.NA).dropna().transpose().to_markdown())
@@ -455,7 +457,7 @@ def get_instances_from_dataframe(
                 # labels like `kcals (%)` will appear to be duplicate attributes for the previous
                 # `1ivelihood_strategy`. Therefore, if we have `allow_unrecognized_labels` we need to ignore
                 # the duplicates, but if we don't, we should raise an error.
-                elif attribute in livelihood_strategy["attribute_rows"]:
+                elif activity_attribute in livelihood_strategy["attribute_rows"]:
                     if allow_unrecognized_labels:
                         # Skip to the next row
                         continue
@@ -466,15 +468,15 @@ def get_instances_from_dataframe(
                         )
 
                 # Add the attribute to the LivelihoodStrategy.attribute_rows
-                livelihood_strategy["attribute_rows"][attribute] = row
+                livelihood_strategy["attribute_rows"][activity_attribute] = row
                 for i, value in enumerate(df.loc[row, "B":]):
                     # Some attributes are stored in LivelihoodActivity.extra rather than individual fields.
-                    if attribute not in activity_field_names:
+                    if activity_attribute not in activity_field_names:
                         if "extra" not in livelihood_activities_for_strategy[i]:
                             livelihood_activities_for_strategy[i]["extra"] = {}
-                        livelihood_activities_for_strategy[i]["extra"][attribute] = value
+                        livelihood_activities_for_strategy[i]["extra"][activity_attribute] = value
                     else:
-                        livelihood_activities_for_strategy[i][attribute] = value
+                        livelihood_activities_for_strategy[i][activity_attribute] = value
 
         except Exception as e:
             if column:
