@@ -15,6 +15,7 @@ from .models import (
     Fishing,
     FoodPurchase,
     Hazard,
+    Hunting,
     LivelihoodActivity,
     LivelihoodProductCategory,
     LivelihoodStrategy,
@@ -627,6 +628,12 @@ class ReliefGiftOtherSerializer(LivelihoodActivitySerializer):
             "times_per_month",
             "times_per_year",
         ]
+
+
+class HuntingSerializer(LivelihoodActivitySerializer):
+    class Meta:
+        model = Hunting
+        fields = LivelihoodActivitySerializer.Meta.fields
 
 
 class FishingSerializer(LivelihoodActivitySerializer):

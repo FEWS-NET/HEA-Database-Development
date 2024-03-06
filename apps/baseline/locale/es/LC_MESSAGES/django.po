@@ -253,7 +253,7 @@ msgid "Full Name"
 msgstr "Nombre completo"
 
 #: apps/baseline/models.py:289
-msgid "The full name the Community, including the parent administrative units."
+msgid "The full name of the Community, including the parent administrative units."
 msgstr ""
 "El nombre completo de la comunidad, incluidas las unidades administrativas "
 "de los padres."

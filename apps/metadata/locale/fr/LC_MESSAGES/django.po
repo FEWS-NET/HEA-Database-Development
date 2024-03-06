@@ -20,7 +20,7 @@ msgstr ""
 
 #: apps/metadata/apps.py:8
 msgid "metadata"
-msgstr "C'est du méta"
+msgstr "métadonnées"
 
 #: apps/metadata/models.py:23
 msgid "Code"
@@ -34,7 +34,7 @@ msgstr "Commande"
 msgid ""
 "The order to display the items in when sorting by this field, if not obvious."
 msgstr ""
-"L'ordre d'afficher les éléments lors du tri par ce champ, sinon évident."
+"L'ordre dans lequel afficher les éléments lors du tri par ce champ, s'il n'est pas évident."
 
 #: apps/metadata/models.py:37 apps/metadata/models.py:221
 msgid "aliases"
@@ -66,18 +66,21 @@ msgstr "Booléen"
 
 #: apps/metadata/models.py:95
 msgid "Has Product?"
-msgstr "A un produit?"
+msgstr "Le produit est-il disponible ?"
 
 #: apps/metadata/models.py:97
 msgid ""
 "Does a value for this characteristic also require a product? If True, then "
 "aliases may contain a <product> placeholder."
 msgstr ""
-"Une valeur pour cette caractéristique nécessite-t-elle également un produit?"
+"Une valeur pour cette caractéristique nécessite-t-elle également un produit? Si vrai, alors"
+"les alias peuvent contenir un espace réservé <product>."
+
+
 
 #: apps/metadata/models.py:103
 msgid "Has Unit Of Measure?"
-msgstr "A unité de mesure?"
+msgstr "A une unité de mesure ?"
 
 #: apps/metadata/models.py:105
 msgid ""
@@ -85,7 +88,7 @@ msgid ""
 "True, then aliases may contain a <unit_of_measure> placeholder."
 msgstr ""
 "Une valeur pour cette caractéristique nécessite-t-elle également une "
-"unité_of_Measure?"
+"unité_de_mesure ?"
 
 #: apps/metadata/models.py:112
 msgid "Variable Type"
@@ -105,11 +108,11 @@ msgstr "Caractéristiques de la richesse"
 
 #: apps/metadata/models.py:128
 msgid "Milk Production"
-msgstr "Production de lait"
+msgstr "Production du lait"
 
 #: apps/metadata/models.py:129
 msgid "Butter Production"
-msgstr "Production de beurre"
+msgstr "Production du beurre"
 
 #: apps/metadata/models.py:130
 msgid "Meat Production"
@@ -133,7 +136,7 @@ msgstr "Paiement en nature"
 
 #: apps/metadata/models.py:135
 msgid "Relief, Gift or Other Food"
-msgstr "Soulagement, cadeau ou autre nourriture"
+msgstr "aide, cadeau ou autre nourriture"
 
 #: apps/metadata/models.py:136 apps/metadata/models.py:168
 msgid "Fishing"
@@ -153,7 +156,7 @@ msgstr "Autre achat"
 
 #: apps/metadata/models.py:144
 msgid "Baseline"
-msgstr "Base de base"
+msgstr "profil de référence"
 
 #: apps/metadata/models.py:145
 msgid "Response"
@@ -241,7 +244,7 @@ msgstr "Maigre"
 
 #: apps/metadata/models.py:273
 msgid "Wet"
-msgstr "Mouillé"
+msgstr "frais"
 
 #: apps/metadata/models.py:274
 msgid "Dry"
@@ -249,7 +252,7 @@ msgstr "Sec"
 
 #: apps/metadata/models.py:275
 msgid "Mild"
-msgstr "Bénin"
+msgstr "léger"
 
 #: apps/metadata/models.py:276
 msgctxt "season"
@@ -318,7 +321,7 @@ msgstr ""
 
 #: apps/metadata/models.py:304
 msgid "Start Day"
-msgstr "Commence jour"
+msgstr "jour de commencement"
 
 #: apps/metadata/models.py:307
 msgid "End Day"
@@ -376,3 +379,4 @@ msgstr "Arabe"
 #: apps/metadata/viewsets.py:205 apps/metadata/viewsets.py:219
 msgid "Portuguese"
 msgstr "Portugais"
+
