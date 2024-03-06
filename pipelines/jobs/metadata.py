@@ -2,13 +2,15 @@
 Load metadata from Google Sheets
 """
 
+import json
 import os
+from io import BytesIO
 
 import django
-import luigi
 import pandas as pd
 from dagster import OpExecutionContext, job, op
-from kiluigi.targets.google_drive import GoogleDriveTarget
+from gdrivefs.core import GoogleDriveFile
+from upath import UPath
 
 from ..utils import class_from_name
 
@@ -28,20 +30,14 @@ def load_all_metadata(context: OpExecutionContext):
     """
     Load all metadata from the Reference Data Google Sheet into the Django models.
     """
-    # @TODO replace KiLuigi's GoogleDriveTarget with fsspec.open and gdrivefs to remove the dependency on Luigi.
-    # creds = json.loads(os.environ["GOOGLE_APPLICATION_CREDENTIALS"])
-    # with fsspec.open(
-    #    "gdrive:///0AOJ0gJ8sjnO7Uk9PVA/Database Design/Reference Data",
-    #    token="service_account",
-    #    access="read_only",
-    #    creds=creds,
-    # ) as f:
-    target = GoogleDriveTarget(
-        "14ygcIlYa0ZZpNIQJpmsGHrNIOYXKzihGf6JyLIG3GbY",
-        format=luigi.format.Nop,
-        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    )
-    with target.open() as f:
+    storage_options = {"token": "service_account", "access": "read_only", "root_file_id": "0AOJ0gJ8sjnO7Uk9PVA"}
+    storage_options["creds"] = json.loads(os.environ["GOOGLE_APPLICATION_CREDENTIALS"])
+    p = UPath("gdrive://Database Design/Reference Data", **storage_options)
+    with p.fs.open(p.path, mode="rb", cache_type="bytes") as f:
+        # Google Sheets have to exported rather than read directly
+        if isinstance(f, GoogleDriveFile) and (f.details["mimeType"] == "application/vnd.google-apps.spreadsheet"):
+            f = BytesIO(p.fs.export(p.path, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+
         with pd.ExcelFile(f) as reference_data:
             sheet_name = None
             sheet_names = reference_data.sheet_names[1:]

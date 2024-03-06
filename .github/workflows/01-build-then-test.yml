@@ -17,13 +17,6 @@ env:
   PIP_INDEX_URL: "https://pypi.python.org/simple/"
   SECRET_KEY: ${{ secrets.SECRET_KEY }}
 
-  KILUIGI_INTERMEDIATETARGET_BACKEND_CLASS: kiluigi.targets.ExpiringLocalTarget
-  KILUIGI_INTERMEDIATETARGET_ROOT_PATH: /usr/src/app/media/pipelines/intermediate_targets
-  KILUIGI_FINALTARGET_BACKEND_CLASS: kiluigi.targets.LocalTarget
-  KILUIGI_FINALTARGET_ROOT_PATH: /usr/src/app/media/pipelines/final_targets
-  KILUIGI_REPORTTARGET_BACKEND_CLASS: kiluigi.targets.LocalTarget
-  KILUIGI_REPORTTARGET_ROOT_PATH: /usr/src/app/media/pipelines/reports
-
   # Avoid "variable is not set. Defaulting to a blank string." warnings
   GOOGLE_ADMIN_EMAIL: ""
   GOOGLE_APPLICATION_CREDENTIALS: ""
