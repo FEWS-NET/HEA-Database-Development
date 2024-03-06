@@ -176,18 +176,29 @@ class LivelihoodStrategyAdmin(admin.ModelAdmin):
         "product",
         "unit_of_measure",
     )
+    language_aware_fields_with_lookup = tuple(
+        [
+            field
+            for fields in [
+                list(translation_fields(translatable_field))
+                for translatable_field in [
+                    "livelihood_zone_baseline__livelihood_zone__name__icontains",
+                    "product__common_name__icontains",
+                    "season__name__icontains",
+                ]
+            ]
+            for field in fields
+        ]
+    )
     search_fields = (
         "strategy_type__icontains",
         "livelihood_zone_baseline__livelihood_zone__code__iexact",
         "livelihood_zone_baseline__livelihood_zone__alternate_code__iexact",
         "additional_identifier__icontains",
-        *translation_fields("livelihood_zone_baseline__livelihood_zone__name"),
-        *translation_fields("product__common_name"),
         "product__cpc__iexact",
         "product__aliases__icontains",
         "season__aliases__icontains",
-        *translation_fields("season__name"),
-    )
+    ) + language_aware_fields_with_lookup
 
     list_filter = (
         "strategy_type",
@@ -224,17 +235,28 @@ class LivelihoodActivityAdmin(admin.ModelAdmin):
         ("livelihood_strategy__season", admin.RelatedOnlyFieldListFilter),
         ("livelihood_zone_baseline__livelihood_zone__country", admin.RelatedOnlyFieldListFilter),
     )
+    language_aware_fields_with_lookup = tuple(
+        [
+            field
+            for fields in [
+                list(translation_fields(translatable_field))
+                for translatable_field in [
+                    "livelihood_strategy__product__common_name__icontains",
+                    "livelihood_strategy__season__name__icontains",
+                ]
+            ]
+            for field in fields
+        ]
+    )
     search_fields = (
         "strategy_type__icontains",
         "livelihood_strategy__additional_identifier__icontains",
         "livelihood_zone_baseline__livelihood_zone__code__iexact",
         "livelihood_zone_baseline__livelihood_zone__alternate_code__iexact",
-        *translation_fields("livelihood_strategy__product__common_name"),
         "livelihood_strategy__product__cpc__iexact",
         "livelihood_strategy__product__aliases__icontains",
         "livelihood_strategy__season__aliases__icontains",
-        *translation_fields("livelihood_strategy__season__name"),
-    )
+    ) + language_aware_fields_with_lookup
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
@@ -321,16 +343,28 @@ class WealthGroupCharacteristicValueAdmin(admin.ModelAdmin):
         ("unit_of_measure", admin.RelatedOnlyFieldListFilter),
     )
 
+    language_aware_fields_with_lookup = tuple(
+        [
+            field
+            for fields in [
+                list(translation_fields(translatable_field))
+                for translatable_field in [
+                    "wealth_characteristic__name__icontains",
+                    "wealth_group__wealth_group_category__name__icontains",
+                    "product__common_name__icontains",
+                ]
+            ]
+            for field in fields
+        ]
+    )
+
     search_fields = (
-        *translation_fields("wealth_characteristic__name"),
-        *translation_fields("wealth_group__wealth_group_category__name"),
         "wealth_group__livelihood_zone_baseline__livelihood_zone__code__iexact",
         "wealth_group__livelihood_zone_baseline__livelihood_zone__alternate_code__iexact",
         "wealth_group__livelihood_zone_baseline__livelihood_zone__country__name__icontains",
-        *translation_fields("product__common_name"),
         "product__cpc__iexact",
         "product__aliases__icontains",
-    )
+    ) + language_aware_fields_with_lookup
 
     def get_wealth_group_category(self, obj):
         return obj.wealth_group.wealth_group_category.name

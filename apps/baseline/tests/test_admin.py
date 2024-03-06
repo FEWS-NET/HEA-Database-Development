@@ -632,7 +632,7 @@ class CommunityLivestockAdminTestCase(TestCase):
         self.assertNotIn(str(self.livestockproduction2.livestock), table_rows[1].get_text())
 
 
-class LivelihoodActivityAdminTest(TestCase):
+class LivelihoodActivityAdminTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
         User.objects.create_superuser(username="admin", password="password", email="admin@hea.org")
@@ -745,7 +745,7 @@ class LivelihoodActivityAdminTest(TestCase):
                 self.assertIn(str(filter_value), result_list_str)
 
 
-class WealthGroupCharacteristicValueAdminTest(TestCase):
+class WealthGroupCharacteristicValueAdminTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
         User.objects.create_superuser(username="admin", password="password", email="hea@test.com")
