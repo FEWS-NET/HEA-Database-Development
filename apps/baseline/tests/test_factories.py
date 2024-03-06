@@ -15,6 +15,7 @@ from baseline.models import (
     Fishing,
     FoodPurchase,
     Hazard,
+    Hunting,
     LivelihoodActivity,
     LivelihoodProductCategory,
     LivelihoodStrategy,
@@ -53,6 +54,7 @@ from .factories import (
     FishingFactory,
     FoodPurchaseFactory,
     HazardFactory,
+    HuntingFactory,
     LivelihoodActivityFactory,
     LivelihoodProductCategoryFactory,
     LivelihoodStrategyFactory,
@@ -187,6 +189,11 @@ class FactoryTestCase(TestCase):
             ReliefGiftOtherFactory()
         self.assertEqual(ReliefGiftOther.objects.count(), self.num_records)
 
+    def test_hunting_factory(self):
+        for _ in range(self.num_records):
+            HuntingFactory()
+        self.assertEqual(Hunting.objects.count(), self.num_records)
+
     def test_fishing_factory(self):
         for _ in range(self.num_records):
             FishingFactory()
@@ -280,6 +287,7 @@ class FactoryTestCase(TestCase):
             FoodPurchaseFactory()
             PaymentInKindFactory()
             ReliefGiftOtherFactory()
+            HuntingFactory()
             FishingFactory()
             WildFoodGatheringFactory()
             OtherCashIncomeFactory()

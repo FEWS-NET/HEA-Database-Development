@@ -21,6 +21,7 @@ from baseline.viewsets import (
     FishingViewSet,
     FoodPurchaseViewSet,
     HazardViewSet,
+    HuntingViewSet,
     LivelihoodActivityViewSet,
     LivelihoodProductCategoryViewSet,
     LivelihoodStrategyViewSet,
@@ -97,6 +98,7 @@ router.register(r"foodpurchase", FoodPurchaseViewSet)
 router.register(r"paymentinkind", PaymentInKindViewSet)
 router.register(r"relief", ReliefGiftOtherViewSet)
 router.register(r"fishing", FishingViewSet)
+router.register(r"hunting", HuntingViewSet)
 router.register(r"wildfoodgathering", WildFoodGatheringViewSet)
 router.register(r"othercashincome", OtherCashIncomeViewSet)
 router.register(r"otherpurchase", OtherPurchaseViewSet)
