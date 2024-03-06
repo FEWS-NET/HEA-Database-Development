@@ -20,6 +20,7 @@ from baseline.models import (
     Fishing,
     FoodPurchase,
     Hazard,
+    Hunting,
     LivelihoodActivity,
     LivelihoodProductCategory,
     LivelihoodStrategy,
@@ -245,6 +246,7 @@ class LivelihoodStrategyFactory(factory.django.DjangoModelFactory):
             "PaymentInKind",
             "ReliefGiftOther",
             "Fishing",
+            "Hunting",
             "WildFoodGathering",
             "OtherCashIncome",
             "OtherPurchase",
@@ -280,6 +282,7 @@ class LivelihoodActivityFactory(factory.django.DjangoModelFactory):
             "PaymentInKind",
             "ReliefGiftOther",
             "Fishing",
+            "Hunting",
             "WildFoodGathering",
             "OtherCashIncome",
             "OtherPurchase",
@@ -470,6 +473,20 @@ class ReliefGiftOtherFactory(LivelihoodActivityFactory):
     quantity_produced = factory.LazyAttribute(lambda o: o.unit_multiple * o.times_per_year)
     unit_multiple = fuzzy.FuzzyInteger(1, 500)
     times_per_year = fuzzy.FuzzyInteger(1, 160)
+
+
+class HuntingFactory(LivelihoodActivityFactory):
+    class Meta:
+        model = Hunting
+        django_get_or_create = [
+            "livelihood_strategy",
+            "livelihood_zone_baseline",
+            "strategy_type",
+            "scenario",
+            "wealth_group",
+        ]
+
+    strategy_type = "Hunting"
 
 
 class FishingFactory(LivelihoodActivityFactory):

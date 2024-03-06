@@ -1522,6 +1522,20 @@ class ReliefGiftOther(LivelihoodActivity):
         verbose_name_plural = _("Relief, Gifts and Other Food")
 
 
+class Hunting(LivelihoodActivity):
+    """
+    Hunting by some households in a Wealth Group for their own consumption, for sale and for other uses.
+    Some BSS have hunting on the Data3 tab, for example, Madagascar/MG23
+
+    Stored on the BSS 'Data3' worksheet in the 'Hunting' (Chasse) section, typically starting around Row 48
+    """
+
+    class Meta:
+        verbose_name = LivelihoodStrategyType.HUNTING.label
+        verbose_name_plural = LivelihoodStrategyType.HUNTING.label
+        proxy = True
+
+
 class Fishing(LivelihoodActivity):
     """
     Fishing by households in a Wealth Group for their own consumption, for sale and for other uses.

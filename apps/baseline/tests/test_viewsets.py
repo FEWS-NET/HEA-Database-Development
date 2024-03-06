@@ -22,6 +22,7 @@ from .factories import (
     FishingFactory,
     FoodPurchaseFactory,
     HazardFactory,
+    HuntingFactory,
     LivelihoodActivityFactory,
     LivelihoodProductCategoryFactory,
     LivelihoodStrategyFactory,
@@ -3111,6 +3112,170 @@ class FishingViewSetTestCase(APITestCase):
             response.json().keys(),
             expected_fields,
             f"Fishing: Fields expected: {expected_fields}. Fields found: {response.json().keys()}.",
+        )
+
+    def test_patch_requires_authentication(self):
+        logging.disable(logging.CRITICAL)
+        response = self.client.patch(self.url_get(0), {"created": self.data[1].created})
+        logging.disable(logging.NOTSET)
+        self.assertEqual(response.status_code, 403)
+
+    def test_delete_requires_authentication(self):
+        logging.disable(logging.CRITICAL)
+        response = self.client.delete(self.url_get(0))
+        logging.disable(logging.NOTSET)
+        self.assertEqual(response.status_code, 403)
+
+    def test_patch(self):
+        self.client.force_login(self.user)
+        new_value = self.client.get(self.url_get(1)).json()["scenario"]
+        logging.disable(logging.CRITICAL)
+        response = self.client.patch(self.url_get(0), {"scenario": new_value})
+        logging.disable(logging.NOTSET)
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get(self.url_get(0))
+        self.assertEqual(response.status_code, 200)
+        self.assertIsInstance(response.json(), dict)
+        self.assertIn("scenario", response.json())
+        self.assertEqual(response.json()["scenario"], new_value)
+
+    def test_list_returns_all_records(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), self.num_records)
+
+    def test_list_returns_filtered_data(self):
+        response = self.client.get(
+            self.url,
+            {
+                "id": self.data[0].id,
+                "quantity_produced": self.data[0].quantity_produced,
+                "quantity_sold": self.data[0].quantity_sold,
+                "quantity_other_uses": self.data[0].quantity_other_uses,
+                "quantity_consumed": self.data[0].quantity_consumed,
+                "price": self.data[0].price,
+                "income": self.data[0].income,
+                "expenditure": self.data[0].expenditure,
+                "kcals_consumed": self.data[0].kcals_consumed,
+                "percentage_kcals": self.data[0].percentage_kcals,
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 1)
+
+    def test_search(self):
+        response = self.client.get(
+            self.url,
+            {
+                "search": self.data[0].scenario,
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertGreater(len(response.json()), 0)
+        self.assertLess(len(response.json()), self.num_records)
+        response = self.client.get(
+            self.url,
+            {
+                "search": self.data[0].scenario + "xyz",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 0)
+
+    def test_json(self):
+        response = self.client.get(self.url, {"format": "json"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), self.num_records)
+
+    def test_csv(self):
+        response = self.client.get(self.url, {"format": "csv"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"][:8], "text/csv")
+        try:
+            content = "".join([s.decode("utf-8") for s in response.streaming_content])
+        except AttributeError:
+            content = response.content.decode("utf-8")
+        df = pd.read_csv(StringIO(content)).fillna("")
+        self.assertEqual(len(df), self.num_records)
+
+    def test_html(self):
+        response = self.client.get(self.url, {"format": "html"})
+        self.assertEqual(response.status_code, 200)
+        try:
+            content = "".join([s.decode("utf-8") for s in response.streaming_content])
+        except AttributeError:
+            content = response.content
+        df = pd.read_html(content)[0].fillna("")
+        self.assertEqual(len(df), self.num_records + 1)
+
+
+class HuntingViewSetTestCase(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.num_records = 5
+        cls.data = [HuntingFactory() for _ in range(cls.num_records)]
+        cls.user = User.objects.create_superuser("test", "test@test.com", "password")
+
+    def setUp(self):
+        self.url = reverse("hunting-list")
+        self.url_get = lambda n: reverse("hunting-detail", args=(self.data[n].pk,))
+
+    def test_get_record(self):
+        response = self.client.get(self.url_get(0))
+        self.assertEqual(response.status_code, 200)
+        self.assertIsInstance(response.json(), dict)
+        expected_fields = (
+            "id",
+            "livelihood_strategy",
+            "source_organization",
+            "source_organization_name",
+            "livelihood_zone_baseline",
+            "livelihood_zone_baseline_label",
+            "livelihood_zone",
+            "livelihood_zone_name",
+            "livelihood_zone_country",
+            "livelihood_zone_country_name",
+            "strategy_type",
+            "strategy_type_label",
+            "season",
+            "season_name",
+            "season_description",
+            "season_type",
+            "season_type_label",
+            "product",
+            "product_common_name",
+            "product_description",
+            "unit_of_measure",
+            "unit_of_measure_description",
+            "currency",
+            "additional_identifier",
+            "household_labor_provider",
+            "household_labor_provider_label",
+            "scenario",
+            "scenario_label",
+            "wealth_group",
+            "wealth_group_label",
+            "community",
+            "community_name",
+            "wealth_group_category",
+            "wealth_group_category_name",
+            "wealth_group_category_description",
+            "wealth_group_percentage_of_households",
+            "wealth_group_average_household_size",
+            "quantity_produced",
+            "quantity_sold",
+            "quantity_other_uses",
+            "quantity_consumed",
+            "price",
+            "income",
+            "expenditure",
+            "kcals_consumed",
+            "percentage_kcals",
+        )
+        self.assertCountEqual(
+            response.json().keys(),
+            expected_fields,
+            f"Hunting: Fields expected: {expected_fields}. Fields found: {response.json().keys()}.",
         )
 
     def test_patch_requires_authentication(self):

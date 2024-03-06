@@ -19,6 +19,7 @@ from .models import (
     Fishing,
     FoodPurchase,
     Hazard,
+    Hunting,
     LivelihoodActivity,
     LivelihoodProductCategory,
     LivelihoodStrategy,
@@ -56,6 +57,7 @@ from .serializers import (
     FishingSerializer,
     FoodPurchaseSerializer,
     HazardSerializer,
+    HuntingSerializer,
     LivelihoodActivitySerializer,
     LivelihoodProductCategorySerializer,
     LivelihoodStrategySerializer,
@@ -857,6 +859,48 @@ class FishingFilterSet(filters.FilterSet):
             "kcals_consumed",
             "percentage_kcals",
         ]
+
+
+class HuntingFilterSet(filters.FilterSet):
+    class Meta:
+        model = Hunting
+        fields = [
+            "livelihood_strategy",
+            "livelihood_zone_baseline",
+            "strategy_type",
+            "scenario",
+            "wealth_group",
+            "quantity_produced",
+            "quantity_sold",
+            "quantity_other_uses",
+            "quantity_consumed",
+            "price",
+            "income",
+            "expenditure",
+            "kcals_consumed",
+            "percentage_kcals",
+        ]
+
+
+class HuntingViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint that allows hunting to be viewed or edited when available
+    """
+
+    queryset = Hunting.objects.select_related(
+        "livelihood_strategy__product",
+        "livelihood_strategy__season",
+        "livelihood_strategy__unit_of_measure",
+        "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
+        "wealth_group__community__livelihood_zone_baseline__source_organization",
+        "wealth_group__wealth_group_category",
+    )
+    serializer_class = HuntingSerializer
+    filterset_class = HuntingFilterSet
+    search_fields = [
+        "scenario",
+        "strategy_type",
+    ]
 
 
 class FishingViewSet(viewsets.ModelViewSet):
