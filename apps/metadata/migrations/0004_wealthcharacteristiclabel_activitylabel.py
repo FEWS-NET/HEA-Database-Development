@@ -131,6 +131,7 @@ class Migration(migrations.Migration):
                             ("FoodPurchase", "Food Purchase"),
                             ("PaymentInKind", "Payment in Kind"),
                             ("ReliefGiftOther", "Relief, Gift or Other Food"),
+                            ("Hunting", "Hunting"),
                             ("Fishing", "Fishing"),
                             ("WildFoodGathering", "Wild Food Gathering"),
                             ("OtherCashIncome", "Other Cash Income"),
