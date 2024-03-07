@@ -12,11 +12,14 @@ from django.utils.translation import activate
 from baseline.admin import (
     CommunityCropProductionAdmin,
     CommunityLivestockAdmin,
+    LivelihoodActivityAdmin,
     WealthGroupAdmin,
 )
 from baseline.models import (
     CommunityCropProduction,
     CommunityLivestock,
+    LivelihoodActivity,
+    LivelihoodActivityScenario,
     LivelihoodZoneBaseline,
     WealthGroup,
 )
@@ -27,6 +30,7 @@ from baseline.tests.factories import (
     CommunityLivestockFactory,
     CropProductionFactory,
     FoodPurchaseFactory,
+    LivelihoodActivityFactory,
     LivelihoodStrategyFactory,
     LivelihoodZoneBaselineFactory,
     LivelihoodZoneFactory,
@@ -34,10 +38,11 @@ from baseline.tests.factories import (
     MeatProductionFactory,
     MilkProductionFactory,
     SourceOrganizationFactory,
+    WealthCharacteristicFactory,
     WealthGroupCharacteristicValueFactory,
     WealthGroupFactory,
 )
-from common.tests.factories import ClassifiedProductFactory
+from common.tests.factories import ClassifiedProductFactory, UnitOfMeasureFactory
 from metadata.models import LivelihoodStrategyType
 from metadata.tests.factories import (
     LivelihoodCategoryFactory,
@@ -625,3 +630,188 @@ class CommunityLivestockAdminTestCase(TestCase):
         # Check that the table rows only contain the filtered results
         self.assertIn(str(self.livestockproduction1.livestock), table_rows[1].get_text())
         self.assertNotIn(str(self.livestockproduction2.livestock), table_rows[1].get_text())
+
+
+class LivelihoodActivityAdminTestCase(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        User.objects.create_superuser(username="admin", password="password", email="admin@hea.org")
+        cls.livelihood_zone_baseline1 = LivelihoodZoneBaselineFactory()
+        cls.livelihood_zone_baseline2 = LivelihoodZoneBaselineFactory()
+        cls.livelihood_strategy1 = LivelihoodStrategyFactory(
+            livelihood_zone_baseline=cls.livelihood_zone_baseline1,
+            strategy_type=LivelihoodStrategyType.MILK_PRODUCTION,
+            additional_identifier="mukera",
+        )
+        cls.livelihood_strategy2 = LivelihoodStrategyFactory(
+            livelihood_zone_baseline=cls.livelihood_zone_baseline2, strategy_type=LivelihoodStrategyType.FISHING
+        )
+        cls.activity1 = LivelihoodActivityFactory(
+            livelihood_strategy=cls.livelihood_strategy1,
+            strategy_type=LivelihoodStrategyType.MILK_PRODUCTION,
+            livelihood_zone_baseline=cls.livelihood_zone_baseline1,
+            wealth_group__livelihood_zone_baseline=cls.livelihood_zone_baseline1,
+            scenario=LivelihoodActivityScenario.BASELINE,
+        )
+        cls.activity2 = LivelihoodActivityFactory(
+            livelihood_strategy=cls.livelihood_strategy2,
+            strategy_type=LivelihoodStrategyType.FISHING,
+            livelihood_zone_baseline=cls.livelihood_zone_baseline2,
+            wealth_group__livelihood_zone_baseline=cls.livelihood_zone_baseline2,
+            scenario=LivelihoodActivityScenario.BASELINE,
+        )
+        cls.activity3 = LivelihoodActivityFactory(
+            livelihood_strategy=cls.livelihood_strategy2,
+            strategy_type=LivelihoodStrategyType.FISHING,
+            livelihood_zone_baseline=cls.livelihood_zone_baseline2,
+            wealth_group__livelihood_zone_baseline=cls.livelihood_zone_baseline2,
+            scenario=LivelihoodActivityScenario.RESPONSE,
+        )
+        cls.site = AdminSite()
+        activate("en")
+
+    def setUp(self):
+        self.client.login(username="admin", password="password")
+
+    def test_search(self):
+        url = reverse("admin:baseline_livelihoodactivity_changelist") + "?q=" + self.livelihood_strategy1.strategy_type
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        soup = BeautifulSoup(response.content, "html.parser")
+        result_list = soup.find(id="result_list")
+        result_list_str = str(result_list)
+        self.assertIn(self.livelihood_strategy1.strategy_type, result_list_str)
+        self.assertNotIn(self.livelihood_strategy2.strategy_type, result_list_str)
+
+        url = (
+            reverse("admin:baseline_livelihoodactivity_changelist")
+            + "?q="
+            + self.livelihood_strategy1.additional_identifier
+        )
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        soup = BeautifulSoup(response.content, "html.parser")
+        result_list = soup.find(id="result_list")
+        result_list_str = str(result_list)
+        self.assertIn(self.livelihood_strategy1.strategy_type, result_list_str)
+        self.assertNotIn(self.livelihood_strategy2.strategy_type, result_list_str)
+
+    def test_get_product_common_name(self):
+        modeladmin = LivelihoodActivityAdmin(LivelihoodActivity, self.site)
+        self.assertEqual(
+            modeladmin.get_product_common_name(self.activity1), self.livelihood_strategy1.product.common_name
+        )
+
+    def test_get_season_name(self):
+        modeladmin = LivelihoodActivityAdmin(LivelihoodActivity, self.site)
+        self.assertEqual(modeladmin.get_season_name(self.activity2), self.livelihood_strategy2.season.name)
+
+    def test_get_country_name(self):
+        modeladmin = LivelihoodActivityAdmin(LivelihoodActivity, self.site)
+        self.assertEqual(
+            modeladmin.get_country_name(self.activity1), self.livelihood_zone_baseline1.livelihood_zone.country.name
+        )
+
+    def test_filter(self):
+        url = (
+            reverse("admin:baseline_livelihoodactivity_changelist")
+            + "?strategy_type="
+            + self.livelihood_strategy1.strategy_type
+        )
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_filters(self):
+        base_url = reverse("admin:baseline_livelihoodactivity_changelist")
+        country_name = self.livelihood_zone_baseline1.livelihood_zone.country.name
+        filters = {
+            "strategy_type": self.livelihood_strategy1.strategy_type,
+            "scenario": self.activity3.scenario,
+            "livelihood_strategy__product__cpc": self.livelihood_strategy1.product.cpc,
+            "livelihood_strategy__season__id__exact": self.livelihood_strategy2.season.pk,
+            "livelihood_zone_baseline__livelihood_zone__country__name": country_name,
+        }
+
+        for filter_name, filter_value in filters.items():
+            with self.subTest(filter=filter_name):
+                query_string = f"?{filter_name}={filter_value}"
+                response = self.client.get(base_url + query_string)
+                self.assertEqual(response.status_code, 200)
+
+                soup = BeautifulSoup(response.content, "html.parser")
+                result_list = soup.find(id="result_list")
+                result_list_str = str(result_list)
+
+                self.assertIn(str(filter_value), result_list_str)
+
+
+class WealthGroupCharacteristicValueAdminTestCase(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        User.objects.create_superuser(username="admin", password="password", email="hea@test.com")
+        cls.wealth_group1 = WealthGroupFactory()
+        wealth_category = WealthGroupCategoryFactory(code="BO", name_en="Better Off")
+        cls.wealth_group2 = WealthGroupFactory(wealth_group_category=wealth_category)
+        cls.product1 = ClassifiedProductFactory()
+        cls.wealth_characteristic1 = WealthCharacteristicFactory(has_product=True, has_unit_of_measure=True)
+        cls.wealth_characteristic2 = WealthCharacteristicFactory(has_product=True, has_unit_of_measure=True)
+        cls.wealth_group_characteristic_value1 = WealthGroupCharacteristicValueFactory(
+            wealth_group=cls.wealth_group1,
+            wealth_characteristic=cls.wealth_characteristic1,
+            product=cls.product1,
+            unit_of_measure=UnitOfMeasureFactory(),
+        )
+        cls.wealth_group_characteristic_value2 = WealthGroupCharacteristicValueFactory(
+            wealth_group=cls.wealth_group2,
+            wealth_characteristic=cls.wealth_characteristic2,
+            product=ClassifiedProductFactory(),
+            unit_of_measure=UnitOfMeasureFactory(),
+        )
+        cls.site = AdminSite()
+
+    def setUp(self):
+        self.client.login(username="admin", password="password")
+
+    def test_search(self):
+        url = (
+            reverse("admin:baseline_wealthgroupcharacteristicvalue_changelist")
+            + "?q="
+            + self.wealth_characteristic1.name
+        )
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        soup = BeautifulSoup(response.content, "html.parser")
+        result_list = soup.find(id="result_list")
+        result_list_str = str(result_list)
+        self.assertIn(self.wealth_characteristic1.name, result_list_str)
+        self.assertNotIn(self.wealth_characteristic2.name, result_list_str)
+
+    def test_filters(self):
+        base_url = reverse("admin:baseline_wealthgroupcharacteristicvalue_changelist")
+        country_name1 = self.wealth_group1.livelihood_zone_baseline.livelihood_zone.country.name
+        country_name2 = self.wealth_group2.livelihood_zone_baseline.livelihood_zone.country.name
+        filters = {
+            "wealth_group": (
+                self.wealth_group1.id,
+                self.wealth_group2,
+            ),
+            "wealth_group__wealth_group_category__code": (
+                self.wealth_group1.wealth_group_category.code,
+                self.wealth_group2.wealth_group_category.name,
+            ),
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__name": (country_name1, country_name2),
+            "product": (
+                self.product1.cpc,
+                self.wealth_group_characteristic_value2.product.cpc,
+            ),
+        }
+        for filter_name, filter_value in filters.items():
+            with self.subTest(filter=filter_name):
+                query_string = f"?{filter_name}={filter_value[0]}"
+                response = self.client.get(base_url + query_string)
+                self.assertEqual(response.status_code, 200)
+                soup = BeautifulSoup(response.content, "html.parser")
+                result_list = soup.find(id="result_list")
+                result_list_str = str(result_list)
+                self.assertIn(str(filter_value[0]), result_list_str)
+                self.assertNotIn(str(filter_value[1]), result_list_str)

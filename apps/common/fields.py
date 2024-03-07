@@ -5,9 +5,12 @@ from itertools import chain
 
 from django.conf import settings
 from django.contrib.gis.db import models
+from django.db.models import Lookup
 from django.utils import translation
 from django.utils.text import format_lazy
 from django.utils.translation import gettext_lazy as _
+
+from common.utils import get_all_subclasses
 
 
 class CleaningCharField(models.CharField):
@@ -196,10 +199,35 @@ class TranslatedField:
         setattr(cls, name, property(local_translation_getter))
 
 
-def translation_fields(base_fieldname):
+def translation_fields(field_name):
     """
     Return a list of the language-specific field names for a base field.
 
     Convenience function for use in Admin and Viewset subclasses.
+    Supports the use of queryset lookups at the end of the field name.
+
+    Example:
+        field_name = "name__icontains"
+        returns: ["name_en__icontains", "name_fr__icontains", ...] based on LANGUAGES setting
+
+    Args:
+        field_name (str): The base field name possibly including a lookup.
+
+    Returns:
+        generator: A generator yielding translated field names with any lookup preserved.
     """
-    return (f"{base_fieldname}_{code}" for code, name in settings.LANGUAGES)
+    lookups = {lookup.lookup_name for lookup in get_all_subclasses(Lookup)}
+
+    # Split the field name by double underscores
+    parts = field_name.split("__")
+
+    # Check if the last part is a known lookup
+    if parts[-1] in lookups:
+        lookup = f"__{parts.pop()}"  # Separate lookup from field name
+    else:
+        lookup = ""  # No specific lookup is provided
+
+    # Generate translated field names
+    if lookup:
+        return (f"{'__'.join(parts)}_{code}{lookup}" for code, _ in settings.LANGUAGES)
+    return (f"{'__'.join(parts)}_{code}" for code, _ in settings.LANGUAGES)

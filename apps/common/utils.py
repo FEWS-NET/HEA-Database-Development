@@ -315,3 +315,16 @@ def excel_to_markdown(
             tables[sheet_name] = df.iloc[:rows, :columns].to_markdown(index=include_row_number)
 
     return tables[sheet_names[0]] if len(sheet_names) == 1 else tables
+
+
+def get_all_subclasses(cls):
+    """
+    Recursively get all subclasses of a class.
+
+    :param cls: The class for which to find all subclasses.
+    :return: A set of all subclasses.
+    """
+    subclasses = set(cls.__subclasses__())
+    for subclass in subclasses.copy():
+        subclasses.update(get_all_subclasses(subclass))
+    return subclasses
