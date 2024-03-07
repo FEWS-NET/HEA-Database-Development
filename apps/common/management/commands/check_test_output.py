@@ -46,7 +46,7 @@ class Command(BaseCommand):
         content = input_file.read()
 
         # Find the test output by finding all text before the --- marker after the "Found x test(s)" header
-        result = re.search(r"Found \d+ test\(s\)\.\n(.+)\n-+", content, re.DOTALL | re.MULTILINE)
+        result = re.search(r"Found \d+ test\(s\)\.\n(.+)\n---+", content, re.DOTALL | re.MULTILINE)
         if not result:
             raise CommandError("Cannot find test output")
         test_output = result.groups()[0]
