@@ -49,7 +49,7 @@ class Migration(migrations.Migration):
                 (
                     "full_name",
                     common.fields.NameField(
-                        help_text="The full name the Community, including the parent administrative units.",
+                        help_text="The full name of the Community, including the parent administrative units.",
                         max_length=200,
                         verbose_name="Full Name",
                     ),

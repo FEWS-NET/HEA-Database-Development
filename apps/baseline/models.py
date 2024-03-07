@@ -296,7 +296,7 @@ class Community(common_models.Model):
     full_name = common_models.NameField(
         max_length=200,
         verbose_name=_("Full Name"),
-        help_text=_("The full name the Community, including the parent administrative units."),
+        help_text=_("The full name of the Community, including the parent administrative units."),
     )
     livelihood_zone_baseline = models.ForeignKey(
         LivelihoodZoneBaseline,
@@ -1062,7 +1062,17 @@ class LivelihoodActivity(common_models.Model):
         pass
 
     def validate_quantity_consumed(self):
-        if self.quantity_consumed != self.quantity_produced - self.quantity_sold - self.quantity_other_uses:
+        # Default to 0 if any of the quantities are None
+        quantity_produced = self.quantity_produced or 0
+        quantity_sold = self.quantity_sold or 0
+        quantity_other_uses = self.quantity_other_uses or 0
+
+        # Calculate the expected quantity_consumed with default values considered
+        expected_quantity_consumed = quantity_produced - quantity_sold - quantity_other_uses
+        quantity_consumed = self.quantity_consumed or 0
+
+        # Check if the actual quantity_consumed matches the expected quantity_consumed
+        if self.quantity_consumed and quantity_consumed != expected_quantity_consumed:
             raise ValidationError(
                 _(
                     "Quantity consumed for a Livelihood Activity must be quantity produced - quantity sold - quantity used for other things"  # NOQA: E501
@@ -1070,7 +1080,10 @@ class LivelihoodActivity(common_models.Model):
             )
 
     def validate_income(self):
-        if self.income != self.quantity_sold * self.price:
+        income = self.income or 0
+        quantity_sold = self.quantity_sold or 0
+        price = self.price or 0
+        if self.income and income != quantity_sold * price:
             raise ValidationError(_("Income for a Livelihood Activity must be quantity sold multiplied by price"))
 
     def validate_expenditure(self):
@@ -1085,7 +1098,11 @@ class LivelihoodActivity(common_models.Model):
         OtherPurchase, involve spending money to acquire the item, in which
         case we must validate that expenditure = quantity_produced * price
         """
-        if self.expenditure and self.expenditure != self.quantity_produced * self.price:
+        quantity_produced = self.quantity_produced or 0
+        price = self.price or 0
+        expenditure = self.expenditure or 0
+
+        if self.expenditure and expenditure != quantity_produced * price:
             raise ValidationError(
                 _("Expenditure for a Livelihood Activity must be quantity produced multiplied by price")
             )
@@ -1095,8 +1112,10 @@ class LivelihoodActivity(common_models.Model):
             from_unit=self.livelihood_strategy.unit_of_measure,
             to_unit=self.livelihood_strategy.product.unit_of_measure,
         )
-        kcals_per_unit = self.livelihood_strategy.product.kcals_per_unit
-        if self.kcals_consumed != self.quantity_consumed * conversion_factor * kcals_per_unit:
+        kcals_per_unit = self.livelihood_strategy.product.kcals_per_unit or 0
+        quantity_consumed = self.quantity_consumed or 0
+        kcals_consumed = self.kcals_consumed or 0
+        if self.kcals_consumed and kcals_consumed != quantity_consumed * conversion_factor * kcals_per_unit:
             raise ValidationError(
                 _("Kcals consumed for a Livelihood Activity must be quantity consumed multiplied by kcals per unit")
             )
@@ -1471,6 +1490,7 @@ class PaymentInKind(LivelihoodActivity):
     def validate_quantity_produced(self):
         if (
             self.quantity_produced
+            and self.quantity_produced
             != self.payment_per_time * self.people_per_household * self.times_per_month * self.months_per_year
         ):
             raise ValidationError(
@@ -1520,6 +1540,20 @@ class ReliefGiftOther(LivelihoodActivity):
     class Meta:
         verbose_name = LivelihoodStrategyType.RELIEF_GIFT_OTHER.label
         verbose_name_plural = _("Relief, Gifts and Other Food")
+
+
+class Hunting(LivelihoodActivity):
+    """
+    Hunting by some households in a Wealth Group for their own consumption, for sale and for other uses.
+    Some BSS have hunting on the Data3 tab, for example, Madagascar/MG23
+
+    Stored on the BSS 'Data3' worksheet in the 'Hunting' (Chasse) section, typically starting around Row 48
+    """
+
+    class Meta:
+        verbose_name = LivelihoodStrategyType.HUNTING.label
+        verbose_name_plural = LivelihoodStrategyType.HUNTING.label
+        proxy = True
 
 
 class Fishing(LivelihoodActivity):

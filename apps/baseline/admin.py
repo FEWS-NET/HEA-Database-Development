@@ -25,6 +25,7 @@ from .models import (
     Fishing,
     FoodPurchase,
     Hazard,
+    Hunting,
     LivelihoodActivity,
     LivelihoodStrategy,
     LivelihoodZone,
@@ -577,6 +578,13 @@ class OtherCashIncomeInlineAdmin(LivelihoodActivityInlineAdmin):
 
     def get_queryset(self, request):
         return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyType.OTHER_CASH_INCOME)
+
+
+class HuntingInlineAdmin(LivelihoodActivityInlineAdmin):
+    model = Hunting
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyType.HUNTING)
 
 
 class FishingInlineAdmin(LivelihoodActivityInlineAdmin):
