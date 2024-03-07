@@ -2,7 +2,6 @@ from copy import deepcopy
 
 from django.contrib import admin
 from django.contrib.gis.admin import GISModelAdmin
-from django.db.models import Q
 
 from common.fields import translation_fields
 from metadata.models import LivelihoodStrategyType
@@ -153,8 +152,9 @@ class CommunityAdmin(GISModelAdmin):
     search_fields = (
         "name",
         "full_name",
-        *translation_fields("livelihood_zone_baseline__livelihood_zone__name"),
-        "livelihood_zone_baseline__livelihood_zone__code",
+        *translation_fields("livelihood_zone_baseline__livelihood_zone__name__icontains"),
+        "livelihood_zone_baseline__livelihood_zone__code__iexact",
+        "livelihood_zone_baseline__livelihood_zone__alternate_code__iexact",
     )
     list_filter = (
         *translation_fields("livelihood_zone_baseline__livelihood_zone__name"),
@@ -179,17 +179,24 @@ class LivelihoodStrategyAdmin(admin.ModelAdmin):
         "product",
         "unit_of_measure",
     )
+
     search_fields = (
-        "strategy_type",
-        *translation_fields("livelihood_zone_baseline__livelihood_zone__name"),
-        *translation_fields("product__common_name"),
-        "livelihood_zone_baseline__livelihood_zone__code",
+        "strategy_type__icontains",
+        "livelihood_zone_baseline__livelihood_zone__code__iexact",
+        "livelihood_zone_baseline__livelihood_zone__alternate_code__iexact",
+        "additional_identifier__icontains",
+        "product__cpc__iexact",
+        "product__aliases__icontains",
+        "season__aliases__icontains",
+        *translation_fields("livelihood_zone_baseline__livelihood_zone__name__icontains"),
+        *translation_fields("product__common_name__icontains"),
+        *translation_fields("season__name__icontains"),
     )
 
     list_filter = (
         "strategy_type",
         "livelihood_zone_baseline__livelihood_zone",
-        "livelihood_zone_baseline__livelihood_zone__country",
+        ("livelihood_zone_baseline__livelihood_zone__country", admin.RelatedOnlyFieldListFilter),
     )
 
 
@@ -217,20 +224,20 @@ class LivelihoodActivityAdmin(admin.ModelAdmin):
     list_filter = (
         "strategy_type",
         "scenario",
-        "livelihood_strategy__product",
-        "livelihood_strategy__season",
-        "livelihood_zone_baseline__livelihood_zone__country",
+        ("livelihood_strategy__product", admin.RelatedOnlyFieldListFilter),
+        ("livelihood_strategy__season", admin.RelatedOnlyFieldListFilter),
+        ("livelihood_zone_baseline__livelihood_zone__country", admin.RelatedOnlyFieldListFilter),
     )
     search_fields = (
-        "strategy_type",
-        "livelihood_strategy__additional_identifier",
-        "livelihood_zone_baseline__livelihood_zone__code",
-        "livelihood_zone_baseline__livelihood_zone__alternate_code",
-        *translation_fields("livelihood_strategy__product__common_name"),
-        "livelihood_strategy__product__cpc",
-        "livelihood_strategy__product__aliases",
-        "livelihood_strategy__season__aliases",
-        *translation_fields("livelihood_strategy__season__name"),
+        "strategy_type__icontains",
+        "livelihood_strategy__additional_identifier__icontains",
+        "livelihood_zone_baseline__livelihood_zone__code__iexact",
+        "livelihood_zone_baseline__livelihood_zone__alternate_code__iexact",
+        "livelihood_strategy__product__cpc__iexact",
+        "livelihood_strategy__product__aliases__icontains",
+        "livelihood_strategy__season__aliases__icontains",
+        *translation_fields("livelihood_strategy__product__common_name__icontains"),
+        *translation_fields("livelihood_strategy__season__name__icontains"),
     )
 
     def get_queryset(self, request):
@@ -240,22 +247,6 @@ class LivelihoodActivityAdmin(admin.ModelAdmin):
             "livelihood_strategy__season",
             "livelihood_zone_baseline__livelihood_zone__country",
         )
-
-    def get_search_results(self, request, queryset, search_term):
-        use_distinct = True
-        if search_term:
-            custom_queries = (
-                Q(strategy_type__icontains=search_term)
-                | Q(livelihood_strategy__additional_identifier__icontains=search_term)
-                | Q(livelihood_zone_baseline__livelihood_zone__code__icontains=search_term)
-                | Q(livelihood_zone_baseline__livelihood_zone__alternate_code__icontains=search_term)
-                | Q(livelihood_strategy__product__cpc__icontains=search_term)
-                | Q(livelihood_strategy__product__aliases__icontains=search_term)
-                | Q(livelihood_strategy__season__aliases__icontains=search_term)
-            )
-            queryset = queryset.filter(custom_queries).distinct()
-
-        return queryset, use_distinct
 
     def get_product_common_name(self, obj):
         return obj.livelihood_strategy.product.common_name
