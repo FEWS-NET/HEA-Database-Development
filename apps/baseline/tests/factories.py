@@ -318,6 +318,15 @@ class LivelihoodActivityFactory(factory.django.DjangoModelFactory):
         strategy_type=factory.SelfAttribute("..strategy_type"),
     )
     household_labor_provider = factory.Iterator(["men", "women", "children", "all"])
+    extra = factory.Iterator(
+        [
+            {"name of local measure": "stone"},
+            {"profit after fattening": 567},
+            {"purchase price of animals before fattening": 123},
+            {"number of months that green consumption occurs for": 8},
+            {"percentage of calories that come from green consumption during that period": 15},
+        ]
+    )
 
 
 class BaselineLivelihoodActivityFactory(LivelihoodActivityFactory):

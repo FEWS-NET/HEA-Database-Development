@@ -447,6 +447,7 @@ class LivelihoodActivitySerializer(serializers.ModelSerializer):
             "household_labor_provider_label",
             "scenario",
             "scenario_label",
+            "extra",
             # WealthGroup
             "wealth_group",
             "wealth_group_label",

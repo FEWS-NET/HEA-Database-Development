@@ -1267,12 +1267,14 @@ class LivelihoodActivityViewSetTestCase(APITestCase):
             "percentage_kcals",
             "household_labor_provider",
             "household_labor_provider_label",
+            "extra",
         )
         self.assertCountEqual(
             response.json().keys(),
             expected_fields,
             f"LivelihoodActivity: Fields expected: {expected_fields}. Fields found: {response.json().keys()}.",
         )
+        self.assertEqual(response.json()["extra"], self.data[0].extra)
 
     def test_patch_requires_authentication(self):
         logging.disable(logging.CRITICAL)
@@ -1431,6 +1433,7 @@ class BaselineLivelihoodActivityViewSetTestCase(APITestCase):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "extra",
         )
         self.assertCountEqual(
             response.json().keys(),
@@ -1596,6 +1599,7 @@ class ResponseLivelihoodActivityViewSetTestCase(APITestCase):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "extra",
         )
         self.assertCountEqual(
             response.json().keys(),
@@ -1766,6 +1770,7 @@ class MilkProductionViewSetTestCase(APITestCase):
             "lactation_days",
             "daily_production",
             "type_of_milk_sold_or_other_uses",
+            "extra",
         )
         self.assertCountEqual(
             response.json().keys(),
@@ -1933,6 +1938,7 @@ class ButterProductionViewSetTestCase(APITestCase):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "extra",
         )
         self.assertCountEqual(
             response.json().keys(),
@@ -2099,6 +2105,7 @@ class MeatProductionViewSetTestCase(APITestCase):
             "percentage_kcals",
             "animals_slaughtered",
             "carcass_weight",
+            "extra",
         )
         self.assertCountEqual(
             response.json().keys(),
@@ -2265,6 +2272,7 @@ class LivestockSalesViewSetTestCase(APITestCase):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "extra",
         )
         self.assertCountEqual(
             response.json().keys(),
@@ -2429,6 +2437,7 @@ class CropProductionViewSetTestCase(APITestCase):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "extra",
         )
         self.assertCountEqual(
             response.json().keys(),
@@ -2597,6 +2606,7 @@ class FoodPurchaseViewSetTestCase(APITestCase):
             "months_per_year",
             "times_per_month",
             "times_per_year",
+            "extra",
         )
         self.assertCountEqual(
             response.json().keys(),
@@ -2767,6 +2777,7 @@ class PaymentInKindViewSetTestCase(APITestCase):
             "people_per_household",
             "times_per_month",
             "months_per_year",
+            "extra",
         )
         self.assertCountEqual(
             response.json().keys(),
@@ -2939,6 +2950,7 @@ class ReliefGiftsOtherViewSetTestCase(APITestCase):
             "months_per_year",
             "times_per_month",
             "times_per_year",
+            "extra",
         )
         self.assertCountEqual(
             response.json().keys(),
@@ -3103,6 +3115,7 @@ class FishingViewSetTestCase(APITestCase):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "extra",
         )
         self.assertCountEqual(
             response.json().keys(),
@@ -3267,6 +3280,7 @@ class HuntingViewSetTestCase(APITestCase):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "extra",
         )
         self.assertCountEqual(
             response.json().keys(),
@@ -3431,6 +3445,7 @@ class WildFoodGatheringViewSetTestCase(APITestCase):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "extra",
         )
         self.assertCountEqual(
             response.json().keys(),
@@ -3600,6 +3615,7 @@ class OtherCashIncomeViewSetTestCase(APITestCase):
             "times_per_month",
             "months_per_year",
             "times_per_year",
+            "extra",
         )
         self.assertCountEqual(
             response.json().keys(),
@@ -3772,6 +3788,7 @@ class OtherPurchasesViewSetTestCase(APITestCase):
             "unit_multiple",
             "times_per_month",
             "months_per_year",
+            "extra",
         )
         self.assertCountEqual(
             response.json().keys(),

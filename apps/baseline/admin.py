@@ -273,6 +273,7 @@ class LivelihoodActivityAdmin(admin.ModelAdmin):
                 "fields": [
                     "livelihood_strategy",
                     "scenario",
+                    "extra",
                 ]
             },
         ),
@@ -372,6 +373,7 @@ class LivelihoodActivityInlineAdmin(admin.StackedInline):
                 "fields": [
                     "livelihood_strategy",
                     "scenario",
+                    "extra",
                 ]
             },
         ),
