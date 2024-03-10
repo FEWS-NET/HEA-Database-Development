@@ -87,6 +87,7 @@ logconfig_dict = {
             "level": "DEBUG",
             "propagate": False,
         },
+        "ddtrace": {"level": "INFO", "propagate": False},
         "environ": {"level": "INFO", "propagate": False},
         "fiona": {"level": "INFO", "propagate": False},
         "rasterio": {"level": "INFO", "propagate": False},

@@ -71,7 +71,7 @@ class Lookup(ABC):
     # Related models to also instantiate
     related_models = []
 
-    def __init__(self, filters: dict = {}):
+    def __init__(self, filters: dict = {}, require_match=None):
         # Make sure we don't have any fields in multiple categories
         assert len(set((*self.id_fields, *self.parent_fields, *self.lookup_fields))) == len(self.id_fields) + len(
             self.parent_fields
@@ -80,6 +80,10 @@ class Lookup(ABC):
         self.composite_key = len(self.id_fields) > 1
 
         self.filters = filters
+
+        # Override the require_match if necessary
+        if require_match is not None:
+            self.require_match = require_match
 
     def get_queryset_columns(self):
         return [*self.lookup_fields, *self.parent_fields, *self.id_fields]

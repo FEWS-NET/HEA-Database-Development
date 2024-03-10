@@ -18,11 +18,11 @@ exclude = [
   'dist',
 ]
 
-[tool.ruff.mccabe]
+[lint.mccabe]
 # Unlike Flake8, default to a complexity level of 10.
 max-complexity = 10
 
-[tool.ruff.flake8-quotes]
+[lint.flake8-quotes]
 docstring-quotes = "double"
 
 [tool.black]
@@ -52,4 +52,9 @@ exclude = '''
 
 [tool.isort]
 profile = "black"
+skip = [".history", ".tox"]
 src_paths = ["apps"]
+
+
+[tool.dagster]
+module_name = "pipelines"

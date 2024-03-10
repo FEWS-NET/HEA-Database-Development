@@ -1,0 +1,44 @@
+storage:
+  postgres:
+    postgres_db:
+      username:
+        env: DAGSTER_PGUSER
+      password:
+        env: DAGSTER_PGPASSWORD
+      hostname:
+        env: PGHOST
+      db_name:
+        env: PGDATABASE
+      port:
+        env: PGPORT
+
+local_artifact_storage:
+  module: dagster.core.storage.root
+  class: LocalArtifactStorage
+  config:
+    base_dir: "media/pipelines/artifacts"
+
+compute_logs:
+  module: dagster_aws.s3.compute_log_manager
+  class: S3ComputeLogManager
+  config:
+    bucket:
+      env: DAGSTER_S3_BUCKET
+    prefix: 
+      env: DAGSTER_S3_LOG_PATH
+
+# Telemetry files are created in the ./logs directory prior to submitting to Dagster.
+# There is no way to change this directory through configuration, but our containers have a
+# ./log directory rather than a ./logs directory, so it raises unwanted warning messages. 
+telemetry:
+  enabled: false
+
+# Use the QueuedRunCoordinator to avoid warning messages when launching large backfills, or in production settings.
+run_coordinator:
+  module: dagster.core.run_coordinator
+  class: QueuedRunCoordinator
+  config:
+    max_concurrent_runs: 20
+    tag_concurrency_limits:
+      - key: "dagster/backfill"
+        limit: 10

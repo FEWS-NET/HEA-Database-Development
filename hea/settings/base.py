@@ -104,6 +104,7 @@ EXTERNAL_APPS = [
     "django.contrib.admindocs",
     "binary_database_files",
     "django_extensions",
+    "ddtrace.contrib.django",
 ]
 PROJECT_APPS = ["common", "metadata", "baseline"]
 INSTALLED_APPS = EXTERNAL_APPS + PROJECT_APPS

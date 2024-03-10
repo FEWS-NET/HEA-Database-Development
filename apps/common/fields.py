@@ -1,6 +1,7 @@
 """
 Additional Model Fields
 """
+
 from itertools import chain
 
 from django.conf import settings

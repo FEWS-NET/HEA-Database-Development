@@ -353,9 +353,11 @@ class NonOverlappingMixin(models.Model):
         setattr(
             self,
             self.get_end_field(),
-            now()
-            if isinstance(self._meta.get_field(self.get_end_field()), models.DateTimeField)
-            else datetime.date.today(),
+            (
+                now()
+                if isinstance(self._meta.get_field(self.get_end_field()), models.DateTimeField)
+                else datetime.date.today()
+            ),
         )
         self.save()
 
@@ -427,12 +429,14 @@ class NonOverlappingMixin(models.Model):
                     "class": self._meta.verbose_name.title(),
                     "pk": evaluation_queryset[0].pk,
                     "instance": str(evaluation_queryset[0]),
-                    "non_overlapping_fields": "{} and {}".format(
-                        ", ".join(list(non_overlapping_fields)[:-1]),
-                        list(non_overlapping_fields)[-1],
-                    )
-                    if len(non_overlapping_fields) > 1
-                    else list(non_overlapping_fields)[0],
+                    "non_overlapping_fields": (
+                        "{} and {}".format(
+                            ", ".join(list(non_overlapping_fields)[:-1]),
+                            list(non_overlapping_fields)[-1],
+                        )
+                        if len(non_overlapping_fields) > 1
+                        else list(non_overlapping_fields)[0]
+                    ),
                     "start": start,
                     "end": end,
                 },

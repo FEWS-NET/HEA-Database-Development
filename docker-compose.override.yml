@@ -6,6 +6,11 @@ services:
     volumes:
       - ./:/usr/src/app
 
+  minio:
+    ports:
+      - "9000:9000"
+      - "9010:9010"
+
   app:
     restart: "no"
     build:
@@ -21,6 +26,9 @@ services:
       - /usr/src/app/jupyter
       - /usr/src/app/log
       - /usr/src/app/media
+      # Ignore the local .env file, to avoid it conflicting with variables set
+      # in the docker-compose.yml file, particularly by Dagster
+      - ./env.example:/usr/src/app/.env
     environment:
       DJANGO_SETTINGS_MODULE: hea.settings.local
       # Put .coverage in a writable directory
@@ -29,3 +37,38 @@ services:
       - --timeout=3600
       - --workers=12
       - --reload
+
+  dagster_webserver:
+    restart: no
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./:/usr/src/app
+      # Separate volumes for writable directories inside the container
+      - /usr/src/app/assets
+      - /usr/src/app/cache
+      - /usr/src/app/jupyter
+      - /usr/src/app/log
+      - /usr/src/app/media
+      # Ignore the local .env file, to avoid it conflicting with variables set
+      # in the docker-compose.yml file, particularly by Dagster
+      - ./env.example:/usr/src/app/.env
+    environment:
+      DJANGO_SETTINGS_MODULE: hea.settings.local
+
+  dagster_daemon:
+    restart: no
+    volumes:
+      - ./:/usr/src/app
+      # Separate volumes for writable directories inside the container
+      - /usr/src/app/assets
+      - /usr/src/app/cache
+      - /usr/src/app/jupyter
+      - /usr/src/app/log
+      - /usr/src/app/media
+      # Ignore the local .env file, to avoid it conflicting with variables set
+      # in the docker-compose.yml file, particularly by Dagster
+      - ./env.example:/usr/src/app/.env
+    environment:
+      DJANGO_SETTINGS_MODULE: hea.settings.local
+

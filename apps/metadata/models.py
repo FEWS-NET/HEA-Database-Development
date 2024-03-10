@@ -2,12 +2,13 @@ import logging
 
 from django.contrib.gis.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db.models.functions import Lower
 from django.utils.translation import gettext_lazy as _
 from django.utils.translation import pgettext_lazy
 
 import common.models as common_models
 from common.fields import TranslatedField
-from common.models import Country
+from common.models import ClassifiedProduct, Country, Currency, UnitOfMeasure
 
 logger = logging.getLogger(__name__)
 
@@ -342,3 +343,130 @@ class Season(common_models.Model):
     class Meta:
         verbose_name = _("Season")
         verbose_name_plural = _("Seasons")
+
+
+class ActivityLabel(common_models.Model):
+    """
+    A label from Column A of the 'Data', 'Data2' or 'Data3' worksheet in a BSS and associated attributes.
+
+    Used by the data ingestion pipeline for LivelihoodStrategy and LivelihoodActivity to determine the attributes for
+    the LivelihoodStrategy and/or LivelihoodActivity for a given row in a BSS.
+    """
+
+    class LivelihoodActivityType(models.TextChoices):
+        LIVELIHOOD_ACTIVITY = "LivelihoodActivity", _("Livelihod Activity")  # Labels from the 'Data' worksheet
+        OTHER_CASH_INCOME = "OtherCashIncome", _("Other Cash Income")  # Labels from the 'Data2' worksheet
+        WILD_FOODS = "WildFoods", _("Wild Foods")  # Labels from the 'Data3' worksheet
+
+    activity_label = common_models.NameField(max_length=100, verbose_name=_("Activity Label"))
+    activity_type = models.CharField(
+        max_length=20,
+        verbose_name=_("Activity Type"),
+        choices=LivelihoodActivityType.choices,
+        default=LivelihoodActivityType.LIVELIHOOD_ACTIVITY,
+        help_text=_(
+            "The type of Livelihood Activity, either a general Livelihood Activity, or an Other Cash Income "
+            "activity from the 'Data2' worksheet, or a Wild Foods, Fishing or Hunting activity from the "
+            "'Data3' worksheet."
+        ),
+    )
+    is_start = models.BooleanField(
+        default=False,
+        verbose_name=_("Is Start?"),
+        help_text=_("Indicates whether this Activity Label marks the start of a new Livelihood Strategy"),
+    )
+    strategy_type = models.CharField(
+        max_length=30,
+        blank=True,
+        choices=LivelihoodStrategyType.choices,
+        verbose_name=_("Strategy Type"),
+        help_text=_("The type of livelihood strategy, such as crop production, or wild food gathering."),
+    )
+    product = models.ForeignKey(
+        ClassifiedProduct,
+        db_column="product_code",
+        null=True,
+        blank=True,
+        on_delete=models.RESTRICT,
+        related_name="activity_labels",
+        verbose_name=_("Product"),
+    )
+    unit_of_measure = models.ForeignKey(
+        UnitOfMeasure,
+        db_column="unit_code",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        verbose_name=_("Unit of Measure"),
+        related_name="activity_labels",
+    )
+    currency = models.ForeignKey(
+        Currency,
+        db_column="currency_code",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        verbose_name=_("Currency"),
+    )
+    season = models.CharField(max_length=60, blank=True, verbose_name=_("Season"))
+    additional_identifier = models.CharField(max_length=60, blank=True, verbose_name=_("Season"))
+    attribute = models.CharField(max_length=60, blank=True, verbose_name=_("Attribute"))
+
+    class ExtraMeta:
+        identifier = ["activity_label"]
+
+    class Meta:
+        verbose_name = _("Activity Label")
+        verbose_name_plural = _("Activity Labels")
+        constraints = [
+            models.UniqueConstraint(Lower("activity_label"), "activity_type", name="unique_lower_name_category"),
+        ]
+
+
+class WealthCharacteristicLabel(common_models.Model):
+    """
+    A label from Column A of the 'WB' worksheet in a BSS and associated attributes.
+
+    Used by the ingestion pipeline for WealthCharacteristicValue to determine the attributes for a given row in a BSS.
+    """
+
+    wealth_characteristic_label = common_models.NameField(
+        max_length=100, unique=True, verbose_name=_("Wealth Characteristic Label")
+    )
+    # wealth_characteristic has to be nullable because there are some labels that we want to recognize
+    # i.e. they need an entry in this table, but that we want to ignore completely. For example, sample text in blank
+    # rows, etc. Those labels will have an entry in this table, but no other metadata items.
+    wealth_characteristic = models.ForeignKey(
+        WealthCharacteristic,
+        db_column="wealth_characteristic_code",
+        null=True,
+        blank=True,
+        on_delete=models.RESTRICT,
+        related_name="wealth_characteristics",
+        verbose_name=_("Wealth Characteristic"),
+    )
+    product = models.ForeignKey(
+        ClassifiedProduct,
+        db_column="product_code",
+        null=True,
+        blank=True,
+        on_delete=models.RESTRICT,
+        related_name="wealth_characteristics",
+        verbose_name=_("Product"),
+    )
+    unit_of_measure = models.ForeignKey(
+        UnitOfMeasure,
+        db_column="unit_code",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        verbose_name=_("Unit of Measure"),
+        related_name="wealth_characteristics",
+    )
+
+    class ExtraMeta:
+        identifier = ["wealth_characteristic_label"]
+
+    class Meta:
+        verbose_name = _("Wealth Characteristic Label")
+        verbose_name_plural = _("Wealth Characteristics Labels")

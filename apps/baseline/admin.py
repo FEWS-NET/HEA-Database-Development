@@ -78,7 +78,7 @@ class LivelihoodZoneAdmin(admin.ModelAdmin):
         *translation_fields("description"),
         "country__iso_en_ro_name",
     ]
-    list_filter = ("country",)
+    list_filter = (("country", admin.RelatedOnlyFieldListFilter),)
 
 
 class LivelihoodZoneBaselineAdmin(GISModelAdmin):
@@ -152,7 +152,9 @@ class CommunityAdmin(GISModelAdmin):
     search_fields = (
         "name",
         "full_name",
-        *translation_fields("livelihood_zone_baseline__livelihood_zone__name"),
+        *translation_fields("livelihood_zone_baseline__livelihood_zone__name__icontains"),
+        "livelihood_zone_baseline__livelihood_zone__code__iexact",
+        "livelihood_zone_baseline__livelihood_zone__alternate_code__iexact",
     )
     list_filter = (
         *translation_fields("livelihood_zone_baseline__livelihood_zone__name"),
@@ -226,7 +228,6 @@ class LivelihoodActivityAdmin(admin.ModelAdmin):
         ("livelihood_strategy__season", admin.RelatedOnlyFieldListFilter),
         ("livelihood_zone_baseline__livelihood_zone__country", admin.RelatedOnlyFieldListFilter),
     )
-
     search_fields = (
         "strategy_type__icontains",
         "livelihood_strategy__additional_identifier__icontains",
@@ -317,22 +318,22 @@ class WealthGroupCharacteristicValueAdmin(admin.ModelAdmin):
 
     list_filter = (
         "wealth_group__wealth_group_category",
-        ("wealth_group__livelihood_zone_baseline__livelihood_zone__country", admin.RelatedOnlyFieldListFilter),
+        "wealth_group__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_characteristic__has_product",
-        ("product", admin.RelatedOnlyFieldListFilter),
+        "product",
         "wealth_characteristic__has_unit_of_measure",
-        ("unit_of_measure", admin.RelatedOnlyFieldListFilter),
+        "unit_of_measure",
     )
 
     search_fields = (
-        "wealth_group__livelihood_zone_baseline__livelihood_zone__code__iexact",
-        "wealth_group__livelihood_zone_baseline__livelihood_zone__alternate_code__iexact",
-        "wealth_group__livelihood_zone_baseline__livelihood_zone__country__name__icontains",
-        "product__cpc__iexact",
-        "product__aliases__icontains",
-        *translation_fields("wealth_characteristic__name__icontains"),
-        *translation_fields("wealth_group__wealth_group_category__name__icontains"),
-        *translation_fields("product__common_name__icontains"),
+        *translation_fields("wealth_characteristic__name"),
+        *translation_fields("wealth_group__wealth_group_category__name"),
+        "wealth_group__livelihood_zone_baseline__livelihood_zone__code",
+        "wealth_group__livelihood_zone_baseline__livelihood_zone__alternate_code",
+        "wealth_group__livelihood_zone_baseline__livelihood_zone__country__name",
+        *translation_fields("product__common_name"),
+        "product__cpc",
+        "product__aliases",
     )
 
     def get_wealth_group_category(self, obj):

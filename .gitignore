@@ -104,6 +104,8 @@ vagrant_ansible_inventory*
 # Jupyter Notebook Checkpoints
 .ipynb_checkpoints/
 
+# Dagster temporary storage
+tmp*/
 # Nose Files
 nosetests.xml
 .nose-stopwatch*

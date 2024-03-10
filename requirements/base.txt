@@ -1,5 +1,10 @@
 # Do not pip freeze into this file. Add only the packages you need so pip can align dependencies.
-ddtrace==1.14.0
+dagster==1.6.8
+dagster_aws==0.22.8
+dagster-pipes==1.6.8
+dagster-postgres==0.22.8
+dagster-webserver==1.6.8
+ddtrace==2.6.2
 Django==5.0.2
 django-binary-database-files==1.0.18
 django-environ==0.11.2
@@ -12,11 +17,11 @@ djangorestframework==3.14.0
 djangorestframework-xml==2.0.0
 docutils
 factory-boy==3.2.1
+git+https://github.com/American-Institutes-for-Research/gdrivefs.git@e870c19e1d730635e3760e7ae21eebf9ddda765e
 gunicorn==20.1.0
 html5lib==1.1
 json-logging-py==0.2
-jupyterlab==4.0.5
-git+https://gitlab.com/kimetrica/kimetrica-public-projects/kiluigi.git@6cf8ef8fcfb50c6e5eb1b9e023dc2b7fea03997e#egg
+jupyterlab==4.1.4
 lxml==4.9.3
 # Make sure that same version of numpy is specified here and in docker/app/Dockerfile
 numpy==1.26.4
@@ -26,9 +31,14 @@ pandas==2.2.0
 # See https://github.com/DataDog/dd-trace-py/issues/4393
 psycopg2-binary==2.9.7
 requests==2.31.0
+# s3fs provides S3 support for Dagster UPathIOManager subclasses
+s3fs==2024.2.0
+sentry-sdk[django]==1.40.6
 sqlparse==0.4.4
 # Required for DataFrame.to_markdown()
 tabulate==0.9.0
+# Need universal-pathlib > 0.2.0 for gdrivefs support
+universal-pathlib==0.2.1
 whitenoise==6.4.0
 xlrd==2.0.1
 xlutils==2.0.0

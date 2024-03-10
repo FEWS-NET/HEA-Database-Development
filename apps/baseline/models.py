@@ -834,15 +834,22 @@ class LivelihoodStrategy(common_models.Model):
 
     objects = LivelihoodStrategyManager()
 
+    # List of Strategy Types that require a Product
+    REQUIRES_PRODUCT = [
+        "MilkProduction",
+        "ButterProduction",
+        "MeatProduction",
+        "LivestockSale",
+        "CropProduction",
+        "OtherCashIncome",
+        "WildFoodGathering",
+    ]
+
     def clean(self):
         """
         Validate that product and season are not null for Livelihood Strategies that require them.
         """
-        if (
-            self.strategy_type
-            in ["MilkProduction", "ButterProduction", "MeatProduction", "LivestockSale", "CropProduction"]
-            and not self.product
-        ):
+        if self.strategy_type in self.REQUIRES_PRODUCT and not self.product:
             raise ValidationError(_("A %s Livelihood Strategy must have a Product" % self.strategy_type))
         if self.strategy_type in ["MilkProduction", "ButterProduction"] and not self.season:
             raise ValidationError(_("A %s Livelihood Strategy must have a Season" % self.strategy_type))
