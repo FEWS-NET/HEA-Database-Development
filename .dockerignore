@@ -105,3 +105,6 @@ nosetests.xml
 
 # Ruff cache
 .ruff_cache/
+
+# Local development settings
+.env

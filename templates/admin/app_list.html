@@ -13,11 +13,9 @@
 </p>
 
 {% if app_list %}
-
     {% if 'baseline.view_sourceorganization' in perms or 'baseline.view_livelihoodzone' in perms or 'baseline.view_livelihoodzonebaseline' in perms or 'baseline.view_community' in perms %}
         <div class="menu-category">
             <h5>{% translate 'BSS Setup' %}</h5>
-
             {% if perms.baseline.view_sourceorganization %}
                 <div class="row row-cols-1 row-cols-md-3 g-4">
                 <!-- Card 1 -->
@@ -44,10 +42,7 @@
                         <div class="card-body">
                             <a href="{% url 'admin:baseline_livelihoodzonebaseline_changelist' %}"> {% translate 'Livelihood Zone Baselines' %}</a>
                         </div>
-
-
                     </div>
-
                 </div>
             {% endif %}
             {% if perms.baseline.view_community %}
@@ -58,36 +53,65 @@
                         </div>
                     </div>
                 </div>
-
-
             {% endif %}
             </div>
         </div>
     {% endif %}
+
+
     {% if 'baseline.view_wealthgroup' in perms or 'baseline.view_livelihoodstrategy' in perms %}
         <div class="menu-category">
             <h5> {% translate 'BSS WB,Data,.. Sheets' %} </h5>
             <div class="row row-cols-1 row-cols-md-3 g-4">
-                  {% if perms.baseline.view_wealthgroup %}
-                <div class="col">
-                    <div class="card m-2">
-                        <div class="card-body">
-                            <a href="{% url 'admin:baseline_wealthgroup_changelist' %}">{% translate 'Wealth Group Data' %}</a>
+                {% if perms.baseline.view_wealthgroup %}
+                    <div class="col">
+                        <div class="card m-2">
+                            <div class="card-body">
+                                <a href="{% url 'admin:baseline_wealthgroup_changelist' %}">{% translate 'Wealth Group Data' %}</a>
+                            </div>
                         </div>
                     </div>
-                </div>
-                  {% endif %}
-
-             {% if perms.baseline.view_livelihoodstrategy %}
-                <div class="col">
-                    <div class="card m-2">
-                        <div class="card-body">
-                            <a href="{% url 'admin:baseline_livelihoodstrategy_changelist' %}">{% translate 'Livelihood Strategy' %}</a>
-                        </div>
-                    </div>
-                </div>
-                  {% endif %}
+                {% endif %}
             </div>
+        </div>
+    {% endif %}
+
+      {% if 'baseline.view_livelihoodactivity' in perms or 'baseline.view_wealthgroupcharacteristicvalue' in perms or 'baseline.view_livelihoodstrategy' in perms %}
+        <div class="menu-category">
+            <h5> {% translate 'Wealth, Activity and Strategy Insights' %} </h5>
+            {% if 'baseline.view_wealthgroupcharacteristicvalue' in perms %}
+                <div class="row row-cols-1 row-cols-md-3 g-4">
+                    <div class="col">
+                        <div class="card m-2">
+                            <div class="card-body">
+                               <a href="{% url 'admin:baseline_wealthgroupcharacteristicvalue_changelist' %}">{% translate 'Wealth Group Characteristic Value' %}</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+            {% if 'baseline.view_livelihoodstrategy' in perms %}
+                <div class="row row-cols-1 row-cols-md-3 g-4">
+                    <div class="col">
+                        <div class="card m-2">
+                            <div class="card-body">
+                                 <a href="{% url 'admin:baseline_livelihoodstrategy_changelist' %}">{% translate 'Livelihood Strategy' %}</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+            {% if 'baseline.view_livelihoodactivity' in perms %}
+                <div class="row row-cols-1 row-cols-md-3 g-4">
+                    <div class="col">
+                        <div class="card m-2">
+                            <div class="card-body">
+                                <a href="{% url 'admin:baseline_livelihoodactivity_changelist' %}">{% translate 'Livelihood Activity' %}</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
         </div>
     {% endif %}
     {% if 'baseline.view_communitycropproduction' in perms or  'baseline.view_communitylivestock'  in perms %}

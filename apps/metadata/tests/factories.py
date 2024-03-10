@@ -71,6 +71,8 @@ class WealthCharacteristicFactory(factory.django.DjangoModelFactory):
             WealthCharacteristic.VariableType.NUM,
         ]
     )
+    has_product = factory.Iterator([False, True])
+    has_unit_of_measure = factory.Iterator([False, True])
     name_en = factory.LazyAttribute(lambda o: f"{o.code} Wealth Characteristic en")
     name_pt = factory.LazyAttribute(lambda o: f"{o.code} Wealth Characteristic pt")
     name_es = factory.LazyAttribute(lambda o: f"{o.code} Wealth Characteristic es")
