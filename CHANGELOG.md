@@ -1,9 +1,6 @@
 # HEA Changelog
 
-## 23.06.04
+## 24.03.1
 
-### Bug
+Initial Release
 
-### Story
-
-### Task
