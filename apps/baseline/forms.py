@@ -21,12 +21,18 @@ class LivelihoodActivityForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["quantity_produced"].label = _("Produced")
-        self.fields["quantity_purchased"].label = _("Purchased")
-        self.fields["quantity_sold"].label = _("Sold")
-        self.fields["quantity_consumed"].label = _("Consumed")
-        self.fields["quantity_other_uses"].label = _("Other uses")
-        self.fields["percentage_kcals"].label = _("Percentage")
+        if "quantity_produced" in self.fields:
+            self.fields["quantity_produced"].label = _("Produced")
+        if "quantity_purchased" in self.fields:
+            self.fields["quantity_purchased"].label = _("Purchased")
+        if "quantity_sold" in self.fields:
+            self.fields["quantity_sold"].label = _("Sold")
+        if "quantity_consumed" in self.fields:
+            self.fields["quantity_consumed"].label = _("Consumed")
+        if "quantity_other_uses" in self.fields:
+            self.fields["quantity_other_uses"].label = _("Other uses")
+        if "percentage_kcals" in self.fields:
+            self.fields["percentage_kcals"].label = _("Percentage")
 
 
 class MilkProductionForm(LivelihoodActivityForm):

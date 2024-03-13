@@ -51,17 +51,17 @@
                     </button>
                     <div class="collapse-menu" id="wg-collapse">
                         <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
-                             {% if 'metadata.view_wealthgroupcharacteristicvalue' in perms %}
+                             {% if 'baseline.view_wealthgroupcharacteristicvalue' in perms %}
                                 <li><a class="link-dark rounded"
                                        href="{% url 'admin:baseline_wealthgroupcharacteristicvalue_changelist' %}">{% translate 'Wealth Group Characteristic Value' %}</a>
                                 </li>
                             {% endif %}
-                            {% if 'metadata.view_livelihoodactivity' in perms %}
+                            {% if 'baseline.view_livelihoodactivity' in perms %}
                                 <li><a class="link-dark rounded"
                                        href="{% url 'admin:baseline_livelihoodactivity_changelist' %}">{% translate 'Livelihood Activity' %}</a>
                                 </li>
                             {% endif %}
-                          {% if 'metadata.view_livelihoodstrategy' in perms %}
+                          {% if 'baseline.view_livelihoodstrategy' in perms %}
                                 <li><a class="link-dark rounded"
                                        href="{% url 'admin:baseline_livelihoodstrategy_changelist' %}">{% translate 'Livelihood Strategy' %}</a>
                                 </li>
