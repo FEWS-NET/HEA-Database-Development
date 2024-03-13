@@ -444,6 +444,16 @@ def get_instances_from_dataframe(
             # When we get the values for the LivelihoodActivity records, we just want the actual attribute
             # that the values in the row are for
             activity_attribute = label_attributes["attribute"]
+
+            # Some labels are ambiguous and map to different attributes depending on the strategy_type.
+            if activity_attribute == "quantity_produced_or_purchased":
+                if livelihood_strategy["strategy_type"] == "CropProduction":
+                    activity_attribute = "quantity_produced"
+                elif livelihood_strategy["strategy_type"] == "FoodPurchase":
+                    activity_attribute = "quantity_purchased"
+                else:
+                    raise ValueError("Invalid strategy_type %s for label '%s'" % (strategy_type, label))
+
             # Update the LivelihoodActivity records
             if any(value for value in df.loc[row, "B":].astype(str).str.strip()):
                 # Make sure we have an attribute!
