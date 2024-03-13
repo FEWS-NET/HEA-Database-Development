@@ -23,6 +23,8 @@ html5lib==1.1
 json-logging-py==0.2
 jupyterlab==4.1.4
 lxml==4.9.3
+# Support .xls files that use transparent encryption to lock worksheets
+git+https://github.com/nolze/msoffcrypto-tool.git@0f320cbe042b94cfc9087cd0cb693d6ae90d518e
 # Make sure that same version of numpy is specified here and in docker/app/Dockerfile
 numpy==1.26.4
 openpyxl==3.1.2
