@@ -30,6 +30,7 @@ from .models import (
     LivelihoodStrategy,
     LivelihoodZone,
     LivelihoodZoneBaseline,
+    LivelihoodZoneBaselineCorrection,
     LivestockSale,
     MarketPrice,
     MeatProduction,
@@ -79,6 +80,19 @@ class LivelihoodZoneAdmin(admin.ModelAdmin):
         "country__iso_en_ro_name",
     ]
     list_filter = (("country", admin.RelatedOnlyFieldListFilter),)
+
+
+class LivelihoodZoneBaselineCorrectionAdmin(admin.ModelAdmin):
+    list_display = ("worksheet_name", "cell_range", "previous_value", "value", "correction_date", "author")
+    list_filter = ("livelihood_zone_baseline", "worksheet_name", "correction_date", "author")
+    search_fields = ("cell_range", "previous_value", "value", "comment")
+    date_hierarchy = "correction_date"
+
+
+class LivelihoodZoneBaselineCorrectionInlineAdmin(admin.StackedInline):
+    model = LivelihoodZoneBaselineCorrection
+    list_display = ("worksheet_name", "cell_range", "previous_value", "value", "correction_date", "author")
+    extra = 1
 
 
 class LivelihoodZoneBaselineAdmin(GISModelAdmin):
@@ -133,6 +147,9 @@ class LivelihoodZoneBaselineAdmin(GISModelAdmin):
         "livelihood_zone__country",
     ]
     date_hierarchy = "reference_year_start_date"
+    inlines = [
+        LivelihoodZoneBaselineCorrectionInlineAdmin,
+    ]
 
 
 class CommunityAdmin(GISModelAdmin):
@@ -947,6 +964,7 @@ class CopingStrategyAdmin(admin.ModelAdmin):
 admin.site.register(SourceOrganization, SourceOrganizationAdmin)
 admin.site.register(LivelihoodZone, LivelihoodZoneAdmin)
 admin.site.register(LivelihoodZoneBaseline, LivelihoodZoneBaselineAdmin)
+admin.site.register(LivelihoodZoneBaselineCorrection, LivelihoodZoneBaselineCorrectionAdmin)
 admin.site.register(Community, CommunityAdmin)
 admin.site.register(LivelihoodStrategy, LivelihoodStrategyAdmin)
 admin.site.register(WealthGroup, WealthGroupAdmin)

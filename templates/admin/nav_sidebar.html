@@ -11,7 +11,7 @@
         </a>
         <ul class="list-unstyled ps-0">
 
-            {% if 'baseline.view_sourceorganization' in perms or 'baseline.view_livelihoodzone' in perms or 'baseline.view_livelihoodzonebaseline' in perms or 'baseline.view_community' in perms %}
+            {% if 'baseline.view_sourceorganization' in perms or 'baseline.view_livelihoodzone' in perms or 'baseline.view_livelihoodzonebaseline' in perms or 'baseline.view_community' in perms or 'baseline.view_livelihoodzonebaselinecorrection' in perms %}
                 <li class="mb-1">
                     <button class="btn btn-toggle align-items-center rounded collapsed-menu" data-bs-toggle="collapse"
                             data-bs-target="#home-collapse" aria-expanded="true">
@@ -32,6 +32,11 @@
                             {% if perms.baseline.view_livelihoodzonebaseline %}
                                 <li><a class="link-dark rounded"
                                        href="{% url 'admin:baseline_livelihoodzonebaseline_changelist' %}">{% translate 'Livelihood Zone Baselines' %}</a>
+                                </li>
+                            {% endif %}
+                            {% if perms.baseline.view_livelihoodzonebaselinecorrection %}
+                                <li><a class="link-dark rounded"
+                                       href="{% url 'admin:baseline_livelihoodzonebaselinecorrection_changelist' %}">{% translate 'Baseline Corrections' %}</a>
                                 </li>
                             {% endif %}
                             {% if perms.baseline.view_community %}
