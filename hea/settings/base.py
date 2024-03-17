@@ -186,6 +186,7 @@ LANGUAGES = (
     ("pt", _("Portuguese")),
     ("ar", _("Arabic")),
 )
+LOCALE_PATHS = (os.path.join(SITE_ROOT, "locale"),)
 
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 SESSION_ENGINE = "django.contrib.sessions.backends.cached_db"

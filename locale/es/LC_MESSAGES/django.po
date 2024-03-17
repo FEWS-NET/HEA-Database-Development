@@ -5,13 +5,8 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-01-25 11:32+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
+"POT-Creation-Date: 2024-03-21 07:17+0000\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -31,12 +26,12 @@ msgid "Spanish"
 msgstr "Español"
 
 #: hea/settings/base.py:186
-msgid "Arabic"
-msgstr "Arábica"
+msgid "Portuguese"
+msgstr "Portugués"
 
 #: hea/settings/base.py:187
-msgid "Portuguese"
-msgstr "portugués"
+msgid "Arabic"
+msgstr "Arábica"
 
 #: templates/admin/app_list.html:4
 msgid ""
@@ -61,160 +56,173 @@ msgstr ""
 "sirve como una representación de Un grupo de patrimonio dentro de una "
 "comunidad en una zona de medios de vida dada."
 
-#: templates/admin/app_list.html:19 templates/admin/nav_sidebar.html:18
+#: templates/admin/app_list.html:18 templates/admin/nav_sidebar.html:18
 msgid "BSS Setup"
 msgstr "Configuración de BSS"
 
-#: templates/admin/app_list.html:27 templates/admin/nav_sidebar.html:24
+#: templates/admin/app_list.html:25 templates/admin/nav_sidebar.html:24
 msgid "Source Organizations"
 msgstr "Organizaciones de origen"
 
-#: templates/admin/app_list.html:36 templates/admin/nav_sidebar.html:29
+#: templates/admin/app_list.html:34 templates/admin/nav_sidebar.html:29
 msgid "Livelihood Zones"
 msgstr "Zonas de medios de vida"
 
-#: templates/admin/app_list.html:45 templates/admin/nav_sidebar.html:34
+#: templates/admin/app_list.html:43 templates/admin/nav_sidebar.html:34
 msgid "Livelihood Zone Baselines"
 msgstr "Líneas de base de la zona de medios de vida"
 
-#: templates/admin/app_list.html:57 templates/admin/nav_sidebar.html:39
+#: templates/admin/app_list.html:52 templates/admin/nav_sidebar.html:39
 msgid "Communities"
 msgstr "Comunidades"
 
-#: templates/admin/app_list.html:69
+#: templates/admin/app_list.html:64
 msgid "BSS WB,Data,.. Sheets"
 msgstr "BSS WB, Datos, .. Hojas"
 
-#: templates/admin/app_list.html:75 templates/admin/nav_sidebar.html:57
+#: templates/admin/app_list.html:70 templates/admin/nav_sidebar.html:83
 msgid "Wealth Group Data"
 msgstr "Datos del grupo de patrimonio"
 
-#: templates/admin/app_list.html:85 templates/admin/nav_sidebar.html:62
+#: templates/admin/app_list.html:81 templates/admin/nav_sidebar.html:50
+msgid "Wealth, Activity and Strategy Insights"
+msgstr "Información sobre riqueza, actividad y estrategia"
+
+#: templates/admin/app_list.html:87 templates/admin/nav_sidebar.html:56
+msgid "Wealth Group Characteristic Value"
+msgstr "Características del grupo de riqueza"
+
+#: templates/admin/app_list.html:98 templates/admin/nav_sidebar.html:66
+#: templates/admin/nav_sidebar.html:88
 msgid "Livelihood Strategy"
 msgstr "Estrategia de medios de vida"
 
-#: templates/admin/app_list.html:95
+#: templates/admin/app_list.html:109 templates/admin/nav_sidebar.html:61
+msgid "Livelihood Activity"
+msgstr "Estrategia de medios de vida"
+
+#: templates/admin/app_list.html:119
 msgid "BSS Production Sheet"
 msgstr "Hoja de producción de BSS"
 
-#: templates/admin/app_list.html:102 templates/admin/nav_sidebar.html:80
+#: templates/admin/app_list.html:126 templates/admin/nav_sidebar.html:106
 msgid "Crop Production"
 msgstr "Producciones de cultivos"
 
-#: templates/admin/app_list.html:112 templates/admin/nav_sidebar.html:85
+#: templates/admin/app_list.html:136 templates/admin/nav_sidebar.html:111
 msgid "Livestock Production"
 msgstr "Producciones ganaderas"
 
-#: templates/admin/app_list.html:123 templates/admin/app_list.html:140
-#: templates/admin/nav_sidebar.html:96 templates/admin/nav_sidebar.html:107
+#: templates/admin/app_list.html:147 templates/admin/app_list.html:164
+#: templates/admin/nav_sidebar.html:122 templates/admin/nav_sidebar.html:133
 msgid "Market Prices"
 msgstr "Precios de mercado"
 
-#: templates/admin/app_list.html:130
+#: templates/admin/app_list.html:154
 msgid "Market"
 msgstr "Mercado"
 
-#: templates/admin/app_list.html:151 templates/admin/nav_sidebar.html:119
+#: templates/admin/app_list.html:175 templates/admin/nav_sidebar.html:145
 msgid "Seasonal Calendars"
 msgstr "Calendarios estacionales"
 
-#: templates/admin/app_list.html:158 templates/admin/nav_sidebar.html:125
+#: templates/admin/app_list.html:182 templates/admin/nav_sidebar.html:151
 msgid "Seasonal Activity Type"
 msgstr "Tipo de actividad estacional"
 
-#: templates/admin/app_list.html:168 templates/admin/nav_sidebar.html:130
+#: templates/admin/app_list.html:192 templates/admin/nav_sidebar.html:156
 msgid "Seasonal Activities"
 msgstr "Actividades estacionales"
 
-#: templates/admin/app_list.html:178 templates/admin/nav_sidebar.html:135
+#: templates/admin/app_list.html:202 templates/admin/nav_sidebar.html:161
 msgid "Activity Occurrences"
 msgstr "Ocurrencias de actividad"
 
-#: templates/admin/app_list.html:189 templates/admin/nav_sidebar.html:146
+#: templates/admin/app_list.html:213 templates/admin/nav_sidebar.html:172
 msgid "Hazards and Events"
 msgstr "Peligros y eventos"
 
-#: templates/admin/app_list.html:196 templates/admin/nav_sidebar.html:152
+#: templates/admin/app_list.html:220 templates/admin/nav_sidebar.html:178
 msgid "Annual Production Performances"
 msgstr "Actuaciones de producción anuales"
 
-#: templates/admin/app_list.html:206 templates/admin/nav_sidebar.html:157
+#: templates/admin/app_list.html:230 templates/admin/nav_sidebar.html:183
 msgid "Hazards"
 msgstr "Peligros"
 
-#: templates/admin/app_list.html:216 templates/admin/nav_sidebar.html:162
+#: templates/admin/app_list.html:240 templates/admin/nav_sidebar.html:188
 msgid "Events"
 msgstr "Eventos"
 
-#: templates/admin/app_list.html:228 templates/admin/nav_sidebar.html:175
+#: templates/admin/app_list.html:252 templates/admin/nav_sidebar.html:201
 msgid "Expandability and Coping"
 msgstr "Expandido y afrontamiento"
 
-#: templates/admin/app_list.html:235 templates/admin/nav_sidebar.html:181
+#: templates/admin/app_list.html:259 templates/admin/nav_sidebar.html:207
 msgid "Expandability Factors"
 msgstr "Factores de expansión"
 
-#: templates/admin/app_list.html:245 templates/admin/nav_sidebar.html:186
+#: templates/admin/app_list.html:269 templates/admin/nav_sidebar.html:212
 msgid "Coping Strategies"
 msgstr "Estrategias de afrontamiento"
 
-#: templates/admin/app_list.html:257 templates/admin/nav_sidebar.html:199
+#: templates/admin/app_list.html:281 templates/admin/nav_sidebar.html:225
 msgid "Common"
 msgstr "Común"
 
-#: templates/admin/app_list.html:262 templates/admin/nav_sidebar.html:204
+#: templates/admin/app_list.html:286 templates/admin/nav_sidebar.html:230
 msgid "Countries"
 msgstr "Países"
 
-#: templates/admin/app_list.html:269 templates/admin/nav_sidebar.html:207
+#: templates/admin/app_list.html:293 templates/admin/nav_sidebar.html:233
 msgid "Currencies"
 msgstr "Monedas"
 
-#: templates/admin/app_list.html:276 templates/admin/nav_sidebar.html:210
+#: templates/admin/app_list.html:300 templates/admin/nav_sidebar.html:236
 msgid "Products"
 msgstr "Productos"
 
-#: templates/admin/app_list.html:283 templates/admin/nav_sidebar.html:213
+#: templates/admin/app_list.html:307 templates/admin/nav_sidebar.html:239
 msgid "Units of Measure"
 msgstr "Unidades de medida"
 
-#: templates/admin/app_list.html:292 templates/admin/nav_sidebar.html:225
+#: templates/admin/app_list.html:316 templates/admin/nav_sidebar.html:251
 msgid "Metadata"
 msgstr "Metadatos"
 
-#: templates/admin/app_list.html:297 templates/admin/nav_sidebar.html:230
+#: templates/admin/app_list.html:321 templates/admin/nav_sidebar.html:256
 msgid "Hazard Categories"
 msgstr "Categorías de peligro"
 
-#: templates/admin/app_list.html:304 templates/admin/nav_sidebar.html:233
+#: templates/admin/app_list.html:328 templates/admin/nav_sidebar.html:259
 msgid "Livelihood Categories"
 msgstr "Categorías de medios de vida"
 
-#: templates/admin/app_list.html:311 templates/admin/nav_sidebar.html:236
+#: templates/admin/app_list.html:335 templates/admin/nav_sidebar.html:262
 msgid "Seasons"
 msgstr "Estaciones"
 
-#: templates/admin/app_list.html:318 templates/admin/nav_sidebar.html:239
+#: templates/admin/app_list.html:342 templates/admin/nav_sidebar.html:265
 msgid "Wealth Categories"
 msgstr "Categorías de riqueza"
 
-#: templates/admin/app_list.html:326 templates/admin/nav_sidebar.html:242
+#: templates/admin/app_list.html:350 templates/admin/nav_sidebar.html:268
 msgid "Wealth Group Characteristics"
 msgstr "Características del grupo de riqueza"
 
-#: templates/admin/app_list.html:336 templates/admin/nav_sidebar.html:255
+#: templates/admin/app_list.html:360 templates/admin/nav_sidebar.html:281
 msgid "User management"
 msgstr "Gestión de usuarios"
 
-#: templates/admin/app_list.html:341 templates/admin/nav_sidebar.html:260
+#: templates/admin/app_list.html:365 templates/admin/nav_sidebar.html:286
 msgid "Users"
 msgstr "Usuarios"
 
-#: templates/admin/app_list.html:348 templates/admin/nav_sidebar.html:262
+#: templates/admin/app_list.html:372 templates/admin/nav_sidebar.html:288
 msgid "Groups"
 msgstr "Grupos"
 
-#: templates/admin/app_list.html:355
+#: templates/admin/app_list.html:379
 msgid "You don’t have permission to view or edit anything."
 msgstr "No tiene permiso para ver ni editar nada."
 
@@ -278,18 +286,18 @@ msgstr "Contenido desconocido"
 msgid "Sidebar"
 msgstr "Barra lateral"
 
-#: templates/admin/nav_sidebar.html:51
+#: templates/admin/nav_sidebar.html:77
 msgid "BSS WB, Data,.. Sheets"
 msgstr "BSS WB, Datos, .. Hojas"
 
-#: templates/admin/nav_sidebar.html:74
+#: templates/admin/nav_sidebar.html:100
 msgid "BSS Production Data"
 msgstr "Datos de producción de BSS"
 
-#: templates/admin/nav_sidebar.html:102
+#: templates/admin/nav_sidebar.html:128
 msgid "Markets"
 msgstr "Mercados"
 
-#: templates/admin/nav_sidebar.html:273
+#: templates/admin/nav_sidebar.html:299
 msgid "Toggle navigation"
 msgstr "Navegación de palanca"

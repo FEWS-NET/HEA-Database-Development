@@ -1,3 +1,5 @@
+from html import escape
+
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.test import TestCase
@@ -129,7 +131,7 @@ class ClassifiedProductAdminTestCase(TestCase):
             "es": (
                 "Descripción (Inglés):",
                 "Descripción (Portugués):",
-                "Descripción (Árabe):",
+                "Descripción (Arábica):",
                 "Descripción (Español):",
                 "Descripción (Francés):",
             ),
@@ -141,11 +143,11 @@ class ClassifiedProductAdminTestCase(TestCase):
                 "Description (Français):",
             ),
             "ar": (
-                "وصف (الإنجليزيّة):",
-                "وصف (البرتغاليّة):",
-                "وصف (العربيّة):",
-                "وصف (الإسبانيّة):",
-                "وصف (الفرنسيّة):",
+                "وصف (إنجليزي):",
+                "وصف (البرتغالية):",
+                "وصف (عربي):",
+                "وصف (الأسبانية):",
+                "وصف (فرنسي):",
             ),
             "pt": (
                 "Descrição (Inglês):",
@@ -157,10 +159,11 @@ class ClassifiedProductAdminTestCase(TestCase):
         }
         for code in translations:
             translation.activate(code)
-            response = self.client.get(reverse("admin:common_classifiedproduct_add"))
+            url = reverse("admin:common_classifiedproduct_add")
+            response = self.client.get(url)
             for trans in translations[code]:
-                with self.subTest(language=code, trans=trans):
-                    self.assertContains(response, trans, msg_prefix=f"Language={code}")
+                with self.subTest(language=code, trans=trans, url=url):
+                    self.assertContains(response, escape(trans), html=True, msg_prefix=response.content.decode())
 
     def test_list_classified_product(self):
         # There are many products, so filter by the prefix, to guarantee that the product appears on the first page

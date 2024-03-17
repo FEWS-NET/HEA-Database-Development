@@ -926,7 +926,7 @@ class ClassifiedProduct(MP_Node, Model):
             "stored as XXXX.YY "
         ),
     )
-    scientific_name = models.CharField(max_length=100, verbose_name="scientific name", blank=True, null=True)
+    scientific_name = models.CharField(max_length=100, verbose_name=_("scientific name"), blank=True, null=True)
 
     unit_of_measure = models.ForeignKey(
         UnitOfMeasure,
