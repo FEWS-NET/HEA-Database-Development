@@ -506,9 +506,14 @@ def get_instances_from_dataframe(
             if any(value for value in df.loc[row, "B":].astype(str).str.strip()):
                 # Make sure we have an attribute!
                 if not activity_attribute:
+                    rows = df.index[:num_header_rows].tolist() + [row]
                     raise ValueError(
                         "Found values in row %s for label '%s' without an identified attribute:\n%s"
-                        % (row, label, df.loc[row, "B":].replace("", pd.NA).dropna().transpose().to_markdown())
+                        % (
+                            row,
+                            label,
+                            df.loc[rows].replace("", pd.NA).dropna(axis="columns", subset=row).to_markdown(),
+                        )
                     )
                 # If the activity label that marks the start of a Livelihood Strategy is not in the
                 # `ActivityLabel.objects.all()`, and hence not in the  `activity_label_map`, then repeated
@@ -537,14 +542,20 @@ def get_instances_from_dataframe(
                         livelihood_activities_for_strategy[i][activity_attribute] = value
 
         except Exception as e:
+            worksheet = {
+                ActivityLabel.LivelihoodActivityType.LIVELIHOOD_ACTIVITY: "Data",
+                ActivityLabel.LivelihoodActivityType.OTHER_CASH_INCOME: "Data2",
+                ActivityLabel.LivelihoodActivityType.WILD_FOODS: "Data3",
+            }.get(activity_type)
             if column:
                 raise RuntimeError(
-                    "Unhandled error in %s processing cell 'Data'!%s%s for label '%s'"
-                    % (partition_key, column, row, label)
+                    "Unhandled error in %s processing cell '%s'!%s%s for label '%s'"
+                    % (partition_key, worksheet, column, row, label)
                 ) from e
             else:
                 raise RuntimeError(
-                    "Unhandled error in %s processing row 'Data'!%s with label '%s'" % (partition_key, row, label)
+                    "Unhandled error in %s processing row '%s'!%s with label '%s'"
+                    % (partition_key, worksheet, row, label)
                 ) from e
 
     raise_errors = False
