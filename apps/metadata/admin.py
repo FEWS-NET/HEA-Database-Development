@@ -141,6 +141,7 @@ class ActivityLabelAdmin(admin.ModelAdmin):
         "season",
         "additional_identifier",
         "attribute",
+        "notes",
     )
     list_display = (
         "activity_label",
@@ -161,6 +162,7 @@ class ActivityLabelAdmin(admin.ModelAdmin):
     list_filter = (
         "activity_type",
         "strategy_type",
+        "attribute",
     )
 
 
@@ -170,6 +172,7 @@ class WealthCharacteristicLabelAdmin(admin.ModelAdmin):
         "wealth_characteristic",
         "product",
         "unit_of_measure",
+        "notes",
     )
     list_display = (
         "wealth_characteristic_label",
