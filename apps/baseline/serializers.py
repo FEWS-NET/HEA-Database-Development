@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from common.fields import translation_fields
+
 from .models import (
     BaselineLivelihoodActivity,
     BaselineWealthGroup,
@@ -82,7 +84,8 @@ class LivelihoodZoneBaselineSerializer(serializers.ModelSerializer):
             "geography",
             "main_livelihood_category",
             "bss",
-            "profile_report",
+            "bss_language",
+            *translation_fields("profile_report"),
             "reference_year_start_date",
             "reference_year_end_date",
             "valid_from_date",
@@ -95,6 +98,10 @@ class LivelihoodZoneBaselineSerializer(serializers.ModelSerializer):
     source_organization_name = serializers.CharField(source="source_organization.pk", read_only=True)
     livelihood_zone_country = serializers.CharField(source="livelihood_zone.country.pk", read_only=True)
     livelihood_zone_country_name = serializers.CharField(source="livelihood_zone.country.name", read_only=True)
+    bss_language = serializers.SerializerMethodField()
+
+    def get_bss_language(self, obj):
+        return obj.get_bss_language_display()
 
 
 class LivelihoodProductCategorySerializer(serializers.ModelSerializer):

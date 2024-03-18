@@ -7,6 +7,8 @@ from django.contrib.auth.models import User
 from django.urls import reverse
 from rest_framework.test import APITestCase
 
+from common.fields import translation_fields
+
 from .factories import (
     BaselineLivelihoodActivityFactory,
     BaselineWealthGroupFactory,
@@ -298,7 +300,8 @@ class LivelihoodZoneBaselineViewSetTestCase(APITestCase):
             "geography",
             "main_livelihood_category",
             "bss",
-            "profile_report",
+            "bss_language",
+            *translation_fields("profile_report"),
             "reference_year_start_date",
             "reference_year_end_date",
             "valid_from_date",

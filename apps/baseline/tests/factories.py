@@ -111,10 +111,9 @@ class LivelihoodZoneBaselineFactory(factory.django.DjangoModelFactory):
     name_pt = factory.LazyAttribute(lambda lz: f"Baseline {lz.livelihood_zone}")
     name_ar = factory.LazyAttribute(lambda lz: f"Baseline {lz.livelihood_zone}")
     livelihood_zone = factory.SubFactory(LivelihoodZoneFactory)
-    geography = None
     main_livelihood_category = factory.SubFactory(LivelihoodCategoryFactory)
     source_organization = factory.SubFactory(SourceOrganizationFactory)
-    bss = None
+    bss_language = factory.Iterator(["en", "pt", "es", "ar", "fr"])
     reference_year_start_date = factory.Sequence(lambda n: datetime.date(1900, 1, 1) + datetime.timedelta(days=n))
     reference_year_end_date = factory.Sequence(lambda n: datetime.date(1900, 1, 1) + datetime.timedelta(days=n + 10))
     valid_from_date = factory.Sequence(lambda n: datetime.date(1900, 1, 1) + datetime.timedelta(days=n))
