@@ -88,11 +88,10 @@ import pandas as pd
 from dagster import AssetExecutionContext, MetadataValue, Output, asset
 from openpyxl.utils import get_column_letter
 
+from ..configs import BSSMetadataConfig
+from ..partitions import bss_files_partitions_def, bss_instances_partitions_def
 from ..utils import get_index, verbose_pivot
 from .base import (
-    BSSMetadataConfig,
-    bss_files_partitions_def,
-    bss_instances_partitions_def,
     get_all_bss_labels_dataframe,
     get_bss_dataframe,
     get_bss_label_dataframe,

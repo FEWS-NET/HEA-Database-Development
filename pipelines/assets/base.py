@@ -2,7 +2,6 @@
 Base functions for performing operations on BSS spreadsheets.
 """
 
-import json
 import numbers
 import os
 from io import BytesIO
@@ -16,10 +15,7 @@ import xlrd
 import xlwt
 from dagster import (
     AssetExecutionContext,
-    Config,
     DagsterEventType,
-    DynamicPartitionsDefinition,
-    EnvVar,
     EventRecordsFilter,
     MetadataValue,
     Output,
@@ -29,10 +25,11 @@ from gdrivefs.core import GoogleDriveFile
 from openpyxl.comments import Comment
 from openpyxl.utils import get_column_letter
 from openpyxl.utils.cell import coordinate_to_tuple, rows_from_range
-from pydantic import Field
 from upath import UPath
 from xlutils.copy import copy as copy_xls
 
+from ..configs import BSSMetadataConfig
+from ..partitions import bss_files_partitions_def
 from ..utils import get_index
 
 # set the default Django settings module
@@ -62,27 +59,6 @@ SUMMARY_LABELS = [
     "range",
     "interval",
 ]
-
-# List of files in the BSS root folder
-bss_files_partitions_def = DynamicPartitionsDefinition(name="bss_files")
-
-# List of instances in the LivelihoodBaseline model
-bss_instances_partitions_def = DynamicPartitionsDefinition(name="bss_instances")
-
-
-class BSSMetadataConfig(Config):
-    # The fspec path of the spreadsheet containing the BSS Metadata and Corrections
-    bss_metadata_workbook: str = EnvVar("BSS_METADATA_WORKBOOK")
-    # The fsspec storage options for the BSS metadata spreadsheet
-    bss_metadata_storage_options: dict = json.loads(EnvVar("BSS_METADATA_STORAGE_OPTIONS").get_value("{}"))
-    # The fspec path of the root folder containing the BSSs
-    # For example:
-    # "/home/user/Temp/Baseline Storage Sheets (BSS)"
-    # or "gdrive://Discovery Folder/Baseline Storage Sheets (BSS)"
-    bss_files_folder: str = EnvVar("BSS_FILES_FOLDER")
-    # The fsspec storage options for the BSS root folder
-    bss_files_storage_options: dict = json.loads(EnvVar("BSS_FILES_STORAGE_OPTIONS").get_value("{}"))
-    preview_rows: int = Field(default=10, description="The number of rows to show in DataFrame previews")
 
 
 @asset
