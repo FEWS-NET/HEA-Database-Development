@@ -142,6 +142,8 @@ def get_instances_from_dataframe(
     """
     LivelhoodStrategy and LivelihoodActivity instances extracted from the BSS from the Data, Data2 or Data3 worksheets.
     """
+    errors = []
+
     # Save the natural key to the livelihood zone baseline for later use.
     livelihoodzonebaseline = [metadata["code"], metadata["reference_year_end_date"].isoformat()]
 
@@ -369,12 +371,6 @@ def get_instances_from_dataframe(
                     # Activities in the fixture, or raise an exception.
                     strategy_is_valid = True
 
-                    # Check the Livelihood Strategy has a product_id if one is required.
-                    if livelihood_strategy["strategy_type"] in LivelihoodStrategy.REQUIRES_PRODUCT and (
-                        "product_id" not in livelihood_strategy or not livelihood_strategy["product_id"]
-                    ):
-                        strategy_is_valid = False
-
                     non_empty_summary_activities = [
                         livelihood_activity
                         for livelihood_activity in livelihood_activities_for_strategy
@@ -388,8 +384,34 @@ def get_instances_from_dataframe(
                         )
                     ]
 
-                    # For invalid strategies, we only proceed if there are Summary Livelihood Activities
-                    if strategy_is_valid or non_empty_summary_activities:
+                    # Check the Livelihood Strategy has a product_id if one is required.
+                    if livelihood_strategy["strategy_type"] in LivelihoodStrategy.REQUIRES_PRODUCT and (
+                        "product_id" not in livelihood_strategy or not livelihood_strategy["product_id"]
+                    ):
+                        strategy_is_valid = False
+                        if not non_empty_summary_activities:
+                            # No summary activities so we don't need to log an error, a warning is sufficient
+                            context.log.warning(
+                                "Cannot determine product_id for non-summary %s %s on row %s"
+                                % (
+                                    livelihood_strategy["strategy_type"],
+                                    livelihood_strategy["activity_label"],
+                                    livelihood_strategy["row"],
+                                )
+                            )
+                        else:
+                            # Summary activities exist, so we need to raise an error
+                            errors.append(
+                                "Cannot determine product_id for summary %s %s on row %s"
+                                % (
+                                    livelihood_strategy["strategy_type"],
+                                    livelihood_strategy["activity_label"],
+                                    livelihood_strategy["row"],
+                                )
+                            )
+
+                    # For invalid strategies, we have appended an error, and can raise them all at the end.
+                    if strategy_is_valid:
 
                         # Append the stategies and activities to the lists of instances to create.
                         livelihood_strategies.append(livelihood_strategy)
@@ -525,24 +547,8 @@ def get_instances_from_dataframe(
                     "Unhandled error in %s processing row 'Data'!%s with label '%s'" % (partition_key, row, label)
                 ) from e
 
-    # Basic checks to ensure that the metadata is consistent and complete
-    errors = []
-
-    for livelihood_strategy in livelihood_strategies:
-        # Check the Livelihood Strategy has a product_id if one is required.
-        if livelihood_strategy["strategy_type"] in LivelihoodStrategy.REQUIRES_PRODUCT and (
-            "product_id" not in livelihood_strategy or not livelihood_strategy["product_id"]
-        ):
-            errors.append(
-                "Cannot determine product_id for %s %s on row %s"
-                % (
-                    livelihood_strategy["strategy_type"],
-                    livelihood_strategy["activity_label"],
-                    livelihood_strategy["row"],
-                )
-            )
-
-    if errors:
+    raise_errors = False
+    if errors and raise_errors:
         errors = "\n".join(errors)
         raise RuntimeError("Missing or inconsistent metadata in BSS %s:\n%s" % (partition_key, errors))
 
