@@ -322,6 +322,29 @@ def get_instances_from_dataframe(
                                 if livelihood_activity["type_of_milk_sold_or_other_uses"]
                                 else MilkProduction.MilkType.SKIM
                             )
+
+                    # Add the `type_of_milk_consumed`, because it is not present in any current BSS
+                    if (
+                        livelihood_strategy["strategy_type"] == "MilkProduction"
+                        and "type_of_milk_consumed" not in livelihood_strategy["attribute_rows"]
+                    ):
+                        for livelihood_activity in livelihood_activities_for_strategy:
+                            # We assume that people drink whole milk. This is not always true, but is the assumption
+                            # that is embedded in the ButterProduction calculations in current BSSs
+                            livelihood_activity["type_of_milk_consumed"] = MilkProduction.MilkType.WHOLE
+
+                    # Add the `times_per_year` to FoodPurchase, because it is not present in any current BSS
+                    if (
+                        livelihood_strategy["strategy_type"] == "FoodPurchase"
+                        and "times_per_year" not in livelihood_strategy["attribute_rows"]
+                    ):
+                        for livelihood_activity in livelihood_activities_for_strategy:
+                            livelihood_activity["times_per_year"] = (
+                                livelihood_activity["times_per_month"] * livelihood_activity["months_per_year"]
+                                if livelihood_activity["times_per_month"] and livelihood_activity["months_per_year"]
+                                else None
+                            )
+
                     # Lookup the season name from the alias used in the BSS to create the natural key
                     livelihood_strategy["season"] = (
                         [seasonnamelookup.get(livelihood_strategy["season"], country_id=metadata["country_id"])]
