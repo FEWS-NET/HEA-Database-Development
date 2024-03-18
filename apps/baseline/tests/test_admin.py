@@ -212,6 +212,11 @@ class LivelihoodZoneBaselineAdminTestCase(TestCase):
             "valid_to_date": "2033-12-31",
             "population_source": "New Test Source",
             "population_estimate": 15000,
+            # Management form data for corrections formset
+            "corrections-TOTAL_FORMS": "0",
+            "corrections-INITIAL_FORMS": "0",
+            "corrections-MIN_NUM_FORMS": "0",
+            "corrections-MAX_NUM_FORMS": "1000",
         }
         response = self.client.post(reverse("admin:baseline_livelihoodzonebaseline_add"), data)
         self.assertEqual(response.status_code, 302)
