@@ -219,9 +219,9 @@ def corrected_files(
         if not isinstance(prev_value, numbers.Number):
             prev_value = str(prev_value).strip()
             expected_prev_value = str(expected_prev_value).strip()
-            for null_value in ["None", "nan", "N/A", "#N/A"]:
+            for null_value in ["None", "nan", "#N/A", "N/A"]:  # Note that #N/A must be before N/A!
                 prev_value = prev_value.replace(null_value, "")
-                expected_prev_value = prev_value.replace(null_value, "")
+                expected_prev_value = expected_prev_value.replace(null_value, "")
         if expected_prev_value != prev_value:
             raise ValueError(
                 "Unexpected prior value in source BSS. "
@@ -342,7 +342,7 @@ def get_bss_dataframe(
         num_summary_cols = df.loc[3, "B":end_col].dropna().nunique()
     end_col = df.columns[df.columns.get_loc(end_col) + num_summary_cols]
 
-    # Find the row index of the start of the Livelihood Activities
+    # Find the row index of the start of the Livelihood Activities or Wealth Group Characteristic Values
     start_row = get_index(start_strings, df.loc[1:, "A"])
     if start_row == 1:
         raise ValueError(f'No cell in Column A containing any of the start strings: {", ".join(start_strings)}')
