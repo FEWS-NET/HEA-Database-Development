@@ -51,7 +51,6 @@ An example of relevant rows from the worksheet:
 
 import json
 import os
-import warnings
 from typing import Any
 
 import django
@@ -133,7 +132,12 @@ def summary_livelihood_activity_labels_dataframe(
 
 
 def get_instances_from_dataframe(
-    df: pd.DataFrame, metadata: dict[str:Any], activity_type: str, num_header_rows: int, partition_key: str
+    context: AssetExecutionContext,
+    df: pd.DataFrame,
+    metadata: dict[str:Any],
+    activity_type: str,
+    num_header_rows: int,
+    partition_key: str,
 ) -> Output[dict]:
     """
     LivelhoodStrategy and LivelihoodActivity instances extracted from the BSS from the Data, Data2 or Data3 worksheets.
@@ -193,7 +197,7 @@ def get_instances_from_dataframe(
         unrecognized_labels.columns = ["label", "rows"]
         message = "Unrecognized activity labels:\n\n" + unrecognized_labels.to_markdown(index=False)
         if allow_unrecognized_labels:
-            warnings.warn(message)
+            context.log.warning(message)
         else:
             raise ValueError(message)
 
@@ -562,6 +566,7 @@ def livelihood_activity_instances(
     except IndexError:
         raise ValueError("No complete entry in the BSS Metadata worksheet for %s" % partition_key)
     output = get_instances_from_dataframe(
+        context,
         livelihood_activity_dataframe,
         metadata,
         ActivityLabel.LivelihoodActivityType.LIVELIHOOD_ACTIVITY,

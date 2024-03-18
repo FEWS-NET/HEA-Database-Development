@@ -140,6 +140,7 @@ def other_cash_income_instances(
         raise ValueError("%s does not contain a Data2 worksheet" % partition_key)
 
     output = get_instances_from_dataframe(
+        context,
         other_cash_income_dataframe,
         metadata,
         ActivityLabel.LivelihoodActivityType.OTHER_CASH_INCOME,

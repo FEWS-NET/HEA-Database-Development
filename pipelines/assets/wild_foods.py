@@ -151,6 +151,7 @@ def wild_foods_instances(
         raise ValueError("%s does not contain a Data3 worksheet" % partition_key)
 
     output = get_instances_from_dataframe(
+        context,
         wild_foods_dataframe,
         metadata,
         ActivityLabel.LivelihoodActivityType.WILD_FOODS,
