@@ -34,7 +34,7 @@ class Migration(migrations.Migration):
                 (
                     "worksheet_name",
                     models.CharField(
-                        choices=[("wb", "Wb"), ("data", "Data"), ("data2", "Data2"), ("data3", "Data3")],
+                        choices=[("WB", "WB"), ("Data", "Data"), ("Data2", "Data2"), ("Data3", "Data3")],
                         max_length=20,
                         verbose_name="Worksheet name",
                     ),

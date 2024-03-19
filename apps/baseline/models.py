@@ -280,6 +280,9 @@ class LivelihoodZoneBaselineCorrection(common_models.Model):
         help_text=_("Required comment about the correction suggested"),
     )
 
+    def __str__(self):
+        return f"{str(self.livelihood_zone_baseline)} {self.worksheet_name} {self.cell_range}"
+
 
 # @TODO Can we have a better name.
 class LivelihoodProductCategory(common_models.Model):
