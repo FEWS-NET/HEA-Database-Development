@@ -10,7 +10,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("baseline", "0009_hunting_alter_livelihoodactivity_strategy_type_and_more"),
+        ("baseline", "0011_livelihoodzonebaseline_bss_language"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
