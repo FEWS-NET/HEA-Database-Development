@@ -411,6 +411,7 @@ class ActivityLabel(common_models.Model):
     season = models.CharField(max_length=60, blank=True, verbose_name=_("Season"))
     additional_identifier = models.CharField(max_length=60, blank=True, verbose_name=_("Season"))
     attribute = models.CharField(max_length=60, blank=True, verbose_name=_("Attribute"))
+    notes = models.TextField(blank=True, verbose_name=_("Notes"))
 
     class ExtraMeta:
         identifier = ["activity_label"]
@@ -463,6 +464,7 @@ class WealthCharacteristicLabel(common_models.Model):
         verbose_name=_("Unit of Measure"),
         related_name="wealth_characteristics",
     )
+    notes = models.TextField(blank=True, verbose_name=_("Notes"))
 
     class ExtraMeta:
         identifier = ["wealth_characteristic_label"]

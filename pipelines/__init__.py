@@ -45,6 +45,7 @@ from .assets.wild_foods import (
     wild_foods_instances,
     wild_foods_label_dataframe,
 )
+from .jobs.fixtures import import_baseline_from_fixture
 from .jobs.metadata import update_metadata
 from .resources import (
     DataFrameCSVIOManager,
@@ -91,7 +92,7 @@ defs = Definitions(
         uploaded_baseline,
         imported_baseline,
     ],
-    jobs=[update_metadata],
+    jobs=[update_metadata, import_baseline_from_fixture],
     resources={
         "io_manager": PickleIOManager(base_path=EnvVar("DAGSTER_ASSET_BASE_PATH")),  # Used by default
         "json_io_manager": JSONIOManager(base_path=EnvVar("DAGSTER_ASSET_BASE_PATH")),

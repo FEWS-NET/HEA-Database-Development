@@ -88,11 +88,10 @@ import pandas as pd
 from dagster import AssetExecutionContext, MetadataValue, Output, asset
 from openpyxl.utils import get_column_letter
 
+from ..configs import BSSMetadataConfig
+from ..partitions import bss_files_partitions_def, bss_instances_partitions_def
 from ..utils import get_index, verbose_pivot
 from .base import (
-    BSSMetadataConfig,
-    bss_files_partitions_def,
-    bss_instances_partitions_def,
     get_all_bss_labels_dataframe,
     get_bss_dataframe,
     get_bss_label_dataframe,
@@ -183,7 +182,7 @@ def wealth_characteristic_instances(
     livelihoodzonebaseline = [metadata["code"], metadata["reference_year_end_date"].isoformat()]
 
     df = wealth_characteristic_dataframe
-    header_rows = 3  # wealth group category, district, village
+    num_header_rows = 3  # wealth group category, district, village
 
     # Prepare the lookups, so they cache the individual results
     wealthgroupcategorylookup = WealthGroupCategoryLookup()
@@ -253,16 +252,19 @@ def wealth_characteristic_instances(
     # Check that we recognize all of the wealth characteristic labels
     allow_unrecognized_labels = True
     unrecognized_labels = (
-        df.iloc[header_rows:][
-            ~df.iloc[header_rows:]["A"].str.lower().isin(label_map) & (df.iloc[header_rows:]["A"].str.strip() != "")
+        df.iloc[num_header_rows:][
+            ~df.iloc[num_header_rows:]["A"].str.strip().str.lower().isin(label_map)
+            & (df.iloc[num_header_rows:]["A"].str.strip() != "")
         ]
         .groupby("A")
         .apply(lambda x: ", ".join(x.index.astype(str)))
-        .reset_index()
     )
-    unrecognized_labels.columns = ["label", "rows"]
-    if not unrecognized_labels.empty:
-        message = "Unrecognized activity labels:\n\n" + unrecognized_labels.to_markdown()
+    if unrecognized_labels.empty:
+        unrecognized_labels = pd.DataFrame(columns=["label", "rows"])
+    else:
+        unrecognized_labels = unrecognized_labels.reset_index()
+        unrecognized_labels.columns = ["label", "rows"]
+        message = "Unrecognized wealth characteristic labels:\n\n" + unrecognized_labels.to_markdown(index=False)
         if allow_unrecognized_labels:
             context.log.warning(message)
         else:
@@ -280,7 +282,7 @@ def wealth_characteristic_instances(
 
     # Iterate over the rows
     wealth_group_characteristic_values = []
-    for row in df.iloc[header_rows:].index:  # Ignore the Wealth Group header rows
+    for row in df.iloc[num_header_rows:].index:  # Ignore the Wealth Group header rows
         label = df.loc[row, "A"].strip().lower()
         if not label:
             # Ignore blank rows
@@ -446,8 +448,8 @@ def wealth_characteristic_instances(
         "pct_rows_recognized": round(
             (
                 1
-                - len(df.iloc[header_rows:][df.iloc[header_rows:]["A"].isin(unrecognized_labels["label"])])
-                / len(df.iloc[header_rows:])
+                - len(df.iloc[num_header_rows:][df.iloc[num_header_rows:]["A"].isin(unrecognized_labels["label"])])
+                / len(df.iloc[num_header_rows:])
             )
             * 100
         ),

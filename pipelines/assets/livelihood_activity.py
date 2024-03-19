@@ -51,18 +51,16 @@ An example of relevant rows from the worksheet:
 
 import json
 import os
-import warnings
 from typing import Any
 
 import django
 import pandas as pd
 from dagster import AssetExecutionContext, MetadataValue, Output, asset
 
+from ..configs import BSSMetadataConfig
+from ..partitions import bss_files_partitions_def, bss_instances_partitions_def
 from ..utils import class_from_name
 from .base import (
-    BSSMetadataConfig,
-    bss_files_partitions_def,
-    bss_instances_partitions_def,
     get_all_bss_labels_dataframe,
     get_bss_dataframe,
     get_bss_label_dataframe,
@@ -134,11 +132,18 @@ def summary_livelihood_activity_labels_dataframe(
 
 
 def get_instances_from_dataframe(
-    df: pd.DataFrame, metadata: dict[str:Any], activity_type: str, num_header_rows: int, partition_key: str
+    context: AssetExecutionContext,
+    df: pd.DataFrame,
+    metadata: dict[str:Any],
+    activity_type: str,
+    num_header_rows: int,
+    partition_key: str,
 ) -> Output[dict]:
     """
     LivelhoodStrategy and LivelihoodActivity instances extracted from the BSS from the Data, Data2 or Data3 worksheets.
     """
+    errors = []
+
     # Save the natural key to the livelihood zone baseline for later use.
     livelihoodzonebaseline = [metadata["code"], metadata["reference_year_end_date"].isoformat()]
 
@@ -194,7 +199,7 @@ def get_instances_from_dataframe(
         unrecognized_labels.columns = ["label", "rows"]
         message = "Unrecognized activity labels:\n\n" + unrecognized_labels.to_markdown(index=False)
         if allow_unrecognized_labels:
-            warnings.warn(message)
+            context.log.warning(message)
         else:
             raise ValueError(message)
 
@@ -319,6 +324,29 @@ def get_instances_from_dataframe(
                                 if livelihood_activity["type_of_milk_sold_or_other_uses"]
                                 else MilkProduction.MilkType.SKIM
                             )
+
+                    # Add the `type_of_milk_consumed`, because it is not present in any current BSS
+                    if (
+                        livelihood_strategy["strategy_type"] == "MilkProduction"
+                        and "type_of_milk_consumed" not in livelihood_strategy["attribute_rows"]
+                    ):
+                        for livelihood_activity in livelihood_activities_for_strategy:
+                            # We assume that people drink whole milk. This is not always true, but is the assumption
+                            # that is embedded in the ButterProduction calculations in current BSSs
+                            livelihood_activity["type_of_milk_consumed"] = MilkProduction.MilkType.WHOLE
+
+                    # Add the `times_per_year` to FoodPurchase, because it is not present in any current BSS
+                    if (
+                        livelihood_strategy["strategy_type"] == "FoodPurchase"
+                        and "times_per_year" not in livelihood_strategy["attribute_rows"]
+                    ):
+                        for livelihood_activity in livelihood_activities_for_strategy:
+                            livelihood_activity["times_per_year"] = (
+                                livelihood_activity["times_per_month"] * livelihood_activity["months_per_year"]
+                                if livelihood_activity["times_per_month"] and livelihood_activity["months_per_year"]
+                                else None
+                            )
+
                     # Lookup the season name from the alias used in the BSS to create the natural key
                     livelihood_strategy["season"] = (
                         [seasonnamelookup.get(livelihood_strategy["season"], country_id=metadata["country_id"])]
@@ -343,12 +371,6 @@ def get_instances_from_dataframe(
                     # Activities in the fixture, or raise an exception.
                     strategy_is_valid = True
 
-                    # Check the Livelihood Strategy has a product_id if one is required.
-                    if livelihood_strategy["strategy_type"] in LivelihoodStrategy.REQUIRES_PRODUCT and (
-                        "product_id" not in livelihood_strategy or not livelihood_strategy["product_id"]
-                    ):
-                        strategy_is_valid = False
-
                     non_empty_summary_activities = [
                         livelihood_activity
                         for livelihood_activity in livelihood_activities_for_strategy
@@ -362,8 +384,34 @@ def get_instances_from_dataframe(
                         )
                     ]
 
-                    # For invalid strategies, we only proceed if there are Summary Livelihood Activities
-                    if strategy_is_valid or non_empty_summary_activities:
+                    # Check the Livelihood Strategy has a product_id if one is required.
+                    if livelihood_strategy["strategy_type"] in LivelihoodStrategy.REQUIRES_PRODUCT and (
+                        "product_id" not in livelihood_strategy or not livelihood_strategy["product_id"]
+                    ):
+                        strategy_is_valid = False
+                        if not non_empty_summary_activities:
+                            # No summary activities so we don't need to log an error, a warning is sufficient
+                            context.log.warning(
+                                "Cannot determine product_id for non-summary %s %s on row %s"
+                                % (
+                                    livelihood_strategy["strategy_type"],
+                                    livelihood_strategy["activity_label"],
+                                    livelihood_strategy["row"],
+                                )
+                            )
+                        else:
+                            # Summary activities exist, so we need to raise an error
+                            errors.append(
+                                "Cannot determine product_id for summary %s %s on row %s"
+                                % (
+                                    livelihood_strategy["strategy_type"],
+                                    livelihood_strategy["activity_label"],
+                                    livelihood_strategy["row"],
+                                )
+                            )
+
+                    # For invalid strategies, we have appended an error, and can raise them all at the end.
+                    if strategy_is_valid:
 
                         # Append the stategies and activities to the lists of instances to create.
                         livelihood_strategies.append(livelihood_strategy)
@@ -444,13 +492,28 @@ def get_instances_from_dataframe(
             # When we get the values for the LivelihoodActivity records, we just want the actual attribute
             # that the values in the row are for
             activity_attribute = label_attributes["attribute"]
+
+            # Some labels are ambiguous and map to different attributes depending on the strategy_type.
+            if activity_attribute == "quantity_produced_or_purchased":
+                if livelihood_strategy["strategy_type"] == "CropProduction":
+                    activity_attribute = "quantity_produced"
+                elif livelihood_strategy["strategy_type"] == "FoodPurchase":
+                    activity_attribute = "quantity_purchased"
+                else:
+                    raise ValueError("Invalid strategy_type %s for label '%s'" % (strategy_type, label))
+
             # Update the LivelihoodActivity records
             if any(value for value in df.loc[row, "B":].astype(str).str.strip()):
                 # Make sure we have an attribute!
                 if not activity_attribute:
+                    rows = df.index[:num_header_rows].tolist() + [row]
                     raise ValueError(
                         "Found values in row %s for label '%s' without an identified attribute:\n%s"
-                        % (row, label, df.loc[row, "B":].replace("", pd.NA).dropna().transpose().to_markdown())
+                        % (
+                            row,
+                            label,
+                            df.loc[rows].replace("", pd.NA).dropna(axis="columns", subset=row).to_markdown(),
+                        )
                     )
                 # If the activity label that marks the start of a Livelihood Strategy is not in the
                 # `ActivityLabel.objects.all()`, and hence not in the  `activity_label_map`, then repeated
@@ -479,34 +542,24 @@ def get_instances_from_dataframe(
                         livelihood_activities_for_strategy[i][activity_attribute] = value
 
         except Exception as e:
+            worksheet = {
+                ActivityLabel.LivelihoodActivityType.LIVELIHOOD_ACTIVITY: "Data",
+                ActivityLabel.LivelihoodActivityType.OTHER_CASH_INCOME: "Data2",
+                ActivityLabel.LivelihoodActivityType.WILD_FOODS: "Data3",
+            }.get(activity_type)
             if column:
                 raise RuntimeError(
-                    "Unhandled error in %s processing cell 'Data'!%s%s for label '%s'"
-                    % (partition_key, column, row, label)
+                    "Unhandled error in %s processing cell '%s'!%s%s for label '%s'"
+                    % (partition_key, worksheet, column, row, label)
                 ) from e
             else:
                 raise RuntimeError(
-                    "Unhandled error in %s processing row 'Data'!%s with label '%s'" % (partition_key, row, label)
+                    "Unhandled error in %s processing row '%s'!%s with label '%s'"
+                    % (partition_key, worksheet, row, label)
                 ) from e
 
-    # Basic checks to ensure that the metadata is consistent and complete
-    errors = []
-
-    for livelihood_strategy in livelihood_strategies:
-        # Check the Livelihood Strategy has a product_id if one is required.
-        if livelihood_strategy["strategy_type"] in LivelihoodStrategy.REQUIRES_PRODUCT and (
-            "product_id" not in livelihood_strategy or not livelihood_strategy["product_id"]
-        ):
-            errors.append(
-                "Cannot determine product_id for %s %s on row %s"
-                % (
-                    livelihood_strategy["strategy_type"],
-                    livelihood_strategy["activity_label"],
-                    livelihood_strategy["row"],
-                )
-            )
-
-    if errors:
+    raise_errors = False
+    if errors and raise_errors:
         errors = "\n".join(errors)
         raise RuntimeError("Missing or inconsistent metadata in BSS %s:\n%s" % (partition_key, errors))
 
@@ -553,6 +606,7 @@ def livelihood_activity_instances(
     except IndexError:
         raise ValueError("No complete entry in the BSS Metadata worksheet for %s" % partition_key)
     output = get_instances_from_dataframe(
+        context,
         livelihood_activity_dataframe,
         metadata,
         ActivityLabel.LivelihoodActivityType.LIVELIHOOD_ACTIVITY,

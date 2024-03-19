@@ -18,7 +18,8 @@ import json
 import pandas as pd
 from dagster import AssetExecutionContext, MetadataValue, Output, asset
 
-from .base import BSSMetadataConfig, bss_files_partitions_def
+from ..configs import BSSMetadataConfig
+from ..partitions import bss_files_partitions_def
 
 
 @asset(partitions_def=bss_files_partitions_def, io_manager_key="json_io_manager")

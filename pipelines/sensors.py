@@ -3,9 +3,20 @@ import os
 import django
 from dagster import AssetSelection, RunRequest, SensorResult, sensor
 
-from .assets.base import bss_instances_partitions_def
-from .assets.livelihood_activity import livelihood_activity_instances
-from .assets.wealth_characteristic import wealth_characteristic_instances
+from .assets.livelihood_activity import (
+    livelihood_activity_dataframe,
+    livelihood_activity_instances,
+)
+from .assets.other_cash_income import (
+    other_cash_income_dataframe,
+    other_cash_income_instances,
+)
+from .assets.wealth_characteristic import (
+    wealth_characteristic_dataframe,
+    wealth_characteristic_instances,
+)
+from .assets.wild_foods import wild_foods_dataframe, wild_foods_instances
+from .partitions import bss_instances_partitions_def
 
 # set the default Django settings module
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hea.settings.production")
@@ -17,7 +28,16 @@ from baseline.models import LivelihoodZoneBaseline  # NOQA: E402
 
 
 @sensor(
-    asset_selection=AssetSelection.keys(livelihood_activity_instances.key, wealth_characteristic_instances.key),
+    asset_selection=AssetSelection.keys(
+        livelihood_activity_dataframe.key,
+        livelihood_activity_instances.key,
+        other_cash_income_dataframe.key,
+        other_cash_income_instances.key,
+        wild_foods_dataframe.key,
+        wild_foods_instances.key,
+        wealth_characteristic_dataframe.key,
+        wealth_characteristic_instances.key,
+    ),
     minimum_interval_seconds=600,
 )
 def bss_instance_sensor(context):

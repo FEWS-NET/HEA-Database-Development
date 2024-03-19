@@ -12,12 +12,9 @@ from django.core.files import File
 from django.core.management import call_command
 from django.db import models
 
+from ..configs import BSSMetadataConfig
+from ..partitions import bss_files_partitions_def, bss_instances_partitions_def
 from ..utils import class_from_name
-from .base import (
-    BSSMetadataConfig,
-    bss_files_partitions_def,
-    bss_instances_partitions_def,
-)
 
 # set the default Django settings module
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hea.settings.production")
@@ -118,6 +115,18 @@ def consolidated_instances(
         if instances:
             consolidated_instances[model_name] += instances
 
+    # For Livelihood Activities we need to create instances of the subclass, as well as the base class
+    # so create an additional list of instances for each subclass.
+    subclass_livelihood_activities = defaultdict(list)
+    for instance in consolidated_instances["LivelihoodActivity"]:
+        # The subclass instances also need a pointer to the base class instance
+        instance["livelihoodactivity_ptr"] = (
+            instance["wealth_group"][:3] + instance["livelihood_strategy"][2:] + [instance["wealth_group"][3]]
+        )
+        subclass_livelihood_activities[instance["strategy_type"]].append(instance)
+
+    consolidated_instances = {**consolidated_instances, **subclass_livelihood_activities}
+
     metadata = {f"num_{key.lower()}": len(value) for key, value in consolidated_instances.items()}
     metadata["total_instances"] = sum(len(value) for value in consolidated_instances.values())
     metadata["preview"] = MetadataValue.md(f"```json\n{json.dumps(consolidated_instances, indent=4)}\n```")
@@ -167,6 +176,10 @@ def validated_instances(
             df["key"] = df[
                 ["livelihood_zone_baseline", "strategy_type", "season", "product_id", "additional_identifier"]
             ].apply(lambda x: x[0] + [x[1], x[2][0] if x[2] else "", x[3], x[4]], axis="columns")
+        elif model_name == "LivelihoodActivity":
+            df["key"] = df[["livelihood_zone_baseline", "wealth_group", "livelihood_strategy"]].apply(
+                lambda x: [x[0][0], x[0][1], x[1][2], x[2][2], x[2][3], x[2][4], x[2][5], x[1][3]], axis="columns"
+            )
 
         # Apply some model-level defaults
         if "created" in valid_field_names and "created" not in df:
@@ -255,17 +268,7 @@ def consolidated_fixture(
     """
     Consolidated Django fixture for a BSS, including Livelihood Activities and Wealth Group Characteristic Values.
     """
-    # For Livelihood Activities we need to create instances of the subclass, as well as the base class
-    # so create an additional list of instances for each subclass.
-    livelihood_activities = defaultdict(list)
-    for instance in validated_instances["LivelihoodActivity"]:
-        # The subclass instances also need a pointer to the base class instance
-        instance["livelihoodactivity_ptr"] = (
-            instance["wealth_group"][:3] + instance["livelihood_strategy"][2:] + [instance["wealth_group"][3]]
-        )
-        livelihood_activities[instance["strategy_type"]].append(instance)
-
-    metadata, fixture = get_fixture_from_instances({**validated_instances, **livelihood_activities})
+    metadata, fixture = get_fixture_from_instances(validated_instances)
     metadata["preview"] = MetadataValue.md(f"```json\n{json.dumps(fixture, indent=4)}\n```")
     return Output(
         fixture,

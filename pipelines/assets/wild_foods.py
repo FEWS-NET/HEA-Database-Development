@@ -62,10 +62,9 @@ import django
 import pandas as pd
 from dagster import AssetExecutionContext, Output, asset
 
+from ..configs import BSSMetadataConfig
+from ..partitions import bss_files_partitions_def, bss_instances_partitions_def
 from .base import (
-    BSSMetadataConfig,
-    bss_files_partitions_def,
-    bss_instances_partitions_def,
     get_all_bss_labels_dataframe,
     get_bss_dataframe,
     get_bss_label_dataframe,
@@ -152,6 +151,7 @@ def wild_foods_instances(
         raise ValueError("%s does not contain a Data3 worksheet" % partition_key)
 
     output = get_instances_from_dataframe(
+        context,
         wild_foods_dataframe,
         metadata,
         ActivityLabel.LivelihoodActivityType.WILD_FOODS,
