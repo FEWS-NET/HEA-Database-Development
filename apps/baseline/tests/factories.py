@@ -111,10 +111,9 @@ class LivelihoodZoneBaselineFactory(factory.django.DjangoModelFactory):
     name_pt = factory.LazyAttribute(lambda lz: f"Baseline {lz.livelihood_zone}")
     name_ar = factory.LazyAttribute(lambda lz: f"Baseline {lz.livelihood_zone}")
     livelihood_zone = factory.SubFactory(LivelihoodZoneFactory)
-    geography = None
     main_livelihood_category = factory.SubFactory(LivelihoodCategoryFactory)
     source_organization = factory.SubFactory(SourceOrganizationFactory)
-    bss = None
+    bss_language = factory.Iterator(["en", "pt", "es", "ar", "fr"])
     reference_year_start_date = factory.Sequence(lambda n: datetime.date(1900, 1, 1) + datetime.timedelta(days=n))
     reference_year_end_date = factory.Sequence(lambda n: datetime.date(1900, 1, 1) + datetime.timedelta(days=n + 10))
     valid_from_date = factory.Sequence(lambda n: datetime.date(1900, 1, 1) + datetime.timedelta(days=n))
@@ -318,6 +317,15 @@ class LivelihoodActivityFactory(factory.django.DjangoModelFactory):
         strategy_type=factory.SelfAttribute("..strategy_type"),
     )
     household_labor_provider = factory.Iterator(["men", "women", "children", "all"])
+    extra = factory.Iterator(
+        [
+            {"name of local measure": "stone"},
+            {"profit after fattening": 567},
+            {"purchase price of animals before fattening": 123},
+            {"number of months that green consumption occurs for": 8},
+            {"percentage of calories that come from green consumption during that period": 15},
+        ]
+    )
 
 
 class BaselineLivelihoodActivityFactory(LivelihoodActivityFactory):

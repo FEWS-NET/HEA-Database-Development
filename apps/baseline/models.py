@@ -134,6 +134,14 @@ class LivelihoodZoneBaseline(common_models.Model):
     June 2023 for the Sahel countries.
     """
 
+    class Language(models.TextChoices):
+        # Choices are rendered to migrations, so we cannot base them dynamically on settings.LANGUAGES
+        EN = "en", _("English")
+        FR = "fr", _("French")
+        ES = "es", _("Spanish")
+        PT = "pt", _("Portuguese")
+        AR = "ar", _("Arabic")
+
     name = TranslatedField(common_models.NameField(max_length=200, unique=True))
     description = TranslatedField(common_models.DescriptionField())
     livelihood_zone = models.ForeignKey(
@@ -151,11 +159,16 @@ class LivelihoodZoneBaseline(common_models.Model):
         SourceOrganization, on_delete=models.RESTRICT, verbose_name=_("Source Organization")
     )
     bss = models.FileField(upload_to="livelihoodzonebaseline/bss", verbose_name=_("BSS Excel file"))
-    profile_report = models.FileField(
-        upload_to="livelihoodzonebaseline/profile_report",
-        blank=True,
-        null=True,
-        verbose_name=_("Profile Report PDF file"),
+    bss_language = models.CharField(
+        choices=Language.choices, blank=True, null=True, max_length=10, verbose_name=_("BSS Language")
+    )
+    profile_report = TranslatedField(
+        models.FileField(
+            upload_to="livelihoodzonebaseline/profile_report",
+            blank=True,
+            null=True,
+            verbose_name=_("Profile Report PDF file"),
+        )
     )
     reference_year_start_date = models.DateField(
         verbose_name=_("Reference Year Start Date"),

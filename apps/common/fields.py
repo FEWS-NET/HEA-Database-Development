@@ -164,7 +164,7 @@ class TranslatedField:
         # For example, non-text fields that have `null=False` may need to allow null in the non-default language
         # fields if sometimes not all are populated.
         assert isinstance(
-            field, (models.CharField, models.TextField)
+            field, (models.CharField, models.TextField, models.FileField)
         ), f"Field {str(field)} is of unsupported type {str(type(field))}"
         self.field = field
 

@@ -106,7 +106,8 @@ class LivelihoodZoneBaselineAdmin(GISModelAdmin):
                     "main_livelihood_category",
                     "source_organization",
                     "bss",
-                    "profile_report",
+                    "bss_language",
+                    *translation_fields("profile_report"),
                     "reference_year_start_date",
                     "reference_year_end_date",
                     "valid_from_date",
@@ -291,6 +292,7 @@ class LivelihoodActivityAdmin(admin.ModelAdmin):
                 "fields": [
                     "livelihood_strategy",
                     "scenario",
+                    "extra",
                 ]
             },
         ),
@@ -390,6 +392,7 @@ class LivelihoodActivityInlineAdmin(admin.StackedInline):
                 "fields": [
                     "livelihood_strategy",
                     "scenario",
+                    "extra",
                 ]
             },
         ),
