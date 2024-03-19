@@ -4,6 +4,7 @@ Models for managing HEA Baseline Surveys
 
 import numbers
 
+from django.conf import settings
 from django.contrib.gis.db import models
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -245,6 +246,42 @@ class LivelihoodZoneBaseline(common_models.Model):
                 name="baseline_livelihoodzonebaseline_livelihood_zone_reference_year_end_date_uniq",
             )
         ]
+
+
+class LivelihoodZoneBaselineCorrection(common_models.Model):
+    """
+    Represents a correction entry for a livelihood zone baseline.
+    Each correction stores information about the changed data,
+    including the worksheet name, cell range, previous and new values,
+    the date of correction, the author of the correction, and a comment explaining the change.
+    """
+
+    class WorksheetName(models.TextChoices):
+        WB = "WB", _("WB")
+        DATA = "Data", _("Data")
+        DATA2 = "Data2", _("Data2")
+        DATA3 = "Data3", _("Data3")
+
+    livelihood_zone_baseline = models.ForeignKey(
+        LivelihoodZoneBaseline,
+        on_delete=models.CASCADE,
+        related_name="corrections",
+        verbose_name=_("Livelihood Zone Baseline"),
+    )
+    worksheet_name = models.CharField(max_length=20, choices=WorksheetName.choices, verbose_name=_("Worksheet name"))
+    cell_range = models.CharField(max_length=10, verbose_name=_("Cell range"))
+    previous_value = models.CharField(max_length=255, verbose_name=_("Previous value before correction"))
+    value = models.CharField(max_length=255, verbose_name=_("Corrected value"))
+    correction_date = models.DateTimeField(auto_now_add=True, verbose_name=_("Correction date"))
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name=_("Correction author"))
+    comment = models.TextField(
+        max_length=255,
+        verbose_name=_("Correction comments"),
+        help_text=_("Required comment about the correction suggested"),
+    )
+
+    def __str__(self):
+        return f"{str(self.livelihood_zone_baseline)} {self.worksheet_name} {self.cell_range}"
 
 
 # @TODO Can we have a better name.

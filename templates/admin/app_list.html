@@ -45,6 +45,16 @@
                     </div>
                 </div>
             {% endif %}
+         {% if perms.baseline.view_livelihoodzonebaselinecorrection %}
+                <div class="col">
+                    <div class="card m-2">
+                        <div class="card-body">
+                            <a href="{% url 'admin:baseline_livelihoodzonebaselinecorrection_changelist' %}"> {% translate 'Baseline Corrections' %}</a>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
             {% if perms.baseline.view_community %}
                 <div class="col">
                     <div class="card m-2">
