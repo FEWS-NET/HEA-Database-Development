@@ -250,13 +250,17 @@ class LivelihoodActivityAdmin(admin.ModelAdmin):
         )
 
     def get_product_common_name(self, obj):
-        return obj.livelihood_strategy.product.common_name
+        if obj.livelihood_strategy.product:
+            return obj.livelihood_strategy.product.common_name
+        return None
 
     get_product_common_name.admin_order_field = "livelihood_strategy__product__common_name"
     get_product_common_name.short_description = "Product Common Name"
 
     def get_season_name(self, obj):
-        return obj.livelihood_strategy.season.name
+        if obj.livelihood_strategy.season:
+            return obj.livelihood_strategy.season.name
+        return None
 
     get_season_name.admin_order_field = "livelihood_strategy__season__name"
     get_season_name.short_description = "Season Name"
