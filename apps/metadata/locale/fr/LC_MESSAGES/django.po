@@ -5,13 +5,8 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-01-25 15:31+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
+"POT-Creation-Date: 2024-03-21 07:17+0000\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -34,9 +29,11 @@ msgstr "Commande"
 msgid ""
 "The order to display the items in when sorting by this field, if not obvious."
 msgstr ""
-"L'ordre dans lequel afficher les éléments lors du tri par ce champ, s'il n'est pas évident."
+"L'ordre dans lequel afficher les éléments lors du tri par ce champ, s'il "
+"n'est pas évident."
 
-#: apps/metadata/models.py:37 apps/metadata/models.py:221
+#: apps/metadata/models.py:37 apps/metadata/models.py:222
+#: apps/metadata/models.py:333
 msgid "aliases"
 msgstr "alias"
 
@@ -73,10 +70,8 @@ msgid ""
 "Does a value for this characteristic also require a product? If True, then "
 "aliases may contain a <product> placeholder."
 msgstr ""
-"Une valeur pour cette caractéristique nécessite-t-elle également un produit? Si vrai, alors"
-"les alias peuvent contenir un espace réservé <product>."
-
-
+"Une valeur pour cette caractéristique nécessite-t-elle également un produit? "
+"Si vrai, alorsles alias peuvent contenir un espace réservé <product>."
 
 #: apps/metadata/models.py:103
 msgid "Has Unit Of Measure?"
@@ -138,179 +133,183 @@ msgstr "Paiement en nature"
 msgid "Relief, Gift or Other Food"
 msgstr "aide, cadeau ou autre nourriture"
 
-#: apps/metadata/models.py:136 apps/metadata/models.py:168
+#: apps/metadata/models.py:136
+msgid "Hunting"
+msgstr "Chasse"
+
+#: apps/metadata/models.py:137 apps/metadata/models.py:169
 msgid "Fishing"
 msgstr "Pêche"
 
-#: apps/metadata/models.py:137
+#: apps/metadata/models.py:138
 msgid "Wild Food Gathering"
 msgstr "Rassemblement des aliments sauvages"
 
-#: apps/metadata/models.py:138
+#: apps/metadata/models.py:139
 msgid "Other Cash Income"
 msgstr "Autres revenus en espèces"
 
-#: apps/metadata/models.py:139
+#: apps/metadata/models.py:140
 msgid "Other Purchase"
 msgstr "Autre achat"
 
-#: apps/metadata/models.py:144
+#: apps/metadata/models.py:145
 msgid "Baseline"
 msgstr "profil de référence"
 
-#: apps/metadata/models.py:145
+#: apps/metadata/models.py:146
 msgid "Response"
 msgstr "Réponse"
 
-#: apps/metadata/models.py:165
+#: apps/metadata/models.py:166
 msgid "Crops"
 msgstr "Cultures"
 
-#: apps/metadata/models.py:166
+#: apps/metadata/models.py:167
 msgid "Livestock"
 msgstr "Bétail"
 
-#: apps/metadata/models.py:167
+#: apps/metadata/models.py:168
 msgid "Gardening"
 msgstr "Jardinage"
 
-#: apps/metadata/models.py:171
+#: apps/metadata/models.py:172
 msgid "Activity Category"
 msgstr "Catégorie d'activité"
 
-#: apps/metadata/models.py:175
+#: apps/metadata/models.py:176
 msgid "Seasonal Activity Type"
 msgstr "Type d'activité saisonnière"
 
-#: apps/metadata/models.py:176
+#: apps/metadata/models.py:177
 msgid "Seasonal Activity Types"
 msgstr "Types d'activités saisonnières"
 
-#: apps/metadata/models.py:188
+#: apps/metadata/models.py:189
 msgid "Wealth Group Category"
 msgstr "Catégorie de groupe de richesse"
 
-#: apps/metadata/models.py:189
+#: apps/metadata/models.py:190
 msgid "Wealth Group Categories"
 msgstr "Catégories de groupes de richesse"
 
-#: apps/metadata/models.py:205
+#: apps/metadata/models.py:206
 msgid "country"
 msgstr "pays"
 
-#: apps/metadata/models.py:213
+#: apps/metadata/models.py:214
 msgid "code"
 msgstr "code"
 
-#: apps/metadata/models.py:214
+#: apps/metadata/models.py:215
 msgid "An identifier for the Unit, such as the FNID"
 msgstr "Un identifiant pour l'unité, comme le FNID"
 
-#: apps/metadata/models.py:216
+#: apps/metadata/models.py:217
 msgid "full name"
 msgstr "nom et prénom"
 
-#: apps/metadata/models.py:222
+#: apps/metadata/models.py:223
 msgid "A list of alternate names for the Market."
 msgstr "Une liste de noms alternatifs pour le marché."
 
-#: apps/metadata/models.py:224
+#: apps/metadata/models.py:225
 msgid "geography"
 msgstr "géographie"
 
-#: apps/metadata/models.py:246
+#: apps/metadata/models.py:247
 msgid "Market"
 msgstr "Marché"
 
-#: apps/metadata/models.py:247
+#: apps/metadata/models.py:248
 msgid "Markets"
 msgstr "Marchés"
 
-#: apps/metadata/models.py:260
+#: apps/metadata/models.py:261
 msgid "Hazard Category"
 msgstr "Catégorie de danger"
 
-#: apps/metadata/models.py:261
+#: apps/metadata/models.py:262
 msgid "Hazard Categories"
 msgstr "Catégories de danger"
 
-#: apps/metadata/models.py:271
+#: apps/metadata/models.py:277
 msgid "Harvest"
 msgstr "Récolte"
 
-#: apps/metadata/models.py:272
+#: apps/metadata/models.py:278
 msgid "Lean"
 msgstr "Maigre"
 
-#: apps/metadata/models.py:273
+#: apps/metadata/models.py:279
 msgid "Wet"
 msgstr "frais"
 
-#: apps/metadata/models.py:274
+#: apps/metadata/models.py:280
 msgid "Dry"
 msgstr "Sec"
 
-#: apps/metadata/models.py:275
+#: apps/metadata/models.py:281
 msgid "Mild"
 msgstr "léger"
 
-#: apps/metadata/models.py:276
+#: apps/metadata/models.py:282
 msgctxt "season"
 msgid "Spring"
 msgstr "Printemps"
 
-#: apps/metadata/models.py:277
+#: apps/metadata/models.py:283
 msgid "Summer"
 msgstr "Été"
 
-#: apps/metadata/models.py:278
+#: apps/metadata/models.py:284
 msgctxt "season"
 msgid "Fall"
 msgstr "Automne"
 
-#: apps/metadata/models.py:279
+#: apps/metadata/models.py:285
 msgid "Winter"
 msgstr "Hiver"
 
-#: apps/metadata/models.py:280
+#: apps/metadata/models.py:286
 msgid "Monsoon"
 msgstr "Mousson"
 
-#: apps/metadata/models.py:283
+#: apps/metadata/models.py:289
 msgid "Start"
 msgstr "Commencer"
 
-#: apps/metadata/models.py:284
+#: apps/metadata/models.py:290
 msgid "End"
 msgstr "Fin"
 
-#: apps/metadata/models.py:286
+#: apps/metadata/models.py:292
 msgid "Country"
 msgstr "Pays"
 
-#: apps/metadata/models.py:289 apps/metadata/tests/test_admin.py:87
-#: apps/metadata/viewsets.py:28 apps/metadata/viewsets.py:29
-#: apps/metadata/viewsets.py:30 apps/metadata/viewsets.py:31
-#: apps/metadata/viewsets.py:32 apps/metadata/viewsets.py:201
-#: apps/metadata/viewsets.py:202 apps/metadata/viewsets.py:203
-#: apps/metadata/viewsets.py:204 apps/metadata/viewsets.py:205
+#: apps/metadata/models.py:295 apps/metadata/tests/test_admin.py:87
+#: apps/metadata/viewsets.py:29 apps/metadata/viewsets.py:30
+#: apps/metadata/viewsets.py:31 apps/metadata/viewsets.py:32
+#: apps/metadata/viewsets.py:33 apps/metadata/viewsets.py:154
+#: apps/metadata/viewsets.py:155 apps/metadata/viewsets.py:156
+#: apps/metadata/viewsets.py:157 apps/metadata/viewsets.py:158
 msgid "Name"
 msgstr "Nom"
 
-#: apps/metadata/models.py:290 apps/metadata/viewsets.py:34
-#: apps/metadata/viewsets.py:37 apps/metadata/viewsets.py:40
-#: apps/metadata/viewsets.py:43 apps/metadata/viewsets.py:46
-#: apps/metadata/viewsets.py:207 apps/metadata/viewsets.py:210
-#: apps/metadata/viewsets.py:213 apps/metadata/viewsets.py:216
-#: apps/metadata/viewsets.py:219
+#: apps/metadata/models.py:296 apps/metadata/viewsets.py:35
+#: apps/metadata/viewsets.py:38 apps/metadata/viewsets.py:41
+#: apps/metadata/viewsets.py:44 apps/metadata/viewsets.py:47
+#: apps/metadata/viewsets.py:160 apps/metadata/viewsets.py:163
+#: apps/metadata/viewsets.py:166 apps/metadata/viewsets.py:169
+#: apps/metadata/viewsets.py:172
 msgid "Description"
 msgstr "Description"
 
-#: apps/metadata/models.py:294
+#: apps/metadata/models.py:300
 msgid "Season Type"
 msgstr "Type de saison"
 
-#: apps/metadata/models.py:296
+#: apps/metadata/models.py:302
 msgid ""
 "Refers to the classification of a specific time of year based on weather "
 "patterns, temperature, and other factors"
@@ -319,19 +318,19 @@ msgstr ""
 "fonction des conditions météorologiques, de la température et d'autres "
 "facteurs"
 
-#: apps/metadata/models.py:304
+#: apps/metadata/models.py:310
 msgid "Start Day"
 msgstr "jour de commencement"
 
-#: apps/metadata/models.py:307
+#: apps/metadata/models.py:313
 msgid "End Day"
 msgstr "Jour de fin"
 
-#: apps/metadata/models.py:313
+#: apps/metadata/models.py:319
 msgid "Year alignment"
 msgstr "Alignement de l'année"
 
-#: apps/metadata/models.py:315
+#: apps/metadata/models.py:321
 msgid ""
 "Whether a label for a season that contains a single year refers to the start "
 "year or the end year for that Season."
@@ -339,44 +338,47 @@ msgstr ""
 "Le fait qu'une étiquette pour une saison qui contient une seule année se "
 "réfère à l'année de départ ou à l'année de fin de cette saison."
 
-#: apps/metadata/models.py:324
+#: apps/metadata/models.py:327
 msgid "Order"
 msgstr "Commande"
 
-#: apps/metadata/models.py:325
+#: apps/metadata/models.py:328
 msgid "The order of the Season within the Season Year"
 msgstr "L'ordre de la saison au cours de l'année de la saison"
 
-#: apps/metadata/models.py:329
+#: apps/metadata/models.py:334
+msgid "A list of alternate names for the Season."
+msgstr "Une liste de noms alternatifs pour l'objet."
+
+#: apps/metadata/models.py:343
 msgid "Season"
 msgstr "Saison"
 
-#: apps/metadata/models.py:330
+#: apps/metadata/models.py:344
 msgid "Seasons"
 msgstr "Saisons"
 
-#: apps/metadata/viewsets.py:28 apps/metadata/viewsets.py:34
-#: apps/metadata/viewsets.py:201 apps/metadata/viewsets.py:207
+#: apps/metadata/viewsets.py:29 apps/metadata/viewsets.py:35
+#: apps/metadata/viewsets.py:154 apps/metadata/viewsets.py:160
 msgid "English"
 msgstr "Anglais"
 
-#: apps/metadata/viewsets.py:29 apps/metadata/viewsets.py:37
-#: apps/metadata/viewsets.py:202 apps/metadata/viewsets.py:210
+#: apps/metadata/viewsets.py:30 apps/metadata/viewsets.py:38
+#: apps/metadata/viewsets.py:155 apps/metadata/viewsets.py:163
 msgid "French"
 msgstr "Français"
 
-#: apps/metadata/viewsets.py:30 apps/metadata/viewsets.py:40
-#: apps/metadata/viewsets.py:203 apps/metadata/viewsets.py:213
+#: apps/metadata/viewsets.py:31 apps/metadata/viewsets.py:41
+#: apps/metadata/viewsets.py:156 apps/metadata/viewsets.py:166
 msgid "Spanish"
 msgstr "Espagnol"
 
-#: apps/metadata/viewsets.py:31 apps/metadata/viewsets.py:43
-#: apps/metadata/viewsets.py:204 apps/metadata/viewsets.py:216
+#: apps/metadata/viewsets.py:32 apps/metadata/viewsets.py:44
+#: apps/metadata/viewsets.py:157 apps/metadata/viewsets.py:169
 msgid "Arabic"
 msgstr "Arabe"
 
-#: apps/metadata/viewsets.py:32 apps/metadata/viewsets.py:46
-#: apps/metadata/viewsets.py:205 apps/metadata/viewsets.py:219
+#: apps/metadata/viewsets.py:33 apps/metadata/viewsets.py:47
+#: apps/metadata/viewsets.py:158 apps/metadata/viewsets.py:172
 msgid "Portuguese"
 msgstr "Portugais"
-
