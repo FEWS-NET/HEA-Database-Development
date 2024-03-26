@@ -129,6 +129,7 @@ def baseline_instances(
         ["GROUPE SOCIO-ECONOMIQUE", "Arrondissement", "Quartier", "Numéro d'entretien", "Enquetêur(s)"],
         ["GROUPE SOCIO-ECONOMIQUE", "Département", "Village ou site", "Numéro d'entretien", "Enquetêur(s)"],
         ["GROUPE DE RICHESSE", "Département", "Village ou location:", "Numero d'entretien", "Intervieweurs"],
+        ["GROUPE DE RICHESSE", "Département", "Village ou localité:", "Numero d'entretien", "Intervieweurs"],
         ["WEALTH GROUP", "District", "Village or settlement", "Interview number:", "Interviewers"],
     )
     found_columns = community_df.iloc[0].str.strip().tolist()

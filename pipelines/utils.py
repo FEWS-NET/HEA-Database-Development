@@ -32,7 +32,7 @@ def class_from_name(full_name):
 
 def get_index(search_text: str | list[str], data: pd.Series, offset: int = 0):
     """
-    Return the index of the first value in a Series that matches the text.
+    Return the index of the first value in a Series that matches the text, or None if there is no match.
 
     Note that the search is case-insensitive.
 
@@ -45,13 +45,18 @@ def get_index(search_text: str | list[str], data: pd.Series, offset: int = 0):
     # Make sure that the search terms are lowercase and stripped of leading/trailing whitespace
     search_text = [str(search_term).lower().strip() for search_term in search_text]
     # Convert the Series to a set of True/False values based on whether they match one of the
-    # search_text values, and use idxmax to return the index of the first match.
+    # search_text values.
+    matches = data.str.lower().str.strip().isin(search_text)
+    # If we don't find a match, return None
+    if not matches.any():
+        return None
+    # Use idxmax to return the index of the first match.
     # This works because in Pandas True > False, so idxmax() returns the index of the first True.
-    index = data.str.lower().str.strip().isin(search_text).idxmax()
+    result = matches.idxmax()
     # Offset the index if necessary
     if offset:
-        index = data.index[data.index.get_loc(index) + offset]
-    return index
+        result = data.index[data.index.get_loc(result) + offset]
+    return result
 
 
 def verbose_pivot(df: pd.DataFrame, values: str | list[str], index: str | list[str], columns: str | list[str]):

@@ -122,6 +122,7 @@ def wealth_characteristic_dataframe(config: BSSMetadataConfig, corrected_files) 
         corrected_files,
         "WB",
         start_strings=["Wealth characteristics", "Caractéristiques socio-économiques", "Caractéristiques de richesse"],
+        end_strings=["Informations sur les équidés"],
         header_rows=HEADER_ROWS,
         # The final three relevant columns are Summary/From/To in Row 4. Range/Interval will be in the cell above
         # From (i.e. in Row 3) so force two additional summary columns.
