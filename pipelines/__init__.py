@@ -11,10 +11,10 @@ from .assets.base import (
 )
 from .assets.baseline import baseline_instances
 from .assets.fixtures import (
-    consolidated_fixture,
+    consolidated_fixtures,
     consolidated_instances,
-    imported_baseline,
-    uploaded_baseline,
+    imported_baselines,
+    uploaded_baselines,
     validated_instances,
 )
 from .assets.livelihood_activity import (
@@ -45,7 +45,12 @@ from .assets.wild_foods import (
     wild_foods_instances,
     wild_foods_label_dataframe,
 )
-from .jobs.fixtures import import_baseline_from_fixture
+from .jobs.fixtures import (
+    extract_dataframes,
+    import_baseline_from_fixture,
+    update_external_assets,
+    upload_baselines,
+)
 from .jobs.metadata import update_metadata
 from .resources import (
     DataFrameCSVIOManager,
@@ -88,11 +93,11 @@ defs = Definitions(
         summary_wealth_characteristic_labels_dataframe,
         consolidated_instances,
         validated_instances,
-        consolidated_fixture,
-        uploaded_baseline,
-        imported_baseline,
+        consolidated_fixtures,
+        uploaded_baselines,
+        imported_baselines,
     ],
-    jobs=[update_metadata, import_baseline_from_fixture],
+    jobs=[update_metadata, update_external_assets, upload_baselines, extract_dataframes, import_baseline_from_fixture],
     resources={
         "io_manager": PickleIOManager(base_path=EnvVar("DAGSTER_ASSET_BASE_PATH")),  # Used by default
         "json_io_manager": JSONIOManager(base_path=EnvVar("DAGSTER_ASSET_BASE_PATH")),

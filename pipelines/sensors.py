@@ -29,13 +29,9 @@ from baseline.models import LivelihoodZoneBaseline  # NOQA: E402
 
 @sensor(
     asset_selection=AssetSelection.keys(
-        livelihood_activity_dataframe.key,
         livelihood_activity_instances.key,
-        other_cash_income_dataframe.key,
         other_cash_income_instances.key,
-        wild_foods_dataframe.key,
         wild_foods_instances.key,
-        wealth_characteristic_dataframe.key,
         wealth_characteristic_instances.key,
     ),
     minimum_interval_seconds=600,
