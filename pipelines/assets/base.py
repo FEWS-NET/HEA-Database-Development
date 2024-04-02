@@ -490,7 +490,7 @@ def get_all_bss_labels_dataframe(
             "num_datapoints": int(df["datapoint_count"].sum()),
             "num_summaries": int(df["in_summary"].sum()),
             # Escape the ~ in the partition_key, otherwise it is rendered as strikethrough
-            "preview": MetadataValue.md(df.sample(config.preview_rows).to_markdown().replace("~", "\\~")),
+            "preview": MetadataValue.md(df.head(config.preview_rows).to_markdown().replace("~", "\\~")),
             "sample": MetadataValue.md(
                 df[df["in_summary"]].sample(config.preview_rows).to_markdown().replace("~", "\\~")
             ),
@@ -501,7 +501,7 @@ def get_all_bss_labels_dataframe(
 def get_summary_bss_label_dataframe(
     config: BSSMetadataConfig, all_labels_dataframe: dict[str, pd.DataFrame]
 ) -> Output[pd.DataFrame]:
-    df = all_labels_dataframe.sort_values(by=["label_lower", "row_number", "filename"])
+    df = all_labels_dataframe.sort_values(by=["label_lower", "row_number", "bss"])
 
     # Group by label_lower and aggregate
     df = (
@@ -513,16 +513,16 @@ def get_summary_bss_label_dataframe(
             ),  # Create comma-separated list of unique languages
             datapoint_count_sum=("datapoint_count", "sum"),
             in_summary_sum=("in_summary", "sum"),
-            unique_filename_count=("filename", pd.Series.nunique),
+            unique_bss_count=("bss", pd.Series.nunique),
             min_row_number=("row_number", "min"),
             max_row_number=("row_number", "max"),
-            filename_for_min_row=("filename", "first"),  # Assuming df is sorted by row_number within each group
-            filename_for_max_row=("filename", "last"),  # Assuming df is sorted by row_number within each group
+            bss_for_min_row=("bss", "first"),  # Assuming df is sorted by row_number within each group
+            bss_for_max_row=("bss", "last"),  # Assuming df is sorted by row_number within each group
         )
         .reset_index()
     )
 
-    df = df.sort_values(by=["min_row_number", "label_lower", "filename_for_min_row", "filename_for_max_row"])
+    df = df.sort_values(by=["min_row_number", "label_lower", "bss_for_min_row", "bss_for_max_row"])
     df = df.rename(
         columns={"label_lower": "label", "datapoint_count_sum": "datapoint_count", "in_summary_sum": "summary_count"}
     )
