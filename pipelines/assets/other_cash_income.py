@@ -137,7 +137,7 @@ def other_cash_income_instances(
         raise ValueError("No complete entry in the BSS Metadata worksheet for %s" % partition_key)
 
     if other_cash_income_dataframe.empty:
-        raise ValueError("%s does not contain a Data2 worksheet" % partition_key)
+        output = {}
 
     output = get_instances_from_dataframe(
         context,
