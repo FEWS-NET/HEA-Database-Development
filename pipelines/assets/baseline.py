@@ -125,16 +125,35 @@ def baseline_instances(
     community_df = data_df.iloc[2:7].transpose()
     # Check that the columns are what we expect
     expected_column_sets = (
-        ["WEALTH GROUP", "District", "Village", "Interview number:", "Interviewers"],
-        ["GROUPE SOCIO-ECONOMIQUE", "Arrondissement", "Quartier", "Numéro d'entretien", "Enquetêur(s)"],
-        ["GROUPE SOCIO-ECONOMIQUE", "Département", "Village ou site", "Numéro d'entretien", "Enquetêur(s)"],
-        ["GROUPE DE RICHESSE", "Département", "Village ou location:", "Numero d'entretien", "Intervieweurs"],
-        ["GROUPE DE RICHESSE", "Département", "Village ou localité:", "Numero d'entretien", "Intervieweurs"],
-        ["WEALTH GROUP", "District", "Village or settlement", "Interview number:", "Interviewers"],
+        ["WEALTH GROUP", "GROUPE SOCIO-ECONOMIQUE", "GROUPE DE RICHESSE"],
+        [
+            "District",
+            "Arrondissement",
+            "Département",
+            "Commune",
+            "Cercle",
+            "Sous-préfecture",
+        ],
+        [
+            "Village",
+            "Village or settlement",
+            "Village ou site",
+            "Village ou location:",
+            "Village ou localité:",
+            "Village ou localité",
+            "Quartier",
+            "Quartier/Secteur",
+        ],
+        ["Interview number:", "Numéro d'entretien", "Numero d'entretien"],
+        ["Interviewers", "Enquetêur(s)", "Intervieweurs"],
     )
     found_columns = community_df.iloc[0].str.strip().tolist()
-    if not any(found_columns == expected_columns for expected_columns in expected_column_sets):
-        raise ValueError("Cannot identify Communities from columns %s" % ", ".join(found_columns))
+    for i, column in enumerate(found_columns):
+        if column not in expected_column_sets[i]:
+            raise ValueError(
+                "Cannot identify Communities from header %s, expected one of %s"
+                % (column, ", ".join(expected_column_sets[i]))
+            )
     # Normalize the column names
     community_df.columns = ["wealth_group_category", "district", "name", "interview_number", "interviewers"]
     community_df = community_df[1:]
