@@ -30,7 +30,7 @@ def class_from_name(full_name):
     return c
 
 
-def get_index(search_text: str | list[str], data: pd.Series, offset: int = 0):
+def get_index(search_text: str | list[str], data: pd.Series, offset: int = 0) -> int | None:
     """
     Return the index of the first value in a Series that matches the text, or None if there is no match.
 
@@ -56,6 +56,16 @@ def get_index(search_text: str | list[str], data: pd.Series, offset: int = 0):
     # Offset the index if necessary
     if offset:
         result = data.index[data.index.get_loc(result) + offset]
+    return result
+
+
+def prepare_lookup(data: pd.Series | pd.DataFrame) -> pd.Series | pd.DataFrame:
+    """
+    Prepare a Series or DataFrame for lookup operations by converting to lowercase strings and stripping whitespace.
+    """
+    result = data if isinstance(data, pd.DataFrame) else pd.DataFrame(data)
+    result = result.applymap(str).applymap(str.strip).applymap(str.lower).replace(r"\s+", " ", regex=True)
+    result = result.iloc[:, 0] if isinstance(data, pd.Series) else result
     return result
 
 

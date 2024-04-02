@@ -90,7 +90,7 @@ from openpyxl.utils import get_column_letter
 
 from ..configs import BSSMetadataConfig
 from ..partitions import bss_files_partitions_def, bss_instances_partitions_def
-from ..utils import get_index, verbose_pivot
+from ..utils import get_index, prepare_lookup, verbose_pivot
 from .base import (
     get_all_bss_labels_dataframe,
     get_bss_dataframe,
@@ -250,12 +250,14 @@ def wealth_characteristic_instances(
         for wealth_group_category in df.loc[3, "C":]
     ]
 
+    # Prepare the label column for matching against the label_map
+    prepared_labels = prepare_lookup(df["A"])
+
     # Check that we recognize all of the wealth characteristic labels
     allow_unrecognized_labels = True
     unrecognized_labels = (
         df.iloc[num_header_rows:][
-            ~df.iloc[num_header_rows:]["A"].str.strip().str.lower().isin(label_map)
-            & (df.iloc[num_header_rows:]["A"].str.strip() != "")
+            ~prepared_labels.iloc[num_header_rows:].isin(label_map) & (prepared_labels.iloc[num_header_rows:] != "")
         ]
         .groupby("A")
         .apply(lambda x: ", ".join(x.index.astype(str)))
@@ -284,7 +286,7 @@ def wealth_characteristic_instances(
     # Iterate over the rows
     wealth_group_characteristic_values = []
     for row in df.iloc[num_header_rows:].index:  # Ignore the Wealth Group header rows
-        label = df.loc[row, "A"].strip().lower()
+        label = prepared_labels[row]
         if not label:
             # Ignore blank rows
             continue

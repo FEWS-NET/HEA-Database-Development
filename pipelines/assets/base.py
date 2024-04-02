@@ -30,7 +30,7 @@ from xlutils.copy import copy as copy_xls
 
 from ..configs import BSSMetadataConfig
 from ..partitions import bss_files_partitions_def
-from ..utils import get_index
+from ..utils import get_index, prepare_lookup
 
 # set the default Django settings module
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hea.settings.production")
@@ -447,7 +447,7 @@ def get_bss_label_dataframe(
 
     label_df = pd.DataFrame()
     label_df["label"] = df["A"]
-    label_df["label_lower"] = label_df["label"].str.lower().str.strip()
+    label_df["label_lower"] = prepare_lookup(label_df["label"])
     label_df["bss"] = context.asset_partition_key_for_output()
     label_df["lang"] = dataframe_materialization.metadata["lang"].text
     label_df["worksheet"] = dataframe_materialization.metadata["worksheet"].text
