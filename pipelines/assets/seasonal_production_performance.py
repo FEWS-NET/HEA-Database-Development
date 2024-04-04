@@ -153,7 +153,7 @@ def hazards_dataframe(config: BSSMetadataConfig, corrected_files) -> Output[pd.D
 
 
 @asset(partitions_def=bss_files_partitions_def)
-def hazards_dataframe_label_dataframe(
+def hazard_labels_dataframe(
     context: AssetExecutionContext,
     config: BSSMetadataConfig,
     hazards_dataframe: pd.DataFrame,
@@ -165,7 +165,7 @@ def hazards_dataframe_label_dataframe(
 
 
 @asset(io_manager_key="dataframe_csv_io_manager")
-def all_hazards_labels_dataframe(
+def all_hazard_labels_dataframe(
     config: BSSMetadataConfig, hazards_dataframe_label_dataframe: dict[str, pd.DataFrame]
 ) -> Output[pd.DataFrame]:
     """
@@ -175,7 +175,7 @@ def all_hazards_labels_dataframe(
 
 
 @asset(io_manager_key="dataframe_csv_io_manager")
-def summary_hazards_labels_dataframe(
+def summary_hazard_labels_dataframe(
     config: BSSMetadataConfig, all_hazards_labels_dataframe: pd.DataFrame
 ) -> Output[pd.DataFrame]:
     """
