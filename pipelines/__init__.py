@@ -37,7 +37,7 @@ from .assets.seasonal_production_performance import (
     hazard_labels_dataframe,
     hazards_dataframe,
     seasonal_production_performance_dataframe,
-    seasonal_production_performance_dataframe_label_dataframe,
+    seasonal_production_performance_label_dataframe,
     summary_hazard_labels_dataframe,
     summary_seasonal_production_performance_labels_dataframe,
 )
@@ -103,7 +103,7 @@ defs = Definitions(
         imported_baseline,
         seasonal_production_performance_dataframe,
         hazards_dataframe,
-        seasonal_production_performance_dataframe_label_dataframe,
+        seasonal_production_performance_label_dataframe,
         all_seasonal_production_performance_labels_dataframe,
         summary_seasonal_production_performance_labels_dataframe,
         hazard_labels_dataframe,
