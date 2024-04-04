@@ -51,7 +51,7 @@ def seasonal_production_performance_dataframe(config: BSSMetadataConfig, correct
 
 
 @asset(partitions_def=bss_files_partitions_def)
-def seasonal_production_performance_dataframe_label_dataframe(
+def seasonal_production_performance_label_dataframe(
     context: AssetExecutionContext,
     config: BSSMetadataConfig,
     seasonal_production_performance_dataframe: pd.DataFrame,
