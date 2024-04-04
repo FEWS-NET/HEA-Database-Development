@@ -70,12 +70,12 @@ def seasonal_production_performance_label_dataframe(
 
 @asset(io_manager_key="dataframe_csv_io_manager")
 def all_seasonal_production_performance_labels_dataframe(
-    config: BSSMetadataConfig, seasonal_production_performance_dataframe_label_dataframe: dict[str, pd.DataFrame]
+    config: BSSMetadataConfig, seasonal_production_performance_label_dataframe: dict[str, pd.DataFrame]
 ) -> Output[pd.DataFrame]:
     """
     Combined dataframe of the seasonal production performance labels in use across all BSSs.
     """
-    return get_all_bss_labels_dataframe(config, seasonal_production_performance_dataframe_label_dataframe)
+    return get_all_bss_labels_dataframe(config, seasonal_production_performance_label_dataframe)
 
 
 @asset(io_manager_key="dataframe_csv_io_manager")
