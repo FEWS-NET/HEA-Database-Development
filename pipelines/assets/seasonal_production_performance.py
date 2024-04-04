@@ -166,22 +166,22 @@ def hazard_labels_dataframe(
 
 @asset(io_manager_key="dataframe_csv_io_manager")
 def all_hazard_labels_dataframe(
-    config: BSSMetadataConfig, hazards_dataframe_label_dataframe: dict[str, pd.DataFrame]
+    config: BSSMetadataConfig, hazard_labels_dataframe: dict[str, pd.DataFrame]
 ) -> Output[pd.DataFrame]:
     """
     Combined dataframe of the Hazards labels in use across all BSSs.
     """
-    return get_all_bss_labels_dataframe(config, hazards_dataframe_label_dataframe)
+    return get_all_bss_labels_dataframe(config, hazard_labels_dataframe)
 
 
 @asset(io_manager_key="dataframe_csv_io_manager")
 def summary_hazard_labels_dataframe(
-    config: BSSMetadataConfig, all_hazards_labels_dataframe: pd.DataFrame
+    config: BSSMetadataConfig, all_hazard_labels_dataframe: pd.DataFrame
 ) -> Output[pd.DataFrame]:
     """
     Summary of the Hazards labels in use across all BSSs.
     """
-    return get_summary_bss_label_dataframe(config, all_hazards_labels_dataframe)
+    return get_summary_bss_label_dataframe(config, all_hazard_labels_dataframe)
 
 
 @asset(partitions_def=bss_files_partitions_def)
