@@ -3,7 +3,9 @@ Models for managing HEA Baseline Surveys
 """
 
 import numbers
+from collections import defaultdict
 
+import pandas as pd
 from django.conf import settings
 from django.contrib.gis.db import models
 from django.core.exceptions import ValidationError
@@ -246,6 +248,14 @@ class LivelihoodZoneBaseline(common_models.Model):
                 name="baseline_livelihoodzonebaseline_livelihood_zone_reference_year_end_date_uniq",
             )
         ]
+
+    def load_sheet(self, sheet_name):
+        # TODO: Apply overrides.
+        if not hasattr(self, "cache"):
+            self.cache = defaultdict(dict)
+        if sheet_name not in self.cache:
+            self.cache[sheet_name] = pd.read_excel(self.bss.path, sheet_name=sheet_name, header=None)
+        return self.cache[sheet_name]
 
 
 class LivelihoodZoneBaselineCorrection(common_models.Model):
