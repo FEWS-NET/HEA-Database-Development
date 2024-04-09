@@ -25,6 +25,7 @@ class ReferenceDataAdmin(admin.ModelAdmin):
     list_display = (
         "code",
         "name",
+        "aliases",
         "description",
     )
     search_fields = (

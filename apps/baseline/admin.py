@@ -234,6 +234,7 @@ class WealthGroupCharacteristicValueInlineAdmin(admin.TabularInline):
 class LivelihoodActivityAdmin(admin.ModelAdmin):
     form = LivelihoodActivityForm
     list_display = (
+        "wealth_group",
         "strategy_type",
         "get_product_common_name",
         "get_season_name",
@@ -330,8 +331,8 @@ class LivelihoodActivityAdmin(admin.ModelAdmin):
 
 class WealthGroupCharacteristicValueAdmin(admin.ModelAdmin):
     list_display = [
-        "get_wealth_characteristic_common_name",
         "wealth_group",
+        "get_wealth_characteristic_common_name",
         "get_wealth_group_category",
         "get_country_name",
         "product",
