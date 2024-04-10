@@ -133,6 +133,8 @@ def baseline_instances(
             "Commune",
             "Cercle",
             "Sous-préfecture",
+            "Région et cercle",  # 2023 Mali BSSs
+            "LGA",  # Local Government Area, in the 2023 Nigeria BSSs
         ],
         [
             "Village",
@@ -141,6 +143,8 @@ def baseline_instances(
             "Village ou location:",
             "Village ou localité:",
             "Village ou localité",
+            "Village et commune",  # 2023 Mali BSSs
+            "Commune et village",  # 2023 Mali BSSs
             "Quartier",
             "Quartier/Secteur",
         ],
