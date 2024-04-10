@@ -139,6 +139,8 @@ class LivelihoodZoneBaselineAdmin(GISModelAdmin):
         "reference_year_end_date",
     )
     search_fields = (
+        "livelihood_zone__code",
+        "livelihood_zone__alternate_code",
         *translation_fields("livelihood_zone__name"),
         *translation_fields("main_livelihood_category__name"),
         "source_organization__name",
@@ -234,6 +236,7 @@ class WealthGroupCharacteristicValueInlineAdmin(admin.TabularInline):
 class LivelihoodActivityAdmin(admin.ModelAdmin):
     form = LivelihoodActivityForm
     list_display = (
+        "wealth_group",
         "strategy_type",
         "get_product_common_name",
         "get_season_name",
@@ -247,6 +250,10 @@ class LivelihoodActivityAdmin(admin.ModelAdmin):
         ("livelihood_zone_baseline__livelihood_zone__country", admin.RelatedOnlyFieldListFilter),
     )
     search_fields = (
+        "wealth_group__wealth_group_category__code__iexact",
+        *translation_fields("wealth_group__wealth_group_category__name"),
+        "wealth_group__community__name",
+        "wealth_group__community__full_name",
         "strategy_type__icontains",
         "livelihood_strategy__additional_identifier__icontains",
         "livelihood_zone_baseline__livelihood_zone__code__iexact",
@@ -254,7 +261,9 @@ class LivelihoodActivityAdmin(admin.ModelAdmin):
         "livelihood_strategy__product__cpc__iexact",
         "livelihood_strategy__product__aliases__icontains",
         "livelihood_strategy__season__aliases__icontains",
+        "livelihood_strategy__additional_identifier",
         *translation_fields("livelihood_strategy__product__common_name__icontains"),
+        *translation_fields("livelihood_strategy__product__description__icontains"),
         *translation_fields("livelihood_strategy__season__name__icontains"),
     )
 
@@ -330,8 +339,8 @@ class LivelihoodActivityAdmin(admin.ModelAdmin):
 
 class WealthGroupCharacteristicValueAdmin(admin.ModelAdmin):
     list_display = [
-        "get_wealth_characteristic_common_name",
         "wealth_group",
+        "get_wealth_characteristic_common_name",
         "get_wealth_group_category",
         "get_country_name",
         "product",
@@ -349,12 +358,18 @@ class WealthGroupCharacteristicValueAdmin(admin.ModelAdmin):
     )
 
     search_fields = (
+        "wealth_group__wealth_group_category__code__iexact",
+        "wealth_group__wealth_group_category__aliases",
+        "wealth_group__community__name",
+        "wealth_group__community__full_name",
         *translation_fields("wealth_characteristic__name"),
+        "wealth_characteristic__aliases",
         *translation_fields("wealth_group__wealth_group_category__name"),
         "wealth_group__livelihood_zone_baseline__livelihood_zone__code",
         "wealth_group__livelihood_zone_baseline__livelihood_zone__alternate_code",
         "wealth_group__livelihood_zone_baseline__livelihood_zone__country__name",
-        *translation_fields("product__common_name"),
+        *translation_fields("product__description__icontains"),
+        *translation_fields("product__common_name__icontains"),
         "product__cpc",
         "product__aliases",
     )
