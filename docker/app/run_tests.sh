@@ -33,13 +33,28 @@ else
     echo "CHECK_SAFETY=${CHECK_SAFETY}"
 fi
 
-# Ignore various GDAL issues (42369, 42370, 48545, 51832, 61143) as the GDAL version is dependent on the operating system
-# @TODO remove the ignore when Debian upgrades to GDAL >= 3.6.0 in the release we are using (currently buster/stable)
-# Jesaja paraphrased: "Installing GDAL 3.6.2 and Python bindings from unstable worked fine, but it upgrades
-# quite a few libraries, including the C standard library."
+# Ignore vulnerability found in gdal version 3.6.2
+# @TODO Remove this once the base image includes GDAL>=3.8.0
+#   Vulnerability ID: 62283
+#   Affected spec: <3.8.0
+#   ADVISORY: Gdal 3.8.0 backports a security fix for CVE-2023-45853: MiniZip
+#   in zlib through 1.3 has an integer overflow.
+
+# Ignore vulnerability found in django version 5.0.2
+# Updating to 5.0.3 will fix the vulnerability, but causes a unit test failure
+# in LivelihoodActivityAdminTestCase.test_filters
+# @TODO Remove this once the base image includes a version of Django that
+# doesn't cause the unit test error.
+#   Vulnerability ID: 65771
+#   Affected spec: >=5.0a1,<5.0.3
+#   ADVISORY: Affected versions of Django are vulnerable to potential
+#   regular expression denial-of-service. django.utils.text.Truncator.words()
+#   method (with html=True) and truncatewords_html template filter were
+#   subject to a potential regular expression denial-of-service attack using a
+#   suitably crafted string (follow up to CVE-2019-14232 and CVE-2023-43665).
 
 echo Package Vulnerabilities:
-pip freeze | safety check --stdin --full-report -i 62283
+pip freeze | safety check --stdin --full-report -i 62283 -i 65771
 SAFETY_RESULT=$?
 
 # Suppress SAFETY_RESULT unless CHECK_SAFETY is set
