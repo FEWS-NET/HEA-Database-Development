@@ -25,6 +25,7 @@ class ReferenceDataAdmin(admin.ModelAdmin):
     list_display = (
         "code",
         "name",
+        "aliases",
         "description",
     )
     search_fields = (
@@ -100,6 +101,7 @@ class SeasonAdmin(admin.ModelAdmin):
     list_display = (
         "country",
         "name",
+        "aliases",
         "season_type",
         "start",
         "end",
