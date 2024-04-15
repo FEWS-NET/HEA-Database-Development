@@ -307,7 +307,11 @@ class WealthGroupCharacteristicValueSerializer(serializers.ModelSerializer):
     livelihood_zone_baseline_label = serializers.SerializerMethodField()
 
     def get_livelihood_zone_baseline_label(self, obj):
-        return str(obj.wealth_group.community.livelihood_zone_baseline)
+        return (
+            str(obj.wealth_group.community.livelihood_zone_baseline)
+            if obj.wealth_group.community
+            else str(obj.wealth_group.livelihood_zone_baseline)
+        )
 
     wealth_group_label = serializers.SerializerMethodField()
 
@@ -406,7 +410,7 @@ class LivelihoodStrategySerializer(serializers.ModelSerializer):
     season_type_label = serializers.SerializerMethodField()
 
     def get_season_type_label(self, obj):
-        return obj.season.get_season_type_display()
+        return obj.season.get_season_type_display() if obj.season else ""
 
     strategy_type_label = serializers.SerializerMethodField()
 
@@ -532,7 +536,7 @@ class LivelihoodActivitySerializer(serializers.ModelSerializer):
     )
 
     def get_season_type_label(self, obj):
-        return obj.livelihood_strategy.season.get_season_type_display()
+        return obj.livelihood_strategy.season.get_season_type_display() if obj.livelihood_strategy.season else ""
 
     strategy_type_label = serializers.SerializerMethodField()
 
@@ -861,7 +865,7 @@ class CommunityCropProductionSerializer(serializers.ModelSerializer):
     season_type_label = serializers.SerializerMethodField()
 
     def get_season_type_label(self, obj):
-        return obj.season.get_season_type_display()
+        return obj.season.get_season_type_display() if obj.season else ""
 
     crop_purpose_label = serializers.SerializerMethodField()
 
@@ -1287,7 +1291,7 @@ class ExpandabilityFactorSerializer(serializers.ModelSerializer):
     )
 
     def get_season_type_label(self, obj):
-        return obj.livelihood_strategy.season.get_season_type_display()
+        return obj.livelihood_strategy.season.get_season_type_display() if obj.livelihood_strategy.season else ""
 
     strategy_type = serializers.CharField(source="livelihood_strategy.strategy_type", read_only=True)
     strategy_type_label = serializers.SerializerMethodField()
@@ -1403,7 +1407,7 @@ class CopingStrategySerializer(serializers.ModelSerializer):
     )
 
     def get_season_type_label(self, obj):
-        return obj.livelihood_strategy.season.get_season_type_display()
+        return obj.livelihood_strategy.season.get_season_type_display() if obj.livelihood_strategy.season else ""
 
     strategy_type = serializers.CharField(source="livelihood_strategy.strategy_type", read_only=True)
     strategy_type_label = serializers.SerializerMethodField()
