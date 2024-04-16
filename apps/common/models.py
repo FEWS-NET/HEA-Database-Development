@@ -16,7 +16,6 @@ from django.db.models import CASCADE, Q
 from django.utils.encoding import force_str
 from django.utils.formats import date_format
 from django.utils.timezone import now
-from django.utils.translation import get_language
 from django.utils.translation import gettext_lazy as _
 from model_utils.models import TimeFramedModel, TimeStampedModel
 from treebeard.mp_tree import MP_Node, MP_NodeQuerySet
