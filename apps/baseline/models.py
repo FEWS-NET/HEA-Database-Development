@@ -142,7 +142,7 @@ class LivelihoodZoneBaseline(common_models.Model):
         PT = "pt", _("Portuguese")
         AR = "ar", _("Arabic")
 
-    name = TranslatedField(common_models.NameField(max_length=200, unique=True))
+    name = TranslatedField(common_models.NameField(max_length=200))
     description = TranslatedField(common_models.DescriptionField())
     livelihood_zone = models.ForeignKey(
         LivelihoodZone, db_column="livelihood_zone_code", on_delete=models.RESTRICT, verbose_name=_("Livelihood Zone")
@@ -244,7 +244,11 @@ class LivelihoodZoneBaseline(common_models.Model):
             models.UniqueConstraint(
                 fields=("livelihood_zone", "reference_year_end_date"),
                 name="baseline_livelihoodzonebaseline_livelihood_zone_reference_year_end_date_uniq",
-            )
+            ),
+            models.UniqueConstraint(
+                fields=("name_en", "reference_year_end_date"),
+                name="baseline_livelihoodzonebaseline_name_en_reference_year_end_date_uniq",
+            ),
         ]
 
 
