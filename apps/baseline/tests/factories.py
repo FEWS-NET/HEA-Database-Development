@@ -120,6 +120,7 @@ class LivelihoodZoneBaselineFactory(factory.django.DjangoModelFactory):
     valid_to_date = factory.Sequence(lambda n: datetime.date(1900, 1, 1) + datetime.timedelta(days=n + 10))
     population_source = factory.Sequence(lambda n: f"population_source {n}")
     population_estimate = fuzzy.FuzzyInteger(500, 1000000)
+    currency = factory.SubFactory(CurrencyFactory)
 
 
 class LivelihoodProductCategoryFactory(factory.django.DjangoModelFactory):

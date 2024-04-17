@@ -151,6 +151,7 @@ class LivelihoodZoneBaselineFilterSet(filters.FilterSet):
             "population_estimate",
             *translation_fields("description"),
             *translation_fields("name"),
+            "currency",
         )
 
 

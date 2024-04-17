@@ -92,6 +92,7 @@ class LivelihoodZoneBaselineSerializer(serializers.ModelSerializer):
             "valid_to_date",
             "population_source",
             "population_estimate",
+            "currency",
         )
 
     livelihood_zone_name = serializers.CharField(source="livelihood_zone.name", read_only=True)
