@@ -149,9 +149,9 @@ class LivelihoodZoneBaselineFilterSet(filters.FilterSet):
             "valid_to_date",
             "population_source",
             "population_estimate",
+            "currency",
             *translation_fields("description"),
             *translation_fields("name"),
-            "currency",
         )
 
 
