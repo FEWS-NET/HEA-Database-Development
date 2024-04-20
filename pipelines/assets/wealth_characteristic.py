@@ -395,12 +395,19 @@ def wealth_characteristic_instances(
     # Make sure that the names in the Wealth Group-level interviews (e.g. columns $M:$AZ) match
     # the names in the in the Community-level interviews (e.g. columns $C:$K) that were used to
     # create the Wealth Group records
-    form3_full_names_df = pd.DataFrame(form3_full_names, columns=["full_name"])
-    form3_full_names_df["bss_column"] = [get_column_letter(x + 3) for x in form3_full_names_df.index]
+    form3_full_names_df = pd.DataFrame(
+        [(get_column_letter(i + 3), full_name) for i, full_name in enumerate(form3_full_names)],
+        columns=["bss_column", "full_name"],
+    )
     unmatched_full_names = value_df[
         pd.notna(value_df["full_name"].replace("", pd.NA))
         & ~value_df["full_name"].str.lower().isin(form3_full_names_df.full_name.str.lower())
-    ][["full_name", "bss_column"]].drop_duplicates()
+        # The Wealth Group Interview columns may only have the "Village" name without the "District", so also check
+        # them against just the first part of the actual full names.
+        & ~value_df["full_name"]
+        .str.lower()
+        .isin(form3_full_names_df.full_name.str.lower().apply(lambda x: x.split(", ")[0]))
+    ][["bss_column", "full_name"]].drop_duplicates()
     if not unmatched_full_names.empty:
         raise ValueError(
             "%s contains unmatched Community full_name values in Wealth Group interviews:\n%s\n\nExpected names:\n%s"
