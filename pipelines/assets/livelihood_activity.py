@@ -142,6 +142,20 @@ def get_instances_from_dataframe(
     """
     LivelhoodStrategy and LivelihoodActivity instances extracted from the BSS from the Data, Data2 or Data3 worksheets.
     """
+    if df.empty:
+        # There are no Livelihood Activities in the BSS for this activity type,
+        # so return an empty set of instances.
+        return Output(
+            {
+                "LivelihoodStrategy": [],
+                "LivelihoodActivity": [],
+            },
+            metadata={
+                "num_livelihood_strategies": 0,
+                "num_livelihood_activities": 0,
+            },
+        )
+
     errors = []
 
     # Save the natural key to the livelihood zone baseline for later use.
