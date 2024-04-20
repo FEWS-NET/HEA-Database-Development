@@ -77,6 +77,7 @@ def other_cash_income_dataframe(config: BSSMetadataConfig, corrected_files) -> O
         "Data2",
         start_strings=[
             "AGRICULTURAL LABOUR INCOME - CULTIVATION (PRE-HARVEST)",
+            "MAIN DOUVRE AGRICOLE LOCALE (avant récolte)",  # 2023 Mali BSSs
             "PAIMENT EN NATURE",
             "REVENUS MAIN D'OEUVRE AGRICOLE (pre-récolte)",
             "REVENU DU TRAVAUX AGRICOLES - CULTIVATION",

@@ -58,6 +58,7 @@ SUMMARY_LABELS = [
     "BASE DE RÉFÉRENAE",
     "range",
     "interval",
+    "intervales",  # 2023 Mali BSSs
 ]
 
 
@@ -270,30 +271,36 @@ def corrected_files(
 
     # Apply the corrections
     for correction in corrections_df.itertuples():
-        for row in rows_from_range(correction.range):
-            for cell in row:
-                if isinstance(wb, xlwt.Workbook):
-                    row, col = coordinate_to_tuple(cell)
-                    prev_value = xlrd_wb.sheet_by_name(correction.worksheet_name).cell_value(row - 1, col - 1)
-                    if (
-                        xlrd_wb.sheet_by_name(correction.worksheet_name).cell(row - 1, col - 1).ctype
-                        == xlrd.XL_CELL_ERROR
-                    ):
-                        # xlrd.error_text_from_code returns, eg, "#N/A"
-                        prev_value = xlrd.error_text_from_code[
-                            xlrd_wb.sheet_by_name(correction.worksheet_name).cell_value(row - 1, col - 1)
-                        ]
-                    validate_previous_value(cell, correction.prev_value, prev_value)
-                    # xlwt uses 0-based indexes, but coordinate_to_tuple uses 1-based, so offset the values
-                    wb.get_sheet(correction.worksheet_name).write(row - 1, col - 1, correction.value)
-                else:
-                    cell = wb[correction.worksheet_name][cell]
-                    validate_previous_value(cell, correction.prev_value, cell.value)
-                    cell.value = correction.value
-                    cell.comment = Comment(
-                        f"{correction.author} on {correction.correction_date}: {correction.comment}",  # NOQA: E501
-                        author=correction.author,
-                    )
+        try:
+            for row in rows_from_range(correction.range):
+                for cell in row:
+                    if isinstance(wb, xlwt.Workbook):
+                        row, col = coordinate_to_tuple(cell)
+                        prev_value = xlrd_wb.sheet_by_name(correction.worksheet_name).cell_value(row - 1, col - 1)
+                        if (
+                            xlrd_wb.sheet_by_name(correction.worksheet_name).cell(row - 1, col - 1).ctype
+                            == xlrd.XL_CELL_ERROR
+                        ):
+                            # xlrd.error_text_from_code returns, eg, "#N/A"
+                            prev_value = xlrd.error_text_from_code[
+                                xlrd_wb.sheet_by_name(correction.worksheet_name).cell_value(row - 1, col - 1)
+                            ]
+                        validate_previous_value(cell, correction.prev_value, prev_value)
+                        # xlwt uses 0-based indexes, but coordinate_to_tuple uses 1-based, so offset the values
+                        wb.get_sheet(correction.worksheet_name).write(row - 1, col - 1, correction.value)
+                    else:
+                        cell = wb[correction.worksheet_name][cell]
+                        validate_previous_value(cell, correction.prev_value, cell.value)
+                        cell.value = correction.value
+                        cell.comment = Comment(
+                            f"{correction.author} on {correction.correction_date}: {correction.comment}",  # NOQA: E501
+                            author=correction.author,
+                        )
+        except Exception as e:
+            raise ValueError(
+                f"Error applying correction to BSS `{partition_key}`, worksheet `{correction.worksheet_name}`, "
+                f"range `{correction.range}`"
+            ) from e
 
     buffer = BytesIO()
     wb.save(buffer)
