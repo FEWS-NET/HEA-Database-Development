@@ -59,7 +59,7 @@ from dagster import AssetExecutionContext, MetadataValue, Output, asset
 
 from ..configs import BSSMetadataConfig
 from ..partitions import bss_files_partitions_def, bss_instances_partitions_def
-from ..utils import class_from_name
+from ..utils import class_from_name, prepare_lookup
 from .base import (
     get_all_bss_labels_dataframe,
     get_bss_dataframe,
@@ -142,6 +142,20 @@ def get_instances_from_dataframe(
     """
     LivelhoodStrategy and LivelihoodActivity instances extracted from the BSS from the Data, Data2 or Data3 worksheets.
     """
+    if df.empty:
+        # There are no Livelihood Activities in the BSS for this activity type,
+        # so return an empty set of instances.
+        return Output(
+            {
+                "LivelihoodStrategy": [],
+                "LivelihoodActivity": [],
+            },
+            metadata={
+                "num_livelihood_strategies": 0,
+                "num_livelihood_activities": 0,
+            },
+        )
+
     errors = []
 
     # Save the natural key to the livelihood zone baseline for later use.
@@ -182,12 +196,14 @@ def get_instances_from_dataframe(
             ]
         )
 
+    # Prepare the label column for matching against the label_map
+    prepared_labels = prepare_lookup(df["A"])
+
     # Check that we recognize all of the activity labels
     allow_unrecognized_labels = True
     unrecognized_labels = (
         df.iloc[num_header_rows:][
-            ~df.iloc[num_header_rows:]["A"].str.strip().str.lower().isin(label_map)
-            & (df.iloc[num_header_rows:]["A"].str.strip() != "")
+            ~prepared_labels.iloc[num_header_rows:].isin(label_map) & (prepared_labels.iloc[num_header_rows:] != "")
         ]
         .groupby("A")
         .apply(lambda x: ", ".join(x.index.astype(str)))
@@ -224,7 +240,7 @@ def get_instances_from_dataframe(
     for row in df.iloc[num_header_rows:].index:  # Ignore the Wealth Group header rows
         column = None
         try:
-            label = df.loc[row, "A"].strip().lower()
+            label = prepared_labels[row]
             if not label:
                 # Ignore blank rows
                 continue
@@ -299,7 +315,8 @@ def get_instances_from_dataframe(
                                 )
 
                     # Calculated kcals_consumed if the livelihood activity only contains the percentage_kcals.
-                    # This is typical for ButterProduction. Derive it by multiplying percentage_kcals by:
+                    # This is typical for ButterProduction and consumption of green crops.
+                    # Derive it by multiplying percentage_kcals by:
                     #   2100 (kcals per person per day) * 365 (days per year) * average_household_size (from Row 40)
                     if (
                         "percentage_kcals" in livelihood_strategy["attribute_rows"]
@@ -309,6 +326,7 @@ def get_instances_from_dataframe(
                             # The household size will always be the 4th header row in the dataframe, even though the
                             # original row number (which is the index) will be different between the Data and Data3
                             # worksheets
+                            column = df.columns[i + 1]
                             household_size = df.iloc[3, i + 1]
                             livelihood_activity["kcals_consumed"] = (
                                 livelihood_activity["percentage_kcals"] * 2100 * 365 * household_size
@@ -339,6 +357,8 @@ def get_instances_from_dataframe(
                     if (
                         livelihood_strategy["strategy_type"] == "FoodPurchase"
                         and "times_per_year" not in livelihood_strategy["attribute_rows"]
+                        and "times_per_month" in livelihood_strategy["attribute_rows"]
+                        and "months_per_year" in livelihood_strategy["attribute_rows"]
                     ):
                         for livelihood_activity in livelihood_activities_for_strategy:
                             livelihood_activity["times_per_year"] = (
@@ -439,7 +459,18 @@ def get_instances_from_dataframe(
                     # Save the row, label and attribute/row map, to aid trouble-shooting
                     "row": row,
                     "activity_label": label,
-                    "attribute_rows": {},
+                }
+                # Keep track of which row each attribute came from, to aid trouble-shooting
+                livelihood_strategy["attribute_rows"] = {
+                    attribute: row
+                    for attribute in [
+                        "season",
+                        "product_id",
+                        "unit_of_measure_id",
+                        "currency_id",
+                        "additional_identifier",
+                    ]
+                    if livelihood_strategy[attribute]
                 }
 
                 # Initialize the list of livelihood activities for the new livelihood strategy
@@ -469,24 +500,30 @@ def get_instances_from_dataframe(
                     )
 
                 # Only update expected keys, and only if we found a value for that attribute.
-                for key, value in label_attributes.items():
-                    if key in livelihood_strategy and value:
-                        if not livelihood_strategy[key]:
-                            livelihood_strategy[key] = value
+                for attribute, value in label_attributes.items():
+                    if attribute in livelihood_strategy and value:
+                        if not livelihood_strategy[attribute]:
+                            livelihood_strategy[attribute] = value
 
                         # If this attribute is already set for the `livelihood_strategy`, then the value should be the
                         # same. For example, we may detect the unit of measure multiple times for a single
-                        # `livelihood_strateg`:
+                        # `livelihood_strategy`:
                         #     Maize rainfed: kg produced
                         #     sold/exchanged (kg)
                         #     other use (kg)
                         # But if we receive different values for the same attribute, it probably indicates a metadata
                         # inconsistency for that attribute (or possibly a failure to recognize the start of the next
                         # Livelihood Strategy
-                        elif livelihood_strategy[key] != value:
+                        elif livelihood_strategy[attribute] != value:
                             raise ValueError(
-                                "Found duplicate value %s from row %s for existing attribute %s with value %s"
-                                % (value, row, key, livelihood_strategy[key])
+                                "Found duplicate value %s from row %s for existing attribute %s with value %s from row %s"
+                                % (
+                                    value,
+                                    row,
+                                    attribute,
+                                    livelihood_strategy[attribute],
+                                    livelihood_strategy["attribute_rows"][attribute],
+                                )
                             )
 
             # When we get the values for the LivelihoodActivity records, we just want the actual attribute
@@ -506,13 +543,20 @@ def get_instances_from_dataframe(
             if any(value for value in df.loc[row, "B":].astype(str).str.strip()):
                 # Make sure we have an attribute!
                 if not activity_attribute:
+                    # Include the header rows as well as the current row in the error message to aid trouble-shooting
                     rows = df.index[:num_header_rows].tolist() + [row]
                     raise ValueError(
                         "Found values in row %s for label '%s' without an identified attribute:\n%s"
                         % (
                             row,
                             label,
-                            df.loc[rows].replace("", pd.NA).dropna(axis="columns", subset=row).to_markdown(),
+                            # Use replace/dropna/fillna so that the error message only includes the columns that
+                            # contain unwanted data.
+                            df.loc[rows]
+                            .replace("", pd.NA)
+                            .dropna(axis="columns", subset=row)
+                            .fillna("")
+                            .to_markdown(),
                         )
                     )
                 # If the activity label that marks the start of a Livelihood Strategy is not in the
@@ -527,7 +571,7 @@ def get_instances_from_dataframe(
                     else:
                         raise ValueError(
                             "Found duplicate value %s from row %s for existing attribute %s with value %s"
-                            % (value, row, key, livelihood_strategy[key])
+                            % (value, row, attribute, livelihood_strategy[attribute])
                         )
 
                 # Add the attribute to the LivelihoodStrategy.attribute_rows
