@@ -42,7 +42,11 @@ from baseline.tests.factories import (
     WealthGroupCharacteristicValueFactory,
     WealthGroupFactory,
 )
-from common.tests.factories import ClassifiedProductFactory, UnitOfMeasureFactory
+from common.tests.factories import (
+    ClassifiedProductFactory,
+    CurrencyFactory,
+    UnitOfMeasureFactory,
+)
 from metadata.models import LivelihoodStrategyType
 from metadata.tests.factories import (
     LivelihoodCategoryFactory,
@@ -199,6 +203,7 @@ class LivelihoodZoneBaselineAdminTestCase(TestCase):
         bss = SimpleUploadedFile("test_bss.xlsx", b"Baseline content placeholder, just to be used for testing ...")
         livelihood_zone = LivelihoodZoneFactory(name_en="New Test Zone")
         current_count = LivelihoodZoneBaseline.objects.all().count()
+        currency = CurrencyFactory()
         data = {
             "name_en": f"{livelihood_zone.code} Baseline",
             "description": f"{livelihood_zone.code} Baseline description",
@@ -206,6 +211,7 @@ class LivelihoodZoneBaselineAdminTestCase(TestCase):
             "main_livelihood_category": LivelihoodCategoryFactory().pk,
             "source_organization": SourceOrganizationFactory().pk,
             "bss": bss,
+            "currency": currency,
             "reference_year_start_date": "2023-01-01",
             "reference_year_end_date": "2023-12-31",
             "valid_from_date": "2023-01-01",
