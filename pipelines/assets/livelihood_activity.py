@@ -364,7 +364,7 @@ def get_instances_from_dataframe(
                             livelihood_activity["times_per_year"] = (
                                 livelihood_activity["times_per_month"] * livelihood_activity["months_per_year"]
                                 if livelihood_activity["times_per_month"] and livelihood_activity["months_per_year"]
-                                else None
+                                else 0
                             )
 
                     # Lookup the season name from the alias used in the BSS to create the natural key
