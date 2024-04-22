@@ -77,6 +77,7 @@ def other_cash_income_dataframe(config: BSSMetadataConfig, corrected_files) -> O
         "Data2",
         start_strings=[
             "AGRICULTURAL LABOUR INCOME - CULTIVATION (PRE-HARVEST)",
+            "MAIN DOUVRE AGRICOLE LOCALE (avant récolte)",  # 2023 Mali BSSs
             "PAIMENT EN NATURE",
             "REVENUS MAIN D'OEUVRE AGRICOLE (pre-récolte)",
             "REVENU DU TRAVAUX AGRICOLES - CULTIVATION",
@@ -137,7 +138,7 @@ def other_cash_income_instances(
         raise ValueError("No complete entry in the BSS Metadata worksheet for %s" % partition_key)
 
     if other_cash_income_dataframe.empty:
-        raise ValueError("%s does not contain a Data2 worksheet" % partition_key)
+        output = {}
 
     output = get_instances_from_dataframe(
         context,

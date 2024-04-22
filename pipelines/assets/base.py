@@ -30,7 +30,7 @@ from xlutils.copy import copy as copy_xls
 
 from ..configs import BSSMetadataConfig
 from ..partitions import bss_files_partitions_def
-from ..utils import get_index
+from ..utils import get_index, prepare_lookup
 
 # set the default Django settings module
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hea.settings.production")
@@ -58,6 +58,7 @@ SUMMARY_LABELS = [
     "BASE DE RÉFÉRENAE",
     "range",
     "interval",
+    "intervales",  # 2023 Mali BSSs
 ]
 
 
@@ -270,30 +271,36 @@ def corrected_files(
 
     # Apply the corrections
     for correction in corrections_df.itertuples():
-        for row in rows_from_range(correction.range):
-            for cell in row:
-                if isinstance(wb, xlwt.Workbook):
-                    row, col = coordinate_to_tuple(cell)
-                    prev_value = xlrd_wb.sheet_by_name(correction.worksheet_name).cell_value(row - 1, col - 1)
-                    if (
-                        xlrd_wb.sheet_by_name(correction.worksheet_name).cell(row - 1, col - 1).ctype
-                        == xlrd.XL_CELL_ERROR
-                    ):
-                        # xlrd.error_text_from_code returns, eg, "#N/A"
-                        prev_value = xlrd.error_text_from_code[
-                            xlrd_wb.sheet_by_name(correction.worksheet_name).cell_value(row - 1, col - 1)
-                        ]
-                    validate_previous_value(cell, correction.prev_value, prev_value)
-                    # xlwt uses 0-based indexes, but coordinate_to_tuple uses 1-based, so offset the values
-                    wb.get_sheet(correction.worksheet_name).write(row - 1, col - 1, correction.value)
-                else:
-                    cell = wb[correction.worksheet_name][cell]
-                    validate_previous_value(cell, correction.prev_value, cell.value)
-                    cell.value = correction.value
-                    cell.comment = Comment(
-                        f"{correction.author} on {correction.correction_date}: {correction.comment}",  # NOQA: E501
-                        author=correction.author,
-                    )
+        try:
+            for row in rows_from_range(correction.range):
+                for cell in row:
+                    if isinstance(wb, xlwt.Workbook):
+                        row, col = coordinate_to_tuple(cell)
+                        prev_value = xlrd_wb.sheet_by_name(correction.worksheet_name).cell_value(row - 1, col - 1)
+                        if (
+                            xlrd_wb.sheet_by_name(correction.worksheet_name).cell(row - 1, col - 1).ctype
+                            == xlrd.XL_CELL_ERROR
+                        ):
+                            # xlrd.error_text_from_code returns, eg, "#N/A"
+                            prev_value = xlrd.error_text_from_code[
+                                xlrd_wb.sheet_by_name(correction.worksheet_name).cell_value(row - 1, col - 1)
+                            ]
+                        validate_previous_value(cell, correction.prev_value, prev_value)
+                        # xlwt uses 0-based indexes, but coordinate_to_tuple uses 1-based, so offset the values
+                        wb.get_sheet(correction.worksheet_name).write(row - 1, col - 1, correction.value)
+                    else:
+                        cell = wb[correction.worksheet_name][cell]
+                        validate_previous_value(cell, correction.prev_value, cell.value)
+                        cell.value = correction.value
+                        cell.comment = Comment(
+                            f"{correction.author} on {correction.correction_date}: {correction.comment}",  # NOQA: E501
+                            author=correction.author,
+                        )
+        except Exception as e:
+            raise ValueError(
+                f"Error applying correction to BSS `{partition_key}`, worksheet `{correction.worksheet_name}`, "
+                f"range `{correction.range}`"
+            ) from e
 
     buffer = BytesIO()
     wb.save(buffer)
@@ -333,7 +340,7 @@ def get_bss_dataframe(
 
     # Find the last column before the summary column, which is in row 3
     end_col = get_index(SUMMARY_LABELS, df.loc[3], offset=-1)
-    if end_col == df.columns[-1]:  # Need the last row because get_index has offset=-1
+    if not end_col:
         raise ValueError(f'No cell containing any of the summary strings: {", ".join(SUMMARY_LABELS)}')
 
     if not num_summary_cols:
@@ -344,7 +351,7 @@ def get_bss_dataframe(
 
     # Find the row index of the start of the Livelihood Activities or Wealth Group Characteristic Values
     start_row = get_index(start_strings, df.loc[1:, "A"])
-    if start_row == 1:
+    if not start_row:
         raise ValueError(f'No cell in Column A containing any of the start strings: {", ".join(start_strings)}')
 
     if end_strings:
@@ -354,11 +361,14 @@ def get_bss_dataframe(
             df.loc[start_row:, "A"],
             offset=-1,
         )
-        if end_row == df.index[-1]:  # Need the last row because get_index has offset=-1
-            raise ValueError(f'No cell in Column A containing any of the end strings: {", ".join(start_strings)}')
+        if not end_row:
+            # The WB worksheet typically doesn't have a totals section at the bottom, so if we didn't find
+            # an end string, then use the last row rather than raising an error.
+            end_row = df.index[-1]
     else:
-        # Find the last row that contains a label
-        end_row = df.index[df["A"].notna()][-1]
+        # Use the last row. We don't use the last row that contains a label, because the WB worksheet contains data
+        # for rows that rely on copying down the label in column A from a previous row.
+        end_row = df.index[-1]
 
     # Find the language based on the value in cell A3
     lang = LANGS[df.loc[3, "A"].strip().lower()]
@@ -427,6 +437,10 @@ def get_bss_label_dataframe(
             },
         )
 
+    # The summary columns won't have a community, so find the column after the last column with a community name
+    last_community_col = df.loc[5][df.loc[5].replace("", pd.NA).notna()].index[-1]
+    summary_start_col = df.columns[df.columns.get_loc(last_community_col) + 1]
+
     df = df.iloc[num_header_rows:]  # Ignore the header rows
     instance = context.instance
     dataframe_materialization = instance.get_event_records(
@@ -440,16 +454,20 @@ def get_bss_label_dataframe(
 
     label_df = pd.DataFrame()
     label_df["label"] = df["A"]
-    label_df["label_lower"] = label_df["label"].str.lower().str.strip()
-    label_df["filename"] = context.asset_partition_key_for_output()
+    label_df["label_lower"] = prepare_lookup(label_df["label"])
+    label_df["bss"] = context.asset_partition_key_for_output()
     label_df["lang"] = dataframe_materialization.metadata["lang"].text
     label_df["worksheet"] = dataframe_materialization.metadata["worksheet"].text
     label_df["row_number"] = df.index
     label_df["datapoint_count"] = df.loc[:, "B":].apply(lambda row: sum((row != 0) & (row != "")), axis="columns")
 
+    # Store a bool to indicate whether the row contains any summary data
+    summary_cols = df.loc[:, summary_start_col:].fillna(0).map(lambda x: 0 if isinstance(x, str) else x).astype(float)
+    label_df["in_summary"] = summary_cols.sum(axis="columns") > 0
+
     # Create a sample of rows that contain data, because the first rows may not contain any values.
     # For example the Data sheet contains data for Camel's Milk first, which isn't a common Livelihood Activity.
-    sample_df = label_df[label_df["datapoint_count"] > 0]
+    sample_df = label_df[label_df["in_summary"]]
     sample_rows = min(len(sample_df), config.preview_rows)
 
     return Output(
@@ -457,8 +475,10 @@ def get_bss_label_dataframe(
         metadata={
             "num_labels": len(label_df),
             "num_datapoints": int(label_df["datapoint_count"].sum()),
-            "preview": MetadataValue.md(label_df.head(config.preview_rows).to_markdown()),
-            "sample": MetadataValue.md(sample_df.sample(sample_rows).to_markdown()),
+            "num_summaries": int(label_df["in_summary"].sum()),
+            # Escape the ~ in the partition_key, otherwise it is rendered as strikethrough
+            "preview": MetadataValue.md(label_df.head(config.preview_rows).to_markdown().replace("~", "\\~")),
+            "sample": MetadataValue.md(sample_df.sample(sample_rows).to_markdown().replace("~", "\\~")),
         },
     )
 
@@ -475,9 +495,11 @@ def get_all_bss_labels_dataframe(
         metadata={
             "num_labels": len(df),
             "num_datapoints": int(df["datapoint_count"].sum()),
-            "preview": MetadataValue.md(df.sample(config.preview_rows).to_markdown()),
-            "datapoint_preview": MetadataValue.md(
-                df[df["datapoint_count"] > 0].sample(config.preview_rows).to_markdown()
+            "num_summaries": int(df["in_summary"].sum()),
+            # Escape the ~ in the partition_key, otherwise it is rendered as strikethrough
+            "preview": MetadataValue.md(df.head(config.preview_rows).to_markdown().replace("~", "\\~")),
+            "sample": MetadataValue.md(
+                df[df["in_summary"]].sample(config.preview_rows).to_markdown().replace("~", "\\~")
             ),
         },
     )
@@ -486,7 +508,7 @@ def get_all_bss_labels_dataframe(
 def get_summary_bss_label_dataframe(
     config: BSSMetadataConfig, all_labels_dataframe: dict[str, pd.DataFrame]
 ) -> Output[pd.DataFrame]:
-    df = all_labels_dataframe.sort_values(by=["label_lower", "row_number", "filename"])
+    df = all_labels_dataframe.sort_values(by=["label_lower", "row_number", "bss"])
 
     # Group by label_lower and aggregate
     df = (
@@ -497,17 +519,20 @@ def get_summary_bss_label_dataframe(
                 lambda x: ", ".join(x.sort_values().unique()),
             ),  # Create comma-separated list of unique languages
             datapoint_count_sum=("datapoint_count", "sum"),
-            unique_filename_count=("filename", pd.Series.nunique),
+            in_summary_sum=("in_summary", "sum"),
+            unique_bss_count=("bss", pd.Series.nunique),
             min_row_number=("row_number", "min"),
             max_row_number=("row_number", "max"),
-            filename_for_min_row=("filename", "first"),  # Assuming df is sorted by row_number within each group
-            filename_for_max_row=("filename", "last"),  # Assuming df is sorted by row_number within each group
+            bss_for_min_row=("bss", "first"),  # Assuming df is sorted by row_number within each group
+            bss_for_max_row=("bss", "last"),  # Assuming df is sorted by row_number within each group
         )
         .reset_index()
     )
 
-    df = df.sort_values(by=["min_row_number", "label_lower", "filename_for_min_row", "filename_for_max_row"])
-    df = df.rename(columns={"label_lower": "label", "datapoint_count_sum": "datapoint_count"})
+    df = df.sort_values(by=["min_row_number", "label_lower", "bss_for_min_row", "bss_for_max_row"])
+    df = df.rename(
+        columns={"label_lower": "label", "datapoint_count_sum": "datapoint_count", "in_summary_sum": "summary_count"}
+    )
     return Output(
         df,
         metadata={

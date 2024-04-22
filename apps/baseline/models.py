@@ -142,7 +142,7 @@ class LivelihoodZoneBaseline(common_models.Model):
         PT = "pt", _("Portuguese")
         AR = "ar", _("Arabic")
 
-    name = TranslatedField(common_models.NameField(max_length=200, unique=True))
+    name = TranslatedField(common_models.NameField(max_length=200))
     description = TranslatedField(common_models.DescriptionField())
     livelihood_zone = models.ForeignKey(
         LivelihoodZone, db_column="livelihood_zone_code", on_delete=models.RESTRICT, verbose_name=_("Livelihood Zone")
@@ -244,7 +244,11 @@ class LivelihoodZoneBaseline(common_models.Model):
             models.UniqueConstraint(
                 fields=("livelihood_zone", "reference_year_end_date"),
                 name="baseline_livelihoodzonebaseline_livelihood_zone_reference_year_end_date_uniq",
-            )
+            ),
+            models.UniqueConstraint(
+                fields=("name_en", "reference_year_end_date"),
+                name="baseline_livelihoodzonebaseline_name_en_reference_year_end_date_uniq",
+            ),
         ]
 
 
@@ -321,11 +325,19 @@ class LivelihoodProductCategory(common_models.Model):
 
 class CommunityManager(common_models.IdentifierManager):
     def get_by_natural_key(self, code: str, reference_year_end_date: str, full_name: str):
-        return self.get(
-            livelihood_zone_baseline__livelihood_zone__code=code,
-            livelihood_zone_baseline__reference_year_end_date=reference_year_end_date,
-            full_name=full_name,
-        )
+        try:
+            return self.get(
+                livelihood_zone_baseline__livelihood_zone__code=code,
+                livelihood_zone_baseline__reference_year_end_date=reference_year_end_date,
+                full_name=full_name,
+            )
+        except Community.DoesNotExist:
+            # Also try matching just the Community name instead of the full_name
+            return self.get(
+                livelihood_zone_baseline__livelihood_zone__code=code,
+                livelihood_zone_baseline__reference_year_end_date=reference_year_end_date,
+                name=full_name,
+            )
 
 
 class Community(common_models.Model):
@@ -411,12 +423,21 @@ class Community(common_models.Model):
 class WealthGroupManager(common_models.IdentifierManager):
     def get_by_natural_key(self, code: str, reference_year_end_date: str, wealth_group_category: str, full_name: str):
         if full_name:
-            return self.get(
-                livelihood_zone_baseline__livelihood_zone__code=code,
-                livelihood_zone_baseline__reference_year_end_date=reference_year_end_date,
-                wealth_group_category__code=wealth_group_category,
-                community__full_name=full_name,
-            )
+            try:
+                return self.get(
+                    livelihood_zone_baseline__livelihood_zone__code=code,
+                    livelihood_zone_baseline__reference_year_end_date=reference_year_end_date,
+                    wealth_group_category__code=wealth_group_category,
+                    community__full_name=full_name,
+                )
+            except WealthGroup.DoesNotExist:
+                # Also try matching just the Community name instead of the full_name
+                return self.get(
+                    livelihood_zone_baseline__livelihood_zone__code=code,
+                    livelihood_zone_baseline__reference_year_end_date=reference_year_end_date,
+                    wealth_group_category__code=wealth_group_category,
+                    community__name=full_name,
+                )
         else:
             return self.get(
                 livelihood_zone_baseline__livelihood_zone__code=code,
@@ -583,16 +604,22 @@ class WealthGroupCharacteristicValueManager(common_models.IdentifierManager):
             "wealth_group__livelihood_zone_baseline__reference_year_end_date": reference_year_end_date,
             "wealth_group__wealth_group_category__code": wealth_group_category,
         }
-        if full_name:
-            criteria["wealth_group__community__full_name"] = full_name
-        else:
-            criteria["wealth_group__community__isnull"] = True
         if product:
             criteria["product__cpc"] = product
         else:
             criteria["product__isnull"] = True
-
-        return self.get(**criteria)
+        if not full_name:
+            criteria["wealth_group__community__isnull"] = True
+            return self.get(**criteria)
+        else:
+            try:
+                criteria["wealth_group__community__full_name"] = full_name
+                return self.get(**criteria)
+            except WealthGroupCharacteristicValue.DoesNotExist:
+                # Also try matching just the Community name instead of the full_name
+                del criteria["wealth_group__community__full_name"]
+                criteria["wealth_group__community__name"] = full_name
+                return self.get(**criteria)
 
 
 class WealthGroupCharacteristicValue(common_models.Model):
@@ -963,12 +990,19 @@ class LivelihoodActivityManager(common_models.IdentifierManager):
             criteria["livelihood_strategy__product__cpc"] = product
         else:
             criteria["livelihood_strategy__product__isnull"] = True
-        if full_name:
-            criteria["wealth_group__community__full_name"] = full_name
-        else:
-            criteria["wealth_group__community__isnull"] = True
 
-        return self.get(**criteria)
+        if not full_name:
+            criteria["wealth_group__community__isnull"] = True
+            return self.get(**criteria)
+        else:
+            try:
+                criteria["wealth_group__community__full_name"] = full_name
+                return self.get(**criteria)
+            except WealthGroupCharacteristicValue.DoesNotExist:
+                # Also try matching just the Community name instead of the full_name
+                del criteria["wealth_group__community__full_name"]
+                criteria["wealth_group__community__name"] = full_name
+                return self.get(**criteria)
 
 
 class LivelihoodActivity(common_models.Model):
@@ -1012,6 +1046,7 @@ class LivelihoodActivity(common_models.Model):
     )
     wealth_group = models.ForeignKey(WealthGroup, on_delete=models.CASCADE, help_text=_("Wealth Group"))
 
+    # Also used for the quantity received for the PaymentInKind and ReliefGiftsOther Livelihood Strategies
     quantity_produced = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Produced"))
     quantity_purchased = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Purchased"))
     quantity_sold = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Sold/Exchanged"))
@@ -1461,6 +1496,8 @@ class FoodPurchase(LivelihoodActivity):
     # Production calculation/validation is `unit_of_measure * unit_multiple * times_per_month  * months_per_year`
     # Do we need this, or can we use combined units of measure like FDW, e.g. 5kg
     # NIO93 Row B422 tia = 2.5kg
+
+    # unit_multiple has names like wt_of_measure in the BSS.
     unit_multiple = models.PositiveSmallIntegerField(
         verbose_name=_("Unit Multiple"), help_text=_("Multiple of the unit of measure in a single purchase")
     )
