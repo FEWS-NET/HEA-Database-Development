@@ -85,6 +85,7 @@ class LivelihoodZoneBaselineSerializer(serializers.ModelSerializer):
             "main_livelihood_category",
             "bss",
             "bss_language",
+            "currency",
             *translation_fields("profile_report"),
             "reference_year_start_date",
             "reference_year_end_date",
