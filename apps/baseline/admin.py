@@ -115,6 +115,7 @@ class LivelihoodZoneBaselineAdmin(GISModelAdmin):
                     "data_collection_start_date",
                     "data_collection_end_date",
                     "publication_date",
+                    "currency",
                     *translation_fields("description"),
                 ]
             },

@@ -227,7 +227,13 @@ class LivelihoodZoneBaseline(common_models.Model):
         verbose_name=_("Population Estimate"),
         help_text=_("The estimated population of the Livelihood Zone during the reference year"),
     )
-
+    currency = models.ForeignKey(
+        Currency,
+        db_column="currency_code",
+        on_delete=models.PROTECT,
+        verbose_name=_("Currency"),
+        help_text=_("Default currency for income or expenditure from Livelihood Activities within this Baseline."),
+    )
     objects = LivelihoodZoneBaselineManager()
 
     def natural_key(self):
