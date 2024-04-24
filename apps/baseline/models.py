@@ -229,7 +229,6 @@ class LivelihoodZoneBaseline(common_models.Model):
     )
     currency = models.ForeignKey(
         Currency,
-        default="USD",
         db_column="currency_code",
         on_delete=models.PROTECT,
         verbose_name=_("Currency"),
