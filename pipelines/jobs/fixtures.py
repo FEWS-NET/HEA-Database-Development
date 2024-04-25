@@ -25,16 +25,16 @@ from ..assets.livelihood_activity import (
     livelihood_activity_label_dataframe,
     summary_livelihood_activity_labels_dataframe,
 )
-from ..assets.seasonal_production_performance import (
-    hazard_instances,
-    seasonal_production_performance_instances,
-)
 from ..assets.other_cash_income import (
     all_other_cash_income_labels_dataframe,
     other_cash_income_dataframe,
     other_cash_income_instances,
     other_cash_income_label_dataframe,
     summary_other_cash_income_labels_dataframe,
+)
+from ..assets.seasonal_production_performance import (
+    hazard_instances,
+    seasonal_production_performance_instances,
 )
 from ..assets.wealth_characteristic import (
     all_wealth_characteristic_labels_dataframe,
