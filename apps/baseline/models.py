@@ -2100,6 +2100,24 @@ class MarketPrice(common_models.Model):
         verbose_name_plural = _("Market Prices")
 
 
+class SeasonalProductionPerformanceManager(common_models.IdentifierManager):
+    def get_by_natural_key(
+        self,
+        code: str,
+        reference_year_end_date: str,
+        community_full_name: str,
+        season_name: str,
+        performance_year_end_date: str,
+    ):
+        return self.get(
+            community__livelihood_zone_baseline__livelihood_zone__code=code,
+            community__livelihood_zone_baseline__reference_year_end_date=reference_year_end_date,
+            community__full_name=community_full_name,
+            season__name_en=season_name,
+            performance_year_end_date=performance_year_end_date,
+        )
+
+
 # @TODO Ask Save what to call this
 class SeasonalProductionPerformance(common_models.Model):
     """
@@ -2138,10 +2156,33 @@ class SeasonalProductionPerformance(common_models.Model):
         verbose_name=_("Seasonal Performance"),
         help_text=_("Rating of the seasonal production performance from Very Poor (1) to Very Good (5)"),
     )
+    objects = SeasonalProductionPerformanceManager()
+
+    def natural_key(self):
+        return (
+            self.community.livelihood_zone_baseline.livelihood_zone.code,
+            self.community.livelihood_zone_baseline.reference_year_end_date.isoformat(),
+            self.community.full_name,
+            self.season.name_en,
+            self.performance_year_end_date.isoformat(),
+        )
 
     class Meta:
         verbose_name = _("Seasonal Production Performance")
         verbose_name_plural = _("Seasonal Production Performance")
+
+
+class HazardManager(common_models.IdentifierManager):
+    def get_by_natural_key(
+        self, code: str, reference_year_end_date: str, community_full_name: str, chronic_or_periodic: str, ranking: str
+    ):
+        return self.get(
+            community__livelihood_zone_baseline__livelihood_zone__code=code,
+            community__livelihood_zone_baseline__reference_year_end_date=reference_year_end_date,
+            community__full_name=community_full_name,
+            chronic_or_periodic=chronic_or_periodic,
+            ranking=int(ranking),
+        )
 
 
 class Hazard(common_models.Model):
@@ -2184,10 +2225,20 @@ class Hazard(common_models.Model):
     description = common_models.DescriptionField(
         max_length=255, verbose_name=_("Description of Event(s) and/or Response(s)")
     )
+    objects = HazardManager()
 
     class Meta:
         verbose_name = _("Hazard")
         verbose_name_plural = _("Hazards")
+
+    def natural_key(self):
+        return (
+            self.community.livelihood_zone_baseline.livelihood_zone.code,
+            self.community.livelihood_zone_baseline.reference_year_end_date.isoformat(),
+            self.community.full_name,
+            self.chronic_or_periodic,
+            str(self.ranking),
+        )
 
 
 class Event(common_models.Model):
