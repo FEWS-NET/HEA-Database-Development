@@ -148,7 +148,7 @@ def wild_foods_instances(
         raise ValueError("No complete entry in the BSS Metadata worksheet for %s" % partition_key)
 
     if wild_foods_dataframe.empty:
-        raise ValueError("%s does not contain a Data3 worksheet" % partition_key)
+        output = {}
 
     output = get_instances_from_dataframe(
         context,

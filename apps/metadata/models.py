@@ -68,10 +68,6 @@ class LivelihoodCategory(ReferenceData):
     A type of Livelihood Zone, such as Pastoral or Rain-fed AgroPastoral, etc.
     """
 
-    # @TODO Do we need a parent category so we can store the detail of Rain Fed AgriPastoral,
-    # but still filter for all AgroPastoral
-    # Roger: Is this true? Or is Rainfed a modifier for Crop rather than for LivelihoodCategory?
-
     class Meta:
         verbose_name = _("Livelihood Category")
         verbose_name_plural = _("Livelihood Categories")
@@ -162,7 +158,6 @@ class SeasonalActivityType(ReferenceData):
     so that it can be shared across all BSS.
     """
 
-    # @TODO What is the overlap with LivelihoodStrategyTypes? Can we reuse or share?
     class SeasonalActivityCategory(models.TextChoices):
         CROP = "crop", _("Crops")
         LIVESTOCK = "livestock", _("Livestock")
@@ -291,8 +286,6 @@ class Season(common_models.Model):
         END = "End", _("End")
 
     country = models.ForeignKey(Country, verbose_name=_("Country"), db_column="country_code", on_delete=models.PROTECT)
-    # @TODO Uncomment if we have a full Spatial app.
-    # geographic_unit - models.ForeignKey(GeographicUnit, verbose_name=_("Geographic Unit"), on_delete=models.RESTRICT)
     name = TranslatedField(models.CharField(max_length=100, unique=True, verbose_name=_("Name")))
     description = TranslatedField(models.TextField(max_length=255, verbose_name=_("Description")))
     season_type = models.CharField(

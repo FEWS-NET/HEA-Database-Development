@@ -142,7 +142,7 @@ class LivelihoodZoneBaseline(common_models.Model):
         PT = "pt", _("Portuguese")
         AR = "ar", _("Arabic")
 
-    name = TranslatedField(common_models.NameField(max_length=200, unique=True))
+    name = TranslatedField(common_models.NameField(max_length=200))
     description = TranslatedField(common_models.DescriptionField())
     livelihood_zone = models.ForeignKey(
         LivelihoodZone, db_column="livelihood_zone_code", on_delete=models.RESTRICT, verbose_name=_("Livelihood Zone")
@@ -227,7 +227,13 @@ class LivelihoodZoneBaseline(common_models.Model):
         verbose_name=_("Population Estimate"),
         help_text=_("The estimated population of the Livelihood Zone during the reference year"),
     )
-
+    currency = models.ForeignKey(
+        Currency,
+        db_column="currency_code",
+        on_delete=models.PROTECT,
+        verbose_name=_("Currency"),
+        help_text=_("Default currency for income or expenditure from Livelihood Activities within this Baseline."),
+    )
     objects = LivelihoodZoneBaselineManager()
 
     def natural_key(self):
@@ -244,7 +250,11 @@ class LivelihoodZoneBaseline(common_models.Model):
             models.UniqueConstraint(
                 fields=("livelihood_zone", "reference_year_end_date"),
                 name="baseline_livelihoodzonebaseline_livelihood_zone_reference_year_end_date_uniq",
-            )
+            ),
+            models.UniqueConstraint(
+                fields=("name_en", "reference_year_end_date"),
+                name="baseline_livelihoodzonebaseline_name_en_reference_year_end_date_uniq",
+            ),
         ]
 
 
@@ -284,7 +294,10 @@ class LivelihoodZoneBaselineCorrection(common_models.Model):
         return f"{str(self.livelihood_zone_baseline)} {self.worksheet_name} {self.cell_range}"
 
 
-# @TODO Can we have a better name.
+# @TODO Decide whether to change the name of this model when we review the
+# LIAS and finalize models for expandability and coping. Ideally we want to be
+# able to identify Livelihood Activities that are produce staple foods, and/or
+# are part of the different baskets.
 class LivelihoodProductCategory(common_models.Model):
     """
     The usage category of the Product in the Livelihood Zone, such as staple food or livelihood protection.
@@ -318,11 +331,19 @@ class LivelihoodProductCategory(common_models.Model):
 
 class CommunityManager(common_models.IdentifierManager):
     def get_by_natural_key(self, code: str, reference_year_end_date: str, full_name: str):
-        return self.get(
-            livelihood_zone_baseline__livelihood_zone__code=code,
-            livelihood_zone_baseline__reference_year_end_date=reference_year_end_date,
-            full_name=full_name,
-        )
+        try:
+            return self.get(
+                livelihood_zone_baseline__livelihood_zone__code=code,
+                livelihood_zone_baseline__reference_year_end_date=reference_year_end_date,
+                full_name=full_name,
+            )
+        except Community.DoesNotExist:
+            # Also try matching just the Community name instead of the full_name
+            return self.get(
+                livelihood_zone_baseline__livelihood_zone__code=code,
+                livelihood_zone_baseline__reference_year_end_date=reference_year_end_date,
+                name=full_name,
+            )
 
 
 class Community(common_models.Model):
@@ -408,12 +429,21 @@ class Community(common_models.Model):
 class WealthGroupManager(common_models.IdentifierManager):
     def get_by_natural_key(self, code: str, reference_year_end_date: str, wealth_group_category: str, full_name: str):
         if full_name:
-            return self.get(
-                livelihood_zone_baseline__livelihood_zone__code=code,
-                livelihood_zone_baseline__reference_year_end_date=reference_year_end_date,
-                wealth_group_category__code=wealth_group_category,
-                community__full_name=full_name,
-            )
+            try:
+                return self.get(
+                    livelihood_zone_baseline__livelihood_zone__code=code,
+                    livelihood_zone_baseline__reference_year_end_date=reference_year_end_date,
+                    wealth_group_category__code=wealth_group_category,
+                    community__full_name=full_name,
+                )
+            except WealthGroup.DoesNotExist:
+                # Also try matching just the Community name instead of the full_name
+                return self.get(
+                    livelihood_zone_baseline__livelihood_zone__code=code,
+                    livelihood_zone_baseline__reference_year_end_date=reference_year_end_date,
+                    wealth_group_category__code=wealth_group_category,
+                    community__name=full_name,
+                )
         else:
             return self.get(
                 livelihood_zone_baseline__livelihood_zone__code=code,
@@ -423,9 +453,6 @@ class WealthGroupManager(common_models.IdentifierManager):
             )
 
 
-# @TODO https://fewsnet.atlassian.net/browse/HEA-92
-# Should this be SocioEconomicGroup, or maybe PopulationGroup, given female-headed households, etc.
-# Jenny will check with P3 on preferred English naming. In French, it is something else anyway, I think.
 class WealthGroup(common_models.Model):
     """
     Households within a Livelihood Zone with similar capacity to exploit the available food and income options.
@@ -451,14 +478,6 @@ class WealthGroup(common_models.Model):
     # within that Community in the specified Wealth Group Category. If the Community
     # is null, then the Wealth Group represents the households with that
     # Wealth Group Category for the whole Livelihood Zone Baseline.
-    # @TODO Or make this a mandatory geographic_unit
-    # In which case we move validation out of here and into the spatial hierarchy.
-    # Roger: We need the `livelihood_zone_baseline` as a foreign key anyway,
-    # so we can validate that Activity->Strategy->Baseline and Activity->WealthGroup->Baseline end up at the
-    # same Baseline. Therefore we need the `livelihood_zone_baseline` as a separate column anyway. I think it
-    # would be weird to have `livelihood_zone_baseline` and `geographic_unit` both pointing at the same object,
-    # and it would be less obvious whether a WealthGroup is a BaselineWealthGroup or a CommunityWealthGroup.
-    # Therefore, I think that the current approach with an optional `community` is preferable.
     community = models.ForeignKey(
         Community, blank=True, null=True, on_delete=models.CASCADE, verbose_name=_("Community")
     )
@@ -591,16 +610,22 @@ class WealthGroupCharacteristicValueManager(common_models.IdentifierManager):
             "wealth_group__livelihood_zone_baseline__reference_year_end_date": reference_year_end_date,
             "wealth_group__wealth_group_category__code": wealth_group_category,
         }
-        if full_name:
-            criteria["wealth_group__community__full_name"] = full_name
-        else:
-            criteria["wealth_group__community__isnull"] = True
         if product:
             criteria["product__cpc"] = product
         else:
             criteria["product__isnull"] = True
-
-        return self.get(**criteria)
+        if not full_name:
+            criteria["wealth_group__community__isnull"] = True
+            return self.get(**criteria)
+        else:
+            try:
+                criteria["wealth_group__community__full_name"] = full_name
+                return self.get(**criteria)
+            except WealthGroupCharacteristicValue.DoesNotExist:
+                # Also try matching just the Community name instead of the full_name
+                del criteria["wealth_group__community__full_name"]
+                criteria["wealth_group__community__name"] = full_name
+                return self.get(**criteria)
 
 
 class WealthGroupCharacteristicValue(common_models.Model):
@@ -674,8 +699,6 @@ class WealthGroupCharacteristicValue(common_models.Model):
         related_name="wealth_group_characteristic_values",
     )
 
-    # @TODO Are we better off with a `value = JSONField()` or `num_value`, `str_value`, `bool_value` as separate fields
-    # or a single `value=CharField()` that we just store the str representation of the value in.
     # Examples of the characteristics we need to support:
     # "has_motorcycle" (boolean)
     # "type_water" (one from well, faucet, river, etc.)
@@ -871,10 +894,7 @@ class LivelihoodStrategy(common_models.Model):
         verbose_name=_("Currency"),
         help_text=_("Currency of income or expenditure from this Livelihood Strategy"),
     )
-    # In Somalia they track export/local sales separately - see SO18 Data:B178 and also B770
     # In many BSS they store separate data for Rainfed and Irrigated production of staple crops.
-    # @TODO See https://fewsnet.atlassian.net/browse/HEA-67
-    # Are there other types than rainfed and irrigated?
     additional_identifier = models.CharField(
         max_length=60,
         blank=True,
@@ -976,12 +996,19 @@ class LivelihoodActivityManager(common_models.IdentifierManager):
             criteria["livelihood_strategy__product__cpc"] = product
         else:
             criteria["livelihood_strategy__product__isnull"] = True
-        if full_name:
-            criteria["wealth_group__community__full_name"] = full_name
-        else:
-            criteria["wealth_group__community__isnull"] = True
 
-        return self.get(**criteria)
+        if not full_name:
+            criteria["wealth_group__community__isnull"] = True
+            return self.get(**criteria)
+        else:
+            try:
+                criteria["wealth_group__community__full_name"] = full_name
+                return self.get(**criteria)
+            except WealthGroupCharacteristicValue.DoesNotExist:
+                # Also try matching just the Community name instead of the full_name
+                del criteria["wealth_group__community__full_name"]
+                criteria["wealth_group__community__name"] = full_name
+                return self.get(**criteria)
 
 
 class LivelihoodActivity(common_models.Model):
@@ -1025,6 +1052,7 @@ class LivelihoodActivity(common_models.Model):
     )
     wealth_group = models.ForeignKey(WealthGroup, on_delete=models.CASCADE, help_text=_("Wealth Group"))
 
+    # Also used for the quantity received for the PaymentInKind and ReliefGiftsOther Livelihood Strategies
     quantity_produced = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Produced"))
     quantity_purchased = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Purchased"))
     quantity_sold = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Sold/Exchanged"))
@@ -1095,11 +1123,6 @@ class LivelihoodActivity(common_models.Model):
     def calculate_fields(self):
         self.livelihood_zone_baseline = self.livelihood_strategy.livelihood_zone_baseline
         self.strategy_type = self.livelihood_strategy.strategy_type
-
-        # @TODO This hasn't been reviewed yet, and fix
-        # self.is_staple = self.wealth_group.community.livelihood_zone_baseline.staple_set(
-        #     item=self.output_item
-        # ).exists()
 
     # These formulae are copied directly from the BSS cells:
 
@@ -1200,8 +1223,6 @@ class LivelihoodActivity(common_models.Model):
                 )
             )
 
-    # @TODO Do we use Django Forms as a separate validation layer, and load the data from the dataframe into a Form
-    # instance and then check whether it is valid.  See Two Scoops for an explanation.
     def clean(self):
         self.validate_livelihood_zone_baseline()
         self.validate_strategy_type()
@@ -1327,7 +1348,6 @@ class MilkProduction(LivelihoodActivity):
         blank=True, null=True, verbose_name=_("Average daily milk production per animal")
     )
 
-    # @TODO see https://fewsnet.atlassian.net/browse/HEA-65
     # This is currently not required for scenario development and is only used for the kcal calculations in the BSS.
     # Save the Children confirmed that most communities consume Whole Milk, and then either sell Whole Milk, or make
     # Butter/Ghee and then sell the remaining Skim Milk (and also sell some proportion of the Butter/Ghee). The
@@ -1359,15 +1379,9 @@ class MilkProduction(LivelihoodActivity):
 
     # @TODO See https://fewsnet.atlassian.net/browse/HEA-65
     # The BSS has a single cell for kcal_percentage that covers both the Milk and Butter/Ghee
-    # livelihood strategies. Can we separate these out? If not, do we store Ghee as a sale only
-    # and record all consumption against milk, which is how it is calculated. Or do we create a
-    # combined `DairyProduction(LivelihoodStrategy)` so that there is only a single row in the db
-    # but which contains extra metadata for the ghee production/sales/other_uses. Or do we split
-    # production/sales/other_users/consumption into rows in a table rather than columns so that a
-    # LivelihoodStrategy can have 0 or many of each type. I.e. adopt the TransferModel approach that
-    # Chris proposed early on.
+    # livelihood strategies. Can we separate these out? If not, we will need to store Butter/Ghee as
+    # amount_sold only and record all consumption against milk, which is how it is calculated.
     def validate_quantity_produced(self):
-        # @TODO Add validation
         pass
 
     def clean(self):
@@ -1418,9 +1432,7 @@ class ButterProduction(LivelihoodActivity):
     # total_milk_production * 640 - (milk_sold_or_exchanged + milk_other_uses) * (640 - (300 if sold_other_use == "skim" else 0)) - (ghee_sold_or_exchanged + ghee_other_uses)*7865  # NOQA: E501
     # Doesn't reconcile with Ghee production, e.g. AI105 because that has:
     # =IF(SUM(AI90,AI98)=0,"",SUM(AI90,-AI91*AI94,-AI95*AI94,AI98,-AI99*AI102,-AI103*AI102)*0.04)
-
     def validate_quantity_produced(self):
-        # @TODO Add validation
         pass
 
     class Meta:
@@ -1458,8 +1470,6 @@ class LivestockSale(LivelihoodActivity):
     Stored on the BSS 'Data' worksheet in the 'Livestock Production' section, typically starting around Row 181.
     """
 
-    # @TODO Do we need validation around offtake (animals_sold) to make sure
-    # that they are not selling and killing more animals than they own.
     class Meta:
         verbose_name = LivelihoodStrategyType.LIVESTOCK_SALE.label
         verbose_name_plural = _("Livestock Sales")
@@ -1492,6 +1502,8 @@ class FoodPurchase(LivelihoodActivity):
     # Production calculation/validation is `unit_of_measure * unit_multiple * times_per_month  * months_per_year`
     # Do we need this, or can we use combined units of measure like FDW, e.g. 5kg
     # NIO93 Row B422 tia = 2.5kg
+
+    # unit_multiple has names like wt_of_measure in the BSS.
     unit_multiple = models.PositiveSmallIntegerField(
         verbose_name=_("Unit Multiple"), help_text=_("Multiple of the unit of measure in a single purchase")
     )
@@ -1753,14 +1765,15 @@ class SeasonalActivity(common_models.Model):
     Implicit in the BSS 'Seas Cal' worksheet in Column A, if present.
     """
 
-    # @TODO Should a Seasonal Activity have a foreign key (maybe optional) to a
+    # @TODO Should SeasonalActivity have a M:M foreign key (maybe optional) to
     # LivelihoodStrategy? Logically such a thing exists - the BSS contains
-    # seasonal activities related to growing Maize, and a livelihood strategy
-    # for growing maize. It might also have to be a ManyToManyField because if
-    # we have seasonal activities related to, say, sheep, then the livelihood
-    # strategies for Sheep Milk Production, Sheep Livestock Production and
-    # Sheep Sales would all be related.
-
+    # seasonal activities related to growing Maize, and one or more livelihood
+    # strategies for growing maize. It probably also needs to be a ManyToManyField
+    # because if we have seasonal activities related to, say, sheep, then the
+    # livelihood strategies for Sheep Milk Production, Sheep Butter Production,
+    # Sheep Livestock Production, and Sheep Sales would all be related. The BSS
+    # doesn't currently makes these links explicit, and so we haven't added the
+    # necessary ManyToManyFieldas yet.
     livelihood_zone_baseline = models.ForeignKey(
         LivelihoodZoneBaseline,
         on_delete=models.RESTRICT,
@@ -1893,17 +1906,18 @@ class SeasonalActivityOccurrence(common_models.Model):
         ]
 
 
-# @TODO https://fewsnet.atlassian.net/browse/HEA-91
-# What is this used for?
 class CommunityCropProduction(common_models.Model):
     """
-    The community crop production data for a crop producing community
-    Form 3's CROP PRODUCTION is used for community-level interviews
-    And the data goes to the BSS's 'Production' worksheet
+    The community-level crop production data for a crop-producing community.
+
+    This data is captured in the Community-level Form 3's CROP PRODUCTION section,
+    and is stored inthe BSS 'Production' worksheet. This data supports the
+    cross checks for the Livelihood Activity data and expandibility/coping data
+    that is contained in the LIAS. This data is not ingested from the BSS automatically.
     """
 
-    # @TODO  CropPurpose is referring the 'Main food & cash crops...' in Form 3,
-    #  but the BSS doesn't seem to contain this, should we keep this?
+    # @TODO This may not be necessary - we can distinguish Cash Crops from Food Crops by looking at the ratio of
+    # income to kcals (or percentage of income and/or percentage of kcals) in the Livelihood Activities.
     class CropPurpose(models.TextChoices):
         FOOD = "food", _("Main Food Crop")
         CASH = "cash", _("Cash Crop")
@@ -1941,11 +1955,6 @@ class CommunityCropProduction(common_models.Model):
         verbose_name=_("Land Unit of Measure"),
     )
 
-    # @TODO We need to store the harvest month for each crop, because it is needed
-    # to calculate the per month food, income and expenditure shown in Table 4 of the LIAS Sheet S
-
-    # @TODO Do we need to add UnitOfMeasure and parse it out of `6x50kg bags`, etc. or can we just store it as text.
-
     def clean(self):
         if not self.crop_id.startswith("R01"):
             raise ValidationError(
@@ -1971,19 +1980,15 @@ class CommunityCropProduction(common_models.Model):
         verbose_name_plural = _("Community Crop Productions")
 
 
-# @TODO Are these fields from Form 3 required here on CommunityLivestock,
-# or are they on WealthGroupLivestock as a result of the repition on Form 4
-# These worksheets are locked in the BSS. They are important reference data even
-# if the WealthGroup-level values are used for calculations.
 class CommunityLivestock(common_models.Model):
     """
     An animal typically raised by households in a Community, with revelant additional attributes.
 
-    This data is typically captured in Form 3 and stored in the Production worksheet in the BSS.
+    This data is captured in the Community-level Form 3's LIVESTOCK PRODUCTION section,
+    and is stored inthe BSS 'Production' worksheet. This data supports the
+    cross checks for the Livelihood Activity data and expandibility/coping data
+    that is contained in the LIAS. This data is not ingested from the BSS automatically.
     """
-
-    # @TODO It is probably not worth loading this data, it is never extracted as far as we can tell.
-    # And it is filled in irregularly, e.g. MWBPH_30Sep15
 
     community = models.ForeignKey(Community, on_delete=models.CASCADE, verbose_name=_("Wealth Group"))
     livestock = models.ForeignKey(
@@ -2009,8 +2014,6 @@ class CommunityLivestock(common_models.Model):
     age_at_sale = models.PositiveSmallIntegerField(
         verbose_name=_("Age at Sale"), help_text=_("Age in months at which the animal is typically sold/exchanged")
     )
-    # @TODO At implementation we need to ensure consistency across records
-    # that means we either need a EAV table or validation at data entry.
     additional_attributes = models.JSONField(blank=True, null=True, verbose_name=_("Additional Attributes"))
 
     def clean(self):
@@ -2041,6 +2044,8 @@ class MarketPrice(common_models.Model):
     Prices for the reference year are interviewed in Form 3
 
     Stored on the BSS 'Prices' worksheet.
+
+    Not ingested automatically from the BSS.
     """
 
     community = models.ForeignKey(Community, on_delete=models.RESTRICT, verbose_name=_("Community or Village"))
@@ -2054,8 +2059,7 @@ class MarketPrice(common_models.Model):
     )
     # Sometimes the BSS has "farmgate" or "within the village" or "locally" as
     # the market. For example, MWSLA_30Sep15 (https://docs.google.com/spreadsheets/d/1AX6GGt7S1wAP_NlTBBK8FKbCN4kImgzY/edit#gid=2078095544)  # NOQA: E501
-    # @TODO Should the market be nullable, or should we have a Market with the
-    # same name and geography as the Community when that happens.
+    # In those cases the market would be null.
     market = models.ForeignKey(Market, blank=True, null=True, on_delete=models.RESTRICT)
     description = common_models.DescriptionField(max_length=100)
     currency = models.ForeignKey(
@@ -2118,7 +2122,6 @@ class SeasonalProductionPerformanceManager(common_models.IdentifierManager):
         )
 
 
-# @TODO Ask Save what to call this
 class SeasonalProductionPerformance(common_models.Model):
     """
     Relative production performance experienced in a specific season / year.
@@ -2220,8 +2223,6 @@ class Hazard(common_models.Model):
     hazard_category = models.ForeignKey(
         HazardCategory, db_column="hazard_category_code", on_delete=models.RESTRICT, verbose_name=_("Hazard Category")
     )
-    # @TODO MG23 https://docs.google.com/spreadsheets/d/18Y85UKXGehudt2YX5Oc_adw2TUxo6nY7/edit#gid=1565100920
-    # contains additional information on Events and Responses by year in the Timeline worksheet.
     description = common_models.DescriptionField(
         max_length=255, verbose_name=_("Description of Event(s) and/or Response(s)")
     )
@@ -2249,7 +2250,8 @@ class Event(common_models.Model):
     Stored on the BSS 'Timeline' worksheet based on responses to the Form 3.
     """
 
-    # See, for example, MG23.
+    # MG23 https://docs.google.com/spreadsheets/d/18Y85UKXGehudt2YX5Oc_adw2TUxo6nY7/edit#gid=1565100920
+    # contains additional information on Events and Responses by year in the Timeline worksheet.
     # SN05 also contains Events, but they are stored in the Seasonal Production Performance section.
     # Although logically Events can be split into Shocks and Responses, the way in the data is
     # currently stored in the BSSs doesn't support easy identification of the different types.
@@ -2295,7 +2297,7 @@ class ExpandabilityFactor(models.Model):
     )
     wealth_group = models.ForeignKey(WealthGroup, on_delete=models.RESTRICT, verbose_name=_("Wealth Group"))
 
-    # @TODO make these percentages
+    # @TODO after review of the representation of expandability in the LIAS, make these percentages if appropriate
     percentage_produced = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Produced"))
     percentage_sold = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Sold/Exchanged"))
     percentage_other_uses = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Other Uses"))
@@ -2338,10 +2340,10 @@ class CopingStrategy(models.Model):
     # and it would be better to update this model to resolve this and the other comments below,
     # before attempting load data into this model.
     # @TODO although this model currently has separate foreign keys to Community, Wealth Group and Livelihood Strategy
-    # it might be better to instead have a single OneToOneField ro LivelihoodActivity. This is what was shown in the
+    # it might be better to instead have a single OneToOneField to LivelihoodActivity. This is what was shown in the
     # final Logical Model Diagram.
     # @TODO we can also use negative values and avoid this enum but parsing the data like this my be clearer and
-    # possibly easier to report ?
+    # possibly easier to report?
     class Strategy(models.TextChoices):
         REDUCE = "reduce", _("Reduce")
         INCREASE = "increase", _("Increase")

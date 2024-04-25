@@ -16,7 +16,6 @@ from django.db.models import CASCADE, Q
 from django.utils.encoding import force_str
 from django.utils.formats import date_format
 from django.utils.timezone import now
-from django.utils.translation import get_language
 from django.utils.translation import gettext_lazy as _
 from model_utils.models import TimeFramedModel, TimeStampedModel
 from treebeard.mp_tree import MP_Node, MP_NodeQuerySet
@@ -162,59 +161,6 @@ class IdentifierManager(IdentifierQueryMixin, ShowQueryVariablesMixin, models.Ma
     use_for_related_fields = True
 
 
-# @TODO https://fewsnet.atlassian.net/browse/HEA-26
-# We will use Django Model Translation, and fall back to using this class if
-# necessary.
-class TranslatableModel(models.Model):
-    """
-    Abstract base class that makes a model translatable, assuming that it
-    contains a `name` field.
-    """
-
-    es_name = NameField(
-        blank=True,
-        verbose_name=_("Spanish name"),
-        help_text=_("Spanish name if different from the English name"),
-    )
-    fr_name = NameField(
-        blank=True,
-        verbose_name=_("French name"),
-        help_text=_("French name if different from the English name"),
-    )
-    pt_name = NameField(
-        blank=True,
-        verbose_name=_("Portuguese name"),
-        help_text=_("Portuguese name if different from the English name"),
-    )
-    ar_name = NameField(
-        blank=True,
-        verbose_name=_("Arabic name"),
-        help_text=_("Arabic name if different from the English name"),
-    )
-
-    def local_name(self):
-        """
-        Return the translated display name for the model instance.
-        """
-        language = get_language()
-        if language == "es" and self.es_name:
-            return self.es_name
-        elif language == "fr" and self.fr_name:
-            return self.fr_name
-        elif language == "pt" and self.pt_name:
-            return self.pt_name
-        elif language == "ar" and self.ar_name:
-            return self.ar_name
-        else:
-            return _(self.name)
-
-    local_name.short_description = _("local name")
-
-    class Meta:
-        abstract = True
-
-
-# @TODO Should this be in Metadata
 class Model(TimeStampedModel):
     """
     An abstract base class model that provides:
@@ -597,10 +543,6 @@ class Country(models.Model):
         verbose_name_plural = _("Countries")
 
 
-# @TODO Should this be in Metadata and if so, should it be a Unit of Measure
-# Roger: probably not because it has additional attributes (iso4217n3) and/or
-# because money isn't necessarily an item in the same way as maize or school fees
-# are, if we aren't using a Transfer-based model.
 class Currency(models.Model):
     """
     A monetary unit in common use and included in ISO 4217.
@@ -995,10 +937,10 @@ class CountryClassifiedProductAliases(Model):
         related_name="per_country_aliases",
         on_delete=CASCADE,
     )
-    # @TODO Do we use this approach for compatibility with FDW and reuse of Lookups
-    # or do we use the Tranlsation approach with a separate table (and what will that do for country-specific aliases)
-    # or do we use a variation of FDW only with JSONField to maintain database independence.
-    # aliases = ArrayField(models.CharField(max_length=60), verbose_name=_("aliases"))
+    aliases = models.JSONField(
+        verbose_name=_("aliases"),
+        help_text=_("A list of alternate names for the product."),
+    )
 
     class Meta:
         verbose_name = _("Country Classified Product Alias")

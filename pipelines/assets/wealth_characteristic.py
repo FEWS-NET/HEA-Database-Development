@@ -90,7 +90,7 @@ from openpyxl.utils import get_column_letter
 
 from ..configs import BSSMetadataConfig
 from ..partitions import bss_files_partitions_def, bss_instances_partitions_def
-from ..utils import get_index, verbose_pivot
+from ..utils import get_index, prepare_lookup, verbose_pivot
 from .base import (
     get_all_bss_labels_dataframe,
     get_bss_dataframe,
@@ -122,6 +122,7 @@ def wealth_characteristic_dataframe(config: BSSMetadataConfig, corrected_files) 
         corrected_files,
         "WB",
         start_strings=["Wealth characteristics", "Caractéristiques socio-économiques", "Caractéristiques de richesse"],
+        end_strings=["Informations sur les équidés"],
         header_rows=HEADER_ROWS,
         # The final three relevant columns are Summary/From/To in Row 4. Range/Interval will be in the cell above
         # From (i.e. in Row 3) so force two additional summary columns.
@@ -249,12 +250,14 @@ def wealth_characteristic_instances(
         for wealth_group_category in df.loc[3, "C":]
     ]
 
+    # Prepare the label column for matching against the label_map
+    prepared_labels = prepare_lookup(df["A"])
+
     # Check that we recognize all of the wealth characteristic labels
     allow_unrecognized_labels = True
     unrecognized_labels = (
         df.iloc[num_header_rows:][
-            ~df.iloc[num_header_rows:]["A"].str.strip().str.lower().isin(label_map)
-            & (df.iloc[num_header_rows:]["A"].str.strip() != "")
+            ~prepared_labels.iloc[num_header_rows:].isin(label_map) & (prepared_labels.iloc[num_header_rows:] != "")
         ]
         .groupby("A")
         .apply(lambda x: ", ".join(x.index.astype(str)))
@@ -283,7 +286,7 @@ def wealth_characteristic_instances(
     # Iterate over the rows
     wealth_group_characteristic_values = []
     for row in df.iloc[num_header_rows:].index:  # Ignore the Wealth Group header rows
-        label = df.loc[row, "A"].strip().lower()
+        label = prepared_labels[row]
         if not label:
             # Ignore blank rows
             continue
@@ -392,12 +395,19 @@ def wealth_characteristic_instances(
     # Make sure that the names in the Wealth Group-level interviews (e.g. columns $M:$AZ) match
     # the names in the in the Community-level interviews (e.g. columns $C:$K) that were used to
     # create the Wealth Group records
-    form3_full_names_df = pd.DataFrame(form3_full_names, columns=["full_name"])
-    form3_full_names_df["bss_column"] = [get_column_letter(x + 3) for x in form3_full_names_df.index]
+    form3_full_names_df = pd.DataFrame(
+        [(get_column_letter(i + 3), full_name) for i, full_name in enumerate(form3_full_names)],
+        columns=["bss_column", "full_name"],
+    )
     unmatched_full_names = value_df[
         pd.notna(value_df["full_name"].replace("", pd.NA))
         & ~value_df["full_name"].str.lower().isin(form3_full_names_df.full_name.str.lower())
-    ][["full_name", "bss_column"]].drop_duplicates()
+        # The Wealth Group Interview columns may only have the "Village" name without the "District", so also check
+        # them against just the first part of the actual full names.
+        & ~value_df["full_name"]
+        .str.lower()
+        .isin(form3_full_names_df.full_name.str.lower().apply(lambda x: x.split(", ")[0]))
+    ][["bss_column", "full_name"]].drop_duplicates()
     if not unmatched_full_names.empty:
         raise ValueError(
             "%s contains unmatched Community full_name values in Wealth Group interviews:\n%s\n\nExpected names:\n%s"

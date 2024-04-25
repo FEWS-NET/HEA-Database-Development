@@ -19,12 +19,13 @@ class ReferenceDataAdmin(admin.ModelAdmin):
     fields = (
         "code",
         *translation_fields("name"),
-        *translation_fields("description"),
         "aliases",
+        *translation_fields("description"),
     )
     list_display = (
         "code",
         "name",
+        "aliases",
         "description",
     )
     search_fields = (
@@ -49,8 +50,8 @@ class SeasonalActivityTypeAdmin(ReferenceDataAdmin):
         "code",
         *translation_fields("name"),
         "activity_category",
-        *translation_fields("description"),
         "aliases",
+        *translation_fields("description"),
     )
 
 
@@ -67,10 +68,10 @@ class WealthCharacteristicAdmin(ReferenceDataAdmin):
 
     fields = (
         "code",
-        *translation_fields("name"),
         "variable_type",
-        *translation_fields("description"),
+        *translation_fields("name"),
         "aliases",
+        *translation_fields("description"),
     )
     list_filter = ("variable_type",)
 
@@ -89,21 +90,21 @@ class SeasonAdmin(admin.ModelAdmin):
     fields = (
         "country",
         *translation_fields("name"),
+        "aliases",
         *translation_fields("description"),
         "season_type",
         "start",
         "end",
         "alignment",
         "order",
-        "aliases",
     )
     list_display = (
         "country",
         "name",
+        "aliases",
         "season_type",
         "start",
         "end",
-        "aliases",
     )
     search_fields = (
         "country__iso_en_ro_name",
@@ -121,9 +122,9 @@ class MarketAdmin(ReferenceDataAdmin):
     fields = (
         "code",
         *translation_fields("name"),
+        "aliases",
         "country",
         *translation_fields("description"),
-        "aliases",
     )
 
     list_filter = (("country", admin.RelatedOnlyFieldListFilter),)
