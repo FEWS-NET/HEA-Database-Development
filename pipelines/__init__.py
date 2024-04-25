@@ -34,9 +34,11 @@ from .assets.other_cash_income import (
 from .assets.seasonal_production_performance import (
     all_hazard_labels_dataframe,
     all_seasonal_production_performance_labels_dataframe,
+    hazard_instances,
     hazard_labels_dataframe,
     hazards_dataframe,
     seasonal_production_performance_dataframe,
+    seasonal_production_performance_instances,
     seasonal_production_performance_label_dataframe,
     summary_hazard_labels_dataframe,
     summary_seasonal_production_performance_labels_dataframe,
@@ -109,6 +111,8 @@ defs = Definitions(
         hazard_labels_dataframe,
         all_hazard_labels_dataframe,
         summary_hazard_labels_dataframe,
+        seasonal_production_performance_instances,
+        hazard_instances,
     ],
     jobs=[update_metadata, import_baseline_from_fixture],
     resources={

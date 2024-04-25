@@ -308,7 +308,7 @@ def corrected_files(
 
 def get_bss_dataframe(
     config: BSSMetadataConfig,
-    filepath_or_buffer,
+    filepath_or_buffer: object,
     bss_sheet: str,
     start_strings: list[str],
     end_strings: Optional[list[str]] = None,

@@ -99,6 +99,8 @@ def consolidated_instances(
     livelihood_activity_instances,
     other_cash_income_instances,
     wild_foods_instances,
+    seasonal_production_performance_instances,
+    hazard_instances,
 ) -> Output[dict]:
     """
     Consolidated record instances from a BSS, ready to be validated.
@@ -109,7 +111,10 @@ def consolidated_instances(
         # WealthGroup instances, which are needed as a foreign key from LivelihoodActivity, etc.
         **wealth_characteristic_instances,
         **livelihood_activity_instances,
+        **seasonal_production_performance_instances,
+        **hazard_instances,
     }
+
     # Add the wild foods and other cash income instances, if they are present
     for model_name, instances in {**other_cash_income_instances, **wild_foods_instances}.items():
         if instances:

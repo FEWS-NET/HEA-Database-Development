@@ -12,6 +12,10 @@ from ..assets.fixtures import (
 )
 from ..assets.livelihood_activity import livelihood_activity_instances
 from ..assets.other_cash_income import other_cash_income_instances
+from ..assets.seasonal_production_performance import (
+    hazard_instances,
+    seasonal_production_performance_instances,
+)
 from ..assets.wealth_characteristic import wealth_characteristic_instances
 from ..assets.wild_foods import wild_foods_instances
 from ..partitions import bss_instances_partitions_def
@@ -27,6 +31,8 @@ import_baseline_from_fixture = define_asset_job(
         validated_instances,
         consolidated_fixture,
         imported_baseline,
+        seasonal_production_performance_instances,
+        hazard_instances,
     ),
     partitions_def=bss_instances_partitions_def,
 )
