@@ -316,6 +316,7 @@ def uploaded_baselines(
     )
 
 
+@asset(partitions_def=bss_instances_partitions_def)
 def imported_communities(
     context: AssetExecutionContext,
     community_instances,

@@ -247,9 +247,9 @@ def corrected_files(context: AssetExecutionContext, config: BSSMetadataConfig) -
                 # Need data_only=True to get the values of cells that contain formulas
                 wb = openpyxl.load_workbook(original_file, data_only=True)
 
-    if corrections_df.empty and not wb_msoffcrypto_file:
-        # No corrections and file not encrypted, so just leave the file unaltered
-        return Output(BytesIO(original_file.read()), metadata=output_metadata)
+        if corrections_df.empty and not wb_msoffcrypto_file:
+            # No corrections and file not encrypted, so just leave the file unaltered
+            return Output(BytesIO(original_file.open().read()), metadata=output_metadata)
 
     # Apply the corrections
     for correction in corrections_df.itertuples():

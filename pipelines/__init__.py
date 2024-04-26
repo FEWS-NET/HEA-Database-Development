@@ -8,11 +8,12 @@ from .assets.base import (
     corrected_files,
     original_files,
 )
-from .assets.baseline import baseline_instances
+from .assets.baseline import baseline_instances, community_instances
 from .assets.fixtures import (
     consolidated_fixtures,
     consolidated_instances,
     imported_baselines,
+    imported_communities,
     uploaded_baselines,
     validated_instances,
 )
@@ -69,6 +70,7 @@ defs = Definitions(
         original_files,
         corrected_files,
         baseline_instances,
+        community_instances,
         livelihood_activity_dataframe,
         livelihood_activity_label_dataframe,
         all_livelihood_activity_labels_dataframe,
@@ -93,6 +95,7 @@ defs = Definitions(
         validated_instances,
         consolidated_fixtures,
         uploaded_baselines,
+        imported_communities,
         imported_baselines,
     ],
     jobs=[update_metadata, update_external_assets, upload_baselines, extract_dataframes, import_baseline_from_fixture],

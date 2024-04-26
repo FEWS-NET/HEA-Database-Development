@@ -19,7 +19,7 @@ import pandas as pd
 from dagster import AssetExecutionContext, MetadataValue, Output, asset
 
 from ..configs import BSSMetadataConfig
-from ..partitions import bss_files_partitions_def
+from ..partitions import bss_files_partitions_def, bss_instances_partitions_def
 
 
 @asset(partitions_def=bss_files_partitions_def, io_manager_key="json_io_manager")
@@ -134,7 +134,7 @@ def baseline_instances(
     )
 
 
-@asset(partitions_def=bss_files_partitions_def, io_manager_key="json_io_manager")
+@asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
 def community_instances(context: AssetExecutionContext, config: BSSMetadataConfig, corrected_files) -> Output[dict]:
     """
     Community instances extracted from the BSS.
