@@ -425,6 +425,12 @@ class Community(common_models.Model):
         verbose_name=_("Wealth Group Interview Date"),
         help_text=_("The date that the Wealth Group Interviews (Form 4) were conducted."),
     )
+    aliases = models.JSONField(
+        blank=True,
+        null=True,
+        verbose_name=_("aliases"),
+        help_text=_("A list of alternate names for the community name for differently spelled values."),
+    )
     objects = CommunityManager()
 
     def natural_key(self):
