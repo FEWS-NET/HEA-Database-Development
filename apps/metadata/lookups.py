@@ -7,6 +7,7 @@ from common.fields import translation_fields
 from common.lookups import Lookup
 
 from .models import (
+    HazardCategory,
     LivelihoodCategory,
     ReferenceData,
     Season,
@@ -66,3 +67,7 @@ class SeasonNameLookup(SeasonLookup):
         *translation_fields("description"),
         "aliases",
     ]
+
+
+class HazardCategoryLookup(ReferenceDataLookup):
+    model = HazardCategory

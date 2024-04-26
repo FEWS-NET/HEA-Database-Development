@@ -31,6 +31,18 @@ from .assets.other_cash_income import (
     other_cash_income_label_dataframe,
     summary_other_cash_income_labels_dataframe,
 )
+from .assets.seasonal_production_performance import (
+    all_hazard_labels_dataframe,
+    all_seasonal_production_performance_labels_dataframe,
+    hazard_instances,
+    hazard_labels_dataframe,
+    hazards_dataframe,
+    seasonal_production_performance_dataframe,
+    seasonal_production_performance_instances,
+    seasonal_production_performance_label_dataframe,
+    summary_hazard_labels_dataframe,
+    summary_seasonal_production_performance_labels_dataframe,
+)
 from .assets.wealth_characteristic import (
     all_wealth_characteristic_labels_dataframe,
     summary_wealth_characteristic_labels_dataframe,
@@ -96,6 +108,16 @@ defs = Definitions(
         consolidated_fixtures,
         uploaded_baselines,
         imported_baselines,
+        seasonal_production_performance_dataframe,
+        hazards_dataframe,
+        seasonal_production_performance_label_dataframe,
+        all_seasonal_production_performance_labels_dataframe,
+        summary_seasonal_production_performance_labels_dataframe,
+        hazard_labels_dataframe,
+        all_hazard_labels_dataframe,
+        summary_hazard_labels_dataframe,
+        seasonal_production_performance_instances,
+        hazard_instances,
     ],
     jobs=[update_metadata, update_external_assets, upload_baselines, extract_dataframes, import_baseline_from_fixture],
     resources={

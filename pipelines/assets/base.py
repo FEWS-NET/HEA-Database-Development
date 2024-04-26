@@ -47,6 +47,10 @@ LANGS = {
     "groupe de richesse": "fr",
     "groupe socio-economique": "fr",
     "group socio-economique": "fr",
+    "year of harvest": "en",
+    "production year": "en",
+    "year": "en",
+    "année": "fr",
 }
 
 # List of labels that indicate the start of the summary columns from row 3 in the Data, Data, and Data3 worksheets
@@ -59,6 +63,8 @@ SUMMARY_LABELS = [
     "range",
     "interval",
     "intervales",  # 2023 Mali BSSs
+    "Average",  # For timeline sheet
+    "MOYENNE",
 ]
 
 
@@ -309,7 +315,7 @@ def corrected_files(
 
 def get_bss_dataframe(
     config: BSSMetadataConfig,
-    filepath_or_buffer,
+    filepath_or_buffer: object,
     bss_sheet: str,
     start_strings: list[str],
     end_strings: Optional[list[str]] = None,
@@ -327,10 +333,7 @@ def get_bss_dataframe(
         # The requested worksheet does not exist in the file
         return Output(
             pd.DataFrame(),
-            metadata={
-                "worksheet": bss_sheet,
-                "row_count": "Worksheet not present in file",
-            },
+            metadata={"worksheet": bss_sheet, "row_count": "Worksheet not present in file", "datapoint_count": 0},
         )
 
     # Use a 1-based index to match the Excel Row Number
@@ -338,15 +341,16 @@ def get_bss_dataframe(
     # Set the column names to match Excel
     df.columns = [get_column_letter(col + 1) for col in df.columns]
 
-    # Find the last column before the summary column, which is in row 3
-    end_col = get_index(SUMMARY_LABELS, df.loc[3], offset=-1)
-    if not end_col:
+    # Find the last column before the summary column, which is in row 3 for the WB, data sheets and 4 for timeline sheet
+    row = 4 if bss_sheet == "Timeline" else 3
+    end_col = get_index(SUMMARY_LABELS, df.loc[row], offset=-1)
+    if end_col == df.columns[-1]:  # Need the last row because get_index has offset=-1
         raise ValueError(f'No cell containing any of the summary strings: {", ".join(SUMMARY_LABELS)}')
 
     if not num_summary_cols:
         # If the number of summary columns wasn't specified, then assume that
         # there is one summary column for each wealth category, from row 3.
-        num_summary_cols = df.loc[3, "B":end_col].dropna().nunique()
+        num_summary_cols = df.loc[row, "B":end_col].dropna().nunique()
     end_col = df.columns[df.columns.get_loc(end_col) + num_summary_cols]
 
     # Find the row index of the start of the Livelihood Activities or Wealth Group Characteristic Values
@@ -370,8 +374,8 @@ def get_bss_dataframe(
         # for rows that rely on copying down the label in column A from a previous row.
         end_row = df.index[-1]
 
-    # Find the language based on the value in cell A3
-    lang = LANGS[df.loc[3, "A"].strip().lower()]
+    # Find the language based on the value in cell A3, or A4
+    lang = LANGS[df.loc[row, "A"].strip().lower()]
 
     # Filter to just the Wealth Group header rows and the Livelihood Activities
     df = pd.concat([df.loc[header_rows, :end_col], df.loc[start_row:end_row, :end_col]])

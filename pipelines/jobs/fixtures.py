@@ -32,6 +32,10 @@ from ..assets.other_cash_income import (
     other_cash_income_label_dataframe,
     summary_other_cash_income_labels_dataframe,
 )
+from ..assets.seasonal_production_performance import (
+    hazard_instances,
+    seasonal_production_performance_instances,
+)
 from ..assets.wealth_characteristic import (
     all_wealth_characteristic_labels_dataframe,
     summary_wealth_characteristic_labels_dataframe,
@@ -59,6 +63,8 @@ import_baseline_from_fixture = define_asset_job(
         validated_instances,
         consolidated_fixtures,
         imported_baselines,
+        seasonal_production_performance_instances,
+        hazard_instances,
     ),
     partitions_def=bss_instances_partitions_def,
 )

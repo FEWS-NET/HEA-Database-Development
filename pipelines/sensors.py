@@ -5,6 +5,10 @@ from dagster import AssetSelection, RunRequest, SensorResult, sensor
 
 from .assets.livelihood_activity import livelihood_activity_instances
 from .assets.other_cash_income import other_cash_income_instances
+from .assets.seasonal_production_performance import (
+    hazards_dataframe,
+    seasonal_production_performance_dataframe,
+)
 from .assets.wealth_characteristic import wealth_characteristic_instances
 from .assets.wild_foods import wild_foods_instances
 from .partitions import bss_instances_partitions_def
@@ -24,6 +28,8 @@ from baseline.models import LivelihoodZoneBaseline  # NOQA: E402
         other_cash_income_instances.key,
         wild_foods_instances.key,
         wealth_characteristic_instances.key,
+        seasonal_production_performance_dataframe.key,
+        hazards_dataframe.key,
     ),
     minimum_interval_seconds=600,
 )
