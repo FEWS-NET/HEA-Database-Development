@@ -291,8 +291,8 @@ class LivelihoodZoneBaselineCorrection(common_models.Model):
     )
     worksheet_name = models.CharField(max_length=20, choices=WorksheetName.choices, verbose_name=_("Worksheet name"))
     cell_range = models.CharField(max_length=20, verbose_name=_("Cell range"))
-    previous_value = models.JSONField(verbose_name=_("Previous value before correction"))
-    value = models.JSONField(verbose_name=_("Corrected value"))
+    previous_value = models.JSONField(blank=True, verbose_name=_("Previous value before correction"))
+    value = models.JSONField(blank=True, verbose_name=_("Corrected value"))
     correction_date = models.DateTimeField(auto_now_add=True, verbose_name=_("Correction date"))
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name=_("Correction author"))
     comment = models.TextField(
@@ -308,12 +308,9 @@ class LivelihoodZoneBaselineCorrection(common_models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=("livelihood_zone_baseline", "worksheet_name", "cell_range"),
-                name="livelihood_zone_baseline_corrections_uniq",
+                name="baseline_livelihoodzonebaselinecorrection_uniq",
             ),
         ]
-
-    def __str__(self):
-        return f"{str(self.livelihood_zone_baseline.livelihood_zone)} {self.worksheet_name} {self.cell_range}"
 
     def natural_key(self):
         return (

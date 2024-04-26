@@ -39,11 +39,13 @@ class Migration(migrations.Migration):
             model_name="livelihoodzonebaselinecorrection",
             name="previous_value",
             field=models.JSONField(verbose_name="Previous value before correction"),
+            blank=True,
         ),
         migrations.AlterField(
             model_name="livelihoodzonebaselinecorrection",
             name="value",
             field=models.JSONField(verbose_name="Corrected value"),
+            blank=True,
         ),
         migrations.AlterField(
             model_name="livelihoodzonebaselinecorrection",
@@ -64,7 +66,7 @@ class Migration(migrations.Migration):
             model_name="livelihoodzonebaselinecorrection",
             constraint=models.UniqueConstraint(
                 fields=("livelihood_zone_baseline", "worksheet_name", "cell_range"),
-                name="livelihood_zone_baseline_corrections_uniq",
+                name="baseline_livelihoodzonebaselinecorrection_uniq",
             ),
         ),
     ]
