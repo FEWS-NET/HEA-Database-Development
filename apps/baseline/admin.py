@@ -103,6 +103,7 @@ class LivelihoodZoneBaselineAdmin(GISModelAdmin):
                 "fields": [
                     "livelihood_zone",
                     "alternate_code",
+                    "country",
                     *translation_fields("name"),
                     "main_livelihood_category",
                     "source_organization",
@@ -141,7 +142,7 @@ class LivelihoodZoneBaselineAdmin(GISModelAdmin):
         "reference_year_start_date",
         "reference_year_end_date",
     )
-    readonly_fields = ("alternate_code",)
+    readonly_fields = ("alternate_code", "country")
     search_fields = (
         "livelihood_zone__code",
         "livelihood_zone__alternate_code",
@@ -164,12 +165,20 @@ class LivelihoodZoneBaselineAdmin(GISModelAdmin):
         """
         return instance.livelihood_zone.alternate_code
 
+    def country(self, instance):
+        """
+        Display the country for the livelihood zone as a readonly field.
+        """
+        return instance.livelihood_zone.country
+
 
 class CommunityAdmin(GISModelAdmin):
     fields = (
         "name",
         "full_name",
         "livelihood_zone_baseline",
+        "alternate_code",
+        "country",
         "aliases",
         "interview_number",
         "community_interview_date",
@@ -178,20 +187,32 @@ class CommunityAdmin(GISModelAdmin):
     )
     list_display = (
         "livelihood_zone_baseline",
+        "alternate_code",
+        "country",
         "full_name",
     )
+    readonly_fields = ("alternate_code", "country")
     search_fields = (
         "name",
         "full_name",
         *translation_fields("livelihood_zone_baseline__livelihood_zone__name__icontains"),
-        "livelihood_zone_baseline__livelihood_zone__code__iexact",
-        "livelihood_zone_baseline__livelihood_zone__alternate_code__iexact",
+        "livelihood_zone_baseline__livelihood_zone__code",
+        "livelihood_zone_baseline__livelihood_zone__alternate_code",
         "aliases__icontains",
     )
-    list_filter = (
-        *translation_fields("livelihood_zone_baseline__livelihood_zone__name"),
-        "livelihood_zone_baseline__livelihood_zone__country",
-    )
+    list_filter = ("livelihood_zone_baseline__livelihood_zone__country",)
+
+    def alternate_code(self, instance):
+        """
+        Display the alternate code for the livelihood zone as a readonly field.
+        """
+        return instance.livelihood_zone_baseline.livelihood_zone.alternate_code
+
+    def country(self, instance):
+        """
+        Display the country for the livelihood zone as a readonly field.
+        """
+        return instance.livelihood_zone_baseline.livelihood_zone.country
 
 
 class LivelihoodStrategyAdmin(admin.ModelAdmin):
