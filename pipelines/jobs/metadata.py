@@ -22,7 +22,9 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hea.settings.production")
 # Configure Django with our custom settings before importing any Django classes
 django.setup()
 
+from baseline.lookups import CommunityLookup  # NOQA: E402
 from baseline.models import (  # NOQA: E402
+    Community,
     LivelihoodZoneBaseline,
     LivelihoodZoneBaselineCorrection,
 )
@@ -319,7 +321,137 @@ def load_all_corrections(context: OpExecutionContext):
             context.log.info(f"Skipped {len(unchanged_corrections)} unchanged corrections")
 
 
+@op
+def load_all_community_aliases(context: OpExecutionContext):
+    """
+    Load all Community Aliases from the BSS Metadata Google Sheet into the Django models.
+    """
+    storage_options = {"token": "service_account", "access": "read_only", "root_file_id": "0AOJ0gJ8sjnO7Uk9PVA"}
+    storage_options["creds"] = json.loads(os.environ["GOOGLE_APPLICATION_CREDENTIALS"])
+    p = UPath("gdrive://Database Design/BSS Metadata", **storage_options)
+    with p.fs.open(p.path, mode="rb", cache_type="bytes") as f:
+        # Google Sheets have to be exported rather than read directly
+        if isinstance(f, GoogleDriveFile) and (f.details["mimeType"] == "application/vnd.google-apps.spreadsheet"):
+            f = BytesIO(p.fs.export(p.path, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+
+        df = pd.read_excel(f, sheet_name="Community Aliases", engine="openpyxl")
+
+        # Use a 1-based index to match the Excel Row Number
+        df.index += 1
+
+        # Add two new columnds to df, livelihood_zone_id and reference_year_end_date, by splitting the livelihood_zone_baseline on the ~
+        df[["livelihood_zone_id", "reference_year_end_date"]] = df["livelihood_zone_baseline"].str.split(
+            "~", expand=True
+        )
+        df["full_name"] = df["full_name"].str.strip()
+        df["reference_year_end_date"] = pd.to_datetime(df["reference_year_end_date"])
+
+        # Add the livelihood_zone_baseline_id as a foreign key to the LivelihoodZoneBaseline model
+        livelihood_zone_baseline_df = pd.DataFrame.from_records(
+            LivelihoodZoneBaseline.objects.all().values("id", "livelihood_zone_id", "reference_year_end_date")
+        )
+        livelihood_zone_baseline_df["livelihood_zone_baseline_id"] = livelihood_zone_baseline_df["id"]
+        livelihood_zone_baseline_df["reference_year_end_date"] = pd.to_datetime(
+            livelihood_zone_baseline_df["reference_year_end_date"]
+        )
+        df = df.merge(
+            livelihood_zone_baseline_df[
+                ["livelihood_zone_id", "reference_year_end_date", "livelihood_zone_baseline_id"]
+            ],
+            how="inner",
+            on=["livelihood_zone_id", "reference_year_end_date"],
+        )
+
+        # Add the community id
+        df["livelihood_zone_baseline_key"] = df["livelihood_zone_baseline"]
+        df["livelihood_zone_baseline"] = df["livelihood_zone_baseline_id"]
+        df = CommunityLookup().do_lookup(df, "full_name", "id")
+
+        df["aliases"] = df["aliases"].apply(lambda x: tuple(sorted(x.lower().split("~"))) if x else None)
+        df["modified"] = datetime.datetime.now(tz=datetime.timezone.utc)
+        df = df.dropna()
+
+        # Check the the corrections dataframe doesn't contain any duplicates
+        duplicates_df = df[df.duplicated(subset=["livelihood_zone_baseline", "full_name"])][
+            ["livelihood_zone_baseline", "full_name"]
+        ]
+        if not duplicates_df.empty:
+            raise ValueError(f"Found duplicate corrections:\n{duplicates_df.to_markdown()}")
+
+        with transaction.atomic():
+
+            df = df.set_index(["livelihood_zone_baseline_id", "full_name"], drop=False)
+
+            # Get the current set of aliases from the database, so we can see what has changed
+            existing_instances = Community.objects.filter(
+                livelihood_zone_baseline_id__in=df["livelihood_zone_baseline_id"].unique()
+            ).select_related("livelihood_zone_baseline")
+            existing_df = pd.DataFrame.from_records(
+                existing_instances.values(),
+                columns=[
+                    "livelihood_zone_baseline_id",
+                    "full_name",
+                    "aliases",
+                ],
+            )
+            existing_df["aliases"] = existing_df["aliases"].apply(lambda x: tuple(x) if x else None)
+            existing_df = existing_df.set_index(["livelihood_zone_baseline_id", "full_name"], drop=False)
+
+            # Ignore unchanged aliases
+            unchanged_aliases = df[
+                df.set_index(
+                    [
+                        "livelihood_zone_baseline_id",
+                        "full_name",
+                        "aliases",
+                    ]
+                ).index.isin(
+                    existing_df.set_index(
+                        [
+                            "livelihood_zone_baseline_id",
+                            "full_name",
+                            "aliases",
+                        ]
+                    ).index
+                )
+            ]
+            df = df[~df.index.isin(unchanged_aliases.index)]
+
+            # Build the update as a list of unsaved Community instances
+            communities = [
+                Community(
+                    **{
+                        k: v
+                        for k, v in community.items()
+                        if k
+                        in [
+                            "id",
+                            "livelihood_zone_baseline_id",
+                            "full_name",
+                            "aliases",
+                            "modified",
+                        ]
+                    }
+                )
+                for community in df.to_dict(orient="records")
+            ]
+            # Save the communities to the database using a bulk_update
+            Community.objects.bulk_update(
+                communities,
+                fields=["aliases", "modified"],
+            )
+
+            # Report on the aliases that were updated
+            for record in df.itertuples():
+                context.log.info(
+                    f"Updated aliases for Community {record.livelihood_zone_baseline_key} {record.full_name}"
+                )
+
+            context.log.info(f"Skipped {len(unchanged_aliases)} Communities with unchanged aliases")
+
+
 @job
 def update_metadata():
     load_all_metadata()
     load_all_corrections()
+    load_all_community_aliases()
