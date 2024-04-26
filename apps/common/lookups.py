@@ -7,6 +7,7 @@ import functools
 from abc import ABC
 
 import pandas as pd
+from django.contrib.auth.models import User
 
 from .fields import translation_fields
 from .models import (
@@ -187,9 +188,12 @@ class Lookup(ABC):
         if df.empty:
             raise ValueError(f"{self.__class__.__qualname__} received empty source dataframe")
 
-        if not match_column and self.id_fields in df.columns:
-            # Assume an existing column with the same name that we should replace
-            match_column = self.id_fields
+        if not match_column:
+            if self.id_fields in df.columns:
+                # Assume an existing column with the same name that we should replace
+                match_column = self.id_fields
+            else:
+                raise ValueError(f"{self.__class__.__qualname__}.do_lookup() requires a match_column")
 
         # The source dataframe should contain the field name, but the parent field may include a
         # path through related models.
@@ -315,6 +319,32 @@ class Lookup(ABC):
             df = self.do_lookup(df, "value", "result")
             result = df.iloc[0, -1]
             return result if pd.notna(result) else None
+        except ValueError:
+            return None
+
+    @functools.cache
+    def get_instance(self, value: str, **parent_values) -> str | None:
+        """
+        Return the Django model instance for a single string, or None if there is no match.
+
+        Used to do a lookup for a single value instead of a dataframe.
+
+        Unlike `do_lookup()` this is a cached property to avoid repeated database queries.
+        Note that this cache is per-instance of the Lookup class, so the class should be instantiated outside a loop
+        performing repeated lookups:
+
+            lookup = MyLookup()
+            for dict_item in very_long_list:
+                instance = lookup.get_instance(item["other_name"])
+        """
+        df = pd.DataFrame({"value": [value]})
+        for parent_field in self.parent_fields:
+            df[parent_field] = [parent_values[parent_field]]
+        try:
+            df = self.do_lookup(df, "value", "result")
+            df = self.get_instances(df, "result")
+            result = df.iloc[0, -1]
+            return result if isinstance(result, self.model) else None
         except ValueError:
             return None
 
@@ -468,3 +498,33 @@ class UnitOfMeasureLookup(Lookup):
         *translation_fields("description"),
         "aliases",
     )
+
+
+class UserLookup(Lookup):
+    model = User
+    id_fields = ("id",)
+    lookup_fields = [
+        "username",
+        "email",
+        "first_name",
+        "last_name",
+    ]
+
+    def get_lookup_df(self):
+        """
+        Build a dataframe for a model that can be used to lookup the primary key.
+
+        Create a dataframe that contains the primary key, and all the columns that
+        can be used to lookup the primary key, e.g. the name, description, aliases, etc.
+
+        Use the queryset.iterator() to prevent Django from caching the queryset.
+        """
+        df = super().get_lookup_df()
+
+        # Also include the full name in the fields to lookup
+        df["full_name"] = df.apply(
+            lambda row: " ".join([x for x in [row["first_name"].strip(), row["last_name"].strip()] if x]),
+            axis="columns",
+        )
+
+        return df

@@ -3,7 +3,6 @@ import warnings
 from dagster import Definitions, EnvVar
 
 from .assets.base import (
-    bss_corrections,
     bss_metadata,
     completed_bss_metadata,
     corrected_files,
@@ -67,7 +66,6 @@ defs = Definitions(
     assets=[
         bss_metadata,
         completed_bss_metadata,
-        bss_corrections,
         original_files,
         corrected_files,
         baseline_instances,

@@ -89,7 +89,7 @@ from dagster import AssetExecutionContext, MetadataValue, Output, asset
 from openpyxl.utils import get_column_letter
 
 from ..configs import BSSMetadataConfig
-from ..partitions import bss_files_partitions_def, bss_instances_partitions_def
+from ..partitions import bss_instances_partitions_def
 from ..utils import get_index, prepare_lookup, verbose_pivot
 from .base import (
     get_all_bss_labels_dataframe,
@@ -104,7 +104,10 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hea.settings.production")
 # Configure Django with our custom settings before importing any Django classes
 django.setup()
 
-from baseline.models import WealthGroupCharacteristicValue  # NOQA: E402
+from baseline.models import (  # NOQA: E402
+    LivelihoodZoneBaseline,
+    WealthGroupCharacteristicValue,
+)
 from metadata.lookups import WealthGroupCategoryLookup  # NOQA: E402
 from metadata.models import WealthCharacteristicLabel  # NOQA: E402
 
@@ -112,7 +115,7 @@ from metadata.models import WealthCharacteristicLabel  # NOQA: E402
 HEADER_ROWS = [3, 4, 5]
 
 
-@asset(partitions_def=bss_files_partitions_def)
+@asset(partitions_def=bss_instances_partitions_def)
 def wealth_characteristic_dataframe(config: BSSMetadataConfig, corrected_files) -> Output[pd.DataFrame]:
     """
     DataFrame of Wealth Group Characteristic Values from a BSS
@@ -130,7 +133,7 @@ def wealth_characteristic_dataframe(config: BSSMetadataConfig, corrected_files) 
     )
 
 
-@asset(partitions_def=bss_files_partitions_def)
+@asset(partitions_def=bss_instances_partitions_def)
 def wealth_characteristic_label_dataframe(
     context: AssetExecutionContext,
     config: BSSMetadataConfig,
@@ -168,7 +171,6 @@ def summary_wealth_characteristic_labels_dataframe(
 def wealth_characteristic_instances(
     context: AssetExecutionContext,
     config: BSSMetadataConfig,
-    completed_bss_metadata,
     wealth_characteristic_dataframe,
 ) -> Output[dict]:
     """
@@ -176,11 +178,7 @@ def wealth_characteristic_instances(
     """
     # Find the metadata for this BSS
     partition_key = context.asset_partition_key_for_output()
-    try:
-        metadata = completed_bss_metadata[completed_bss_metadata["partition_key"] == partition_key].iloc[0]
-    except IndexError:
-        raise ValueError("No complete entry in the BSS Metadata worksheet for %s" % partition_key)
-    livelihoodzonebaseline = [metadata["code"], metadata["reference_year_end_date"].isoformat()]
+    livelihood_zone_baseline = LivelihoodZoneBaseline.objects.get_by_natural_key(*partition_key.split("~")[1:])
 
     df = wealth_characteristic_dataframe
     num_header_rows = 3  # wealth group category, district, village
@@ -227,7 +225,9 @@ def wealth_characteristic_instances(
         wealth_group_df, "wealth_group_category", "wealth_group_category"
     )
     # Add the natural key for the Livelihood Zone Baseline to the Wealth Groups
-    wealth_group_df["livelihood_zone_baseline"] = [livelihoodzonebaseline] * len(wealth_group_df)
+    wealth_group_df["livelihood_zone_baseline"] = [
+        [livelihood_zone_baseline.livelihood_zone_id, livelihood_zone_baseline.reference_year_end_date.isoformat()]
+    ] * len(wealth_group_df)
     # Add the natural key for the Community to the Wealth Groups
     wealth_group_df["community"] = wealth_group_df[["livelihood_zone_baseline", "full_name"]].apply(
         lambda x: x.iloc[0] + [x.iloc[1]] if x.iloc[1] else None, axis="columns"
@@ -346,7 +346,9 @@ def wealth_characteristic_instances(
 
                         # The natural key for the Wealth Group is made up of the Livelihood Zone Baseline, the
                         # Wealth Group Category from column B and the Community Full Name from Rows 4 and 5.
-                        wealth_group_characteristic_value["wealth_group"] = livelihoodzonebaseline + [
+                        wealth_group_characteristic_value["wealth_group"] = [
+                            livelihood_zone_baseline.livelihood_zone_id,
+                            livelihood_zone_baseline.reference_year_end_date.isoformat(),
                             wealth_group_category,
                             community_full_names[i],
                         ]

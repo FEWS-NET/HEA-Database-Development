@@ -63,7 +63,7 @@ import pandas as pd
 from dagster import AssetExecutionContext, Output, asset
 
 from ..configs import BSSMetadataConfig
-from ..partitions import bss_files_partitions_def, bss_instances_partitions_def
+from ..partitions import bss_instances_partitions_def
 from .base import (
     get_all_bss_labels_dataframe,
     get_bss_dataframe,
@@ -78,13 +78,14 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hea.settings.production")
 # Configure Django with our custom settings before importing any Django classes
 django.setup()
 
+from baseline.models import LivelihoodZoneBaseline  # NOQA: E402
 from metadata.models import ActivityLabel  # NOQA: E402
 
 # Indexes of header rows in the Data3 dataframe (wealth_group_category, district, village)
 HEADER_ROWS = [3, 4, 5, 7]
 
 
-@asset(partitions_def=bss_files_partitions_def)
+@asset(partitions_def=bss_instances_partitions_def)
 def wild_foods_dataframe(config: BSSMetadataConfig, corrected_files) -> Output[pd.DataFrame]:
     """
     DataFrame of Wild Food Gathering and Fishing Livelihood Activities from a BSS
@@ -98,7 +99,7 @@ def wild_foods_dataframe(config: BSSMetadataConfig, corrected_files) -> Output[p
     )
 
 
-@asset(partitions_def=bss_files_partitions_def)
+@asset(partitions_def=bss_instances_partitions_def)
 def wild_foods_label_dataframe(
     context: AssetExecutionContext,
     config: BSSMetadataConfig,
@@ -133,19 +134,13 @@ def summary_wild_foods_labels_dataframe(
 @asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
 def wild_foods_instances(
     context: AssetExecutionContext,
-    completed_bss_metadata,
     wild_foods_dataframe,
 ) -> Output[dict]:
     """
     LivelhoodStrategy and LivelihoodActivity instances extracted from the BSS.
     """
     partition_key = context.asset_partition_key_for_output()
-    # Find the metadata for this BSS
-    partition_key = context.asset_partition_key_for_output()
-    try:
-        metadata = completed_bss_metadata[completed_bss_metadata["partition_key"] == partition_key].iloc[0]
-    except IndexError:
-        raise ValueError("No complete entry in the BSS Metadata worksheet for %s" % partition_key)
+    livelihood_zone_baseline = LivelihoodZoneBaseline.objects.get_by_natural_key(*partition_key.split("~")[1:])
 
     if wild_foods_dataframe.empty:
         output = {}
@@ -153,7 +148,7 @@ def wild_foods_instances(
     output = get_instances_from_dataframe(
         context,
         wild_foods_dataframe,
-        metadata,
+        livelihood_zone_baseline,
         ActivityLabel.LivelihoodActivityType.WILD_FOODS,
         len(HEADER_ROWS),
         partition_key,

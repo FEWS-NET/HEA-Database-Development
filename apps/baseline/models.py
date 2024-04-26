@@ -302,6 +302,14 @@ class LivelihoodZoneBaselineCorrection(common_models.Model):
     )
     objects = LivelihoodZoneBaselineCorrectionManager()
 
+    def natural_key(self):
+        return (
+            self.livelihood_zone_baseline.livelihood_zone_id,
+            self.livelihood_zone_baseline.reference_year_end_date.isoformat(),
+            self.worksheet_name,
+            self.cell_range,
+        )
+
     class Meta:
         verbose_name = _("Livelihood Zone Baseline Correction")
         verbose_name_plural = _("Livelihood Zone Baseline Corrections")
@@ -311,14 +319,6 @@ class LivelihoodZoneBaselineCorrection(common_models.Model):
                 name="baseline_livelihoodzonebaselinecorrection_uniq",
             ),
         ]
-
-    def natural_key(self):
-        return (
-            self.livelihood_zone_baseline.livelihood_zone_id,
-            self.livelihood_zone_baseline.reference_year_end_date.isoformat(),
-            self.worksheet_name,
-            self.cell_range,
-        )
 
 
 # @TODO Decide whether to change the name of this model when we review the

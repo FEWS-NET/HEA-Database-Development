@@ -24,14 +24,12 @@ from ..partitions import bss_files_partitions_def
 
 @asset(partitions_def=bss_files_partitions_def, io_manager_key="json_io_manager")
 def baseline_instances(
-    context: AssetExecutionContext, config: BSSMetadataConfig, completed_bss_metadata, corrected_files
+    context: AssetExecutionContext, config: BSSMetadataConfig, completed_bss_metadata
 ) -> Output[dict]:
     """
-    LivelihoodZone, LivelihoodZoneBaseline and Community instances extracted from the BSS.
+    LivelihoodZone and LivelihoodZoneBaseline instances extracted from the BSS.
     """
     partition_key = context.asset_partition_key_for_output()
-
-    data_df = pd.read_excel(corrected_files, "WB", header=None)
 
     # Find the metadata for this BSS
     try:
@@ -53,6 +51,7 @@ def baseline_instances(
         metadata[column] = metadata[column].isoformat() if pd.notna(metadata[column]) and metadata[column] else None
     # Ensure pd.NA char columns contain empty strings
     for column in [
+        "alternate_code",
         "name_en",
         "name_es",
         "name_fr",
@@ -79,6 +78,7 @@ def baseline_instances(
                 # Get country and code from the filename
                 "country_id": metadata["country_id"],
                 "code": metadata["code"],
+                "alternate_code": metadata["alternate_code"],
                 "name_en": metadata["name_en"],
                 "name_es": metadata["name_es"],
                 "name_fr": metadata["name_fr"],
@@ -116,11 +116,34 @@ def baseline_instances(
                 "data_collection_end_date": metadata["data_collection_end_date"],
                 "publication_date": metadata["publication_date"],
                 "bss": metadata["bss_path"],
+                "currency_id": metadata["currency_id"],
             }
         ],
     }
 
+    try:
+        preview = json.dumps(result, indent=4)
+    except TypeError as e:
+        raise ValueError("Cannot serialize Community fixture to JSON. Failing dict is\n %s" % result) from e
+
+    return Output(
+        result,
+        metadata={
+            "preview": MetadataValue.md(f"```json\n{preview}\n```"),
+        },
+    )
+
+
+@asset(partitions_def=bss_files_partitions_def, io_manager_key="json_io_manager")
+def community_instances(context: AssetExecutionContext, config: BSSMetadataConfig, corrected_files) -> Output[dict]:
+    """
+    Community instances extracted from the BSS.
+    """
+    partition_key = context.asset_partition_key_for_output()
+    data_df = pd.read_excel(corrected_files, "WB", header=None)
+
     # Find the communities
+
     # Transpose to get data in columns
     community_df = data_df.iloc[2:7].transpose()
     # Check that the columns are what we expect
@@ -176,22 +199,23 @@ def baseline_instances(
     community_df = community_df.drop(columns="district")
     # Add the natural key for the livelihood zone baseline
     community_df["livelihood_zone_baseline"] = community_df["full_name"].apply(
-        lambda full_name: [metadata["code"], metadata["reference_year_end_date"]]
+        lambda full_name: partition_key.split("~")[1:]
     )
 
     # Replace NaN with "" ready for Django
     community_df = community_df.fillna("")
-    result["Community"] = community_df.to_dict(orient="records")
+
+    result = {"Community": community_df.to_dict(orient="records")}
 
     try:
         preview = json.dumps(result, indent=4)
     except TypeError as e:
-        raise ValueError("Cannot serialize baseline fixture to JSON. Failing dict is\n %s" % result) from e
+        raise ValueError("Cannot serialize Community fixture to JSON. Failing dict is\n %s" % result) from e
 
     return Output(
         result,
         metadata={
-            "num_communities": len(community_df),
             "preview": MetadataValue.md(f"```json\n{preview}\n```"),
+            "num_communities": len(community_df),
         },
     )

@@ -51,14 +51,13 @@ An example of relevant rows from the worksheet:
 
 import json
 import os
-from typing import Any
 
 import django
 import pandas as pd
 from dagster import AssetExecutionContext, MetadataValue, Output, asset
 
 from ..configs import BSSMetadataConfig
-from ..partitions import bss_files_partitions_def, bss_instances_partitions_def
+from ..partitions import bss_instances_partitions_def
 from ..utils import class_from_name, prepare_lookup
 from .base import (
     get_all_bss_labels_dataframe,
@@ -73,7 +72,11 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hea.settings.production")
 # Configure Django with our custom settings before importing any Django classes
 django.setup()
 
-from baseline.models import LivelihoodStrategy, MilkProduction  # NOQA: E402
+from baseline.models import (  # NOQA: E402
+    LivelihoodStrategy,
+    LivelihoodZoneBaseline,
+    MilkProduction,
+)
 from metadata.lookups import SeasonNameLookup, WealthGroupCategoryLookup  # NOQA: E402
 from metadata.models import ActivityLabel, LivelihoodActivityScenario  # NOQA: E402
 
@@ -82,7 +85,7 @@ from metadata.models import ActivityLabel, LivelihoodActivityScenario  # NOQA: E
 HEADER_ROWS = [3, 4, 5, 40]
 
 
-@asset(partitions_def=bss_files_partitions_def)
+@asset(partitions_def=bss_instances_partitions_def)
 def livelihood_activity_dataframe(config: BSSMetadataConfig, corrected_files) -> Output[pd.DataFrame]:
     """
     DataFrame of Livelihood Activities from a BSS
@@ -97,7 +100,7 @@ def livelihood_activity_dataframe(config: BSSMetadataConfig, corrected_files) ->
     )
 
 
-@asset(partitions_def=bss_files_partitions_def)
+@asset(partitions_def=bss_instances_partitions_def)
 def livelihood_activity_label_dataframe(
     context: AssetExecutionContext,
     config: BSSMetadataConfig,
@@ -134,7 +137,7 @@ def summary_livelihood_activity_labels_dataframe(
 def get_instances_from_dataframe(
     context: AssetExecutionContext,
     df: pd.DataFrame,
-    metadata: dict[str:Any],
+    livelihood_zone_baseline: LivelihoodZoneBaseline,
     activity_type: str,
     num_header_rows: int,
     partition_key: str,
@@ -159,7 +162,10 @@ def get_instances_from_dataframe(
     errors = []
 
     # Save the natural key to the livelihood zone baseline for later use.
-    livelihoodzonebaseline = [metadata["code"], metadata["reference_year_end_date"].isoformat()]
+    livelihoodzonebaseline = [
+        livelihood_zone_baseline.livelihood_zone_id,
+        livelihood_zone_baseline.reference_year_end_date.isoformat(),
+    ]
 
     # Prepare the lookups, so they cache the individual results
     seasonnamelookup = SeasonNameLookup()
@@ -369,7 +375,12 @@ def get_instances_from_dataframe(
 
                     # Lookup the season name from the alias used in the BSS to create the natural key
                     livelihood_strategy["season"] = (
-                        [seasonnamelookup.get(livelihood_strategy["season"], country_id=metadata["country_id"])]
+                        [
+                            seasonnamelookup.get(
+                                livelihood_strategy["season"],
+                                country_id=livelihood_zone_baseline.livelihood_zone.country_id,
+                            )
+                        ]
                         if livelihood_strategy["season"]
                         else None
                     )
@@ -454,7 +465,7 @@ def get_instances_from_dataframe(
                     "season": label_attributes.get("season", None),
                     "product_id": label_attributes.get("product_id", None),
                     "unit_of_measure_id": label_attributes.get("unit_of_measure_id", None),
-                    "currency_id": metadata["currency_id"],
+                    "currency_id": livelihood_zone_baseline.currency_id,
                     "additional_identifier": label_attributes.get("additional_identifier", None),
                     # Save the row, label and attribute/row map, to aid trouble-shooting
                     "row": row,
@@ -637,7 +648,6 @@ def get_instances_from_dataframe(
 @asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
 def livelihood_activity_instances(
     context: AssetExecutionContext,
-    completed_bss_metadata,
     livelihood_activity_dataframe,
 ) -> Output[dict]:
     """
@@ -645,14 +655,12 @@ def livelihood_activity_instances(
     """
     # Find the metadata for this BSS
     partition_key = context.asset_partition_key_for_output()
-    try:
-        metadata = completed_bss_metadata[completed_bss_metadata["partition_key"] == partition_key].iloc[0]
-    except IndexError:
-        raise ValueError("No complete entry in the BSS Metadata worksheet for %s" % partition_key)
+    livelihood_zone_baseline = LivelihoodZoneBaseline.objects.get_by_natural_key(*partition_key.split("~")[1:])
+
     output = get_instances_from_dataframe(
         context,
         livelihood_activity_dataframe,
-        metadata,
+        livelihood_zone_baseline,
         ActivityLabel.LivelihoodActivityType.LIVELIHOOD_ACTIVITY,
         len(HEADER_ROWS),
         partition_key,

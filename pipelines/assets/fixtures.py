@@ -283,7 +283,11 @@ def uploaded_baselines(
     original_files,
 ) -> Output[None]:
     """
-    Imported Django fixtures for a BSS, added to the Django database.
+    Baselines from external BSS metadata, uploaded to the Django database using a fixture.
+
+    This asset creates an empty Baseline with access to the original file.
+    Downstream assets apply corrections to the original file and then process
+    the contents to create Communities, Wealth Groups, Livelihood Strategies, etc.
     """
     metadata, fixture = get_fixture_from_instances(baseline_instances)
     output_buffer = StringIO()
@@ -295,7 +299,7 @@ def uploaded_baselines(
         f.seek(0)
         call_command(verbose_load_data.Command(), f.name, verbosity=2, format="verbose_json", stdout=output_buffer)
 
-    # Create the metadata reporting the number of instances created for each model
+    # Add the output to the metadata
     metadata["output"] = MetadataValue.md(f"```\n{output_buffer.getvalue()}\n```")
 
     # Add the file objects `bss` and `profile_report` FileFields to the model instances
@@ -305,6 +309,33 @@ def uploaded_baselines(
     )
     livelihood_zone_baseline.bss = File(original_files, name=instance["bss"])
     livelihood_zone_baseline.save()
+
+    return Output(
+        None,
+        metadata=metadata,
+    )
+
+
+def imported_communities(
+    context: AssetExecutionContext,
+    community_instances,
+) -> Output[None]:
+    """
+    Communities from a BSS, imported to the Django database using a fixture.
+    """
+    metadata, fixture = get_fixture_from_instances(community_instances)
+    output_buffer = StringIO()
+
+    # We need to use a .verbose_json file extension for Django to use the correct serializer.
+    with tempfile.NamedTemporaryFile(mode="w+", suffix=".verbose_json") as f:
+        # Write the fixture to a temporary file so that Django can access it
+        f.write(json.dumps(fixture))
+        f.seek(0)
+        call_command(verbose_load_data.Command(), f.name, verbosity=2, format="verbose_json", stdout=output_buffer)
+
+    # Add the output to the metadata
+    metadata["preview"] = MetadataValue.md(f"```json\n{json.dumps(fixture, indent=4)}\n```")
+    metadata["output"] = MetadataValue.md(f"```\n{output_buffer.getvalue()}\n```")
 
     return Output(
         None,

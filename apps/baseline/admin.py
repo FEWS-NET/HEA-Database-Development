@@ -102,6 +102,7 @@ class LivelihoodZoneBaselineAdmin(GISModelAdmin):
             {
                 "fields": [
                     "livelihood_zone",
+                    "alternate_code",
                     *translation_fields("name"),
                     "main_livelihood_category",
                     "source_organization",
@@ -134,11 +135,13 @@ class LivelihoodZoneBaselineAdmin(GISModelAdmin):
     ]
     list_display = (
         "livelihood_zone",
+        "alternate_code",
         "main_livelihood_category",
         "source_organization",
         "reference_year_start_date",
         "reference_year_end_date",
     )
+    readonly_fields = ("alternate_code",)
     search_fields = (
         "livelihood_zone__code",
         "livelihood_zone__alternate_code",
@@ -154,6 +157,12 @@ class LivelihoodZoneBaselineAdmin(GISModelAdmin):
     inlines = [
         LivelihoodZoneBaselineCorrectionInlineAdmin,
     ]
+
+    def alternate_code(self, instance):
+        """
+        Display the alternate code for the livelihood zone as a readonly field.
+        """
+        return instance.livelihood_zone.alternate_code
 
 
 class CommunityAdmin(GISModelAdmin):

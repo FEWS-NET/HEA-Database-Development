@@ -4,12 +4,7 @@ Load fixtures from corrected files
 
 from dagster import define_asset_job
 
-from ..assets.base import (
-    bss_corrections,
-    bss_metadata,
-    completed_bss_metadata,
-    corrected_files,
-)
+from ..assets.base import bss_metadata, completed_bss_metadata
 from ..assets.baseline import baseline_instances
 from ..assets.fixtures import (
     consolidated_fixtures,
@@ -69,8 +64,6 @@ update_external_assets = define_asset_job(
     selection=(
         bss_metadata,
         completed_bss_metadata,
-        bss_corrections,
-        corrected_files,
     ),
     partitions_def=bss_files_partitions_def,
 )
@@ -104,5 +97,5 @@ extract_dataframes = define_asset_job(
         summary_other_cash_income_labels_dataframe,
         summary_wild_foods_labels_dataframe,
     ),
-    partitions_def=bss_files_partitions_def,
+    partitions_def=bss_instances_partitions_def,
 )
