@@ -543,6 +543,7 @@ class CommunityViewSetTestCase(APITestCase):
             "livelihood_zone_country_code",
             "livelihood_zone_country_name",
             "geography",
+            "aliases",
         )
         self.assertCountEqual(
             response.json().keys(),

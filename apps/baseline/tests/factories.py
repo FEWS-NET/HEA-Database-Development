@@ -149,6 +149,7 @@ class CommunityFactory(factory.django.DjangoModelFactory):
     name = factory.LazyAttribute(lambda o: f"Community {o.code} name")
     full_name = factory.LazyAttribute(lambda o: f"Community {o.code} full name")
     livelihood_zone_baseline = factory.SubFactory(LivelihoodZoneBaselineFactory)
+    aliases = factory.Sequence(lambda n: [f"alias{n + i}" for i in range(n % 10)])
     geography = None
 
 
