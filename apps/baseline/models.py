@@ -258,6 +258,16 @@ class LivelihoodZoneBaseline(common_models.Model):
         ]
 
 
+class LivelihoodZoneBaselineCorrectionManager(common_models.IdentifierManager):
+    def get_by_natural_key(self, code: str, reference_year_end_date: str, worksheet_name: str, cell_range):
+        return self.get(
+            livelihood_zone_baseline__livelihood_zone__code=code,
+            livelihood_zone_baseline__reference_year_end_date=reference_year_end_date,
+            worksheet_name=worksheet_name,
+            cell_range=cell_range,
+        )
+
+
 class LivelihoodZoneBaselineCorrection(common_models.Model):
     """
     Represents a correction entry for a livelihood zone baseline.
@@ -271,6 +281,7 @@ class LivelihoodZoneBaselineCorrection(common_models.Model):
         DATA = "Data", _("Data")
         DATA2 = "Data2", _("Data2")
         DATA3 = "Data3", _("Data3")
+        TIMELINE = "Timeline", _("Timeline")
 
     livelihood_zone_baseline = models.ForeignKey(
         LivelihoodZoneBaseline,
@@ -279,9 +290,9 @@ class LivelihoodZoneBaselineCorrection(common_models.Model):
         verbose_name=_("Livelihood Zone Baseline"),
     )
     worksheet_name = models.CharField(max_length=20, choices=WorksheetName.choices, verbose_name=_("Worksheet name"))
-    cell_range = models.CharField(max_length=10, verbose_name=_("Cell range"))
-    previous_value = models.CharField(max_length=255, verbose_name=_("Previous value before correction"))
-    value = models.CharField(max_length=255, verbose_name=_("Corrected value"))
+    cell_range = models.CharField(max_length=20, verbose_name=_("Cell range"))
+    previous_value = models.JSONField(blank=True, verbose_name=_("Previous value before correction"))
+    value = models.JSONField(blank=True, verbose_name=_("Corrected value"))
     correction_date = models.DateTimeField(auto_now_add=True, verbose_name=_("Correction date"))
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name=_("Correction author"))
     comment = models.TextField(
@@ -289,9 +300,25 @@ class LivelihoodZoneBaselineCorrection(common_models.Model):
         verbose_name=_("Correction comments"),
         help_text=_("Required comment about the correction suggested"),
     )
+    objects = LivelihoodZoneBaselineCorrectionManager()
 
-    def __str__(self):
-        return f"{str(self.livelihood_zone_baseline)} {self.worksheet_name} {self.cell_range}"
+    class Meta:
+        verbose_name = _("Livelihood Zone Baseline Correction")
+        verbose_name_plural = _("Livelihood Zone Baseline Corrections")
+        constraints = [
+            models.UniqueConstraint(
+                fields=("livelihood_zone_baseline", "worksheet_name", "cell_range"),
+                name="baseline_livelihoodzonebaselinecorrection_uniq",
+            ),
+        ]
+
+    def natural_key(self):
+        return (
+            self.livelihood_zone_baseline.livelihood_zone_id,
+            self.livelihood_zone_baseline.reference_year_end_date.isoformat(),
+            self.worksheet_name,
+            self.cell_range,
+        )
 
 
 # @TODO Decide whether to change the name of this model when we review the
@@ -380,7 +407,7 @@ class Community(common_models.Model):
     # See https://docs.google.com/spreadsheets/d/1wuXjjmQXW9qG5AV8MRKHVadrFUhleUGN/
     # If present, this can be used to validate the data reported for the Wealth Group (Form 4) interviews.
     interview_number = models.CharField(
-        max_length=10,
+        max_length=30,
         blank=True,
         null=True,
         verbose_name=_("Interview Number"),
@@ -397,6 +424,12 @@ class Community(common_models.Model):
         null=True,
         verbose_name=_("Wealth Group Interview Date"),
         help_text=_("The date that the Wealth Group Interviews (Form 4) were conducted."),
+    )
+    aliases = models.JSONField(
+        blank=True,
+        null=True,
+        verbose_name=_("aliases"),
+        help_text=_("A list of alternate names for the community name for differently spelled values."),
     )
     objects = CommunityManager()
 

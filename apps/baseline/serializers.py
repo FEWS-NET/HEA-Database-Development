@@ -174,6 +174,7 @@ class CommunitySerializer(serializers.ModelSerializer):
             "livelihood_zone_country_code",
             "livelihood_zone_country_name",
             "geography",
+            "aliases",
         ]
 
     livelihood_zone_baseline_label = serializers.SerializerMethodField()

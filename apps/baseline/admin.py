@@ -161,6 +161,7 @@ class CommunityAdmin(GISModelAdmin):
         "name",
         "full_name",
         "livelihood_zone_baseline",
+        "aliases",
         "interview_number",
         "community_interview_date",
         "wealth_group_interview_date",
@@ -176,6 +177,7 @@ class CommunityAdmin(GISModelAdmin):
         *translation_fields("livelihood_zone_baseline__livelihood_zone__name__icontains"),
         "livelihood_zone_baseline__livelihood_zone__code__iexact",
         "livelihood_zone_baseline__livelihood_zone__alternate_code__iexact",
+        "aliases__icontains",
     )
     list_filter = (
         *translation_fields("livelihood_zone_baseline__livelihood_zone__name"),
