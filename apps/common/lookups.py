@@ -128,10 +128,15 @@ class Lookup(ABC):
 
         return df
 
-    def prepare_lookup_df(self):
+    def prepare_lookup_df(self) -> pd.DataFrame:
         """
         Use DataFrame.melt to create a m:1 lookup table that can be used to lookup
         the search value and retrieve the primary key.
+
+        Returns a DataFrame with the columns:
+            - lookup_key: the column that the lookup_column from the source DataFrame will be matched against
+            - lookup_value: the value that will be returned if a match is found, typically the primary key
+            - any parent columns required to filter the rows from the source DataFrame when matching
         """
         df = self.get_lookup_df()
 
@@ -250,9 +255,14 @@ class Lookup(ABC):
         if self.require_match and merge_df["lookup_value"].isnull().values.all():
             errors = []
             errors.append(f"{self.__class__.__qualname__} didn't find any matches:")
-            errors.append("Source")
+            errors.append("Source" if len(df) <= 10 else "Source (first 10 rows only)")
             errors.append(df[left_fields].iloc[:10].to_string(index=False))
-            errors.append("Lookup Reference")
+            errors.append(
+                "Expected Lookup Values" if len(lookup_df) <= 10 else "Expected Lookup Values (first 10 rows only)"
+            )
+            # Filter the lookup_df to only include the rows that match the parent fields
+            for field in right_fields[:-1]:
+                lookup_df = lookup_df[lookup_df[field].isin(df[field].unique())]
             errors.append(lookup_df[right_fields].iloc[:10].to_string(index=False))
             raise ValueError("\n".join(errors))
 
@@ -290,7 +300,7 @@ class Lookup(ABC):
         Replace the primary key value in a DataFrame column with a model instance
         """
         related_models = related_models or self.related_models
-        queryset = self.model.objects.filter(pk__in=df[column].unique())
+        queryset = self.model.objects.filter(pk__in=df[column].dropna().unique())
         if related_models:
             queryset = queryset.select_related(*related_models)
         model_map = {instance.pk: instance for instance in queryset.iterator()}

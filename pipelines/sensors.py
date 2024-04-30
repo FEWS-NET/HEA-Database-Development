@@ -40,8 +40,5 @@ def bss_instance_sensor(context):
     ]
 
     return SensorResult(
-        run_requests=[
-            RunRequest(partition_key=livelihoood_zone_baseline) for livelihoood_zone_baseline in new_partitions
-        ],
         dynamic_partitions_requests=[bss_instances_partitions_def.build_add_request(new_partitions)],
     )

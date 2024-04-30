@@ -11,4 +11,5 @@ class CommunityLookup(Lookup):
         "code",
         "name",
         "full_name",
+        "aliases",
     )

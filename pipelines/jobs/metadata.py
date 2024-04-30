@@ -373,10 +373,10 @@ def load_all_community_aliases(context: OpExecutionContext):
 
         # Check the the corrections dataframe doesn't contain any duplicates
         duplicates_df = df[df.duplicated(subset=["livelihood_zone_baseline", "full_name"])][
-            ["livelihood_zone_baseline", "full_name"]
+            ["livelihood_zone_baseline_key", "full_name"]
         ]
         if not duplicates_df.empty:
-            raise ValueError(f"Found duplicate corrections:\n{duplicates_df.to_markdown()}")
+            raise ValueError(f"Found duplicate aliases:\n{duplicates_df.to_markdown()}")
 
         with transaction.atomic():
 

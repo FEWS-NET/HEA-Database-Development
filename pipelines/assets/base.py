@@ -208,13 +208,18 @@ def corrected_files(context: AssetExecutionContext, config: BSSMetadataConfig) -
 
     # Find the corrections for this BSS
     corrections_df = pd.DataFrame.from_records(
-        livelihood_zone_baseline.corrections.all().values(
+        livelihood_zone_baseline.corrections.all()
+        .order_by("worksheet_name", "cell_range")
+        .values(
             "worksheet_name", "cell_range", "previous_value", "value", "author__username", "correction_date", "comment"
         )
     )
 
     # Prepare the metadata for the output
-    output_metadata = {"num_corrections": len(corrections_df)}
+    output_metadata = {
+        "num_corrections": len(corrections_df),
+        "corrections": MetadataValue.md(corrections_df.to_markdown(index=False)),
+    }
 
     # Open the file to force it to be saved to the local media directory in case it only exists in the database.
     with livelihood_zone_baseline.bss.open() as original_file:

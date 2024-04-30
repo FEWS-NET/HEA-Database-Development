@@ -65,6 +65,7 @@ from .base import (
     get_bss_label_dataframe,
     get_summary_bss_label_dataframe,
 )
+from .baseline import get_wealth_group_dataframe
 
 # set the default Django settings module
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hea.settings.production")
@@ -77,12 +78,18 @@ from baseline.models import (  # NOQA: E402
     LivelihoodZoneBaseline,
     MilkProduction,
 )
-from metadata.lookups import SeasonNameLookup, WealthGroupCategoryLookup  # NOQA: E402
+from metadata.lookups import SeasonNameLookup  # NOQA: E402
 from metadata.models import ActivityLabel, LivelihoodActivityScenario  # NOQA: E402
 
 # Indexes of header rows in the Data3 dataframe (wealth_group_category, district, village, household size)
 # The household size is included in the header rows because it is used to calculate the kcals_consumed
 HEADER_ROWS = [3, 4, 5, 40]
+
+WORKSHEET_MAP = {
+    ActivityLabel.LivelihoodActivityType.LIVELIHOOD_ACTIVITY: "Data",
+    ActivityLabel.LivelihoodActivityType.OTHER_CASH_INCOME: "Data2",
+    ActivityLabel.LivelihoodActivityType.WILD_FOODS: "Data3",
+}
 
 
 @asset(partitions_def=bss_instances_partitions_def)
@@ -159,17 +166,18 @@ def get_instances_from_dataframe(
             },
         )
 
+    worksheet_name = WORKSHEET_MAP[activity_type]
+
     errors = []
 
     # Save the natural key to the livelihood zone baseline for later use.
-    livelihoodzonebaseline = [
+    livelihood_zone_baseline_key = [
         livelihood_zone_baseline.livelihood_zone_id,
         livelihood_zone_baseline.reference_year_end_date.isoformat(),
     ]
 
     # Prepare the lookups, so they cache the individual results
     seasonnamelookup = SeasonNameLookup()
-    wealthgroupcategorylookup = WealthGroupCategoryLookup()
     label_map = {
         instance.pop("activity_label").lower(): instance
         for instance in ActivityLabel.objects.filter(activity_type=activity_type).values(
@@ -184,23 +192,8 @@ def get_instances_from_dataframe(
         )
     }
 
-    # The LivelihoodActivity is the intersection of a LivelihoodStrategy and a WealthGroup,
-    # so build a list of the natural keys for the WealthGroup for each column, based on the
-    # Wealth Group Category from Row 3 and the Community Full Name from Rows 4 and 5.
-    # In the Summary columns, typically the Wealth Group Category is in Row 4 rather than Row 3.
-    wealth_groups = []
-    for column in df.loc[3:5, "B":]:
-        wealth_groups.append(
-            livelihoodzonebaseline
-            + [
-                wealthgroupcategorylookup.get(df.loc[3, column]) or wealthgroupcategorylookup.get(df.loc[4, column]),
-                (
-                    ""
-                    if wealthgroupcategorylookup.get(df.loc[4, column])
-                    else ", ".join([df.loc[5, column].strip(), df.loc[4, column].strip()])
-                ),
-            ]
-        )
+    # Get a dataframe of the Wealth Groups for each column
+    wealth_group_df = get_wealth_group_dataframe(df, livelihood_zone_baseline, worksheet_name, partition_key)
 
     # Prepare the label column for matching against the label_map
     prepared_labels = prepare_lookup(df["A"])
@@ -389,7 +382,7 @@ def get_instances_from_dataframe(
                     # This is the last step so that we are sure that the attributes in the livelihood_strategy are
                     # final. For example, the Season 1, etc. alias has been replaced with the real natural key.
                     for i, livelihood_activity in enumerate(livelihood_activities_for_strategy):
-                        livelihood_activity["livelihood_strategy"] = livelihoodzonebaseline + [
+                        livelihood_activity["livelihood_strategy"] = livelihood_zone_baseline_key + [
                             livelihood_strategy["strategy_type"],
                             livelihood_strategy["season"][0] if livelihood_strategy["season"] else "",
                             livelihood_strategy["product_id"] if livelihood_strategy["product_id"] else "",
@@ -460,7 +453,7 @@ def get_instances_from_dataframe(
 
                 # Initialize the new livelihood strategy
                 livelihood_strategy = {
-                    "livelihood_zone_baseline": livelihoodzonebaseline,
+                    "livelihood_zone_baseline": livelihood_zone_baseline_key,
                     "strategy_type": strategy_type,
                     "season": label_attributes.get("season", None),
                     "product_id": label_attributes.get("product_id", None),
@@ -487,10 +480,10 @@ def get_instances_from_dataframe(
                 # Initialize the list of livelihood activities for the new livelihood strategy
                 livelihood_activities_for_strategy = [
                     {
-                        "livelihood_zone_baseline": livelihoodzonebaseline,
+                        "livelihood_zone_baseline": livelihood_zone_baseline_key,
                         "strategy_type": livelihood_strategy["strategy_type"],
                         "scenario": LivelihoodActivityScenario.BASELINE,
-                        "wealth_group": wealth_groups[i],
+                        "wealth_group": wealth_group_df.iloc[i]["natural_key"],
                         # Include the column and row to aid trouble-shooting
                         "bss_sheet": "Data",
                         "bss_column": df.columns[i + 1],
@@ -597,20 +590,15 @@ def get_instances_from_dataframe(
                         livelihood_activities_for_strategy[i][activity_attribute] = value
 
         except Exception as e:
-            worksheet = {
-                ActivityLabel.LivelihoodActivityType.LIVELIHOOD_ACTIVITY: "Data",
-                ActivityLabel.LivelihoodActivityType.OTHER_CASH_INCOME: "Data2",
-                ActivityLabel.LivelihoodActivityType.WILD_FOODS: "Data3",
-            }.get(activity_type)
             if column:
                 raise RuntimeError(
                     "Unhandled error in %s processing cell '%s'!%s%s for label '%s'"
-                    % (partition_key, worksheet, column, row, label)
+                    % (partition_key, worksheet_name, column, row, label)
                 ) from e
             else:
                 raise RuntimeError(
                     "Unhandled error in %s processing row '%s'!%s with label '%s'"
-                    % (partition_key, worksheet, row, label)
+                    % (partition_key, worksheet_name, row, label)
                 ) from e
 
     raise_errors = False
