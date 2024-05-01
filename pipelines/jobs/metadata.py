@@ -177,8 +177,6 @@ def load_all_fewsnet_geographies(context: OpExecutionContext):
     )
     all_geometries = {}
     for iso3166a2 in baseline_countries:
-        # Order by fnid (which contains the year as the first entry after the country code)
-        # to ensure that the most recent feature is last and will be the one saved for the zone
         response = requests.get(
             f"https://fdw.fews.net/api/feature/?format=geojson&unit_type=livelihood_zone&ordering=fnid&country_code={iso3166a2}"
         )
