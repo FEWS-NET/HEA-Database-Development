@@ -1,7 +1,7 @@
 import os
 
 import django
-from dagster import RunRequest, SensorResult, sensor
+from dagster import SensorResult, sensor
 
 from .partitions import bss_instances_partitions_def
 
