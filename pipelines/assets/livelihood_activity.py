@@ -138,7 +138,9 @@ def summary_livelihood_activity_labels_dataframe(
     """
     Summary of the Livelihood Activity labels in use across all BSSs.
     """
-    return get_summary_bss_label_dataframe(config, all_livelihood_activity_labels_dataframe)
+    return get_summary_bss_label_dataframe(
+        config, all_livelihood_activity_labels_dataframe, ActivityLabel.LivelihoodActivityType.LIVELIHOOD_ACTIVITY
+    )
 
 
 def get_instances_from_dataframe(

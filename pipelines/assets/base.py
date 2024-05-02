@@ -21,7 +21,9 @@ from dagster import (
     Output,
     asset,
 )
+from django.db.models import F
 from gdrivefs.core import GoogleDriveFile
+from googletrans import Translator
 from openpyxl.comments import Comment
 from openpyxl.utils import get_column_letter
 from openpyxl.utils.cell import coordinate_to_tuple, rows_from_range
@@ -40,6 +42,7 @@ django.setup()
 
 from baseline.models import LivelihoodZoneBaseline  # NOQA: E402
 from common.lookups import CountryLookup  # NOQA: E402
+from metadata.models import ActivityLabel, WealthCharacteristicLabel  # NOQA: E402
 
 # Map of values in cell A3 of the WB, Data, Data2, and Data3 worksheets to the language of the BSS
 LANGS = {
@@ -493,7 +496,7 @@ def get_all_bss_labels_dataframe(
 
 
 def get_summary_bss_label_dataframe(
-    config: BSSMetadataConfig, all_labels_dataframe: dict[str, pd.DataFrame]
+    config: BSSMetadataConfig, all_labels_dataframe: pd.DataFrame, label_type: str
 ) -> Output[pd.DataFrame]:
     df = all_labels_dataframe.sort_values(by=["label_lower", "row_number", "bss"])
 
@@ -520,6 +523,65 @@ def get_summary_bss_label_dataframe(
     df = df.rename(
         columns={"label_lower": "label", "datapoint_count_sum": "datapoint_count", "in_summary_sum": "summary_count"}
     )
+
+    # Add a translation of the label
+    translator = Translator()
+
+    def translate_label(label, langs):
+        """
+        Use the Google Translate API to translate the label from <lang> to English
+        """
+        langs = [lang.strip() for lang in langs.split(",") if lang != "en"]
+        if not langs:
+            return label
+        try:
+            translation = translator.translate(label, dest="en", src=langs[0])
+            return translation.text
+        except Exception:
+            return ""
+
+    df["translation"] = df.apply(lambda x: translate_label(x["label"], x["langs"]), axis="columns")
+
+    # Find the assocatiated label metadata for these labels
+    if label_type in ActivityLabel.LivelihoodActivityType.values:
+        queryset = (
+            ActivityLabel.objects.filter(activity_type=label_type)
+            # Rename the label column to make it easy to merge the dataframes
+            .annotate(label=F("activity_label")).values(
+                "label",
+                "strategy_type",
+                "is_start",
+                "product__common_name_en",
+                "unit_of_measure_id",
+                "season",
+                "additional_identifier",
+                "attribute",
+                "notes",
+            )
+        )
+    elif label_type == "WealthCharacteristic":
+        queryset = (
+            WealthCharacteristicLabel.objects.all()
+            # Rename the label column to make it easy to merge the dataframes
+            .annotate(label=F("wealth_characteristic_label")).values(
+                "label",
+                "wealth_characteristic_id",
+                "product__common_name_en",
+                "unit_of_measure_id",
+                "notes",
+            )
+        )
+    label_metadata_df = pd.DataFrame.from_records(queryset)
+    # Rename the product name to match the column we need in the GSheet
+    # when we run jobs.metadata.load_all_metadata
+    label_metadata_df = label_metadata_df.rename(columns={"product__common_name_en": "product_id"})
+
+    # Add the status, "complete" labels are ones with matching label metadata instance
+    df["status"] = df["label"].apply(lambda x: "Complete" if x in label_metadata_df["label"].tolist() else "")
+
+    # Merge the label metadata into the dataframe
+    df = df.merge(label_metadata_df, left_on="label", right_on="label", how="left")
+
     return Output(
         df,
         metadata={

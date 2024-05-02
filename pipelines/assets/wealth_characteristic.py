@@ -164,7 +164,7 @@ def summary_wealth_characteristic_labels_dataframe(
     """
     Summary of the Wealth Group Characteristic labels in use across all BSSs.
     """
-    return get_summary_bss_label_dataframe(config, all_wealth_characteristic_labels_dataframe)
+    return get_summary_bss_label_dataframe(config, all_wealth_characteristic_labels_dataframe, "WealthCharacteristic")
 
 
 @asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
