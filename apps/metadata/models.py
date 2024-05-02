@@ -414,6 +414,8 @@ class ActivityLabel(common_models.Model):
         verbose_name_plural = _("Activity Labels")
         constraints = [
             models.UniqueConstraint(Lower("activity_label"), "activity_type", name="unique_lower_name_category"),
+            # Also enforce uniqueness on the original case-insensitive name, to enable bulk_create of metadata
+            models.UniqueConstraint("activity_label", "activity_type", name="unique_activity_label_category"),
         ]
 
 
@@ -465,3 +467,6 @@ class WealthCharacteristicLabel(common_models.Model):
     class Meta:
         verbose_name = _("Wealth Characteristic Label")
         verbose_name_plural = _("Wealth Characteristics Labels")
+        constraints = [
+            models.UniqueConstraint(Lower("wealth_characteristic_label"), name="unique_lower_label"),
+        ]

@@ -31,7 +31,6 @@ from baseline.models import (  # NOQA: E402
     LivelihoodZoneBaselineCorrection,
 )
 from common.lookups import ClassifiedProductLookup, UserLookup  # NOQA: E402
-from common.models import ClassifiedProduct  # NOQA: E402
 from metadata.models import ActivityLabel  # NOQA: E402
 
 
@@ -103,10 +102,13 @@ def load_all_metadata(context: OpExecutionContext):
                         df["ordering"] = df["ordering"].replace("", None)
 
                     if sheet_name == "ClassifiedProduct":
+                        existing_instances = {
+                            instance.pk: instance for instance in model.objects.filter(pk__in=df["cpc"])
+                        }
                         for record in df.to_dict(orient="records"):
                             cpc = record.pop("cpc")
-                            try:
-                                instance = model.objects.get(pk=cpc)
+                            if cpc in existing_instances:
+                                instance = existing_instances[cpc]
                                 for k, v in record.items():
                                     if k in valid_field_names:
                                         current = getattr(instance, k)
@@ -129,9 +131,7 @@ def load_all_metadata(context: OpExecutionContext):
                                                 else:
                                                     continue
                                             setattr(instance, k, v)
-                                instance.save()
-                                context.log.info(f"Updated {sheet_name} {str(instance)}")
-                            except ClassifiedProduct.DoesNotExist:
+                            else:
                                 if cpc[1:].isnumeric():
                                     raise ValueError("Missing real CPC code %s" % cpc)
                                 parent_instance = model.objects.get(pk=cpc[:-2])
@@ -141,6 +141,15 @@ def load_all_metadata(context: OpExecutionContext):
                                 context.log.info(
                                     f"Created {sheet_name} {str(instance)} as a child of {str(parent_instance)}"
                                 )
+                        try:
+                            num_instances = model.objects.bulk_update(
+                                existing_instances.values(),
+                                fields=record.keys(),
+                            )
+                        except Exception as e:
+                            raise RuntimeError("Failed to create/update %s" % sheet_name) from e
+                        context.log.info(f"Updated {num_instances} {sheet_name} instances")
+
                     else:
                         if sheet_name == "SourceOrganization":
                             id_fields = "name"
@@ -154,20 +163,23 @@ def load_all_metadata(context: OpExecutionContext):
                             id_fields = "wealth_characteristic_label"
                         else:
                             id_fields = "code"
+                        instances = []
                         for record in df.to_dict(orient="records"):
                             if isinstance(id_fields, str):
                                 id_fields = [id_fields]
 
-                            id_values = [record.pop(k) for k in id_fields]
-                            keys = dict(zip(id_fields, id_values))
                             record = {k: v for k, v in record.items() if k in valid_field_names}
-                            try:
-                                instance, created = model.objects.update_or_create(**{"defaults": record, **keys})
-                            except Exception as e:
-                                raise RuntimeError(
-                                    "Failed to create or update %s %s with %s" % (sheet_name, keys, record)
-                                ) from e
-                            context.log.info(f'{"Created" if created else "Updated"} {sheet_name} {str(instance)}')
+                            instances.append(model(**record))
+                        try:
+                            instances = model.objects.bulk_create(
+                                instances,
+                                update_conflicts=True,
+                                update_fields=[k for k in record if k not in id_fields],
+                                unique_fields=id_fields,
+                            )
+                        except Exception as e:
+                            raise RuntimeError("Failed to create/update %s" % sheet_name) from e
+                        context.log.info(f"Created or updated {len(instances)} {sheet_name} instances")
 
 
 @op
