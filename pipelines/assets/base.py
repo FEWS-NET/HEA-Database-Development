@@ -550,6 +550,7 @@ def get_summary_bss_label_dataframe(
             .annotate(label=F("activity_label")).values(
                 "label",
                 "strategy_type",
+                "status",
                 "is_start",
                 "product__common_name_en",
                 "unit_of_measure_id",
@@ -565,6 +566,7 @@ def get_summary_bss_label_dataframe(
             # Rename the label column to make it easy to merge the dataframes
             .annotate(label=F("wealth_characteristic_label")).values(
                 "label",
+                "status",
                 "wealth_characteristic_id",
                 "product__common_name_en",
                 "unit_of_measure_id",

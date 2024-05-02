@@ -74,8 +74,6 @@ def load_all_metadata(context: OpExecutionContext):
                     ]
                     # If we found a model, then update the model from the contents of the Referemce Data worksheet
                     df = pd.read_excel(f, sheet_name).fillna("")
-                    if "status" in df:
-                        df = df[df["status"] == "Complete"]
                     if "aliases" in df:
                         df["aliases"] = df["aliases"].apply(lambda x: sorted(x.lower().split("~")) if x else None)
                     if "cpcv2" in df:

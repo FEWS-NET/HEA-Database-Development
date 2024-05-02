@@ -79,7 +79,11 @@ from baseline.models import (  # NOQA: E402
     MilkProduction,
 )
 from metadata.lookups import SeasonNameLookup  # NOQA: E402
-from metadata.models import ActivityLabel, LivelihoodActivityScenario  # NOQA: E402
+from metadata.models import (  # NOQA: E402
+    ActivityLabel,
+    LabelStatus,
+    LivelihoodActivityScenario,
+)
 
 # Indexes of header rows in the Data3 dataframe (wealth_group_category, district, village, household size)
 # The household size is included in the header rows because it is used to calculate the kcals_consumed
@@ -182,7 +186,7 @@ def get_instances_from_dataframe(
     seasonnamelookup = SeasonNameLookup()
     label_map = {
         instance.pop("activity_label").lower(): instance
-        for instance in ActivityLabel.objects.filter(activity_type=activity_type).values(
+        for instance in ActivityLabel.objects.filter(status=LabelStatus.COMPLETE, activity_type=activity_type).values(
             "activity_label",
             "strategy_type",
             "is_start",
@@ -565,11 +569,12 @@ def get_instances_from_dataframe(
                             .to_markdown(),
                         )
                     )
-                # If the activity label that marks the start of a Livelihood Strategy is not in the
-                # `ActivityLabel.objects.all()`, and hence not in the  `activity_label_map`, then repeated
-                # labels like `kcals (%)` will appear to be duplicate attributes for the previous
-                # `1ivelihood_strategy`. Therefore, if we have `allow_unrecognized_labels` we need to ignore
-                # the duplicates, but if we don't, we should raise an error.
+                # If the activity label that marks the start of a Livelihood Strategy is not
+                # returned by `ActivityLabel.objects.filter(status=LabelStatus.COMPLETE)`,
+                # and hence is not in the `activity_label_map`, then repeated labels like
+                # `kcals (%)` will appear to be duplicate attributes for the previous
+                # `1ivelihood_strategy`. Therefore, if we have `allow_unrecognized_labels` we
+                # need to ignore the duplicates, but if we don't, we should raise an error.
                 elif activity_attribute in livelihood_strategy["attribute_rows"]:
                     if allow_unrecognized_labels:
                         # Skip to the next row
