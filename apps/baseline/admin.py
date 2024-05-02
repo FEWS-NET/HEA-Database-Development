@@ -2,6 +2,7 @@ from copy import deepcopy
 
 from django.contrib import admin
 from django.contrib.gis.admin import GISModelAdmin
+from django.utils.translation import gettext_lazy as _
 
 from common.fields import translation_fields
 from metadata.models import LivelihoodStrategyType
@@ -111,6 +112,8 @@ class LivelihoodZoneBaselineAdmin(GISModelAdminReadOnly):
             {
                 "fields": [
                     "livelihood_zone",
+                    "livelihood_zone_alternate_code",
+                    "country",
                     *translation_fields("name"),
                     "main_livelihood_category",
                     "source_organization",
@@ -143,11 +146,13 @@ class LivelihoodZoneBaselineAdmin(GISModelAdminReadOnly):
     ]
     list_display = (
         "livelihood_zone",
+        "livelihood_zone_alternate_code",
         "main_livelihood_category",
         "source_organization",
         "reference_year_start_date",
         "reference_year_end_date",
     )
+    readonly_fields = ("livelihood_zone_alternate_code", "country")
     search_fields = (
         "livelihood_zone__code",
         "livelihood_zone__alternate_code",
@@ -163,6 +168,20 @@ class LivelihoodZoneBaselineAdmin(GISModelAdminReadOnly):
     inlines = [
         LivelihoodZoneBaselineCorrectionInlineAdmin,
     ]
+
+    @admin.display(description=_("Livelihood Zone Alternate Code"))
+    def livelihood_zone_alternate_code(self, instance):
+        """
+        Display the alternate code for the livelihood zone as a readonly field.
+        """
+        return instance.livelihood_zone.alternate_code
+
+    @admin.display(description=_("Country"))
+    def country(self, instance):
+        """
+        Display the country for the livelihood zone as a readonly field.
+        """
+        return instance.livelihood_zone.country
 
     def get_fieldsets(self, request, obj=None):
 
@@ -184,6 +203,8 @@ class CommunityAdmin(GISModelAdminReadOnly):
         "name",
         "full_name",
         "livelihood_zone_baseline",
+        "livelihood_zone_alternate_code",
+        "country",
         "aliases",
         "interview_number",
         "community_interview_date",
@@ -192,20 +213,33 @@ class CommunityAdmin(GISModelAdminReadOnly):
     )
     list_display = (
         "livelihood_zone_baseline",
+        "livelihood_zone_alternate_code",
+        "country",
         "full_name",
     )
+    readonly_fields = ("livelihood_zone_alternate_code", "country")
     search_fields = (
         "name",
         "full_name",
         *translation_fields("livelihood_zone_baseline__livelihood_zone__name__icontains"),
-        "livelihood_zone_baseline__livelihood_zone__code__iexact",
-        "livelihood_zone_baseline__livelihood_zone__alternate_code__iexact",
+        "livelihood_zone_baseline__livelihood_zone__code",
+        "livelihood_zone_baseline__livelihood_zone__alternate_code",
         "aliases__icontains",
     )
-    list_filter = (
-        *translation_fields("livelihood_zone_baseline__livelihood_zone__name"),
-        "livelihood_zone_baseline__livelihood_zone__country",
-    )
+    list_filter = ("livelihood_zone_baseline__livelihood_zone__country",)
+
+    @admin.display(description=_("Livelihood Zone Alternate Code"))
+    def livelihood_zone_alternate_code(self, instance):
+        """
+        Display the alternate code for the livelihood zone as a readonly field.
+        """
+        return instance.livelihood_zone_baseline.livelihood_zone.alternate_code
+
+    def country(self, instance):
+        """
+        Display the country for the livelihood zone as a readonly field.
+        """
+        return instance.livelihood_zone_baseline.livelihood_zone.country
 
     def get_fields(self, request, obj=None):
         fields = super().get_fields(request, obj=obj)
@@ -240,8 +274,8 @@ class LivelihoodStrategyAdmin(admin.ModelAdmin):
 
     search_fields = (
         "strategy_type__icontains",
-        "livelihood_zone_baseline__livelihood_zone__code__iexact",
-        "livelihood_zone_baseline__livelihood_zone__alternate_code__iexact",
+        "livelihood_zone_baseline__livelihood_zone__code",
+        "livelihood_zone_baseline__livelihood_zone__alternate_code",
         "additional_identifier__icontains",
         "product__cpc__iexact",
         "product__aliases__icontains",
@@ -294,8 +328,8 @@ class LivelihoodActivityAdmin(admin.ModelAdmin):
         "wealth_group__community__full_name",
         "strategy_type__icontains",
         "livelihood_strategy__additional_identifier__icontains",
-        "livelihood_zone_baseline__livelihood_zone__code__iexact",
-        "livelihood_zone_baseline__livelihood_zone__alternate_code__iexact",
+        "livelihood_zone_baseline__livelihood_zone__code",
+        "livelihood_zone_baseline__livelihood_zone__alternate_code",
         "livelihood_strategy__product__cpc__iexact",
         "livelihood_strategy__product__aliases__icontains",
         "livelihood_strategy__season__aliases__icontains",
@@ -959,6 +993,7 @@ class EventAdmin(admin.ModelAdmin):
 
 
 class ExpandabilityFactorAdmin(admin.ModelAdmin):
+
     fields = (
         "livelihood_strategy",
         "wealth_group",
@@ -991,6 +1026,7 @@ class ExpandabilityFactorAdmin(admin.ModelAdmin):
 
 
 class CopingStrategyAdmin(admin.ModelAdmin):
+
     fields = (
         "community",
         "leaders",

@@ -286,3 +286,6 @@ SILENCED_SYSTEM_CHECKS = [
     # SECURE_HSTS_PRELOAD: https://docs.djangoproject.com/en/3.0/ref/settings/#secure-hsts-preload
     "security.W021",
 ]
+
+# Ensure we can delete large numbers or records through the admin, to facilitate reloading.
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000

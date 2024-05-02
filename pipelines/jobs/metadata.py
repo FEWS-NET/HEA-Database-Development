@@ -12,6 +12,7 @@ import pandas as pd
 import requests
 from dagster import OpExecutionContext, job, op
 from django.contrib.gis.geos import GEOSGeometry, MultiPolygon, Polygon
+from django.db import transaction
 from gdrivefs.core import GoogleDriveFile
 from upath import UPath
 
@@ -23,8 +24,13 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hea.settings.production")
 # Configure Django with our custom settings before importing any Django classes
 django.setup()
 
-from baseline.models import LivelihoodZoneBaseline  # NOQA: E402
-from common.lookups import ClassifiedProductLookup  # NOQA: E402
+from baseline.lookups import CommunityLookup  # NOQA: E402
+from baseline.models import (  # NOQA: E402
+    Community,
+    LivelihoodZoneBaseline,
+    LivelihoodZoneBaselineCorrection,
+)
+from common.lookups import ClassifiedProductLookup, UserLookup  # NOQA: E402
 from common.models import ClassifiedProduct  # NOQA: E402
 from metadata.models import ActivityLabel  # NOQA: E402
 
@@ -165,6 +171,288 @@ def load_all_metadata(context: OpExecutionContext):
 
 
 @op
+def load_all_corrections(context: OpExecutionContext):
+    """
+    Load all Corrections from the BSS Metadata Google Sheet into the Django models.
+    """
+    storage_options = {"token": "service_account", "access": "read_only", "root_file_id": "0AOJ0gJ8sjnO7Uk9PVA"}
+    storage_options["creds"] = json.loads(os.environ["GOOGLE_APPLICATION_CREDENTIALS"])
+    p = UPath("gdrive://Database Design/BSS Metadata", **storage_options)
+    with p.fs.open(p.path, mode="rb", cache_type="bytes") as f:
+        # Google Sheets have to be exported rather than read directly
+        if isinstance(f, GoogleDriveFile) and (f.details["mimeType"] == "application/vnd.google-apps.spreadsheet"):
+            f = BytesIO(p.fs.export(p.path, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+
+        df = pd.read_excel(f, sheet_name="Corrections", engine="openpyxl")
+
+        # Use a 1-based index to match the Excel Row Number
+        df.index += 1
+
+        # Add the author_id as a foreign key to the User model
+        df = UserLookup().do_lookup(df, "author", "author_id")
+
+        # Add the livelihood_zone_baseline_id as a foreign key to the LivelihoodZoneBaseline model
+        livelihood_zone_baseline_df = pd.DataFrame.from_records(
+            LivelihoodZoneBaseline.objects.all().values("id", "livelihood_zone_id", "reference_year_end_date")
+        )
+        livelihood_zone_baseline_df["livelihood_zone_baseline"] = (
+            livelihood_zone_baseline_df["livelihood_zone_id"].astype(str)
+            + "~"
+            + livelihood_zone_baseline_df["reference_year_end_date"].map(lambda x: x.isoformat())
+        )
+        livelihood_zone_baseline_df["livelihood_zone_baseline_id"] = livelihood_zone_baseline_df["id"]
+        df = df.merge(
+            livelihood_zone_baseline_df[["livelihood_zone_baseline", "livelihood_zone_baseline_id"]],
+            how="inner",
+            on="livelihood_zone_baseline",
+        )
+        df["created"] = df["modified"] = datetime.datetime.now(tz=datetime.timezone.utc)
+        df = df.fillna("")
+
+        # Check the the corrections dataframe doesn't contain any duplicates
+        duplicates_df = df[df.duplicated(subset=["livelihood_zone_baseline", "worksheet_name", "cell_range"])][
+            ["livelihood_zone_baseline", "worksheet_name", "cell_range"]
+        ]
+        if not duplicates_df.empty:
+            raise ValueError(f"Found duplicate corrections:\n{duplicates_df.to_markdown()}")
+
+        with transaction.atomic():
+
+            df = df.set_index(["livelihood_zone_baseline_id", "worksheet_name", "cell_range"], drop=False)
+
+            # Get the current set of corrections from the database, so we can see what has changed
+            existing_instances = LivelihoodZoneBaselineCorrection.objects.filter(
+                livelihood_zone_baseline_id__in=df["livelihood_zone_baseline_id"].unique()
+            ).select_related("livelihood_zone_baseline")
+            existing_df = pd.DataFrame.from_records(
+                existing_instances.values(),
+                columns=[
+                    "livelihood_zone_baseline_id",
+                    "worksheet_name",
+                    "cell_range",
+                    "previous_value",
+                    "value",
+                    "author_id",
+                    "comment",
+                ],
+            )
+            existing_df = existing_df.set_index(
+                ["livelihood_zone_baseline_id", "worksheet_name", "cell_range"], drop=False
+            )
+
+            # Ignore unchanged corrections
+            unchanged_corrections = df[
+                df.set_index(
+                    [
+                        "livelihood_zone_baseline_id",
+                        "worksheet_name",
+                        "cell_range",
+                        "previous_value",
+                        "value",
+                        "author_id",
+                        "comment",
+                    ]
+                ).index.isin(
+                    existing_df.set_index(
+                        [
+                            "livelihood_zone_baseline_id",
+                            "worksheet_name",
+                            "cell_range",
+                            "previous_value",
+                            "value",
+                            "author_id",
+                            "comment",
+                        ]
+                    ).index
+                )
+            ]
+            df = df[~df.index.isin(unchanged_corrections.index)]
+
+            # Build the corrections as a list of unsaved LivelihoodZoneBaselineCorrection instances
+            corrections = [
+                LivelihoodZoneBaselineCorrection(
+                    **{
+                        k: v
+                        for k, v in correction.items()
+                        if k
+                        in [
+                            "livelihood_zone_baseline_id",
+                            "worksheet_name",
+                            "cell_range",
+                            "previous_value",
+                            "value",
+                            "correction_date",
+                            "author_id",
+                            "comment",
+                            "created",
+                            "modified",
+                        ]
+                    }
+                )
+                for correction in df.to_dict(orient="records")
+            ]
+            # Save the corrections to the database using a bulk_create, updating any existing corrections
+            instances = LivelihoodZoneBaselineCorrection.objects.bulk_create(
+                corrections,
+                update_conflicts=True,
+                update_fields=["previous_value", "value", "correction_date", "author_id", "comment", "modified"],
+                unique_fields=["livelihood_zone_baseline_id", "worksheet_name", "cell_range"],
+            )
+
+            # Report on the corrections that were created or updated
+            for instance in instances:
+                key = (instance.livelihood_zone_baseline_id, instance.worksheet_name, instance.cell_range)
+                record = df.loc[key]
+                if key not in existing_df.index:
+                    context.log.info(
+                        f"Created correction for {record['livelihood_zone_baseline']} {record['worksheet_name']}!{record['cell_range']}"
+                    )
+                else:
+                    context.log.info(
+                        f"Updated correction for {record['livelihood_zone_baseline']} {record['worksheet_name']}!{record['cell_range']}"
+                    )
+
+            # Delete any LivelihoodZoneBaselineCorrection instances that are for Baselines that are in the Corrections
+            # worksheet but that don't match a correction entry in the worksheet.
+            for instance in existing_instances:
+                key = (instance.livelihood_zone_baseline_id, instance.worksheet_name, instance.cell_range)
+                if key not in df.index and key not in unchanged_corrections.index:
+                    context.log.info(f"Deleted correction {str(instance)}")
+                    instance.delete()
+
+            context.log.info(f"Skipped {len(unchanged_corrections)} unchanged corrections")
+
+
+@op
+def load_all_community_aliases(context: OpExecutionContext):
+    """
+    Load all Community Aliases from the BSS Metadata Google Sheet into the Django models.
+    """
+    storage_options = {"token": "service_account", "access": "read_only", "root_file_id": "0AOJ0gJ8sjnO7Uk9PVA"}
+    storage_options["creds"] = json.loads(os.environ["GOOGLE_APPLICATION_CREDENTIALS"])
+    p = UPath("gdrive://Database Design/BSS Metadata", **storage_options)
+    with p.fs.open(p.path, mode="rb", cache_type="bytes") as f:
+        # Google Sheets have to be exported rather than read directly
+        if isinstance(f, GoogleDriveFile) and (f.details["mimeType"] == "application/vnd.google-apps.spreadsheet"):
+            f = BytesIO(p.fs.export(p.path, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+
+        df = pd.read_excel(f, sheet_name="Community Aliases", engine="openpyxl")
+
+        # Use a 1-based index to match the Excel Row Number
+        df.index += 1
+
+        # Add two new columnds to df, livelihood_zone_id and reference_year_end_date, by splitting the livelihood_zone_baseline on the ~
+        df[["livelihood_zone_id", "reference_year_end_date"]] = df["livelihood_zone_baseline"].str.split(
+            "~", expand=True
+        )
+        df["full_name"] = df["full_name"].str.strip()
+        df["reference_year_end_date"] = pd.to_datetime(df["reference_year_end_date"])
+
+        # Add the livelihood_zone_baseline_id as a foreign key to the LivelihoodZoneBaseline model
+        livelihood_zone_baseline_df = pd.DataFrame.from_records(
+            LivelihoodZoneBaseline.objects.all().values("id", "livelihood_zone_id", "reference_year_end_date")
+        )
+        livelihood_zone_baseline_df["livelihood_zone_baseline_id"] = livelihood_zone_baseline_df["id"]
+        livelihood_zone_baseline_df["reference_year_end_date"] = pd.to_datetime(
+            livelihood_zone_baseline_df["reference_year_end_date"]
+        )
+        df = df.merge(
+            livelihood_zone_baseline_df[
+                ["livelihood_zone_id", "reference_year_end_date", "livelihood_zone_baseline_id"]
+            ],
+            how="inner",
+            on=["livelihood_zone_id", "reference_year_end_date"],
+        )
+
+        # Add the community id
+        df["livelihood_zone_baseline_key"] = df["livelihood_zone_baseline"]
+        df["livelihood_zone_baseline"] = df["livelihood_zone_baseline_id"]
+        df = CommunityLookup().do_lookup(df, "full_name", "id")
+
+        df["aliases"] = df["aliases"].apply(lambda x: tuple(sorted(x.lower().split("~"))) if x else None)
+        df["modified"] = datetime.datetime.now(tz=datetime.timezone.utc)
+        df = df.dropna()
+
+        # Check the the corrections dataframe doesn't contain any duplicates
+        duplicates_df = df[df.duplicated(subset=["livelihood_zone_baseline", "full_name"])][
+            ["livelihood_zone_baseline_key", "full_name"]
+        ]
+        if not duplicates_df.empty:
+            raise ValueError(f"Found duplicate aliases:\n{duplicates_df.to_markdown()}")
+
+        with transaction.atomic():
+
+            df = df.set_index(["livelihood_zone_baseline_id", "full_name"], drop=False)
+
+            # Get the current set of aliases from the database, so we can see what has changed
+            existing_instances = Community.objects.filter(
+                livelihood_zone_baseline_id__in=df["livelihood_zone_baseline_id"].unique()
+            ).select_related("livelihood_zone_baseline")
+            existing_df = pd.DataFrame.from_records(
+                existing_instances.values(),
+                columns=[
+                    "livelihood_zone_baseline_id",
+                    "full_name",
+                    "aliases",
+                ],
+            )
+            existing_df["aliases"] = existing_df["aliases"].apply(lambda x: tuple(x) if x else None)
+            existing_df = existing_df.set_index(["livelihood_zone_baseline_id", "full_name"], drop=False)
+
+            # Ignore unchanged aliases
+            unchanged_aliases = df[
+                df.set_index(
+                    [
+                        "livelihood_zone_baseline_id",
+                        "full_name",
+                        "aliases",
+                    ]
+                ).index.isin(
+                    existing_df.set_index(
+                        [
+                            "livelihood_zone_baseline_id",
+                            "full_name",
+                            "aliases",
+                        ]
+                    ).index
+                )
+            ]
+            df = df[~df.index.isin(unchanged_aliases.index)]
+
+            # Build the update as a list of unsaved Community instances
+            communities = [
+                Community(
+                    **{
+                        k: v
+                        for k, v in community.items()
+                        if k
+                        in [
+                            "id",
+                            "livelihood_zone_baseline_id",
+                            "full_name",
+                            "aliases",
+                            "modified",
+                        ]
+                    }
+                )
+                for community in df.to_dict(orient="records")
+            ]
+            # Save the communities to the database using a bulk_update
+            Community.objects.bulk_update(
+                communities,
+                fields=["aliases", "modified"],
+            )
+
+            # Report on the aliases that were updated
+            for record in df.itertuples():
+                context.log.info(
+                    f"Updated aliases for Community {record.livelihood_zone_baseline_key} {record.full_name}"
+                )
+
+            context.log.info(f"Skipped {len(unchanged_aliases)} Communities with unchanged aliases")
+
+
+@op
 def load_all_fewsnet_geographies(context: OpExecutionContext):
     """
     Load all Livelihood Zone Baseline geographies from the FEWS NET Data Warehouse via the API.
@@ -225,6 +513,8 @@ def load_all_fewsnet_geographies(context: OpExecutionContext):
 @job
 def update_metadata():
     load_all_metadata()
+    load_all_corrections()
+    load_all_community_aliases()
 
 
 @job

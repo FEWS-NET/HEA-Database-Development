@@ -29,7 +29,7 @@ from upath import UPath
 from xlutils.copy import copy as copy_xls
 
 from ..configs import BSSMetadataConfig
-from ..partitions import bss_files_partitions_def
+from ..partitions import bss_files_partitions_def, bss_instances_partitions_def
 from ..utils import get_index, prepare_lookup
 
 # set the default Django settings module
@@ -38,6 +38,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hea.settings.production")
 # Configure Django with our custom settings before importing any Django classes
 django.setup()
 
+from baseline.models import LivelihoodZoneBaseline  # NOQA: E402
 from common.lookups import CountryLookup  # NOQA: E402
 
 # Map of values in cell A3 of the WB, Data, Data2, and Data3 worksheets to the language of the BSS
@@ -159,30 +160,6 @@ def completed_bss_metadata(config: BSSMetadataConfig, bss_metadata) -> Output[pd
     )
 
 
-@asset
-def bss_corrections(context: AssetExecutionContext, config: BSSMetadataConfig) -> Output[pd.DataFrame]:
-    """
-    A DataFrame containing approved corrections to cells in BSS spreadsheets.
-    """
-    p = UPath(config.bss_metadata_workbook, **config.bss_metadata_storage_options)
-
-    with p.fs.open(p.path, mode="rb", cache_type="bytes") as f:
-        # Google Sheets have to exported rather than read directly
-        if isinstance(f, GoogleDriveFile) and (f.details["mimeType"] == "application/vnd.google-apps.spreadsheet"):
-            f = BytesIO(p.fs.export(p.path, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
-
-        df = pd.read_excel(f, sheet_name="Corrections", engine="openpyxl")
-
-    return Output(
-        df,
-        metadata={
-            "num_baselines": df["bss_path"].nunique(),
-            "num_corrections": len(df),
-            "preview": MetadataValue.md(df.head(config.preview_rows).to_markdown()),
-        },
-    )
-
-
 @asset(partitions_def=bss_files_partitions_def)
 def original_files(context: AssetExecutionContext, config: BSSMetadataConfig, bss_metadata) -> Output[BytesIO]:
     """
@@ -202,104 +179,114 @@ def original_files(context: AssetExecutionContext, config: BSSMetadataConfig, bs
         return Output(BytesIO(f.read()), metadata=output_metadata)
 
 
-@asset(partitions_def=bss_files_partitions_def)
-def corrected_files(
-    context: AssetExecutionContext, config: BSSMetadataConfig, original_files, bss_metadata, bss_corrections
-) -> Output[BytesIO]:
+@asset(partitions_def=bss_instances_partitions_def)
+def corrected_files(context: AssetExecutionContext, config: BSSMetadataConfig) -> Output[BytesIO]:
     """
     BSS files with any necessary corrections applied.
     """
     partition_key = context.asset_partition_key_for_output()
-    bss_path = bss_metadata[bss_metadata["partition_key"] == partition_key]["bss_path"].iloc[0]
+    livelihood_zone_baseline = LivelihoodZoneBaseline.objects.get_by_natural_key(*partition_key.split("~")[1:])
 
-    def validate_previous_value(cell, expected_prev_value, prev_value):
+    def validate_previous_value(cell, expected_previous_value, previous_value):
         """
         Inline function to validate the existing value of a cell is the expected one, prior to correcting it.
         """
         # "#N/A" is inconsistently loaded as nan, even when copied and pasted in Excel or GSheets
-        if not isinstance(prev_value, numbers.Number):
-            prev_value = str(prev_value).strip()
-            expected_prev_value = str(expected_prev_value).strip()
-            for null_value in ["None", "nan", "#N/A", "N/A"]:  # Note that #N/A must be before N/A!
-                prev_value = prev_value.replace(null_value, "")
-                expected_prev_value = expected_prev_value.replace(null_value, "")
-        if expected_prev_value != prev_value:
+        if not isinstance(previous_value, numbers.Number):
+            previous_value = str(previous_value).strip()
+            expected_previous_value = str(expected_previous_value).strip()
+            if previous_value in ["None", "nan", "#N/A", "N/A"]:
+                previous_value = ""
+            if expected_previous_value in ["None", "nan", "#N/A", "N/A"]:
+                expected_previous_value = ""
+        if expected_previous_value != previous_value:
             raise ValueError(
                 "Unexpected prior value in source BSS. "
                 f"BSS `{partition_key}`, cell `{cell}`, "
-                f"value found `{prev_value}`, expected `{expected_prev_value}`."
+                f"value found `{previous_value}`, expected `{expected_previous_value}`."
             )
 
     # Find the corrections for this BSS
-    corrections_df = bss_corrections[bss_corrections["bss_path"] == bss_path]
+    corrections_df = pd.DataFrame.from_records(
+        livelihood_zone_baseline.corrections.all()
+        .order_by("worksheet_name", "cell_range")
+        .values(
+            "worksheet_name", "cell_range", "previous_value", "value", "author__username", "correction_date", "comment"
+        )
+    )
 
     # Prepare the metadata for the output
-    output_metadata = {"num_corrections": len(corrections_df)}
+    output_metadata = {
+        "num_corrections": len(corrections_df),
+        "corrections": MetadataValue.md(corrections_df.to_markdown(index=False)),
+    }
 
-    # Excel silently encrypts .xls files if there are locked worksheets, which
-    # prevents xlrd from reading them. It uses a hard-coded password to do it!
-    # See https://stackoverflow.com/questions/22789951/xlrd-error-workbook-is-encrypted-python-3-2-3
-    try:
-        wb_msoffcrypto_file = None
-        xlrd_wb = xlrd.open_workbook(file_contents=original_files.getvalue(), formatting_info=True, on_demand=True)
-        # xlrd can only read XLS files, so we need to use xlutils.copy_xls to create something we can edit
-        wb = copy_xls(xlrd_wb)
-    except xlrd.biffh.XLRDError as e:
-        if str(e) == "Workbook is encrypted":
-            # Try and unencrypt workbook with magic password
-            wb_msoffcrypto_file = msoffcrypto.OfficeFile(original_files)
-            try:
-                # Yes, this is actually a thing!
-                wb_msoffcrypto_file.load_key(password="VelvetSweatshop")
-            except Exception as e:
-                raise RuntimeError("Cannot process encrypted workbook") from e
-            # Magic Excel password worked
-            buffer = BytesIO()
-            wb_msoffcrypto_file.decrypt(buffer)
-            xlrd_wb = xlrd.open_workbook(file_contents=buffer.getvalue(), formatting_info=True, on_demand=True)
+    # Open the file to force it to be saved to the local media directory in case it only exists in the database.
+    with livelihood_zone_baseline.bss.open() as original_file:
+        # Excel silently encrypts .xls files if there are locked worksheets, which
+        # prevents xlrd from reading them. It uses a hard-coded password to do it!
+        # See https://stackoverflow.com/questions/22789951/xlrd-error-workbook-is-encrypted-python-3-2-3
+        try:
+            wb_msoffcrypto_file = None
+            xlrd_wb = xlrd.open_workbook(file_contents=original_file.read(), formatting_info=True, on_demand=True)
             # xlrd can only read XLS files, so we need to use xlutils.copy_xls to create something we can edit
             wb = copy_xls(xlrd_wb)
-        else:
-            # We assume that the file is an xlsx file that can be read by openpyxl
-            xlrd_wb = None  # Required to suppress spurious unbound variable errors from Pyright
-            # Need data_only=True to get the values of cells that contain formulas
-            wb = openpyxl.load_workbook(original_files, data_only=True)
+        except xlrd.biffh.XLRDError as e:
+            if str(e) == "Workbook is encrypted":
+                # Try and unencrypt workbook with magic password
+                wb_msoffcrypto_file = msoffcrypto.OfficeFile(original_file)
+                try:
+                    # Yes, this is actually a thing!
+                    wb_msoffcrypto_file.load_key(password="VelvetSweatshop")
+                except Exception as e:
+                    raise RuntimeError("Cannot process encrypted workbook") from e
+                # Magic Excel password worked
+                buffer = BytesIO()
+                wb_msoffcrypto_file.decrypt(buffer)
+                xlrd_wb = xlrd.open_workbook(file_contents=buffer.getvalue(), formatting_info=True, on_demand=True)
+                # xlrd can only read XLS files, so we need to use xlutils.copy_xls to create something we can edit
+                wb = copy_xls(xlrd_wb)
+            else:
+                # We assume that the file is an xlsx file that can be read by openpyxl
+                xlrd_wb = None  # Required to suppress spurious unbound variable errors from Pyright
+                # Need data_only=True to get the values of cells that contain formulas
+                wb = openpyxl.load_workbook(original_file, data_only=True)
 
-    if corrections_df.empty and not wb_msoffcrypto_file:
-        # No corrections and file not encrypted, so just leave the file unaltered
-        return Output(original_files, metadata=output_metadata)
+        if corrections_df.empty and not wb_msoffcrypto_file:
+            # No corrections and file not encrypted, so just leave the file unaltered
+            return Output(BytesIO(original_file.open().read()), metadata=output_metadata)
 
     # Apply the corrections
     for correction in corrections_df.itertuples():
         try:
-            for row in rows_from_range(correction.range):
+            for row in rows_from_range(correction.cell_range):
                 for cell in row:
                     if isinstance(wb, xlwt.Workbook):
                         row, col = coordinate_to_tuple(cell)
-                        prev_value = xlrd_wb.sheet_by_name(correction.worksheet_name).cell_value(row - 1, col - 1)
+                        previous_value = xlrd_wb.sheet_by_name(correction.worksheet_name).cell_value(row - 1, col - 1)
                         if (
                             xlrd_wb.sheet_by_name(correction.worksheet_name).cell(row - 1, col - 1).ctype
                             == xlrd.XL_CELL_ERROR
                         ):
                             # xlrd.error_text_from_code returns, eg, "#N/A"
-                            prev_value = xlrd.error_text_from_code[
+                            previous_value = xlrd.error_text_from_code[
                                 xlrd_wb.sheet_by_name(correction.worksheet_name).cell_value(row - 1, col - 1)
                             ]
-                        validate_previous_value(cell, correction.prev_value, prev_value)
+                        validate_previous_value(cell, correction.previous_value, previous_value)
                         # xlwt uses 0-based indexes, but coordinate_to_tuple uses 1-based, so offset the values
                         wb.get_sheet(correction.worksheet_name).write(row - 1, col - 1, correction.value)
                     else:
                         cell = wb[correction.worksheet_name][cell]
-                        validate_previous_value(cell, correction.prev_value, cell.value)
+                        validate_previous_value(cell, correction.previous_value, cell.value)
                         cell.value = correction.value
                         cell.comment = Comment(
-                            f"{correction.author} on {correction.correction_date}: {correction.comment}",  # NOQA: E501
-                            author=correction.author,
+                            f"{correction.author__username} on {correction.correction_date.date().isoformat()}: {correction.comment}",  # NOQA: E501
+                            author=correction.author__username,
                         )
         except Exception as e:
             raise ValueError(
                 f"Error applying correction to BSS `{partition_key}`, worksheet `{correction.worksheet_name}`, "
-                f"range `{correction.range}`"
+                f"range `{correction.cell_range}`"
             ) from e
 
     buffer = BytesIO()

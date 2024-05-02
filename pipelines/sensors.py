@@ -1,12 +1,8 @@
 import os
 
 import django
-from dagster import AssetSelection, RunRequest, SensorResult, sensor
+from dagster import SensorResult, sensor
 
-from .assets.livelihood_activity import livelihood_activity_instances
-from .assets.other_cash_income import other_cash_income_instances
-from .assets.wealth_characteristic import wealth_characteristic_instances
-from .assets.wild_foods import wild_foods_instances
 from .partitions import bss_instances_partitions_def
 
 # set the default Django settings module
@@ -18,15 +14,7 @@ django.setup()
 from baseline.models import LivelihoodZoneBaseline  # NOQA: E402
 
 
-@sensor(
-    asset_selection=AssetSelection.keys(
-        livelihood_activity_instances.key,
-        other_cash_income_instances.key,
-        wild_foods_instances.key,
-        wealth_characteristic_instances.key,
-    ),
-    minimum_interval_seconds=600,
-)
+@sensor(minimum_interval_seconds=600)
 def bss_instance_sensor(context):
     """
     Detects when a BSS instance has been added to the database and triggers the import pipeline.
@@ -52,8 +40,5 @@ def bss_instance_sensor(context):
     ]
 
     return SensorResult(
-        run_requests=[
-            RunRequest(partition_key=livelihoood_zone_baseline) for livelihoood_zone_baseline in new_partitions
-        ],
         dynamic_partitions_requests=[bss_instances_partitions_def.build_add_request(new_partitions)],
     )

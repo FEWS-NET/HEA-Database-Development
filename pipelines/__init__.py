@@ -3,17 +3,17 @@ import warnings
 from dagster import Definitions, EnvVar
 
 from .assets.base import (
-    bss_corrections,
     bss_metadata,
     completed_bss_metadata,
     corrected_files,
     original_files,
 )
-from .assets.baseline import baseline_instances
+from .assets.baseline import baseline_instances, community_instances
 from .assets.fixtures import (
     consolidated_fixtures,
     consolidated_instances,
     imported_baselines,
+    imported_communities,
     uploaded_baselines,
     validated_instances,
 )
@@ -67,10 +67,10 @@ defs = Definitions(
     assets=[
         bss_metadata,
         completed_bss_metadata,
-        bss_corrections,
         original_files,
         corrected_files,
         baseline_instances,
+        community_instances,
         livelihood_activity_dataframe,
         livelihood_activity_label_dataframe,
         all_livelihood_activity_labels_dataframe,
@@ -95,6 +95,7 @@ defs = Definitions(
         validated_instances,
         consolidated_fixtures,
         uploaded_baselines,
+        imported_communities,
         imported_baselines,
     ],
     jobs=[
