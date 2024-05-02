@@ -51,7 +51,7 @@ from .jobs.fixtures import (
     update_external_assets,
     upload_baselines,
 )
-from .jobs.metadata import update_metadata
+from .jobs.metadata import load_all_geographies, update_metadata
 from .resources import (
     DataFrameCSVIOManager,
     DataFrameExcelIOManager,
@@ -98,7 +98,14 @@ defs = Definitions(
         imported_communities,
         imported_baselines,
     ],
-    jobs=[update_metadata, update_external_assets, upload_baselines, extract_dataframes, import_baseline_from_fixture],
+    jobs=[
+        update_metadata,
+        update_external_assets,
+        upload_baselines,
+        extract_dataframes,
+        import_baseline_from_fixture,
+        load_all_geographies,
+    ],
     resources={
         "io_manager": PickleIOManager(base_path=EnvVar("DAGSTER_ASSET_BASE_PATH")),  # Used by default
         "json_io_manager": JSONIOManager(base_path=EnvVar("DAGSTER_ASSET_BASE_PATH")),
