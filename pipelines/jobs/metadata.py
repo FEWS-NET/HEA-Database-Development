@@ -451,7 +451,7 @@ def load_all_community_aliases(context: OpExecutionContext):
 
             context.log.info(f"Skipped {len(unchanged_aliases)} Communities with unchanged aliases")
 
-            
+
 def load_all_fewsnet_geographies(context: OpExecutionContext):
     """
     Load all Livelihood Zone Baseline geographies from the FEWS NET Data Warehouse via the API.
