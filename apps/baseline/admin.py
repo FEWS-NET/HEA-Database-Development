@@ -96,7 +96,16 @@ class LivelihoodZoneBaselineCorrectionInlineAdmin(admin.StackedInline):
     extra = 1
 
 
-class LivelihoodZoneBaselineAdmin(GISModelAdmin):
+class GISModelAdminReadOnly(GISModelAdmin):
+    """
+    A GISModelAdmin where the geometry field is read-only
+    """
+
+    # disabled set to True removes the "Delete all Features"
+    gis_widget_kwargs = {"attrs": {"map_width": 1000, "modifiable": False, "disabled": True}}
+
+
+class LivelihoodZoneBaselineAdmin(GISModelAdminReadOnly):
     fieldsets = [
         (
             None,
@@ -167,14 +176,29 @@ class LivelihoodZoneBaselineAdmin(GISModelAdmin):
         """
         return instance.livelihood_zone.alternate_code
 
+    @admin.display(description=_("Country"))
     def country(self, instance):
         """
         Display the country for the livelihood zone as a readonly field.
         """
         return instance.livelihood_zone.country
 
+    def get_fieldsets(self, request, obj=None):
 
-class CommunityAdmin(GISModelAdmin):
+        fieldsets = super().get_fieldsets(request, obj=obj)
+        if obj and obj.geography:
+            # Check if 'geography' field has a value
+            return fieldsets
+        else:
+            # Find the "Additional" fieldset and remove the "geography" field
+            for fieldset in fieldsets:
+                if fieldset[0] == "Additional":
+                    fieldset[1]["fields"] = [field for field in fieldset[1]["fields"] if field != "geography"]
+                    break
+            return fieldsets
+
+
+class CommunityAdmin(GISModelAdminReadOnly):
     fields = (
         "name",
         "full_name",
@@ -216,6 +240,18 @@ class CommunityAdmin(GISModelAdmin):
         Display the country for the livelihood zone as a readonly field.
         """
         return instance.livelihood_zone_baseline.livelihood_zone.country
+
+    def get_fields(self, request, obj=None):
+        fields = super().get_fields(request, obj=obj)
+        if obj and obj.geography:
+            # Check if 'geography' is already in the fields list
+            if "geography" not in fields:
+                # Add 'geography' to the fields
+                fields += ("geography",)
+        else:
+            # Remove 'geography' from the fields if it's empty or null
+            fields = [field for field in fields if field != "geography"]
+        return fields
 
 
 class LivelihoodStrategyAdmin(admin.ModelAdmin):
