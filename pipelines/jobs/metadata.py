@@ -2,13 +2,16 @@
 Load metadata from Google Sheets
 """
 
+import datetime
 import json
 import os
 from io import BytesIO
 
 import django
 import pandas as pd
+import requests
 from dagster import OpExecutionContext, job, op
+from django.contrib.gis.geos import GEOSGeometry, MultiPolygon, Polygon
 from gdrivefs.core import GoogleDriveFile
 from upath import UPath
 
@@ -20,6 +23,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hea.settings.production")
 # Configure Django with our custom settings before importing any Django classes
 django.setup()
 
+from baseline.models import LivelihoodZoneBaseline  # NOQA: E402
 from common.lookups import ClassifiedProductLookup  # NOQA: E402
 from common.models import ClassifiedProduct  # NOQA: E402
 from metadata.models import ActivityLabel  # NOQA: E402
@@ -160,6 +164,69 @@ def load_all_metadata(context: OpExecutionContext):
                             context.log.info(f'{"Created" if created else "Updated"} {sheet_name} {str(instance)}')
 
 
+@op
+def load_all_fewsnet_geographies(context: OpExecutionContext):
+    """
+    Load all Livelihood Zone Baseline geographies from the FEWS NET Data Warehouse via the API.
+    """
+    baseline_countries = (
+        LivelihoodZoneBaseline.objects.all()
+        .values_list("livelihood_zone__country__iso3166a2", flat=True)
+        .order_by("livelihood_zone__country__iso3166a2")
+        .distinct()
+    )
+    all_geometries = {}
+    for iso3166a2 in baseline_countries:
+        response = requests.get(
+            f"https://fdw.fews.net/api/feature/?format=geojson&unit_type=livelihood_zone&ordering=fnid&country_code={iso3166a2}"
+        )
+        response.raise_for_status()
+        srid = int(response.json()["crs"]["properties"]["name"].split(":")[-1])
+        for feature in response.json()["features"]:
+            # Also save the geometry for the Livelihood Zone Baseline
+            all_geometries[
+                (
+                    feature["properties"]["attributes"]["EFF_YEAR"],
+                    feature["properties"]["attributes"]["LZCODE"],
+                )
+            ] = feature
+
+        for livelihood_zone_baseline in LivelihoodZoneBaseline.objects.filter(
+            livelihood_zone__country_id=iso3166a2
+        ).order_by(
+            "livelihood_zone__country__iso3166a2",
+            "reference_year_end_date",
+            "livelihood_zone__code",
+        ):
+            for feature in all_geometries.values():
+                start_date = (
+                    datetime.date.fromisoformat(feature["properties"]["start_date"])
+                    if feature["properties"]["start_date"]
+                    else datetime.date.min
+                )
+                end_date = (
+                    datetime.date.fromisoformat(feature["properties"]["end_date"])
+                    if feature["properties"]["end_date"]
+                    else datetime.date.max
+                )
+                if (
+                    feature["properties"]["attributes"]["LZCODE"] == livelihood_zone_baseline.livelihood_zone.code
+                ) and (start_date <= livelihood_zone_baseline.valid_from_date <= end_date):
+                    geometry = GEOSGeometry(json.dumps(feature["geometry"]), srid=srid)
+                    if isinstance(geometry, Polygon):
+                        geometry = MultiPolygon(geometry)
+                    livelihood_zone_baseline.geography = geometry
+                    livelihood_zone_baseline.save()
+                    context.log.info(f"Updated geometry for {livelihood_zone_baseline}")
+                    continue
+            context.log.warning(f"Failed to find FEWS NET geometry for {livelihood_zone_baseline}")
+
+
 @job
 def update_metadata():
     load_all_metadata()
+
+
+@job
+def load_all_geographies():
+    load_all_fewsnet_geographies()
