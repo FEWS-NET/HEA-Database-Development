@@ -579,6 +579,40 @@ def get_instances_from_dataframe(
                 else:
                     raise ValueError("Invalid strategy_type %s for label '%s'" % (strategy_type, label))
 
+            # Some BSS incorrectly specify the product in the value columns instead of in the label column
+            # Therefore, if we have specified the product__name as the attribute, check that the product
+            # can be identified and is the same for all columns and then add it to the Livelihood Strategy.
+            elif activity_attribute == "product__name":
+                if not livelihood_strategy["product_id"]:
+                    product_name_df = pd.DataFrame(df.loc[row, "B":]).rename(columns={row: "product__name"})
+                    if product_name_df["product__name"].replace("", pd.NA).dropna().nunique() > 0:
+                        try:
+                            product_name_df = classifiedproductlookup.do_lookup(
+                                product_name_df, "product__name", "product_id"
+                            )
+                            if product_name_df["product_id"].nunique() > 1:
+                                errors.append(
+                                    "Found multiple products %s from row %s for label '%s'"
+                                    % (
+                                        ", ".join(
+                                            product_name_df["product__name"].replace("", pd.NA).dropna().unique()
+                                        ),
+                                        row,
+                                        label,
+                                    )
+                                )
+                            elif product_name_df["product_id"].nunique() == 1:
+                                livelihood_strategy["product_id"] = product_name_df["product_id"].iloc[0]
+                        except ValueError:
+                            errors.append(
+                                "Failed to identify product from '%s' in row %s for label '%s'"
+                                % (
+                                    ", ".join(product_name_df["product__name"].replace("", pd.NA).dropna().unique()),
+                                    row,
+                                    label,
+                                )
+                            )
+
             # Update the LivelihoodActivity records
             if any(value for value in df.loc[row, "B":].astype(str).str.strip()):
                 # Make sure we have an attribute!
