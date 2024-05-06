@@ -57,6 +57,7 @@ class ClassifiedProductAdmin(TreeAdmin):
         "scientific_name",
         "cpcv2",
         "hs2012",
+        "aliases",
         "per_country_aliases__country__iso_en_ro_name",
         "per_country_aliases__country__iso_en_name",
         "per_country_aliases__country__iso_en_ro_proper",

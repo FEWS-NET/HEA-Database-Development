@@ -78,6 +78,7 @@ from baseline.models import (  # NOQA: E402
     LivelihoodZoneBaseline,
     MilkProduction,
 )
+from common.lookups import ClassifiedProductLookup  # NOQA: E402
 from metadata.lookups import SeasonNameLookup  # NOQA: E402
 from metadata.models import (  # NOQA: E402
     ActivityLabel,
@@ -184,6 +185,7 @@ def get_instances_from_dataframe(
 
     # Prepare the lookups, so they cache the individual results
     seasonnamelookup = SeasonNameLookup()
+    classifiedproductlookup = ClassifiedProductLookup()
     label_map = {
         instance.pop("activity_label").lower(): instance
         for instance in ActivityLabel.objects.filter(status=LabelStatus.COMPLETE, activity_type=activity_type).values(
@@ -373,6 +375,7 @@ def get_instances_from_dataframe(
                             )
 
                     # Lookup the season name from the alias used in the BSS to create the natural key
+                    # Note that the natural key is always a list
                     livelihood_strategy["season"] = (
                         [
                             seasonnamelookup.get(
@@ -413,6 +416,33 @@ def get_instances_from_dataframe(
                             for field in ["income", "expenditure", "kcals_consumed", "percentage_kcals"]
                         )
                     ]
+
+                    # Check the Livelihood Strategy has a Season if one is required.
+                    # (e.g. for MilkProduction and ButterProduction).
+                    if livelihood_strategy["strategy_type"] in LivelihoodStrategy.REQUIRES_SEASON and (
+                        "season" not in livelihood_strategy or not livelihood_strategy["season"]
+                    ):
+                        strategy_is_valid = False
+                        if not non_empty_summary_activities:
+                            # No summary activities so we don't need to log an error, a warning is sufficient
+                            context.log.warning(
+                                "Cannot determine season for non-summary %s %s on row %s"
+                                % (
+                                    livelihood_strategy["strategy_type"],
+                                    livelihood_strategy["activity_label"],
+                                    livelihood_strategy["row"],
+                                )
+                            )
+                        else:
+                            # Summary activities exist, so we need to raise an error
+                            errors.append(
+                                "Cannot determine season for summary %s %s on row %s"
+                                % (
+                                    livelihood_strategy["strategy_type"],
+                                    livelihood_strategy["activity_label"],
+                                    livelihood_strategy["row"],
+                                )
+                            )
 
                     # Check the Livelihood Strategy has a product_id if one is required.
                     if livelihood_strategy["strategy_type"] in LivelihoodStrategy.REQUIRES_PRODUCT and (
@@ -555,7 +585,7 @@ def get_instances_from_dataframe(
                 if not activity_attribute:
                     # Include the header rows as well as the current row in the error message to aid trouble-shooting
                     rows = df.index[:num_header_rows].tolist() + [row]
-                    raise ValueError(
+                    errors.append(
                         "Found values in row %s for label '%s' without an identified attribute:\n%s"
                         % (
                             row,
@@ -608,7 +638,7 @@ def get_instances_from_dataframe(
                     % (partition_key, worksheet_name, row, label)
                 ) from e
 
-    raise_errors = False
+    raise_errors = True
     if errors and raise_errors:
         errors = "\n".join(errors)
         raise RuntimeError("Missing or inconsistent metadata in BSS %s:\n%s" % (partition_key, errors))

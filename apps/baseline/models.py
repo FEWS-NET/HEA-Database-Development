@@ -939,13 +939,22 @@ class LivelihoodStrategy(common_models.Model):
 
     # List of Strategy Types that require a Product
     REQUIRES_PRODUCT = [
-        "MilkProduction",
-        "ButterProduction",
-        "MeatProduction",
-        "LivestockSale",
-        "CropProduction",
-        "OtherCashIncome",
-        "WildFoodGathering",
+        LivelihoodStrategyType.MILK_PRODUCTION,
+        LivelihoodStrategyType.BUTTER_PRODUCTION,
+        LivelihoodStrategyType.MEAT_PRODUCTION,
+        LivelihoodStrategyType.LIVESTOCK_SALE,
+        LivelihoodStrategyType.CROP_PRODUCTION,
+        LivelihoodStrategyType.OTHER_CASH_INCOME,
+        LivelihoodStrategyType.WILD_FOOD_GATHERING,
+        LivelihoodStrategyType.FISHING,
+        LivelihoodStrategyType.HUNTING,
+        LivelihoodStrategyType.FOOD_PURCHASE,
+    ]
+
+    # List of Strategy Types that require a Season
+    REQUIRES_SEASON = [
+        LivelihoodStrategyType.MILK_PRODUCTION,
+        LivelihoodStrategyType.BUTTER_PRODUCTION,
     ]
 
     def clean(self):
