@@ -86,7 +86,17 @@ class LivelihoodZoneAdmin(admin.ModelAdmin):
 class LivelihoodZoneBaselineCorrectionAdmin(admin.ModelAdmin):
     list_display = ("worksheet_name", "cell_range", "previous_value", "value", "correction_date", "author")
     list_filter = ("livelihood_zone_baseline", "worksheet_name", "correction_date", "author")
-    search_fields = ("cell_range", "previous_value", "value", "comment")
+    search_fields = (
+        "livelihood_zone_baseline__livelihood_zone__code",
+        "livelihood_zone_baseline__livelihood_zone__alternate_code",
+        *translation_fields("livelihood_zone_baseline__livelihood_zone__name"),
+        *translation_fields("livelihood_zone_baseline__main_livelihood_category__name"),
+        "livelihood_zone_baseline__source_organization__name",
+        "cell_range",
+        "previous_value",
+        "value",
+        "comment",
+    )
     date_hierarchy = "correction_date"
 
 
