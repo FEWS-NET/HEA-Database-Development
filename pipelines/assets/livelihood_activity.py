@@ -107,7 +107,12 @@ def livelihood_activity_dataframe(config: BSSMetadataConfig, corrected_files) ->
         corrected_files,
         "Data",
         start_strings=["LIVESTOCK PRODUCTION:", "production animale:"],
-        end_strings=["income minus expenditure", "Revenus moins dépenses", "Revenu moins dépense"],
+        end_strings=[
+            "income minus expenditure",
+            "Revenus moins dépenses",
+            "Revenu moins dépense",
+            "revenu moins dépenses",  # 2023 Mali BSSs
+        ],
         header_rows=HEADER_ROWS,
     )
 
@@ -585,7 +590,8 @@ def get_instances_from_dataframe(
             elif activity_attribute == "product__name":
                 if not livelihood_strategy["product_id"]:
                     product_name_df = pd.DataFrame(df.loc[row, "B":]).rename(columns={row: "product__name"})
-                    if product_name_df["product__name"].replace("", pd.NA).dropna().nunique() > 0:
+                    product_name_df["product__name"] = product_name_df["product__name"].replace(["", 0], pd.NA)
+                    if product_name_df["product__name"].dropna().nunique() > 0:
                         try:
                             product_name_df = classifiedproductlookup.do_lookup(
                                 product_name_df, "product__name", "product_id"
@@ -594,9 +600,7 @@ def get_instances_from_dataframe(
                                 errors.append(
                                     "Found multiple products %s from row %s for label '%s'"
                                     % (
-                                        ", ".join(
-                                            product_name_df["product__name"].replace("", pd.NA).dropna().unique()
-                                        ),
+                                        ", ".join(product_name_df["product__name"].dropna().astype(str).unique()),
                                         row,
                                         label,
                                     )
@@ -607,7 +611,7 @@ def get_instances_from_dataframe(
                             errors.append(
                                 "Failed to identify product from '%s' in row %s for label '%s'"
                                 % (
-                                    ", ".join(product_name_df["product__name"].replace("", pd.NA).dropna().unique()),
+                                    ", ".join(product_name_df["product__name"].dropna().astype(str).unique()),
                                     row,
                                     label,
                                 )
@@ -617,22 +621,28 @@ def get_instances_from_dataframe(
             if any(value for value in df.loc[row, "B":].astype(str).str.strip()):
                 # Make sure we have an attribute!
                 if not activity_attribute:
-                    # Include the header rows as well as the current row in the error message to aid trouble-shooting
-                    rows = df.index[:num_header_rows].tolist() + [row]
-                    errors.append(
-                        "Found values in row %s for label '%s' without an identified attribute:\n%s"
-                        % (
-                            row,
-                            label,
-                            # Use replace/dropna/fillna so that the error message only includes the columns that
-                            # contain unwanted data.
-                            df.loc[rows]
-                            .replace("", pd.NA)
-                            .dropna(axis="columns", subset=row)
-                            .fillna("")
-                            .to_markdown(),
+                    # We can ignore the values if they are all 0 or all 1, as they are typically just
+                    # copy/paste errors from the previous row, or a note that data exists for the
+                    # Livelihood Activity without containing any actual data.
+                    values = df.loc[row, "B":].replace("", pd.NA).dropna().astype(str).str.strip().unique()
+                    if values.size > 1 or values[0] not in ["0", "1"]:
+                        # Include the header rows as well as the current row in the error message to aid trouble-shooting
+                        rows = df.index[:num_header_rows].tolist() + [row]
+                        errors.append(
+                            "Found values %s in row %s for label '%s' without an identified attribute:\n%s"
+                            % (
+                                ", ".join(values),
+                                row,
+                                label,
+                                # Use replace/dropna/fillna so that the error message only includes the columns that
+                                # contain unwanted data.
+                                df.loc[rows]
+                                .replace("", pd.NA)
+                                .dropna(axis="columns", subset=row)
+                                .fillna("")
+                                .to_markdown(),
+                            )
                         )
-                    )
                 # If the activity label that marks the start of a Livelihood Strategy is not
                 # returned by `ActivityLabel.objects.filter(status=LabelStatus.COMPLETE)`,
                 # and hence is not in the `activity_label_map`, then repeated labels like
@@ -644,21 +654,22 @@ def get_instances_from_dataframe(
                         # Skip to the next row
                         continue
                     else:
-                        raise ValueError(
+                        errors.append(
                             "Found duplicate value %s from row %s for existing attribute %s with value %s"
                             % (value, row, attribute, livelihood_strategy[attribute])
                         )
 
                 # Add the attribute to the LivelihoodStrategy.attribute_rows
-                livelihood_strategy["attribute_rows"][activity_attribute] = row
-                for i, value in enumerate(df.loc[row, "B":]):
-                    # Some attributes are stored in LivelihoodActivity.extra rather than individual fields.
-                    if activity_attribute not in activity_field_names:
-                        if "extra" not in livelihood_activities_for_strategy[i]:
-                            livelihood_activities_for_strategy[i]["extra"] = {}
-                        livelihood_activities_for_strategy[i]["extra"][activity_attribute] = value
-                    else:
-                        livelihood_activities_for_strategy[i][activity_attribute] = value
+                else:
+                    livelihood_strategy["attribute_rows"][activity_attribute] = row
+                    for i, value in enumerate(df.loc[row, "B":]):
+                        # Some attributes are stored in LivelihoodActivity.extra rather than individual fields.
+                        if activity_attribute not in activity_field_names:
+                            if "extra" not in livelihood_activities_for_strategy[i]:
+                                livelihood_activities_for_strategy[i]["extra"] = {}
+                            livelihood_activities_for_strategy[i]["extra"][activity_attribute] = value
+                        else:
+                            livelihood_activities_for_strategy[i][activity_attribute] = value
 
         except Exception as e:
             if column:
