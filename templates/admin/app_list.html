@@ -64,6 +64,8 @@
                     </div>
                 </div>
             {% endif %}
+        
+         
             </div>
         </div>
     {% endif %}
@@ -123,6 +125,34 @@
                 </div>
             {% endif %}
         </div>
+    {% endif %}
+    {% if 'metadata.view_wealthcharacteristiclabel' in perms or 'metadata.view_activitylabel' in perms %}
+        <div class="menu-category">
+            <h5>{% translate 'Labels' %}</h5>
+            <div class="row row-cols-1 row-cols-md-3 g-4">
+                <!-- Card 1 -->
+                {% if perms.metadata.view_wealthcharacteristiclabel %}
+                    <div class="col">
+                    <div class="card m-2">
+                        <div class="card-body">
+                           <a href="{% url 'admin:metadata_wealthcharacteristiclabel_changelist' %}">{% translate 'Wealth Characteristic Label' %}</a>
+                        </div>
+                    </div>
+                {% endif %}
+                </div>
+                <!-- Card 2 -->
+                {% if 'metadata.view_activitylabel' in perms %}
+                    <div class="col">
+                        <div class="card m-2">
+                            <div class="card-body">
+                                <a href="{% url 'admin:metadata_activitylabel_changelist' %}">{% translate 'Activity Label' %}</a>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
     {% endif %}
     {% if 'baseline.view_communitycropproduction' in perms or  'baseline.view_communitylivestock'  in perms %}
         <div class="menu-category">
