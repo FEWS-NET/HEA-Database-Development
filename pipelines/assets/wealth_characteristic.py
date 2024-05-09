@@ -109,7 +109,7 @@ from baseline.models import (  # NOQA: E402
     WealthGroupCharacteristicValue,
 )
 from metadata.lookups import WealthGroupCategoryLookup  # NOQA: E402
-from metadata.models import WealthCharacteristicLabel  # NOQA: E402
+from metadata.models import LabelStatus, WealthCharacteristicLabel  # NOQA: E402
 
 # Indexes of header rows in the Data3 dataframe (wealth_group_category, district, village)
 HEADER_ROWS = [3, 4, 5]
@@ -164,7 +164,7 @@ def summary_wealth_characteristic_labels_dataframe(
     """
     Summary of the Wealth Group Characteristic labels in use across all BSSs.
     """
-    return get_summary_bss_label_dataframe(config, all_wealth_characteristic_labels_dataframe)
+    return get_summary_bss_label_dataframe(config, all_wealth_characteristic_labels_dataframe, "WealthCharacteristic")
 
 
 @asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
@@ -187,7 +187,7 @@ def wealth_characteristic_instances(
     wealthgroupcategorylookup = WealthGroupCategoryLookup()
     label_map = {
         instance.pop("wealth_characteristic_label").lower(): instance
-        for instance in WealthCharacteristicLabel.objects.values(
+        for instance in WealthCharacteristicLabel.objects.filter(status=LabelStatus.COMPLETE).values(
             "wealth_characteristic_label",
             "wealth_characteristic_id",
             "product_id",

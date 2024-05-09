@@ -134,6 +134,7 @@ class ActivityLabelAdmin(admin.ModelAdmin):
     fields = (
         "activity_label",
         "activity_type",
+        "status",
         "is_start",
         "strategy_type",
         "product",
@@ -147,6 +148,7 @@ class ActivityLabelAdmin(admin.ModelAdmin):
     list_display = (
         "activity_label",
         "activity_type",
+        "status",
         "is_start",
         "strategy_type",
         "product",
@@ -162,6 +164,7 @@ class ActivityLabelAdmin(admin.ModelAdmin):
     )
     list_filter = (
         "activity_type",
+        "status",
         "strategy_type",
         "attribute",
     )
@@ -170,6 +173,7 @@ class ActivityLabelAdmin(admin.ModelAdmin):
 class WealthCharacteristicLabelAdmin(admin.ModelAdmin):
     fields = (
         "wealth_characteristic_label",
+        "status",
         "wealth_characteristic",
         "product",
         "unit_of_measure",
@@ -177,6 +181,7 @@ class WealthCharacteristicLabelAdmin(admin.ModelAdmin):
     )
     list_display = (
         "wealth_characteristic_label",
+        "status",
         "wealth_characteristic",
         "product",
         "unit_of_measure",
@@ -188,7 +193,10 @@ class WealthCharacteristicLabelAdmin(admin.ModelAdmin):
         *translation_fields("product__common_name"),
         *translation_fields("product__description"),
     )
-    list_filter = ("wealth_characteristic",)
+    list_filter = (
+        "status",
+        "wealth_characteristic",
+    )
 
 
 admin.site.register(LivelihoodCategory, LivelihoodCategoryAdmin)

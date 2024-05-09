@@ -18,6 +18,7 @@ djangorestframework-xml==2.0.0
 docutils
 factory-boy==3.2.1
 git+https://github.com/American-Institutes-for-Research/gdrivefs.git@e870c19e1d730635e3760e7ae21eebf9ddda765e
+googletrans-py==4.0.0
 gunicorn==20.1.0
 html5lib==1.1
 json-logging-py==0.2

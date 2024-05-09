@@ -118,7 +118,9 @@ def summary_other_cash_income_labels_dataframe(
     """
     Summary of the Other Cash Income activity labels in use across all BSSs.
     """
-    return get_summary_bss_label_dataframe(config, all_other_cash_income_labels_dataframe)
+    return get_summary_bss_label_dataframe(
+        config, all_other_cash_income_labels_dataframe, ActivityLabel.LivelihoodActivityType.OTHER_CASH_INCOME
+    )
 
 
 @asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")

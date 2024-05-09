@@ -78,8 +78,13 @@ from baseline.models import (  # NOQA: E402
     LivelihoodZoneBaseline,
     MilkProduction,
 )
+from common.lookups import ClassifiedProductLookup  # NOQA: E402
 from metadata.lookups import SeasonNameLookup  # NOQA: E402
-from metadata.models import ActivityLabel, LivelihoodActivityScenario  # NOQA: E402
+from metadata.models import (  # NOQA: E402
+    ActivityLabel,
+    LabelStatus,
+    LivelihoodActivityScenario,
+)
 
 # Indexes of header rows in the Data3 dataframe (wealth_group_category, district, village, household size)
 # The household size is included in the header rows because it is used to calculate the kcals_consumed
@@ -102,7 +107,12 @@ def livelihood_activity_dataframe(config: BSSMetadataConfig, corrected_files) ->
         corrected_files,
         "Data",
         start_strings=["LIVESTOCK PRODUCTION:", "production animale:"],
-        end_strings=["income minus expenditure", "Revenus moins dépenses", "Revenu moins dépense"],
+        end_strings=[
+            "income minus expenditure",
+            "Revenus moins dépenses",
+            "Revenu moins dépense",
+            "revenu moins dépenses",  # 2023 Mali BSSs
+        ],
         header_rows=HEADER_ROWS,
     )
 
@@ -138,7 +148,9 @@ def summary_livelihood_activity_labels_dataframe(
     """
     Summary of the Livelihood Activity labels in use across all BSSs.
     """
-    return get_summary_bss_label_dataframe(config, all_livelihood_activity_labels_dataframe)
+    return get_summary_bss_label_dataframe(
+        config, all_livelihood_activity_labels_dataframe, ActivityLabel.LivelihoodActivityType.LIVELIHOOD_ACTIVITY
+    )
 
 
 def get_instances_from_dataframe(
@@ -178,9 +190,10 @@ def get_instances_from_dataframe(
 
     # Prepare the lookups, so they cache the individual results
     seasonnamelookup = SeasonNameLookup()
+    classifiedproductlookup = ClassifiedProductLookup()
     label_map = {
         instance.pop("activity_label").lower(): instance
-        for instance in ActivityLabel.objects.filter(activity_type=activity_type).values(
+        for instance in ActivityLabel.objects.filter(status=LabelStatus.COMPLETE, activity_type=activity_type).values(
             "activity_label",
             "strategy_type",
             "is_start",
@@ -367,6 +380,7 @@ def get_instances_from_dataframe(
                             )
 
                     # Lookup the season name from the alias used in the BSS to create the natural key
+                    # Note that the natural key is always a list
                     livelihood_strategy["season"] = (
                         [
                             seasonnamelookup.get(
@@ -407,6 +421,33 @@ def get_instances_from_dataframe(
                             for field in ["income", "expenditure", "kcals_consumed", "percentage_kcals"]
                         )
                     ]
+
+                    # Check the Livelihood Strategy has a Season if one is required.
+                    # (e.g. for MilkProduction and ButterProduction).
+                    if livelihood_strategy["strategy_type"] in LivelihoodStrategy.REQUIRES_SEASON and (
+                        "season" not in livelihood_strategy or not livelihood_strategy["season"]
+                    ):
+                        strategy_is_valid = False
+                        if not non_empty_summary_activities:
+                            # No summary activities so we don't need to log an error, a warning is sufficient
+                            context.log.warning(
+                                "Cannot determine season for non-summary %s %s on row %s"
+                                % (
+                                    livelihood_strategy["strategy_type"],
+                                    livelihood_strategy["activity_label"],
+                                    livelihood_strategy["row"],
+                                )
+                            )
+                        else:
+                            # Summary activities exist, so we need to raise an error
+                            errors.append(
+                                "Cannot determine season for summary %s %s on row %s"
+                                % (
+                                    livelihood_strategy["strategy_type"],
+                                    livelihood_strategy["activity_label"],
+                                    livelihood_strategy["row"],
+                                )
+                            )
 
                     # Check the Livelihood Strategy has a product_id if one is required.
                     if livelihood_strategy["strategy_type"] in LivelihoodStrategy.REQUIRES_PRODUCT and (
@@ -543,51 +584,92 @@ def get_instances_from_dataframe(
                 else:
                     raise ValueError("Invalid strategy_type %s for label '%s'" % (strategy_type, label))
 
+            # Some BSS incorrectly specify the product in the value columns instead of in the label column
+            # Therefore, if we have specified the product__name as the attribute, check that the product
+            # can be identified and is the same for all columns and then add it to the Livelihood Strategy.
+            elif activity_attribute == "product__name":
+                if not livelihood_strategy["product_id"]:
+                    product_name_df = pd.DataFrame(df.loc[row, "B":]).rename(columns={row: "product__name"})
+                    product_name_df["product__name"] = product_name_df["product__name"].replace(["", 0], pd.NA)
+                    if product_name_df["product__name"].dropna().nunique() > 0:
+                        try:
+                            product_name_df = classifiedproductlookup.do_lookup(
+                                product_name_df, "product__name", "product_id"
+                            )
+                            if product_name_df["product_id"].nunique() > 1:
+                                errors.append(
+                                    "Found multiple products %s from row %s for label '%s'"
+                                    % (
+                                        ", ".join(product_name_df["product__name"].dropna().astype(str).unique()),
+                                        row,
+                                        label,
+                                    )
+                                )
+                            elif product_name_df["product_id"].nunique() == 1:
+                                livelihood_strategy["product_id"] = product_name_df["product_id"].iloc[0]
+                        except ValueError:
+                            errors.append(
+                                "Failed to identify product from '%s' in row %s for label '%s'"
+                                % (
+                                    ", ".join(product_name_df["product__name"].dropna().astype(str).unique()),
+                                    row,
+                                    label,
+                                )
+                            )
+
             # Update the LivelihoodActivity records
             if any(value for value in df.loc[row, "B":].astype(str).str.strip()):
                 # Make sure we have an attribute!
                 if not activity_attribute:
-                    # Include the header rows as well as the current row in the error message to aid trouble-shooting
-                    rows = df.index[:num_header_rows].tolist() + [row]
-                    raise ValueError(
-                        "Found values in row %s for label '%s' without an identified attribute:\n%s"
-                        % (
-                            row,
-                            label,
-                            # Use replace/dropna/fillna so that the error message only includes the columns that
-                            # contain unwanted data.
-                            df.loc[rows]
-                            .replace("", pd.NA)
-                            .dropna(axis="columns", subset=row)
-                            .fillna("")
-                            .to_markdown(),
+                    # We can ignore the values if they are all 0 or all 1, as they are typically just
+                    # copy/paste errors from the previous row, or a note that data exists for the
+                    # Livelihood Activity without containing any actual data.
+                    values = df.loc[row, "B":].replace("", pd.NA).dropna().astype(str).str.strip().unique()
+                    if values.size > 1 or values[0] not in ["0", "1"]:
+                        # Include the header rows as well as the current row in the error message to aid trouble-shooting
+                        rows = df.index[:num_header_rows].tolist() + [row]
+                        errors.append(
+                            "Found values %s in row %s for label '%s' without an identified attribute:\n%s"
+                            % (
+                                ", ".join(values),
+                                row,
+                                label,
+                                # Use replace/dropna/fillna so that the error message only includes the columns that
+                                # contain unwanted data.
+                                df.loc[rows]
+                                .replace("", pd.NA)
+                                .dropna(axis="columns", subset=row)
+                                .fillna("")
+                                .to_markdown(),
+                            )
                         )
-                    )
-                # If the activity label that marks the start of a Livelihood Strategy is not in the
-                # `ActivityLabel.objects.all()`, and hence not in the  `activity_label_map`, then repeated
-                # labels like `kcals (%)` will appear to be duplicate attributes for the previous
-                # `1ivelihood_strategy`. Therefore, if we have `allow_unrecognized_labels` we need to ignore
-                # the duplicates, but if we don't, we should raise an error.
+                # If the activity label that marks the start of a Livelihood Strategy is not
+                # returned by `ActivityLabel.objects.filter(status=LabelStatus.COMPLETE)`,
+                # and hence is not in the `activity_label_map`, then repeated labels like
+                # `kcals (%)` will appear to be duplicate attributes for the previous
+                # `1ivelihood_strategy`. Therefore, if we have `allow_unrecognized_labels` we
+                # need to ignore the duplicates, but if we don't, we should raise an error.
                 elif activity_attribute in livelihood_strategy["attribute_rows"]:
                     if allow_unrecognized_labels:
                         # Skip to the next row
                         continue
                     else:
-                        raise ValueError(
+                        errors.append(
                             "Found duplicate value %s from row %s for existing attribute %s with value %s"
                             % (value, row, attribute, livelihood_strategy[attribute])
                         )
 
                 # Add the attribute to the LivelihoodStrategy.attribute_rows
-                livelihood_strategy["attribute_rows"][activity_attribute] = row
-                for i, value in enumerate(df.loc[row, "B":]):
-                    # Some attributes are stored in LivelihoodActivity.extra rather than individual fields.
-                    if activity_attribute not in activity_field_names:
-                        if "extra" not in livelihood_activities_for_strategy[i]:
-                            livelihood_activities_for_strategy[i]["extra"] = {}
-                        livelihood_activities_for_strategy[i]["extra"][activity_attribute] = value
-                    else:
-                        livelihood_activities_for_strategy[i][activity_attribute] = value
+                else:
+                    livelihood_strategy["attribute_rows"][activity_attribute] = row
+                    for i, value in enumerate(df.loc[row, "B":]):
+                        # Some attributes are stored in LivelihoodActivity.extra rather than individual fields.
+                        if activity_attribute not in activity_field_names:
+                            if "extra" not in livelihood_activities_for_strategy[i]:
+                                livelihood_activities_for_strategy[i]["extra"] = {}
+                            livelihood_activities_for_strategy[i]["extra"][activity_attribute] = value
+                        else:
+                            livelihood_activities_for_strategy[i][activity_attribute] = value
 
         except Exception as e:
             if column:
@@ -601,7 +683,7 @@ def get_instances_from_dataframe(
                     % (partition_key, worksheet_name, row, label)
                 ) from e
 
-    raise_errors = False
+    raise_errors = True
     if errors and raise_errors:
         errors = "\n".join(errors)
         raise RuntimeError("Missing or inconsistent metadata in BSS %s:\n%s" % (partition_key, errors))

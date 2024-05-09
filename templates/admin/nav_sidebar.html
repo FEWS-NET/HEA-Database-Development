@@ -97,7 +97,30 @@
                     </div>
                 </li>
             {% endif %}
-
+        
+            {% if 'metadata.view_wealthcharacteristiclabel' in perms or 'metadata.view_activitylabel' in perms %}
+                <li class="mb-1">
+                    <button class="btn btn-toggle align-items-center rounded collapsed-menu" data-bs-toggle="collapse"
+                            data-bs-target="#labels-collapse" aria-expanded="false">
+                        {% translate 'Labels' %}
+                    </button>
+                    <div class="collapse-menu" id="labels-collapse">
+                        <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+                            {% if 'metadata.view_wealthcharacteristiclabel' in perms %}
+                                <li><a class="link-dark rounded"
+                                       href="{% url 'admin:metadata_wealthcharacteristiclabel_changelist' %}">{% translate 'Wealth Characteristic Label' %}</a>
+                                </li>
+                            {% endif %}
+                            {% if 'metadata.view_activitylabel' in perms %}
+                                <li><a class="link-dark rounded"
+                                       href="{% url 'admin:metadata_activitylabel_changelist' %}">{% translate 'Activity Label' %}</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </li>
+            {% endif %}
+        
             {% if 'baseline.view_communitycropproduction' in perms or 'baseline.view_communitylivestock' in perms %}
                 <li class="mb-1">
                     <button class="btn btn-toggle align-items-center rounded collapsed-menu" data-bs-toggle="collapse"
