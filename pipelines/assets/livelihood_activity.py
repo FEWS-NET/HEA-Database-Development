@@ -409,15 +409,15 @@ def get_instances_from_dataframe(
                     # Activities in the fixture, or raise an exception.
                     strategy_is_valid = True
 
+                    # Find the non-empty summary activities, so we can use them to decide whether to raise errors.
+                    # Note that we save non-empty livelihood activities that include 0 values for income, expenditure,
+                    # or kcals_consumed, but we don't count summary activities that have 0 values for these fields.
                     non_empty_summary_activities = [
                         livelihood_activity
                         for livelihood_activity in livelihood_activities_for_strategy
                         if livelihood_activity["wealth_group"][3] == ""
                         and any(
-                            (
-                                field in livelihood_activity
-                                and (livelihood_activity[field] or livelihood_activity[field] == 0)
-                            )
+                            (field in livelihood_activity and livelihood_activity[field])
                             for field in ["income", "expenditure", "kcals_consumed", "percentage_kcals"]
                         )
                     ]
@@ -441,11 +441,11 @@ def get_instances_from_dataframe(
                         else:
                             # Summary activities exist, so we need to raise an error
                             errors.append(
-                                "Cannot determine season for summary %s %s on row %s"
+                                "Cannot determine season for summary %s on row %s for label '%s'"
                                 % (
                                     livelihood_strategy["strategy_type"],
-                                    livelihood_strategy["activity_label"],
                                     livelihood_strategy["row"],
+                                    livelihood_strategy["activity_label"],
                                 )
                             )
 
@@ -467,11 +467,11 @@ def get_instances_from_dataframe(
                         else:
                             # Summary activities exist, so we need to raise an error
                             errors.append(
-                                "Cannot determine product_id for summary %s %s on row %s"
+                                "Cannot determine product_id for summary %s on row %s for label '%s'"
                                 % (
                                     livelihood_strategy["strategy_type"],
-                                    livelihood_strategy["activity_label"],
                                     livelihood_strategy["row"],
+                                    livelihood_strategy["activity_label"],
                                 )
                             )
 
@@ -598,7 +598,7 @@ def get_instances_from_dataframe(
                             )
                             if product_name_df["product_id"].nunique() > 1:
                                 errors.append(
-                                    "Found multiple products %s from row %s for label '%s'"
+                                    "Found multiple products %s on row %s for label '%s'"
                                     % (
                                         ", ".join(product_name_df["product__name"].dropna().astype(str).unique()),
                                         row,
@@ -609,13 +609,23 @@ def get_instances_from_dataframe(
                                 livelihood_strategy["product_id"] = product_name_df["product_id"].iloc[0]
                         except ValueError:
                             errors.append(
-                                "Failed to identify product from '%s' in row %s for label '%s'"
+                                "Failed to identify product from %s on row %s for label '%s'"
                                 % (
                                     ", ".join(product_name_df["product__name"].dropna().astype(str).unique()),
                                     row,
                                     label,
                                 )
                             )
+
+            # Some BSS incorrectly specify the product for a Crop Production, but not the attribute.
+            # Therefore, we infer the missing attribute if possible.
+            elif not activity_attribute:
+                # Check the following row, and attempt to infer the attribute for this row
+                next_label = prepared_labels[row + 1]
+                if next_label:
+                    next_label_attributes = label_map.get(next_label, {})
+                    if next_label_attributes and next_label_attributes["attribute"] == "name_of_local_measure":
+                        activity_attribute = "number_of_local_measures"
 
             # Update the LivelihoodActivity records
             if any(value for value in df.loc[row, "B":].astype(str).str.strip()):
@@ -629,7 +639,7 @@ def get_instances_from_dataframe(
                         # Include the header rows as well as the current row in the error message to aid trouble-shooting
                         rows = df.index[:num_header_rows].tolist() + [row]
                         errors.append(
-                            "Found values %s in row %s for label '%s' without an identified attribute:\n%s"
+                            "Found values %s without an identified attribute on row %s for label '%s' :\n%s"
                             % (
                                 ", ".join(values),
                                 row,
@@ -655,8 +665,14 @@ def get_instances_from_dataframe(
                         continue
                     else:
                         errors.append(
-                            "Found duplicate value %s from row %s for existing attribute %s with value %s"
-                            % (value, row, attribute, livelihood_strategy[attribute])
+                            "Found duplicate value %s for existing attribute %s with value %s on row %s for label '%s'"
+                            % (
+                                value,
+                                attribute,
+                                livelihood_strategy[attribute],
+                                row,
+                                label,
+                            )
                         )
 
                 # Add the attribute to the LivelihoodStrategy.attribute_rows
@@ -686,7 +702,9 @@ def get_instances_from_dataframe(
     raise_errors = True
     if errors and raise_errors:
         errors = "\n".join(errors)
-        raise RuntimeError("Missing or inconsistent metadata in BSS %s:\n%s" % (partition_key, errors))
+        raise RuntimeError(
+            "Missing or inconsistent metadata in BSS %s worksheet '%s':\n%s" % (partition_key, worksheet_name, errors)
+        )
 
     result = {
         "LivelihoodStrategy": livelihood_strategies,
