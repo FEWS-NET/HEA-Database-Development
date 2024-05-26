@@ -1,11 +1,12 @@
 import logging
 
+from django.contrib.contenttypes.models import ContentType
+
 from baseline.models import (
     Community,
     LivelihoodActivity,
     LivelihoodStrategy,
     LivelihoodZoneBaseline,
-    WealthGroup,
 )
 from ingestion.decorators import register
 from ingestion.importers import Importer
@@ -45,6 +46,13 @@ class LivelihoodStrategyImporter(Importer):
             "livelihoodactivity",
         ]
 
+    # def _save_instances(self, successful_mappings, parent_instances, import_run):
+    #     """
+    #     Uncomment to generate a fake parent instance, so that child importers can run.
+    #     """
+    #     parent_instances[self.Meta.model] = [LivelihoodStrategyFactory()]
+    #     return parent_instances
+
     def ingest_product(
         self,
         field_def,
@@ -52,6 +60,7 @@ class LivelihoodStrategyImporter(Importer):
         failed_mappings,
         parent_instances,
         bss_value_extractors,
+        import_run,
     ):
         # Scan down column A of the three Data sheets looking for a product alias.
         for sheet_name in ("Data", "Data2", "Data3"):
@@ -67,6 +76,7 @@ class LivelihoodStrategyImporter(Importer):
                     bss_value_extractors=bss_value_extractors,
                     successful_mappings=successful_mappings,
                     failed_mappings=failed_mappings,
+                    import_run=import_run,
                 )
         return successful_mappings, failed_mappings, parent_instances
 
@@ -77,6 +87,7 @@ class LivelihoodStrategyImporter(Importer):
         failed_mappings,
         parent_instances,
         bss_value_extractors,
+        import_run,
     ):
         # The products must already have been mapped, so we know how many LSes we have and which rows they're on.
         # This finds the strategy_types (~12), then generates a strategy_type SpreadsheetLocation per LS (~90).
@@ -96,6 +107,7 @@ class LivelihoodStrategyImporter(Importer):
                     bss_value_extractors=bss_value_extractors,
                     successful_mappings=successful_mappings,
                     failed_mappings=failed_mappings,
+                    import_run=import_run,
                 )
                 if new_spreadsheet_location:
                     strategy_type_spreadsheet_locations.append(new_spreadsheet_location)
@@ -147,7 +159,7 @@ class CommunityImporter(Importer):
             "interview_number",
         ]
         dependent_model_fields = [
-            "wealth_groups",
+            # TODO: "wealthgroup" importer
         ]
 
     def ingest_name(
@@ -157,6 +169,7 @@ class CommunityImporter(Importer):
         failed_mappings,
         parent_instances,
         bss_value_extractors,
+        import_run,
     ):
         # The community/village names are on row 4, repeated for each wealth category (on row 2).
         # So scan across the first wealth category accumulating village names.
@@ -176,6 +189,7 @@ class CommunityImporter(Importer):
                 bss_value_extractors=bss_value_extractors,
                 successful_mappings=successful_mappings,
                 failed_mappings=failed_mappings,
+                import_run=import_run,
             )
             column += 1
         return successful_mappings, failed_mappings, parent_instances
@@ -187,6 +201,7 @@ class CommunityImporter(Importer):
         failed_mappings,
         parent_instances,
         bss_value_extractors,
+        import_run,
     ):
         # 1. Scan across Data sheet row 3 loading district names
         sheet_name = "Data"
@@ -202,6 +217,7 @@ class CommunityImporter(Importer):
                 bss_value_extractors=bss_value_extractors,
                 successful_mappings=successful_mappings,
                 failed_mappings=failed_mappings,
+                import_run=import_run,
             )
         # 2. Prefix the village names
         for i, full_name_loc in enumerate(successful_mappings[field_def.name]):
@@ -216,6 +232,7 @@ class CommunityImporter(Importer):
         failed_mappings,
         parent_instances,
         bss_value_extractors,
+        import_run,
     ):
         # 1. Populate in the same way as the name field
         successful_mappings, failed_mappings, parent_instances = self.ingest_name(
@@ -224,6 +241,7 @@ class CommunityImporter(Importer):
             failed_mappings,
             parent_instances,
             bss_value_extractors,
+            import_run,
         )
         # 2. Convert to lower case
         for loc in successful_mappings[field_def.name]:
@@ -256,18 +274,19 @@ class LivelihoodActivityImporter(Importer):
             "livelihood_zone_baseline",
         ]
         dependent_model_fields = [
-            "milkproduction",
-            "butterproduction",
-            "meatproduction",
-            "livestocksale",
-            "cropproduction",
-            "foodpurchase",
-            "paymentinkind",
-            "reliefgiftother",
-            "fishing",
-            "wildfoodgathering",
-            "othercashincome",
-            "otherpurchase",
+            # TODO: related importers (by inheriting from LivelihoodActivityImporter)
+            # "milkproduction",
+            # "butterproduction",
+            # "meatproduction",
+            # "livestocksale",
+            # "cropproduction",
+            # "foodpurchase",
+            # "paymentinkind",
+            # "reliefgiftother",
+            # "fishing",
+            # "wildfoodgathering",
+            # "othercashincome",
+            # "otherpurchase",
         ]
 
     def ingest_quantity_produced(
@@ -277,21 +296,38 @@ class LivelihoodActivityImporter(Importer):
         failed_mappings,
         parent_instances,
         bss_value_extractors,
+        import_run,
     ):
         # The product is specified on the first row of each LS.
         # Use them to iterate over each LS's rows, looking for quantity_produced field name aliases
-        for strategy_i, strategy_loc in enumerate(parent_instances[LivelihoodStrategy]["product"]):
+        ls_product_locs = SpreadsheetLocation.objects.filter(
+            content_type=ContentType.objects.get_for_model(LivelihoodStrategy),
+            app_label="baseline",
+            model="LivelihoodStrategy",
+            field="product",
+            find_field=False,
+            import_run=import_run,
+        ).order_by("instance_number")
+        num_lses = len(ls_product_locs)
+
+        # Wealth categories provide the LivelihoodActivity columns
+        ls_wealth_category_locs = SpreadsheetLocation.objects.filter(
+            content_type=ContentType.objects.get_for_model(LivelihoodStrategy),
+            app_label="baseline",
+            model="LivelihoodStrategy",
+            field="wealth_category",
+            find_field=False,
+            import_run=import_run,
+        ).order_by("instance_number")
+
+        for strategy_i, strategy_loc in enumerate(ls_product_locs):
             sheet = parent_instances[LivelihoodZoneBaseline][0].load_sheet(strategy_loc.sheet_name)
             row_count, column_count = sheet.shape
             row = strategy_loc.row
 
             # If there's a subsequent LS on the same sheet, scan col A until that row, otherwise scan to bottom
-            if (
-                strategy_i + 1 < len(parent_instances[LivelihoodStrategy]["product"])
-                and parent_instances[LivelihoodStrategy]["product"][strategy_i + 1].sheet_name
-                == strategy_loc.sheet_name
-            ):
-                last_row = parent_instances[LivelihoodStrategy]["product"][strategy_i + 1].row - 1
+            if strategy_i + 1 < num_lses and ls_product_locs[strategy_i + 1].sheet_name == strategy_loc.sheet_name:
+                last_row = ls_product_locs[strategy_i + 1].row - 1
             else:
                 last_row = min(row_count, 3000)
 
@@ -307,6 +343,7 @@ class LivelihoodActivityImporter(Importer):
                     bss_value_extractors=bss_value_extractors,
                     successful_mappings=successful_mappings,
                     failed_mappings=failed_mappings,
+                    import_run=import_run,
                 )
                 # When we locate a quantity_produced field alias in col A, stop looking and load the values
                 if new_spreadsheet_location:
@@ -315,7 +352,7 @@ class LivelihoodActivityImporter(Importer):
 
             # get the value on row `row` for each LA.
             # There is 1 WealthGroup per WealthCategory per Community, plus 1 WG per WealthCategory with no Community
-            for wg_i, wg_loc in enumerate(parent_instances[WealthGroup]["wealth_category"]):
+            for wg_i, wg_loc in enumerate(ls_wealth_category_locs):
                 new_spreadsheet_location, successful_mappings, failed_mappings = self.attempt_load_from_cell(
                     parent_instances=parent_instances,
                     field_def=field_def,
@@ -326,4 +363,6 @@ class LivelihoodActivityImporter(Importer):
                     bss_value_extractors=bss_value_extractors,
                     successful_mappings=successful_mappings,
                     failed_mappings=failed_mappings,
+                    import_run=import_run,
                 )
+        return successful_mappings, failed_mappings, parent_instances

@@ -151,7 +151,7 @@ class FieldNameMapper(Mapper):
 
 class SimpleValueMapper(Mapper):
     def map(self, bss_value_extractors, source_value):
-        return None, None, source_value, source_value
+        return None, "", source_value, source_value
 
 
 class MapperFactory:

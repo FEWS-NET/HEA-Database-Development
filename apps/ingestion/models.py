@@ -25,10 +25,11 @@ class BssValueExtractor(Model):
     regex = models.CharField(
         blank=True,
         help_text=_(
-            "Put the text ALIAS in the regex where the alias should be injected. All occurrences will be replaced. "
+            "Put the text ALIAS in the regex where the alias should be injected. "
+            "For regexes with multiple slots for multipart aliases, put the text ALIAS in the regex multiple times, "
+            "and use || in the alias to separate the alias parts. The number of parts must match. "
             'To match any chars, `(`, maybe spaces, alias, maybe spaces, `)`, any chars, use: ".+\(\s*ALIAS\s*\).*". '
-            "It will return None and not log anything if no value is extracted. "
-            "It will concatenate multiple matches if found and log a warning."
+            "It will not match if no value is extracted. "
             "If no regex is needed, then no BssValueExtractor is needed, and the full cell contents will be matched."
             "(Identical behaviour to regex being an empty string.)"
         ),
@@ -43,8 +44,22 @@ class BssValueExtractor(Model):
         verbose_name_plural = _("BSS Value Extractors")
 
     def match(self, source_value, sought_alias):
-        escaped_alias = re.escape(sought_alias)
-        injected_re = self.regex.replace("ALIAS", escaped_alias)
+        num_alias_slots = self.regex.count("ALIAS")
+        if num_alias_slots == 1:
+            escaped_alias = re.escape(sought_alias)
+            injected_re = self.regex.replace("ALIAS", escaped_alias)
+        else:
+            # regex expects a multipart alias - check if alias is suitable, split on || substring
+            aliases = sought_alias.split("||")
+            if num_alias_slots == len(aliases):
+                injected_re = self.regex
+                for alias in aliases:
+                    escaped_alias = re.escape(alias)
+                    injected_re = injected_re.replace("ALIAS", escaped_alias, 1)
+            else:
+                # regex expects a multipart alias, but alias has wrong number of parts, so this is not a match
+                return None
+
         candidates = re.findall(injected_re, source_value)
         if not candidates:
             # Most times this will be scanning an irrelevant cell looking for a match.
@@ -52,12 +67,11 @@ class BssValueExtractor(Model):
             #     f"No value parsed for {self.app_label}.{self.model}.{self.field} for source value {source_value}."
             # )
             return None
-        elif len(candidates) > 1:
-            logger.warning(
-                f"Multiple matches parsed for {self.app_label}.{self.model}.{self.field} "
-                f"for source value {source_value} regex {injected_re} matches {', '.join(candidates)}."
-            )
         return injected_re
+
+
+class ImportRun(Model):
+    livelihood_zone_baseline = models.ForeignKey("baseline.LivelihoodZoneBaseline", on_delete=models.DO_NOTHING)
 
 
 class SpreadsheetLocation(Model):
@@ -80,7 +94,7 @@ class SpreadsheetLocation(Model):
             "LivelihoodActivity.quantity_produced, as opposed to a value to be stored in that field."
         ),
     )
-    livelihood_zone_baseline = models.ForeignKey("baseline.LivelihoodZoneBaseline", on_delete=models.DO_NOTHING)
+    import_run = models.ForeignKey(ImportRun, on_delete=models.DO_NOTHING)
     sheet_name = models.CharField()
     column = models.PositiveIntegerField()
     row = models.PositiveIntegerField()
@@ -92,7 +106,7 @@ class SpreadsheetLocation(Model):
     )
 
     source_value = models.CharField(blank=True)  # empty string may ingest as zero
-    matching_re = models.CharField(blank=True)  # TODO: delete or use for injected regex (and change regex to non-inje
+    matching_re = models.CharField(blank=True)  # TODO: regex is without alias injected, matching_re is with?
     mapped_value = models.JSONField(
         null=True, blank=True, help_text=_("A string, integer, decimal, choice key, string id or integer id.")
     )
@@ -147,10 +161,6 @@ class FieldNameAlias(Model):
         verbose_name_plural = _("Field Name Aliases")
 
 
-class ImportRun(Model):
-    livelihood_zone_baseline = models.ForeignKey("baseline.LivelihoodZoneBaseline", on_delete=models.DO_NOTHING)
-
-
 class LogLevel(models.IntegerChoices):
     NOTSET = 0, _("Not Set")
     DEBUG = 10, _("Debug")
@@ -166,6 +176,7 @@ class ImportLog(Model):
     or all logs for a specific field, and see the state at the time of logging.
     """
 
+    import_run = models.ForeignKey(ImportRun, on_delete=models.DO_NOTHING)
     log_level = models.IntegerField(verbose_name=_("Log Level"), choices=LogLevel.choices, default=LogLevel.NOTSET)
     message = models.TextField()
     instance = models.JSONField(null=True, blank=True)
@@ -198,7 +209,7 @@ class ScanLog(Model):
     Successful scans have the resulting alias, regex, injected regex and mapped value.
     """
 
-    livelihood_zone_baseline = models.ForeignKey("baseline.LivelihoodZoneBaseline", on_delete=models.DO_NOTHING)
+    import_run = models.ForeignKey(ImportRun, on_delete=models.DO_NOTHING)
     sheet_name = models.CharField()
     column = models.PositiveIntegerField()
     row = models.PositiveIntegerField()

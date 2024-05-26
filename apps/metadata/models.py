@@ -36,7 +36,10 @@ class ReferenceData(common_models.Model):
         blank=True,
         null=True,
         verbose_name=_("aliases"),
-        help_text=_("A list of alternate names for the object."),
+        help_text=_(
+            "A list of alternate names for the object. If an alias has multiple parts, for a regex that has multiple "
+            "slots, use || in the alias to separate the alias parts. The number of parts must match."
+        ),
     )
 
     def calculate_fields(self):
