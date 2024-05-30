@@ -58,6 +58,7 @@ class ClassifiedProductAdmin(TreeAdmin):
         "cpcv2",
         "hs2012",
         "aliases",
+        "kcals_per_unit",
         "per_country_aliases__country__iso_en_ro_name",
         "per_country_aliases__country__iso_en_name",
         "per_country_aliases__country__iso_en_ro_proper",
