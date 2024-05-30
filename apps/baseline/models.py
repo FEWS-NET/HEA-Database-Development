@@ -929,7 +929,7 @@ class LivelihoodStrategy(common_models.Model):
     )
     # In many BSS they store separate data for Rainfed and Irrigated production of staple crops.
     additional_identifier = models.CharField(
-        max_length=60,
+        max_length=200,
         blank=True,
         verbose_name=_("Additional Identifer"),
         help_text=_("Additional text identifying the livelihood strategy"),
@@ -944,7 +944,6 @@ class LivelihoodStrategy(common_models.Model):
         LivelihoodStrategyType.MEAT_PRODUCTION,
         LivelihoodStrategyType.LIVESTOCK_SALE,
         LivelihoodStrategyType.CROP_PRODUCTION,
-        LivelihoodStrategyType.OTHER_CASH_INCOME,
         LivelihoodStrategyType.WILD_FOOD_GATHERING,
         LivelihoodStrategyType.FISHING,
         LivelihoodStrategyType.HUNTING,
@@ -1551,9 +1550,12 @@ class FoodPurchase(LivelihoodActivity):
     )
     # This is a float field because data may be captured as "once per week",
     # which equates to "52 per year", which is "4.33 per month".
-    times_per_month = models.FloatField(verbose_name=_("Purchases per month"))
+    times_per_month = models.FloatField(blank=True, null=True, verbose_name=_("Purchases per month"))
     months_per_year = models.PositiveSmallIntegerField(
-        verbose_name=_("Months per year"), help_text=_("Number of months in a year that the product is purchased")
+        blank=True,
+        null=True,
+        verbose_name=_("Months per year"),
+        help_text=_("Number of months in a year that the product is purchased"),
     )
     times_per_year = models.PositiveSmallIntegerField(
         verbose_name=_("Times per year"),
@@ -1589,7 +1591,7 @@ class PaymentInKind(LivelihoodActivity):
     )
     # This is a float field because data may be captured as "once per week",
     # which equates to "52 per year", which is "4.33 per month".
-    times_per_month = models.FloatField(verbose_name=_("Labor per month"))
+    times_per_month = models.FloatField(blank=True, null=True, verbose_name=_("Labor per month"))
     months_per_year = models.PositiveSmallIntegerField(
         verbose_name=_("Months per year"), help_text=_("Number of months in a year that the labor is performed")
     )
@@ -1624,6 +1626,7 @@ class ReliefGiftOther(LivelihoodActivity):
     """
 
     # Production calculation /validation is `unit_of_measure * unit_multiple * times_per_year`
+    # Also used for the number of children receiving school meals.
     unit_multiple = models.PositiveSmallIntegerField(
         verbose_name=_("Unit Multiple"), help_text=_("Multiple of the unit of measure received each time")
     )
@@ -1788,11 +1791,15 @@ class OtherPurchase(LivelihoodActivity):
     )
 
     def validate_expenditure(self):
-        if self.expenditure != self.price * self.unit_multiple * self.times_per_month * self.months_per_year:
+        if (
+            self.times_per_month
+            and self.months_per_year
+            and self.times_per_month * self.months_per_year != self.times_per_year
+        ):
+            raise ValidationError(_("Times per year must be times per month * months per year"))
+        if self.expenditure != self.price * self.unit_multiple * self.times_per_year:
             raise ValidationError(
-                _(
-                    "Expenditure for Other Purchases must be price * unit multiple * purchases per month * months per year"  # NOQA: E501
-                )
+                _("Expenditure for Other Purchases must be price * unit multiple * purchases per year")
             )
 
     class Meta:
