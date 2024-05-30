@@ -164,21 +164,37 @@ def validated_instances(
             df["key"] = df["code"]
         elif model_name == "LivelihoodZoneBaseline":
             df["key"] = df[["livelihood_zone_id", "reference_year_end_date"]].apply(
-                lambda x: [x[0], x[1]], axis="columns"
+                lambda x: [x.iloc[0], x.iloc[1]], axis="columns"
             )
         elif model_name == "Community":
-            df["key"] = df[["livelihood_zone_baseline", "full_name"]].apply(lambda x: x[0] + [x[1]], axis="columns")
+            df["key"] = df[["livelihood_zone_baseline", "full_name"]].apply(
+                lambda x: x.iloc[0] + [x.iloc[1]], axis="columns"
+            )
         elif model_name == "WealthGroup":
             df["key"] = df[["livelihood_zone_baseline", "wealth_group_category", "community"]].apply(
-                lambda x: x[0] + [x[1], x[2][-1] if x[2] else ""], axis="columns"
+                lambda x: x.iloc[0] + [x.iloc[1], x.iloc[2][-1] if x.iloc[2] else ""], axis="columns"
             )
         elif model_name == "LivelihoodStrategy":
             df["key"] = df[
                 ["livelihood_zone_baseline", "strategy_type", "season", "product_id", "additional_identifier"]
-            ].apply(lambda x: x[0] + [x[1], x[2][0] if x[2] else "", x[3], x[4]], axis="columns")
+            ].apply(
+                lambda x: x.iloc[0]
+                + [x.iloc[1], x.iloc[2][0] if x.iloc[2] else "", x.iloc[3] if x.iloc[3] else "", x.iloc[4]],
+                axis="columns",
+            )
         elif model_name == "LivelihoodActivity":
             df["key"] = df[["livelihood_zone_baseline", "wealth_group", "livelihood_strategy"]].apply(
-                lambda x: [x[0][0], x[0][1], x[1][2], x[2][2], x[2][3], x[2][4], x[2][5], x[1][3]], axis="columns"
+                lambda x: [
+                    x.iloc[0][0],
+                    x.iloc[0][1],
+                    x.iloc[1][2],
+                    x.iloc[2][2],
+                    x.iloc[2][3],
+                    x.iloc[2][4],
+                    x.iloc[2][5],
+                    x.iloc[1][3],
+                ],
+                axis="columns",
             )
 
         # Apply some model-level defaults
