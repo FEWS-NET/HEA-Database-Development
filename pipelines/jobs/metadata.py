@@ -155,7 +155,10 @@ def load_all_metadata(context: OpExecutionContext, config: ReferenceDataConfig):
             f = BytesIO(p.fs.export(p.path, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
 
         with pd.ExcelFile(f) as reference_data:
+            # Get the required sheet names from the config, or load all sheets that match a Django model
             sheet_names = config.sheet_names or reference_data.sheet_names[1:]
+            # Make sure that the sheet names are in the same order as they are in the worksbook
+            sheet_names = [sheet_name for sheet_name in reference_data.sheet_names[1:] if sheet_name in sheet_names]
             # Iterate over the sheets in the ReferenceData workbook, in reverse order (because the Label sheets that
             # need Subject Matter Expert input are at beginning, and depend on the sheets at the end).
             for sheet_name in reversed(sheet_names):
