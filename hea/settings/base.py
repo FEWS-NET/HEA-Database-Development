@@ -106,7 +106,12 @@ EXTERNAL_APPS = [
     "django_extensions",
     "ddtrace.contrib.django",
 ]
-PROJECT_APPS = ["common", "metadata", "baseline"]
+PROJECT_APPS = [
+    "common",
+    "metadata",
+    "baseline",
+    "ingestion",
+]
 INSTALLED_APPS = EXTERNAL_APPS + PROJECT_APPS
 
 MIDDLEWARE = [
