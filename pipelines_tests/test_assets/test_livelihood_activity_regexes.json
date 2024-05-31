@@ -1,0 +1,776 @@
+{
+    "LIVESTOCK PRODUCTION:": {},
+    "Cows' milk": {
+        "strategy_type": "MilkProduction",
+        "is_start": true,
+        "product_id": "cows' milk"
+    },
+    "no. milking animals": {
+        "attribute": "milking_animals"
+    },
+    "season 1: lactation period (days)": {
+        "strategy_type": "MilkProduction",
+        "season": "season 1",
+        "attribute": "lactation_days"
+    },
+    "daily milk production per animal (litres)": {
+        "unit_of_measure_id": "litres",
+        "attribute": "daily_production"
+    },
+    "total production (litres)": {
+        "unit_of_measure_id": "litres",
+        "attribute": "quantity_produced"
+    },
+    "sold/exchanged (litres)": {
+        "unit_of_measure_id": "litres",
+        "attribute": "quantity_sold"
+    },
+    "price (cash)": {
+        "attribute": "price"
+    },
+    "income (cash)": {
+        "attribute": "income"
+    },
+    "income": {
+        "attribute": "income"
+    },
+    "type of milk sold/other use (skim=0, whole=1)": {
+        "attribute": "type_of_milk_sold_or_other_uses"
+    },
+    "other use (liters)": {
+        "unit_of_measure_id": "liters",
+        "attribute": "quantity_other_uses"
+    },
+    "season 2: lactation period (days)": {
+        "strategy_type": "MilkProduction",
+        "is_start": true,
+        "season": "season 2",
+        "attribute": "lactation_days"
+    },
+    "ghee/butter production (kg)": {
+        "strategy_type": "ButterProduction",
+        "is_start": false,
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
+    },
+    "ghee/butter (other use)": {
+        "strategy_type": "ButterProduction",
+        "attribute": "quantity_other_uses"
+    },
+    "ghee/butter sales: kg sold": {
+        "strategy_type": "ButterProduction",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_sold"
+    },
+    "ghee/butter price (cash)": {
+        "strategy_type": "ButterProduction",
+        "attribute": "price"
+    },
+    "ghee/butter income (cash)": {
+        "strategy_type": "ButterProduction",
+        "attribute": "income"
+    },
+    "milk+ghee/butter kcals (%) - 1st season": {
+        "strategy_type": "ButterProduction",
+        "season": "1st season",
+        "attribute": "percentage_kcals"
+    },
+    "milk+ghee/butter kcals (%) - 2nd season": {
+        "strategy_type": "ButterProduction",
+        "is_start": true,
+        "season": "2nd season",
+        "attribute": "percentage_kcals"
+    },
+    "Goat meat: no. animals slaughtered": {
+        "strategy_type": "MeatProduction",
+        "is_start": true,
+        "product_id": "goat meat",
+        "attribute": "animals_slaughtered"
+    },
+    "carcass weight (kg)": {
+        "unit_of_measure_id": "kg",
+        "attribute": "carcass_weight"
+    },
+    "kcals (%)": {
+        "attribute": "percentage_kcals"
+    },
+    "Cattle sales: no. sold": {
+        "strategy_type": "LivestockSale",
+        "is_start": true,
+        "product_id": "cattle",
+        "attribute": "quantity_sold"
+    },
+    "cattle offtake (% sold/slaughtered)": {
+        "product_id": "cattle",
+        "attribute": "percentage_sold_slaughtered"
+    },
+    "Chicken  sales: no. sold": {
+        "strategy_type": "LivestockSale",
+        "is_start": true,
+        "product_id": "chicken",
+        "attribute": "quantity_sold"
+    },
+    "Eggs sales: no. sold": {
+        "strategy_type": "LivestockSale",
+        "is_start": true,
+        "product_id": "eggs",
+        "attribute": "quantity_sold"
+    },
+    "CROP PRODUCTION: ": {
+        "strategy_type": "CropProduction",
+        "is_start": true
+    },
+    "Green crops Season 2: no of months": {
+        "is_start": true,
+        "product_id": "green crops",
+        "season": "season 2",
+        "attribute": "months_per_year"
+    },
+    "Proportion of months green consumption": {
+        "attribute": "percentage_monthly_kcals"
+    },
+    "Green maize sold: quantity sold": {
+        "is_start": true,
+        "product_id": "green maize",
+        "attribute": "quantity_sold"
+    },
+    "Maize: kg produced": {
+        "is_start": true,
+        "product_id": "maize",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
+    },
+    "kcals per kg": {
+        "unit_of_measure_id": "kg",
+        "attribute": "product__kcals_per_unit"
+    },
+    "sold/exchanged (kg)": {
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_sold"
+    },
+    "other use (kg)": {
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_other_uses"
+    },
+    "Rice - rainfed: kg produced": {
+        "is_start": true,
+        "product_id": "rice",
+        "unit_of_measure_id": "kg",
+        "additional_identifier": "rainfed",
+        "attribute": "quantity_produced"
+    },
+    "Wheat - irrigated: kg produced": {
+        "is_start": true,
+        "product_id": "wheat",
+        "unit_of_measure_id": "kg",
+        "additional_identifier": "irrigated",
+        "attribute": "quantity_produced"
+    },
+    "Sorghum: kg produced": {
+        "is_start": true,
+        "product_id": "sorghum",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
+    },
+    "Sesame: no. local meas.": {
+        "product_id": "sesame",
+        "attribute": "number_of_local_measures",
+        "is_start": true
+    },
+    "name of measure": {
+        "attribute": "name_of_local_measure"
+    },
+    "wt of measure": {
+        "attribute": "unit_multiple"
+    },
+    "kg": {
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced_or_purchased"
+    },
+    "Melon: kg sold": {
+        "product_id": "melon",
+        "attribute": "quantity_sold",
+        "unit_of_measure_id": "kg",
+        "is_start": true
+    },
+    "FOOD PURCHASE:": {
+        "strategy_type": "FoodPurchase",
+        "is_start": true
+    },
+    "Maize flour: name of meas.": {
+        "attribute": "name_of_local_measure",
+        "product_id": "maize flour",
+        "is_start": true
+    },
+    "no. meas per month": {
+        "attribute": "times_per_month"
+    },
+    "no. times per month": {
+        "attribute": "times_per_month"
+    },
+    "no. months": {
+        "attribute": "months_per_year"
+    },
+    "kcals/kg": {
+        "attribute": "product__kcals_per_unit",
+        "unit_of_measure_id": "kg"
+    },
+    "price (per kg)": {
+        "unit_of_measure_id": "kg",
+        "attribute": "price"
+    },
+    "price per kg (cash)": {
+        "unit_of_measure_id": "kg",
+        "attribute": "price"
+    },
+    "price per unit": {
+        "attribute": "price"
+    },
+    "expenditure": {
+        "attribute": "expenditure"
+    },
+    "Sugar: quantity (kg)": {
+        "attribute": "quantity_produced_or_purchased",
+        "product_id": "sugar",
+        "unit_of_measure_id": "kg",
+        "is_start": true
+    },
+    "pain : quantité (kg)": {
+        "attribute": "quantity_produced_or_purchased",
+        "product_id": "pain",
+        "unit_of_measure_id": "kg",
+        "is_start": true
+    },
+    "no. times per year": {
+        "attribute": "times_per_year"
+    },
+    "quantity (kg)": {
+        "attribute": "quantity_produced_or_purchased",
+        "unit_of_measure_id": "kg"
+    },
+    "kg produced": {
+        "attribute": "quantity_produced",
+        "unit_of_measure_id": "kg"
+    },
+    "kg produit": {
+        "attribute": "quantity_produced",
+        "unit_of_measure_id": "kg"
+    },
+    "no. people per HH": {
+        "attribute": "people_per_household"
+    },
+    "PRODUCTION ANIMALE:": {},
+    "nb d'animaux laitiers": {
+        "attribute": "milking_animals"
+    },
+    "saison 1: nb animaux laitiers": {
+        "strategy_type": "MilkProduction",
+        "season": "saison 1",
+        "attribute": "milking_animals"
+    },
+    "saison 2: nb animaux laitiers": {
+        "strategy_type": "MilkProduction",
+        "is_start": true,
+        "season": "saison 2",
+        "attribute": "milking_animals"
+    },
+    "période de lactation (jours)": {
+        "attribute": "lactation_days"
+    },
+    "prodn laitière/animal/jour - moyenne (litres)": {
+        "unit_of_measure_id": "litres",
+        "attribute": "daily_production"
+    },
+    "production totale (litres)": {
+        "unit_of_measure_id": "litres",
+        "attribute": "quantity_produced"
+    },
+    "vendus/échangés (litres)": {
+        "unit_of_measure_id": "litres",
+        "attribute": "quantity_sold"
+    },
+    "prix (espèces)": {
+        "attribute": "price"
+    },
+    "prix (cash)": {
+        "attribute": "price"
+    },
+    "revenu (espèces)": {
+        "attribute": "income"
+    },
+    "revenu (cash)": {
+        "attribute": "income"
+    },
+    "revenu": {
+        "attribute": "income"
+    },
+    "revenus": {
+        "attribute": "income"
+    },
+    "type de lait vendus/autre (ecremé=0, entier=1)": {
+        "attribute": "type_of_milk_sold_or_other_uses"
+    },
+    "autre usage (liters)": {
+        "unit_of_measure_id": "liters",
+        "attribute": "quantity_other_uses"
+    },
+    "beurre/beurre clarifié: production (kg)": {
+        "strategy_type": "ButterProduction",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
+    },
+    "beurre/beurre clarifié:(autre usage)": {
+        "strategy_type": "ButterProduction",
+        "attribute": "quantity_other_uses"
+    },
+    "beurre/beurre clarifié vendus: kg vendus": {
+        "strategy_type": "ButterProduction",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_sold"
+    },
+    "beurre/beurre clarifié prix (espèces)": {
+        "strategy_type": "ButterProduction",
+        "attribute": "price"
+    },
+    "beurre/beurre clarifié revenu (espèces)": {
+        "strategy_type": "ButterProduction",
+        "attribute": "income"
+    },
+    "lait+beurre/beurre clarifié kcals(%)-1ère saison": {
+        "strategy_type": "ButterProduction",
+        "season": "1ère saison",
+        "attribute": "percentage_kcals"
+    },
+    "lait+beurre/beurre clarifié kcals(%)-1ème saison": {
+        "strategy_type": "ButterProduction",
+        "season": "1ème saison",
+        "attribute": "percentage_kcals"
+    },
+    "lait+beurre/beurre clarifié kcals(%)-2ème saison": {
+        "strategy_type": "ButterProduction",
+        "is_start": true,
+        "season": "2ème saison",
+        "attribute": "percentage_kcals"
+    },
+    "poids de la carcasse (kg)": {
+        "unit_of_measure_id": "kg",
+        "attribute": "carcass_weight"
+    },
+    "poids de carcasse (kg)": {
+        "unit_of_measure_id": "kg",
+        "attribute": "carcass_weight"
+    },
+    "prix (fcfa)": {
+        "attribute": "price"
+    },
+    "diminution gros bétail (% vendus/abattu)": {
+        "attribute": "percentage_sold_slaughtered"
+    },
+    "diminution petits ruminants (% vendus/abattu)": {
+        "attribute": "percentage_sold_slaughtered"
+    },
+    "prélèvement des pts ruminants (% vendus/egorgés)": {
+        "attribute": "percentage_sold_slaughtered"
+    },
+    "Vente des oeufs: nb  venduss": {
+        "strategy_type": "LivestockSale",
+        "is_start": true,
+        "product_id": "oeufs",
+        "attribute": "quantity_sold"
+    },
+    "Peaux: nb vendues": {
+        "strategy_type": "LivestockSale",
+        "is_start": true,
+        "product_id": "peaux",
+        "attribute": "quantity_sold"
+    },
+    "PRODUCTION AGRICOLE: ": {
+        "strategy_type": "CropProduction",
+        "is_start": true
+    },
+    "Consomn. sur champ 1ère récolte - nb  mois": {
+        "is_start": true,
+        "product_id": "consomn. sur champ",
+        "season": "1ère récolte",
+        "attribute": "months_per_year"
+    },
+    "Consomn. sur champ 2ème récolte - nb  mois": {
+        "is_start": true,
+        "product_id": "consomn. sur champ",
+        "season": "2ème récolte",
+        "attribute": "months_per_year"
+    },
+    "propn de mois de consomn sur champ": {
+        "attribute": "percentage_monthly_kcals"
+    },
+    "Maïs vert (en épis) vendus: quantité": {
+        "is_start": true,
+        "product_id": "maïs vert (en épis)",
+        "attribute": "quantity_sold"
+    },
+    "Mil - recolte principale kg produits": {
+        "is_start": true,
+        "product_id": "mil",
+        "unit_of_measure_id": "kg",
+        "season": "recolte principale",
+        "attribute": "quantity_produced"
+    },
+    "Sorgho - récolte principale kg produits": {
+        "is_start": true,
+        "product_id": "sorgho",
+        "unit_of_measure_id": "kg",
+        "season": "récolte principale",
+        "attribute": "quantity_produced"
+    },
+    "Autre céréal principal (Riz): kg produit": {
+        "is_start": true,
+        "product_id": "riz",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
+    },
+    "kcals par kg": {
+        "unit_of_measure_id": "kg",
+        "attribute": "product__kcals_per_unit"
+    },
+    "vendus /échangés (kg)": {
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_sold"
+    },
+    "vendu /echangé (kg)": {
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_sold"
+    },
+    "autre usage (kg)": {
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_other_uses"
+    },
+    "Riz - kg produits": {
+        "is_start": true,
+        "product_id": "riz",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
+    },
+    "Manioc: nb de mesures locales": {
+        "is_start": true,
+        "product_id": "manioc",
+        "attribute": "number_of_local_measures"
+    },
+    "Manioc: nbr. unités loc.": {
+        "is_start": true,
+        "product_id": "manioc",
+        "attribute": "number_of_local_measures"
+    },
+    "nom de la mesure": {
+        "attribute": "name_of_local_measure"
+    },
+    "nom du mesure": {
+        "attribute": "name_of_local_measure"
+    },
+    "nom d'unité": {
+        "attribute": "name_of_local_measure"
+    },
+    "poids de la mesure": {
+        "attribute": "unit_multiple"
+    },
+    "poid du mesure": {
+        "attribute": "unit_multiple"
+    },
+    "poids du mesure": {
+        "attribute": "unit_multiple"
+    },
+    "poids d'unité": {
+        "attribute": "unit_multiple"
+    },
+    "Autre culture: soja": {
+        "is_start": true,
+        "product_id": "soja",
+        "attribute": "product__name"
+    },
+    "Autre culture: beurre de karite type": {
+        "is_start": true,
+        "product_id": "beurre de karite",
+        "attribute": "product__name"
+    },
+    "Autre culture de rente: type": {
+        "is_start": true,
+        "attribute": "product__name"
+    },
+    "chou: qtité produite": {
+        "is_start": true,
+        "product_id": "chou",
+        "attribute": "quantity_produced"
+    },
+    "Autre légumineuse Voandzou:  kg produits": {
+        "is_start": true,
+        "product_id": "voandzou",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
+    },
+    "autre cereale (Sésame) - kg produit": {
+        "is_start": true,
+        "product_id": "sésame",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
+    },
+    "Autre culture de rente (Anacarde) : kg produit": {
+        "is_start": true,
+        "product_id": "anacarde",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
+    },
+    "Autre culture de rente:  kg produit oignon": {
+        "is_start": true,
+        "product_id": "oignon",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
+    },
+    "Autre culture de rente: kg vendus(TOMATE)": {
+        "is_start": true,
+        "product_id": "tomate",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_sold"
+    },
+    "Autre culture de rente: kg vendus( obergine locale)": {
+        "is_start": true,
+        "product_id": "obergine locale",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_sold"
+    },
+    "Autre: quantité vendue(concombre)": {
+        "is_start": true,
+        "product_id": "concombre",
+        "attribute": "quantity_sold"
+    },
+    "nb de mesures locales": {
+        "attribute": "number_of_local_measures"
+    },
+    "Culture de rente principale (coton) : kg vendus": {
+        "is_start": true,
+        "product_id": "coton",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_sold"
+    },
+    "culture de rente aubergine : quantité vendue": {
+        "is_start": true,
+        "product_id": "aubergine",
+        "attribute": "quantity_sold"
+    },
+    "quantité vendue(coton)": {
+        "is_start": true,
+        "product_id": "coton",
+        "attribute": "quantity_sold"
+    },
+    "Autre culture de rente (produits maraichers) : kg vendus": {
+        "is_start": true,
+        "product_id": "produits maraichers",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_sold"
+    },
+    "Autre culture de rente: Piment": {
+        "is_start": true,
+        "product_id": "piment"
+    },
+    "Autre culture de rente: Piment kg produit": {
+        "is_start": true,
+        "product_id": "piment",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
+    },
+    "Autre culture de rente: kg Tomate": {
+        "is_start": true,
+        "product_id": "tomate",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_sold"
+    },
+    "ACHAT DE NOURRITURE:": {
+        "strategy_type": "FoodPurchase",
+        "is_start": true
+    },
+    "Pâte alimentaire - nom de la mesure locale": {
+        "is_start": true,
+        "product_id": "pâte alimentaire",
+        "attribute": "name_of_local_measure"
+    },
+    "Maïs : nom du mesure": {
+        "is_start": true,
+        "product_id": "maïs",
+        "attribute": "name_of_local_measure"
+    },
+    "mil: nom unité de mesure": {
+        "is_start": true,
+        "product_id": "mil",
+        "attribute": "name_of_local_measure"
+    },
+    "oignon: nom": {
+        "is_start": true,
+        "product_id": "oignon",
+        "attribute": "name_of_local_measure"
+    },
+    "autre nouriture de base: riz nom du mesure": {
+        "is_start": true,
+        "product_id": "riz",
+        "attribute": "name_of_local_measure"
+    },
+    "autre nouriture de base (riz) nom du mesure": {
+        "is_start": true,
+        "product_id": "riz",
+        "attribute": "name_of_local_measure"
+    },
+    "autre legumineuse: gombo nom du mesure": {
+        "is_start": true,
+        "product_id": "gombo",
+        "attribute": "name_of_local_measure"
+    },
+    "Autre culture (sésame) : nom": {
+        "is_start": true,
+        "product_id": "sésame",
+        "attribute": "name_of_local_measure"
+    },
+    "Autre céréale/légumineuse voandzou: kg produits": {
+        "is_start": true,
+        "product_id": "voandzou",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
+    },
+    "Viande achetée: quantité (kg)": {
+        "is_start": true,
+        "product_id": "viande",
+        "unit_of_measure_id": "kg",
+        "attribute": "unit_multiple"
+    },
+    "sucre acheté: quantité kg": {
+        "is_start": true,
+        "product_id": "sucre",
+        "unit_of_measure_id": "kg",
+        "attribute": "unit_multiple"
+    },
+    "Autre achat: beurre de Karité": {
+        "is_start": true,
+        "product_id": "beurre de karité",
+        "attribute": "product__name"
+    },
+    "Autre achat: e.g. Poisson fume/seche": {
+        "is_start": true,
+        "product_id": "e.g. poisson fume/seche",
+        "attribute": "product__name"
+    },
+    "Autre achat:soumbala": {
+        "is_start": true,
+        "product_id": "soumbala"
+    },
+    "Autre : Farine de blé": {
+        "is_start": true,
+        "product_id": "farine de blé"
+    },
+    "poids mesure (kg)": {
+        "attribute": "unit_multiple",
+        "unit_of_measure_id": "kg"
+    },
+    "nb  mesures / mois": {
+        "attribute": "times_per_month"
+    },
+    "nb  mois": {
+        "attribute": "months_per_year"
+    },
+    "nb de mois": {
+        "attribute": "months_per_year"
+    },
+    "prix par unité": {
+        "attribute": "payment_per_time"
+    },
+    "coût par mesure": {
+        "attribute": "price"
+    },
+    "prix (par kg)": {
+        "unit_of_measure_id": "kg",
+        "attribute": "price"
+    },
+    "price (par kg)": {
+        "unit_of_measure_id": "kg",
+        "attribute": "price"
+    },
+    "prix d'achat (espèces)": {
+        "attribute": "purchase_price"
+    },
+    "prix de vente (espèces)": {
+        "attribute": "sales_price"
+    },
+    "dépense": {
+        "attribute": "expenditure"
+    },
+    "quantité (kg)": {
+        "attribute": "quantity_produced_or_purchased",
+        "unit_of_measure_id": "kg"
+    },
+    "quantité": {
+        "attribute": "quantity_produced_or_purchased"
+    },
+    "no. personnes par ménage": {
+        "attribute": "people_per_household"
+    },
+    "nbr fois par mois": {
+        "attribute": "times_per_month"
+    },
+    "no. fois / mois": {
+        "attribute": "times_per_month"
+    },
+    "nb  fois par mois": {
+        "attribute": "times_per_month"
+    },
+    "nb de mesures par mois": {
+        "attribute": "times_per_month"
+    },
+    "nbr. mois": {
+        "attribute": "months_per_year"
+    },
+    "nbr de mois": {
+        "attribute": "months_per_year"
+    },
+    "Nbr de fois / an": {
+        "attribute": "times_per_year"
+    },
+    "nbr. fois / année": {
+        "attribute": "times_per_year"
+    },
+    "nb fois / an": {
+        "attribute": "times_per_year"
+    },
+    "nb  personnes par ménage": {
+        "attribute": "people_per_household"
+    },
+    "Aide - céréale: quantité (kg)": {
+        "is_start": true,
+        "product_id": "céréale",
+        "unit_of_measure_id": "kg",
+        "attribute": "unit_multiple"
+    },
+    "Autres intrants (dont location de terre)": {
+        "is_start": true,
+        "product_id": "autres intrants (dont location de terre)",
+        "attribute": "expenditure"
+    },
+    "Exode: nbr. pers par Mènage": {
+        "is_start": true,
+        "product_id": "exode",
+        "attribute": "people_per_household"
+    },
+    "Travaux des champs - voir prochaine feuille": {
+        "is_start": true
+    },
+    "Construction  - voir prochaine feuille ": {
+        "is_start": true
+    },
+    "Ag.lab (harvest) -- see Data2": {
+        "is_start": true
+    },
+    "paiement en kg par fois (céréale)": {
+        "attribute": "payment_per_time",
+        "product_id": "céréale",
+        "unit_of_measure_id": "kg"
+    },
+    "payment in kg per time (grain)": {
+        "attribute": "payment_per_time",
+        "product_id": "grain",
+        "unit_of_measure_id": "kg"
+    }
+}
