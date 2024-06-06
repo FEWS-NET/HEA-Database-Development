@@ -1,5 +1,12 @@
 # HEA Changelog
 
+## 24.05.2
+
+### Story
+
+[HEA-214](https://fewsnet.atlassian.net/browse/HEA-214) Use regexes for matching Livelihood Activities
+
+
 ## 24.05.1
 
 ### Bug
