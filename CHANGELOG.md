@@ -1,5 +1,13 @@
 # HEA Changelog
 
+
+## 24.05.3
+
+### Task
+
+[HEA-447](https://fewsnet.atlassian.net/browse/HEA-447) Fix Safety Warnings
+
+
 ## 24.05.2
 
 ### Story
