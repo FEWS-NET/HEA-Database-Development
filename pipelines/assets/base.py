@@ -136,7 +136,7 @@ def completed_bss_metadata(config: BSSMetadataConfig, bss_metadata) -> Output[pd
         "valid_from_date",
     ]
     bss_metadata = bss_metadata[bss_metadata["bss_exists"]].sort_values(by="bss_path")
-    mask = bss_metadata[required_columns].applymap(lambda x: x == "")
+    mask = bss_metadata[required_columns].map(lambda x: x == "")
 
     # Drop rows where any of the specified columns have empty strings
     complete_df = bss_metadata[~mask.any(axis="columns")]

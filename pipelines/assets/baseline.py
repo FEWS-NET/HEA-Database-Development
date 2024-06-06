@@ -51,12 +51,12 @@ def get_wealth_group_dataframe(
     # Build a dataframe of the relevant columns
     try:
         start_column = "C" if worksheet_name == "WB" else "B"
+        wealthgroupcategorylookup = WealthGroupCategoryLookup()
         wealth_group_df = df.loc[3:5, start_column:].transpose().reset_index()
         wealth_group_df.columns = ["bss_column", "wealth_group_category", "district", "name"]
-        wealth_group_df = WealthGroupCategoryLookup().do_lookup(
+        wealth_group_df = wealthgroupcategorylookup.do_lookup(
             wealth_group_df, "wealth_group_category", "wealth_group_category"
         )
-        wealth_group_df["livelihood_zone_baseline"] = livelihood_zone_baseline.id
         wealth_group_df["name"] = wealth_group_df["name"].str.strip()
         wealth_group_df["district"] = wealth_group_df["district"].str.strip()
 
@@ -80,22 +80,18 @@ def get_wealth_group_dataframe(
         # If this doesn't find any new values, then it's because in a WB worksheet
         # there are no extra Wealth Group Categories on Row 4
         try:
-            wealth_group_df = WealthGroupCategoryLookup().do_lookup(
+            wealth_group_df = wealthgroupcategorylookup.do_lookup(
                 wealth_group_df, "district", "wealth_group_category", update=True
             )
         except ValueError:
             pass
 
         # Lookup the Community instances
-        wealth_group_df = CommunityLookup().do_lookup(wealth_group_df, "full_name", "community")
-        wealth_group_df = CommunityLookup().get_instances(wealth_group_df, "community")
+        community_lookup = CommunityLookup()
+        wealth_group_df["livelihood_zone_baseline"] = livelihood_zone_baseline.id  # required parent for lookup
+        wealth_group_df = community_lookup.do_lookup(wealth_group_df, "full_name", "community")
+        wealth_group_df = community_lookup.get_instances(wealth_group_df, "community")
 
-        # Replace the livelihood_zone_baseline and the community with their natural key, ready for creating a fixture
-        wealth_group_df["livelihood_zone_baseline"] = [livelihood_zone_baseline.natural_key()] * len(wealth_group_df)
-        wealth_group_df["community"] = wealth_group_df.apply(
-            lambda row: (*row["livelihood_zone_baseline"], row["full_name"]) if pd.notna(row["community"]) else None,
-            axis="columns",
-        )
         # Check that the community names are recognized
         unmatched_full_names = wealth_group_df[
             (wealth_group_df["full_name"] != "") & wealth_group_df["community"].isna()
@@ -115,15 +111,32 @@ def get_wealth_group_dataframe(
                 )
             )
 
+        # Replace the livelihood_zone_baseline and the community with their natural key, ready for creating a fixture
+        wealth_group_df["livelihood_zone_baseline"] = [livelihood_zone_baseline.natural_key()] * len(wealth_group_df)
+        wealth_group_df["community"] = wealth_group_df.apply(
+            lambda row: (
+                (
+                    livelihood_zone_baseline.livelihood_zone_id,
+                    livelihood_zone_baseline.reference_year_end_date.isoformat(),
+                    # Note that we need to use the actual full_name from the instance, not the one calculated from
+                    # the BSS, which might have been matched using an alias.
+                    row["community"].full_name,
+                )
+                if pd.notna(row["community"])
+                else None
+            ),
+            axis="columns",
+        )
+        # Add the natural key for the wealth group
         wealth_group_df["natural_key"] = wealth_group_df.fillna("").apply(
-            lambda row: [
+            lambda row: (
                 livelihood_zone_baseline.livelihood_zone_id,
                 livelihood_zone_baseline.reference_year_end_date.isoformat(),
                 row["wealth_group_category"],
-                # Note that we need to use the actual name from the instance, not the one calcualted from the BSS,
-                # which might have been matched using an alias.
+                # Note that we need to use the actual name from the instance, not the one calculated from
+                # the BSS, which might have been matched using an alias.
                 row["community"][2] if row["community"] else "",
-            ],
+            ),
             axis="columns",
         )
         wealth_group_df = wealth_group_df.replace(pd.NA, None)

@@ -299,9 +299,12 @@ def wealth_characteristic_instances(
                         # The natural key for the Wealth Group is made up of the Livelihood Zone Baseline, the
                         # Wealth Group Category from column B and the Community Full Name from Rows 4 and 5.
                         wealth_group_characteristic_value["wealth_group"] = (
-                            *livelihood_zone_baseline.natural_key(),
+                            livelihood_zone_baseline.livelihood_zone_id,
+                            livelihood_zone_baseline.reference_year_end_date.isoformat(),
                             wealth_group_category,
-                            wealth_group_df.iloc[i]["full_name"],
+                            # Note that we need to use the actual name from the instance, not the one calculated from
+                            # the BSS, which might have been matched using an alias.
+                            wealth_group_df.iloc[i]["community"][2] if wealth_group_df.iloc[i]["community"] else "",
                         )
 
                         wealth_group_characteristic_value["reference_type"] = reference_type
@@ -350,7 +353,7 @@ def wealth_characteristic_instances(
     wealth_group_df = pd.concat(
         [
             wealth_group_df,
-            wealth_group_df[wealth_group_df["full_name"] == wealth_group_df.iloc[0]["full_name"]][
+            wealth_group_df[wealth_group_df["community"] == wealth_group_df.iloc[0]["community"]][
                 ["wealth_group_category_original", "wealth_group_category", "livelihood_zone_baseline", "community"]
             ].assign(community=None),
         ]
