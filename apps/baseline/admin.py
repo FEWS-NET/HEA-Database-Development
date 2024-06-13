@@ -170,10 +170,7 @@ class LivelihoodZoneBaselineAdmin(GISModelAdminReadOnly):
         *translation_fields("main_livelihood_category__name"),
         "source_organization__name",
     )
-    list_filter = [
-        "source_organization",
-        "livelihood_zone__country",
-    ]
+    list_filter = ["source_organization", ("livelihood_zone__country", admin.RelatedOnlyFieldListFilter)]
     date_hierarchy = "reference_year_start_date"
     inlines = [
         LivelihoodZoneBaselineCorrectionInlineAdmin,
@@ -236,7 +233,7 @@ class CommunityAdmin(GISModelAdminReadOnly):
         "livelihood_zone_baseline__livelihood_zone__alternate_code",
         "aliases__icontains",
     )
-    list_filter = ("livelihood_zone_baseline__livelihood_zone__country",)
+    list_filter = (("livelihood_zone_baseline__livelihood_zone__country", admin.RelatedOnlyFieldListFilter),)
 
     @admin.display(description=_("Livelihood Zone Alternate Code"))
     def livelihood_zone_alternate_code(self, instance):
@@ -432,11 +429,11 @@ class WealthGroupCharacteristicValueAdmin(admin.ModelAdmin):
 
     list_filter = (
         "wealth_group__wealth_group_category",
-        "wealth_group__livelihood_zone_baseline__livelihood_zone__country",
+        ("wealth_group__livelihood_zone_baseline__livelihood_zone__country", admin.RelatedOnlyFieldListFilter),
         "wealth_characteristic__has_product",
-        "product",
+        ("product", admin.RelatedOnlyFieldListFilter),
         "wealth_characteristic__has_unit_of_measure",
-        "unit_of_measure",
+        ("unit_of_measure", admin.RelatedOnlyFieldListFilter),
     )
 
     search_fields = (
@@ -761,9 +758,9 @@ class WealthGroupAdmin(admin.ModelAdmin):
     )
     list_filter = (
         "livelihood_zone_baseline__source_organization",
-        "livelihood_zone_baseline__livelihood_zone__country",
+        ("livelihood_zone_baseline__livelihood_zone__country", admin.RelatedOnlyFieldListFilter),
         *translation_fields("livelihood_zone_baseline__livelihood_zone__name"),
-        "community",
+        ("community", admin.RelatedOnlyFieldListFilter),
         "wealth_group_category",
     )
     inlines = [

@@ -426,7 +426,6 @@ class ClassifiedProductLookup(Lookup):
         *translation_fields("common_name"),
         *translation_fields("description"),
         "aliases",
-        "cpcv2",
         "hs2012",
     )
 
@@ -441,12 +440,10 @@ class ClassifiedProductLookup(Lookup):
         """
         df = super().get_lookup_df()
 
-        # Split hs2012 and cpcv2 into columns
+        # Split hs2012 into columns
         # Start by replacing None/null alias values with an empty list
-        df["cpcv2"] = df["cpcv2"].apply(lambda x: x if x else [])
         df["hs2012"] = df["hs2012"].apply(lambda x: x if x else [])
         # Append the hs2012 codes as separate columns
-        df = pd.concat([df.drop("cpcv2", axis="columns"), pd.DataFrame(df["cpcv2"].tolist())], axis="columns")
         df = pd.concat([df.drop("hs2012", axis="columns"), pd.DataFrame(df["hs2012"].tolist())], axis="columns")
 
         return df

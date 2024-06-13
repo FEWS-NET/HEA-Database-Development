@@ -20,3 +20,9 @@ class BSSMetadataConfig(Config):
     strict: bool = Field(
         default=False, description="Whether to raise an error if a worksheet is only partially recognized"
     )
+
+
+class ReferenceDataConfig(Config):
+    # The list of worksheet names to load from the reference data workbook.
+    # If empty, all worksheets that match a Django model will be loaded.
+    sheet_names: list[str] = []

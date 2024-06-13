@@ -19,7 +19,7 @@ docutils
 factory-boy==3.2.1
 git+https://github.com/American-Institutes-for-Research/gdrivefs.git@e870c19e1d730635e3760e7ae21eebf9ddda765e
 googletrans-py==4.0.0
-gunicorn==20.1.0
+gunicorn==22.0.0
 html5lib==1.1
 json-logging-py==0.2
 jupyterlab==4.1.4
@@ -37,7 +37,7 @@ requests==2.31.0
 # s3fs provides S3 support for Dagster UPathIOManager subclasses
 s3fs==2024.2.0
 sentry-sdk[django]==1.40.6
-sqlparse==0.4.4
+sqlparse==0.5.0
 # Required for DataFrame.to_markdown()
 tabulate==0.9.0
 # Need universal-pathlib > 0.2.0 for gdrivefs support

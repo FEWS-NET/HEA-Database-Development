@@ -358,7 +358,7 @@ class ActivityLabel(common_models.Model):
         OTHER_CASH_INCOME = "OtherCashIncome", _("Other Cash Income")  # Labels from the 'Data2' worksheet
         WILD_FOODS = "WildFoods", _("Wild Foods")  # Labels from the 'Data3' worksheet
 
-    activity_label = common_models.NameField(max_length=100, verbose_name=_("Activity Label"))
+    activity_label = common_models.NameField(max_length=200, verbose_name=_("Activity Label"))
     activity_type = models.CharField(
         max_length=20,
         verbose_name=_("Activity Type"),
@@ -410,7 +410,7 @@ class ActivityLabel(common_models.Model):
         verbose_name=_("Currency"),
     )
     season = models.CharField(max_length=60, blank=True, verbose_name=_("Season"))
-    additional_identifier = models.CharField(max_length=60, blank=True, verbose_name=_("Season"))
+    additional_identifier = models.CharField(max_length=200, blank=True, verbose_name=_("Season"))
     attribute = models.CharField(max_length=60, blank=True, verbose_name=_("Attribute"))
     notes = models.TextField(blank=True, verbose_name=_("Notes"))
 
@@ -435,7 +435,7 @@ class WealthCharacteristicLabel(common_models.Model):
     """
 
     wealth_characteristic_label = common_models.NameField(
-        max_length=100, unique=True, verbose_name=_("Wealth Characteristic Label")
+        max_length=200, unique=True, verbose_name=_("Wealth Characteristic Label")
     )
     status = models.CharField(blank=True, max_length=20, choices=LabelStatus.choices, verbose_name=_("Status"))
     # wealth_characteristic has to be nullable because there are some labels that we want to recognize

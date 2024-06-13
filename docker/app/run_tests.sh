@@ -53,8 +53,20 @@ fi
 #   subject to a potential regular expression denial-of-service attack using a
 #   suitably crafted string (follow up to CVE-2019-14232 and CVE-2023-43665).
 
+# Ignore vulnerability found in jinja2 version 3.1.4
+# We do not allow any untrusted templates, and so are not affected.
+#   Vulnerability ID: 70612
+#   Affected spec: >=0
+#   ADVISORY: In Jinja2, the from_string function is prone to Server
+#   Side Template Injection (SSTI) where it takes the "source" parameter as a
+#   template object, renders it, and then returns it. The attacker can exploit
+#   it with {{INJECTION COMMANDS}} in a URI. NOTE: The maintainer and multiple
+#   third parties believe that this vulnerability isn't valid because users
+#   shouldn't use untrusted templates without sandboxing.
+#   CVE-2019-8341
+	
 echo Package Vulnerabilities:
-pip freeze | safety check --stdin --full-report -i 62283 -i 65771
+pip freeze | safety check --stdin --full-report -i 62283 -i 65771 -i 70612
 SAFETY_RESULT=$?
 
 # Suppress SAFETY_RESULT unless CHECK_SAFETY is set

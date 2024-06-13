@@ -456,8 +456,8 @@ class FoodPurchaseFactory(LivelihoodActivityFactory):
     )
     unit_multiple = fuzzy.FuzzyInteger(1, 500)
     times_per_month = fuzzy.FuzzyInteger(10, 50)
-    times_per_year = fuzzy.FuzzyInteger(10, 160)
     months_per_year = fuzzy.FuzzyInteger(1, 12)
+    times_per_year = factory.LazyAttribute(lambda o: o.times_per_month * o.months_per_year)
 
 
 class PaymentInKindFactory(LivelihoodActivityFactory):
@@ -480,8 +480,8 @@ class PaymentInKindFactory(LivelihoodActivityFactory):
     payment_per_time = fuzzy.FuzzyInteger(10, 50)
     people_per_household = fuzzy.FuzzyInteger(1, 8)
     times_per_month = fuzzy.FuzzyInteger(1, 10)
-    times_per_year = fuzzy.FuzzyInteger(10, 120)
     months_per_year = fuzzy.FuzzyInteger(10, 12)
+    times_per_year = factory.LazyAttribute(lambda o: o.times_per_month * o.months_per_year)
 
 
 class ReliefGiftOtherFactory(LivelihoodActivityFactory):
@@ -569,7 +569,7 @@ class OtherCashIncomeFactory(LivelihoodActivityFactory):
     people_per_household = fuzzy.FuzzyInteger(1, 30)
     times_per_month = fuzzy.FuzzyInteger(1, 40)
     months_per_year = fuzzy.FuzzyInteger(1, 12)
-    times_per_year = fuzzy.FuzzyInteger(1, 300)
+    times_per_year = factory.LazyAttribute(lambda o: o.times_per_month * o.months_per_year)
 
 
 class OtherPurchaseFactory(LivelihoodActivityFactory):
@@ -593,7 +593,7 @@ class OtherPurchaseFactory(LivelihoodActivityFactory):
     unit_multiple = fuzzy.FuzzyInteger(1, 500)
     times_per_month = fuzzy.FuzzyInteger(1, 50)
     months_per_year = fuzzy.FuzzyInteger(1, 12)
-    times_per_year = fuzzy.FuzzyInteger(1, 300)
+    times_per_year = factory.LazyAttribute(lambda o: o.times_per_month * o.months_per_year)
 
 
 class SeasonalActivityFactory(factory.django.DjangoModelFactory):

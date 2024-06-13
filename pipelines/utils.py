@@ -59,13 +59,21 @@ def get_index(search_text: str | list[str], data: pd.Series, offset: int = 0) ->
     return result
 
 
-def prepare_lookup(data: pd.Series | pd.DataFrame) -> pd.Series | pd.DataFrame:
+def prepare_lookup(data: str | list[str] | pd.Series | pd.DataFrame) -> pd.Series | pd.DataFrame:
     """
     Prepare a Series or DataFrame for lookup operations by converting to lowercase strings and stripping whitespace.
     """
-    result = data if isinstance(data, pd.DataFrame) else pd.DataFrame(data)
-    result = result.applymap(str).applymap(str.strip).applymap(str.lower).replace(r"\s+", " ", regex=True)
-    result = result.iloc[:, 0] if isinstance(data, pd.Series) else result
+    if isinstance(data, str):
+        result = pd.DataFrame([data])
+    elif isinstance(data, (list, pd.Series)):
+        result = pd.DataFrame(data)
+    else:
+        result = data
+    result = result.map(str).map(str.strip).map(str.lower).replace(r"\s+", " ", regex=True)
+    if isinstance(data, str):
+        result = result.iloc[0, 0]
+    elif isinstance(data, (list, pd.Series)):
+        result = result.iloc[:, 0]
     return result
 
 
