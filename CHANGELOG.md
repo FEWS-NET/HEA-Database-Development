@@ -1,6 +1,17 @@
 # HEA Changelog
 
 
+# 24.06.1
+
+### Bug
+
+[HEA-432](https://fewsnet.atlassian.net/browse/HEA-432) Make all admin country filters to use RelatedOnlyFieldListFilter
+
+### Story
+
+[HEA-433](https://fewsnet.atlassian.net/browse/HEA-433) Introduce the admin's filter search functionality similar to FDW to the admin filters
+
+
 ## 24.05.3
 
 ### Task
