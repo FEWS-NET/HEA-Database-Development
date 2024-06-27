@@ -72,7 +72,7 @@ DATABASES = {
         "NAME": env("PGDATABASE"),
         "USER": env("PGUSER"),
         "PASSWORD": env("PGPASSWORD"),
-        "HOST": "localhost",
+        "HOST":  env("PGHOST"),
         "PORT": env.int("PGPORT", 5432),
         "OPTIONS": {"sslmode": "prefer", "application_name": SITE_NAME.lower()},
         "SCHEMA": f"{SITE_NAME.lower()}_owner",
