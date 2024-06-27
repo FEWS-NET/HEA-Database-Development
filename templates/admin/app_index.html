@@ -1,0 +1,368 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block bodyclass %}{{ block.super }} app-{{ app_label }}{% endblock %}
+
+{% if not is_popup %}
+    {% block breadcrumbs %}
+        <div class="breadcrumbs">
+            <a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
+            &rsaquo;
+            {% for app in app_list %}
+                {{ app.name }}
+            {% endfor %}
+        </div>
+    {% endblock %}
+{% endif %}
+{% block content %}
+    {% block content_title %}{% endblock %}
+    <div class="container">
+        <div class="grid">
+            <div class="card span-2">
+                <div class="card-body">
+                    {% if app_list %}
+                        {% with first_app=app_list.0 %}
+                            {% if first_app.name == "baseline" and perms.baseline %}
+                                {% if 'baseline.view_sourceorganization' in perms or 'baseline.view_livelihoodzone' in perms or 'baseline.view_livelihoodzonebaseline' in perms or 'baseline.view_community' in perms %}
+                                    <div class="container">
+                                        <p class="home_page_header_text">{% translate 'BSS Setup' %}</p>
+                                        {% if perms.baseline.view_sourceorganization %}
+                                            <div class="grid">
+                                                <div class="card">
+                                                    <div class="card-body">
+                                                        <a href="{% url 'admin:baseline_sourceorganization_changelist' %}"> {% translate 'Source Organizations' %} </a>
+                                                    </div>
+                                                </div>
+                                            {% endif %}
+                                            {% if perms.baseline.view_livelihoodzone %}
+                                                <div class="card">
+                                                    <div class="card-body">
+                                                        <a href="{% url 'admin:baseline_livelihoodzone_changelist' %}"> {% translate 'Livelihood Zones' %}</a>
+                                                    </div>
+                                                </div>
+                                            {% endif %}
+                                            {% if perms.baseline.view_livelihoodzonebaseline %}
+                                                <div class="card">
+                                                    <div class="card-body">
+                                                        <a href="{% url 'admin:baseline_livelihoodzonebaseline_changelist' %}"> {% translate 'Livelihood Zone Baselines' %}</a>
+                                                    </div>
+                                                </div>
+                                            {% endif %}
+                                            {% if perms.baseline.view_livelihoodzonebaselinecorrection %}
+                                                <div class="card">
+                                                    <div class="card-body">
+                                                        <a href="{% url 'admin:baseline_livelihoodzonebaselinecorrection_changelist' %}"> {% translate 'Baseline Corrections' %}</a>
+                                                    </div>
+                                                </div>
+                                            {% endif %}
+                                            {% if perms.baseline.view_community %}
+                                                <div class="card">
+                                                    <div class="card-body">
+                                                        <a href="{% url 'admin:baseline_community_changelist' %}">{% translate 'Communities' %}</a>
+                                                    </div>
+                                                </div>
+                                            {% endif %}
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                    {% if 'baseline.view_wealthgroup' in perms or 'baseline.view_livelihoodstrategy' in perms %}
+                                        <div class="container">
+                                            <p class="home_page_header_text">{% translate 'BSS WB,Data,.. Sheets' %} </p>
+                                            <div class="grid">
+                                                {% if perms.baseline.view_wealthgroup %}
+                                                    <div class="card">
+                                                        <div class="card-body">
+                                                            <a href="{% url 'admin:baseline_wealthgroup_changelist' %}">{% translate 'Wealth Group Data' %}</a>
+                                                        </div>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                    {% if 'baseline.view_livelihoodactivity' in perms or 'baseline.view_wealthgroupcharacteristicvalue' in perms or 'baseline.view_livelihoodstrategy' in perms %}
+                                        <div class="container">
+                                            <p class="home_page_header_text">{% translate 'Wealth, Activity and Strategy Insights' %} </p>
+                                            <div class="grid">
+                                                {% if 'baseline.view_wealthgroupcharacteristicvalue' in perms %}
+                                                    <div class="card">
+                                                        <div class="card-body">
+                                                            <a href="{% url 'admin:baseline_wealthgroupcharacteristicvalue_changelist' %}">{% translate 'Wealth Group Characteristic Value' %}</a>
+                                                        </div>
+                                                    </div>
+                                                {% endif %}
+                                                {% if 'baseline.view_livelihoodstrategy' in perms %}
+                                                    <div class="card">
+                                                        <div class="card-body">
+                                                            <a href="{% url 'admin:baseline_livelihoodstrategy_changelist' %}">{% translate 'Livelihood Strategy' %}</a>
+                                                        </div>
+                                                    </div>
+                                                {% endif %}
+                                                {% if 'baseline.view_livelihoodactivity' in perms %}
+                                                    <div class="card">
+                                                        <div class="card-body">
+                                                            <a href="{% url 'admin:baseline_livelihoodactivity_changelist' %}">{% translate 'Livelihood Activity' %}</a>
+                                                        </div>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                    {% if 'metadata.view_wealthcharacteristiclabel' in perms or 'metadata.view_activitylabel' in perms %}
+                                        <div class="container">
+                                            <p class="home_page_header_text">{% translate 'Labels' %}</p>
+                                            <div class="grid">
+                                                {% if perms.metadata.view_wealthcharacteristiclabel %}
+                                                    <div class="card">
+                                                        <div class="card-body">
+                                                            <a href="{% url 'admin:metadata_wealthcharacteristiclabel_changelist' %}">{% translate 'Wealth Characteristic Label' %}</a>
+                                                        </div>
+                                                    </div>
+                                                {% endif %}
+                                                {% if 'metadata.view_activitylabel' in perms %}
+                                                    <div class="card">
+                                                        <div class="card-body">
+                                                            <a href="{% url 'admin:metadata_activitylabel_changelist' %}">{% translate 'Activity Label' %}</a>
+                                                        </div>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                    {% if 'baseline.view_communitycropproduction' in perms or 'baseline.view_communitylivestock' in perms %}
+                                        <div class="container">
+                                            <p class="home_page_header_text">{% translate 'BSS Production Sheet' %}</p>
+                                            <div class="grid">
+                                                {% if perms.baseline.view_communitycropproduction %}
+                                                    <div class="card">
+                                                        <div class="card-body">
+                                                            <a href="{% url 'admin:baseline_communitycropproduction_changelist' %}"> {% translate 'Crop Production' %}</a>
+                                                        </div>
+                                                    </div>
+                                                {% endif %}
+                                                {% if perms.baseline.view_communitylivestock %}
+                                                    <div class="card">
+                                                        <div class="card-body">
+                                                            <a href="{% url 'admin:baseline_communitylivestock_changelist' %}">{% translate 'Livestock Production' %}</a>
+                                                        </div>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                    {% if 'metadata.view_market' in perms or 'baseline.view_marketprice' in perms %}
+                                        <div class="container">
+                                            <p class="home_page_header_text">{% translate 'Market Prices' %}</p>
+                                            <div class="grid">
+                                                {% if 'metadata.view_market' in perms %}
+                                                    <div class="card">
+                                                        <div class="card-body">
+                                                            <a href="{% url 'admin:metadata_market_changelist' %}"> {% translate 'Market' %}</a>
+                                                        </div>
+                                                    </div>
+                                                {% endif %}
+                                                {% if 'baseline.view_marketprice' in perms %}
+                                                    <div class="card">
+                                                        <div class="card-body">
+                                                            <a href="{% url 'admin:baseline_marketprice_changelist' %}">{% translate 'Market Prices' %}</a>
+                                                        </div>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                    {% if 'metadata.view_seasonalactivitytype' in perms or 'baseline.view_seasonalactivity' in perms or 'baseline.view_seasonalactivityoccurrence' in perms %}
+                                        <div class="container">
+                                            <p class="home_page_header_text">{% translate 'Seasonal Calendars' %}</p>
+                                            <div class="grid">
+                                                {% if 'metadata.view_seasonalactivitytype' in perms %}
+                                                    <div class="card">
+                                                        <div class="card-body">
+                                                            <a href="{% url 'admin:metadata_seasonalactivitytype_changelist' %}"> {% translate 'Seasonal Activity Type' %}</a>
+                                                        </div>
+                                                    </div>
+                                                {% endif %}
+                                                {% if 'baseline.view_seasonalactivity' in perms %}
+                                                    <div class="card">
+                                                        <div class="card-body">
+                                                            <a href="{% url 'admin:baseline_seasonalactivity_changelist' %}">{% translate 'Seasonal Activities' %}</a>
+                                                        </div>
+                                                    </div>
+                                                {% endif %}
+                                                {% if 'baseline.view_seasonalactivityoccurrence' in perms %}
+                                                    <div class="card">
+                                                        <div class="card-body">
+                                                            <a href="{% url 'admin:baseline_seasonalactivityoccurrence_changelist' %}">{% translate 'Activity Occurrences' %}</a>
+                                                        </div>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                    {% if 'baseline.view_seasonalproductionperformance' in perms or 'baseline.view_hazard' in perms or 'baseline.view_event' in perms %}
+                                        <div class="container">
+                                            <p class="home_page_header_text">{% translate 'Hazards and Events' %}</p>
+                                            <div class="grid">
+                                                {% if 'baseline.view_seasonalproductionperformance' in perms %}
+                                                    <div class="card">
+                                                        <div class="card-body">
+                                                            <a href="{% url 'admin:baseline_seasonalproductionperformance_changelist' %}"> {% translate 'Annual Production Performances' %}</a>
+                                                        </div>
+                                                    </div>
+                                                {% endif %}
+                                                {% if 'baseline.view_hazard' in perms %}
+                                                    <div class="card">
+                                                        <div class="card-body">
+                                                            <a href="{% url 'admin:baseline_hazard_changelist' %}">{% translate 'Hazards' %}</a>
+                                                        </div>
+                                                    </div>
+                                                {% endif %}
+                                                {% if 'baseline.view_event' in perms %}
+                                                    <div class="card">
+                                                        <div class="card-body">
+                                                            <a href="{% url 'admin:baseline_event_changelist' %}">{% translate 'Events' %}</a>
+                                                        </div>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                    {% if 'baseline.view_expandabilityfactor' in perms or 'baseline.view_copingstrategy' in perms %}
+                                        <div class="container">
+                                            <p class="home_page_header_text">{% translate 'Expandability and Coping' %}</p>
+                                            <div class="grid">
+                                                {% if 'baseline.view_expandabilityfactor' in perms %}
+                                                    <div class="card">
+                                                        <div class="card-body">
+                                                            <a href="{% url 'admin:baseline_expandabilityfactor_changelist' %}"> {% translate 'Expandability Factors' %}</a>
+                                                        </div>
+                                                    </div>
+                                                {% endif %}
+                                                {% if 'baseline.view_copingstrategy' in perms %}
+                                                    <div class="card">
+                                                        <div class="card-body">
+                                                            <a href="{% url 'admin:baseline_copingstrategy_changelist' %}">{% translate 'Coping Strategies' %}</a>
+                                                        </div>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                {% endif %}
+                                {% if  first_app.name == "metadata"  and perms.metadata %}
+                                    
+                                <div class="container">
+                                    <p class="home_page_header_text">{% translate 'Metadata' %}</p>
+                                    <div class="grid">
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <a href="{% url 'admin:metadata_hazardcategory_changelist' %}"> {% translate 'Hazard Categories' %}</a>
+                                                </div>
+                                        </div>
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <a href="{% url 'admin:metadata_livelihoodcategory_changelist' %}">{% translate 'Livelihood Categories' %}</a>
+                                                </div>
+                                        </div>
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <a href="{% url 'admin:metadata_season_changelist' %}">{% translate 'Seasons' %}</a>
+                                                </div>
+                                        </div>
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <a href="{% url 'admin:metadata_wealthgroupcategory_changelist' %}">{% translate 'Wealth Categories' %}</a>
+                                                </div>
+                                        </div>
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <a href="{% url 'admin:metadata_wealthcharacteristic_changelist' %}">{% translate 'Wealth Group Characteristics' %}</a>
+                                                </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                    {% endif %}
+
+                                    {% if  first_app.name == "common"  and perms.common %}
+
+                                    <div class="container">
+                                        <p class="home_page_header_text">{% translate 'Common' %}</p>
+                                        <div class="grid">
+                                                <div class="card">
+                                                    <div class="card-body">
+                                                        <a href="{% url 'admin:common_country_changelist' %}"> {% translate 'Countries' %}</a>
+                                                    </div>
+                                            </div>
+                                                <div class="card">
+                                                    <div class="card-body">
+                                                        <a href="{% url 'admin:common_currency_changelist' %}"> {% translate 'Currencies' %}</a>
+                                                    </div>
+                                            </div>
+                                                <div class="card">
+                                                    <div class="card-body">
+                                                        <a href="{% url 'admin:common_classifiedproduct_changelist' %}">{% translate 'Products' %}</a>
+                                                    </div>
+                                            </div>
+                                                <div class="card">
+                                                    <div class="card-body">
+                                                        <a href="{% url 'admin:common_unitofmeasure_changelist' %}">{% translate 'Units of Measure' %}</a>
+                                                    </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                            <div class="container">
+                                    {% if  first_app.name == "Authentication and Authorization"  and perms.auth %}
+                                   
+                                        <p class="home_page_header_text">{% translate 'User management' %}</p>
+                                        <div class="grid">
+                                                <div class="card">
+                                                    <div class="card-body">
+                                                        <a href="{% url 'admin:auth_user_changelist' %}">{% translate 'Users' %}</a>
+                                                    </div>
+                                            </div>
+                                                <div class="card">
+                                                    <div class="card-body">
+                                                        <a href="{% url 'admin:auth_group_changelist' %}">{% translate 'Groups' %}</a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                    </div>
+                                {% endwith %}
+                              
+                                
+                                {% else %}
+                                <p>{% translate 'You don’t have permission to view or edit anything.' %}</p>
+                                {% endif %}
+                    </div>
+                </div> 
+                <div class="card">
+                <div class="card-body">
+                    <p class="home_page_header_text">Help <span class="glyphicon glyphicon-question-sign"></span></p>
+                    <div style="margin-right: 15px";
+                >
+                        <ul class="app_index_ul">
+                            <li style="list-style: none; margin-bottom: 20px; margin-top: 20px">
+                                <a class="home_page_button"  href="#"
+                                   target="_blank"> <span class="glyphicon glyphicon-new-window"></span>{% trans ' Help with the current page' %}</a>
+                            </li>
+
+                            <li style="list-style: none;">
+                                <a class="home_page_button" href="#" target="_blank"
+                                   rel="noreferrer"> <span class="glyphicon glyphicon-briefcase"></span>{% trans " Helpdesk Support" %}</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            </div>
+            
+           
+        </div>
+        
+        
+
+    </div>
+
+{% endblock %}

@@ -87,6 +87,7 @@ services:
       CLIENT: ${CLIENT}
       APP: ${APP}
       ENV: ${ENV}
+      THEME: ${THEME}
       DJANGO_SETTINGS_MODULE: ${APP}.settings.insecure
       DOMAIN: ${APP}lcl.localdomain,${APP}lcl,localhost,127.0.0.1
       SECRET_KEY: ${SECRET_KEY}

@@ -50,6 +50,8 @@ ALLOWED_HOSTS = env.list(
         "host.docker.internal",
     ],
 )
+THEME = env("THEME", default="HEA_DEFAULT").lower()
+
 try:
     EC2_PRIVATE_IP = requests.get("http://169.254.169.254/2018-09-24/meta-data/local-ipv4", timeout=0.01).text
     if EC2_PRIVATE_IP:
@@ -70,7 +72,7 @@ DATABASES = {
         "NAME": env("PGDATABASE"),
         "USER": env("PGUSER"),
         "PASSWORD": env("PGPASSWORD"),
-        "HOST": env("PGHOST"),
+        "HOST": "localhost",
         "PORT": env.int("PGPORT", 5432),
         "OPTIONS": {"sslmode": "prefer", "application_name": SITE_NAME.lower()},
         "SCHEMA": f"{SITE_NAME.lower()}_owner",
@@ -162,6 +164,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "common.context_processors.theme_context",
             ],
         },
     },
