@@ -1926,7 +1926,19 @@ input[class="vDateField"], input[class="vTimeField"] {
     background-repeat: no-repeat;
     background-position: 10px!important;
 }
-
+.errornote {
+    font-size: 0.875rem;
+    font-weight: 700;
+    display: block;
+    padding: 10px 12px;
+    margin: 0 0 10px 0;
+    color: var(--error-fg);
+    border: 1px solid var(--error-fg);
+    background-color: var(--body-bg);
+    background-position: 5px 12px;
+    overflow-wrap: break-word;
+    border-radius: 0px;
+}
 
 /*
 DRF Custom Styles

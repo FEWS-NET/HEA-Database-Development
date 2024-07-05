@@ -12,14 +12,13 @@ ul > li {
 .dashboard #content {
     width: 1000px;
 }
-#content-main{
+
+#content-main {
     border: 1px solid var(--hairline-color);
     background: var(--darkened-bg);
 }
 
-
 /*Navbar styles*/
-
 .dropdown-toggle {
     outline: 0;
 }
@@ -85,6 +84,46 @@ ul > li {
     line-height: 1.25;
 }
 
+/* Highlight selected menu item */
+.btn-toggle-nav a.selected {
+    background-color: #d2f4ea;
+    font-weight: bold;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    #custom_menu {
+        width: 100%;
+    }
+
+    .btn-toggle {
+        width: 100%;
+        text-align: left;
+    }
+}
+
+/* Adjust the toggle-nav-sidebar button */
+#toggle-nav-sidebar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #E4F1EF;
+    border: none;
+    color: #096640;
+    padding: 5px 10px;
+    font-size: 14px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 10px;
+    width: 100%;
+}
+
+#toggle-nav-sidebar:hover,
+#toggle-nav-sidebar:focus {
+    background-color: #E4F1EF;
+}
+
+
 /*For admin menu*/
 
 
@@ -103,6 +142,7 @@ ul > li {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     gap: 16px;
+    align-items: start;
   }
   
   .card {

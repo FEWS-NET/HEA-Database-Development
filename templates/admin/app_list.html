@@ -15,7 +15,7 @@
 {% if app_list %}
     {% if 'baseline.view_sourceorganization' in perms or 'baseline.view_livelihoodzone' in perms or 'baseline.view_livelihoodzonebaseline' in perms or 'baseline.view_community' in perms %}
         <div class="container">
-            <h5>{% translate 'BSS Setup' %}</h5>
+            <p class="home_page_header_text">{% translate 'BSS Setup' %}</p>
             {% if perms.baseline.view_sourceorganization %}
                 <div class="grid">
                 <!-- Card 1 -->
@@ -61,7 +61,7 @@
 
     {% if 'baseline.view_wealthgroup' in perms or 'baseline.view_livelihoodstrategy' in perms %}
         <div class="container">
-            <h5> {% translate 'BSS WB,Data,.. Sheets' %} </h5>
+            <p class="home_page_header_text"> {% translate 'BSS WB,Data,.. Sheets' %} </p>
             <div class="grid">
                 {% if perms.baseline.view_wealthgroup %}
                         <div class="card">
@@ -76,7 +76,7 @@
 
       {% if 'baseline.view_livelihoodactivity' in perms or 'baseline.view_wealthgroupcharacteristicvalue' in perms or 'baseline.view_livelihoodstrategy' in perms %}
         <div class="container">
-            <h5> {% translate 'Wealth, Activity and Strategy Insights' %} </h5>
+            <p class="home_page_header_text"> {% translate 'Wealth, Activity and Strategy Insights' %} </p>
             <div class="grid">
             {% if 'baseline.view_wealthgroupcharacteristicvalue' in perms %}
                         <div class="card">
@@ -104,7 +104,7 @@
     {% endif %}
     {% if 'metadata.view_wealthcharacteristiclabel' in perms or 'metadata.view_activitylabel' in perms %}
         <div class="container">
-            <h5>{% translate 'Labels' %}</h5>
+            <p class="home_page_header_text">{% translate 'Labels' %}</p>
             <div class="grid">
                 <!-- Card 1 -->
                 {% if perms.metadata.view_wealthcharacteristiclabel %}
@@ -128,7 +128,7 @@
     {% endif %}
     {% if 'baseline.view_communitycropproduction' in perms or  'baseline.view_communitylivestock'  in perms %}
         <div class="container">
-            <h5>{% translate 'BSS Production Sheet' %}</h5>
+            <p class="home_page_header_text">{% translate 'BSS Production Sheet' %}</p>
             <div class="grid">
                 {% if perms.baseline.view_communitycropproduction %}
                     <!-- Card 1 -->
@@ -152,7 +152,7 @@
     {% endif %}
     {% if 'metadata.view_market' in perms or 'baseline.view_marketprice' in perms %}
         <div class="container">
-            <h5>{% translate 'Market Prices' %}</h5>
+            <p class="home_page_header_text">{% translate 'Market Prices' %}</p>
             <div class="grid">
                 <!-- Card 1 -->
                 {% if 'metadata.view_market' in perms %}
@@ -176,7 +176,7 @@
     {% endif %}
     {% if 'metadata.view_seasonalactivitytype' in perms or  'baseline.view_seasonalactivity'  in perms or  'baseline.view_seasonalactivityoccurrence'  in perms %}
         <div class="container">
-            <h5>{% translate "Seasonal Calendars" %}</h5>
+            <p class="home_page_header_text">{% translate "Seasonal Calendars" %}</p>
             <div class="grid">
                 <!-- Card 1 -->
                 {% if 'metadata.view_seasonalactivitytype' in perms %}
@@ -208,7 +208,7 @@
     {% endif %}
     {% if 'baseline.view_seasonalproductionperformance' in perms or 'baseline.view_hazard' in perms or 'baseline.view_event' in perms %}
         <div class="container">
-            <h5>{% translate 'Hazards and Events' %}</h5>
+            <p class="home_page_header_text">{% translate 'Hazards and Events' %}</p>
             <div class="grid">
                 <!-- Card 1 -->
                 {% if 'baseline.view_seasonalproductionperformance' in perms %}
@@ -241,7 +241,7 @@
     {% endif %}
     {% if 'baseline.view_expandabilityfactor' in perms or 'baseline.view_copingstrategy' in perms %}
         <div class="container">
-            <h5>{% translate 'Expandability and Coping' %}</h5>
+            <p class="home_page_header_text">{% translate 'Expandability and Coping' %}</p>
             <div class="grid">
                 <!-- Card 1 -->
                 {% if 'baseline.view_expandabilityfactor' in perms %}
@@ -266,7 +266,7 @@
     {% endif %}
     {% if perms.common %}
         <div class="container">
-            <h5> {% translate 'Common' %}</h5>
+            <p class="home_page_header_text"> {% translate 'Common' %}</p>
             <div class="grid">
                     <div class="card">
                         <div class="card-body">
@@ -293,7 +293,7 @@
     {% endif %}
     {% if perms.metadata %}
         <div class="container">
-            <h5> {% translate 'Metadata' %}</h5>
+            <p class="home_page_header_text"> {% translate 'Metadata' %}</p>
             <div class="grid">
                     <div class="card">
                         <div class="card-body">
@@ -326,7 +326,7 @@
 
     {% if perms.auth %}
         <div class="container">
-        <h5>{% translate 'User management' %}</h5>
+            <p class="home_page_header_text">{% translate 'User management' %}</p>
         <div class="grid">
                 <div class="card">
                     <div class="card-body">
