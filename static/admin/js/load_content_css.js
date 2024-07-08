@@ -1,5 +1,5 @@
 // The content div and the object-tools are shared between different pages as they are inherited from
-// a parent template. In order to provide different look and feel based on the fdw design, we need to
+// a parent template. In order to provide different look and feel, we need to
 // allocate classes and styling dynamically based on the page from which they are rendered
 document.addEventListener("DOMContentLoaded", function() {
     let loc = window.location.toString();

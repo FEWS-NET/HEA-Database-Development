@@ -366,7 +366,7 @@
     <div class="card">
         <div class="card-body">
             <p class="home_page_header_text">Open <span class="glyphicon glyphicon-question-sign"></span></p>
-            <div style="margin-right: 15px"; >
+            <div style="margin-right: 15px" >
                 <ul class="app_index_ul">
                     <li style="list-style:none; margin-bottom: 20px; margin-top: 20px">
                         <a class="home_page_button"  href="{{ docsroot }}" target="_blank">{% trans 'Documentation' %}</a>
@@ -382,7 +382,7 @@
 </div>
             <div class="card span-3 recent_actions_container ">
                 <div class="card-body" id="recent-actions-module">
-                    <p class="home_page_header_text">My Recent Actions&nbsp; <span style="font-size: 17px; font-weight: lighter;" class="glyphicon glyphicon-time"></span></p>
+                    <p class="home_page_header_text">My Recent Actions <span style="font-size: 17px; font-weight: lighter;" class="glyphicon glyphicon-time"></span></p>
                                     {% load log %}
                                     {% get_admin_log 10 as admin_log for_user user %}
                                     {% if not admin_log %}
