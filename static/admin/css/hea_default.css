@@ -754,12 +754,13 @@ table li {
     padding-left: 0;
     float: right;
     position: relative;
-    margin-top: -50px;
+    margin-top: 10px;
     margin-left: auto !important;
+    margin-right: 10px;
 }
 
 .object-tools-top-margin {
-    margin-top: -100px !important;
+    margin-top: -70px !important;
 }
 .object-tools-top-margin-list-page {
     margin-top: -5px !important;
@@ -948,7 +949,7 @@ table#change-history tbody th {
     float: right;
     width: 260px;
     position: relative;
-    margin-right: -300px;
+    margin-right: -350px;
 }
 
 #footer {
@@ -1084,7 +1085,7 @@ header a:link, #header a:visited, #logout-form button {
 /* SIDEBAR */
 
 #content-related {
-    background: var(--darkened-bg);
+    background: var(--primary-fg);
 }
 
 #content-related .module {
@@ -1271,7 +1272,7 @@ input, textarea, select, .form-row p, form .button {
     font-size: 13px;
 }
 
-/*Logo image for fdw*/
+/*Logo image for hea*/
 .img_logo {
     margin: 10px 0px 10px 10px;
     aspect-ratio: 3.66 /1;
@@ -1281,7 +1282,10 @@ input, textarea, select, .form-row p, form .button {
     margin: 15px;
     display: block;
     border-color: var(--secondary);
-    border-radius: 0;
+    border: none !important;
+    padding: 16px;
+    box-shadow: none !important;
+    transform: none !important;
 }
 
 .home_page_menu > div {
@@ -1292,7 +1296,12 @@ input, textarea, select, .form-row p, form .button {
 .home_page_menu_body {
     display: block !important;
 }
+.recent_actions_container{
+    width: 200px;
+    align-items:start;
+    transform: none !important;
 
+}
 .add_change {
     margin-bottom: 5px;
 }

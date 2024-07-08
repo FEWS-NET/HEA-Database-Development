@@ -10,12 +10,12 @@ ul > li {
 
 /*Content is limited to 100% width, better render with larger width*/
 .dashboard #content {
-    width: 1000px;
+    width: 1300px;
 }
 
 #content-main {
-    border: 1px solid var(--hairline-color);
-    background: var(--darkened-bg);
+    border: none;
+    background: var(--primary-fg);
 }
 
 /*Navbar styles*/
@@ -130,7 +130,6 @@ ul > li {
 /* Style for the outer container */
 .outer-container {
     position: relative;
-    /*border: 1px solid #ccc;*/
     padding: 20px;
 }
 
@@ -176,16 +175,46 @@ ul > li {
 .card.span-3 {
     grid-column: span 3;
 }
+.grid2 {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr); /* 5 columns by default */
+    gap: 16px;
+    align-items: start;
+}
 
+/* Responsive adjustments for smaller screens */
+@media (max-width: 1200px) {
+    .grid2 {
+        grid-template-columns: repeat(4, 1fr); /* 4 columns for medium screens */
+    }
+}
+
+@media (max-width: 900px) {
+    .grid2 {
+        grid-template-columns: repeat(3, 1fr); /* 3 columns for smaller screens */
+    }
+}
+
+@media (max-width: 600px) {
+    .grid2 {
+        grid-template-columns: repeat(2, 1fr); /* 2 columns for extra small screens */
+    }
+}
+
+@media (max-width: 400px) {
+    .grid2{
+        grid-template-columns: 1fr; /* 1 column for very small screens */
+    }
+}
 /* Style for the recent actions div */
 .recent-actions {
     position: absolute !important;
-    top: 10px; /* Adjust the top distance as needed */
-    right: 10px; /* Adjust the right distance as needed */
+    top: 0px; 
+    right: 10px; 
     background-color: #f8f8f8;
     border: 1px solid #ddd;
     padding: 10px;
-    width: 200px; /* Set the width of the recent actions div */
+    width: 200px; 
 }
 
 
@@ -209,3 +238,5 @@ input[type="text"], input[type="password"], input[type="email"], input[type="url
   color: var(--body-fg);
   background-color: var(--body-bg);
 }
+
+
