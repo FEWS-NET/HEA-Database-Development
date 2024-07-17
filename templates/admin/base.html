@@ -15,13 +15,15 @@
   <link rel="stylesheet" href="{% static "admin/css/dark_mode.css" %}">
   <script src="{% static "admin/js/theme.js" %}" defer></script>
 {% endblock %}
-{% if not is_popup and is_nav_sidebar_enabled %}
+<nav></nav>{% if not is_popup and is_nav_sidebar_enabled %}
   <link rel="stylesheet" href="{% static "admin/css/nav_sidebar.css" %}">
   <script src="{% static 'admin/js/nav_sidebar.js' %}" defer></script>
    <script src="{% static 'admin/js/custom.js' %}" defer></script>
-   <script src="{% static 'admin/js/filterSearch.js' %}"defer> </script>
-   <script src="{% static "admin/js/result_list_clickable_row.js" %}" defer></script>
-   <script src="{% static "admin/js/load_content_css.js" %}" defer></script>
+    <script src="{% static 'admin/js/filterSearch.js' %}"defer> </script>
+    <script src="{% static "admin/js/result_list_clickable_row.js" %}" defer></script>
+  {% if theme == 'hea_default' %}
+    <script src="{% static "admin/js/load_content_css.js" %}" defer></script>
+   {% endif %}
 {% endif %}
 {% block extrastyle %}{% endblock %}
 {% if LANGUAGE_BIDI %}<link rel="stylesheet" href="{% block stylesheet_rtl %}{% static "admin/css/rtl.css" %}{% endblock %}">{% endif %}

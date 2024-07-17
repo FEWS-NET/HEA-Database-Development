@@ -218,8 +218,15 @@ ul > li {
     padding: 10px;
     width: 200px; 
 }
+.recent_actions_container{
+    width: 200px;
+    align-items:start;
+    transform: none !important;
 
-
+}
+.recent_history_li{
+    margin-bottom: 5px;
+}
 .form-row {
   overflow: hidden;
   padding: 10px;
@@ -242,3 +249,72 @@ input[type="text"], input[type="password"], input[type="email"], input[type="url
 }
 
 
+/*Home page styles*/
+.home_page_header_text {
+    font-size: 20px;
+    font-weight: 500;
+    line-height: 25px;
+    letter-spacing: 0em;
+    text-align: left;
+}
+
+.home_page_body_text {
+    font-size: 15px;
+    font-weight: 400;
+    line-height: 22px;
+    letter-spacing: 0em;
+    text-align: left;
+}
+
+.home_page_card {
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0px 0px 24px;
+    background: #FFFFFF;
+    border: 1.5px solid #D1D3D4;
+    box-shadow: 0 0 10px var(--primary);
+}
+
+.home_page_link {
+    font-size: 15px;
+    display: block;
+    text-align: left;
+    margin-bottom: 5px;
+    margin-left: 10px;
+    font-weight: 600;
+}
+
+.home_page_button {
+    padding: 8px;
+    font-weight: 500;
+    background: var(--secondary);
+    box-shadow: 0px 1.94636px 0px rgba(0, 0, 0, 0.016);
+    border-radius: 0;
+    border: 1px solid var(--secondary);
+    color: #FFFFFF !important;
+    text-transform: uppercase;
+    display: inline-block;
+    text-align: center;
+    font-size: 15px;
+}
+
+.home_page_button:hover,
+.home_page_button:focus {
+    font-weight: normal;
+    text-decoration: none;
+    color: var(--secondary) !important;
+    background: #FFFFFF !important;
+}
+.card-body ul li{
+    list-style: none;
+    margin-bottom: 20px;
+
+}
+.card-link + .card-link{
+     margin-left: 10px;
+}
+.card-body{
+    width: 100%;
+}
