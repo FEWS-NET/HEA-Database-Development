@@ -1,0 +1,28 @@
+{% load jsonify %}
+
+<table id="drf-list" class="table">
+<thead>
+    <tr>
+      <th scope="col">Item</th>
+      <th scope="col">Endpoint Url</th>
+    </tr>
+  </thead>
+</table>
+<script>
+    let data = JSON.parse({{ content|jsonify }});
+    let table = document.getElementById("drf-list");
+
+    for (let row of Object.entries(data)){
+        table.insertRow();
+        for (let cell of row) {
+            let newCell = table.rows[table.rows.length - 1].insertCell();
+            if (cell.includes("http", 0)) {
+                newCell.innerHTML = "<a href=" + cell + ">" + cell + "</a>";
+            } else {
+                newCell.textContent = cell;
+                newCell.title = cell;
+            }
+        }
+    }
+
+</script>
