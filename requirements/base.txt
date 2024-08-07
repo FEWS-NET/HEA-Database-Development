@@ -13,7 +13,7 @@ django-filter==23.5
 django-guardian==2.4.0
 django_model_utils==4.4.0
 django-treebeard==4.7.1
-djangorestframework==3.14.0
+djangorestframework==3.15.2
 djangorestframework-xml==2.0.0
 docutils
 factory-boy==3.2.1
@@ -33,7 +33,7 @@ pandas==2.2.0
 # Upgrade to psycopg>=3 once ddtrace supports it.
 # See https://github.com/DataDog/dd-trace-py/issues/4393
 psycopg2-binary==2.9.7
-requests==2.31.0
+requests==2.32.3
 # s3fs provides S3 support for Dagster UPathIOManager subclasses
 s3fs==2024.2.0
 sentry-sdk[django]==1.40.6
