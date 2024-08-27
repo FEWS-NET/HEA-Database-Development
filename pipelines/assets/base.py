@@ -202,6 +202,11 @@ def corrected_files(context: AssetExecutionContext, config: BSSMetadataConfig) -
                 previous_value = ""
             if expected_previous_value in ["None", "nan", "#N/A", "N/A"]:
                 expected_previous_value = ""
+        else:
+            # Provide similar precisions between the Google sheet and original Excel
+            expected_previous_value = round(expected_previous_value, 6)
+            previous_value = round(previous_value, 6)
+
         if expected_previous_value != previous_value:
             raise ValueError(
                 "Unexpected prior value in source BSS. "
