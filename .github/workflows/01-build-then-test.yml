@@ -131,6 +131,11 @@ jobs:
               {"Key": "GitHubRepository", "Value": "${{ github.repository }}"}
             ]
   ecr_login-test_keepdb:
+    outputs:
+      aws_access_key_id: ${{ steps.docker_login.outputs.aws_access_key_id }}
+      aws_secret_access_key: ${{ steps.docker_login.outputs.aws_secret_access_key }}
+      aws_session_token: ${{ steps.docker_login.outputs.aws_session_token }}
+      aws_credential_expiration: ${{ steps.docker_login.outputs.aws_credential_expiration }}
     needs:
       - start-runner-test_keepdb # required to start the main job when the runner is ready
     runs-on: ${{ needs.start-runner-test_keepdb.outputs.label }} # run the job on the newly created runner
@@ -181,6 +186,11 @@ jobs:
               {"Key": "GitHubRepository", "Value": "${{ github.repository }}"}
             ]
   ecr_login-test_main:
+    outputs:
+      aws_access_key_id: ${{ steps.docker_login.outputs.aws_access_key_id }}
+      aws_secret_access_key: ${{ steps.docker_login.outputs.aws_secret_access_key }}
+      aws_session_token: ${{ steps.docker_login.outputs.aws_session_token }}
+      aws_credential_expiration: ${{ steps.docker_login.outputs.aws_credential_expiration }}
     needs:
       - start-runner-test_main # required to start the main job when the runner is ready
     runs-on: ${{ needs.start-runner-test_main.outputs.label }} # run the job on the newly created runner
@@ -231,6 +241,11 @@ jobs:
               {"Key": "GitHubRepository", "Value": "${{ github.repository }}"}
             ]
   ecr_login-test_tag:
+    outputs:
+      aws_access_key_id: ${{ steps.docker_login.outputs.aws_access_key_id }}
+      aws_secret_access_key: ${{ steps.docker_login.outputs.aws_secret_access_key }}
+      aws_session_token: ${{ steps.docker_login.outputs.aws_session_token }}
+      aws_credential_expiration: ${{ steps.docker_login.outputs.aws_credential_expiration }}
     needs:
       - start-runner-test_tag # required to start the main job when the runner is ready
     runs-on: ${{ needs.start-runner-test_tag.outputs.label }} # run the job on the newly created runner
