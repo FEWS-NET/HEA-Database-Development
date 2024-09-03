@@ -177,7 +177,7 @@ def get_livelihood_activity_regexes() -> list:
 
     # Create regex patterns for metadata attributes to replace the placeholders in the regexes
     placeholder_patterns = {
-        "label_pattern": "[a-zà-ÿ][a-zà-ÿ',/ \.\>\-\(\)]+?",
+        "label_pattern": r"[a-zà-ÿ][a-zà-ÿ',/ \.\>\-\(\)]+?",
         "product_pattern": r"(?P<product_id>[a-zà-ÿ][a-zà-ÿ',/ \.\>\-\(\)]+?)",
         "season_pattern": r"(?P<season>season [12]|saison [12]|[12][a-z] season||[12][a-zà-ÿ] saison|r[eé]colte principale|gu|deyr+?)",  # NOQA: E501
         "additional_identifier_pattern": r"(?P<additional_identifier>rainfed|irrigated)",
