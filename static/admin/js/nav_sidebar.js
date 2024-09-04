@@ -29,7 +29,7 @@
             const pattern = new RegExp(`^${linkUrl.pathname}(/\\d+)?(/add/|/change/|/delete/|/)?$`);
             if (pattern.test(currentUrl) || currentUrl.startsWith(link.href)) {
                 link.classList.add('selected');
-                if (link.closest('.collapse') === targetElement) {
+                if (link.closest('.collapse_nav') === targetElement) {
                     isCurrentLink = true;
                 }
             }
@@ -52,7 +52,7 @@
     });
 
     if (selectedElement) {
-        document.querySelectorAll('.collapse').forEach(element => {
+        document.querySelectorAll('.collapse_nav').forEach(element => {
             if (element !== selectedElement) {
                 element.classList.remove('show');
                 element.previousElementSibling.setAttribute('aria-expanded', 'false');

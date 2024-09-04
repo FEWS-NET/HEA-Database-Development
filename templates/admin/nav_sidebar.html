@@ -11,7 +11,7 @@
                             data-bs-target="#home-collapse" aria-expanded="true">
                         {% translate 'BSS Setup' %}
                     </button>
-                    <div class="collapse show" id="home-collapse">
+                    <div class="collapse_nav show" id="home-collapse">
                         <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
                             {% if perms.baseline.view_sourceorganization %}
                                 <li><a class="link-dark rounded"
@@ -48,7 +48,7 @@
                             data-bs-target="#wg-collapse" aria-expanded="false">
                         {% translate 'Wealth, Activity and Strategy Insights' %}
                     </button>
-                    <div class="collapse" id="wg-collapse">
+                    <div class="collapse_nav" id="wg-collapse">
                         <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
                              {% if 'baseline.view_wealthgroupcharacteristicvalue' in perms %}
                                 <li><a class="link-dark rounded"
@@ -75,7 +75,7 @@
                             data-bs-target="#wg-data-collapse" aria-expanded="false">
                         {% translate 'BSS WB, Data,.. Sheets' %}
                     </button>
-                    <div class="collapse" id="wg-data-collapse">
+                    <div class="collapse_nav" id="wg-data-collapse">
                         <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
                             {% if 'metadata.view_wealthgroup' in perms %}
                                 <li><a class="link-dark rounded"
@@ -98,7 +98,7 @@
                             data-bs-target="#labels-collapse" aria-expanded="false">
                         {% translate 'Labels' %}
                     </button>
-                    <div class="collapse" id="labels-collapse">
+                    <div class="collapse_nav" id="labels-collapse">
                         <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
                             {% if 'metadata.view_wealthcharacteristiclabel' in perms %}
                                 <li><a class="link-dark rounded"
@@ -121,7 +121,7 @@
                             data-bs-target="#production-collapse" aria-expanded="false">
                         {% translate 'BSS Production Data' %}
                     </button>
-                    <div class="collapse" id="production-collapse">
+                    <div class="collapse_nav" id="production-collapse">
                         <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
                             {% if perms.baseline.view_communitycropproduction %}
                                 <li><a class="link-dark rounded"
@@ -143,7 +143,7 @@
                             data-bs-target="#market-collapse" aria-expanded="false">
                         {% translate 'Market Prices' %}
                     </button>
-                    <div class="collapse" id="market-collapse">
+                    <div class="collapse_nav" id="market-collapse">
                         <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
                             {% if 'metadata.view_market' in perms %}
                                 <li><a class="link-dark rounded"
@@ -166,7 +166,7 @@
                             data-bs-target="#seascal-collapse" aria-expanded="false">
                         {% translate "Seasonal Calendars" %}
                     </button>
-                    <div class="collapse" id="seascal-collapse">
+                    <div class="collapse_nav" id="seascal-collapse">
                         <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
                             {% if 'metadata.view_seasonalactivitytype' in perms %}
                                 <li><a class="link-dark rounded"
@@ -193,7 +193,7 @@
                             data-bs-target="#hazards-collapse" aria-expanded="false">
                         {% translate 'Hazards and Events' %}
                     </button>
-                    <div class="collapse" id="hazards-collapse">
+                    <div class="collapse_nav" id="hazards-collapse">
                         <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
                             {% if 'baseline.view_seasonalproductionperformance' in perms %}
                                 <li><a class="link-dark rounded"
@@ -222,7 +222,7 @@
                             data-bs-target="#coping-collapse" aria-expanded="false">
                         {% translate 'Expandability and Coping' %}
                     </button>
-                    <div class="collapse" id="coping-collapse">
+                    <div class="collapse_nav" id="coping-collapse">
                         <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
                             {% if 'baseline.view_expandabilityfactor' in perms %}
                                 <li><a class="link-dark rounded"
@@ -246,7 +246,7 @@
                             data-bs-target="#common-collapse" aria-expanded="false">
                         {% translate 'Common' %}
                     </button>
-                    <div class="collapse" id="common-collapse">
+                    <div class="collapse_nav" id="common-collapse">
                         <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
                             <li><a class="link-dark rounded"
                                    href="{% url 'admin:common_country_changelist' %}">{% translate 'Countries' %}</a>
@@ -272,7 +272,7 @@
                             data-bs-target="#metadata-collapse" aria-expanded="false">
                         {% translate 'Metadata' %}
                     </button>
-                    <div class="collapse" id="metadata-collapse">
+                    <div class="collapse_nav" id="metadata-collapse">
                         <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
                             <li><a class="link-dark rounded"
                                    href="{% url 'admin:metadata_hazardcategory_changelist' %}">{% translate 'Hazard Categories' %}</a>
@@ -301,7 +301,7 @@
                             data-bs-target="#account-collapse" aria-expanded="false">
                         {% translate 'User management' %}
                     </button>
-                    <div class="collapse" id="account-collapse">
+                    <div class="collapse_nav" id="account-collapse">
                         <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
                             <li><a class="link-dark rounded"
                                    href="{% url 'admin:auth_user_changelist' %}">{% translate 'Users' %}</a></li>
