@@ -734,13 +734,13 @@ class LivelihoodActivityAdminTestCase(TestCase):
 
     def test_filters(self):
         base_url = reverse("admin:baseline_livelihoodactivity_changelist")
-        country_name = self.livelihood_zone_baseline1.livelihood_zone.country.name
+        country = self.livelihood_zone_baseline1.livelihood_zone.country
         filters = {
             "strategy_type": self.livelihood_strategy1.strategy_type,
             "scenario": self.activity3.scenario,
             "livelihood_strategy__product__cpc": self.livelihood_strategy1.product.cpc,
             "livelihood_strategy__season__id__exact": self.livelihood_strategy2.season.pk,
-            "livelihood_zone_baseline__livelihood_zone__country__name": country_name,
+            "livelihood_zone_baseline__livelihood_zone__country": country.iso3166a2,
         }
 
         for filter_name, filter_value in filters.items():
@@ -799,8 +799,8 @@ class WealthGroupCharacteristicValueAdminTestCase(TestCase):
 
     def test_filters(self):
         base_url = reverse("admin:baseline_wealthgroupcharacteristicvalue_changelist")
-        country_name1 = self.wealth_group1.livelihood_zone_baseline.livelihood_zone.country.name
-        country_name2 = self.wealth_group2.livelihood_zone_baseline.livelihood_zone.country.name
+        country1 = self.wealth_group1.livelihood_zone_baseline.livelihood_zone.country
+        country2 = self.wealth_group2.livelihood_zone_baseline.livelihood_zone.country
         filters = {
             "wealth_group": (
                 self.wealth_group1.id,
@@ -810,7 +810,10 @@ class WealthGroupCharacteristicValueAdminTestCase(TestCase):
                 self.wealth_group1.wealth_group_category.code,
                 self.wealth_group2.wealth_group_category.name,
             ),
-            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__name": (country_name1, country_name2),
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso3166a2": (
+                country1.iso3166a2,
+                country2.iso3166a2,
+            ),
             "product": (
                 self.product1.cpc,
                 self.wealth_group_characteristic_value2.product.cpc,
