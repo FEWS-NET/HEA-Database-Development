@@ -1,8 +1,12 @@
 {% extends "admin/base.html" %}
 
+{% load static %}
 {% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
 {% block extrahead %}
-
+{{ block.super }}
+{% if theme == 'hea_default' %}
+    <link rel="stylesheet" type="text/css" href="{% static 'admin/css/hea_default.css' %}">
+{% endif %}
  {% endblock %}
 {% block branding %}
 <h1 id="site-name"><a href="{% url 'admin:index' %}">{{ site_header|default:_('Django administration') }}</a></h1>

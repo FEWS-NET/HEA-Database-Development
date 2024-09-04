@@ -11,18 +11,19 @@
 
 {% endblock %}">
 <link rel="stylesheet" href="{% static "admin/css/overrides.css" %}">
-{#<link rel="stylesheet" href="{% static "bootstrap5/css/bootstrap.css" %}">#}
 {% block dark-mode-vars %}
   <link rel="stylesheet" href="{% static "admin/css/dark_mode.css" %}">
   <script src="{% static "admin/js/theme.js" %}" defer></script>
-{#  <script src="{% static "bootstrap5/js/bootstrap.bundle.js" %}" defer></script>#}
 {% endblock %}
-{% if not is_popup and is_nav_sidebar_enabled %}
+<nav></nav>{% if not is_popup and is_nav_sidebar_enabled %}
   <link rel="stylesheet" href="{% static "admin/css/nav_sidebar.css" %}">
   <script src="{% static 'admin/js/nav_sidebar.js' %}" defer></script>
    <script src="{% static 'admin/js/custom.js' %}" defer></script>
-   <script src="{% static 'admin/js/filterSearch.js' %}"defer> </script>
-
+    <script src="{% static 'admin/js/filterSearch.js' %}"defer> </script>
+    <script src="{% static "admin/js/result_list_clickable_row.js" %}" defer></script>
+  {% if theme == 'hea_default' %}
+    <script src="{% static "admin/js/load_content_css.js" %}" defer></script>
+   {% endif %}
 {% endif %}
 {% block extrastyle %}{% endblock %}
 {% if LANGUAGE_BIDI %}<link rel="stylesheet" href="{% block stylesheet_rtl %}{% static "admin/css/rtl.css" %}{% endblock %}">{% endif %}
@@ -38,7 +39,6 @@
 
 <body class="{% if is_popup %}popup {% endif %}{% block bodyclass %}{% endblock %}"
   data-admin-utc-offset="{% now "Z" %}">
-<a href="#content-start" class="skip-to-content-link">{% translate 'Skip to main content' %}</a>
 <!-- Container -->
 <div id="container">
 
@@ -46,9 +46,14 @@
     <!-- Header -->
     {% block header %}
     <div id="header">
-        <div id="branding">
-        {% block branding %}{% endblock %}
-        </div>
+      {% block branding %}
+      <div id="branding" style="display: inline-flex; padding: 0">
+          <a class="navbar-brand" href="/">
+              <img class="img_logo" src="{% static "themes/{{theme}}/img/logo.png" %}"
+                   alt= {%translate 'HEA Baseline Database Administration' %} />
+          </a>
+      </div>
+  {% endblock %}
 
         {% block usertools %}
         {% if has_permission %}
@@ -58,15 +63,8 @@
                 <strong>{% firstof user.get_short_name user.get_username %}</strong>.
             {% endblock %}
             {% block userlinks %}
-                {% if site_url %}
-                    <a href="{{ site_url }}">{% translate 'View site' %}</a> /
-                {% endif %}
-                {% if user.is_active and user.is_staff %}
-                    {% url 'django-admindocs-docroot' as docsroot %}
-                    {% if docsroot %}
-                        <a href="{{ docsroot }}">{% translate 'Documentation' %}</a> /
-                    {% endif %}
-                {% endif %}
+              
+                
                 {% if user.has_usable_password %}
                 <a href="{% url 'admin:password_change' %}">{% translate 'Change password' %}</a> /
                 {% endif %}
@@ -124,7 +122,7 @@
         <!-- Content -->
         <div id="content" class="{% block coltype %}colM{% endblock %}">
           {% block pretitle %}{% endblock %}
-          {% block content_title %}{% if title %}<h3>{{ title }}</h3>{% endif %}{% endblock %}
+          {% block content_title %}{% if title %}<div id="title-page-div"><h1>{{ title }}</h1></div>{% endif %}{% endblock %}
           {% block content_subtitle %}{% if subtitle %}<h5>{{ subtitle }}</h5>
 
         {% endif %}{% endblock %}
