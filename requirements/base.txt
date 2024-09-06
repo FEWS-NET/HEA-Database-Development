@@ -5,7 +5,7 @@ dagster-pipes==1.6.8
 dagster-postgres==0.22.8
 dagster-webserver==1.6.8
 ddtrace==2.6.2
-Django==5.0.2
+Django==5.0.8
 django-binary-database-files==1.0.18
 django-environ==0.11.2
 django-extensions==3.2.3
@@ -13,7 +13,7 @@ django-filter==23.5
 django-guardian==2.4.0
 django_model_utils==4.4.0
 django-treebeard==4.7.1
-djangorestframework==3.14.0
+djangorestframework==3.15.2
 djangorestframework-xml==2.0.0
 docutils
 factory-boy==3.2.1
@@ -33,10 +33,10 @@ pandas==2.2.0
 # Upgrade to psycopg>=3 once ddtrace supports it.
 # See https://github.com/DataDog/dd-trace-py/issues/4393
 psycopg2-binary==2.9.7
-requests==2.31.0
+requests==2.32.2
 # s3fs provides S3 support for Dagster UPathIOManager subclasses
 s3fs==2024.2.0
-sentry-sdk[django]==1.40.6
+sentry-sdk[django]==2.8.0
 sqlparse==0.5.0
 # Required for DataFrame.to_markdown()
 tabulate==0.9.0
