@@ -103,6 +103,7 @@ class LivelihoodZoneBaselineCorrectionAdmin(admin.ModelAdmin):
 class LivelihoodZoneBaselineCorrectionInlineAdmin(admin.StackedInline):
     model = LivelihoodZoneBaselineCorrection
     list_display = ("worksheet_name", "cell_range", "previous_value", "value", "correction_date", "author")
+    readonly_fields = ("correction_date",)
     extra = 1
 
 
