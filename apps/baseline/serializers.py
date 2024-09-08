@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from rest_framework_gis.serializers import GeoFeatureModelSerializer
 
 from common.fields import translation_fields
 
@@ -94,6 +95,45 @@ class LivelihoodZoneBaselineSerializer(serializers.ModelSerializer):
             "population_source",
             "population_estimate",
         )
+
+    livelihood_zone_name = serializers.CharField(source="livelihood_zone.name", read_only=True)
+    source_organization_name = serializers.CharField(source="source_organization.pk", read_only=True)
+    livelihood_zone_country = serializers.CharField(source="livelihood_zone.country.pk", read_only=True)
+    livelihood_zone_country_name = serializers.CharField(source="livelihood_zone.country.name", read_only=True)
+    bss_language = serializers.SerializerMethodField()
+
+    def get_bss_language(self, obj):
+        return obj.get_bss_language_display()
+
+
+class LivelihoodZoneBaselineGeoSerializer(GeoFeatureModelSerializer):
+    class Meta:
+        model = LivelihoodZoneBaseline
+        fields = (
+            "id",
+            "name",
+            "description",
+            "source_organization",
+            "source_organization_name",
+            "livelihood_zone",
+            "livelihood_zone_name",
+            "livelihood_zone_country",
+            "livelihood_zone_country_name",
+            "geography",
+            "main_livelihood_category",
+            "bss",
+            "bss_language",
+            "currency",
+            *translation_fields("profile_report"),
+            "reference_year_start_date",
+            "reference_year_end_date",
+            "valid_from_date",
+            "valid_to_date",
+            "population_source",
+            "population_estimate",
+        )
+        geo_field = "geography"
+        auto_bbox = True
 
     livelihood_zone_name = serializers.CharField(source="livelihood_zone.name", read_only=True)
     source_organization_name = serializers.CharField(source="source_organization.pk", read_only=True)
