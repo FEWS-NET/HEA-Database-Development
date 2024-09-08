@@ -361,15 +361,17 @@ class LivelihoodZoneBaselineViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 1)
 
     def test_search(self):
+        baseline = LivelihoodZoneBaselineFactory(population_source="Government statistics agency")
         response = self.client.get(
             self.url,
             {
-                "search": self.data[0].population_source,
+                "search": baseline.population_source,
             },
         )
         self.assertEqual(response.status_code, 200)
         self.assertGreater(len(response.json()), 0)
-        self.assertLess(len(response.json()), self.num_records)
+        self.assertEqual(len(response.json()), 1)
+        self.assertEqual(response.json()[0]["population_source"], baseline.population_source)
         response = self.client.get(
             self.url,
             {
@@ -404,6 +406,22 @@ class LivelihoodZoneBaselineViewSetTestCase(APITestCase):
             content = response.content
         df = pd.read_html(content)[0].fillna("")
         self.assertEqual(len(df), self.num_records + 1)
+
+    def test_geojson_format(self):
+        response = self.client.get(self.url, {"format": "geojson"})
+        self.assertEqual(response.status_code, 200)
+        # Ensure Content-Type is 'application/geo+json'
+        self.assertEqual(response["Content-Type"], "application/geo+json")
+
+        json_response = response.json()
+        self.assertEqual(json_response["type"], "FeatureCollection")
+        # Check if 'features' is present in the response
+        self.assertIn("features", json_response)
+
+        self.assertEqual(len(json_response["features"]), self.num_records)
+        feature = json_response["features"][0]
+        self.assertIn("geometry", feature)
+        self.assertIn("properties", feature)
 
 
 class LivelihoodProductCategoryViewSetTestCase(APITestCase):
