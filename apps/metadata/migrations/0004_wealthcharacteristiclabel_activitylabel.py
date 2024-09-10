@@ -100,7 +100,7 @@ class Migration(migrations.Migration):
                     "activity_type",
                     models.CharField(
                         choices=[
-                            ("LivelihoodActivity", "Livelihod Activity"),
+                            ("LivelihoodActivity", "Livelihood Activity"),
                             ("OtherCashIncome", "Other Cash Income"),
                             ("WildFoods", "Wild Foods"),
                         ],

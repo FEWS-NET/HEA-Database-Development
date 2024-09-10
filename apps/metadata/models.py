@@ -354,7 +354,7 @@ class ActivityLabel(common_models.Model):
     """
 
     class LivelihoodActivityType(models.TextChoices):
-        LIVELIHOOD_ACTIVITY = "LivelihoodActivity", _("Livelihod Activity")  # Labels from the 'Data' worksheet
+        LIVELIHOOD_ACTIVITY = "LivelihoodActivity", _("Livelihood Activity")  # Labels from the 'Data' worksheet
         OTHER_CASH_INCOME = "OtherCashIncome", _("Other Cash Income")  # Labels from the 'Data2' worksheet
         WILD_FOODS = "WildFoods", _("Wild Foods")  # Labels from the 'Data3' worksheet
 
