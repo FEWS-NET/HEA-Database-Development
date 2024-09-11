@@ -1,7 +1,7 @@
 import csv
 from io import BytesIO, TextIOWrapper
 
-from rest_framework.renderers import BaseRenderer
+from rest_framework.renderers import BaseRenderer, JSONRenderer
 
 
 class FormattedCSVRenderer(BaseRenderer):
@@ -95,3 +95,8 @@ class HtmlTableRenderer(BaseRenderer):
             html += "</tbody></table></div></div>"
         html += "</body></html>"
         return html.encode(self.charset)
+
+
+class GeoJSONRenderer(JSONRenderer):
+    media_type = "application/geo+json"  # GeoJSON-specific media type
+    format = "geojson"

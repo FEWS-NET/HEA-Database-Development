@@ -61,6 +61,7 @@ from .serializers import (
     LivelihoodActivitySerializer,
     LivelihoodProductCategorySerializer,
     LivelihoodStrategySerializer,
+    LivelihoodZoneBaselineGeoSerializer,
     LivelihoodZoneBaselineSerializer,
     LivelihoodZoneSerializer,
     LivestockSaleSerializer,
@@ -171,6 +172,11 @@ class LivelihoodZoneBaselineViewSet(viewsets.ModelViewSet):
         *translation_fields("name"),
         "population_source",
     )
+
+    def get_serializer_class(self):
+        if self.request.accepted_renderer.format == "geojson":
+            return LivelihoodZoneBaselineGeoSerializer  # Use GeoFeatureModelSerializer for GeoJSON
+        return LivelihoodZoneBaselineSerializer
 
 
 class LivelihoodProductCategoryFilterSet(filters.FilterSet):

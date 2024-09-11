@@ -107,6 +107,7 @@ EXTERNAL_APPS = [
     "binary_database_files",
     "django_extensions",
     "ddtrace.contrib.django",
+    "rest_framework_gis",
 ]
 PROJECT_APPS = ["common", "metadata", "baseline"]
 INSTALLED_APPS = EXTERNAL_APPS + PROJECT_APPS
@@ -138,6 +139,7 @@ REST_FRAMEWORK = {
         "common.renderers.HtmlTableRenderer",
         "rest_framework_xml.renderers.XMLRenderer",
         "common.renderers.FormattedCSVRenderer",
+        "common.renderers.GeoJSONRenderer",
     ),
     "DEFAULT_FILTER_BACKENDS": [
         "django_filters.rest_framework.DjangoFilterBackend",
