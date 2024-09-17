@@ -126,6 +126,12 @@
         "season": "season 2",
         "attribute": "months_per_year"
     },
+    "Green cons - rainfed: no of months": {
+        "is_start": true,
+        "product_id": "green cons",
+        "additional_identifier": "rainfed",
+        "attribute": "months_per_year"
+    },
     "Proportion of months green consumption": {
         "attribute": "percentage_monthly_kcals"
     },
@@ -656,6 +662,12 @@
         "product_id": "voandzou",
         "unit_of_measure_id": "kg",
         "attribute": "quantity_produced"
+    },
+    "Dried fish purchase: quantity (kg)": {
+        "is_start": true,
+        "product_id": "dried fish",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_purchased"
     },
     "Viande achetée: quantité (kg)": {
         "is_start": true,

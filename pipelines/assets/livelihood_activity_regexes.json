@@ -422,19 +422,19 @@
         "quantity_sold"
     ],
     [
-        "{product_pattern} - {additional_identifier_pattern}: {unit_of_measure_pattern} produced",
+        "{product_pattern}{separator_pattern} {additional_identifier_pattern}: {unit_of_measure_pattern} produced",
         null,
         true,
         "quantity_produced"
     ],
     [
-        "{product_pattern} {additional_identifier_pattern}: {unit_of_measure_pattern} produced",
+        "{product_pattern}{separator_pattern} {additional_identifier_pattern}: {unit_of_measure_pattern} produced",
         null,
         true,
         "quantity_produced"
     ],
     [
-        "{product_pattern}: {unit_of_measure_pattern} produced",
+        "{product_pattern}{separator_pattern} {unit_of_measure_pattern} produced",
         null,
         true,
         "quantity_produced"
@@ -446,7 +446,13 @@
         "months_per_year"
     ],
     [
-        "{product_pattern}: no of months",
+        "{product_pattern}{separator_pattern} {additional_identifier_pattern}{separator_pattern} no of months",
+        null,
+        true,
+        "months_per_year"
+    ],
+    [
+        "{product_pattern}{separator_pattern} no of months",
         null,
         true,
         "months_per_year"
@@ -467,13 +473,13 @@
         "other crop: \\(?{product_pattern}\\)?",
         null,
         true,
-        null
+        "activity_notes"
     ],
     [
         "other cash crop: \\(?{product_pattern}\\)?",
         null,
         true,
-        null
+        "activity_notes"
     ],
     [
         "{product_pattern}: (?P<unit_of_measure_id>kg|l)? sold",
@@ -494,16 +500,22 @@
         "name_of_local_measure"
     ],
     [
-        "{product_pattern}: quantity \\({unit_of_measure_pattern}\\)",
+        "{product_pattern} purchase: quantity \\({unit_of_measure_pattern}\\)",
         null,
         true,
-        "quantity_produced_or_purchased"
+        "quantity_purchased"
     ],
     [
         "{product_pattern} purchase: {unit_of_measure_pattern}",
         null,
         true,
         "quantity_purchased"
+    ],
+    [
+        "{product_pattern}: quantity \\({unit_of_measure_pattern}\\)",
+        null,
+        true,
+        "quantity_produced_or_purchased"
     ],
     [
         "{product_pattern} purchase: quantity \\({unit_of_measure_pattern}\\)",
