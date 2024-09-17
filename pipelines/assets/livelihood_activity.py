@@ -180,7 +180,7 @@ def get_livelihood_activity_regexes() -> list:
         "label_pattern": r"[a-zà-ÿ][a-zà-ÿ',/ \.\>\-\(\)]+?",
         "product_pattern": r"(?P<product_id>[a-zà-ÿ][a-zà-ÿ',/ \.\>\-\(\)]+?)",
         "season_pattern": r"(?P<season>season [12]|saison [12]|[12][a-z] season||[12][a-zà-ÿ] saison|r[eé]colte principale|gu|deyr+?)",  # NOQA: E501
-        "additional_identifier_pattern": r"(?P<additional_identifier>rainfed|irrigated)",
+        "additional_identifier_pattern": r"\(?(?P<additional_identifier>rainfed|irrigated|pluviale?|irriguée|submersion libre|submersion contrôlée|flottant)\)?",
         "unit_of_measure_pattern": r"(?P<unit_of_measure_id>[a-z]+)",
         "nbr_pattern": r"(?:n[b|o]r?)\.?",
         "vendu_pattern": r"(?:quantité )?vendu(?:e|s|ss|es|ses)?",
@@ -638,12 +638,20 @@ def get_instances_from_dataframe(
                         "season" not in livelihood_strategy or not livelihood_strategy["season"]
                     ):
                         strategy_is_valid = False
-                        error_message = "Cannot determine season from %s for %s %s on row %s for label '%s'" % (
+                        rows = df.index[:num_header_rows].tolist() + [livelihood_strategy["row"]]
+                        error_message = "Cannot determine season from %s for %s %s on row %s for label '%s':\n%s" % (
                             livelihood_strategy["season_original"],
                             "summary" if non_empty_summary_activities else "non-summary",
                             livelihood_strategy["strategy_type"],
                             livelihood_strategy["row"],
                             livelihood_strategy["activity_label"],
+                            # Use replace/dropna/fillna so that the error message only includes the columns that
+                            # contain unwanted data.
+                            df.loc[rows]
+                            .replace("", pd.NA)
+                            .dropna(axis="columns", subset=livelihood_strategy["row"])
+                            .fillna("")
+                            .to_markdown(),
                         )
                         if not non_empty_summary_activities:
                             # No summary activities so we don't need to log an error, a warning is sufficient
@@ -657,12 +665,20 @@ def get_instances_from_dataframe(
                         "product_id" not in livelihood_strategy or not livelihood_strategy["product_id"]
                     ):
                         strategy_is_valid = False
-                        error_message = "Cannot determine product_id from %s for %s %s on row %s for label '%s'" % (
+                        rows = df.index[:num_header_rows].tolist() + [livelihood_strategy["row"]]
+                        error_message = "Cannot determine product_id from %s for %s %s on row %s for label '%s':\n%s" % (
                             livelihood_strategy["product_id_original"],
                             "summary" if non_empty_summary_activities else "non-summary",
                             livelihood_strategy["strategy_type"],
                             livelihood_strategy["row"],
                             livelihood_strategy["activity_label"],
+                            # Use replace/dropna/fillna so that the error message only includes the columns that
+                            # contain unwanted data.
+                            df.loc[rows]
+                            .replace("", pd.NA)
+                            .dropna(axis="columns", subset=livelihood_strategy["row"])
+                            .fillna("")
+                            .to_markdown(),
                         )
                         if not non_empty_summary_activities:
                             # No summary activities so we don't need to log an error, a warning is sufficient
@@ -868,24 +884,40 @@ def get_instances_from_dataframe(
                                     and livelihood_strategy["product_id"]
                                     != product_name_df["product_id"].dropna().iloc[0]
                                 ):
+                                    rows = df.index[:num_header_rows].tolist() + [row]
                                     errors.append(
-                                        "Found different products %s and %s in label and other columns on row %s for label '%s'"
+                                        "Found different products %s and %s in label and other columns on row %s for label '%s':\n%s"
                                         % (
                                             livelihood_strategy["product_id"],
                                             product_name_df["product_id"].iloc[0],
                                             row,
                                             label,
+                                            # Use replace/dropna/fillna so that the error message only includes the columns that
+                                            # contain unwanted data.
+                                            df.loc[rows]
+                                            .replace("", pd.NA)
+                                            .dropna(axis="columns", subset=row)
+                                            .fillna("")
+                                            .to_markdown(),
                                         )
                                     )
 
                         except ValueError:
                             if not livelihood_strategy["product_id"]:
+                                rows = df.index[:num_header_rows].tolist() + [row]
                                 errors.append(
-                                    "Failed to identify product from %s on row %s for label '%s'"
+                                    "Failed to identify product from %s on row %s for label '%s':\n%s"
                                     % (
                                         ", ".join(product_name_df["product__name"].dropna().astype(str).unique()),
                                         row,
                                         label,
+                                        # Use replace/dropna/fillna so that the error message only includes the columns that
+                                        # contain unwanted data.
+                                        df.loc[rows]
+                                        .replace("", pd.NA)
+                                        .dropna(axis="columns", subset=row)
+                                        .fillna("")
+                                        .to_markdown(),
                                     )
                                 )
 
@@ -921,7 +953,7 @@ def get_instances_from_dataframe(
                         # Include the header rows as well as the current row in the error message to aid trouble-shooting
                         rows = df.index[:num_header_rows].tolist() + [row]
                         errors.append(
-                            "Found values %s without an identified attribute on row %s for label '%s' :\n%s"
+                            "Found values %s without an identified attribute on row %s for label '%s':\n%s"
                             % (
                                 ", ".join(values),
                                 row,
