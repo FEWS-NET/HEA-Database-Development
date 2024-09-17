@@ -1,17 +1,17 @@
 {% extends "rest_framework/login_base.html" %}
-{% load static  %}
+{% load static %}
 
 {# Override this template in your own templates directory to customize #}
 <head>
     {% block head %}
         {% block style %}
-            {% block bootstrap_theme %}
-                <link rel="stylesheet" type="text/css" href="{% static "rest_framework/css/bootstrap.min.css" %}"/>
-            {% endblock %}
-
             <link rel="stylesheet" type="text/css" href="{% static "rest_framework/css/prettify.css" %}"/>
             <link rel="stylesheet" type="text/css" href="{% static "rest_framework/css/default.css" %}"/>
-            <link rel="stylesheet" type="text/css" href="{% static "admin/css/base.css" %}"/>
+            {% if theme == "hea_default" %}
+                <link rel="stylesheet" type="text/css" href="{% static "admin/css/hea_default.css" %}">
+            {% else %}
+                <link rel="stylesheet" type="text/css" href="{% static "admin/css/base.css" %}"/>
+            {% endif %}
             {% if code_style %}
                 <style>{{ code_style }}</style>{% endif %}
         {% endblock %}
@@ -20,59 +20,65 @@
 </head>
 
 {% block body %}
-      <div class="well" style="width: 500px; margin-left: auto; margin-right: auto; margin-top: 100px">
+    <div class="well" style="width: 500px; margin-left: auto; margin-right: auto; margin-top: 100px">
         <div class="row-fluid">
-          <div>
-            {% block branding %}<h2 style="margin: 0 0 20px; text-align: center;">HEA Database API/h2>{% endblock %}
-          </div>
+            <div>
+                {% block branding %}
+                    <h2 style="margin: 0 0 20px; text-align: center;">HEA Database API </h2>{% endblock %}
+            </div>
         </div><!-- /row fluid -->
 
         <div class="row-fluid">
-          <div>
-            <form action="{% url 'rest_framework:login' %}" role="form" method="post">
-              {% csrf_token %}
-              <input type="hidden" name="next" value="{{ next }}" />
+            <div>
+                <form action="{% url 'rest_framework:login' %}" role="form" method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ next }}"/>
 
-              <div id="div_id_username" class="clearfix control-group {% if form.username.errors %}error{% endif %}">
-                <div class="form-group">
-                  <input type="text" name="username" maxlength="100" placeholder="Username"
-                      autocapitalize="off"
-                      autocorrect="off" class="form-control textinput textInput"
-                      id="id_username" required autofocus
-                      {% if form.username.value %}value="{{ form.username.value }}"{% endif %}>
-                  {% if form.username.errors %}
-                    <p class="text-error">
-                      {{ form.username.errors|striptags }}
-                    </p>
-                  {% endif %}
-                </div>
-              </div>
+                    <div id="div_id_username"
+                         class="clearfix control-group {% if form.username.errors %}error{% endif %}">
+                        <div class="form-group">
+                            <input type="text" name="username" maxlength="100" placeholder="Username"
+                                   autocapitalize="off"
+                                   autocorrect="off" class="form-control textinput textInput"
+                                   id="id_username" required autofocus
+                                   {% if form.username.value %}value="{{ form.username.value }}"{% endif %}>
+                            {% if form.username.errors %}
+                                <p class="text-error">
+                                    {{ form.username.errors|striptags }}
+                                </p>
+                            {% endif %}
+                        </div>
+                    </div>
 
-              <div id="div_id_password" class="clearfix control-group {% if form.password.errors %}error{% endif %}">
-                <div class="form-group">
-                  <input type="password" name="password" maxlength="100" placeholder="Password" autocapitalize="off" autocorrect="off" class="form-control textinput textInput" id="id_password" required>
-                  {% if form.password.errors %}
-                    <p class="text-error">
-                      {{ form.password.errors|striptags }}
-                    </p>
-                  {% endif %}
-                </div>
-              </div>
+                    <div id="div_id_password"
+                         class="clearfix control-group {% if form.password.errors %}error{% endif %}">
+                        <div class="form-group">
+                            <input type="password" name="password" maxlength="100" placeholder="Password"
+                                   autocapitalize="off" autocorrect="off" class="form-control textinput textInput"
+                                   id="id_password" required>
+                            {% if form.password.errors %}
+                                <p class="text-error">
+                                    {{ form.password.errors|striptags }}
+                                </p>
+                            {% endif %}
+                        </div>
+                    </div>
 
-              {% if form.non_field_errors %}
-                {% for error in form.non_field_errors %}
-                  <div class="well well-small text-error" style="border: none">{{ error }}</div>
-                {% endfor %}
-              {% endif %}
+                    {% if form.non_field_errors %}
+                        {% for error in form.non_field_errors %}
+                            <div class="well well-small text-error" style="border: none">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
 
-              <div class="form-actions-no-box">
-                <input type="submit" name="submit" value="Log in" class="btn btn-primary form-control" id="submit-id-submit">
-              </div>
-            </form>
-          </div>
+                    <div class="form-actions-no-box">
+                        <input type="submit" name="submit" value="Log in" class="btn btn-primary form-control"
+                               id="submit-id-submit">
+                    </div>
+                </form>
+            </div>
         </div><!-- /.row-fluid -->
-      </div><!--/.well-->
+    </div><!--/.well-->
     </div><!-- /.row-fluid -->
-  </div><!-- /.container-fluid -->
-</body>
+    </div><!-- /.container-fluid -->
+    </body>
 {% endblock %}
