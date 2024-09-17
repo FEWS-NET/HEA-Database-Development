@@ -638,7 +638,13 @@
         "percentage_sold_slaughtered"
     ],
     [
-        "vente (?:des? |d'){product_pattern}: {nbr_pattern} {vendu_pattern}",
+        "vente (?:des? |d')?{product_pattern}: {nbr_pattern} {vendu_pattern}",
+        "LivestockSale",
+        true,
+        "quantity_sold"
+    ],
+    [
+        "{product_pattern} vente: {nbr_pattern} {vendu_pattern}",
         "LivestockSale",
         true,
         "quantity_sold"
@@ -725,13 +731,13 @@
         "autre culture{separator_pattern} \\(?{product_pattern}\\)?(?: type)?",
         null,
         true,
-        "product__name"
+        "activity_notes"
     ],
     [
         "autre achat{separator_pattern} \\(?{product_pattern}\\)?",
         null,
         true,
-        "product__name"
+        "activity_notes"
     ],
     [
         "(?:autre )?culture de rente(?: principale)?{separator_pattern} \\(?(?P<product_id>[a-z][a-z',/ \\>\\-\\(\\)]+?)\\)?{separator_pattern} ?(?P<unit_of_measure_id>kg|l)? {vendu_pattern}",
@@ -806,13 +812,13 @@
         "name_of_local_measure"
     ],
     [
-        "{product_pattern} achetée?: quantité \\(?{unit_of_measure_pattern}\\)?",
+        "{product_pattern} achetée?: quantité ?\\(?{unit_of_measure_pattern}\\)?",
         null,
         true,
         "unit_multiple"
     ],
     [
-        "aide{separator_pattern} {product_pattern}{separator_pattern} quantité \\(?{unit_of_measure_pattern}\\)?",
+        "aide{separator_pattern} {product_pattern}{separator_pattern} quantité ?\\(?{unit_of_measure_pattern}\\)?",
         null,
         true,
         "unit_multiple"
@@ -824,7 +830,7 @@
         "people_per_household"
     ],
     [
-        "{product_pattern}{separator_pattern} (?:quantity|quantité) \\(?{unit_of_measure_pattern}\\)?",
+        "{product_pattern}{separator_pattern} (?:quantity|quantité) ?\\(?{unit_of_measure_pattern}\\)?",
         null,
         true,
         "quantity_produced_or_purchased"
@@ -834,6 +840,7 @@
         null,
         true,
         {
+            "attribute": "activity_notes",
             "notes": "This is a generic label and should be tested last to avoid accidentally matching more specific patterns."
         }
     ]
