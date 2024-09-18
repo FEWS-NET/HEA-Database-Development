@@ -126,6 +126,12 @@
         "season": "season 2",
         "attribute": "months_per_year"
     },
+    "Green cons - rainfed: no of months": {
+        "is_start": true,
+        "product_id": "green cons",
+        "additional_identifier": "rainfed",
+        "attribute": "months_per_year"
+    },
     "Proportion of months green consumption": {
         "attribute": "percentage_monthly_kcals"
     },
@@ -238,6 +244,12 @@
     "pain : quantité (kg)": {
         "attribute": "quantity_produced_or_purchased",
         "product_id": "pain",
+        "unit_of_measure_id": "kg",
+        "is_start": true
+    },
+    "Viande: quantité(kg)": {
+        "attribute": "quantity_produced_or_purchased",
+        "product_id": "viande",
         "unit_of_measure_id": "kg",
         "is_start": true
     },
@@ -378,6 +390,18 @@
         "product_id": "oeufs",
         "attribute": "quantity_sold"
     },
+    "Vente caprins - locale: nb  vendus": {
+        "strategy_type": "LivestockSale",
+        "is_start": true,
+        "product_id": "caprins - locale",
+        "attribute": "quantity_sold"
+    },
+    "Volaille vente: nbr. vendus": {
+        "strategy_type": "LivestockSale",
+        "is_start": true,
+        "product_id": "volaille",
+        "attribute": "quantity_sold"
+    },
     "Peaux: nb vendues": {
         "strategy_type": "LivestockSale",
         "is_start": true,
@@ -484,12 +508,12 @@
     "Autre culture: soja": {
         "is_start": true,
         "product_id": "soja",
-        "attribute": "product__name"
+        "attribute": "activity_notes"
     },
     "Autre culture: beurre de karite type": {
         "is_start": true,
         "product_id": "beurre de karite",
-        "attribute": "product__name"
+        "attribute": "activity_notes"
     },
     "Autre culture de rente: type": {
         "is_start": true,
@@ -505,6 +529,13 @@
         "product_id": "voandzou",
         "unit_of_measure_id": "kg",
         "attribute": "quantity_produced"
+    },
+    "Riz (submersion libre) - kg produits": {
+        "is_start": true,
+        "product_id": "riz",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced",
+        "additional_identifier": "submersion libre"
     },
     "autre cereale (Sésame) - kg produit": {
         "is_start": true,
@@ -632,6 +663,12 @@
         "unit_of_measure_id": "kg",
         "attribute": "quantity_produced"
     },
+    "Dried fish purchase: quantity (kg)": {
+        "is_start": true,
+        "product_id": "dried fish",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_purchased"
+    },
     "Viande achetée: quantité (kg)": {
         "is_start": true,
         "product_id": "viande",
@@ -647,12 +684,12 @@
     "Autre achat: beurre de Karité": {
         "is_start": true,
         "product_id": "beurre de karité",
-        "attribute": "product__name"
+        "attribute": "activity_notes"
     },
     "Autre achat: e.g. Poisson fume/seche": {
         "is_start": true,
         "product_id": "e.g. poisson fume/seche",
-        "attribute": "product__name"
+        "attribute": "activity_notes"
     },
     "Autre achat:soumbala": {
         "is_start": true,
@@ -660,7 +697,8 @@
     },
     "Autre : Farine de blé": {
         "is_start": true,
-        "product_id": "farine de blé"
+        "product_id": "farine de blé",
+        "attribute": "activity_notes"
     },
     "poids mesure (kg)": {
         "attribute": "unit_multiple",

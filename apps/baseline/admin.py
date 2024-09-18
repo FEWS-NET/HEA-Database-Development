@@ -1,5 +1,6 @@
 from copy import deepcopy
 
+from binary_database_files.models import File
 from django.contrib import admin
 from django.contrib.gis.admin import GISModelAdmin
 from django.utils.translation import gettext_lazy as _
@@ -129,6 +130,7 @@ class LivelihoodZoneBaselineAdmin(GISModelAdminReadOnly):
                     "main_livelihood_category",
                     "source_organization",
                     "bss",
+                    "bss_uploaded_date_time",
                     "bss_language",
                     *translation_fields("profile_report"),
                     "reference_year_start_date",
@@ -163,7 +165,7 @@ class LivelihoodZoneBaselineAdmin(GISModelAdminReadOnly):
         "reference_year_start_date",
         "reference_year_end_date",
     )
-    readonly_fields = ("livelihood_zone_alternate_code", "country")
+    readonly_fields = ("livelihood_zone_alternate_code", "country", "bss_uploaded_date_time")
     search_fields = (
         "livelihood_zone__code",
         "livelihood_zone__alternate_code",
@@ -190,6 +192,16 @@ class LivelihoodZoneBaselineAdmin(GISModelAdminReadOnly):
         Display the country for the livelihood zone as a readonly field.
         """
         return instance.livelihood_zone.country
+
+    @admin.display(description=_("BSS Uploaded At"))
+    def bss_uploaded_date_time(self, instance):
+        """
+        Display the date and time that the BSS was uploaded.
+        """
+        try:
+            return File.objects.get(name=instance.bss).created_datetime.strftime("%Y-%m-%d %H:%M:%S")
+        except File.DoesNotExist:
+            return ""
 
     def get_fieldsets(self, request, obj=None):
 
