@@ -116,8 +116,22 @@ class LivelihoodZoneFilterSet(filters.FilterSet):
             "code",
             *translation_fields("description"),
             *translation_fields("name"),
-            "country",
         )
+
+    country = MultiFieldFilter(
+        [
+            "country__iso3166a2",
+            "country__iso_en_ro_name",
+            "country__iso_en_name",
+            "country__iso_en_ro_proper",
+            "country__iso_en_proper",
+            "country__iso_fr_name",
+            "country__iso_fr_proper",
+            "country__iso_es_name",
+        ],
+        lookup_expr="iexact",
+        label="Country",
+    )
 
 
 class LivelihoodZoneViewSet(viewsets.ModelViewSet):

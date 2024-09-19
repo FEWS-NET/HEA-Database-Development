@@ -273,6 +273,26 @@ class LivelihoodZoneViewSetTestCase(APITestCase):
         df = pd.read_html(content)[0].fillna("")
         self.assertEqual(len(df), self.num_records + 1)
 
+    def test_filter_by_country(self):
+        country = CountryFactory(
+            iso3166a2="AA",
+            iso3166a3="AAA",
+            iso3166n3=911,
+            iso_en_ro_name="A Country",
+            iso_en_name="AA Country",
+            name="AA Country",
+        )
+        LivelihoodZoneFactory(country=country)
+        response = self.client.get(self.url, {"country": country.iso3166a2})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content)), 1)
+        response = self.client.get(self.url, {"country": country.iso_en_ro_name})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
+        response = self.client.get(self.url, {"country": country.iso_en_name})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
+
 
 class LivelihoodZoneBaselineViewSetTestCase(APITestCase):
     @classmethod
