@@ -3,6 +3,7 @@ from django_filters import rest_framework as filters
 from rest_framework import viewsets
 
 from common.fields import translation_fields
+from common.filters import MultiFieldFilter
 
 from .models import (
     BaselineLivelihoodActivity,
@@ -155,6 +156,21 @@ class LivelihoodZoneBaselineFilterSet(filters.FilterSet):
             *translation_fields("name"),
         )
 
+    country = MultiFieldFilter(
+        [
+            "livelihood_zone__country__iso3166a2",
+            "livelihood_zone__country__iso_en_ro_name",
+            "livelihood_zone__country__iso_en_name",
+            "livelihood_zone__country__iso_en_ro_proper",
+            "livelihood_zone__country__iso_en_proper",
+            "livelihood_zone__country__iso_fr_name",
+            "livelihood_zone__country__iso_fr_proper",
+            "livelihood_zone__country__iso_es_name",
+        ],
+        lookup_expr="iexact",
+        label="Country",
+    )
+
 
 class LivelihoodZoneBaselineViewSet(viewsets.ModelViewSet):
     """
@@ -212,6 +228,21 @@ class CommunityFilterSet(filters.FilterSet):
             "livelihood_zone_baseline",
         ]
 
+    country = MultiFieldFilter(
+        [
+            "livelihood_zone_baseline__livelihood_zone__country__iso3166a2",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_fr_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_fr_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_es_name",
+        ],
+        lookup_expr="iexact",
+        label="Country",
+    )
+
 
 class CommunityViewSet(viewsets.ModelViewSet):
     """
@@ -239,6 +270,21 @@ class WealthGroupFilterSet(filters.FilterSet):
             "wealth_group_category",
         ]
 
+    country = MultiFieldFilter(
+        [
+            "livelihood_zone_baseline__livelihood_zone__country__iso3166a2",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_fr_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_fr_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_es_name",
+        ],
+        lookup_expr="iexact",
+        label="Country",
+    )
+
 
 class WealthGroupViewSet(viewsets.ModelViewSet):
     """
@@ -264,6 +310,21 @@ class BaselineWealthGroupFilterSet(filters.FilterSet):
             "wealth_group_category",
         ]
 
+    country = MultiFieldFilter(
+        [
+            "livelihood_zone_baseline__livelihood_zone__country__iso3166a2",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_fr_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_fr_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_es_name",
+        ],
+        lookup_expr="iexact",
+        label="Country",
+    )
+
 
 class BaselineWealthGroupViewSet(viewsets.ModelViewSet):
     """
@@ -287,6 +348,21 @@ class CommunityWealthGroupFilterSet(filters.FilterSet):
             "wealth_group_category",
         ]
 
+    country = MultiFieldFilter(
+        [
+            "community__livelihood_zone_baseline__livelihood_zone__country__iso3166a2",
+            "community__livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name",
+            "community__livelihood_zone_baseline__livelihood_zone__country__iso_en_name",
+            "community__livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_proper",
+            "community__livelihood_zone_baseline__livelihood_zone__country__iso_en_proper",
+            "community__livelihood_zone_baseline__livelihood_zone__country__iso_fr_name",
+            "community__livelihood_zone_baseline__livelihood_zone__country__iso_fr_proper",
+            "community__livelihood_zone_baseline__livelihood_zone__country__iso_es_name",
+        ],
+        lookup_expr="iexact",
+        label="Country",
+    )
+
 
 class CommunityWealthGroupViewSet(viewsets.ModelViewSet):
     """
@@ -308,6 +384,21 @@ class WealthGroupCharacteristicValueFilterSet(filters.FilterSet):
             "wealth_characteristic",
             "wealth_group",
         ]
+
+    country = MultiFieldFilter(
+        [
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso3166a2",
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name",
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_en_name",
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_proper",
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_en_proper",
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_fr_name",
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_fr_proper",
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_es_name",
+        ],
+        lookup_expr="iexact",
+        label="Country",
+    )
 
 
 class WealthGroupCharacteristicValueViewSet(viewsets.ModelViewSet):
@@ -349,6 +440,21 @@ class LivelihoodStrategyFilterSet(filters.FilterSet):
             "additional_identifier",
         ]
 
+    country = MultiFieldFilter(
+        [
+            "livelihood_zone_baseline__livelihood_zone__country__iso3166a2",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_fr_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_fr_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_es_name",
+        ],
+        lookup_expr="iexact",
+        label="Country",
+    )
+
 
 class LivelihoodStrategyViewSet(viewsets.ModelViewSet):
     """
@@ -388,6 +494,21 @@ class LivelihoodActivityFilterSet(filters.FilterSet):
             "kcals_consumed",
             "percentage_kcals",
         ]
+
+    country = MultiFieldFilter(
+        [
+            "livelihood_zone_baseline__livelihood_zone__country__iso3166a2",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_fr_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_fr_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_es_name",
+        ],
+        lookup_expr="iexact",
+        label="Country",
+    )
 
 
 class LivelihoodActivityViewSet(viewsets.ModelViewSet):
@@ -431,6 +552,21 @@ class BaselineLivelihoodActivityFilterSet(filters.FilterSet):
             "percentage_kcals",
         ]
 
+    country = MultiFieldFilter(
+        [
+            "livelihood_zone_baseline__livelihood_zone__country__iso3166a2",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_fr_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_fr_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_es_name",
+        ],
+        lookup_expr="iexact",
+        label="Country",
+    )
+
 
 class BaselineLivelihoodActivityViewSet(viewsets.ModelViewSet):
     """
@@ -472,6 +608,21 @@ class ResponseLivelihoodActivityFilterSet(filters.FilterSet):
             "kcals_consumed",
             "percentage_kcals",
         ]
+
+    country = MultiFieldFilter(
+        [
+            "livelihood_zone_baseline__livelihood_zone__country__iso3166a2",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_fr_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_fr_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_es_name",
+        ],
+        lookup_expr="iexact",
+        label="Country",
+    )
 
 
 class ResponseLivelihoodActivityViewSet(viewsets.ModelViewSet):
