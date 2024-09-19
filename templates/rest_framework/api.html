@@ -360,7 +360,7 @@
                 csrfToken: "{% if request %}{{ csrf_token }}{% endif %}"
             };
         </script>
-        <script src="{% static "rest_framework/js/jquery-3.5.1.min.js" %}"></script>
+        <script src="{% static "rest_framework/js/jquery-3.7.1.min.js" %}"></script>
         <script src="{% static "rest_framework/js/ajax-form.js" %}"></script>
         <script src="{% static "rest_framework/js/csrf.js" %}"></script>
         <script src="{% static "rest_framework/js/bootstrap.min.js" %}"></script>
@@ -374,8 +374,6 @@
     {% endblock %}
 {% block footer %}
     <div id="footer">
-        {% settings_value "ORG_NAME" as org_name %}
-        <p>{{ org_name }} Data Warehouse {{ APP_VERSION }}. All rights reserved.</p>
     </div>
 {% endblock %}
     </body>
