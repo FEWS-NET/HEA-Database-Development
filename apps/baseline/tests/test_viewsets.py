@@ -1,3 +1,4 @@
+import json
 import logging
 import warnings
 from io import StringIO
@@ -8,6 +9,7 @@ from django.urls import reverse
 from rest_framework.test import APITestCase
 
 from common.fields import translation_fields
+from common.tests.factories import CountryFactory
 
 from .factories import (
     BaselineLivelihoodActivityFactory,
@@ -271,6 +273,26 @@ class LivelihoodZoneViewSetTestCase(APITestCase):
         df = pd.read_html(content)[0].fillna("")
         self.assertEqual(len(df), self.num_records + 1)
 
+    def test_filter_by_country(self):
+        country = CountryFactory(
+            iso3166a2="AA",
+            iso3166a3="AAA",
+            iso3166n3=911,
+            iso_en_ro_name="A Country",
+            iso_en_name="AA Country",
+            name="AA Country",
+        )
+        LivelihoodZoneFactory(country=country)
+        response = self.client.get(self.url, {"country": country.iso3166a2})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content)), 1)
+        response = self.client.get(self.url, {"country": country.iso_en_ro_name})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
+        response = self.client.get(self.url, {"country": country.iso_en_name})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
+
 
 class LivelihoodZoneBaselineViewSetTestCase(APITestCase):
     @classmethod
@@ -422,6 +444,23 @@ class LivelihoodZoneBaselineViewSetTestCase(APITestCase):
         feature = json_response["features"][0]
         self.assertIn("geometry", feature)
         self.assertIn("properties", feature)
+
+    def test_filter_by_country(self):
+        country = CountryFactory(
+            iso3166a2="AA",
+            iso3166a3="AAA",
+            iso3166n3=911,
+            iso_en_ro_name="A Country",
+            iso_en_name="AA Country",
+            name="AA Country",
+        )
+        LivelihoodZoneBaselineFactory(livelihood_zone__country=country)
+        response = self.client.get(self.url, {"country": country.iso3166a2})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content)), 1)
+        response = self.client.get(self.url, {"country": country.iso_en_ro_name})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
 
 
 class LivelihoodProductCategoryViewSetTestCase(APITestCase):
@@ -864,6 +903,23 @@ class BaselineWealthGroupViewSetTestCase(APITestCase):
         df = pd.read_html(content)[0].fillna("")
         self.assertEqual(len(df), self.num_records + 1)
 
+    def test_filter_by_country(self):
+        country = CountryFactory(
+            iso3166a2="AA",
+            iso3166a3="AAA",
+            iso3166n3=911,
+            iso_en_ro_name="A Country",
+            iso_en_name="AA Country",
+            name="AA Country",
+        )
+        BaselineWealthGroupFactory(livelihood_zone_baseline__livelihood_zone__country=country)
+        response = self.client.get(self.url, {"country": country.iso3166a2})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content)), 1)
+        response = self.client.get(self.url, {"country": country.iso_en_ro_name})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
+
 
 class CommunityWealthGroupViewSetTestCase(APITestCase):
     @classmethod
@@ -970,6 +1026,23 @@ class CommunityWealthGroupViewSetTestCase(APITestCase):
             content = response.content
         df = pd.read_html(content)[0].fillna("")
         self.assertEqual(len(df), self.num_records + 1)
+
+    def test_filter_by_country(self):
+        country = CountryFactory(
+            iso3166a2="AA",
+            iso3166a3="AAA",
+            iso3166n3=911,
+            iso_en_ro_name="A Country",
+            iso_en_name="AA Country",
+            name="AA Country",
+        )
+        CommunityWealthGroupFactory(community__livelihood_zone_baseline__livelihood_zone__country=country)
+        response = self.client.get(self.url, {"country": country.iso3166a2})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content)), 1)
+        response = self.client.get(self.url, {"country": country.iso_en_ro_name})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
 
 
 class WealthGroupCharacteristicValueViewSetTestCase(APITestCase):
@@ -1093,6 +1166,23 @@ class WealthGroupCharacteristicValueViewSetTestCase(APITestCase):
             content = response.content
         df = pd.read_html(content)[0].fillna("")
         self.assertEqual(len(df), self.num_records + 1)
+
+    def test_filter_by_country(self):
+        country = CountryFactory(
+            iso3166a2="AA",
+            iso3166a3="AAA",
+            iso3166n3=911,
+            iso_en_ro_name="A Country",
+            iso_en_name="AA Country",
+            name="AA Country",
+        )
+        WealthGroupCharacteristicValueFactory(wealth_group__livelihood_zone_baseline__livelihood_zone__country=country)
+        response = self.client.get(self.url, {"country": country.iso3166a2})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content)), 1)
+        response = self.client.get(self.url, {"country": country.iso_en_ro_name})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
 
 
 class LivelihoodStrategyViewSetTestCase(APITestCase):
@@ -1226,6 +1316,23 @@ class LivelihoodStrategyViewSetTestCase(APITestCase):
             content = response.content
         df = pd.read_html(content)[0].fillna("")
         self.assertEqual(len(df), self.num_records + 1)
+
+    def test_filter_by_country(self):
+        country = CountryFactory(
+            iso3166a2="AA",
+            iso3166a3="AAA",
+            iso3166n3=911,
+            iso_en_ro_name="A Country",
+            iso_en_name="AA Country",
+            name="AA Country",
+        )
+        LivelihoodStrategyFactory(livelihood_zone_baseline__livelihood_zone__country=country)
+        response = self.client.get(self.url, {"country": country.iso3166a2})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content)), 1)
+        response = self.client.get(self.url, {"country": country.iso_en_ro_name})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
 
 
 class LivelihoodActivityViewSetTestCase(APITestCase):
@@ -1393,6 +1500,23 @@ class LivelihoodActivityViewSetTestCase(APITestCase):
         df = pd.read_html(content)[0].fillna("")
         self.assertEqual(len(df), self.num_records + 1)
 
+    def test_filter_by_country(self):
+        country = CountryFactory(
+            iso3166a2="AA",
+            iso3166a3="AAA",
+            iso3166n3=911,
+            iso_en_ro_name="A Country",
+            iso_en_name="AA Country",
+            name="AA Country",
+        )
+        LivelihoodActivityFactory(livelihood_zone_baseline__livelihood_zone__country=country)
+        response = self.client.get(self.url, {"country": country.iso3166a2})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content)), 1)
+        response = self.client.get(self.url, {"country": country.iso_en_ro_name})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
+
 
 class BaselineLivelihoodActivityViewSetTestCase(APITestCase):
     @classmethod
@@ -1558,6 +1682,23 @@ class BaselineLivelihoodActivityViewSetTestCase(APITestCase):
             content = response.content
         df = pd.read_html(content)[0].fillna("")
         self.assertEqual(len(df), self.num_records + 1)
+
+    def test_filter_by_country(self):
+        country = CountryFactory(
+            iso3166a2="AA",
+            iso3166a3="AAA",
+            iso3166n3=911,
+            iso_en_ro_name="A Country",
+            iso_en_name="AA Country",
+            name="AA Country",
+        )
+        BaselineLivelihoodActivityFactory(livelihood_zone_baseline__livelihood_zone__country=country)
+        response = self.client.get(self.url, {"country": country.iso3166a2})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content)), 1)
+        response = self.client.get(self.url, {"country": country.iso_en_ro_name})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
 
 
 class ResponseLivelihoodActivityViewSetTestCase(APITestCase):
@@ -1725,6 +1866,23 @@ class ResponseLivelihoodActivityViewSetTestCase(APITestCase):
             content = response.content
         df = pd.read_html(content)[0].fillna("")
         self.assertEqual(len(df), self.num_records + 1)
+
+    def test_filter_by_country(self):
+        country = CountryFactory(
+            iso3166a2="AA",
+            iso3166a3="AAA",
+            iso3166n3=911,
+            iso_en_ro_name="A Country",
+            iso_en_name="AA Country",
+            name="AA Country",
+        )
+        ResponseLivelihoodActivityFactory(livelihood_zone_baseline__livelihood_zone__country=country)
+        response = self.client.get(self.url, {"country": country.iso3166a2})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content)), 1)
+        response = self.client.get(self.url, {"country": country.iso_en_ro_name})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
 
 
 class MilkProductionViewSetTestCase(APITestCase):
