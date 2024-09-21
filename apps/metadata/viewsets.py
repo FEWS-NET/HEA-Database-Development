@@ -1,10 +1,10 @@
 from django.utils.text import format_lazy
 from django.utils.translation import gettext_lazy as _
 from django_filters import rest_framework as filters
-from rest_framework import viewsets
 
 from common.fields import translation_fields
 from common.models import Country
+from common.viewsets import BaseModelViewSet
 from metadata.models import (
     HazardCategory,
     LivelihoodCategory,
@@ -55,7 +55,7 @@ class ReferenceDataFilterSet(filters.FilterSet):
         )
 
 
-class ReferenceDataViewSet(viewsets.ModelViewSet):
+class ReferenceDataViewSet(BaseModelViewSet):
     serializer_class = ReferenceDataSerializer
     filterset_class = ReferenceDataFilterSet
     search_fields = (
@@ -181,7 +181,7 @@ class SeasonFilterSet(filters.FilterSet):
         )
 
 
-class SeasonViewSet(viewsets.ModelViewSet):
+class SeasonViewSet(BaseModelViewSet):
     queryset = Season.objects.all()
     serializer_class = SeasonSerializer
     filterset_class = SeasonFilterSet

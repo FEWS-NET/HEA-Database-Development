@@ -2,6 +2,7 @@ from django.utils.text import format_lazy
 from django.utils.translation import gettext_lazy as _
 from django_filters import rest_framework as filters
 from rest_framework import viewsets
+from rest_framework.pagination import PageNumberPagination
 
 from .fields import translation_fields
 from .filters import MultiFieldFilter
@@ -12,6 +13,27 @@ from .serializers import (
     CurrencySerializer,
     UnitOfMeasureSerializer,
 )
+
+
+class ApiOnlyPagination(PageNumberPagination):
+    page_size = None
+    api_page_size = 50
+    page_size_query_param = "page_size"
+
+    def get_page_size(self, request):
+        # Don't return everything if we are using the browsable API
+        if request.accepted_renderer.format == "api" and self.page_size_query_param not in request.query_params:
+            return self.api_page_size
+
+        return super().get_page_size(request)
+
+
+class BaseModelViewSet(viewsets.ModelViewSet):
+    """
+    A base viewsets for all viewsets to set the pagination for api requests
+    """
+
+    pagination_class = ApiOnlyPagination
 
 
 class CountryFilterSet(filters.FilterSet):
@@ -67,7 +89,7 @@ class CountryFilterSet(filters.FilterSet):
     )
 
 
-class CountryViewSet(viewsets.ModelViewSet):
+class CountryViewSet(BaseModelViewSet):
     """
     ViewSet for the Country model.
 
@@ -139,7 +161,7 @@ class CurrencyFilterSet(filters.FilterSet):
     )
 
 
-class CurrencyViewSet(viewsets.ModelViewSet):
+class CurrencyViewSet(BaseModelViewSet):
     """
     ViewSet for the Currency model.
 
@@ -188,7 +210,7 @@ class UnitOfMeasureFilterSet(filters.FilterSet):
         )
 
 
-class UnitOfMeasureViewSet(viewsets.ModelViewSet):
+class UnitOfMeasureViewSet(BaseModelViewSet):
     """
     ViewSet for the UnitOfMeasure model.
 
@@ -278,7 +300,7 @@ class ClassifiedProductFilterSet(filters.FilterSet):
         )
 
 
-class ClassifiedProductViewSet(viewsets.ModelViewSet):
+class ClassifiedProductViewSet(BaseModelViewSet):
     """
     ViewSet for the ClassifiedProduct model.
 

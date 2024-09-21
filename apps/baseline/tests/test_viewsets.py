@@ -4,6 +4,7 @@ import warnings
 from io import StringIO
 
 import pandas as pd
+from bs4 import BeautifulSoup
 from django.contrib.auth.models import User
 from django.urls import reverse
 from rest_framework.test import APITestCase
@@ -293,6 +294,25 @@ class LivelihoodZoneViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
 
+    def test_pagination_for_browsable_api(self):
+        LivelihoodZoneFactory.create_batch(100)
+        response = self.client.get(self.url, {"format": "json"})
+        self.assertEqual(response.status_code, 200)
+        # Check that the response contains all 100 items (no pagination for JSON)
+        self.assertEqual(len(response.data), 100 + self.num_records)
+
+        response = self.client.get(self.url, {"format": "api"})
+        self.assertEqual(response.status_code, 200)
+        soup = BeautifulSoup(response.content, "html.parser")
+        json_section = soup.find("pre", class_="content-holder")
+        # Extract text and clean HTML tags to look for the JSON data inside
+        raw_json_text = json_section.get_text()
+        soup_cleaned = BeautifulSoup(raw_json_text, "html.parser")
+        cleaned_json_text = soup_cleaned.get_text()
+        json_data = json.loads(cleaned_json_text)
+        # Check that the paginated response contains only 50 items
+        self.assertEqual(len(json_data["results"]), 50)
+
 
 class LivelihoodZoneBaselineViewSetTestCase(APITestCase):
     @classmethod
@@ -319,7 +339,6 @@ class LivelihoodZoneBaselineViewSetTestCase(APITestCase):
             "livelihood_zone_name",
             "livelihood_zone_country",
             "livelihood_zone_country_name",
-            "geography",
             "main_livelihood_category",
             "bss",
             "bss_language",
@@ -354,16 +373,16 @@ class LivelihoodZoneBaselineViewSetTestCase(APITestCase):
 
     def test_patch(self):
         self.client.force_login(self.user)
-        new_value = self.client.get(self.url_get(1)).json()["geography"]
+        new_value = self.client.get(self.url_get(1)).json()["main_livelihood_category"]
         logging.disable(logging.CRITICAL)
-        response = self.client.patch(self.url_get(0), {"geography": new_value})
+        response = self.client.patch(self.url_get(0), {"main_livelihood_category": new_value})
         logging.disable(logging.NOTSET)
         self.assertEqual(response.status_code, 200)
         response = self.client.get(self.url_get(0))
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.json(), dict)
-        self.assertIn("geography", response.json())
-        self.assertEqual(response.json()["geography"], new_value)
+        self.assertIn("main_livelihood_category", response.json())
+        self.assertEqual(response.json()["main_livelihood_category"], new_value)
 
     def test_list_returns_all_records(self):
         response = self.client.get(self.url)
