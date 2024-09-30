@@ -500,7 +500,7 @@ class LivelihoodZoneBaselineViewSetTestCase(APITestCase):
         # Check that the response contains all 100 items (no pagination for the GEOJSON by default)
         self.assertEqual(len(json_response["features"]), 100 + self.num_records)
         # Check that the page_size for geojson format works
-        logging.disable(logging.CRITICAL)
+        logging.disable(logging.WARNING)
         response = self.client.get(self.url, {"format": "geojson", "page_size": 20})
         logging.disable(logging.NOTSET)
         self.assertEqual(response.status_code, 200)
