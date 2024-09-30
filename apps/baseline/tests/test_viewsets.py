@@ -313,6 +313,17 @@ class LivelihoodZoneViewSetTestCase(APITestCase):
         # Check that the paginated response contains only 50 items
         self.assertEqual(len(json_data["results"]), 50)
 
+    def test_json_pagination_with_page_size(self):
+        LivelihoodZoneFactory.create_batch(100)
+        response = self.client.get(self.url, {"format": "json"})
+        self.assertEqual(response.status_code, 200)
+        # Check that the response contains all 100 items (no pagination for JSON)
+        self.assertEqual(len(response.data), 100 + self.num_records)
+        # Check that the page_size for json format works
+        response = self.client.get(self.url, {"format": "json", "page_size": 20})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data["results"]), 20)
+
 
 class LivelihoodZoneBaselineViewSetTestCase(APITestCase):
     @classmethod
@@ -480,6 +491,19 @@ class LivelihoodZoneBaselineViewSetTestCase(APITestCase):
         response = self.client.get(self.url, {"country": country.iso_en_ro_name})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
+
+    def test_geojson_pagination_with_page_size(self):
+        LivelihoodZoneBaselineFactory.create_batch(100)
+        response = self.client.get(self.url, {"format": "geojson"})
+        json_response = response.json()
+        self.assertEqual(response.status_code, 200)
+        # Check that the response contains all 100 items (no pagination for the GEOJSON by default)
+        self.assertEqual(len(json_response["features"]), 100 + self.num_records)
+        # Check that the page_size for geojson format works
+        response = self.client.get(self.url, {"format": "geojson", "page_size": 20})
+        self.assertEqual(response.status_code, 200)
+        json_response = response.json()
+        self.assertEqual(len(json_response["results"]["features"]), 20)
 
 
 class LivelihoodProductCategoryViewSetTestCase(APITestCase):
