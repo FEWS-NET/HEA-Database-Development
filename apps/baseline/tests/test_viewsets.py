@@ -6,6 +6,7 @@ from io import StringIO
 import pandas as pd
 from bs4 import BeautifulSoup
 from django.contrib.auth.models import User
+from django.core.paginator import UnorderedObjectListWarning
 from django.urls import reverse
 from rest_framework.test import APITestCase
 
@@ -52,6 +53,7 @@ from .factories import (
 )
 
 warnings.filterwarnings("error", r"Forbidden: .*")
+warnings.filterwarnings("ignore", category=UnorderedObjectListWarning)
 
 
 class SourceOrganizationViewSetTestCase(APITestCase):
