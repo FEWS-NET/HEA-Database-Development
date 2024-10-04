@@ -217,7 +217,7 @@
                 class="lit-val"> {{ val|break_long_headers|urlize }}</span></p>{% endfor %}
     {% if request.path|slice:"-5:" == "/api/" and request.method == "GET" %}
          {% include "rest_framework/drf-table.html" %}
-    {% else %}<pre style="color: #2B6CB0; border: none;">{{ content|urlize }} </pre></pre>
+    {% else %}<pre class="content-holder" style="color: #2B6CB0; border: none;">{{ content|urlize }} </pre></pre>
     {% endif %}
                             </div>
                         </div>

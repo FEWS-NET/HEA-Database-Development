@@ -82,7 +82,6 @@ class LivelihoodZoneBaselineSerializer(serializers.ModelSerializer):
             "livelihood_zone_name",
             "livelihood_zone_country",
             "livelihood_zone_country_name",
-            "geography",
             "main_livelihood_category",
             "bss",
             "bss_language",

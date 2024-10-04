@@ -1,9 +1,9 @@
 from django.db import models
 from django_filters import rest_framework as filters
-from rest_framework import viewsets
 
 from common.fields import translation_fields
 from common.filters import MultiFieldFilter
+from common.viewsets import BaseModelViewSet
 
 from .models import (
     BaselineLivelihoodActivity,
@@ -94,7 +94,7 @@ class SourceOrganizationFilterSet(filters.FilterSet):
         ]
 
 
-class SourceOrganizationViewSet(viewsets.ModelViewSet):
+class SourceOrganizationViewSet(BaseModelViewSet):
     """
     API endpoint that allows source organizations to be viewed or edited.
     """
@@ -134,7 +134,7 @@ class LivelihoodZoneFilterSet(filters.FilterSet):
     )
 
 
-class LivelihoodZoneViewSet(viewsets.ModelViewSet):
+class LivelihoodZoneViewSet(BaseModelViewSet):
     """
     API endpoint that allows livelihood zones to be viewed or edited.
     """
@@ -186,7 +186,7 @@ class LivelihoodZoneBaselineFilterSet(filters.FilterSet):
     )
 
 
-class LivelihoodZoneBaselineViewSet(viewsets.ModelViewSet):
+class LivelihoodZoneBaselineViewSet(BaseModelViewSet):
     """
     API endpoint that allows livelihood zone baselines to be viewed or edited.
     """
@@ -202,6 +202,8 @@ class LivelihoodZoneBaselineViewSet(viewsets.ModelViewSet):
         *translation_fields("name"),
         "population_source",
     )
+    ordering_fields = ["livelihood_zone__code", "reference_year_end_date"]
+    ordering = ["livelihood_zone__code", "reference_year_end_date"]
 
     def get_serializer_class(self):
         if self.request.accepted_renderer.format == "geojson":
@@ -219,7 +221,7 @@ class LivelihoodProductCategoryFilterSet(filters.FilterSet):
         ]
 
 
-class LivelihoodProductCategoryViewSet(viewsets.ModelViewSet):
+class LivelihoodProductCategoryViewSet(BaseModelViewSet):
     """
     API endpoint that allows livelihood product categories to be viewed or edited.
     """
@@ -258,7 +260,7 @@ class CommunityFilterSet(filters.FilterSet):
     )
 
 
-class CommunityViewSet(viewsets.ModelViewSet):
+class CommunityViewSet(BaseModelViewSet):
     """
     API endpoint that allows communities to be viewed or edited.
     """
@@ -300,7 +302,7 @@ class WealthGroupFilterSet(filters.FilterSet):
     )
 
 
-class WealthGroupViewSet(viewsets.ModelViewSet):
+class WealthGroupViewSet(BaseModelViewSet):
     """
     API endpoint that allows wealth groups to be viewed or edited.
     """
@@ -340,7 +342,7 @@ class BaselineWealthGroupFilterSet(filters.FilterSet):
     )
 
 
-class BaselineWealthGroupViewSet(viewsets.ModelViewSet):
+class BaselineWealthGroupViewSet(BaseModelViewSet):
     """
     API endpoint that allows baseline wealth groups to be viewed or edited.
     """
@@ -378,7 +380,7 @@ class CommunityWealthGroupFilterSet(filters.FilterSet):
     )
 
 
-class CommunityWealthGroupViewSet(viewsets.ModelViewSet):
+class CommunityWealthGroupViewSet(BaseModelViewSet):
     """
     API endpoint that allows community wealth groups to be viewed or edited.
     """
@@ -415,7 +417,7 @@ class WealthGroupCharacteristicValueFilterSet(filters.FilterSet):
     )
 
 
-class WealthGroupCharacteristicValueViewSet(viewsets.ModelViewSet):
+class WealthGroupCharacteristicValueViewSet(BaseModelViewSet):
     """
     API endpoint that allows wealth characteristic values to be viewed or edited.
     """
@@ -470,7 +472,7 @@ class LivelihoodStrategyFilterSet(filters.FilterSet):
     )
 
 
-class LivelihoodStrategyViewSet(viewsets.ModelViewSet):
+class LivelihoodStrategyViewSet(BaseModelViewSet):
     """
     API endpoint that allows livelihood strategies to be viewed or edited.
     """
@@ -525,7 +527,7 @@ class LivelihoodActivityFilterSet(filters.FilterSet):
     )
 
 
-class LivelihoodActivityViewSet(viewsets.ModelViewSet):
+class LivelihoodActivityViewSet(BaseModelViewSet):
     """
     API endpoint that allows livelihood activities to be viewed or edited.
     """
@@ -582,7 +584,7 @@ class BaselineLivelihoodActivityFilterSet(filters.FilterSet):
     )
 
 
-class BaselineLivelihoodActivityViewSet(viewsets.ModelViewSet):
+class BaselineLivelihoodActivityViewSet(BaseModelViewSet):
     """
     API endpoint that allows baseline livelihood activities to be viewed or edited.
     """
@@ -639,7 +641,7 @@ class ResponseLivelihoodActivityFilterSet(filters.FilterSet):
     )
 
 
-class ResponseLivelihoodActivityViewSet(viewsets.ModelViewSet):
+class ResponseLivelihoodActivityViewSet(BaseModelViewSet):
     """
     API endpoint that allows response livelihood activities to be viewed or edited.
     """
@@ -685,7 +687,7 @@ class MilkProductionFilterSet(filters.FilterSet):
         ]
 
 
-class MilkProductionViewSet(viewsets.ModelViewSet):
+class MilkProductionViewSet(BaseModelViewSet):
     """
     API endpoint that allows milk production to be viewed or edited.
     """
@@ -728,7 +730,7 @@ class ButterProductionFilterSet(filters.FilterSet):
         ]
 
 
-class ButterProductionViewSet(viewsets.ModelViewSet):
+class ButterProductionViewSet(BaseModelViewSet):
     """
     API endpoint that allows butter production to be viewed or edited.
     """
@@ -772,7 +774,7 @@ class MeatProductionFilterSet(filters.FilterSet):
         ]
 
 
-class MeatProductionViewSet(viewsets.ModelViewSet):
+class MeatProductionViewSet(BaseModelViewSet):
     """
     API endpoint that allows meat production to be viewed or edited.
     """
@@ -814,7 +816,7 @@ class LivestockSaleFilterSet(filters.FilterSet):
         ]
 
 
-class LivestockSaleViewSet(viewsets.ModelViewSet):
+class LivestockSaleViewSet(BaseModelViewSet):
     """
     API endpoint that allows livestock sales to be viewed or edited.
     """
@@ -856,7 +858,7 @@ class CropProductionFilterSet(filters.FilterSet):
         ]
 
 
-class CropProductionViewSet(viewsets.ModelViewSet):
+class CropProductionViewSet(BaseModelViewSet):
     """
     API endpoint that allows crop production to be viewed or edited.
     """
@@ -901,7 +903,7 @@ class FoodPurchaseFilterSet(filters.FilterSet):
         ]
 
 
-class FoodPurchaseViewSet(viewsets.ModelViewSet):
+class FoodPurchaseViewSet(BaseModelViewSet):
     """
     API endpoint that allows food purchases to be viewed or edited.
     """
@@ -947,7 +949,7 @@ class PaymentInKindFilterSet(filters.FilterSet):
         ]
 
 
-class PaymentInKindViewSet(viewsets.ModelViewSet):
+class PaymentInKindViewSet(BaseModelViewSet):
     """
     API endpoint that allows payments in kind to be viewed or edited.
     """
@@ -991,7 +993,7 @@ class ReliefGiftOtherFilterSet(filters.FilterSet):
         ]
 
 
-class ReliefGiftOtherViewSet(viewsets.ModelViewSet):
+class ReliefGiftOtherViewSet(BaseModelViewSet):
     """
     API endpoint that allows relief, gifts and other food to be viewed or edited.
     """
@@ -1054,7 +1056,7 @@ class HuntingFilterSet(filters.FilterSet):
         ]
 
 
-class HuntingViewSet(viewsets.ModelViewSet):
+class HuntingViewSet(BaseModelViewSet):
     """
     API endpoint that allows hunting to be viewed or edited when available
     """
@@ -1075,7 +1077,7 @@ class HuntingViewSet(viewsets.ModelViewSet):
     ]
 
 
-class FishingViewSet(viewsets.ModelViewSet):
+class FishingViewSet(BaseModelViewSet):
     """
     API endpoint that allows fishing to be viewed or edited.
     """
@@ -1117,7 +1119,7 @@ class WildFoodGatheringFilterSet(filters.FilterSet):
         ]
 
 
-class WildFoodGatheringViewSet(viewsets.ModelViewSet):
+class WildFoodGatheringViewSet(BaseModelViewSet):
     """
     API endpoint that allows wild food gathering to be viewed or edited.
     """
@@ -1164,7 +1166,7 @@ class OtherCashIncomeFilterSet(filters.FilterSet):
         ]
 
 
-class OtherCashIncomeViewSet(viewsets.ModelViewSet):
+class OtherCashIncomeViewSet(BaseModelViewSet):
     """
     API endpoint that allows other cash income to be viewed or edited.
     """
@@ -1209,7 +1211,7 @@ class OtherPurchaseFilterSet(filters.FilterSet):
         ]
 
 
-class OtherPurchaseViewSet(viewsets.ModelViewSet):
+class OtherPurchaseViewSet(BaseModelViewSet):
     """
     API endpoint that allows other purchases to be viewed or edited.
     """
@@ -1241,7 +1243,7 @@ class SeasonalActivityFilterSet(filters.FilterSet):
         ]
 
 
-class SeasonalActivityViewSet(viewsets.ModelViewSet):
+class SeasonalActivityViewSet(BaseModelViewSet):
     """
     API endpoint that allows seasonal activities to be viewed or edited.
     """
@@ -1269,7 +1271,7 @@ class SeasonalActivityOccurrenceFilterSet(filters.FilterSet):
         ]
 
 
-class SeasonalActivityOccurrenceViewSet(viewsets.ModelViewSet):
+class SeasonalActivityOccurrenceViewSet(BaseModelViewSet):
     """
     API endpoint that allows seasonal activity occurrences to be viewed or edited.
     """
@@ -1300,7 +1302,7 @@ class CommunityCropProductionFilterSet(filters.FilterSet):
         ]
 
 
-class CommunityCropProductionViewSet(viewsets.ModelViewSet):
+class CommunityCropProductionViewSet(BaseModelViewSet):
     """
     API endpoint that allows community crop productions to be viewed or edited.
     """
@@ -1342,7 +1344,7 @@ class CommunityLivestockFilterSet(filters.FilterSet):
         }
 
 
-class CommunityLivestockViewSet(viewsets.ModelViewSet):
+class CommunityLivestockViewSet(BaseModelViewSet):
     """
     API endpoint that allows wealth group attributes to be viewed or edited.
     """
@@ -1375,7 +1377,7 @@ class MarketPriceFilterSet(filters.FilterSet):
         ]
 
 
-class MarketPriceViewSet(viewsets.ModelViewSet):
+class MarketPriceViewSet(BaseModelViewSet):
     """
     API endpoint that allows market prices to be viewed or edited.
     """
@@ -1405,7 +1407,7 @@ class SeasonalProductionPerformanceFilterSet(filters.FilterSet):
         ]
 
 
-class SeasonalProductionPerformanceViewSet(viewsets.ModelViewSet):
+class SeasonalProductionPerformanceViewSet(BaseModelViewSet):
     """
     API endpoint that allows seasonal production performance to be viewed or edited.
     """
@@ -1430,7 +1432,7 @@ class HazardFilterSet(filters.FilterSet):
         ]
 
 
-class HazardViewSet(viewsets.ModelViewSet):
+class HazardViewSet(BaseModelViewSet):
     """
     API endpoint that allows hazards to be viewed or edited.
     """
@@ -1459,7 +1461,7 @@ class EventFilterSet(filters.FilterSet):
         ]
 
 
-class EventViewSet(viewsets.ModelViewSet):
+class EventViewSet(BaseModelViewSet):
     """
     API endpoint that allows events to be viewed or edited.
     """
@@ -1491,7 +1493,7 @@ class ExpandabilityFactorFilterSet(filters.FilterSet):
         ]
 
 
-class ExpandabilityFactorViewSet(viewsets.ModelViewSet):
+class ExpandabilityFactorViewSet(BaseModelViewSet):
     """
     API endpoint that allows expandability factors to be viewed or edited.
     """
@@ -1526,7 +1528,7 @@ class CopingStrategyFilterSet(filters.FilterSet):
         ]
 
 
-class CopingStrategyViewSet(viewsets.ModelViewSet):
+class CopingStrategyViewSet(BaseModelViewSet):
     """
     API endpoint that allows coping strategies to be viewed or edited.
     """
