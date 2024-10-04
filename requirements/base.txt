@@ -23,7 +23,7 @@ googletrans-py==4.0.0
 gunicorn==22.0.0
 html5lib==1.1
 json-logging-py==0.2
-jupyterlab==4.1.4
+jupyterlab==4.2.4
 lxml==4.9.3
 # Support .xls files that use transparent encryption to lock worksheets
 git+https://github.com/nolze/msoffcrypto-tool.git@0f320cbe042b94cfc9087cd0cb693d6ae90d518e
