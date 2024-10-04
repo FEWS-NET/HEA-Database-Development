@@ -202,6 +202,8 @@ class LivelihoodZoneBaselineViewSet(BaseModelViewSet):
         *translation_fields("name"),
         "population_source",
     )
+    ordering_fields = ["livelihood_zone__code", "reference_year_end_date"]
+    ordering = ["livelihood_zone__code", "reference_year_end_date"]
 
     def get_serializer_class(self):
         if self.request.accepted_renderer.format == "geojson":

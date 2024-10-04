@@ -6,7 +6,6 @@ from io import StringIO
 import pandas as pd
 from bs4 import BeautifulSoup
 from django.contrib.auth.models import User
-from django.core.paginator import UnorderedObjectListWarning
 from django.urls import reverse
 from rest_framework.test import APITestCase
 
@@ -53,7 +52,6 @@ from .factories import (
 )
 
 warnings.filterwarnings("error", r"Forbidden: .*")
-warnings.filterwarnings("ignore", category=UnorderedObjectListWarning)
 
 
 class SourceOrganizationViewSetTestCase(APITestCase):
@@ -493,21 +491,6 @@ class LivelihoodZoneBaselineViewSetTestCase(APITestCase):
         response = self.client.get(self.url, {"country": country.iso_en_ro_name})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
-
-    def test_geojson_pagination_with_page_size(self):
-        LivelihoodZoneBaselineFactory.create_batch(100)
-        response = self.client.get(self.url, {"format": "geojson"})
-        json_response = response.json()
-        self.assertEqual(response.status_code, 200)
-        # Check that the response contains all 100 items (no pagination for the GEOJSON by default)
-        self.assertEqual(len(json_response["features"]), 100 + self.num_records)
-        # Check that the page_size for geojson format works
-        logging.disable(logging.WARNING)
-        response = self.client.get(self.url, {"format": "geojson", "page_size": 20})
-        logging.disable(logging.NOTSET)
-        self.assertEqual(response.status_code, 200)
-        json_response = response.json()
-        self.assertEqual(len(json_response["results"]["features"]), 20)
 
 
 class LivelihoodProductCategoryViewSetTestCase(APITestCase):

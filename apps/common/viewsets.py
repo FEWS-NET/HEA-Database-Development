@@ -2,6 +2,7 @@ from django.utils.text import format_lazy
 from django.utils.translation import gettext_lazy as _
 from django_filters import rest_framework as filters
 from rest_framework import viewsets
+from rest_framework.exceptions import NotAcceptable
 from rest_framework.pagination import PageNumberPagination
 
 from .fields import translation_fields
@@ -24,6 +25,9 @@ class ApiOnlyPagination(PageNumberPagination):
         # Don't return everything if we are using the browsable API
         if request.accepted_renderer.format == "api" and self.page_size_query_param not in request.query_params:
             return self.api_page_size
+        # If geojson is requested we don't want to support pagination
+        if request.accepted_renderer.format == "geojson" and self.page_size_query_param in request.query_params:
+            raise NotAcceptable("Pagination is not supported for GeoJSON format.")
 
         return super().get_page_size(request)
 
