@@ -17,6 +17,7 @@ from .models import (
     Currency,
     UnitOfMeasure,
 )
+from .utils import normalize
 
 
 class Lookup(ABC):
@@ -58,6 +59,9 @@ class Lookup(ABC):
     # Use case-insensitive lookups
     case_insensitive: bool = True
 
+    # Ignore accents
+    ignore_accents: bool = True
+
     # Ignore leading or trailing spaces in lookups
     strip: bool = True
 
@@ -72,7 +76,7 @@ class Lookup(ABC):
     # Related models to also instantiate
     related_models = []
 
-    def __init__(self, filters: dict = {}, require_match=None):
+    def __init__(self, filters: dict = None, require_match=None):
         # Make sure we don't have any fields in multiple categories
         assert len(set((*self.id_fields, *self.parent_fields, *self.lookup_fields))) == len(self.id_fields) + len(
             self.parent_fields
@@ -80,7 +84,7 @@ class Lookup(ABC):
 
         self.composite_key = len(self.id_fields) > 1
 
-        self.filters = filters
+        self.filters = filters or dict()
 
         # Override the require_match if necessary
         if require_match is not None:
@@ -150,14 +154,7 @@ class Lookup(ABC):
         df["lookup_key"] = df["lookup_key"].where(df["lookup_key"].fillna(False).astype(bool))
         df = df[~df["lookup_key"].isnull()]
 
-        # Always use a string lookup, because the lookup may be against columns of mixed data types
-        df["lookup_key"] = df["lookup_key"].astype(str)
-
-        if self.case_insensitive:
-            df["lookup_key"] = df["lookup_key"].str.lower()
-
-        if self.strip:
-            df["lookup_key"] = df["lookup_key"].str.strip()
+        df["lookup_key"] = self.prepare_column_for_lookup(df["lookup_key"])
 
         df = df.drop_duplicates()
 
@@ -166,6 +163,25 @@ class Lookup(ABC):
         if not self.composite_key:
             df = df.rename(columns={self.id_fields[0]: "lookup_value"})
         return df
+
+    def prepare_column_for_lookup(self, column):
+        # Always use a string lookup, because the lookup may be against columns of mixed data types
+        column = column.astype(str)
+
+        # Replace non-breaking spaces and tabs with space
+        column = column.str.replace("\xa0", " ")
+        column = column.str.replace("\t", " ")
+
+        if self.case_insensitive:
+            column = column.str.lower()
+
+        if self.strip:
+            column = column.str.strip()
+
+        if self.ignore_accents:
+            column = column.str.translate(normalize)
+
+        return column
 
     def do_lookup(
         self,
@@ -220,14 +236,8 @@ class Lookup(ABC):
         right_fields = [field for field in self.parent_fields if field.split("__")[-1] in df.columns]
 
         if lookup_column:
-            # Always use a string lookup, because the lookup may be against columns of mixed data types
-            df["lookup_candidate"] = df[lookup_column].astype(str)
-
-            if self.case_insensitive:
-                df["lookup_candidate"] = df["lookup_candidate"].str.lower()
-
-            if self.strip:
-                df["lookup_candidate"] = df["lookup_candidate"].str.strip()
+            df["lookup_candidate"] = df[lookup_column]
+            df["lookup_candidate"] = self.prepare_column_for_lookup(df["lookup_candidate"])
 
             left_fields.append("lookup_candidate")
             right_fields.append("lookup_key")
