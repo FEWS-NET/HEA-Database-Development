@@ -9,8 +9,10 @@ from django.contrib.auth.models import User
 from django.urls import reverse
 from rest_framework.test import APITestCase
 
+from baseline.tree_utils import build_filter_tree
 from common.fields import translation_fields
-from common.tests.factories import CountryFactory
+from common.tests.factories import ClassifiedProductFactory, CountryFactory
+from metadata.models import LivelihoodStrategyType
 
 from .factories import (
     BaselineLivelihoodActivityFactory,
@@ -5392,3 +5394,78 @@ class CopingStrategyViewSetTestCase(APITestCase):
             content = response.content
         df = pd.read_html(content)[0].fillna("")
         self.assertEqual(len(df), self.num_records + 1)
+
+
+class LivelihoodStrategyTreeTestCase(APITestCase):
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.root = ClassifiedProductFactory(cpc="R0", description="Agriculture, forestry and fishery products")
+        cls.child1 = ClassifiedProductFactory(
+            cpc="R01", description="Products of agriculture, horticulture and market gardening", parent=cls.root
+        )
+        cls.grand_child1 = ClassifiedProductFactory(cpc="R011", description="Cereals", parent=cls.child1)
+        cls.leaf1 = ClassifiedProductFactory(cpc="R0111", description="Wheat", parent=cls.grand_child1)
+
+        LivelihoodStrategyFactory(strategy_type=LivelihoodStrategyType.CROP_PRODUCTION, product=cls.leaf1)
+        LivelihoodStrategyFactory(strategy_type=LivelihoodStrategyType.FOOD_PURCHASE, product=cls.leaf1)
+
+    def test_build_filter_tree(self):
+        result = build_filter_tree()
+
+        # Expected result should match the hierarchical structure
+        expected_result = [
+            {
+                "value": "CropProduction",
+                "title": "Crop production",
+                "children": [
+                    {
+                        "value": "R0",
+                        "title": "Agriculture, forestry and fishery products",
+                        "children": [
+                            {
+                                "value": "R01",
+                                "title": "Products of agriculture, horticulture and market gardening",
+                                "children": [
+                                    {
+                                        "value": "R011",
+                                        "title": "Cereals",
+                                        "children": [{"value": "R0111", "title": "Wheat", "children": []}],
+                                    }
+                                ],
+                            }
+                        ],
+                    }
+                ],
+            },
+            {
+                "value": "FoodPurchase",
+                "title": "Food purchase",
+                "children": [
+                    {
+                        "value": "R0",
+                        "title": "Agriculture, forestry and fishery products",
+                        "children": [
+                            {
+                                "value": "R01",
+                                "title": "Products of agriculture, horticulture and market gardening",
+                                "children": [
+                                    {
+                                        "value": "R011",
+                                        "title": "Cereals",
+                                        "children": [{"value": "R0111", "title": "Wheat", "children": []}],
+                                    }
+                                ],
+                            }
+                        ],
+                    }
+                ],
+            },
+        ]
+        # Assert that the result matches the expected structure
+        self.assertEqual(result, expected_result)
+        # If we have another LivelihoodStrategy with a product in the same hierarchy say 'Cereals' we should get the
+        # same result as long the strategy is not a new one
+        LivelihoodStrategyFactory(strategy_type=LivelihoodStrategyType.FOOD_PURCHASE, product=self.grand_child1)
+        result = build_filter_tree()
+        self.assertEqual(result, expected_result)

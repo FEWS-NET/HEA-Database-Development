@@ -1,5 +1,6 @@
 from django.db import models
 from django_filters import rest_framework as filters
+from rest_framework.response import Response
 
 from common.fields import translation_fields
 from common.filters import MultiFieldFilter
@@ -82,6 +83,7 @@ from .serializers import (
     WealthGroupSerializer,
     WildFoodGatheringSerializer,
 )
+from .tree_utils import build_filter_tree
 
 
 class SourceOrganizationFilterSet(filters.FilterSet):
@@ -525,6 +527,21 @@ class LivelihoodActivityFilterSet(filters.FilterSet):
         lookup_expr="iexact",
         label="Country",
     )
+
+
+class LivelihoodStrategyHierarchyViewSet(BaseModelViewSet):
+    queryset = LivelihoodStrategy.objects.select_related(
+        "livelihood_zone_baseline__livelihood_zone__country",
+        "livelihood_zone_baseline__source_organization",
+        "season",
+        "unit_of_measure",
+        "product",
+    )
+    serializer_class = LivelihoodStrategySerializer
+
+    def list(self, request, *args, **kwargs):
+        data = build_filter_tree()
+        return Response(data)
 
 
 class LivelihoodActivityViewSet(BaseModelViewSet):
