@@ -88,7 +88,9 @@ router.register(r"baselinewealthgroup", BaselineWealthGroupViewSet)
 router.register(r"communitywealthgroup", CommunityWealthGroupViewSet)
 router.register(r"wealthgroupcharacteristicvalue", WealthGroupCharacteristicValueViewSet)
 router.register(r"livelihoodstrategy", LivelihoodStrategyViewSet)
-router.register(r"livelihoodstrategyhierarchy", LivelihoodStrategyHierarchyViewSet)
+router.register(
+    r"livelihoodstrategyhierarchy", LivelihoodStrategyHierarchyViewSet, basename="livelihoodstrategyhierarchy"
+)
 router.register(r"livelihoodactivity", LivelihoodActivityViewSet)
 router.register(r"baselinelivelihoodactivity", BaselineLivelihoodActivityViewSet)
 router.register(r"responselivelihoodactivity", ResponseLivelihoodActivityViewSet)

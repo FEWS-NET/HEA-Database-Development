@@ -1366,6 +1366,38 @@ class LivelihoodStrategyViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
 
+    def test_filter_by_product(self):
+        parent = ClassifiedProductFactory(cpc="K011")
+        product = ClassifiedProductFactory(
+            cpc="K0111",
+            description_en="my product",
+            common_name_en="common",
+            kcals_per_unit=550,
+            parent=parent,
+            aliases=["test"],
+        )
+        ClassifiedProductFactory(cpc="K01111")
+        LivelihoodStrategyFactory(product=product)
+        response = self.client.get(self.url, {"product": "K011"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content)), 1)
+
+        response = self.client.get(self.url, {"product": "K0111"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content)), 1)
+
+        response = self.client.get(self.url, {"product": "K01111"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content)), 0)
+
+        response = self.client.get(self.url, {"product": "my"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
+
+        response = self.client.get(self.url, {"product": "my product"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
+
 
 class LivelihoodActivityViewSetTestCase(APITestCase):
     @classmethod
@@ -1546,6 +1578,38 @@ class LivelihoodActivityViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(json.loads(response.content)), 1)
         response = self.client.get(self.url, {"country": country.iso_en_ro_name})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
+
+    def test_filter_by_product(self):
+        parent = ClassifiedProductFactory(cpc="K011")
+        product = ClassifiedProductFactory(
+            cpc="K0111",
+            description_en="my product",
+            common_name_en="common",
+            kcals_per_unit=550,
+            parent=parent,
+            aliases=["test"],
+        )
+        # ClassifiedProductFactory(cpc="K01111")
+        LivelihoodActivityFactory(livelihood_strategy__product=product)
+        response = self.client.get(self.url, {"product": "K011"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content)), 1)
+
+        response = self.client.get(self.url, {"product": "K0111"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content)), 1)
+
+        response = self.client.get(self.url, {"product": "K01111"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content)), 0)
+
+        response = self.client.get(self.url, {"product": "my"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
+
+        response = self.client.get(self.url, {"product": "my product"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
 
@@ -5413,7 +5477,6 @@ class LivelihoodStrategyTreeTestCase(APITestCase):
     def test_build_filter_tree(self):
         result = build_filter_tree()
 
-        # Expected result should match the hierarchical structure
         expected_result = [
             {
                 "value": "CropProduction",
@@ -5462,7 +5525,6 @@ class LivelihoodStrategyTreeTestCase(APITestCase):
                 ],
             },
         ]
-        # Assert that the result matches the expected structure
         self.assertEqual(result, expected_result)
         # If we have another LivelihoodStrategy with a product in the same hierarchy say 'Cereals' we should get the
         # same result as long the strategy is not a new one
