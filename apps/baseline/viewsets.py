@@ -1,9 +1,8 @@
 from django.db import models
 from django_filters import rest_framework as filters
-from rest_framework.response import Response
 
 from common.fields import translation_fields
-from common.filters import MultiFieldFilter
+from common.filters import MultiFieldFilter, UpperCaseFilter
 from common.viewsets import BaseModelViewSet
 
 from .models import (
@@ -83,7 +82,6 @@ from .serializers import (
     WealthGroupSerializer,
     WildFoodGatheringSerializer,
 )
-from .tree_utils import build_filter_tree
 
 
 class SourceOrganizationFilterSet(filters.FilterSet):
@@ -481,6 +479,7 @@ class LivelihoodStrategyFilterSet(filters.FilterSet):
         ],
         label="Product",
     )
+    cpc = UpperCaseFilter("product__cpc", lookup_expr="startswith", label="Product code (CPC)")
 
 
 class LivelihoodStrategyViewSet(BaseModelViewSet):
@@ -545,21 +544,7 @@ class LivelihoodActivityFilterSet(filters.FilterSet):
         ],
         label="Product",
     )
-
-
-class LivelihoodStrategyHierarchyViewSet(BaseModelViewSet):
-    queryset = LivelihoodStrategy.objects.select_related(
-        "livelihood_zone_baseline__livelihood_zone__country",
-        "livelihood_zone_baseline__source_organization",
-        "season",
-        "unit_of_measure",
-        "product",
-    )
-    serializer_class = LivelihoodStrategySerializer
-
-    def list(self, request, *args, **kwargs):
-        data = build_filter_tree()
-        return Response(data)
+    cpc = UpperCaseFilter("livelihood_strategy__product__cpc", lookup_expr="startswith", label="Product code (CPC)")
 
 
 class LivelihoodActivityViewSet(BaseModelViewSet):

@@ -9,10 +9,8 @@ from django.contrib.auth.models import User
 from django.urls import reverse
 from rest_framework.test import APITestCase
 
-from baseline.tree_utils import build_filter_tree
 from common.fields import translation_fields
 from common.tests.factories import ClassifiedProductFactory, CountryFactory
-from metadata.models import LivelihoodStrategyType
 
 from .factories import (
     BaselineLivelihoodActivityFactory,
@@ -1402,6 +1400,34 @@ class LivelihoodStrategyViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
 
+    def test_filter_by_cpc(self):
+        parent = ClassifiedProductFactory(cpc="K011")
+        product = ClassifiedProductFactory(
+            cpc="K0111",
+            description_en="my product",
+            common_name_en="common",
+            kcals_per_unit=550,
+            parent=parent,
+        )
+        ClassifiedProductFactory(cpc="K01111")
+        LivelihoodStrategyFactory(product=product)
+        # test filter by cpc exact match
+        response = self.client.get(self.url, {"cpc": "K0111"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content)), 1)
+        # test filter by cpc startswith
+        response = self.client.get(self.url, {"cpc": "K01"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content)), 1)
+        # test filter by cpc lowercase/case in-sensitive
+        response = self.client.get(self.url, {"cpc": "k0111"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
+        # test filter by product not having a strategy
+        response = self.client.get(self.url, {"cpc": "K01111"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 0)
+
 
 class LivelihoodActivityViewSetTestCase(APITestCase):
     @classmethod
@@ -1619,6 +1645,34 @@ class LivelihoodActivityViewSetTestCase(APITestCase):
         response = self.client.get(self.url, {"product": "test"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
+
+    def test_filter_by_cpc(self):
+        parent = ClassifiedProductFactory(cpc="K011")
+        product = ClassifiedProductFactory(
+            cpc="K0111",
+            description_en="my product",
+            common_name_en="common",
+            kcals_per_unit=550,
+            parent=parent,
+        )
+        ClassifiedProductFactory(cpc="K01111")
+        LivelihoodActivityFactory(livelihood_strategy__product=product)
+        # test filter by cpc exact match
+        response = self.client.get(self.url, {"cpc": "K0111"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content)), 1)
+        # test filter by cpc startswith
+        response = self.client.get(self.url, {"cpc": "K01"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content)), 1)
+        # test filter by cpc lowercase/case in-sensitive
+        response = self.client.get(self.url, {"cpc": "k0111"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
+        # test filter by product not having a strategy
+        response = self.client.get(self.url, {"cpc": "K01111"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 0)
 
 
 class BaselineLivelihoodActivityViewSetTestCase(APITestCase):
@@ -5465,76 +5519,3 @@ class CopingStrategyViewSetTestCase(APITestCase):
             content = response.content
         df = pd.read_html(content)[0].fillna("")
         self.assertEqual(len(df), self.num_records + 1)
-
-
-class LivelihoodStrategyHierarchyViewSetTestCase(APITestCase):
-
-    @classmethod
-    def setUpTestData(cls):
-        cls.root = ClassifiedProductFactory(cpc="R0", description="Agriculture, forestry and fishery products")
-        cls.child1 = ClassifiedProductFactory(
-            cpc="R01", description="Products of agriculture, horticulture and market gardening", parent=cls.root
-        )
-        cls.grand_child1 = ClassifiedProductFactory(cpc="R011", description="Cereals", parent=cls.child1)
-        cls.leaf1 = ClassifiedProductFactory(cpc="R0111", description="Wheat", parent=cls.grand_child1)
-
-        LivelihoodStrategyFactory(strategy_type=LivelihoodStrategyType.CROP_PRODUCTION, product=cls.leaf1)
-        LivelihoodStrategyFactory(strategy_type=LivelihoodStrategyType.FOOD_PURCHASE, product=cls.leaf1)
-
-    def test_build_filter_tree(self):
-        result = build_filter_tree()
-
-        expected_result = [
-            {
-                "value": "CropProduction",
-                "title": "Crop production",
-                "children": [
-                    {
-                        "value": "R0",
-                        "title": "Agriculture, forestry and fishery products",
-                        "children": [
-                            {
-                                "value": "R01",
-                                "title": "Products of agriculture, horticulture and market gardening",
-                                "children": [
-                                    {
-                                        "value": "R011",
-                                        "title": "Cereals",
-                                        "children": [{"value": "R0111", "title": "Wheat", "children": []}],
-                                    }
-                                ],
-                            }
-                        ],
-                    }
-                ],
-            },
-            {
-                "value": "FoodPurchase",
-                "title": "Food purchase",
-                "children": [
-                    {
-                        "value": "R0",
-                        "title": "Agriculture, forestry and fishery products",
-                        "children": [
-                            {
-                                "value": "R01",
-                                "title": "Products of agriculture, horticulture and market gardening",
-                                "children": [
-                                    {
-                                        "value": "R011",
-                                        "title": "Cereals",
-                                        "children": [{"value": "R0111", "title": "Wheat", "children": []}],
-                                    }
-                                ],
-                            }
-                        ],
-                    }
-                ],
-            },
-        ]
-        self.assertEqual(result, expected_result)
-        # If we have another LivelihoodStrategy with a product in the same hierarchy say 'Cereals' we should get the
-        # same result as long the strategy is not a new one
-        LivelihoodStrategyFactory(strategy_type=LivelihoodStrategyType.FOOD_PURCHASE, product=self.grand_child1)
-        result = build_filter_tree()
-        self.assertEqual(result, expected_result)
