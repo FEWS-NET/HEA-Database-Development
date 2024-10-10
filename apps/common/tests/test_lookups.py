@@ -20,6 +20,14 @@ class ClassifiedProductLookupTestCase(TestCase):
         self.assertEqual(len(result_df), 1)
         self.assertEqual(result_df["cpc"][0], self.product.pk)
 
+    def test_nonstandard_characters_lookup(self):
+        self.assertEqual(self.product.common_name_en[-3:], " en")
+        df = pd.DataFrame({"product": [self.product.common_name_en[:-3] + "\xa0én"]})
+        result_df = ClassifiedProductLookup().do_lookup(df, "product", "cpc")
+        self.assertTrue("cpc" in result_df.columns)
+        self.assertEqual(len(result_df), 1)
+        self.assertEqual(result_df["cpc"][0], self.product.pk)
+
     def test_ignore_unwanted_parents(self):
         ClassifiedProductFactory(cpc="R0151", description_en="Potatoes")
         # Create a child with a matching description, but different cpc
