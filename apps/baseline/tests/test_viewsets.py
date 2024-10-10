@@ -1374,27 +1374,31 @@ class LivelihoodStrategyViewSetTestCase(APITestCase):
             common_name_en="common",
             kcals_per_unit=550,
             parent=parent,
-            aliases=["test"],
+            aliases=["test alias"],
         )
         ClassifiedProductFactory(cpc="K01111")
         LivelihoodStrategyFactory(product=product)
         response = self.client.get(self.url, {"product": "K011"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(json.loads(response.content)), 1)
-
+        # filter by cpc
         response = self.client.get(self.url, {"product": "K0111"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(json.loads(response.content)), 1)
-
+        # filter by cpc startswith
         response = self.client.get(self.url, {"product": "K01111"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(json.loads(response.content)), 0)
-
+        # filter by description icontains
         response = self.client.get(self.url, {"product": "my"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
-
+        # filter by description
         response = self.client.get(self.url, {"product": "my product"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
+        # filter by alias
+        response = self.client.get(self.url, {"product": "test"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
 
@@ -1591,25 +1595,28 @@ class LivelihoodActivityViewSetTestCase(APITestCase):
             parent=parent,
             aliases=["test"],
         )
-        # ClassifiedProductFactory(cpc="K01111")
         LivelihoodActivityFactory(livelihood_strategy__product=product)
         response = self.client.get(self.url, {"product": "K011"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(json.loads(response.content)), 1)
-
+        # filter by cpc
         response = self.client.get(self.url, {"product": "K0111"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(json.loads(response.content)), 1)
-
+        # filter by cpc startswith
         response = self.client.get(self.url, {"product": "K01111"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(json.loads(response.content)), 0)
-
+        # filter by description icontains
         response = self.client.get(self.url, {"product": "my"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
-
+        # filter by description
         response = self.client.get(self.url, {"product": "my product"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
+        # filter by alias
+        response = self.client.get(self.url, {"product": "test"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
 
