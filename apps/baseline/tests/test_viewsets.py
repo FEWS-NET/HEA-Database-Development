@@ -5460,7 +5460,7 @@ class CopingStrategyViewSetTestCase(APITestCase):
         self.assertEqual(len(df), self.num_records + 1)
 
 
-class LivelihoodStrategyTreeTestCase(APITestCase):
+class LivelihoodStrategyHierarchyViewSetTestCase(APITestCase):
 
     @classmethod
     def setUpTestData(cls):
