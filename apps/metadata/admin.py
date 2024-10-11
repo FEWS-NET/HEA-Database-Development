@@ -41,12 +41,6 @@ class LivelihoodCategoryAdmin(ReferenceDataAdmin):
     A concrete admin for LivelihoodCategory
     """
 
-    fields = (
-        "code",
-        *translation_fields("name"),
-        "aliases",
-        *translation_fields("description"),
-    )
     list_display = ("code", "name", "aliases", "description", "color_display")
 
     # Display color as a colored block in the list page
