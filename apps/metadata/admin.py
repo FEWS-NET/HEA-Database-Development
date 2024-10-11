@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.utils.html import format_html
 
 from common.fields import translation_fields
 
@@ -39,6 +40,20 @@ class LivelihoodCategoryAdmin(ReferenceDataAdmin):
     """
     A concrete admin for LivelihoodCategory
     """
+
+    fields = (
+        "code",
+        *translation_fields("name"),
+        "aliases",
+        *translation_fields("description"),
+    )
+    list_display = ("code", "name", "aliases", "description", "color_display")
+
+    # Display color as a colored block in the list page
+    def color_display(self, obj):
+        return format_html('<div style="width: 60px; height: 20px; background-color: {};"></div>', obj.color)
+
+    color_display.short_description = "Color"
 
 
 class SeasonalActivityTypeAdmin(ReferenceDataAdmin):
