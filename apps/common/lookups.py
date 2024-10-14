@@ -4,6 +4,7 @@ reference data in Django Models.
 """
 
 import functools
+import re
 from abc import ABC
 
 import pandas as pd
@@ -61,6 +62,9 @@ class Lookup(ABC):
 
     # Ignore accents
     ignore_accents: bool = True
+
+    # Replace any number of non-standard space characters (anything that matches r"\s+") with a single, normal space
+    sanitize_spaces: bool = True
 
     # Ignore leading or trailing spaces in lookups
     strip: bool = True
@@ -168,9 +172,8 @@ class Lookup(ABC):
         # Always use a string lookup, because the lookup may be against columns of mixed data types
         column = column.astype(str)
 
-        # Replace non-breaking spaces and tabs with space
-        column = column.str.replace("\xa0", " ")
-        column = column.str.replace("\t", " ")
+        if self.sanitize_spaces:
+            column = column.apply(lambda s: re.sub(r"\s+", " ", s))
 
         if self.case_insensitive:
             column = column.str.lower()
