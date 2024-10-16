@@ -11,7 +11,12 @@ warnings.filterwarnings("error", r"DateTimeField .* received a naive datetime")
 
 ########## STATIC FILE CONFIGURATION
 # Use normal StaticFileStorage so we don't have to run ./manage.py collectstatic first
-STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
+STORAGES = {
+    "default": {"BACKEND": "binary_database_files.storage.DatabaseStorage"},
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
 ########## End STATIC FILE CONFIGURATION
 
 ########## CACHE CONFIGURATION
