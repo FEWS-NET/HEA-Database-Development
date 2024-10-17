@@ -68,6 +68,15 @@ class LivelihoodCategory(ReferenceData):
     A type of Livelihood Zone, such as Pastoral or Rain-fed AgroPastoral, etc.
     """
 
+    color = models.CharField(
+        max_length=7,
+        default="#FFFFFF",
+        verbose_name=_(
+            "Color",
+        ),
+        help_text=_("Color hex value code for the Livelihood Category."),
+    )
+
     class Meta:
         verbose_name = _("Livelihood Category")
         verbose_name_plural = _("Livelihood Categories")
