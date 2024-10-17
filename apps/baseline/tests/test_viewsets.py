@@ -10,7 +10,7 @@ from django.urls import reverse
 from rest_framework.test import APITestCase
 
 from common.fields import translation_fields
-from common.tests.factories import CountryFactory
+from common.tests.factories import ClassifiedProductFactory, CountryFactory
 
 from .factories import (
     BaselineLivelihoodActivityFactory,
@@ -1364,6 +1364,70 @@ class LivelihoodStrategyViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
 
+    def test_filter_by_product(self):
+        parent = ClassifiedProductFactory(cpc="K011")
+        product = ClassifiedProductFactory(
+            cpc="K0111",
+            description_en="my product",
+            common_name_en="common",
+            kcals_per_unit=550,
+            parent=parent,
+            aliases=["test alias"],
+        )
+        ClassifiedProductFactory(cpc="K01111")
+        LivelihoodStrategyFactory(product=product)
+        response = self.client.get(self.url, {"product": "K011"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content)), 1)
+        # filter by cpc
+        response = self.client.get(self.url, {"product": "K0111"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content)), 1)
+        # filter by cpc startswith
+        response = self.client.get(self.url, {"product": "K01111"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content)), 0)
+        # filter by description icontains
+        response = self.client.get(self.url, {"product": "my"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
+        # filter by description
+        response = self.client.get(self.url, {"product": "my product"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
+        # filter by alias
+        response = self.client.get(self.url, {"product": "test"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
+
+    def test_filter_by_cpc(self):
+        parent = ClassifiedProductFactory(cpc="K011")
+        product = ClassifiedProductFactory(
+            cpc="K0111",
+            description_en="my product",
+            common_name_en="common",
+            kcals_per_unit=550,
+            parent=parent,
+        )
+        ClassifiedProductFactory(cpc="K01111")
+        LivelihoodStrategyFactory(product=product)
+        # test filter by cpc exact match
+        response = self.client.get(self.url, {"cpc": "K0111"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content)), 1)
+        # test filter by cpc startswith
+        response = self.client.get(self.url, {"cpc": "K01"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content)), 1)
+        # test filter by cpc lowercase/case in-sensitive
+        response = self.client.get(self.url, {"cpc": "k0111"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
+        # test filter by product not having a strategy
+        response = self.client.get(self.url, {"cpc": "K01111"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 0)
+
 
 class LivelihoodActivityViewSetTestCase(APITestCase):
     @classmethod
@@ -1546,6 +1610,69 @@ class LivelihoodActivityViewSetTestCase(APITestCase):
         response = self.client.get(self.url, {"country": country.iso_en_ro_name})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
+
+    def test_filter_by_product(self):
+        parent = ClassifiedProductFactory(cpc="K011")
+        product = ClassifiedProductFactory(
+            cpc="K0111",
+            description_en="my product",
+            common_name_en="common",
+            kcals_per_unit=550,
+            parent=parent,
+            aliases=["test"],
+        )
+        LivelihoodActivityFactory(livelihood_strategy__product=product)
+        response = self.client.get(self.url, {"product": "K011"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content)), 1)
+        # filter by cpc
+        response = self.client.get(self.url, {"product": "K0111"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content)), 1)
+        # filter by cpc startswith
+        response = self.client.get(self.url, {"product": "K01111"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content)), 0)
+        # filter by description icontains
+        response = self.client.get(self.url, {"product": "my"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
+        # filter by description
+        response = self.client.get(self.url, {"product": "my product"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
+        # filter by alias
+        response = self.client.get(self.url, {"product": "test"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
+
+    def test_filter_by_cpc(self):
+        parent = ClassifiedProductFactory(cpc="K011")
+        product = ClassifiedProductFactory(
+            cpc="K0111",
+            description_en="my product",
+            common_name_en="common",
+            kcals_per_unit=550,
+            parent=parent,
+        )
+        ClassifiedProductFactory(cpc="K01111")
+        LivelihoodActivityFactory(livelihood_strategy__product=product)
+        # test filter by cpc exact match
+        response = self.client.get(self.url, {"cpc": "K0111"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content)), 1)
+        # test filter by cpc startswith
+        response = self.client.get(self.url, {"cpc": "K01"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content)), 1)
+        # test filter by cpc lowercase/case in-sensitive
+        response = self.client.get(self.url, {"cpc": "k0111"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
+        # test filter by product not having a strategy
+        response = self.client.get(self.url, {"cpc": "K01111"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 0)
 
 
 class BaselineLivelihoodActivityViewSetTestCase(APITestCase):
