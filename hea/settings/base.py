@@ -206,7 +206,6 @@ MEDIA_URL = "/media/"
 STATIC_HOST = env.str("DJANGO_STATIC_HOST", "")
 STATIC_URL = STATIC_HOST + "/static/"
 STATIC_ROOT = normpath(join(SITE_ROOT, "assets"))
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 STATICFILES_DIRS = (normpath(join(SITE_ROOT, "static")),)
 
@@ -276,7 +275,12 @@ LOGGING = {
     "root": {"handlers": ["console", "logfile"], "level": "DEBUG"},
 }
 
-DEFAULT_FILE_STORAGE = "binary_database_files.storage.DatabaseStorage"
+STORAGES = {
+    "default": {"BACKEND": "binary_database_files.storage.DatabaseStorage"},
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 # Serve files from the database, in case they are not present on the file
 # system, for example if the container has been replaced.
 DATABASE_FILES_URL_METHOD = "URL_METHOD_2"
