@@ -164,7 +164,6 @@ class LivelihoodZoneBaselineFilterSet(filters.FilterSet):
             "valid_from_date",
             "valid_to_date",
             "population_source",
-            "population_estimate",
             "currency",
             *translation_fields("description"),
             *translation_fields("name"),
@@ -184,6 +183,7 @@ class LivelihoodZoneBaselineFilterSet(filters.FilterSet):
         lookup_expr="iexact",
         label="Country",
     )
+    population_estimate = filters.RangeFilter(label="Population estimate range")
 
 
 class LivelihoodZoneBaselineViewSet(BaseModelViewSet):
