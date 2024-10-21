@@ -1,3 +1,4 @@
+from django import forms
 from django.contrib import admin
 from django.utils.html import format_html
 
@@ -42,6 +43,19 @@ class LivelihoodCategoryAdmin(ReferenceDataAdmin):
     """
 
     list_display = ("code", "name", "aliases", "description", "color_display")
+    fields = (
+        "code",
+        *translation_fields("name"),
+        "aliases",
+        "color",
+        *translation_fields("description"),
+    )
+
+    # Override only the 'color' field to use the html5 color input
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        if db_field.name == "color":
+            kwargs["widget"] = forms.TextInput(attrs={"type": "color"})
+        return super().formfield_for_dbfield(db_field, request, **kwargs)
 
     # Display color as a colored block in the list page
     def color_display(self, obj):
