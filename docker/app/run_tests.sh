@@ -40,19 +40,6 @@ fi
 #   ADVISORY: Gdal 3.8.0 backports a security fix for CVE-2023-45853: MiniZip
 #   in zlib through 1.3 has an integer overflow.
 
-# Ignore vulnerability found in django version 5.0.2
-# Updating to 5.0.3 will fix the vulnerability, but causes a unit test failure
-# in LivelihoodActivityAdminTestCase.test_filters
-# @TODO Remove this once the base image includes a version of Django that
-# doesn't cause the unit test error.
-#   Vulnerability ID: 65771
-#   Affected spec: >=5.0a1,<5.0.3
-#   ADVISORY: Affected versions of Django are vulnerable to potential
-#   regular expression denial-of-service. django.utils.text.Truncator.words()
-#   method (with html=True) and truncatewords_html template filter were
-#   subject to a potential regular expression denial-of-service attack using a
-#   suitably crafted string (follow up to CVE-2019-14232 and CVE-2023-43665).
-
 # Ignore vulnerability found in jinja2 version 3.1.4
 # We do not allow any untrusted templates, and so are not affected.
 #   Vulnerability ID: 70612
@@ -66,7 +53,7 @@ fi
 #   CVE-2019-8341
 	
 echo Package Vulnerabilities:
-pip freeze | safety check --stdin --full-report -i 62283 -i 65771 -i 70612
+pip freeze | safety check --stdin --full-report -i 62283 -i 70612
 SAFETY_RESULT=$?
 
 # Suppress SAFETY_RESULT unless CHECK_SAFETY is set
