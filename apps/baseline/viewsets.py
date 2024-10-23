@@ -1,5 +1,8 @@
 from django.db import models
+from django.db.models import F, OuterRef, Q, Subquery
+from django.db.models.functions import Coalesce, NullIf
 from django_filters import rest_framework as filters
+from rest_framework.viewsets import ModelViewSet
 
 from common.fields import translation_fields
 from common.filters import MultiFieldFilter
@@ -63,6 +66,7 @@ from .serializers import (
     LivelihoodProductCategorySerializer,
     LivelihoodStrategySerializer,
     LivelihoodZoneBaselineGeoSerializer,
+    LivelihoodZoneBaselineReportSerializer,
     LivelihoodZoneBaselineSerializer,
     LivelihoodZoneSerializer,
     LivestockSaleSerializer,
@@ -1550,3 +1554,207 @@ class CopingStrategyViewSet(BaseModelViewSet):
         "leaders",
         "strategy",
     ]
+
+
+class LivelihoodZoneBaselineReportViewSet(ModelViewSet):
+    """
+    There are two ‘levels’ of filter needed on this endpoint. The standard ones which are already on the LZB endpoint
+    filter the LZBs that are returned (eg, population range and wealth group). Let’s call them ‘global’ filters.
+    Everything needs filtering by wealth group or population, if those filters are active.
+
+    The strategy type and product filters do not remove LZBs from the results by themselves; they only filter the
+    statistics. I suggest we call them data ‘slice’ filters.
+
+    If a user selects Sorghum, that filters the kcals income for our slice. The kcals income for the slice is then
+    divided by the kcals income on the global set for the kcals income percent.
+
+    The global filters are identical to those already on the LZB endpoint (and will always be - it is sharing the
+    code).
+
+    The slice filters are:
+
+      - slice_product (for multiple, repeat the parameter, eg, slice_product=R0&slice_product=B01). These
+        match any CPC code that starts with the value. (The client needs to convert the selected product to CPC.)
+
+      - slice_strategy_type - you can specify multiple, and you need to pass the code not the label (which could be
+        translated). (These are case-insensitive but otherwise must be an exact match.)
+
+    The slice is defined by matching any of the products, AND any of the strategy types (as opposed to OR).
+
+    Translated fields, eg, name, description, are rendered in the currently selected locale if possible. (Except
+    Country, which has different translations following ISO.) This can be selected in the UI or set using eg,
+    &language=pt which overrides the UI selection.
+
+    You select the fields you want using the &fields= parameter in the usual way. If you omit the fields parameter all
+    fields are returned. These are currently the same field list as the normal LZB endpoint, plus the aggregations,
+    called slice_sum_kcals_consumed, sum_kcals_consumed, kcals_consumed_percent, plus product CPC and product common
+    name translated. If you omit a field, the statistics for that field will be aggregated together.
+
+    The ordering code is also shared with the normal LZB endpoint, which uses the standard &ordering= parameter. If
+    none are specified, the results are sorted by the aggregations descending, ie, biggest percentage first.
+
+    Example URL:
+
+    http://localhost:8000/api/livelihoodzonebaselinereport/
+        ?language=pt
+        &slice_product=R09
+        &slice_strategy_type=MilkProduction
+        &fields=id,name,description,source_organization,source_organization_name,livelihood_zone,livelihood_zone_name,
+            country_pk,country_iso_en_name,main_livelihood_category,bss,currency,reference_year_start_date,
+            reference_year_end_date,valid_from_date,valid_to_date,population_source,population_estimate,
+            livelihoodzone_pk,livelihood_strategy_pk,strategy_type,livelihood_activity_pk,wealth_group_category_code,
+            product_cpc,product_common_name
+        &source_organization=1
+        &min_kcals_consumed_percent=52
+        &max_kcals_consumed_percent=99
+
+    The strategy type codes are:
+        MilkProduction
+        ButterProduction
+        MeatProduction
+        LivestockSale
+        CropProduction
+        FoodPurchase
+        PaymentInKind
+        ReliefGiftOther
+        Hunting
+        Fishing
+        WildFoodGathering
+        OtherCashIncome
+        OtherPurchase
+
+    The product hierarchy can be retrieved from the classified product endpoint /api/classifiedproduct/.
+
+    You can then filter by the percentage of your slice. The only value we have data for so far is kcals_consumed,
+    filtered using, eg, &min_kcals_consumed_percent=52&max_kcals_consumed_percent=99.
+
+    The API currently only supports a single slice at a time. For combining please run multiple searches, and add
+    the desired results to the Compare tab.
+    """
+
+    queryset = LivelihoodZoneBaseline.objects.all()
+    serializer_class = LivelihoodZoneBaselineReportSerializer
+    filterset_class = LivelihoodZoneBaselineFilterSet
+
+    def get_queryset(self):
+        """
+        Aggregates the values specified in the serializer.aggregates property, grouping and aggregating by any
+        fields not requested by the user.
+        """
+
+        # Add the global filters, eg, wealth group, population range, that apply to global search results AND slices:
+        queryset = self.filter_queryset(super().get_queryset())
+
+        # Add the global aggregations, eg, total consumption filtered by wealth group but not by prod/strategy slice:
+        queryset = queryset.annotate(**self.global_aggregates())
+
+        # Work out the slice aggregates, eg, slice_sum_kcals_consumed for product/strategy slice:
+        slice_aggregates = self.get_slice_aggregates()
+        # Work out the calculations on aggregates, eg,
+        #   kcals_consumed_percent = slice_sum_kcals_consumed * 100 / sum_kcals_consumed
+        calcs_on_aggregates = self.get_calculations_on_aggregates()
+
+        # Extract the model fields from the combined list of model and calculated fields:
+        model_fields = self.get_serializer().get_fields().keys() - slice_aggregates.keys() - calcs_on_aggregates.keys()
+
+        # Convert user-friendly field name (eg, livelihood_strategy_pk) into db field path (livelihood_strategies__pk).
+        obj_field_paths = [self.serializer_class.field_to_database_path(field) for field in model_fields]
+
+        # Get them from the query. The ORM converts this qs.values() call into a SQL `GROUP BY *field_paths` clause.
+        queryset = queryset.values(*obj_field_paths)
+
+        # The ORM converts these annotations into grouped SELECT ..., SUM(lzb.population), SUM(la.kcals_consumed), etc.
+        queryset = queryset.annotate(**slice_aggregates, **calcs_on_aggregates)
+
+        # Add the filters on aggregates, eg, kcals_consumed_percent > 50%
+        queryset = queryset.filter(self.get_filters_on_aggregates())
+
+        # If no ordering has been specified by the FilterSet, order by final value fields descending:
+        if not self.request.query_params.get("ordering"):
+            order_by_value_desc = [
+                f"-{self.serializer_class.slice_percent_field_name(field_name, aggregate)}"
+                for field_name, aggregate in self.serializer_class.aggregates.items()
+            ]
+            queryset = queryset.order_by(*order_by_value_desc)
+
+        return queryset
+
+    def get_filters_on_aggregates(self):
+        # Add filters on aggregates, eg, .filter(kcals_consumed_percent__gte=params.get("min_kcals_consumed_percent"))
+        filters_on_aggregates = Q()
+        for url_param_prefix, orm_expr in (("min", "gte"), ("max", "lte")):
+            for field in self.serializer_class.aggregates.keys():
+                url_param_name = f"{url_param_prefix}_{field}_percent"
+                limit = self.request.query_params.get(url_param_name)
+                if limit is not None:
+                    filters_on_aggregates &= Q(**{f"{field}_percent__{orm_expr}": float(limit)})
+        return filters_on_aggregates
+
+    def global_aggregates(self):
+        """
+        Produced a subquery per LZB-wide statistic that we need, eg, kcals_consumed for selected wealth groups for all
+        products and strategies. The kcals_consumed for a specific set of products and strategy types is divided by
+        this figure to obtain a percentage.
+        """
+        global_aggregates = {}
+        for field_name, aggregate in self.serializer_class.aggregates.items():
+            subquery = LivelihoodZoneBaseline.objects.all()
+
+            # The FilterSet applies the global filters, such as Wealth Group Category.
+            # We also need to apply these to the subquery that gets the kcal totals per LZB (eg, the kcal_percent
+            # denominator), to restrict the 100% value by, for example, wealth group.
+            subquery = self.filter_queryset(subquery)
+
+            # Join to outer query
+            subquery = subquery.filter(pk=OuterRef("pk"))
+
+            # Annotate with the aggregate expression, eg, sum_kcals_consumed
+            aggregate_field_name = self.serializer_class.aggregate_field_name(field_name, aggregate)
+            subquery = subquery.annotate(
+                **{aggregate_field_name: aggregate(self.serializer_class.field_to_database_path(field_name))}
+            ).values(aggregate_field_name)[:1]
+
+            global_aggregates[aggregate_field_name] = Subquery(subquery)
+
+        return global_aggregates
+
+    def get_slice_aggregates(self):
+        # Construct the filters for the slice, for example specific products & strategy types, to apply to each measure
+        slice_filter = self.get_slice_filters()
+        # Remove the aggregated fields from the obj field list, and instead add them as sliced aggregate annotations:
+        slice_aggregates = {}
+        required_fields = set(self.get_serializer().get_fields().keys())
+        required_fields.add(self.request.query_params.get("ordering", ""))
+        for field_name, aggregate in self.serializer_class.aggregates.items():
+            aggregate_field_name = self.serializer_class.slice_aggregate_field_name(field_name, aggregate)
+            if aggregate_field_name in required_fields:
+                # Annotate the queryset with the aggregate, eg, slice_sum_kcals_consumed, applying the slice filters.
+                # This is then divided by, eg, sum_kcals_consumed for the percentage of the slice.
+                field_path = self.serializer_class.field_to_database_path(field_name)
+                slice_aggregates[aggregate_field_name] = aggregate(field_path, filter=slice_filter, default=0)
+        return slice_aggregates
+
+    def get_slice_filters(self):
+        # Filters to slice the aggregations, to obtain, eg, the kcals for the selected products/strategy types.
+        # This is then divided by the total for the LZB for the slice percentage.
+        slice_filters = Q()
+        for slice_field, slice_expr in self.serializer_class.slice_fields.items():
+            slice_filter = Q()
+            for item in self.request.query_params.getlist(f"slice_{slice_field}"):
+                slice_filter |= Q(**{slice_expr: item})
+            # Slice must match any of the products AND any of the strategy types (if selected)
+            slice_filters &= slice_filter
+        return slice_filters
+
+    def get_calculations_on_aggregates(self):
+        # Aggregate slice percentages
+        # TODO: Add complex kcal income calculations from LIAS
+        calcs_on_aggregates = {}
+        for field_name, aggregate in self.serializer_class.aggregates.items():
+            slice_total = F(self.serializer_class.slice_aggregate_field_name(field_name, aggregate))
+            overall_total = F(self.serializer_class.aggregate_field_name(field_name, aggregate))
+            expr = slice_total * 100 / NullIf(overall_total, 0)  # Protects against divide by zero
+            expr = Coalesce(expr, 0)  # Zero if no LivActivities found for prod/strategy slice
+            slice_percent_field_name = self.serializer_class.slice_percent_field_name(field_name, aggregate)
+            calcs_on_aggregates[slice_percent_field_name] = expr
+        return calcs_on_aggregates
