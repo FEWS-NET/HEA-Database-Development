@@ -9,6 +9,7 @@ from django.contrib.auth.models import User
 from django.urls import reverse
 from rest_framework.test import APITestCase
 
+from baseline.models import LivelihoodZoneBaseline
 from common.fields import translation_fields
 from common.tests.factories import ClassifiedProductFactory, CountryFactory
 
@@ -331,6 +332,9 @@ class LivelihoodZoneBaselineViewSetTestCase(APITestCase):
         cls.num_records = 5
         cls.data = [LivelihoodZoneBaselineFactory() for _ in range(cls.num_records)]
         cls.user = User.objects.create_superuser("test", "test@test.com", "password")
+        cls.population_estimates = sorted(
+            [record.population_estimate for record in LivelihoodZoneBaseline.objects.all()]
+        )
 
     def setUp(self):
         self.url = reverse("livelihoodzonebaseline-list")
@@ -491,6 +495,46 @@ class LivelihoodZoneBaselineViewSetTestCase(APITestCase):
         response = self.client.get(self.url, {"country": country.iso_en_ro_name})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
+
+    def test_population_estimate_range_filter(self):
+        min_estimate = self.population_estimates[0]
+        max_estimate = self.population_estimates[-1]
+
+        # Test filtering with a range that should include all records
+        response = self.client.get(
+            self.url,
+            {
+                "population_estimate_min": min_estimate,
+                "population_estimate_max": max_estimate,
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), self.num_records)
+
+        # Test filtering for subset of the records
+        second_smallest = self.population_estimates[1]
+        second_largest = self.population_estimates[3]
+        response = self.client.get(
+            self.url,
+            {
+                "population_estimate_min": second_smallest,
+                "population_estimate_max": second_largest,
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        filtered_records = [_response["population_estimate"] for _response in response.data]
+        self.assertTrue(all(second_smallest <= r <= second_largest for r in filtered_records))
+
+        # Test filtering with a range that excludes all records
+        response = self.client.get(
+            self.url,
+            {
+                "population_estimate_min": max_estimate + 1,
+                "population_estimate_max": max_estimate + 1000,
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 0)
 
 
 class LivelihoodProductCategoryViewSetTestCase(APITestCase):
