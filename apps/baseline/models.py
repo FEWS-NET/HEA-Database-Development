@@ -2360,3 +2360,48 @@ class CopingStrategy(models.Model):
     class Meta:
         verbose_name = _("Coping Strategy")
         verbose_name_plural = _("Coping Strategies")
+
+
+class KeyParameter(common_models.Model):
+    """
+    These are 'key parameters' for a given BSS, as reported in the baseline Fact Sheets.
+
+    These are defined as:
+
+    > a source that contributes at least 10% of the kilocalories of one wealth group’s total food or income,
+      or at least 5% of two wealth groups' total food or income
+
+    These are entered manually for three reasons:
+        1. We expect to have to support manual overrides anyway.
+        2. We lack sufficient data (eg, product kcals per unit, strategy sub-type production figures) [1]
+        3. We haven't yet reverse-engineered the formulae in the LIAS for making kcals and cash comparable.
+
+    [1] A price on a purchase LS is presumably what the Fact Sheets call a 'consumer price'. A price on a
+    livestock sale is presumably always a 'producer price'. Labor figures are presumably the ones from the
+    livelihood activity detail. And animal numbers and school stats are presumably wealth group characteristics.
+    """
+
+    class KeyParameterType(models.TextChoices):
+        PRICE = "price", _("Price")
+        QUANTITY = "quantity", _("Quantity")
+
+    livelihood_zone_baseline = models.ForeignKey(
+        LivelihoodZoneBaseline,
+        on_delete=models.CASCADE,
+        verbose_name=_("Livelihood Zone Baseline"),
+    )
+    strategy_type = models.CharField(
+        max_length=30,
+        choices=LivelihoodStrategyType.choices,
+        db_index=True,
+        verbose_name=_("Strategy Type"),
+        help_text=_("The type of livelihood strategy, such as crop production, or wild food gathering."),
+    )
+    key_parameter_type = models.CharField(
+        max_length=30,
+        choices=KeyParameterType.choices,
+        verbose_name=_("Key Parameter Type"),
+        help_text=_("The type of key parameter, such as quantity or price."),
+    )
+    name = TranslatedField(common_models.NameField(max_length=200))
+    description = TranslatedField(common_models.DescriptionField())

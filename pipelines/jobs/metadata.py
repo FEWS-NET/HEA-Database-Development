@@ -16,6 +16,8 @@ from django.db import models, transaction
 from gdrivefs.core import GoogleDriveFile
 from upath import UPath
 
+from common.fields import translation_fields
+
 from ..configs import ReferenceDataConfig
 from ..utils import class_from_name
 
@@ -28,11 +30,12 @@ django.setup()
 from baseline.lookups import CommunityLookup  # NOQA: E402
 from baseline.models import (  # NOQA: E402
     Community,
+    KeyParameter,
     LivelihoodZoneBaseline,
     LivelihoodZoneBaselineCorrection,
 )
 from common.lookups import ClassifiedProductLookup, UserLookup  # NOQA: E402
-from metadata.models import ActivityLabel  # NOQA: E402
+from metadata.models import ActivityLabel, LivelihoodStrategyType  # NOQA: E402
 
 
 def load_metadata_for_model(context: OpExecutionContext, model: models.Model, df: pd.DataFrame):
@@ -189,7 +192,7 @@ def load_all_corrections(context: OpExecutionContext):
     """
     storage_options = {"token": "service_account", "access": "read_only", "root_file_id": "0AOJ0gJ8sjnO7Uk9PVA"}
     storage_options["creds"] = json.loads(os.environ["GOOGLE_APPLICATION_CREDENTIALS"])
-    p = UPath("gdrive://Database Design/BSS Metadata", **storage_options)
+    p = UPath("gdrive://Database Design/BSS Metadata/Key Parameters", **storage_options)
     with p.fs.open(p.path, mode="rb", cache_type="bytes") as f:
         # Google Sheets have to be exported rather than read directly
         if isinstance(f, GoogleDriveFile) and (f.details["mimeType"] == "application/vnd.google-apps.spreadsheet"):
@@ -229,7 +232,6 @@ def load_all_corrections(context: OpExecutionContext):
             raise ValueError(f"Found duplicate corrections:\n{duplicates_df.to_markdown()}")
 
         with transaction.atomic():
-
             df = df.set_index(["livelihood_zone_baseline_id", "worksheet_name", "cell_range"], drop=False)
 
             # Get the current set of corrections from the database, so we can see what has changed
@@ -393,7 +395,6 @@ def load_all_community_aliases(context: OpExecutionContext):
             raise ValueError(f"Found duplicate aliases:\n{duplicates_df.to_markdown()}")
 
         with transaction.atomic():
-
             df = df.set_index(["livelihood_zone_baseline_id", "full_name"], drop=False)
 
             # Get the current set of aliases from the database, so we can see what has changed
@@ -522,11 +523,81 @@ def load_all_fewsnet_geographies(context: OpExecutionContext):
             context.log.warning(f"Failed to find FEWS NET geometry for {livelihood_zone_baseline}")
 
 
+@op
+def load_all_key_parameters(context: OpExecutionContext):
+    """
+    Load all Key Parameters from the BSS Metadata Google Sheet into Django.
+
+    It looks for a file with the same name as the original BSS Excel file, in the shared Google Drive folder:
+        gdrive://Database Design/Key Parameters/{bss_filename} (without extension)
+    """
+    storage_options = {"token": "service_account", "access": "read_only", "root_file_id": "0AOJ0gJ8sjnO7Uk9PVA"}
+    storage_options["creds"] = json.loads(os.environ["GOOGLE_APPLICATION_CREDENTIALS"])
+    for lzb in LivelihoodZoneBaseline.objects.all():
+        bss_filename = lzb.bss.name
+        bss_filename = bss_filename[bss_filename.rfind("/") + 1 : bss_filename.rfind(".")]
+        p = UPath(f"gdrive://Database Design/Key Parameters/{bss_filename}", **storage_options)
+        if not p.exists() or not p.is_file():
+            context.log.info(
+                f"No key parameters file found for {lzb} at //Database Design/Key Parameters/{bss_filename}"
+            )
+            continue
+        with p.fs.open(p.path, mode="rb", cache_type="bytes") as f:
+            # Google Sheets have to be exported rather than read directly
+            if isinstance(f, GoogleDriveFile) and (f.details["mimeType"] == "application/vnd.google-apps.spreadsheet"):
+                f = BytesIO(p.fs.export(p.path, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+
+            df = pd.read_excel(
+                f,
+                sheet_name="Key Parameters",
+                engine="openpyxl",
+                usecols=[
+                    "strategy_type",
+                    "key_parameter_type",
+                    *translation_fields("name"),
+                    *translation_fields("description"),
+                    "created",
+                    "modified",
+                ],
+            )
+
+            with transaction.atomic():
+                # We don't have a definitive unique key, as there could be many key parameters for a single LZB,
+                # strategy type and parameter type, so we just delete and recreate them all.
+                KeyParameter.objects.filter(livelihood_zone_baseline=lzb).delete()
+
+                instances = [
+                    KeyParameter(livelihood_zone_baseline_id=lzb.pk, **key_parameter)
+                    for key_parameter in df.to_dict(orient="records")
+                    if key_parameter.keys()
+                    >= {
+                        "strategy_type",
+                        "key_parameter_type",
+                        *translation_fields("name"),
+                        *translation_fields("description"),
+                        "created",
+                        "modified",
+                    }
+                    and key_parameter["strategy_type"] in set(LivelihoodStrategyType.values)
+                    and key_parameter["key_parameter_type"] in set(KeyParameter.KeyParameterType.values)
+                    and any(key_parameter[lang_field] for lang_field in translation_fields("name"))
+                    and any(key_parameter[lang_field] for lang_field in translation_fields("description"))
+                ]
+                # Save the corrections to the database using a bulk_create, updating any existing corrections
+                instances = LivelihoodZoneBaselineCorrection.objects.bulk_create(instances)
+
+                # Log the insertions
+                context.log.info(
+                    f"Loaded {len(instances)} key parameters for {lzb} from //Database Design/Key Parameters/{bss_filename}"
+                )
+
+
 @job
 def update_metadata():
     load_all_metadata()
     load_all_corrections()
     load_all_community_aliases()
+    load_all_key_parameters()
 
 
 @job

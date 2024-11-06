@@ -21,6 +21,7 @@ from .models import (
     FoodPurchase,
     Hazard,
     Hunting,
+    KeyParameter,
     LivelihoodActivity,
     LivelihoodProductCategory,
     LivelihoodStrategy,
@@ -59,6 +60,7 @@ from .serializers import (
     FoodPurchaseSerializer,
     HazardSerializer,
     HuntingSerializer,
+    KeyParameterSerializer,
     LivelihoodActivitySerializer,
     LivelihoodProductCategorySerializer,
     LivelihoodStrategySerializer,
@@ -1570,3 +1572,31 @@ class CopingStrategyViewSet(BaseModelViewSet):
         "leaders",
         "strategy",
     ]
+
+
+class KeyParameterFilterSet(filters.FilterSet):
+    class Meta:
+        model = KeyParameter
+        fields = (
+            "livelihood_zone_baseline",
+            "strategy_type",
+            "key_parameter_type",
+            *translation_fields("description"),
+            *translation_fields("name"),
+        )
+
+
+class KeyParameterViewSet(BaseModelViewSet):
+    """
+    API endpoint that allows key parameters to be viewed or edited.
+    """
+
+    queryset = KeyParameter.objects.select_related("livelihood_zone_baseline")
+    serializer_class = KeyParameterSerializer
+    filterset_class = KeyParameterFilterSet
+    search_fields = (
+        "strategy_type",
+        "key_parameter_type",
+        *translation_fields("name"),
+        *translation_fields("description"),
+    )

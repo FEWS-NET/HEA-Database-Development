@@ -23,6 +23,7 @@ from baseline.viewsets import (
     FoodPurchaseViewSet,
     HazardViewSet,
     HuntingViewSet,
+    KeyParameterViewSet,
     LivelihoodActivityViewSet,
     LivelihoodProductCategoryViewSet,
     LivelihoodStrategyViewSet,
@@ -113,6 +114,7 @@ router.register(r"hazard", HazardViewSet)
 router.register(r"event", EventViewSet)
 router.register(r"expandabilityfactor", ExpandabilityFactorViewSet)
 router.register(r"copingstrategy", CopingStrategyViewSet)
+router.register(r"keyparameter", KeyParameterViewSet)
 
 urlpatterns = [
     ########## LOCALE INDEPENDENT PATHS go here. ##########

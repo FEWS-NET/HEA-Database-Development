@@ -19,6 +19,7 @@ from .models import (
     FoodPurchase,
     Hazard,
     Hunting,
+    KeyParameter,
     LivelihoodActivity,
     LivelihoodProductCategory,
     LivelihoodStrategy,
@@ -1466,3 +1467,34 @@ class CopingStrategySerializer(serializers.ModelSerializer):
 
     def get_wealth_group_label(self, obj):
         return str(obj.wealth_group)
+
+
+class KeyParameterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = KeyParameter
+        fields = [
+            "id",
+            "livelihood_zone_baseline",
+            "livelihood_zone_baseline_label",
+            "strategy_type",
+            "strategy_type_label",
+            "key_parameter_type",
+            "key_parameter_type_label",
+            "name",
+            "description",
+        ]
+
+    strategy_type_label = serializers.SerializerMethodField()
+
+    def get_strategy_type_label(self, obj):
+        return obj.get_strategy_type_display()
+
+    key_parameter_type_label = serializers.SerializerMethodField()
+
+    def get_key_parameter_type_label(self, obj):
+        return obj.get_key_parameter_type_display()
+
+    livelihood_zone_baseline_label = serializers.SerializerMethodField()
+
+    def get_livelihood_zone_baseline_label(self, obj):
+        return str(obj.livelihood_zone_baseline)

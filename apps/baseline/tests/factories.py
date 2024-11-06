@@ -21,6 +21,7 @@ from baseline.models import (
     FoodPurchase,
     Hazard,
     Hunting,
+    KeyParameter,
     LivelihoodActivity,
     LivelihoodProductCategory,
     LivelihoodStrategy,
@@ -799,3 +800,44 @@ class CopingStrategyFactory(factory.django.DjangoModelFactory):
     )
     strategy = factory.Iterator(["reduce", "increase"])
     by_value = fuzzy.FuzzyInteger(0, 100)
+
+
+class KeyParameterFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = KeyParameter
+        django_get_or_create = [
+            "livelihood_zone_baseline",
+            "strategy_type",
+            "key_parameter_type",
+            "name_en",
+        ]
+
+    strategy_type = factory.Iterator(
+        [
+            "MilkProduction",
+            "ButterProduction",
+            "MeatProduction",
+            "LivestockSale",
+            "CropProduction",
+            "FoodPurchase",
+            "PaymentInKind",
+            "ReliefGiftOther",
+            "Fishing",
+            "Hunting",
+            "WildFoodGathering",
+            "OtherCashIncome",
+            "OtherPurchase",
+        ]
+    )
+    livelihood_zone_baseline = factory.SubFactory(LivelihoodZoneBaselineFactory)
+    key_parameter_type = factory.Iterator(["quantity", "price"])
+    name_en = factory.Sequence(lambda n: f"Key parameter {n} en")
+    name_fr = factory.Sequence(lambda n: f"Key parameter {n} fr")
+    name_es = factory.Sequence(lambda n: f"Key parameter {n} es")
+    name_pt = factory.Sequence(lambda n: f"Key parameter {n} pt")
+    name_ar = factory.Sequence(lambda n: f"Key parameter {n} ar")
+    description_en = factory.LazyAttribute(lambda o: f"{o.name_en} description")
+    description_fr = factory.LazyAttribute(lambda o: f"{o.name_fr} description")
+    description_es = factory.LazyAttribute(lambda o: f"{o.name_es} description")
+    description_pt = factory.LazyAttribute(lambda o: f"{o.name_pt} description")
+    description_ar = factory.LazyAttribute(lambda o: f"{o.name_ar} description")
