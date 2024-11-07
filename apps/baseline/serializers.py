@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 from rest_framework import serializers
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
 
@@ -806,11 +808,14 @@ class SeasonalActivityOccurrenceSerializer(serializers.ModelSerializer):
             "product_common_name",
             "product_description",
             "additional_identifier",
+            "seasonal_activity_label",
             # End SeasonalActivity
             "community",
             "community_name",
             "start",
             "end",
+            "start_date",
+            "end_date",
         ]
 
     livelihood_zone_name = serializers.CharField(
@@ -852,9 +857,38 @@ class SeasonalActivityOccurrenceSerializer(serializers.ModelSerializer):
         source="seasonal_activity.seasonal_activity_type.activity_category", read_only=True
     )
     activity_category_label = serializers.SerializerMethodField()
+    start_date = serializers.SerializerMethodField()
+    end_date = serializers.SerializerMethodField()
+    seasonal_activity_label = serializers.SerializerMethodField()
 
     def get_activity_category_label(self, obj):
         return obj.seasonal_activity.seasonal_activity_type.get_activity_category_display()
+
+    def get_start_date(self, obj):
+        """Compute start_date based on the start day of the year."""
+        if obj.start is None:
+            return None
+        start_date = datetime(datetime.now().year, 1, 1) + timedelta(days=obj.start - 1)
+        return start_date.strftime("%Y-%m-%d")
+
+    def get_end_date(self, obj):
+        """Compute end_date based on the end day of the year."""
+        if obj.end is None:
+            return None
+        end_date = datetime(datetime.now().year, 1, 1) + timedelta(days=obj.end - 1)
+        return end_date.strftime("%Y-%m-%d")
+
+    def get_seasonal_activity_label(self, obj):
+        """Generate activity_label based on additional_identifier and product."""
+        additional_identifier = obj.seasonal_activity.additional_identifier
+        product = obj.seasonal_activity.product
+
+        if additional_identifier and product:
+            return f"{additional_identifier.capitalize()}:{product.common_name.capitalize()}"
+        if additional_identifier:
+            return additional_identifier.capitalize()
+        if product:
+            return product.common_name.capitalize()
 
 
 class CommunityCropProductionSerializer(serializers.ModelSerializer):

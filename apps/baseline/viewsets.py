@@ -1280,6 +1280,10 @@ class SeasonalActivityViewSet(BaseModelViewSet):
 
 
 class SeasonalActivityOccurrenceFilterSet(filters.FilterSet):
+    show_zone_level_only = filters.BooleanFilter(
+        field_name="community", lookup_expr="isnull", label="Show zone level calendar only"
+    )
+
     class Meta:
         model = SeasonalActivityOccurrence
         fields = [
@@ -1288,6 +1292,7 @@ class SeasonalActivityOccurrenceFilterSet(filters.FilterSet):
             "community",
             "start",
             "end",
+            "show_zone_level_only",
         ]
 
 

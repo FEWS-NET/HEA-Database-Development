@@ -4412,6 +4412,9 @@ class SeasonalActivityOccurrenceViewSetTestCase(APITestCase):
             "community_name",
             "start",
             "end",
+            "seasonal_activity_label",
+            "start_date",
+            "end_date",
         )
         self.assertCountEqual(
             response.json().keys(),
@@ -4488,6 +4491,19 @@ class SeasonalActivityOccurrenceViewSetTestCase(APITestCase):
             content = response.content
         df = pd.read_html(content)[0].fillna("")
         self.assertEqual(len(df), self.num_records + 1)
+
+    def test_show_zone_level_only_filter(self):
+        """Test filtering where show_zone_level_only=True (community is None)"""
+        SeasonalActivityOccurrenceFactory(community=None)
+        SeasonalActivityOccurrenceFactory(community=None)
+        response = self.client.get(self.url, {"show_zone_level_only": True})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content)), 2)
+
+        """Test filtering where show_zone_level_only=False (occurrence is for community)"""
+        response = self.client.get(self.url, {"show_zone_level_only": False})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content)), self.num_records)
 
 
 class CommunityCropProductionViewSetTestCase(APITestCase):
