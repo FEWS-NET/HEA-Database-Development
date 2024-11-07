@@ -282,6 +282,7 @@ class LivelihoodZoneBaselineCorrection(common_models.Model):
         DATA2 = "Data2", _("Data2")
         DATA3 = "Data3", _("Data3")
         TIMELINE = "Timeline", _("Timeline")
+        SEAS_CAL = "Seas Cal", _("Seas Cal")
 
     livelihood_zone_baseline = models.ForeignKey(
         LivelihoodZoneBaseline,
@@ -1807,6 +1808,29 @@ class OtherPurchase(LivelihoodActivity):
         verbose_name_plural = _("Other Purchases")
 
 
+class SeasonalActivityManager(common_models.IdentifierManager):
+    def get_by_natural_key(
+        self,
+        code: str,
+        reference_year_end_date: str,
+        seasonal_activity_type: str,
+        product: str = "",
+        additional_identifier: str = "",
+    ):
+        criteria = {
+            "livelihood_zone_baseline__livelihood_zone__code": code,
+            "livelihood_zone_baseline__reference_year_end_date": reference_year_end_date,
+            "seasonal_activity_type__code": seasonal_activity_type,
+        }
+        if product:
+            criteria["product__cpc"] = product
+        else:
+            criteria["product__isnull"] = True
+        if additional_identifier:
+            criteria["additional_identifier__iexact"] = additional_identifier
+        return self.get(**criteria)
+
+
 class SeasonalActivity(common_models.Model):
     """
     An activity or event undertaken/experienced by households in a Livelihood Zone at specific periods during the year.
@@ -1859,6 +1883,17 @@ class SeasonalActivity(common_models.Model):
         verbose_name=_("Additional Identifier"),
         help_text=_("Additional text identifying the seasonal activity"),
     )
+
+    objects = SeasonalActivityManager()
+
+    def natural_key(self):
+        return (
+            self.livelihood_zone_baseline.livelihood_zone_id,
+            self.livelihood_zone_baseline.reference_year_end_date.isoformat(),
+            self.seasonal_activity_type.code,
+            self.product.cpc if self.product else "",
+            self.additional_identifier if self.additional_identifier else "",
+        )
 
     class Meta:
         verbose_name = _("Seasonal Activity")
@@ -1915,6 +1950,18 @@ class SeasonalActivityOccurrence(common_models.Model):
     end = models.PositiveSmallIntegerField(
         validators=[MaxValueValidator(365), MinValueValidator(1)], verbose_name=_("End Day")
     )
+
+    def natural_key(self):
+        return (
+            self.livelihood_zone_baseline.livelihood_zone_id,
+            self.livelihood_zone_baseline.reference_year_end_date.isoformat(),
+            self.seasonal_activity.seasonal_activity_type.code,
+            self.seasonal_activity.product.cpc if self.seasonal_activity.product else "",
+            self.seasonal_activity.additional_identifier if self.seasonal_activity.additional_identifier else "",
+            self.community.full_name if self.community else "",
+            str(self.start),
+            str(self.end),
+        )
 
     def start_month(self):
         return get_month_from_day_number(self.start)

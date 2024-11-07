@@ -366,6 +366,7 @@ class ActivityLabel(common_models.Model):
         LIVELIHOOD_ACTIVITY = "LivelihoodActivity", _("Livelihood Activity")  # Labels from the 'Data' worksheet
         OTHER_CASH_INCOME = "OtherCashIncome", _("Other Cash Income")  # Labels from the 'Data2' worksheet
         WILD_FOODS = "WildFoods", _("Wild Foods")  # Labels from the 'Data3' worksheet
+        SEAS_CAL = "Seas Cal", _("Seas Cal")  # Header labels from the 'SeasCal' worksheet
 
     activity_label = common_models.NameField(max_length=200, verbose_name=_("Activity Label"))
     activity_type = models.CharField(
