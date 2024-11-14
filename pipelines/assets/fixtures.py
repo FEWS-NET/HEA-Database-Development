@@ -146,6 +146,18 @@ def validated_instances(
     """
     partition_key = context.asset_partition_key_for_output()
     # Create a dict of all the models, and a dataframe of their instances
+    validate_instances(consolidated_instances, partition_key)
+
+    metadata = {f"num_{key.lower()}": len(value) for key, value in consolidated_instances.items()}
+    metadata["total_instances"] = sum(len(value) for value in consolidated_instances.values())
+    metadata["preview"] = MetadataValue.md(f"```json\n{json.dumps(consolidated_instances, indent=4)}\n```")
+    return Output(
+        consolidated_instances,
+        metadata=metadata,
+    )
+
+
+def validate_instances(consolidated_instances, partition_key):
     errors = []
     dfs = {}
     for model_name, instances in consolidated_instances.items():
@@ -196,7 +208,21 @@ def validated_instances(
                 ],
                 axis="columns",
             )
-
+        elif model_name == "SeasonalActivity":
+            df["key"] = df[
+                ["livelihood_zone_baseline", "seasonal_activity_type", "product", "additional_identifier"]
+            ].apply(
+                lambda x: (
+                    x.iloc[0]
+                    + [x.iloc[1], x.iloc[2] if pd.notna(x.iloc[2]) else "", x.iloc[3] if pd.notna(x.iloc[3]) else ""]
+                ),
+                axis="columns",
+            )
+        elif model_name == "SeasonalActivityOccurrence":
+            df["key"] = df[["livelihood_zone_baseline", "seasonal_activity", "community", "start", "end"]].apply(
+                lambda x: (x.iloc[0] + x.iloc[1] + [x.iloc[2][-1] if x.iloc[2] else ""] + [x.iloc[3], x.iloc[4]]),
+                axis="columns",
+            )
         # Apply some model-level defaults
         if "created" in valid_field_names and "created" not in df:
             df["created"] = pd.Timestamp.now(datetime.timezone.utc)
@@ -265,14 +291,6 @@ def validated_instances(
     if errors:
         errors = "\n".join(errors)
         raise RuntimeError("Missing or inconsistent metadata in BSS %s:\n%s" % (partition_key, errors))
-
-    metadata = {f"num_{key.lower()}": len(value) for key, value in consolidated_instances.items()}
-    metadata["total_instances"] = sum(len(value) for value in consolidated_instances.values())
-    metadata["preview"] = MetadataValue.md(f"```json\n{json.dumps(consolidated_instances, indent=4)}\n```")
-    return Output(
-        consolidated_instances,
-        metadata=metadata,
-    )
 
 
 @asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")

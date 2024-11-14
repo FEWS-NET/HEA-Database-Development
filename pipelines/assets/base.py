@@ -63,6 +63,8 @@ SUMMARY_LABELS = [
     "range",
     "interval",
     "intervales",  # 2023 Mali BSSs
+    "Results",
+    "Synthèse",
 ]
 
 
@@ -366,8 +368,10 @@ def get_bss_dataframe(
         end_row = df.index[-1]
 
     # Find the language based on the value in cell A3
-    lang = LANGS[df.loc[3, "A"].strip().lower()]
-
+    if bss_sheet != "Seas Cal":
+        lang = LANGS[df.loc[3, "A"].strip().lower()]
+    else:
+        lang = ""
     # Filter to just the Wealth Group header rows and the Livelihood Activities
     df = pd.concat([df.loc[header_rows, :end_col], df.loc[start_row:end_row, :end_col]])
 

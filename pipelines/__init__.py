@@ -31,6 +31,15 @@ from .assets.other_cash_income import (
     other_cash_income_label_dataframe,
     summary_other_cash_income_labels_dataframe,
 )
+from .assets.seasonal_calendar import (
+    all_seasonal_calendar_labels_dataframe,
+    consolidated_seas_cal_fixtures,
+    imported_seas_cals,
+    seasonal_calendar_dataframe,
+    seasonal_calendar_instances,
+    seasonal_calendar_label_dataframe,
+    validated_seas_cal_instances,
+)
 from .assets.wealth_characteristic import (
     all_wealth_characteristic_labels_dataframe,
     summary_wealth_characteristic_labels_dataframe,
@@ -48,6 +57,7 @@ from .assets.wild_foods import (
 from .jobs.fixtures import (
     extract_dataframes,
     import_baseline_from_fixture,
+    import_seas_cal_from_fixture,
     update_external_assets,
     upload_baselines,
 )
@@ -97,6 +107,13 @@ defs = Definitions(
         uploaded_baselines,
         imported_communities,
         imported_baselines,
+        seasonal_calendar_dataframe,
+        seasonal_calendar_label_dataframe,
+        all_seasonal_calendar_labels_dataframe,
+        seasonal_calendar_instances,
+        validated_seas_cal_instances,
+        consolidated_seas_cal_fixtures,
+        imported_seas_cals,
     ],
     jobs=[
         update_metadata,
@@ -105,6 +122,7 @@ defs = Definitions(
         extract_dataframes,
         import_baseline_from_fixture,
         load_all_geographies,
+        import_seas_cal_from_fixture,
     ],
     resources={
         "io_manager": PickleIOManager(base_path=EnvVar("DAGSTER_ASSET_BASE_PATH")),  # Used by default
