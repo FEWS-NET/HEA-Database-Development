@@ -65,7 +65,7 @@ HEADER_ROWS = [
     3,
 ]
 SEAS_CAL = "Seas Cal"
-# Cut-off percentage to determine the threshold of occurrencesselec
+# Cut-off percentage to determine the threshold of occurrences
 CUT_OFF = 0.5
 
 
@@ -311,7 +311,6 @@ def get_seas_cal_instances_from_dataframe(
     df["product"] = df["product"].fillna("<missing>")
     df["additional_identifier"] = df["additional_identifier"].fillna("<missing>")
 
-    # Function to build start and end dates for contiguous blocks
     def build_start_end_dates(group):
         occurrences = group["month"].sort_values().tolist()
         blocks = []
@@ -348,7 +347,7 @@ def get_seas_cal_instances_from_dataframe(
     result["product"].replace("<missing>", pd.NA, inplace=True)
     result["additional_identifier"].replace("<missing>", pd.NA, inplace=True)
 
-    # replace the 'Results' community placeholder with NaN for the community
+    # replace the 'Results' community placeholder with NaN for the community representing zonal value
     result.loc[result["community"].isin(["Synthèse", "Results"]), "community"] = np.nan
     result = result.fillna("")
 
@@ -418,7 +417,6 @@ def seasonal_calendar_instances(
     metadata["total_instances"] = sum(len(value) for value in instances.values())
     metadata["preview"] = MetadataValue.md(f"```json\n{json.dumps(instances, indent=4)}\n```")
 
-    # Return the consolidated instances as output with metadata
     return Output(
         instances,
         metadata=metadata,
@@ -452,7 +450,9 @@ def consolidated_seas_cal_fixtures(
     config: BSSMetadataConfig,
     validated_seas_cal_instances,
 ) -> Output[list[dict]]:
-    """ """
+    """
+    Consolidate the season calendar fixtures to make it ready for importing
+    """
     metadata, fixture = get_fixture_from_instances(validated_seas_cal_instances)
     metadata["preview"] = MetadataValue.md(f"```json\n{json.dumps(fixture, indent=4)}\n```")
     return Output(
@@ -466,5 +466,9 @@ def imported_seas_cals(
     context: AssetExecutionContext,
     consolidated_seas_cal_fixtures,
 ) -> Output[None]:
+    """
+    Attempt to import the season calendar given the consolidated seas_cal fixtures using the
+    imported_baselines common method
+    """
 
     return imported_baselines(None, consolidated_seas_cal_fixtures)
