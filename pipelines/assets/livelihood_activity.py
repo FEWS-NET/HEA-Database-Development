@@ -853,6 +853,15 @@ def get_instances_from_dataframe(
                         )
                         activity_attribute = None
 
+                # For Payment In Kind and Other Cash Income the attribute for payment_per_time sometimes uses a label
+                # that normally matches the price attribute.
+                if activity_attribute == "price":
+                    if livelihood_strategy["strategy_type"] in (
+                        LivelihoodStrategyType.PAYMENT_IN_KIND,
+                        LivelihoodStrategyType.OTHER_CASH_INCOME,
+                    ):
+                        activity_attribute = "payment_per_time"
+
                 # Some BSS incorrectly specify the product in the value columns instead of in the label column
                 # Therefore, if we have specified the product__name as the attribute, check that the product
                 # can be identified and is the same for all columns and then add it to the Livelihood Strategy.
