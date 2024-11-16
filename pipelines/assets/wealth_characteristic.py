@@ -96,6 +96,7 @@ from .base import (
     get_summary_bss_label_dataframe,
 )
 from .baseline import get_wealth_group_dataframe
+from .fixtures import get_fixture_from_instances, import_fixture, validate_instances
 
 # set the default Django settings module
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hea.settings.production")
@@ -430,5 +431,55 @@ def wealth_characteristic_instances(
 
     return Output(
         result,
+        metadata=metadata,
+    )
+
+
+@asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
+def wealth_characteristic_valid_instances(
+    context: AssetExecutionContext,
+    wealth_characteristic_instances,
+) -> Output[dict]:
+    """
+    Valid  WealthGroup and WealthGroupCharacteristicValue instances from a BSS, ready to be loaded via a Django fixture.
+    """
+    partition_key = context.asset_partition_key_for_output()
+    valid_instances, metadata = validate_instances(context, wealth_characteristic_instances, partition_key)
+    metadata = {f"num_{key.lower()}": len(value) for key, value in valid_instances.items()}
+    metadata["total_instances"] = sum(len(value) for value in valid_instances.values())
+    metadata["preview"] = MetadataValue.md(f"```json\n{json.dumps(valid_instances, indent=4)}\n```")
+    return Output(
+        valid_instances,
+        metadata=metadata,
+    )
+
+
+@asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
+def wealth_characteristic_fixture(
+    context: AssetExecutionContext,
+    config: BSSMetadataConfig,
+    wealth_characteristic_valid_instances,
+) -> Output[list[dict]]:
+    """
+    Django fixture for the Livelihood Activities from a BSS.
+    """
+    fixture, metadata = get_fixture_from_instances(wealth_characteristic_valid_instances)
+    return Output(
+        fixture,
+        metadata=metadata,
+    )
+
+
+@asset(partitions_def=bss_instances_partitions_def)
+def imported_wealth_characteristics(
+    context: AssetExecutionContext,
+    wealth_characteristic_fixture,
+) -> Output[None]:
+    """
+    Imported Django fixtures for a BSS, added to the Django database.
+    """
+    metadata = import_fixture(wealth_characteristic_fixture)
+    return Output(
+        None,
         metadata=metadata,
     )
