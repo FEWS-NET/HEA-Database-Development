@@ -1,6 +1,7 @@
+from django.contrib.auth.models import User
 from rest_framework import serializers
 
-from .models import ClassifiedProduct, Country, Currency, UnitOfMeasure
+from .models import ClassifiedProduct, Country, Currency, HeaProfile, UnitOfMeasure
 
 
 class CountrySerializer(serializers.ModelSerializer):
@@ -61,3 +62,37 @@ class ClassifiedProductSerializer(serializers.ModelSerializer):
             "kcals_per_unit",
             "aliases",
         ]
+
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["id", "username", "first_name", "last_name"]
+
+
+class CurrentUserSerializer(serializers.ModelSerializer):
+    permissions = serializers.ListField(source="get_all_permissions", read_only=True)
+    groups = serializers.SerializerMethodField()
+
+    def get_groups(self, user):
+        return user.groups.values_list("name", flat=True)
+
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "username",
+            "first_name",
+            "last_name",
+            "email",
+            "permissions",
+            "groups",
+            "is_staff",
+            "is_superuser",
+        ]
+
+
+class HeaProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HeaProfile
+        fields = ("user", "expert", "skip_tour", "tour_last_viewed", "livelihood_explorer_data")

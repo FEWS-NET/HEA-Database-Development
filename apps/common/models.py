@@ -8,6 +8,7 @@ import logging
 import operator
 from functools import reduce
 
+from django.contrib.auth.models import User
 from django.core import validators
 from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
@@ -950,3 +951,23 @@ class CountryClassifiedProductAliases(Model):
                 fields=["country", "product"], name="common_countryclassified_country_code_product_code_uniq"
             )
         ]
+
+
+class HeaProfile(Model):
+    """
+    A profile to store data associated with a user to be used by the Livelihoods Explorer
+    to create a dynamic user experience.
+    """
+
+    user = models.OneToOneField(User, on_delete=CASCADE, primary_key=True, unique=True)
+    expert = models.BooleanField(default=False)
+    skip_tour = models.BooleanField(default=False)
+    tour_last_viewed = models.DateField(null=True)
+    livelihood_explorer_data = models.JSONField(default=dict, null=True, blank=True)
+
+    def __str__(self):
+        return f"hea_profile: {str(self.user)}"
+
+    class Meta:
+        verbose_name = _("hea user profile")
+        verbose_name_plural = _("hea user profiles")

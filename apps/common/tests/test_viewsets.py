@@ -9,6 +9,7 @@ from .factories import (
     ClassifiedProductFactory,
     CountryFactory,
     CurrencyFactory,
+    HeaProfileFactory,
     UnitOfMeasureFactory,
     UserFactory,
 )
@@ -190,3 +191,59 @@ class ClassifiedProductViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         result = json.loads(response.content.decode("utf-8"))
         self.assertEqual(len(result), 1)
+
+
+class UserViewSetTestCase(APITestCase):
+    def setUp(self):
+        self.user = UserFactory(username="testuser", password="password123", first_name="Test", last_name="User")
+        self.client.force_authenticate(user=self.user)
+        self.url = reverse("user-list")
+
+    def test_get_current_user(self):
+        response = self.client.get(f"{self.url}current/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["username"], self.user.username)
+
+    def test_search_users(self):
+        UserFactory(username="searchuser", password="password123", first_name="Search", last_name="User")
+        response = self.client.get(self.url, {"search": "Search"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["first_name"], "Search")
+
+
+class HeaProfileViewSetTestCase(APITestCase):
+    def setUp(self):
+        self.user = UserFactory(username="testuser", password="password123")
+        self.profile = HeaProfileFactory(user=self.user)
+        self.client.force_authenticate(user=self.user)
+        self.url = reverse("heaprofile-list")
+
+    def test_get_current_profile(self):
+        response = self.client.get(f"{self.url}current/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["user"], self.user.id)
+
+    def test_superuser_access_profiles(self):
+        superuser = UserFactory(username="admin", password="password123", is_superuser=True)
+        self.client.force_authenticate(user=superuser)
+        response = self.client.get(f"{self.url}{self.profile.user.id}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["user"], self.user.id)
+
+    def test_queryset_filters(self):
+        other_user = UserFactory(username="otheruser", password="password123")
+        HeaProfileFactory(user=other_user)
+
+        # Current user profile only
+        response = self.client.get(f"{self.url}?pk=current")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["user"], self.user.id)
+
+        # Superuser access to all profiles
+        superuser = UserFactory(username="admin", password="password123", is_superuser=True)
+        self.client.force_authenticate(user=superuser)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertGreaterEqual(len(response.data), 2)
