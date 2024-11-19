@@ -7,17 +7,16 @@ from dagster import define_asset_job
 from ..assets.base import bss_metadata, completed_bss_metadata
 from ..assets.baseline import baseline_instances
 from ..assets.fixtures import (
-    consolidated_fixtures,
-    consolidated_instances,
-    imported_baselines,
+    consolidated_fixture,
+    imported_baseline,
     uploaded_baselines,
-    validated_instances,
 )
 from ..assets.livelihood_activity import (
     all_livelihood_activity_labels_dataframe,
     livelihood_activity_dataframe,
     livelihood_activity_instances,
     livelihood_activity_label_dataframe,
+    livelihood_activity_valid_instances,
     summary_livelihood_activity_labels_dataframe,
 )
 from ..assets.other_cash_income import (
@@ -25,6 +24,7 @@ from ..assets.other_cash_income import (
     other_cash_income_dataframe,
     other_cash_income_instances,
     other_cash_income_label_dataframe,
+    other_cash_income_valid_instances,
     summary_other_cash_income_labels_dataframe,
 )
 from ..assets.wealth_characteristic import (
@@ -33,6 +33,7 @@ from ..assets.wealth_characteristic import (
     wealth_characteristic_dataframe,
     wealth_characteristic_instances,
     wealth_characteristic_label_dataframe,
+    wealth_characteristic_valid_instances,
 )
 from ..assets.wild_foods import (
     all_wild_foods_labels_dataframe,
@@ -40,6 +41,7 @@ from ..assets.wild_foods import (
     wild_foods_dataframe,
     wild_foods_instances,
     wild_foods_label_dataframe,
+    wild_foods_valid_instances,
 )
 from ..partitions import bss_files_partitions_def, bss_instances_partitions_def
 
@@ -50,10 +52,12 @@ import_baseline_from_fixture = define_asset_job(
         livelihood_activity_instances,
         other_cash_income_instances,
         wild_foods_instances,
-        consolidated_instances,
-        validated_instances,
-        consolidated_fixtures,
-        imported_baselines,
+        wealth_characteristic_valid_instances,
+        livelihood_activity_valid_instances,
+        other_cash_income_valid_instances,
+        wild_foods_valid_instances,
+        consolidated_fixture,
+        imported_baseline,
     ),
     partitions_def=bss_instances_partitions_def,
 )

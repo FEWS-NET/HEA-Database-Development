@@ -38,11 +38,12 @@ An example of relevant rows from the worksheet:
 | 32 | income                                                 |        |        |        |           |          |          |           |          |          |
 """  # NOQA: E501
 
+import json
 import os
 
 import django
 import pandas as pd
-from dagster import AssetExecutionContext, Output, asset
+from dagster import AssetExecutionContext, MetadataValue, Output, asset
 
 from ..configs import BSSMetadataConfig
 from ..partitions import bss_instances_partitions_def
@@ -52,6 +53,7 @@ from .base import (
     get_bss_label_dataframe,
     get_summary_bss_label_dataframe,
 )
+from .fixtures import get_fixture_from_instances, import_fixture, validate_instances
 from .livelihood_activity import get_instances_from_dataframe
 
 # set the default Django settings module
@@ -146,3 +148,62 @@ def other_cash_income_instances(
         partition_key,
     )
     return output
+
+
+@asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
+def other_cash_income_valid_instances(
+    context: AssetExecutionContext,
+    other_cash_income_instances,
+    wealth_characteristic_instances,
+) -> Output[dict]:
+    """
+    Valid LivelhoodStrategy and LivelihoodActivity instances from a BSS, ready to be loaded via a Django fixture.
+    """
+    partition_key = context.asset_partition_key_for_output()
+    # Livelihood Activities depend on the Wealth Groups, so copy them from the wealth_characteristic_instances, making
+    # sure that the WealthGroup is the first entry in the dict, so that the lookup keys have been created before
+    # validate_instances processes the child model and needs them.
+    if any(instances for instances in other_cash_income_instances.values()):
+        other_cash_income_instances = {
+            **{"WealthGroup": wealth_characteristic_instances["WealthGroup"]},
+            **other_cash_income_instances,
+        }
+    valid_instances, metadata = validate_instances(context, other_cash_income_instances, partition_key)
+    metadata = {f"num_{key.lower()}": len(value) for key, value in valid_instances.items()}
+    metadata["total_instances"] = sum(len(value) for value in valid_instances.values())
+    metadata["preview"] = MetadataValue.md(f"```json\n{json.dumps(valid_instances, indent=4)}\n```")
+    return Output(
+        valid_instances,
+        metadata=metadata,
+    )
+
+
+@asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
+def other_cash_income_fixture(
+    context: AssetExecutionContext,
+    config: BSSMetadataConfig,
+    other_cash_income_valid_instances,
+) -> Output[list[dict]]:
+    """
+    Django fixture for the Livelihood Activities from a BSS.
+    """
+    fixture, metadata = get_fixture_from_instances(other_cash_income_valid_instances)
+    return Output(
+        fixture,
+        metadata=metadata,
+    )
+
+
+@asset(partitions_def=bss_instances_partitions_def)
+def imported_other_cash_income_activities(
+    context: AssetExecutionContext,
+    other_cash_income_fixture,
+) -> Output[None]:
+    """
+    Imported Django fixtures for a BSS, added to the Django database.
+    """
+    metadata = import_fixture(other_cash_income_fixture)
+    return Output(
+        None,
+        metadata=metadata,
+    )

@@ -83,6 +83,9 @@ def get_wealth_group_dataframe(
             wealth_group_df = wealthgroupcategorylookup.do_lookup(
                 wealth_group_df, "district", "wealth_group_category", update=True
             )
+            # Remove the duplicate wealth_group_category_original column created by the second do_lookup(),
+            # which otherwise causes problems when trying to merge dataframes, e.g. when building the wealth_group_df.
+            wealth_group_df = wealth_group_df.loc[:, ~wealth_group_df.columns.duplicated()]
         except ValueError:
             pass
 
