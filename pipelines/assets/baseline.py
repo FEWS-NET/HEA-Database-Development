@@ -90,7 +90,8 @@ def get_wealth_group_dataframe(
             pass
         # Check if there are unrecognized wealth group category at this point and report
         wealth_group_missing_category_df = wealth_group_df[
-            wealth_group_df["wealth_group_category"].isnull() & df["wealth_group_category_original"].notnull()
+            wealth_group_df["wealth_group_category"].isnull()
+            & wealth_group_df["wealth_group_category_original"].notnull()
         ]
         if not wealth_group_missing_category_df.empty:
             unique_values = set(wealth_group_missing_category_df["wealth_group_category_original"].unique())
@@ -98,7 +99,6 @@ def get_wealth_group_dataframe(
                 "%s has unrecognized wealth group category in %s:\n%s"
                 % (partition_key, worksheet_name, "\n  ".join(unique_values)),
             )
-
         # Lookup the Community instances
         community_lookup = CommunityLookup()
         wealth_group_df["livelihood_zone_baseline"] = livelihood_zone_baseline.id  # required parent for lookup
