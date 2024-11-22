@@ -69,6 +69,7 @@ from .base import (
     get_summary_bss_label_dataframe,
 )
 from .baseline import get_wealth_group_dataframe
+from .fixtures import get_fixture_from_instances, import_fixture, validate_instances
 
 # set the default Django settings module
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hea.settings.production")
@@ -179,7 +180,7 @@ def get_livelihood_activity_regexes() -> list:
     placeholder_patterns = {
         "label_pattern": r"[a-zà-ÿ][a-zà-ÿ',/ \.\>\-\(\)]+?",
         "product_pattern": r"(?P<product_id>[a-zà-ÿ][a-zà-ÿ',/ \.\>\-\(\)]+?)",
-        "season_pattern": r"(?P<season>season [12]|saison [12]|[12][a-z] season||[12][a-zà-ÿ] saison|r[eé]colte principale|gu|deyr+?)",  # NOQA: E501
+        "season_pattern": r"(?P<season>season [12]|saison [12]|[12][a-z] season||[12][a-zà-ÿ] saison|r[eé]colte principale|principale r[eé]colte|gu|deyr+?)",  # NOQA: E501
         "additional_identifier_pattern": r"\(?(?P<additional_identifier>rainfed|irrigated|pluviale?|irriguée|submersion libre|submersion contrôlée|flottant)\)?",
         "unit_of_measure_pattern": r"(?P<unit_of_measure_id>[a-z]+)",
         "nbr_pattern": r"(?:n[b|o]r?)\.?",
@@ -853,6 +854,15 @@ def get_instances_from_dataframe(
                         )
                         activity_attribute = None
 
+                # For Payment In Kind and Other Cash Income the attribute for payment_per_time sometimes uses a label
+                # that normally matches the price attribute.
+                if activity_attribute == "price":
+                    if livelihood_strategy["strategy_type"] in (
+                        LivelihoodStrategyType.PAYMENT_IN_KIND,
+                        LivelihoodStrategyType.OTHER_CASH_INCOME,
+                    ):
+                        activity_attribute = "payment_per_time"
+
                 # Some BSS incorrectly specify the product in the value columns instead of in the label column
                 # Therefore, if we have specified the product__name as the attribute, check that the product
                 # can be identified and is the same for all columns and then add it to the Livelihood Strategy.
@@ -1069,3 +1079,62 @@ def livelihood_activity_instances(
         partition_key,
     )
     return output
+
+
+@asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
+def livelihood_activity_valid_instances(
+    context: AssetExecutionContext,
+    livelihood_activity_instances,
+    wealth_characteristic_instances,
+) -> Output[dict]:
+    """
+    Valid LivelhoodStrategy and LivelihoodActivity instances from a BSS, ready to be loaded via a Django fixture.
+    """
+    partition_key = context.asset_partition_key_for_output()
+    # Livelihood Activities depend on the Wealth Groups, so copy them from the wealth_characteristic_instances, making
+    # sure that the WealthGroup is the first entry in the dict, so that the lookup keys have been created before
+    # validate_instances processes the child model and needs them.
+    if any(instances for instances in livelihood_activity_instances.values()):
+        livelihood_activity_instances = {
+            **{"WealthGroup": wealth_characteristic_instances["WealthGroup"]},
+            **livelihood_activity_instances,
+        }
+    valid_instances, metadata = validate_instances(context, livelihood_activity_instances, partition_key)
+    metadata = {f"num_{key.lower()}": len(value) for key, value in valid_instances.items()}
+    metadata["total_instances"] = sum(len(value) for value in valid_instances.values())
+    metadata["preview"] = MetadataValue.md(f"```json\n{json.dumps(valid_instances, indent=4)}\n```")
+    return Output(
+        valid_instances,
+        metadata=metadata,
+    )
+
+
+@asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
+def livelihood_activity_fixture(
+    context: AssetExecutionContext,
+    config: BSSMetadataConfig,
+    livelihood_activity_valid_instances,
+) -> Output[list[dict]]:
+    """
+    Django fixture for the Livelihood Activities from a BSS.
+    """
+    fixture, metadata = get_fixture_from_instances(livelihood_activity_valid_instances)
+    return Output(
+        fixture,
+        metadata=metadata,
+    )
+
+
+@asset(partitions_def=bss_instances_partitions_def)
+def imported_livelihood_activities(
+    context: AssetExecutionContext,
+    livelihood_activity_fixture,
+) -> Output[None]:
+    """
+    Imported Django fixtures for a BSS, added to the Django database.
+    """
+    metadata = import_fixture(livelihood_activity_fixture)
+    return Output(
+        None,
+        metadata=metadata,
+    )

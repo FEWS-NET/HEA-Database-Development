@@ -85,7 +85,6 @@ import os
 import django
 import pandas as pd
 from dagster import AssetExecutionContext, MetadataValue, Output, asset
-from openpyxl.utils import get_column_letter
 
 from ..configs import BSSMetadataConfig
 from ..partitions import bss_instances_partitions_def
@@ -97,6 +96,7 @@ from .base import (
     get_summary_bss_label_dataframe,
 )
 from .baseline import get_wealth_group_dataframe
+from .fixtures import get_fixture_from_instances, import_fixture, validate_instances
 
 # set the default Django settings module
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hea.settings.production")
@@ -197,7 +197,9 @@ def wealth_characteristic_instances(
     context.log.info("Loaded %d Wealth Characteristic Labels", len(label_map))
 
     # Get a dataframe of the Wealth Groups for each column
-    wealth_group_df = get_wealth_group_dataframe(df, livelihood_zone_baseline, "WB", partition_key)
+    wealth_group_df = get_wealth_group_dataframe(df, livelihood_zone_baseline, "WB", partition_key).set_index(
+        "bss_column", drop=False
+    )
 
     # Prepare the label column for matching against the label_map
     prepared_labels = prepare_lookup(df["A"])
@@ -257,21 +259,21 @@ def wealth_characteristic_instances(
             # Iterate over the value columns, from Column C to the the Summary Column.
             # We don't iterate over the last two columns because they contain the min_value and max_value that are
             # part of the Summary Wealth Characteristic Value rather than a separate Wealth Characteristic Value.
-            for i, value in enumerate(df.loc[row, "C" : df.columns[-3]]):
-                # Store the column to aid trouble-shooting.
-                # We need col_index + 1 to get the letter, and the enumerate is already starting from col C
-                column = get_column_letter(i + 3)
+            for column in df.columns[2:-2]:
+                value = df.loc[row, column]
                 try:
                     # Add find the reference_type:
                     # Wealth Group (Form 4) values will have a full name and a wealth group category from Row 3
-                    if wealth_group_df.iloc[i]["full_name"] and wealth_group_df.iloc[i]["wealth_group_category"]:
+                    if (
+                        wealth_group_df.loc[column, "full_name"]
+                        and wealth_group_df.loc[column, "wealth_group_category"]
+                    ):
                         reference_type = WealthGroupCharacteristicValue.CharacteristicReference.WEALTH_GROUP
                     # Community (Form 3) values will have a full name from Rows 4 and 5, but no wealth group category
-                    elif wealth_group_df.iloc[i]["full_name"]:
+                    elif wealth_group_df.loc[column, "full_name"]:
                         reference_type = WealthGroupCharacteristicValue.CharacteristicReference.COMMUNITY
                     # Summary values will not have full name or a wealth category, and will be in the last 3 columns
-                    # Check for len(df.columns) -5 because the Summary col is 3rd from end, and i starts at Column C.
-                    elif i == len(df.columns) - 5:
+                    elif column == df.columns[-3]:
                         reference_type = WealthGroupCharacteristicValue.CharacteristicReference.SUMMARY
                     # There is no full name, and this isn't the summary, so we can ignore this column. This happens
                     # because there are typically blank columns in BSS between each wealth group category. For example,
@@ -290,8 +292,8 @@ def wealth_characteristic_instances(
                         value != ""
                         and reference_type
                         and (
-                            not wealth_group_df.iloc[i]["wealth_group_category"]
-                            or wealth_group_df.iloc[i]["wealth_group_category"] == wealth_group_category
+                            not wealth_group_df.loc[column, "wealth_group_category"]
+                            or wealth_group_df.loc[column, "wealth_group_category"] == wealth_group_category
                         )
                     ):
                         wealth_group_characteristic_value = attributes.copy()
@@ -304,7 +306,11 @@ def wealth_characteristic_instances(
                             wealth_group_category,
                             # Note that we need to use the actual name from the instance, not the one calculated from
                             # the BSS, which might have been matched using an alias.
-                            wealth_group_df.iloc[i]["community"][2] if wealth_group_df.iloc[i]["community"] else "",
+                            (
+                                wealth_group_df.loc[column, "community"][2]
+                                if wealth_group_df.loc[column, "community"]
+                                else ""
+                            ),
                         )
 
                         wealth_group_characteristic_value["reference_type"] = reference_type
@@ -354,7 +360,12 @@ def wealth_characteristic_instances(
         [
             wealth_group_df,
             wealth_group_df[wealth_group_df["community"] == wealth_group_df.iloc[0]["community"]][
-                ["wealth_group_category_original", "wealth_group_category", "livelihood_zone_baseline", "community"]
+                [
+                    "wealth_group_category_original",
+                    "wealth_group_category",
+                    "livelihood_zone_baseline",
+                    "community",
+                ]
             ].assign(community=None),
         ]
     )
@@ -420,5 +431,55 @@ def wealth_characteristic_instances(
 
     return Output(
         result,
+        metadata=metadata,
+    )
+
+
+@asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
+def wealth_characteristic_valid_instances(
+    context: AssetExecutionContext,
+    wealth_characteristic_instances,
+) -> Output[dict]:
+    """
+    Valid  WealthGroup and WealthGroupCharacteristicValue instances from a BSS, ready to be loaded via a Django fixture.
+    """
+    partition_key = context.asset_partition_key_for_output()
+    valid_instances, metadata = validate_instances(context, wealth_characteristic_instances, partition_key)
+    metadata = {f"num_{key.lower()}": len(value) for key, value in valid_instances.items()}
+    metadata["total_instances"] = sum(len(value) for value in valid_instances.values())
+    metadata["preview"] = MetadataValue.md(f"```json\n{json.dumps(valid_instances, indent=4)}\n```")
+    return Output(
+        valid_instances,
+        metadata=metadata,
+    )
+
+
+@asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
+def wealth_characteristic_fixture(
+    context: AssetExecutionContext,
+    config: BSSMetadataConfig,
+    wealth_characteristic_valid_instances,
+) -> Output[list[dict]]:
+    """
+    Django fixture for the Livelihood Activities from a BSS.
+    """
+    fixture, metadata = get_fixture_from_instances(wealth_characteristic_valid_instances)
+    return Output(
+        fixture,
+        metadata=metadata,
+    )
+
+
+@asset(partitions_def=bss_instances_partitions_def)
+def imported_wealth_characteristics(
+    context: AssetExecutionContext,
+    wealth_characteristic_fixture,
+) -> Output[None]:
+    """
+    Imported Django fixtures for a BSS, added to the Django database.
+    """
+    metadata = import_fixture(wealth_characteristic_fixture)
+    return Output(
+        None,
         metadata=metadata,
     )

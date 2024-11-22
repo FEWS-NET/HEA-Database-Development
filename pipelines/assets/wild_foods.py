@@ -56,11 +56,12 @@ An example of relevant rows from the worksheet:
     | 85 | TOTAL FISHING KCALS (%)                 | 0.009088932377 | 0.005577299413 | 0      | 0.009639776763 | 0.01133165595 | 0        | 0         | 0.009708632311 | 0        |
 """  # NOQA: E501
 
+import json
 import os
 
 import django
 import pandas as pd
-from dagster import AssetExecutionContext, Output, asset
+from dagster import AssetExecutionContext, MetadataValue, Output, asset
 
 from ..configs import BSSMetadataConfig
 from ..partitions import bss_instances_partitions_def
@@ -70,6 +71,7 @@ from .base import (
     get_bss_label_dataframe,
     get_summary_bss_label_dataframe,
 )
+from .fixtures import get_fixture_from_instances, import_fixture, validate_instances
 from .livelihood_activity import get_instances_from_dataframe
 
 # set the default Django settings module
@@ -156,3 +158,62 @@ def wild_foods_instances(
         partition_key,
     )
     return output
+
+
+@asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
+def wild_foods_valid_instances(
+    context: AssetExecutionContext,
+    wild_foods_instances,
+    wealth_characteristic_instances,
+) -> Output[dict]:
+    """
+    Valid LivelhoodStrategy and LivelihoodActivity instances from a BSS, ready to be loaded via a Django fixture.
+    """
+    partition_key = context.asset_partition_key_for_output()
+    # Livelihood Activities depend on the Wealth Groups, so copy them from the wealth_characteristic_instances, making
+    # sure that the WealthGroup is the first entry in the dict, so that the lookup keys have been created before
+    # validate_instances processes the child model and needs them.
+    if any(instances for instances in wild_foods_instances.values()):
+        wild_foods_instances = {
+            **{"WealthGroup": wealth_characteristic_instances["WealthGroup"]},
+            **wild_foods_instances,
+        }
+    valid_instances, metadata = validate_instances(context, wild_foods_instances, partition_key)
+    metadata = {f"num_{key.lower()}": len(value) for key, value in valid_instances.items()}
+    metadata["total_instances"] = sum(len(value) for value in valid_instances.values())
+    metadata["preview"] = MetadataValue.md(f"```json\n{json.dumps(valid_instances, indent=4)}\n```")
+    return Output(
+        valid_instances,
+        metadata=metadata,
+    )
+
+
+@asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
+def wild_foods_fixture(
+    context: AssetExecutionContext,
+    config: BSSMetadataConfig,
+    wild_foods_valid_instances,
+) -> Output[list[dict]]:
+    """
+    Django fixture for the Livelihood Activities from a BSS.
+    """
+    fixture, metadata = get_fixture_from_instances(wild_foods_valid_instances)
+    return Output(
+        fixture,
+        metadata=metadata,
+    )
+
+
+@asset(partitions_def=bss_instances_partitions_def)
+def imported_wild_foods_activities(
+    context: AssetExecutionContext,
+    wild_foods_fixture,
+) -> Output[None]:
+    """
+    Imported Django fixtures for a BSS, added to the Django database.
+    """
+    metadata = import_fixture(wild_foods_fixture)
+    return Output(
+        None,
+        metadata=metadata,
+    )
