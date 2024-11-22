@@ -22,6 +22,7 @@ from dagster import AssetExecutionContext, MetadataValue, Output, asset
 
 from ..configs import BSSMetadataConfig
 from ..partitions import bss_files_partitions_def, bss_instances_partitions_def
+from .base import SUMMARY_LABELS
 
 # set the default Django settings module
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hea.settings.production")
@@ -88,16 +89,20 @@ def get_wealth_group_dataframe(
             wealth_group_df = wealth_group_df.loc[:, ~wealth_group_df.columns.duplicated()]
         except ValueError:
             pass
-        # Check if there are unrecognized wealth group category at this point and report
+        # Check if there are unrecognized wealth group categories and report
         wealth_group_missing_category_df = wealth_group_df[
             wealth_group_df["wealth_group_category"].isnull()
             & wealth_group_df["wealth_group_category_original"].notnull()
+            & ~wealth_group_df["wealth_group_category_original"]
+            .str.lower()
+            .isin([label.lower() for label in SUMMARY_LABELS])  # Exclude rows with summary labels (case-insensitive)
+            & (wealth_group_df["wealth_group_category_original"].str.strip() != "")  # Exclude rows with empty strings
         ]
         if not wealth_group_missing_category_df.empty:
             unique_values = set(wealth_group_missing_category_df["wealth_group_category_original"].unique())
             raise ValueError(
                 "%s has unrecognized wealth group category in %s:\n%s"
-                % (partition_key, worksheet_name, "\n  ".join(unique_values)),
+                % (partition_key, worksheet_name, "\n".join(unique_values))
             )
         # Lookup the Community instances
         community_lookup = CommunityLookup()
