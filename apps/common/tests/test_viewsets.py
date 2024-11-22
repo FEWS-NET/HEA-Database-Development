@@ -9,9 +9,9 @@ from .factories import (
     ClassifiedProductFactory,
     CountryFactory,
     CurrencyFactory,
-    HeaProfileFactory,
     UnitOfMeasureFactory,
     UserFactory,
+    UserProfileFactory,
 )
 
 
@@ -212,12 +212,12 @@ class UserViewSetTestCase(APITestCase):
         self.assertEqual(response.data[0]["first_name"], "Search")
 
 
-class HeaProfileViewSetTestCase(APITestCase):
+class UserProfileViewSetTestCase(APITestCase):
     def setUp(self):
         self.user = UserFactory(username="testuser", password="password123")
-        self.profile = HeaProfileFactory(user=self.user)
+        self.profile = UserProfileFactory(user=self.user)
         self.client.force_authenticate(user=self.user)
-        self.url = reverse("heaprofile-list")
+        self.url = reverse("userprofile-list")
 
     def test_get_current_profile(self):
         response = self.client.get(f"{self.url}current/")
@@ -233,7 +233,7 @@ class HeaProfileViewSetTestCase(APITestCase):
 
     def test_queryset_filters(self):
         other_user = UserFactory(username="otheruser", password="password123")
-        HeaProfileFactory(user=other_user)
+        UserProfileFactory(user=other_user)
 
         # Current user profile only
         response = self.client.get(f"{self.url}?pk=current")

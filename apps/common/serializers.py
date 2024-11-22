@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 
-from .models import ClassifiedProduct, Country, Currency, HeaProfile, UnitOfMeasure
+from .models import ClassifiedProduct, Country, Currency, UnitOfMeasure, UserProfile
 
 
 class CountrySerializer(serializers.ModelSerializer):
@@ -92,7 +92,7 @@ class CurrentUserSerializer(serializers.ModelSerializer):
         ]
 
 
-class HeaProfileSerializer(serializers.ModelSerializer):
+class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
-        model = HeaProfile
-        fields = ("user", "expert", "skip_tour", "tour_last_viewed", "livelihood_explorer_data")
+        model = UserProfile
+        fields = ("user", "profile_data")

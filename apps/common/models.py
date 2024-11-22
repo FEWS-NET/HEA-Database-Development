@@ -953,21 +953,17 @@ class CountryClassifiedProductAliases(Model):
         ]
 
 
-class HeaProfile(Model):
+class UserProfile(Model):
     """
-    A profile to store data associated with a user to be used by the Livelihoods Explorer
-    to create a dynamic user experience.
+    A profile to store data associated with a user to enable a customized user experience
     """
 
     user = models.OneToOneField(User, on_delete=CASCADE, primary_key=True, unique=True)
-    expert = models.BooleanField(default=False)
-    skip_tour = models.BooleanField(default=False)
-    tour_last_viewed = models.DateField(null=True)
-    livelihood_explorer_data = models.JSONField(default=dict, null=True, blank=True)
+    profile_data = models.JSONField(default=dict, null=True, blank=True)
 
     def __str__(self):
-        return f"hea_profile: {str(self.user)}"
+        return f"user_profile: {str(self.user)}"
 
     class Meta:
-        verbose_name = _("hea user profile")
-        verbose_name_plural = _("hea user profiles")
+        verbose_name = _("user profile")
+        verbose_name_plural = _("user profiles")

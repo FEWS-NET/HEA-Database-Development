@@ -60,9 +60,9 @@ class UserFactory(factory.django.DjangoModelFactory):
                 self.groups.add(group)
 
 
-class HeaProfileFactory(factory.django.DjangoModelFactory):
+class UserProfileFactory(factory.django.DjangoModelFactory):
     class Meta:
-        model = "common.HeaProfile"
+        model = "common.UserProfile"
         django_get_or_create = ("user",)
 
     user = factory.SubFactory(UserFactory)

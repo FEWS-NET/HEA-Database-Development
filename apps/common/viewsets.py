@@ -10,14 +10,14 @@ from rest_framework.permissions import BasePermission, IsAuthenticated
 
 from .fields import translation_fields
 from .filters import MultiFieldFilter
-from .models import ClassifiedProduct, Country, Currency, HeaProfile, UnitOfMeasure
+from .models import ClassifiedProduct, Country, Currency, UnitOfMeasure, UserProfile
 from .serializers import (
     ClassifiedProductSerializer,
     CountrySerializer,
     CurrencySerializer,
     CurrentUserSerializer,
-    HeaProfileSerializer,
     UnitOfMeasureSerializer,
+    UserProfileSerializer,
     UserSerializer,
 )
 
@@ -368,15 +368,15 @@ class UserViewSet(BaseModelViewSet):
         return self.retrieve(request, *args, **kwargs)
 
 
-class HeaProfileViewSet(BaseModelViewSet):
-    queryset = HeaProfile.objects.all()
-    serializer_class = HeaProfileSerializer
+class UserProfileViewSet(BaseModelViewSet):
+    queryset = UserProfile.objects.all()
+    serializer_class = UserProfileSerializer
     permission_classes = [CurrentUserOnly, IsAuthenticated]
 
     def get_object(self):
         pk = self.kwargs.get("pk")
         if pk == "current":
-            return self.request.user.heaprofile if self.request.user.id else None
+            return self.request.user.userprofile if self.request.user.id else None
         return super().get_object()
 
     def get_queryset(self):
