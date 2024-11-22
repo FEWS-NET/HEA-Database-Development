@@ -1125,6 +1125,7 @@ class LivelihoodActivity(common_models.Model):
     percentage_kcals = models.FloatField(
         blank=True,
         null=True,
+        validators=[MinValueValidator(0)],
         verbose_name=_("Percentage of required kcals"),
         help_text=_("Percentage of annual household kcal requirement provided by this livelihood strategy"),
     )
