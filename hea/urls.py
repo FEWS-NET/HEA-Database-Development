@@ -50,8 +50,8 @@ from common.viewsets import (
     CountryViewSet,
     CurrencyViewSet,
     UnitOfMeasureViewSet,
-    UserViewSet,
     UserProfileViewSet,
+    UserViewSet,
 )
 from metadata.viewsets import (
     HazardCategoryViewSet,
