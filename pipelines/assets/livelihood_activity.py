@@ -520,7 +520,8 @@ def get_instances_from_dataframe(
                             # that is embedded in the ButterProduction calculations in current BSSs
                             livelihood_activity["type_of_milk_consumed"] = MilkProduction.MilkType.WHOLE
 
-                    # Add the `times_per_year` to FoodPurchase, because it is not present in any current BSS
+                    # Add the `times_per_year` to FoodPurchase, PaymentInKind and OtherCashIncome,
+                    # because it is not in the current BSSs
                     if (
                         "times_per_month" in livelihood_strategy["attribute_rows"]
                         and "months_per_year" in livelihood_strategy["attribute_rows"]

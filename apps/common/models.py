@@ -32,6 +32,17 @@ from .fields import (  # noqa: F401
 logger = logging.getLogger(__name__)
 
 
+def validate_positive(value):
+    """
+    Validator to ensure that a value is positive.
+
+    The normal models.validators.MinValueValidator(0) isn't suitable because it allows zero,
+    which isn't appropriate for some attributes, such as price.
+    """
+    if value < 0:
+        raise ValidationError(_("Value must be greater than 0."))
+
+
 class ShowQueryVariablesMixin(object):
     """
     Mixin for models.Manager classes that shows the query arguments when a get() query fails

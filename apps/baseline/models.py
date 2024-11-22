@@ -1102,7 +1102,13 @@ class LivelihoodActivity(common_models.Model):
     # but there are exceptions, such as MilkProduction, where there is also an amount used for ButterProduction
     quantity_consumed = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Consumed"))
 
-    price = models.FloatField(blank=True, null=True, verbose_name=_("Price"), help_text=_("Price per unit"))
+    price = models.FloatField(
+        blank=True,
+        null=True,
+        validators=[common_models.validate_positive],
+        verbose_name=_("Price"),
+        help_text=_("Price per unit"),
+    )
     # Can be calculated / validated as `quantity_sold * price` for livelihood strategies that involve the sale of
     # a proportion of the household's own production.
     income = models.FloatField(blank=True, null=True, help_text=_("Income"))
@@ -1584,8 +1590,12 @@ class PaymentInKind(LivelihoodActivity):
     """
 
     # Production calculation/validation is `people_per_household * times_per_month * months_per_year`
-    payment_per_time = models.PositiveSmallIntegerField(
-        verbose_name=_("Payment per time"), help_text=_("Amount of item received each time the labor is performed")
+    payment_per_time = models.FloatField(
+        blank=True,
+        null=True,  # Not required if people_per_household or times_per_month is null
+        validators=[common_models.validate_positive],
+        verbose_name=_("Payment per time"),
+        help_text=_("Amount of item received each time the labor is performed"),
     )
     people_per_household = models.PositiveSmallIntegerField(
         verbose_name=_("People per household"), help_text=_("Number of household members who perform the labor")
@@ -1600,6 +1610,14 @@ class PaymentInKind(LivelihoodActivity):
         verbose_name=_("Times per year"),
         help_text=_("Number of times in a year that the labor is performed"),
     )
+
+    def clean(self):
+        # payment_per_time is only required if people_per_household and times_per_month are provided
+        if self.people_per_household and self.times_per_month and not self.payment_per_time:
+            raise ValidationError(
+                _("Payment per time is required if people per household and times per month are provided")
+            )
+        super().clean()
 
     def validate_quantity_produced(self):
         if (
@@ -1711,8 +1729,12 @@ class OtherCashIncome(LivelihoodActivity):
     # However, some other income (e.g. Remittances) just has a number of times per year and is not calculated from
     # people_per_household, etc. Therefore those fields must be nullable, and we must store the total number of times
     # per year as a separate field
-    payment_per_time = models.PositiveSmallIntegerField(
-        verbose_name=_("Payment per time"), help_text=_("Amount of money received each time the labor is performed")
+    payment_per_time = models.FloatField(
+        blank=True,
+        null=True,  # Not required if people_per_household or times_per_month is null
+        validators=[common_models.validate_positive],
+        verbose_name=_("Payment per time"),
+        help_text=_("Amount of money received each time the labor is performed"),
     )
     people_per_household = models.PositiveSmallIntegerField(
         verbose_name=_("People per household"),
@@ -1733,6 +1755,14 @@ class OtherCashIncome(LivelihoodActivity):
         verbose_name=_("Times per year"),
         help_text=_("Number of times in a year that the income is received"),
     )
+
+    def clean(self):
+        # payment_per_time is only required if people_per_household and times_per_month are provided
+        if self.people_per_household and self.times_per_month and not self.payment_per_time:
+            raise ValidationError(
+                _("Payment per time is required if people per household and times per month are provided")
+            )
+        super().clean()
 
     def validate_income(self):
         if (
