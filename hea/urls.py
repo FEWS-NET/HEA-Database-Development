@@ -50,6 +50,8 @@ from common.viewsets import (
     CountryViewSet,
     CurrencyViewSet,
     UnitOfMeasureViewSet,
+    UserProfileViewSet,
+    UserViewSet,
 )
 from metadata.viewsets import (
     HazardCategoryViewSet,
@@ -67,6 +69,8 @@ router.register(r"country", CountryViewSet)
 router.register(r"currency", CurrencyViewSet)
 router.register(r"unitofmeasure", UnitOfMeasureViewSet)
 router.register(r"classifiedproduct", ClassifiedProductViewSet)
+router.register(r"user", UserViewSet)
+router.register(r"userprofile", UserProfileViewSet)
 
 # Metadata
 router.register(r"livelihoodcategory", LivelihoodCategoryViewSet)

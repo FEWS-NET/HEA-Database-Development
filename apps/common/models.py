@@ -8,6 +8,7 @@ import logging
 import operator
 from functools import reduce
 
+from django.contrib.auth.models import User
 from django.core import validators
 from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
@@ -950,3 +951,19 @@ class CountryClassifiedProductAliases(Model):
                 fields=["country", "product"], name="common_countryclassified_country_code_product_code_uniq"
             )
         ]
+
+
+class UserProfile(Model):
+    """
+    A profile to store data associated with a user to enable a customized user experience
+    """
+
+    user = models.OneToOneField(User, on_delete=CASCADE, primary_key=True, unique=True)
+    profile_data = models.JSONField(default=dict, null=True, blank=True)
+
+    def __str__(self):
+        return f"user_profile: {str(self.user)}"
+
+    class Meta:
+        verbose_name = _("user profile")
+        verbose_name_plural = _("user profiles")

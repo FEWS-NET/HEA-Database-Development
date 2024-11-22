@@ -1,18 +1,24 @@
+from django.contrib.auth.models import User
 from django.utils.text import format_lazy
 from django.utils.translation import gettext_lazy as _
 from django_filters import rest_framework as filters
 from rest_framework import viewsets
+from rest_framework.decorators import action
 from rest_framework.exceptions import NotAcceptable
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import BasePermission, IsAuthenticated
 
 from .fields import translation_fields
 from .filters import MultiFieldFilter
-from .models import ClassifiedProduct, Country, Currency, UnitOfMeasure
+from .models import ClassifiedProduct, Country, Currency, UnitOfMeasure, UserProfile
 from .serializers import (
     ClassifiedProductSerializer,
     CountrySerializer,
     CurrencySerializer,
+    CurrentUserSerializer,
     UnitOfMeasureSerializer,
+    UserProfileSerializer,
+    UserSerializer,
 )
 
 
@@ -323,3 +329,64 @@ class ClassifiedProductViewSet(BaseModelViewSet):
         *translation_fields("description"),
         *translation_fields("common_name"),
     )
+
+
+class CurrentUserOnly(BasePermission):
+    def has_permission(self, request, view):
+        if request.user.is_superuser:
+            return True
+        elif view.kwargs == {"pk": "current"}:
+            # Even anonymous users can see their current user record
+            return True
+        elif request.query_params.get("pk") == "current":
+            # List views seem to use query_params rather than kwargs
+            return True
+        return False
+
+
+class UserViewSet(BaseModelViewSet):
+    """
+    Allows users to be viewed or edited.
+    """
+
+    queryset = User.objects.all()
+    permission_classes = [CurrentUserOnly]
+    serializer_class = UserSerializer
+    search_fields = ["username", "first_name", "last_name"]
+
+    def get_object(self):
+        pk = self.kwargs.get("pk")
+
+        if pk == "current":
+            self.serializer_class = CurrentUserSerializer
+            return self.request.user if self.request.user.id else User.get_anonymous()
+
+        return super().get_object()
+
+    @action(detail=True, methods=["get"])
+    def current(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
+
+
+class UserProfileViewSet(BaseModelViewSet):
+    queryset = UserProfile.objects.all()
+    serializer_class = UserProfileSerializer
+    permission_classes = [CurrentUserOnly, IsAuthenticated]
+
+    def get_object(self):
+        pk = self.kwargs.get("pk")
+        if pk == "current":
+            return self.request.user.userprofile if self.request.user.id else None
+        return super().get_object()
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        pk = self.request.query_params.get("pk") or self.kwargs.get("pk")
+
+        if pk == "current":
+            return queryset.filter(user=self.request.user.id)
+        elif pk:
+            # Superusers can access profiles without using pk=current.
+            return queryset.filter(user=pk)
+        else:
+            return queryset
