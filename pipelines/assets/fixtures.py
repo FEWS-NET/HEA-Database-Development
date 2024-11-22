@@ -6,6 +6,7 @@ from collections import defaultdict
 from io import StringIO
 
 import django
+import numpy as np
 import pandas as pd
 from dagster import AssetExecutionContext, MetadataValue, Output, asset
 from django.core.files import File
@@ -174,6 +175,31 @@ def validate_instances(
                         )
                         errors.append(error)
 
+            # Use the Django model to validate the fields, so we can apply already defined model validations and
+            # return informative error messages.
+            fields = [
+                field
+                for field in model._meta.concrete_fields
+                if not isinstance(field, models.ForeignKey) and field.name in df
+            ]
+            instance = model()
+            for record in df.replace(np.nan, None).itertuples():
+                for field in fields:
+                    value = getattr(record, field.name)
+                    if not value and field.null:
+                        # Replace empty strings with None for optional fields
+                        value = None
+                    try:
+                        field.clean(value, instance)
+                    except Exception as e:
+                        error = (
+                            f'Invalid {field.name} value {value}:  "{", ".join(e.error_list[0].messages)}"\nRecord '
+                            f"{record.Index} from cell '{record.bss_sheet}'!{record.bss_column}{record.bss_row} "
+                            f"for {model_name} in record "
+                            f'{str({k: v for k,v in record._asdict().items() if k != "Index"})}.'
+                        )
+                        errors.append(error)
+
             # Check that the kcals/kg matches the values in the ClassifiedProduct model, if it's present in the BSS
             if model_name == "LivelihoodActivity" and "product__kcals_per_unit" in df:
                 df["product"] = df["livelihood_strategy"].apply(lambda x: x[4])
@@ -182,7 +208,7 @@ def validate_instances(
                 df["reference_unit_of_measure"] = df["product"].apply(lambda x: x.unit_of_measure)
                 for record in df[df["product__kcals_per_unit"] != df["reference_kcals_per_unit"]].itertuples():
                     error = (
-                        f"Non-standard value {record.product__kcals_per_unit} in '{record.column}"
+                        f"Non-standard value {record.product__kcals_per_unit} in '{record.column}' "
                         f"for {model_name} in record "
                         f'{str({k: v for k,v in record._asdict().items() if k != "Index"})}. '
                         f"Expected {record.reference_kcals_per_unit}/{record.reference_unit_of_measure} for {record.product}"
