@@ -478,7 +478,7 @@ def get_instances_from_dataframe(
                                     previous_livelihood_activities_for_strategy[i]["milking_animals"]
                                 )
 
-                    # Calculated kcals_consumed if the livelihood activity only contains the percentage_kcals.
+                    # Calculate kcals_consumed if the livelihood activity only contains the percentage_kcals.
                     # This is typical for ButterProduction and consumption of green crops.
                     # Derive it by multiplying percentage_kcals by:
                     #   2100 (kcals per person per day) * 365 (days per year) * average_household_size (from Row 40)
@@ -520,7 +520,8 @@ def get_instances_from_dataframe(
                             # that is embedded in the ButterProduction calculations in current BSSs
                             livelihood_activity["type_of_milk_consumed"] = MilkProduction.MilkType.WHOLE
 
-                    # Add the `times_per_year` to FoodPurchase, because it is not present in any current BSS
+                    # Add the `times_per_year` to FoodPurchase, PaymentInKind and OtherCashIncome,
+                    # because it is not in the current BSSs
                     if (
                         "times_per_month" in livelihood_strategy["attribute_rows"]
                         and "months_per_year" in livelihood_strategy["attribute_rows"]
@@ -763,7 +764,7 @@ def get_instances_from_dataframe(
                         "scenario": LivelihoodActivityScenario.BASELINE,
                         "wealth_group": wealth_group_df.iloc[i]["natural_key"],
                         # Include the column and row to aid trouble-shooting
-                        "bss_sheet": "Data",
+                        "bss_sheet": worksheet_name,
                         "bss_column": df.columns[i + 1],
                         "bss_row": row,
                         "activity_label": label,
