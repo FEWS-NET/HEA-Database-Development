@@ -12,10 +12,7 @@ from baseline.models import (
 from common.tests.factories import ClassifiedProductFactory
 from common.utils import conditional_logging
 
-from .factories import (
-    CommunityFactory,
-    WealthGroupCharacteristicValueFactory,
-)
+from .factories import CommunityFactory, WealthGroupCharacteristicValueFactory
 
 
 class WealthGroupCharacteristicValueTestCase(TestCase):
