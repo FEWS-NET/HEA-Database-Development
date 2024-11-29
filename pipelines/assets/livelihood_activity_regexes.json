@@ -740,6 +740,12 @@
         "number_of_local_measures"
     ],
     [
+        "autre culture(?: de rente)?{separator_pattern} (?:type|nom)",
+        null,
+        true,
+        "product__name"
+    ],
+    [
         "autre culture{separator_pattern} \\(?{product_pattern}\\)?(?: type)?",
         null,
         true,
@@ -770,12 +776,6 @@
         "quantity_sold"
     ],
     [
-        "autre culture de rente: type",
-        null,
-        true,
-        "product__name"
-    ],
-    [
         "autre culture de rente: \\(?{product_pattern}\\)?",
         null,
         true,
@@ -789,6 +789,12 @@
     ],
     [
         "{product_pattern} {vendu_pattern}{separator_pattern} quantité",
+        null,
+        true,
+        "quantity_sold"
+    ],
+    [
+        "{product_pattern}: (?P<unit_of_measure_id>kg|l)? {vendu_pattern}",
         null,
         true,
         "quantity_sold"

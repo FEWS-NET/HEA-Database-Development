@@ -519,6 +519,10 @@
         "is_start": true,
         "attribute": "product__name"
     },
+    "Autre culture: nom": {
+        "is_start": true,
+        "attribute": "product__name"
+    },
     "chou: qtité produite": {
         "is_start": true,
         "product_id": "chou",

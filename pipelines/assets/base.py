@@ -190,7 +190,7 @@ def corrected_files(context: AssetExecutionContext, config: BSSMetadataConfig) -
     partition_key = context.asset_partition_key_for_output()
     livelihood_zone_baseline = LivelihoodZoneBaseline.objects.get_by_natural_key(*partition_key.split("~")[1:])
 
-    def validate_previous_value(cell, expected_previous_value, previous_value):
+    def validate_previous_value(worksheet_name, cell_reference, expected_previous_value, previous_value):
         """
         Inline function to validate the existing value of a cell is the expected one, prior to correcting it.
         """
@@ -210,7 +210,7 @@ def corrected_files(context: AssetExecutionContext, config: BSSMetadataConfig) -
         if expected_previous_value != previous_value:
             raise ValueError(
                 "Unexpected prior value in source BSS. "
-                f"BSS `{partition_key}`, cell `{cell}`, "
+                f"BSS `{partition_key}`, cell `'{worksheet_name}'!{cell_reference}`, "
                 f"value found `{previous_value}`, expected `{expected_previous_value}`."
             )
 
@@ -280,12 +280,16 @@ def corrected_files(context: AssetExecutionContext, config: BSSMetadataConfig) -
                             previous_value = xlrd.error_text_from_code[
                                 xlrd_wb.sheet_by_name(correction.worksheet_name).cell_value(row - 1, col - 1)
                             ]
-                        validate_previous_value(cell, correction.previous_value, previous_value)
+                        validate_previous_value(
+                            correction.worksheet_name, cell, correction.previous_value, previous_value
+                        )
                         # xlwt uses 0-based indexes, but coordinate_to_tuple uses 1-based, so offset the values
                         wb.get_sheet(correction.worksheet_name).write(row - 1, col - 1, correction.value)
                     else:
                         cell = wb[correction.worksheet_name][cell]
-                        validate_previous_value(cell, correction.previous_value, cell.value)
+                        validate_previous_value(
+                            correction.worksheet_name, cell.coordinate, correction.previous_value, cell.value
+                        )
                         cell.value = correction.value
                         cell.comment = Comment(
                             f"{correction.author__username} on {correction.correction_date.date().isoformat()}: {correction.comment}",  # NOQA: E501
