@@ -1553,7 +1553,10 @@ class FoodPurchase(LivelihoodActivity):
 
     # unit_multiple has names like wt_of_measure in the BSS.
     unit_multiple = models.PositiveSmallIntegerField(
-        verbose_name=_("Unit Multiple"), help_text=_("Multiple of the unit of measure in a single purchase")
+        blank=True,
+        null=True,
+        verbose_name=_("Unit Multiple"),
+        help_text=_("Multiple of the unit of measure in a single purchase"),
     )
     # This is a float field because data may be captured as "once per week",
     # which equates to "52 per year", which is "4.33 per month".
@@ -1565,17 +1568,25 @@ class FoodPurchase(LivelihoodActivity):
         help_text=_("Number of months in a year that the product is purchased"),
     )
     times_per_year = models.PositiveSmallIntegerField(
+        blank=True,
+        null=True,
         verbose_name=_("Times per year"),
         help_text=_("Number of times in a year that the purchase is made"),
     )
 
     def validate_quantity_produced(self):
-        if self.quantity_produced != self.unit_multiple * self.times_per_month * self.months_per_year:
-            raise ValidationError(
-                _(
-                    "Quantity produced for a Food Purchase must be purchase amount * purchases per month * months per year"  # NOQA: E501
+        if (
+            self.quantity_produced is not None
+            and self.unit_multiple is not None
+            and self.times_per_month is not None
+            and self.months_per_year is not None
+        ):
+            if self.quantity_produced != self.unit_multiple * self.times_per_month * self.months_per_year:
+                raise ValidationError(
+                    _(
+                        "Quantity produced for a Food Purchase must be purchase amount * purchases per month * months per year"  # NOQA: E501
+                    )
                 )
-            )
 
     class Meta:
         verbose_name = LivelihoodStrategyType.FOOD_PURCHASE.label
@@ -1598,15 +1609,23 @@ class PaymentInKind(LivelihoodActivity):
         help_text=_("Amount of item received each time the labor is performed"),
     )
     people_per_household = models.PositiveSmallIntegerField(
-        verbose_name=_("People per household"), help_text=_("Number of household members who perform the labor")
+        blank=True,
+        null=True,
+        verbose_name=_("People per household"),
+        help_text=_("Number of household members who perform the labor"),
     )
     # This is a float field because data may be captured as "once per week",
     # which equates to "52 per year", which is "4.33 per month".
     times_per_month = models.FloatField(blank=True, null=True, verbose_name=_("Labor per month"))
     months_per_year = models.PositiveSmallIntegerField(
-        verbose_name=_("Months per year"), help_text=_("Number of months in a year that the labor is performed")
+        blank=True,
+        null=True,
+        verbose_name=_("Months per year"),
+        help_text=_("Number of months in a year that the labor is performed"),
     )
     times_per_year = models.PositiveSmallIntegerField(
+        blank=True,
+        null=True,
         verbose_name=_("Times per year"),
         help_text=_("Number of times in a year that the labor is performed"),
     )
@@ -1621,15 +1640,21 @@ class PaymentInKind(LivelihoodActivity):
 
     def validate_quantity_produced(self):
         if (
-            self.quantity_produced
-            and self.quantity_produced
-            != self.payment_per_time * self.people_per_household * self.times_per_month * self.months_per_year
+            self.quantity_produced is not None
+            and self.payment_per_time is not None
+            and self.people_per_household is not None
+            and self.times_per_month is not None
+            and self.months_per_year is not None
         ):
-            raise ValidationError(
-                _(
-                    "Quantity produced for Payment In Kind must be payment per time * number of people * labor per month * months per year"  # NOQA: E501
+            if (
+                self.quantity_produced
+                != self.payment_per_time * self.people_per_household * self.times_per_month * self.months_per_year
+            ):
+                raise ValidationError(
+                    _(
+                        "Quantity produced for Payment In Kind must be payment per time * number of people * labor per month * months per year"  # NOQA: E501
+                    )
                 )
-            )
 
     class Meta:
         verbose_name = LivelihoodStrategyType.PAYMENT_IN_KIND.label
@@ -1647,7 +1672,10 @@ class ReliefGiftOther(LivelihoodActivity):
     # Production calculation /validation is `unit_of_measure * unit_multiple * times_per_year`
     # Also used for the number of children receiving school meals.
     unit_multiple = models.PositiveSmallIntegerField(
-        verbose_name=_("Unit Multiple"), help_text=_("Multiple of the unit of measure received each time")
+        blank=True,
+        null=True,
+        verbose_name=_("Unit Multiple"),
+        help_text=_("Multiple of the unit of measure received each time"),
     )
     # This is a float field because data may be captured as "once per week",
     # which equates to "52 per year", which is "4.33 per month".
@@ -1661,14 +1689,18 @@ class ReliefGiftOther(LivelihoodActivity):
         help_text=_("Number of months in a year that the item is received"),
     )
     times_per_year = models.PositiveSmallIntegerField(
-        verbose_name=_("Times per year"), help_text=_("Number of times in a year that the item is received")
+        blank=True,
+        null=True,
+        verbose_name=_("Times per year"),
+        help_text=_("Number of times in a year that the item is received"),
     )
 
     def validate_quantity_produced(self):
-        if self.quantity_produced != self.unit_multiple * self.times_per_year:
-            raise ValidationError(
-                _("Quantity produced for Relief, Gifts, Other must be amount received * times per year")
-            )
+        if self.quantity_produced is not None and self.unit_multiple is not None and self.times_per_year is not None:
+            if self.quantity_produced != self.unit_multiple * self.times_per_year:
+                raise ValidationError(
+                    _("Quantity produced for Relief, Gifts, Other must be amount received * times per year")
+                )
 
     class Meta:
         verbose_name = LivelihoodStrategyType.RELIEF_GIFT_OTHER.label
@@ -1752,6 +1784,8 @@ class OtherCashIncome(LivelihoodActivity):
         help_text=_("Number of months in a year that the labor is performed"),
     )
     times_per_year = models.PositiveSmallIntegerField(
+        blank=True,
+        null=True,
         verbose_name=_("Times per year"),
         help_text=_("Number of times in a year that the income is received"),
     )
@@ -1766,19 +1800,24 @@ class OtherCashIncome(LivelihoodActivity):
 
     def validate_income(self):
         if (
-            self.people_per_household
-            and self.income
-            != self.payment_per_time * self.people_per_household * self.times_per_month * self.months_per_year
+            self.people_per_household is not None
+            and self.income is not None
+            and self.payment_per_time is not None
+            and self.times_per_month is not None
+            and self.months_per_year is not None
         ):
-            raise ValidationError(
-                _(
-                    "Quantity produced for Other Cash Income must be payment per time * number of people * labor per month * months per year"  # NOQA: E501
+            if (
+                self.income
+                != self.payment_per_time * self.people_per_household * self.times_per_month * self.months_per_year
+            ):
+                raise ValidationError(
+                    _(
+                        "Quantity produced for Other Cash Income must be payment per time * number of people * labor per month * months per year"  # NOQA: E501
+                    )
                 )
-            )
-        if self.income != self.payment_per_time * self.times_per_year:
-            raise ValidationError(
-                _("Quantity produced for Other Cash Income must be payment per time * times per year")
-            )
+        if self.income is not None and self.payment_per_time is not None and self.times_per_year is not None:
+            if self.income != self.payment_per_time * self.times_per_year:
+                raise ValidationError(_("Income for 'Other Cash Income' must be payment per time * times per year"))
 
     def calculate_fields(self):
         self.times_per_year = self.people_per_household * self.times_per_month * self.months_per_year
@@ -1817,21 +1856,40 @@ class OtherPurchase(LivelihoodActivity):
         help_text=_("Number of months in a year that the product is purchased"),
     )
     times_per_year = models.PositiveSmallIntegerField(
+        blank=True,
+        null=True,
         verbose_name=_("Times per year"),
         help_text=_("Number of times in a year that the product is purchased"),
     )
 
     def validate_expenditure(self):
-        if (
-            self.times_per_month
-            and self.months_per_year
-            and self.times_per_month * self.months_per_year != self.times_per_year
-        ):
-            raise ValidationError(_("Times per year must be times per month * months per year"))
-        if self.expenditure != self.price * self.unit_multiple * self.times_per_year:
-            raise ValidationError(
-                _("Expenditure for Other Purchases must be price * unit multiple * purchases per year")
-            )
+        errors = []
+        if self.times_per_month is not None and self.months_per_year is not None:
+            expected_times_per_year = self.times_per_month * self.months_per_year
+            if self.times_per_year is not None and self.times_per_year != expected_times_per_year:
+                errors.append(
+                    _(
+                        "Times per year must be times per month * months per year. Expected: %(expected)s, Found: %(found)s"
+                    )
+                    % {
+                        "expected": expected_times_per_year,
+                        "found": self.times_per_year,
+                    }
+                )
+        if self.price is not None and self.unit_multiple is not None and self.times_per_year is not None:
+            expected_expenditure = self.price * self.unit_multiple * self.times_per_year
+            if self.expenditure is not None and self.expenditure != expected_expenditure:
+                errors.append(
+                    _(
+                        "Expenditure for Other Purchases must be price * unit multiple * purchases per year. Expected: %(expected)s, Found: %(found)s"
+                    )
+                    % {
+                        "expected": expected_expenditure,
+                        "found": self.expenditure,
+                    }
+                )
+        if errors:
+            raise ValidationError(errors)
 
     class Meta:
         verbose_name = LivelihoodStrategyType.OTHER_PURCHASE.label
