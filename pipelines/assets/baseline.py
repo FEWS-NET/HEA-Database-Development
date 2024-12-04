@@ -302,6 +302,7 @@ def community_instances(context: AssetExecutionContext, config: BSSMetadataConfi
             "Sous-préfecture",
             "Région et cercle",  # 2023 Mali BSSs
             "LGA",  # Local Government Area, in the 2023 Nigeria BSSs
+            "Province et territoire",  # 2024 DRC BSSs
         ],
         [
             "Village",
