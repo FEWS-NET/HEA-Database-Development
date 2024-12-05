@@ -29,6 +29,7 @@ from .factories import (
     FoodPurchaseFactory,
     HazardFactory,
     HuntingFactory,
+    KeyParameterFactory,
     LivelihoodActivityFactory,
     LivelihoodProductCategoryFactory,
     LivelihoodStrategyFactory,
@@ -5563,3 +5564,65 @@ class CopingStrategyViewSetTestCase(APITestCase):
             content = response.content
         df = pd.read_html(content)[0].fillna("")
         self.assertEqual(len(df), self.num_records + 1)
+
+
+class KeyParameterViewSetTestCase(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.num_records = 5
+        cls.data = [KeyParameterFactory() for _ in range(cls.num_records)]
+        cls.user = User.objects.create_superuser("test", "test@test.com", "password")
+
+    def setUp(self):
+        self.url = reverse("keyparameter-list")
+        self.url_get = lambda n: reverse("keyparameter-detail", args=(self.data[n].pk,))
+
+    def test_get_record(self):
+        response = self.client.get(self.url_get(0))
+        self.assertEqual(response.status_code, 200)
+        self.assertIsInstance(response.json(), dict)
+        # assertCountEqual checks elements match in any order
+        expected_fields = [
+            "id",
+            "livelihood_zone_baseline",
+            "livelihood_zone_baseline_label",
+            "strategy_type",
+            "strategy_type_label",
+            "key_parameter_type",
+            "key_parameter_type_label",
+            "name",
+            "description",
+        ]
+        self.assertCountEqual(
+            response.json().keys(),
+            expected_fields,
+            f"KeyParameter: Fields expected: {expected_fields}. Fields found: {response.json().keys()}.",
+        )
+
+    def test_list_returns_filtered_data(self):
+        response = self.client.get(
+            self.url,
+            {
+                "name_en": self.data[0].name_en,
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 1)
+
+    def test_search(self):
+        response = self.client.get(
+            self.url,
+            {
+                "search": self.data[0].name_en,
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 1)
+        response = self.client.get(
+            self.url,
+            {
+                "search": self.data[0].name_en + "xyz",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 0)

@@ -28,6 +28,7 @@ from .models import (
     FoodPurchase,
     Hazard,
     Hunting,
+    KeyParameter,
     LivelihoodActivity,
     LivelihoodStrategy,
     LivelihoodZone,
@@ -204,7 +205,6 @@ class LivelihoodZoneBaselineAdmin(GISModelAdminReadOnly):
             return ""
 
     def get_fieldsets(self, request, obj=None):
-
         fieldsets = super().get_fieldsets(request, obj=obj)
         if obj and obj.geography:
             # Check if 'geography' field has a value
@@ -1013,7 +1013,6 @@ class EventAdmin(admin.ModelAdmin):
 
 
 class ExpandabilityFactorAdmin(admin.ModelAdmin):
-
     fields = (
         "livelihood_strategy",
         "wealth_group",
@@ -1046,7 +1045,6 @@ class ExpandabilityFactorAdmin(admin.ModelAdmin):
 
 
 class CopingStrategyAdmin(admin.ModelAdmin):
-
     fields = (
         "community",
         "leaders",
@@ -1075,6 +1073,20 @@ class CopingStrategyAdmin(admin.ModelAdmin):
     )
 
 
+class KeyParameterAdmin(admin.ModelAdmin):
+    list_display = (
+        "livelihood_zone_baseline",
+        "strategy_type",
+        "key_parameter_type",
+        "name",
+        "description",
+    )
+    search_fields = [
+        *translation_fields("name"),
+        *translation_fields("description"),
+    ]
+
+
 admin.site.register(SourceOrganization, SourceOrganizationAdmin)
 admin.site.register(LivelihoodZone, LivelihoodZoneAdmin)
 admin.site.register(LivelihoodZoneBaseline, LivelihoodZoneBaselineAdmin)
@@ -1098,3 +1110,5 @@ admin.site.register(SeasonalProductionPerformance, SeasonalProductionPerformance
 
 admin.site.register(LivelihoodActivity, LivelihoodActivityAdmin)
 admin.site.register(WealthGroupCharacteristicValue, WealthGroupCharacteristicValueAdmin)
+
+admin.site.register(KeyParameter, KeyParameterAdmin)
