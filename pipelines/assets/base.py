@@ -8,6 +8,7 @@ from io import BytesIO
 from typing import Optional
 
 import django
+import fsspec
 import msoffcrypto
 import openpyxl
 import pandas as pd
@@ -123,6 +124,16 @@ def completed_bss_metadata(config: BSSMetadataConfig, bss_metadata) -> Output[pd
     """
     A DataFrame containing the BSS Metadata that has been completed sufficiently to allow the BSS to be loaded.
     """
+    # Exclude BSS where the listed BSS file does not exist
+    protocol, bss_files_folder = config.bss_files_folder.split("://")
+    # The listings cache is disabled because otherwise gdrivefs returns an empty list of files
+    fs = fsspec.filesystem(protocol, use_listings_cache=False, **config.bss_files_storage_options)
+    bss_paths = []
+    for dirpath, dirnames, filenames in fs.walk(bss_files_folder):
+        bss_paths.extend([os.path.join(dirpath, filename)[len(bss_files_folder) + 1 :] for filename in filenames])
+    bss_metadata = bss_metadata[bss_metadata["bss_path"].isin(bss_paths)].sort_values(by="bss_path")
+
+    # Exclude those BSS where one or more mandatory columns have not been completed
     required_columns = [
         "bss_path",
         "code",
@@ -135,10 +146,8 @@ def completed_bss_metadata(config: BSSMetadataConfig, bss_metadata) -> Output[pd
         "reference_year_end_date",
         "valid_from_date",
     ]
-    bss_metadata = bss_metadata[bss_metadata["bss_exists"]].sort_values(by="bss_path")
     mask = bss_metadata[required_columns].map(lambda x: x == "")
 
-    # Drop rows where any of the specified columns have empty strings
     complete_df = bss_metadata[~mask.any(axis="columns")]
     incomplete_df = bss_metadata[mask.any(axis="columns")]
 
