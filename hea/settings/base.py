@@ -108,8 +108,9 @@ EXTERNAL_APPS = [
     "django_extensions",
     "ddtrace.contrib.django",
     "rest_framework_gis",
+    "django_plotly_dash.apps.DjangoPlotlyDashConfig",
 ]
-PROJECT_APPS = ["common", "metadata", "baseline"]
+PROJECT_APPS = ["common", "metadata", "baseline", "viz"]
 INSTALLED_APPS = EXTERNAL_APPS + PROJECT_APPS
 
 MIDDLEWARE = [
@@ -125,6 +126,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "django_plotly_dash.middleware.BaseMiddleware",
 ]
 
 REST_FRAMEWORK = {
