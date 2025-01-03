@@ -6,6 +6,7 @@ LIVELIHOOD_STRATEGY_URL = "https://headev.fews.net/api/livelihoodstrategy/"
 WEALTH_GROUP_URL = "https://headev.fews.net/api/wealthgroupcharacteristicvalue/"
 LIVELIHOOD_ACTIVITY_URL = "https://headev.fews.net/api/livelihoodactivity/"
 
+
 def fetch_data(api_url):
     """
     Fetch data from the given API endpoint and return as a Pandas DataFrame.
@@ -19,6 +20,7 @@ def fetch_data(api_url):
         print(f"Error fetching data: {e}")
         return pd.DataFrame()
 
+
 def prepare_livelihood_data(df):
     """
     Prepare livelihood strategy data for visualization.
@@ -27,6 +29,7 @@ def prepare_livelihood_data(df):
     df["ls_baseline_date"] = df["livelihood_zone_baseline_label"].str.split(": ").str[1]
     df["ls_baseline_month"] = pd.to_datetime(df["ls_baseline_date"], errors="coerce").dt.month
     return df
+
 
 def prepare_wealth_group_data(df):
     """
@@ -46,9 +49,18 @@ def prepare_wealth_group_data(df):
 
     # Define month mapping dictionary
     month_mapping = {
-        1: "January", 2: "February", 3: "March", 4: "April", 
-        5: "May", 6: "June", 7: "July", 8: "August",
-        9: "September", 10: "October", 11: "November", 12: "December"
+        1: "January",
+        2: "February",
+        3: "March",
+        4: "April",
+        5: "May",
+        6: "June",
+        7: "July",
+        8: "August",
+        9: "September",
+        10: "October",
+        11: "November",
+        12: "December",
     }
 
     # Extract 'created_month' from 'created_date' or fallback to 'ls_baseline_date'
@@ -59,7 +71,6 @@ def prepare_wealth_group_data(df):
         df["created_month"] = pd.to_datetime(df["ls_baseline_date"], errors="coerce").dt.month.map(month_mapping)
 
     return df
-
 
 
 # Fetch and prepare data
