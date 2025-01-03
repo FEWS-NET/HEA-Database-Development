@@ -1,8 +1,8 @@
 from django.urls import path
 
-import viz.dash.inventory_dashboard.app
+import viz.dash.inventory_dashboard.app  # noqa
 
-from .views import InventoryDashboardView
+from .views import InventoryDashboardView  # noqa
 
 app_name = "viz"
 

@@ -9,4 +9,4 @@ class VizConfig(AppConfig):
     verbose_name = _("viz")
 
     def ready(self):
-        import viz.dash.inventory_dashboard.app
+        import viz.dash.inventory_dashboard.app  # noqa
