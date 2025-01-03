@@ -61,7 +61,7 @@ from metadata.viewsets import (
     WealthCharacteristicViewSet,
     WealthGroupCategoryViewSet,
 )
-from viz.views import InventoryDashboardView
+from viz.views import InventoryDashboardView  # noqa
 
 router = routers.DefaultRouter()
 

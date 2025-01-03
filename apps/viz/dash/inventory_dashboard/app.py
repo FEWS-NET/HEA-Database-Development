@@ -1,10 +1,10 @@
 import logging
+
+import dash_bootstrap_components as dbc
 import plotly.express as px
 from dash import dash_table, dcc, html
 from dash.dependencies import Input, Output
 from django_plotly_dash import DjangoDash
-import dash_bootstrap_components as dbc
-from datetime import datetime
 
 from .functions import clean_livelihood_data, clean_wealth_group_data
 
@@ -15,11 +15,7 @@ unique_zones = sorted(clean_livelihood_data["livelihood_zone_baseline_label"].dr
 logger = logging.getLogger(__name__)
 
 # Dash app
-app = DjangoDash(
-        "Inventory_dashboard",
-        suppress_callback_exceptions=True,
-        external_stylesheets=[dbc.themes.BOOTSTRAP]
-        )
+app = DjangoDash("Inventory_dashboard", suppress_callback_exceptions=True, external_stylesheets=[dbc.themes.BOOTSTRAP])
 app.title = "HEA Dashboard"
 
 # Layout
@@ -34,7 +30,7 @@ app.layout = html.Div(
                             id="country-dropdown",
                             options=[{"label": country, "value": country} for country in unique_countries],
                             placeholder="Select Country(s)",
-                            multi=True,  
+                            multi=True,
                         ),
                     ],
                     style={"flex": "1", "marginRight": "10px"},  # Set flex and spacing
@@ -48,14 +44,14 @@ app.layout = html.Div(
                             multi=True,
                         ),
                     ],
-                    style={"flex": "1"},  
+                    style={"flex": "1"},
                 ),
             ],
             style={
-                "display": "flex",  
+                "display": "flex",
                 "width": "100%",
-                "justifyContent": "space-between",  
-                "marginBottom": "20px",  
+                "justifyContent": "space-between",
+                "marginBottom": "20px",
             },
         ),
         html.Div(
@@ -123,16 +119,26 @@ def update_charts(selected_countries, selected_zones):
 
     # Filter data based on selected livelihood zones
     if selected_zones:
-        filtered_livelihood = filtered_livelihood[filtered_livelihood["livelihood_zone_baseline_label"].isin(selected_zones)]
+        filtered_livelihood = filtered_livelihood[
+            filtered_livelihood["livelihood_zone_baseline_label"].isin(selected_zones)
+        ]
         filtered_wealth = filtered_wealth[filtered_wealth["livelihood_zone_baseline_label"].isin(selected_zones)]
 
     # Group data for charts
     livelihood_grouped = (
-        filtered_livelihood.groupby(["livelihood_zone_baseline_label", "strategy_type_label"]).size().reset_index(name="Count")
+        filtered_livelihood.groupby(["livelihood_zone_baseline_label", "strategy_type_label"])
+        .size()
+        .reset_index(name="Count")
     )
-    wealth_grouped = filtered_wealth.groupby("livelihood_zone_baseline_label").size().reset_index(name="Wealth Characteristics Count")
+    wealth_grouped = (
+        filtered_wealth.groupby("livelihood_zone_baseline_label")
+        .size()
+        .reset_index(name="Wealth Characteristics Count")
+    )
     wealth_monthly_grouped = (
-        filtered_wealth.groupby(["created_month", "livelihood_zone_baseline_label"]).size().reset_index(name="Wealth Characteristics Count")
+        filtered_wealth.groupby(["created_month", "livelihood_zone_baseline_label"])
+        .size()
+        .reset_index(name="Wealth Characteristics Count")
     )
 
     wealth_fig = px.bar(
@@ -140,7 +146,10 @@ def update_charts(selected_countries, selected_zones):
         x="livelihood_zone_baseline_label",
         y="Wealth Characteristics Count",
         title="Wealth Characteristics per Baseline",
-        labels={"livelihood_zone_baseline_label": "Baseline", "Wealth Characteristics Count": "No. of Wealth Characteristics"},
+        labels={
+            "livelihood_zone_baseline_label": "Baseline",
+            "Wealth Characteristics Count": "No. of Wealth Characteristics",
+        },
     )
 
     livelihood_fig = px.bar(
@@ -149,7 +158,11 @@ def update_charts(selected_countries, selected_zones):
         y="Count",
         color="livelihood_zone_baseline_label",
         title="Livelihood Strategies per Baseline",
-        labels={"strategy_type_label": "Strategy Type", "Count": "No. of Livelihood Strategies", "livelihood_zone_baseline_label": "Baseline"},
+        labels={
+            "strategy_type_label": "Strategy Type",
+            "Count": "No. of Livelihood Strategies",
+            "livelihood_zone_baseline_label": "Baseline",
+        },
     )
 
     # Stacked/multiple column chart for wealth characteristics by month
@@ -168,6 +181,7 @@ def update_charts(selected_countries, selected_zones):
     )
 
     return zone_options, wealth_fig, livelihood_fig, wealth_monthly_fig, livelihood_grouped.to_dict("records")
+
 
 # Run the app
 if __name__ == "__main__":
