@@ -26,6 +26,7 @@ from baseline.viewsets import (
     LivelihoodActivityViewSet,
     LivelihoodProductCategoryViewSet,
     LivelihoodStrategyViewSet,
+    LivelihoodZoneBaselineReportViewSet,
     LivelihoodZoneBaselineViewSet,
     LivelihoodZoneViewSet,
     LivestockSaleViewSet,
@@ -84,6 +85,7 @@ router.register(r"season", SeasonViewSet)
 router.register(r"sourceorganization", SourceOrganizationViewSet)
 router.register(r"livelihoodzone", LivelihoodZoneViewSet)
 router.register(r"livelihoodzonebaseline", LivelihoodZoneBaselineViewSet)
+router.register(r"livelihoodzonebaselinereport", LivelihoodZoneBaselineReportViewSet, "livelihoodzonebaselinereport")
 router.register(r"livelihoodproductcategory", LivelihoodProductCategoryViewSet)
 router.register(r"community", CommunityViewSet)
 router.register(r"wealthgroup", WealthGroupViewSet)
