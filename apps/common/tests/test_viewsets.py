@@ -181,6 +181,7 @@ class ClassifiedProductViewSetTestCase(APITestCase):
         result = json.loads(response.content.decode("utf-8"))
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0]["common_name"], self.product2.common_name)
+        self.assertEqual(result[0]["display_name"], self.product2.display_name())
 
     def test_search_fields(self):
         response = self.client.get(self.url, {"search": "Product Description"})
