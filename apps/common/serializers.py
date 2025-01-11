@@ -57,11 +57,17 @@ class ClassifiedProductSerializer(serializers.ModelSerializer):
             "cpc",
             "description",
             "common_name",
+            "display_name",
             "scientific_name",
             "unit_of_measure",
             "kcals_per_unit",
             "aliases",
         ]
+
+    display_name = serializers.SerializerMethodField()
+
+    def get_display_name(self, obj):
+        return obj.display_name()
 
 
 class UserSerializer(serializers.ModelSerializer):
