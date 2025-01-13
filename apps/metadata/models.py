@@ -9,7 +9,14 @@ from django.utils.translation import pgettext_lazy
 
 import common.models as common_models
 from common.fields import TranslatedField
-from common.models import ClassifiedProduct, Country, Currency, UnitOfMeasure, SearchQueryMixin, IdentifierManager
+from common.models import (
+    ClassifiedProduct,
+    Country,
+    Currency,
+    IdentifierManager,
+    SearchQueryMixin,
+    UnitOfMeasure,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +25,7 @@ class ReferenceDataQuerySet(SearchQueryMixin, models.QuerySet):
     """
     Extends ReferenceData QuerySet with custom search method
     """
+
     def get_search_filter(self, search_term):
         return (
             Q(code__iexact=search_term)
@@ -33,6 +41,7 @@ class ReferenceDataQuerySet(SearchQueryMixin, models.QuerySet):
             | Q(description_ar__iexact=search_term)
             | Q(aliases__contains=[search_term.lower()])
         )
+
 
 class ReferenceData(common_models.Model):
     """
@@ -60,6 +69,7 @@ class ReferenceData(common_models.Model):
         help_text=_("A list of alternate names for the object."),
     )
     objects = IdentifierManager.from_queryset(ReferenceDataQuerySet)()
+
     def calculate_fields(self):
         # Ensure that aliases are lowercase and don't contain duplicates
         if self.aliases:
@@ -144,6 +154,7 @@ class WealthCharacteristic(ReferenceData):
         help_text=_("Whether the field is numeric, character, boolean, etc."),
     )
     objects = IdentifierManager.from_queryset(ReferenceDataQuerySet)()
+
     class Meta:
         verbose_name = _("Wealth Characteristic")
         verbose_name_plural = _("Wealth Characteristics")
