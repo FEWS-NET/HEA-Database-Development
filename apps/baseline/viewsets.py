@@ -1,7 +1,17 @@
+import logging
+
+from django.apps import apps
+from django.core.cache import cache
 from django.db import models
 from django.db.models import F, OuterRef, Q, Subquery
 from django.db.models.functions import Coalesce, NullIf
+from django.utils import translation
 from django_filters import rest_framework as filters
+from django_filters.filters import CharFilter
+from rest_framework.permissions import AllowAny, DjangoModelPermissionsOrAnonReadOnly
+from rest_framework.renderers import JSONRenderer
+from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
 from common.fields import translation_fields
@@ -86,6 +96,8 @@ from .serializers import (
     WealthGroupSerializer,
     WildFoodGatheringSerializer,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class SourceOrganizationFilterSet(filters.FilterSet):
@@ -188,6 +200,50 @@ class LivelihoodZoneBaselineFilterSet(filters.FilterSet):
         label="Country",
     )
     population_estimate = filters.RangeFilter(label="Population estimate range")
+    product = CharFilter(method="filter_by_product", label="Filter by Product")
+    wealth_characteristic = CharFilter(
+        method="filter_by_wealth_characteristic", label="Filter by Wealth Characteristic"
+    )
+
+    def filter_by_product(self, queryset, name, value):
+        """
+        Filter the baseline by matching products
+        """
+        field_lookups = [
+            *[(field, "icontains") for field in translation_fields("product__common_name")],
+            ("product__cpc", "istartswith"),
+            *[(field, "icontains") for field in translation_fields("product__description")],
+            ("product__aliases", "icontains"),
+        ]
+
+        q_object = Q()
+        for field, lookup in field_lookups:
+            q_object |= Q(**{f"{field}__{lookup}": value})
+
+        matching_baselines = LivelihoodStrategy.objects.filter(q_object).values("livelihood_zone_baseline")
+
+        return queryset.filter(id__in=Subquery(matching_baselines))
+
+    def filter_by_wealth_characteristic(self, queryset, name, value):
+        """
+        Filter the baseline by matching wealth_characteristic
+        """
+        field_lookups = [
+            *[(field, "icontains") for field in translation_fields("wealth_characteristic__name")],
+            ("wealth_characteristic__code", "istartswith"),
+            *[(field, "icontains") for field in translation_fields("wealth_characteristic__description")],
+            ("wealth_characteristic__aliases", "icontains"),
+        ]
+
+        q_object = Q()
+        for field, lookup in field_lookups:
+            q_object |= Q(**{f"{field}__{lookup}": value})
+
+        matching_baselines = WealthGroupCharacteristicValue.objects.filter(q_object).values(
+            "wealth_group__livelihood_zone_baseline"
+        )
+
+        return queryset.filter(id__in=Subquery(matching_baselines))
 
 
 class LivelihoodZoneBaselineViewSet(BaseModelViewSet):
@@ -1778,3 +1834,111 @@ class LivelihoodZoneBaselineReportViewSet(ModelViewSet):
             slice_percent_field_name = self.serializer_class.slice_percent_field_name(field_name, aggregate)
             calcs_on_aggregates[slice_percent_field_name] = expr
         return calcs_on_aggregates
+
+
+MODELS_TO_SEARCH = [
+    {"app_name": "common", "model_name": "ClassifiedProduct", "filter": ("product", "Product", "products")},
+    {
+        "app_name": "metadata",
+        "model_name": "LivelihoodCategory",
+        "filter": ("main_livelihood_category", "main_livelihood_category", "zone_types"),
+    },
+    {
+        "app_name": "metadata",
+        "model_name": "WealthCharacteristic",
+        "filter": ("wealth_characteristic", "Items", "items"),
+    },
+    {"app_name": "common", "model_name": "Country", "filter": ("country", "Country", "countries")},
+]
+
+
+class LivelihoodBaselineFacetedSearch(APIView):
+    """
+    Use a search term to find Livelihood Zone Baselines through various filters.
+
+    Returns faceted search results
+    """
+
+    renderer_classes = [JSONRenderer]
+    permission_classes = [DjangoModelPermissionsOrAnonReadOnly]
+
+    def get_permissions(self):
+        # Bypass the queryset check for permission classes
+        if DjangoModelPermissionsOrAnonReadOnly in self.permission_classes:
+            return [AllowAny()]
+        return super().get_permissions()
+
+    def get(self, request, format=None):
+        """
+        Return a faceted set of matching filters
+        """
+        results = {}
+        search_term = request.query_params.get("search", "")
+        language = request.query_params.get("language", "en")
+
+        # Construct a cache key based on search and language parameters
+        cache_key = f"filters_{search_term}_{language}".lower()
+        cached_results = cache.get(cache_key)
+        logger.debug(f"Cached result: {cached_results}")
+        if cached_results:
+            logger.info(f"Cache hit for key: {cache_key}")
+            return Response(cached_results)
+        logger.info(f"Cache miss for key: {cache_key}")
+        if search_term:
+            for model_entry in MODELS_TO_SEARCH:
+                app_name = model_entry["app_name"]
+                model_name = model_entry["model_name"]
+                filter, filter_label, filter_category = model_entry["filter"]
+                ModelClass = apps.get_model(app_name, model_name)
+                search_per_model = ModelClass.objects.search(search_term)
+                results[filter_category] = []
+
+                translation.activate(language)
+
+                for search_result in search_per_model:
+                    if model_name == "ClassifiedProduct":
+                        unique_zones = (
+                            LivelihoodStrategy.objects.filter(product=search_result)
+                            .values("livelihood_zone_baseline")
+                            .distinct()
+                            .count()
+                        )
+                        value_label, value = search_result.description, search_result.pk
+                    elif model_name == "LivelihoodCategory":
+                        unique_zones = LivelihoodZoneBaseline.objects.filter(
+                            main_livelihood_category=search_result
+                        ).count()
+                        value_label, value = search_result.description, search_result.pk
+                    elif model_name == "LivelihoodZone":
+                        unique_zones = LivelihoodZoneBaseline.objects.filter(livelihood_zone=search_result).count()
+                        value_label, value = search_result.name, search_result.pk
+                    elif model_name == "WealthCharacteristic":
+                        unique_zones = (
+                            WealthGroupCharacteristicValue.objects.filter(wealth_characteristic=search_result)
+                            .values("wealth_group__livelihood_zone_baseline")
+                            .distinct()
+                            .count()
+                        )
+                        value_label, value = search_result.description, search_result.pk
+                    elif model_name == "Country":
+                        unique_zones = (
+                            LivelihoodZoneBaseline.objects.filter(livelihood_zone__country=search_result)
+                            .distinct()
+                            .count()
+                        )
+                        value_label, value = search_result.iso_en_name, search_result.pk
+                    if unique_zones > 0:
+                        results[filter_category].append(
+                            {
+                                "filter": filter,
+                                "filter_label": filter_label,
+                                "value_label": value_label,
+                                "value": value,
+                                "count": unique_zones,
+                            }
+                        )
+
+        # Cache results for a week maybe
+        cache.set(cache_key, results, timeout=60 * 60 * 24 * 7)
+        logger.info(f"Cache set for key: {cache_key}")
+        return Response(results)
