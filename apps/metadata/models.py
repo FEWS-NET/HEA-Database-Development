@@ -2,16 +2,37 @@ import logging
 
 from django.contrib.gis.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db.models import Q
 from django.db.models.functions import Lower
 from django.utils.translation import gettext_lazy as _
 from django.utils.translation import pgettext_lazy
 
 import common.models as common_models
 from common.fields import TranslatedField
-from common.models import ClassifiedProduct, Country, Currency, UnitOfMeasure
+from common.models import ClassifiedProduct, Country, Currency, UnitOfMeasure, SearchQueryMixin, IdentifierManager
 
 logger = logging.getLogger(__name__)
 
+
+class ReferenceDataQuerySet(SearchQueryMixin, models.QuerySet):
+    """
+    Extends ReferenceData QuerySet with custom search method
+    """
+    def get_search_filter(self, search_term):
+        return (
+            Q(code__iexact=search_term)
+            | Q(name_en__iexact=search_term)
+            | Q(name_pt__iexact=search_term)
+            | Q(name_es__iexact=search_term)
+            | Q(name_fr__iexact=search_term)
+            | Q(name_ar__iexact=search_term)
+            | Q(description_en__iexact=search_term)
+            | Q(description_pt__iexact=search_term)
+            | Q(description_es__iexact=search_term)
+            | Q(description_fr__iexact=search_term)
+            | Q(description_ar__iexact=search_term)
+            | Q(aliases__contains=[search_term.lower()])
+        )
 
 class ReferenceData(common_models.Model):
     """
@@ -38,7 +59,7 @@ class ReferenceData(common_models.Model):
         verbose_name=_("aliases"),
         help_text=_("A list of alternate names for the object."),
     )
-
+    objects = IdentifierManager.from_queryset(ReferenceDataQuerySet)()
     def calculate_fields(self):
         # Ensure that aliases are lowercase and don't contain duplicates
         if self.aliases:
@@ -76,6 +97,7 @@ class LivelihoodCategory(ReferenceData):
         ),
         help_text=_("Color hex value code for the Livelihood Category."),
     )
+    objects = IdentifierManager.from_queryset(ReferenceDataQuerySet)()
 
     class Meta:
         verbose_name = _("Livelihood Category")
@@ -121,7 +143,7 @@ class WealthCharacteristic(ReferenceData):
         default=VariableType.STR,
         help_text=_("Whether the field is numeric, character, boolean, etc."),
     )
-
+    objects = IdentifierManager.from_queryset(ReferenceDataQuerySet)()
     class Meta:
         verbose_name = _("Wealth Characteristic")
         verbose_name_plural = _("Wealth Characteristics")

@@ -8,7 +8,7 @@ from django.conf import settings
 from django.contrib.gis.db import models
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
-from django.db.models import F
+from django.db.models import F, Q
 from django.utils.translation import gettext_lazy as _
 from model_utils.managers import InheritanceManager
 
@@ -18,6 +18,7 @@ from common.models import (
     ClassifiedProduct,
     Country,
     Currency,
+    SearchQueryMixin,
     UnitOfMeasure,
     UnitOfMeasureConversion,
 )
@@ -62,6 +63,28 @@ class SourceOrganization(common_models.Model):
         identifier = ["name"]
 
 
+class LivelihoodZoneQuerySet(SearchQueryMixin, models.QuerySet):
+    """
+    Searchable LivelihoodZones
+    """
+
+    def get_search_filter(self, search_term):
+        return (
+            Q(code__iexact=search_term)
+            | Q(alternate_code__iexact=search_term)
+            | Q(name_en__iexact=search_term)
+            | Q(name_pt__iexact=search_term)
+            | Q(name_es__iexact=search_term)
+            | Q(name_fr__iexact=search_term)
+            | Q(name_ar__iexact=search_term)
+            | Q(description_en__iexact=search_term)
+            | Q(description_pt__iexact=search_term)
+            | Q(description_es__iexact=search_term)
+            | Q(description_fr__iexact=search_term)
+            | Q(description_ar__iexact=search_term)
+        )
+
+
 class LivelihoodZone(common_models.Model):
     """
     A geographical area within a Country in which people share broadly the same
@@ -98,6 +121,7 @@ class LivelihoodZone(common_models.Model):
     name = TranslatedField(common_models.NameField(max_length=200, unique=True))
     description = TranslatedField(common_models.DescriptionField())
     country = models.ForeignKey(Country, verbose_name=_("Country"), db_column="country_code", on_delete=models.PROTECT)
+    objects = common_models.IdentifierManager.from_queryset(LivelihoodZoneQuerySet)()
 
     class Meta:
         verbose_name = _("Livelihood Zone")
