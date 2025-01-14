@@ -494,6 +494,7 @@ class CountryQuerySet(SearchQueryMixin, models.QuerySet):
     """
     Makes country searchable
     """
+
     def get_search_filter(self, search_term):
         return (
             Q(iso3166a2__iexact=search_term)
@@ -508,16 +509,19 @@ class CountryQuerySet(SearchQueryMixin, models.QuerySet):
             | Q(iso_es_name__iexact=search_term)
         )
 
+
 class CountryManager(models.Manager):
     """
     Custom manager for Country model using CountryQuerySet.
     """
+
     def get_queryset(self):
         qs = CountryQuerySet(self.model, using=self._db)
         return qs
 
     def search(self, search_term):
         return self.get_queryset().search(search_term)
+
 
 class Country(models.Model):
     """
