@@ -1,7 +1,6 @@
 import logging
 
 from django.apps import apps
-from django.core.cache import cache
 from django.db import models
 from django.db.models import F, OuterRef, Q, Subquery
 from django.db.models.functions import Coalesce, NullIf
@@ -1876,14 +1875,6 @@ class LivelihoodBaselineFacetedSearch(APIView):
         search_term = request.query_params.get("search", "")
         language = request.query_params.get("language", "en")
 
-        # Construct a cache key based on search and language parameters
-        cache_key = f"filters_{search_term}_{language}".lower()
-        cached_results = cache.get(cache_key)
-        logger.debug(f"Cached result: {cached_results}")
-        if cached_results:
-            logger.info(f"Cache hit for key: {cache_key}")
-            return Response(cached_results)
-        logger.info(f"Cache miss for key: {cache_key}")
         if search_term:
             for model_entry in MODELS_TO_SEARCH:
                 app_name = model_entry["app_name"]
@@ -1938,7 +1929,4 @@ class LivelihoodBaselineFacetedSearch(APIView):
                             }
                         )
 
-        # Cache results for a week maybe
-        cache.set(cache_key, results, timeout=60 * 60 * 24 * 7)
-        logger.info(f"Cache set for key: {cache_key}")
         return Response(results)
