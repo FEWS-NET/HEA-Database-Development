@@ -1,10 +1,8 @@
-import logging
-
 from django.apps import apps
 from django.db import models
 from django.db.models import F, OuterRef, Q, Subquery
 from django.db.models.functions import Coalesce, NullIf
-from django.utils import translation
+from django.utils.translation import override
 from django_filters import rest_framework as filters
 from django_filters.filters import CharFilter
 from rest_framework.permissions import AllowAny, DjangoModelPermissionsOrAnonReadOnly
@@ -95,8 +93,6 @@ from .serializers import (
     WealthGroupSerializer,
     WildFoodGatheringSerializer,
 )
-
-logger = logging.getLogger(__name__)
 
 
 class SourceOrganizationFilterSet(filters.FilterSet):
@@ -1836,26 +1832,41 @@ class LivelihoodZoneBaselineReportViewSet(ModelViewSet):
 
 
 MODELS_TO_SEARCH = [
-    {"app_name": "common", "model_name": "ClassifiedProduct", "filter": ("product", "Product", "products")},
+    {
+        "app_name": "common",
+        "model_name": "ClassifiedProduct",
+        "filter": {"key": "product", "label": "Product", "category": "products"},
+    },
     {
         "app_name": "metadata",
         "model_name": "LivelihoodCategory",
-        "filter": ("main_livelihood_category", "main_livelihood_category", "zone_types"),
+        "filter": {"key": "main_livelihood_category", "label": "Main Livelihood Category", "category": "zone_types"},
+    },
+    {
+        "app_name": "baseline",
+        "model_name": "LivelihoodZone",
+        "filter": {"key": "livelihood_zone", "label": "Livelihood zone", "category": "zones"},
     },
     {
         "app_name": "metadata",
         "model_name": "WealthCharacteristic",
-        "filter": ("wealth_characteristic", "Items", "items"),
+        "filter": {"key": "wealth_characteristic", "label": "Items", "category": "items"},
     },
-    {"app_name": "common", "model_name": "Country", "filter": ("country", "Country", "countries")},
+    {
+        "app_name": "common",
+        "model_name": "Country",
+        "filter": {"key": "country", "label": "Country", "category": "countries"},
+    },
 ]
 
 
 class LivelihoodBaselineFacetedSearch(APIView):
     """
-    Use a search term to find Livelihood Zone Baselines through various filters.
+    Performs a faceted search to find Livelihood Zone Baselines using a specified search term.
 
-    Returns faceted search results
+    The search applies to multiple related models, filtering results based on the configured
+    criteria for each model. For each matching result, it calculates the number of unique
+    livelihodd zones associated with the filter and includes relevant metadata in the response.
     """
 
     renderer_classes = [JSONRenderer]
@@ -1879,54 +1890,57 @@ class LivelihoodBaselineFacetedSearch(APIView):
             for model_entry in MODELS_TO_SEARCH:
                 app_name = model_entry["app_name"]
                 model_name = model_entry["model_name"]
-                filter, filter_label, filter_category = model_entry["filter"]
+                filter, filter_label, filter_category = (
+                    model_entry["filter"]["key"],
+                    model_entry["filter"]["label"],
+                    model_entry["filter"]["category"],
+                )
                 ModelClass = apps.get_model(app_name, model_name)
                 search_per_model = ModelClass.objects.search(search_term)
                 results[filter_category] = []
-
-                translation.activate(language)
-
-                for search_result in search_per_model:
-                    if model_name == "ClassifiedProduct":
-                        unique_zones = (
-                            LivelihoodStrategy.objects.filter(product=search_result)
-                            .values("livelihood_zone_baseline")
-                            .distinct()
-                            .count()
-                        )
-                        value_label, value = search_result.description, search_result.pk
-                    elif model_name == "LivelihoodCategory":
-                        unique_zones = LivelihoodZoneBaseline.objects.filter(
-                            main_livelihood_category=search_result
-                        ).count()
-                        value_label, value = search_result.description, search_result.pk
-                    elif model_name == "LivelihoodZone":
-                        unique_zones = LivelihoodZoneBaseline.objects.filter(livelihood_zone=search_result).count()
-                        value_label, value = search_result.name, search_result.pk
-                    elif model_name == "WealthCharacteristic":
-                        unique_zones = (
-                            WealthGroupCharacteristicValue.objects.filter(wealth_characteristic=search_result)
-                            .values("wealth_group__livelihood_zone_baseline")
-                            .distinct()
-                            .count()
-                        )
-                        value_label, value = search_result.description, search_result.pk
-                    elif model_name == "Country":
-                        unique_zones = (
-                            LivelihoodZoneBaseline.objects.filter(livelihood_zone__country=search_result)
-                            .distinct()
-                            .count()
-                        )
-                        value_label, value = search_result.iso_en_name, search_result.pk
-                    if unique_zones > 0:
-                        results[filter_category].append(
-                            {
-                                "filter": filter,
-                                "filter_label": filter_label,
-                                "value_label": value_label,
-                                "value": value,
-                                "count": unique_zones,
-                            }
-                        )
+                # for activating language
+                with override(language):
+                    for search_result in search_per_model:
+                        if model_name == "ClassifiedProduct":
+                            unique_zones = (
+                                LivelihoodStrategy.objects.filter(product=search_result)
+                                .values("livelihood_zone_baseline")
+                                .distinct()
+                                .count()
+                            )
+                            value_label, value = search_result.description, search_result.pk
+                        elif model_name == "LivelihoodCategory":
+                            unique_zones = LivelihoodZoneBaseline.objects.filter(
+                                main_livelihood_category=search_result
+                            ).count()
+                            value_label, value = search_result.description, search_result.pk
+                        elif model_name == "LivelihoodZone":
+                            unique_zones = LivelihoodZoneBaseline.objects.filter(livelihood_zone=search_result).count()
+                            value_label, value = search_result.name, search_result.pk
+                        elif model_name == "WealthCharacteristic":
+                            unique_zones = (
+                                WealthGroupCharacteristicValue.objects.filter(wealth_characteristic=search_result)
+                                .values("wealth_group__livelihood_zone_baseline")
+                                .distinct()
+                                .count()
+                            )
+                            value_label, value = search_result.description, search_result.pk
+                        elif model_name == "Country":
+                            unique_zones = (
+                                LivelihoodZoneBaseline.objects.filter(livelihood_zone__country=search_result)
+                                .distinct()
+                                .count()
+                            )
+                            value_label, value = search_result.iso_en_name, search_result.pk
+                        if unique_zones > 0:
+                            results[filter_category].append(
+                                {
+                                    "filter": filter,
+                                    "filter_label": filter_label,
+                                    "value_label": value_label,
+                                    "value": value,
+                                    "count": unique_zones,
+                                }
+                            )
 
         return Response(results)
