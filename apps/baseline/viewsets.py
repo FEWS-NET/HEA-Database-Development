@@ -5,7 +5,7 @@ from django.db.models.functions import Coalesce, NullIf
 from django.utils.translation import override
 from django_filters import rest_framework as filters
 from django_filters.filters import CharFilter
-from rest_framework.permissions import AllowAny, DjangoModelPermissionsOrAnonReadOnly
+from rest_framework.permissions import AllowAny
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -225,7 +225,7 @@ class LivelihoodZoneBaselineFilterSet(filters.FilterSet):
         """
         field_lookups = [
             *[(field, "icontains") for field in translation_fields("wealth_characteristic__name")],
-            ("wealth_characteristic__code", "istartswith"),
+            ("wealth_characteristic__code", "iexact"),
             *[(field, "icontains") for field in translation_fields("wealth_characteristic__description")],
             ("wealth_characteristic__aliases", "icontains"),
         ]
@@ -1860,23 +1860,20 @@ MODELS_TO_SEARCH = [
 ]
 
 
-class LivelihoodBaselineFacetedSearch(APIView):
+class LivelihoodBaselineFacetedSearchView(APIView):
     """
     Performs a faceted search to find Livelihood Zone Baselines using a specified search term.
 
     The search applies to multiple related models, filtering results based on the configured
     criteria for each model. For each matching result, it calculates the number of unique
-    livelihodd zones associated with the filter and includes relevant metadata in the response.
+    livelihood zones associated with the filter and includes relevant metadata in the response.
     """
 
     renderer_classes = [JSONRenderer]
-    permission_classes = [DjangoModelPermissionsOrAnonReadOnly]
+    permission_classes = []
 
     def get_permissions(self):
-        # Bypass the queryset check for permission classes
-        if DjangoModelPermissionsOrAnonReadOnly in self.permission_classes:
-            return [AllowAny()]
-        return super().get_permissions()
+        return [AllowAny()]
 
     def get(self, request, format=None):
         """

@@ -499,28 +499,15 @@ class CountryQuerySet(SearchQueryMixin, models.QuerySet):
         return (
             Q(iso3166a2__iexact=search_term)
             | Q(iso3166a3__iexact=search_term)
-            | Q(name__iexact=search_term)
-            | Q(iso_en_name__iexact=search_term)
-            | Q(iso_en_proper__iexact=search_term)
-            | Q(iso_en_ro_name__iexact=search_term)
-            | Q(iso_en_ro_proper__iexact=search_term)
-            | Q(iso_fr_name__iexact=search_term)
-            | Q(iso_fr_proper__iexact=search_term)
-            | Q(iso_es_name__iexact=search_term)
+            | Q(name__icontains=search_term)
+            | Q(iso_en_name__icontains=search_term)
+            | Q(iso_en_proper__icontains=search_term)
+            | Q(iso_en_ro_name__icontains=search_term)
+            | Q(iso_en_ro_proper__icontains=search_term)
+            | Q(iso_fr_name__icontains=search_term)
+            | Q(iso_fr_proper__icontains=search_term)
+            | Q(iso_es_name__icontains=search_term)
         )
-
-
-class CountryManager(models.Manager):
-    """
-    Custom manager for Country model using CountryQuerySet.
-    """
-
-    def get_queryset(self):
-        qs = CountryQuerySet(self.model, using=self._db)
-        return qs
-
-    def search(self, search_term):
-        return self.get_queryset().search(search_term)
 
 
 class Country(models.Model):
@@ -579,7 +566,7 @@ class Country(models.Model):
         verbose_name=_("ISO Spanish name"),
         help_text=_("The name in Spanish of the Country approved by the ISO 3166 Maintenance Agency"),
     )
-    objects = CountryManager()
+    objects = IdentifierManager.from_queryset(CountryQuerySet)()
 
     def __str__(self):
         return self.iso_en_ro_name if self.iso_en_ro_name else ""
@@ -587,6 +574,9 @@ class Country(models.Model):
     class Meta:
         verbose_name = _("Country")
         verbose_name_plural = _("Countries")
+
+    class ExtraMeta:
+        identifier = ["iso_en_ro_name"]
 
 
 class Currency(models.Model):

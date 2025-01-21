@@ -589,7 +589,7 @@ class LivelihoodZoneBaselineViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 1)
 
 
-class LivelihoodBaselineFacetedSearchTestCase(APITestCase):
+class LivelihoodBaselineFacetedSearchViewTestCase(APITestCase):
     def setUp(self):
         self.category1 = LivelihoodCategoryFactory()
         self.baseline1 = LivelihoodZoneBaselineFactory(main_livelihood_category=self.category1)
