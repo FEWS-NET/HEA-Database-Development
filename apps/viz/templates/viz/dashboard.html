@@ -1,0 +1,9 @@
+{% extends "viz/base.html" %}
+
+{% block extrahead %}
+<script defer src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+{% endblock extrahead%}
+
+{% block content %}
+{% include_block page.content %}
+{% endblock content %}

@@ -1,0 +1,113 @@
+{% load i18n static %}
+{% get_current_language as LANGUAGE_CODE %}
+<!DOCTYPE html>
+<html style="height: 100%">
+
+<head>
+    <meta charset="utf-8" />
+    <title>{{ chart_title }}</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <script defer src="{% static "viz/js/standard_visualizations/highcharts.min.js" %}"></script>
+    <script defer src="{% static "viz/js/standard_visualizations/highcharts.accessibility.min.js" %}"></script>
+    <script>
+        {% if LANGUAGE_CODE == 'es' %}
+        Highcharts.setOptions({
+            lang: {
+                loading: 'Cargando...',
+                months: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+                weekdays: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
+                shortMonths: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+                exportButtonTitle: "Exportar",
+                printButtonTitle: "Importar",
+                rangeSelectorFrom: "Desde",
+                rangeSelectorTo: "Hasta",
+                rangeSelectorZoom: "Período",
+                downloadPNG: 'Descargar imagen PNG',
+                downloadJPEG: 'Descargar imagen JPEG',
+                downloadPDF: 'Descargar imagen PDF',
+                downloadSVG: 'Descargar imagen SVG',
+                printChart: 'Imprimir',
+                resetZoom: 'Reiniciar zoom',
+                resetZoomTitle: 'Reiniciar zoom',
+                thousandsSep: ",",
+                decimalPoint: '.'
+            }
+        });
+        {% elif LANGUAGE_CODE == 'fr' %}
+        Highcharts.setOptions({
+            lang: {
+                loading: 'Chargement...',
+                months: ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'],
+                weekdays: ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'],
+                shortMonths: ['jan', 'fév', 'mar', 'avr', 'mai', 'juin', 'juil', 'aoû', 'sep', 'oct', 'nov', 'déc'],
+                exportButtonTitle: "Exporter",
+                printButtonTitle: "Imprimer",
+                rangeSelectorFrom: "Du",
+                rangeSelectorTo: "au",
+                rangeSelectorZoom: "Période",
+                downloadPNG: 'Télécharger en PNG',
+                downloadJPEG: 'Télécharger en JPEG',
+                downloadPDF: 'Télécharger en PDF',
+                downloadSVG: 'Télécharger en SVG',
+                resetZoom: "Réinitialiser le zoom",
+                resetZoomTitle: "Réinitialiser le zoom",
+                thousandsSep: " ",
+                decimalPoint: ','
+            }
+        });
+        {% elif LANGUAGE_CODE == 'pt' %}
+        Highcharts.setOptions({
+            lang: {
+                loading: 'Aguarde...',
+                months: ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'],
+                weekdays: ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'],
+                shortMonths: ['Jan', 'Feb', 'Mar', 'Abr', 'Maio', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
+                exportButtonTitle: "Exportar",
+                printButtonTitle: "Imprimir",
+                rangeSelectorFrom: "De",
+                rangeSelectorTo: "Até",
+                rangeSelectorZoom: "Periodo",
+                downloadPNG: 'Download imagem PNG',
+                downloadJPEG: 'Download imagem JPEG',
+                downloadPDF: 'Download documento PDF',
+                downloadSVG: 'Download imagem SVG'
+                resetZoom: "Reset",
+                resetZoomTitle: "Reset,
+                thousandsSep: ".",
+                decimalPoint: ','
+            }
+        });
+        {% else %}
+        Highcharts.setOptions({
+                lang: {
+                    decimalPoint: ".",
+                    thousandsSep: ",",
+                },
+            });
+        {% endif %}
+    </script>
+    
+</head>
+
+<body style="height: 100%">
+    <div style="width: 100%; height: 99%;" id="highcharts_container"></div>
+    <div id="loading"></div>
+
+    <script>
+        (async () => {
+            const hcConfig = await fetch("{{ highcharts_url|safe }}").then(response => response.json());
+            // add render event and remove loading div to indicate that chart has loaded
+            hcConfig['config']['chart']['events'] = {
+                render: () => {
+                    const elem = document.querySelector('#loading');
+                    if (elem) {
+                        elem.parentNode.removeChild(elem);
+                    }
+                }
+            }
+            Highcharts.chart('highcharts_container', hcConfig['config']);
+        })();
+    </script>
+</body>
+
+</html>
