@@ -35,40 +35,26 @@ def prepare_wealth_group_data(df):
     """
     Prepare wealth group data for visualization.
     """
-    # Rename columns for consistency
     df.rename(columns={"livelihood_zone_country_code": "country_code"}, inplace=True)
 
-    # Extract baseline date from 'livelihood_zone_baseline_label'
     if "livelihood_zone_baseline_label" in df.columns:
         df["ls_baseline_date"] = df["livelihood_zone_baseline_label"].str.split(": ").str[1]
     else:
-        df["ls_baseline_date"] = None  # Assign None if the column is missing
+        df["ls_baseline_date"] = None
 
-    # Convert baseline date to datetime and extract the month
     df["ls_baseline_month"] = pd.to_datetime(df["ls_baseline_date"], errors="coerce").dt.month
 
-    # Define month mapping dictionary
-    month_mapping = {
-        1: "January",
-        2: "February",
-        3: "March",
-        4: "April",
-        5: "May",
-        6: "June",
-        7: "July",
-        8: "August",
-        9: "September",
-        10: "October",
-        11: "November",
-        12: "December",
-    }
+    month_mapping = {month: pd.Timestamp(f"2023-{month:02}-01").strftime("%B") for month in range(1, 13)}
 
-    # Extract 'created_month' from 'created_date' or fallback to 'ls_baseline_date'
     if "created_date" in df.columns:
         df["created_month"] = pd.to_datetime(df["created_date"], errors="coerce").dt.month.map(month_mapping)
     else:
-        print("Warning: 'created_date' column is missing. Using 'ls_baseline_date' instead.")
         df["created_month"] = pd.to_datetime(df["ls_baseline_date"], errors="coerce").dt.month.map(month_mapping)
+
+    if "community_name" in df.columns:
+        df["Record Type"] = df["community_name"].apply(lambda x: "Summary Data" if pd.isna(x) else "Community Data")
+    else:
+        df["Record Type"] = "Community Data"
 
     return df
 
