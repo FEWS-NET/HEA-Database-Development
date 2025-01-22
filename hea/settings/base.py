@@ -150,6 +150,7 @@ REST_FRAMEWORK = {
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
     "EXCEPTION_HANDLER": "apps.common.exception_handlers.drf_exception_handler",
     "STRICT_JSON": True,
+    "SEARCH_PARAM": "search",
 }
 
 ROOT_URLCONF = "hea.urls"
