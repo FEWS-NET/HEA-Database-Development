@@ -24,7 +24,7 @@ from baseline.viewsets import (
     HazardViewSet,
     HuntingViewSet,
     LivelihoodActivityViewSet,
-    LivelihoodBaselineFacetedSearchView,
+    LivelihoodZoneBaselineFacetedSearchView,
     LivelihoodProductCategoryViewSet,
     LivelihoodStrategyViewSet,
     LivelihoodZoneBaselineReportViewSet,
@@ -133,9 +133,9 @@ urlpatterns = [
 ]
 urlpatterns += [
     path(
-        "api/livelihoodbaselinefacetedsearch/",
-        LivelihoodBaselineFacetedSearchView.as_view(),
-        name="livelihood-baseline-faceted-search",
+        "api/livelihoodzonebaselinefacetedsearch/",
+        LivelihoodZoneBaselineFacetedSearchView.as_view(),
+        name="livelihood-zone-baseline-faceted-search",
     ),
 ]
 

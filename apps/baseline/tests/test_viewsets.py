@@ -589,7 +589,7 @@ class LivelihoodZoneBaselineViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 1)
 
 
-class LivelihoodBaselineFacetedSearchViewTestCase(APITestCase):
+class LivelihoodZoneBaselineFacetedSearchViewTestCase(APITestCase):
     def setUp(self):
         self.category1 = LivelihoodCategoryFactory()
         self.baseline1 = LivelihoodZoneBaselineFactory(main_livelihood_category=self.category1)
@@ -618,17 +618,38 @@ class LivelihoodBaselineFacetedSearchViewTestCase(APITestCase):
             wealth_group__livelihood_zone_baseline=self.baseline2, wealth_characteristic=self.characteristic2
         )
         self.characteristic3 = WealthCharacteristicFactory()
-        self.strategy = LivelihoodStrategyFactory(product=self.product1)
+        self.strategy = LivelihoodStrategyFactory(product=self.product1, livelihood_zone_baseline=self.baseline3)
         self.baseline = LivelihoodZoneBaselineFactory(main_livelihood_category=self.category1)
-        self.url = reverse("livelihood-baseline-faceted-search")
+        self.url = reverse("livelihood-zone-baseline-faceted-search")
 
     def test_search_with_product(self):
         # Test when search matches entries
         response = self.client.get(self.url, {"search": self.product1.description_en, "language": "en"})
         self.assertEqual(response.status_code, 200)
-        data = response.data
-        self.assertEqual(len(data["products"]), 1)
-        self.assertEqual(data["products"][0]["count"], 2)  # 2 zones have this proudct
+        search_data = response.data
+        self.assertEqual(len(search_data["products"]), 1)
+        self.assertEqual(search_data["products"][0]["count"], 2)  # 2 zones have this product
+        # confirm the product value is correct
+        self.assertEqual(search_data["products"][0]["value"], self.product1.cpc)
+        # Apply the filters to the baseline
+        baseline_url = reverse("livelihoodzonebaseline-list")
+        response = self.client.get(
+            baseline_url, {search_data["products"][0]["filter"]: search_data["products"][0]["value"]}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content)), 2)
+        data = json.loads(response.content)
+        self.assertTrue(any(d["name"] == self.baseline1.name for d in data))
+        self.assertTrue(any(d["name"] == self.baseline3.name for d in data))
+        self.assertFalse(any(d["name"] == self.baseline2.name for d in data))
+
+        response = self.client.get(baseline_url, {search_data["items"][0]["filter"]: search_data["items"][0]["value"]})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content)), 1)
+        data = json.loads(response.content)
+        self.assertTrue(any(d["name"] == self.baseline1.name for d in data))
+        self.assertFalse(any(d["name"] == self.baseline2.name for d in data))
+        self.assertFalse(any(d["name"] == self.baseline3.name for d in data))
         # Search by the second product
         response = self.client.get(
             self.url,
@@ -637,8 +658,8 @@ class LivelihoodBaselineFacetedSearchViewTestCase(APITestCase):
             },
         )
         self.assertEqual(response.status_code, 200)
-        data = response.data
-        self.assertEqual(len(data["products"]), 0)
+        search_data = response.data
+        self.assertEqual(len(search_data["products"]), 0)
 
     def test_search_with_wealth_characterstics(self):
         # Test when search matches entries

@@ -1,4 +1,5 @@
 from django.apps import apps
+from django.conf import settings
 from django.db import models
 from django.db.models import F, OuterRef, Q, Subquery
 from django.db.models.functions import Coalesce, NullIf
@@ -1860,7 +1861,7 @@ MODELS_TO_SEARCH = [
 ]
 
 
-class LivelihoodBaselineFacetedSearchView(APIView):
+class LivelihoodZoneBaselineFacetedSearchView(APIView):
     """
     Performs a faceted search to find Livelihood Zone Baselines using a specified search term.
 
@@ -1870,17 +1871,14 @@ class LivelihoodBaselineFacetedSearchView(APIView):
     """
 
     renderer_classes = [JSONRenderer]
-    permission_classes = []
-
-    def get_permissions(self):
-        return [AllowAny()]
+    permission_classes = [AllowAny]
 
     def get(self, request, format=None):
         """
         Return a faceted set of matching filters
         """
         results = {}
-        search_term = request.query_params.get("search", "")
+        search_term = request.query_params.get(settings.REST_FRAMEWORK["SEARCH_PARAM"], "")
         language = request.query_params.get("language", "en")
 
         if search_term:
