@@ -1,11 +1,10 @@
-from django.db.models import Sum
+from django.db.models import F, FloatField, Sum
 from django.utils import translation
-from rest_framework import fields as rest_framework_fields
 from rest_framework import serializers
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
 
 from common.fields import translation_fields
-from metadata.models import LivelihoodStrategyType
+from common.serializers import AggregatingSerializer
 
 from .models import (
     BaselineLivelihoodActivity,
@@ -1472,28 +1471,78 @@ class CopingStrategySerializer(serializers.ModelSerializer):
         return str(obj.wealth_group)
 
 
-class DictQuerySetField(rest_framework_fields.SerializerMethodField):
-    def __init__(self, field_name=None, **kwargs):
-        self.field_name = field_name
-        super().__init__(**kwargs)
+class LivelihoodZoneBaselineReportSerializer(AggregatingSerializer):
+    """
+    There are two ‘levels’ of filter needed on this endpoint. The standard ones which are already on the LZB endpoint
+    filter the LZBs that are returned (eg, population range and wealth group). Let’s call them ‘global’ filters.
+    Everything needs filtering by wealth group or population, if those filters are active.
 
-    def to_representation(self, obj):
-        return self.parent.get_field(obj, self.field_name)
+    The data ‘slice’ strategy type and product filters do not remove LZBs from the results by themselves; they
+    only exclude values from the calculated slice statistics.
 
+    If a user selects Sorghum, that filters the kcals income for our slice. The kcals income for the slice is then
+    divided by the kcals income on the global set for the kcals income percent.
 
-class LivelihoodZoneBaselineReportSerializer(serializers.ModelSerializer):
+    The global filters are identical to those already on the LZB endpoint (and will always be - it is sharing the
+    code). These are applied to the LZB, row and slice totals.
+
+    The slice filters are:
+
+      - slice_by_product (for multiple, repeat the parameter, eg, slice_by_product=R0&slice_by_product=B01). These
+        match any CPC code that starts with the value. (The client needs to convert the selected product to CPC.)
+
+      - slice_by_strategy_type - you can specify multiple, and you need to pass the code not the label (which could be
+        translated). (These are case-insensitive but otherwise must be an exact match.)
+
+    The slice is defined by matching any of the products, AND any of the strategy types (as opposed to OR).
+
+    Translated fields, eg, name, description, are rendered in the currently selected locale if possible. (Except
+    Country, which has different translations following ISO.) This can be selected in the UI or set using eg,
+    &language=pt which overrides the UI selection.
+
+    You select the fields you want using the &fields= parameter in the usual way. If you omit the fields parameter all
+    fields are returned. These are currently the same field list as the normal LZB endpoint, plus the aggregations,
+    called slice_sum_kcals_consumed, sum_kcals_consumed, kcals_consumed_percent, plus product CPC and product common
+    name translated. If you omit a field, the statistics for that field will be aggregated together.
+
+    The ordering code is also shared with the normal LZB endpoint, which uses the standard
+    &ordering= parameter. If none are specified, the results are sorted by the aggregations descending, ie,
+    biggest percentage first.
+
+    The strategy type codes are:
+        MilkProduction
+        ButterProduction
+        MeatProduction
+        LivestockSale
+        CropProduction
+        FoodPurchase
+        PaymentInKind
+        ReliefGiftOther
+        Hunting
+        Fishing
+        WildFoodGathering
+        OtherCashIncome
+        OtherPurchase
+
+    The product hierarchy can be retrieved from the classified product endpoint /api/classifiedproduct/.
+
+    You can then filter by any of the calculated fields. To do so, prefix the field name with min_ or max_.
+    """
+
     class Meta:
         model = LivelihoodZoneBaseline
         fields = (
+            "source_organization",
+            "source_organization_name",
+            "country_pk",
+            "country_iso_en_name",
+            "livelihoodzone_pk",
+            "livelihood_zone",
+            "livelihood_zone_name",
             "id",
             "name",
             "description",
-            "source_organization",
-            "source_organization_name",
-            "livelihood_zone",
-            "livelihood_zone_name",
-            "country_pk",
-            "country_iso_en_name",
+            "wealth_group_category_code",
             "main_livelihood_category",
             "bss",
             "currency",
@@ -1503,111 +1552,32 @@ class LivelihoodZoneBaselineReportSerializer(serializers.ModelSerializer):
             "valid_to_date",  # to display "is latest" / "is historic" in the UI for each ref yr
             "population_source",
             "population_estimate",
-            "livelihoodzone_pk",
-            "livelihood_strategy_pk",
             "strategy_type",
+            "livelihood_strategy_pk",
             "livelihood_activity_pk",
-            "wealth_group_category_code",
-            "population_estimate",
-            "slice_sum_kcals_consumed",
-            "sum_kcals_consumed",
-            "kcals_consumed_percent",
             "product_cpc",
             "product_common_name",
         )
 
-    # For each of these aggregates the following calculation columns are added:
-    #   (a) Total at the LZB level (filtered by population, wealth group, etc), eg, sum_kcals_consumed.
-    #   (b) Total for the selected product/strategy type slice, eg, slice_sum_kcals_consumed.
-    #   (c) The percentage the slice represents of the whole, eg, kcals_consumed_percent.
-    # Filters are automatically created, eg, min_kcals_consumed_percent and max_kcals_consumed_percent.
-    # If no ordering is specified by the FilterSet, the results are ordered by percent descending in the order here.
     aggregates = {
         "kcals_consumed": Sum,
+        "income": Sum,
+        "expenditure": Sum,
+        "percentage_kcals": Sum,
+        "kcal_income_sum": Sum(
+            (
+                F("livelihood_strategies__livelihoodactivity__quantity_purchased")
+                + F("livelihood_strategies__livelihoodactivity__quantity_produced")
+            )
+            * F("livelihood_strategies__product__kcals_per_unit"),
+            output_field=FloatField(),
+        ),
     }
 
-    # For each of these pairs, a URL parameter is created "slice_{field}", eg, ?slice_product=
-    # They can appear zero, one or multiple times in the URL, and define a sub-slice of the row-level data.
-    # A slice includes activities with ANY of the products, AND, ANY of the strategy types.
-    # For example: (product=R0 OR product=L0) AND (strategy_type=MilkProd OR strategy_type=CropProd)
     slice_fields = {
         "product": "livelihood_strategies__product__cpc__istartswith",
         "strategy_type": "livelihood_strategies__strategy_type__iexact",
     }
-
-    livelihood_zone_name = DictQuerySetField("livelihood_zone_name")
-    source_organization_name = DictQuerySetField("source_organization_pk")
-    country_pk = DictQuerySetField("country_pk")
-    country_iso_en_name = DictQuerySetField("country_iso_en_name")
-    livelihoodzone_pk = DictQuerySetField("livelihoodzone_pk")
-    livelihood_strategy_pk = DictQuerySetField("livelihood_strategy_pk")
-    livelihood_activity_pk = DictQuerySetField("livelihood_activity_pk")
-    wealth_group_category_code = DictQuerySetField("wealth_group_category_code")
-    id = DictQuerySetField("id")
-    name = DictQuerySetField("name")
-    description = DictQuerySetField("description")
-    source_organization = DictQuerySetField("source_organization")
-    livelihood_zone = DictQuerySetField("livelihood_zone")
-    main_livelihood_category = DictQuerySetField("main_livelihood_category")
-    bss = DictQuerySetField("bss")
-    currency = DictQuerySetField("currency")
-    reference_year_start_date = DictQuerySetField("reference_year_start_date")
-    reference_year_end_date = DictQuerySetField("reference_year_end_date")
-    valid_from_date = DictQuerySetField("valid_from_date")
-    valid_to_date = DictQuerySetField("valid_to_date")
-    population_source = DictQuerySetField("population_source")
-    population_estimate = DictQuerySetField("population_estimate")
-    product_cpc = DictQuerySetField("product_cpc")
-    product_common_name = DictQuerySetField("product_common_name")
-    strategy_type = DictQuerySetField("strategy_type")
-
-    slice_sum_kcals_consumed = DictQuerySetField("slice_sum_kcals_consumed")
-    sum_kcals_consumed = DictQuerySetField("sum_kcals_consumed")
-    kcals_consumed_percent = DictQuerySetField("kcals_consumed_percent")
-
-    def get_fields(self):
-        """
-        User can specify fields= parameter to specify a field list, comma-delimited.
-
-        If the fields parameter is not passed or does not match fields, defaults to self.Meta.fields.
-
-        The aggregated fields self.aggregates are added regardless of user field selection.
-        """
-        field_list = "request" in self.context and self.context["request"].query_params.get("fields", None)
-        if not field_list:
-            return super().get_fields()
-
-        # User-provided list of fields
-        field_names = set(field_list.split(","))
-
-        # Add the aggregates that are always returned
-        for field_name, aggregate in self.aggregates.items():
-            field_names |= {
-                field_name,
-                self.aggregate_field_name(field_name, aggregate),
-                self.slice_aggregate_field_name(field_name, aggregate),
-                self.slice_percent_field_name(field_name, aggregate),
-            }
-
-        # Add the ordering field if specified
-        ordering = self.context["request"].query_params.get("ordering")
-        if ordering:
-            field_names.add(ordering)
-
-        # Remove any that don't match a field as a dict
-        return {k: v for k, v in super().get_fields().items() if k in field_names}
-
-    def get_field(self, obj, field_name):
-        """
-        Aggregated querysets are a list of dicts.
-        This is called by AggregatedQuerysetField to get the value from the row dict.
-        """
-        db_field = self.field_to_database_path(field_name)
-        value = obj.get(db_field, "")
-        # Get the readable, translated string from the choice key.
-        if field_name == "strategy_type" and value:
-            return dict(LivelihoodStrategyType.choices).get(value, value)
-        return value
 
     @staticmethod
     def field_to_database_path(field_name):
@@ -1621,24 +1591,15 @@ class LivelihoodZoneBaselineReportSerializer(serializers.ModelSerializer):
             "livelihood_activity_pk": "livelihood_strategies__livelihoodactivity__pk",
             "wealth_group_category_code": "livelihood_strategies__livelihoodactivity__wealth_group__wealth_group_category__code",  # NOQA: E501
             "kcals_consumed": "livelihood_strategies__livelihoodactivity__kcals_consumed",
+            "income": "livelihood_strategies__livelihoodactivity__income",
+            "expenditure": "livelihood_strategies__livelihoodactivity__expenditure",
+            "percentage_kcals": "livelihood_strategies__livelihoodactivity__percentage_kcals",
             "livelihood_zone_name": f"livelihood_zone__name_{language_code}",
             "source_organization_pk": "source_organization__pk",
             "source_organization_name": "source_organization__name",
             "country_pk": "livelihood_zone__country__pk",
             "country_iso_en_name": "livelihood_zone__country__iso_en_name",
-            "product_cpc": "livelihood_strategies__product",
+            "product_cpc": "livelihood_strategies__product__cpc",
             "strategy_type": "livelihood_strategies__strategy_type",
             "product_common_name": f"livelihood_strategies__product__common_name_{language_code}",
         }.get(field_name, field_name)
-
-    @staticmethod
-    def aggregate_field_name(field_name, aggregate):
-        return f"{aggregate.name.lower()}_{field_name}"  # eg, sum_kcals_consumed
-
-    @staticmethod
-    def slice_aggregate_field_name(field_name, aggregate):
-        return f"slice_{aggregate.name.lower()}_{field_name}"  # eg, slice_sum_kcals_consumed
-
-    @staticmethod
-    def slice_percent_field_name(field_name, aggregate):
-        return f"{field_name}_percent"  # eg, kcals_consumed_percent

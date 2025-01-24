@@ -1123,7 +1123,7 @@ class LivelihoodActivity(common_models.Model):
     quantity_sold = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Sold/Exchanged"))
     quantity_other_uses = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Other Uses"))
     # Can normally be calculated / validated as `quantity_produced + quantity_purchased - quantity_sold - quantity_other_uses`  # NOQA: E501
-    # but there are exceptions, such as MilkProduction, where there is also an amount used for ButterProduction, is this captured quantity_other_uses?  # NOQA: E501
+    # but there are exceptions, such as MilkProduction which also stores MilkProduction.quantity_butter_production
     quantity_consumed = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Consumed"))
 
     price = models.FloatField(
