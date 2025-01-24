@@ -1,7 +1,7 @@
 from django.apps import apps
 from django.conf import settings
 from django.db import models
-from django.db.models import F, OuterRef, Q, Subquery
+from django.db.models import F, FloatField, Q, Subquery
 from django.db.models.functions import Coalesce, NullIf
 from django.utils.translation import override
 from django_filters import rest_framework as filters
@@ -1770,24 +1770,9 @@ class LivelihoodZoneBaselineReportViewSet(ModelViewSet):
         """
         global_aggregates = {}
         for field_name, aggregate in self.serializer_class.aggregates.items():
-            subquery = LivelihoodZoneBaseline.objects.all()
-
-            # The FilterSet applies the global filters, such as Wealth Group Category.
-            # We also need to apply these to the subquery that gets the kcal totals per LZB (eg, the kcal_percent
-            # denominator), to restrict the 100% value by, for example, wealth group.
-            subquery = self.filter_queryset(subquery)
-
-            # Join to outer query
-            subquery = subquery.filter(pk=OuterRef("pk"))
-
-            # Annotate with the aggregate expression, eg, sum_kcals_consumed
             aggregate_field_name = self.serializer_class.aggregate_field_name(field_name, aggregate)
-            subquery = subquery.annotate(
-                **{aggregate_field_name: aggregate(self.serializer_class.field_to_database_path(field_name))}
-            ).values(aggregate_field_name)[:1]
-
-            global_aggregates[aggregate_field_name] = Subquery(subquery)
-
+            field_path = self.serializer_class.field_to_database_path(field_name)
+            global_aggregates[aggregate_field_name] = aggregate(field_path, default=0, output_field=FloatField())
         return global_aggregates
 
     def get_slice_aggregates(self):
@@ -1803,7 +1788,9 @@ class LivelihoodZoneBaselineReportViewSet(ModelViewSet):
                 # Annotate the queryset with the aggregate, eg, slice_sum_kcals_consumed, applying the slice filters.
                 # This is then divided by, eg, sum_kcals_consumed for the percentage of the slice.
                 field_path = self.serializer_class.field_to_database_path(field_name)
-                slice_aggregates[aggregate_field_name] = aggregate(field_path, filter=slice_filter, default=0)
+                slice_aggregates[aggregate_field_name] = aggregate(
+                    field_path, filter=slice_filter, default=0, output_field=FloatField()
+                )
         return slice_aggregates
 
     def get_slice_filters(self):
@@ -1825,8 +1812,10 @@ class LivelihoodZoneBaselineReportViewSet(ModelViewSet):
         for field_name, aggregate in self.serializer_class.aggregates.items():
             slice_total = F(self.serializer_class.slice_aggregate_field_name(field_name, aggregate))
             overall_total = F(self.serializer_class.aggregate_field_name(field_name, aggregate))
-            expr = slice_total * 100 / NullIf(overall_total, 0)  # Protects against divide by zero
-            expr = Coalesce(expr, 0)  # Zero if no LivActivities found for prod/strategy slice
+            # Protect against divide by zero (divide by null returns null without error)
+            expr = slice_total * 100 / NullIf(overall_total, 0)
+            # Zero if no LivActivities found for prod/strategy slice, rather than null:
+            expr = Coalesce(expr, 0, output_field=FloatField())
             slice_percent_field_name = self.serializer_class.slice_percent_field_name(field_name, aggregate)
             calcs_on_aggregates[slice_percent_field_name] = expr
         return calcs_on_aggregates

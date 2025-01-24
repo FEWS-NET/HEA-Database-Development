@@ -1509,11 +1509,17 @@ class LivelihoodZoneBaselineReportSerializer(serializers.ModelSerializer):
             "livelihood_activity_pk",
             "wealth_group_category_code",
             "population_estimate",
+            "product_cpc",
+            "product_common_name",
             "slice_sum_kcals_consumed",
             "sum_kcals_consumed",
             "kcals_consumed_percent",
-            "product_cpc",
-            "product_common_name",
+            "sum_income",
+            "slice_sum_income",
+            "income_percent",
+            "sum_expenditure",
+            "slice_sum_expenditure",
+            "expenditure_percent",
         )
 
     # For each of these aggregates the following calculation columns are added:
@@ -1524,6 +1530,8 @@ class LivelihoodZoneBaselineReportSerializer(serializers.ModelSerializer):
     # If no ordering is specified by the FilterSet, the results are ordered by percent descending in the order here.
     aggregates = {
         "kcals_consumed": Sum,
+        "income": Sum,
+        "expenditure": Sum,
     }
 
     # For each of these pairs, a URL parameter is created "slice_{field}", eg, ?slice_product=
@@ -1532,7 +1540,12 @@ class LivelihoodZoneBaselineReportSerializer(serializers.ModelSerializer):
     # For example: (product=R0 OR product=L0) AND (strategy_type=MilkProd OR strategy_type=CropProd)
     slice_fields = {
         "product": "livelihood_strategies__product__cpc__istartswith",
+        # this parameter must be set to one of values (not labels) from LivelihoodStrategyType, eg, MilkProduction
         "strategy_type": "livelihood_strategies__strategy_type__iexact",
+        # TODO: Support filter expressions on the right here, so we can slice on, for example, a
+        #  WealthGroupCharacteristicValue where WealthGroupCharacteristic is some hard-coded value,
+        #  eg, the slice on WGCV where WGC=PhoneOwnership, or on WGCV > 3 where WGC=HouseholdSize, eg:
+        #  {"phone_ownership": lambda val: Q(wgcv__path=val, wgc__path__code="PhoneOwnership")}
     }
 
     livelihood_zone_name = DictQuerySetField("livelihood_zone_name")
@@ -1564,6 +1577,14 @@ class LivelihoodZoneBaselineReportSerializer(serializers.ModelSerializer):
     slice_sum_kcals_consumed = DictQuerySetField("slice_sum_kcals_consumed")
     sum_kcals_consumed = DictQuerySetField("sum_kcals_consumed")
     kcals_consumed_percent = DictQuerySetField("kcals_consumed_percent")
+
+    slice_sum_income = DictQuerySetField("slice_sum_income")
+    sum_income = DictQuerySetField("sum_income")
+    income_percent = DictQuerySetField("income_percent")
+
+    slice_sum_expenditure = DictQuerySetField("slice_sum_expenditure")
+    sum_expenditure = DictQuerySetField("sum_expenditure")
+    expenditure_percent = DictQuerySetField("expenditure_percent")
 
     def get_fields(self):
         """
@@ -1621,12 +1642,15 @@ class LivelihoodZoneBaselineReportSerializer(serializers.ModelSerializer):
             "livelihood_activity_pk": "livelihood_strategies__livelihoodactivity__pk",
             "wealth_group_category_code": "livelihood_strategies__livelihoodactivity__wealth_group__wealth_group_category__code",  # NOQA: E501
             "kcals_consumed": "livelihood_strategies__livelihoodactivity__kcals_consumed",
+            "income": "livelihood_strategies__livelihoodactivity__income",
+            "expenditure": "livelihood_strategies__livelihoodactivity__expenditure",
+            "percentage_kcals": "livelihood_strategies__livelihoodactivity__percentage_kcals",
             "livelihood_zone_name": f"livelihood_zone__name_{language_code}",
             "source_organization_pk": "source_organization__pk",
             "source_organization_name": "source_organization__name",
             "country_pk": "livelihood_zone__country__pk",
             "country_iso_en_name": "livelihood_zone__country__iso_en_name",
-            "product_cpc": "livelihood_strategies__product",
+            "product_cpc": "livelihood_strategies__product__cpc",
             "strategy_type": "livelihood_strategies__strategy_type",
             "product_common_name": f"livelihood_strategies__product__common_name_{language_code}",
         }.get(field_name, field_name)
