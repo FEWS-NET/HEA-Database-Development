@@ -1542,7 +1542,43 @@ class LivelihoodZoneBaselineReportSerializer(serializers.ModelSerializer):
         "product": "livelihood_strategies__product__cpc__istartswith",
         # this parameter must be set to one of values (not labels) from LivelihoodStrategyType, eg, MilkProduction
         "strategy_type": "livelihood_strategies__strategy_type__iexact",
-        # TODO: Support filter expressions on the right here, so we can slice on, for example, a
+        # TODO: Integrate the slice functionality with FilterSets. The most natural way to specify a slice would
+        #  be to use the same terms as for the global filters from the FilterSet, prefixed with `slice_`.
+        #  Internally, filterset.filter_queryset(self, queryset) runs
+        #  for name, value in self.form.cleaned_data.items():
+        #      queryset = self.filters[name].filter(queryset, value)
+        #  Base Filter.filter runs:
+        #  lookup = "%s__%s" % (self.field_name, self.lookup_expr)
+        #  qs = self.get_method(qs)(**{lookup: value})
+        #  get_method: return qs.exclude if self.exclude else qs.filter
+        #  We override .filter and don't use get_method, eg, MultiFieldFilter. This'd need fixing.
+        #  filter.filter then returns Q(**{lookup: value})
+        #  Solution:
+        #  Add method FilterSet.generate_q_filter:
+        #      q = Q()
+        #      q.filter = lambda (self, **kwargs): self & Q(**kwargs)  # or put in class QImplementsQuerySet
+        #      q.exclude = lambda (self, **kwargs): self & ~Q(**kwargs)
+        #      q.distinct = lambda (self): self
+        #      for name, value in self.form.cleaned_data.items():
+        #          filter = self.filters[name]
+        #          q &= filter.filter(q, value)
+        #          # eg, filter.filter repeatedly calls q.filter(field__lookupt=value) or q.filter(another_q)
+        #          # we iteratively compose a Q instance.
+        #          # may also call q.distinct() but aggregating endpoint is implicitly distinct
+        #      delattr(q, "filter")
+        #      delattr(q, "exclude")
+        #      delattr(q, "distinct")
+        #      return q
+        #  Problem:
+        #  Slices need multiple values (eg, slice_product=X,slice_product=Y, but FilterSets don't always support them.
+        #
+        #
+        #
+        #      queryset = self.filters[name].filter(queryset, value)
+        #
+        #
+        #
+        #  Support filter expressions on the right here, so we can slice on, for example, a
         #  WealthGroupCharacteristicValue where WealthGroupCharacteristic is some hard-coded value,
         #  eg, the slice on WGCV where WGC=PhoneOwnership, or on WGCV > 3 where WGC=HouseholdSize, eg:
         #  {"phone_ownership": lambda val: Q(wgcv__path=val, wgc__path__code="PhoneOwnership")}
