@@ -109,7 +109,12 @@ EXTERNAL_APPS = [
     "ddtrace.contrib.django",
     "rest_framework_gis",
 ]
-PROJECT_APPS = ["common", "metadata", "baseline"]
+PROJECT_APPS = [
+    "common",
+    "metadata",
+    "baseline",
+    "ingestion",
+]
 INSTALLED_APPS = EXTERNAL_APPS + PROJECT_APPS
 
 MIDDLEWARE = [
