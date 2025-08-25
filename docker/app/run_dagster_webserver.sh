@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Wait up to 30 minutes for outstanding migrations to finish running on another container, checking every 30 seconds
-for i in `seq 1 60`; do
+for i in $(seq 1 60); do
     ./manage.py migrate --plan | grep "No planned migration operations." && break
     echo Waiting for outstanding database migrations
     sleep 30
@@ -13,5 +13,5 @@ echo Setting up logs
 touch log/django.log
 chown -R django:django log/*
 
-echo Starting Dagster with ddtrace to ${DD_TRACE_AGENT_URL}
-gosu django ddtrace-run dagster-webserver -h 0.0.0.0 -p 3000 -m pipelines --path-prefix /${DAGSTER_WEBSERVER_PREFIX} $*
+echo Starting Dagster
+gosu django dagster-webserver -h 0.0.0.0 -p 3000 -m pipelines --path-prefix /${DAGSTER_WEBSERVER_PREFIX} $*
