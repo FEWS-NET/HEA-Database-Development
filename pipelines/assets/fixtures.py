@@ -340,7 +340,7 @@ def consolidated_fixture(
         },
         **wild_foods_valid_instances,
     }
-    
+
     # Add the wild foods and other cash income instances, if they are present
     for model_name, instances in {**other_cash_income_valid_instances, **wild_foods_valid_instances}.items():
         if instances and model_name != "WealthGroup":
