@@ -76,32 +76,6 @@ jobs:
               {"Key": "Name", "Value": "HEA-github-autoscale-runner"},
               {"Key": "GitHubRepository", "Value": "${{ github.repository }}"}
             ]
-  ecr_login-test_branch:
-    outputs:
-      aws_access_key_id: ${{ steps.docker_login.outputs.aws_access_key_id }}
-      aws_secret_access_key: ${{ steps.docker_login.outputs.aws_secret_access_key }}
-      aws_session_token: ${{ steps.docker_login.outputs.aws_session_token }}
-      aws_credential_expiration: ${{ steps.docker_login.outputs.aws_credential_expiration }}
-    needs:
-      - start-runner-test_branch # required to start the main job when the runner is ready
-    runs-on: ${{ needs.start-runner-test_branch.outputs.label }} # run the job on the newly created runner
-    steps:
-      - name: Generate the ECR credentials
-        id: docker_login
-        run: |
-          # authenticate to pull image that runs test jobs
-          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
-
-          # @TODO: "aws configure get" didn't work, replace package with awscli v2
-          # and use "aws configure export-credentials"
-          python3 -m pip install --user aws-export-credentials==0.18.0
-          # set AWS vars to local environment
-          eval $(~/.local/bin/aws-export-credentials --env-export)
-
-          echo "aws_access_key_id=$AWS_ACCESS_KEY_ID" >> $GITHUB_OUTPUT
-          echo "aws_secret_access_key=$AWS_SECRET_ACCESS_KEY" >> $GITHUB_OUTPUT
-          echo "aws_session_token=$AWS_SESSION_TOKEN" >> $GITHUB_OUTPUT
-          echo "aws_credential_expiration=$AWS_CREDENTIAL_EXPIRATION" >> $GITHUB_OUTPUT
 
   start-runner-test_keepdb:
     needs: lint
@@ -130,32 +104,6 @@ jobs:
               {"Key": "Name", "Value": "HEA-github-autoscale-runner"},
               {"Key": "GitHubRepository", "Value": "${{ github.repository }}"}
             ]
-  ecr_login-test_keepdb:
-    outputs:
-      aws_access_key_id: ${{ steps.docker_login.outputs.aws_access_key_id }}
-      aws_secret_access_key: ${{ steps.docker_login.outputs.aws_secret_access_key }}
-      aws_session_token: ${{ steps.docker_login.outputs.aws_session_token }}
-      aws_credential_expiration: ${{ steps.docker_login.outputs.aws_credential_expiration }}
-    needs:
-      - start-runner-test_keepdb # required to start the main job when the runner is ready
-    runs-on: ${{ needs.start-runner-test_keepdb.outputs.label }} # run the job on the newly created runner
-    steps:
-      - name: Generate the ECR credentials
-        id: docker_login
-        run: |
-          # authenticate to pull image that runs test jobs
-          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
-
-          # @TODO: "aws configure get" didn't work, replace package with awscli v2
-          # and use "aws configure export-credentials"
-          python3 -m pip install --user aws-export-credentials==0.18.0
-          # set AWS vars to local environment
-          eval $(~/.local/bin/aws-export-credentials --env-export)
-
-          echo "aws_access_key_id=$AWS_ACCESS_KEY_ID" >> $GITHUB_OUTPUT
-          echo "aws_secret_access_key=$AWS_SECRET_ACCESS_KEY" >> $GITHUB_OUTPUT
-          echo "aws_session_token=$AWS_SESSION_TOKEN" >> $GITHUB_OUTPUT
-          echo "aws_credential_expiration=$AWS_CREDENTIAL_EXPIRATION" >> $GITHUB_OUTPUT
 
   start-runner-test_main:
     if: github.ref == 'refs/heads/main'
@@ -185,32 +133,6 @@ jobs:
               {"Key": "Name", "Value": "HEA-github-autoscale-runner"},
               {"Key": "GitHubRepository", "Value": "${{ github.repository }}"}
             ]
-  ecr_login-test_main:
-    outputs:
-      aws_access_key_id: ${{ steps.docker_login.outputs.aws_access_key_id }}
-      aws_secret_access_key: ${{ steps.docker_login.outputs.aws_secret_access_key }}
-      aws_session_token: ${{ steps.docker_login.outputs.aws_session_token }}
-      aws_credential_expiration: ${{ steps.docker_login.outputs.aws_credential_expiration }}
-    needs:
-      - start-runner-test_main # required to start the main job when the runner is ready
-    runs-on: ${{ needs.start-runner-test_main.outputs.label }} # run the job on the newly created runner
-    steps:
-      - name: Generate the ECR credentials
-        id: docker_login
-        run: |
-          # authenticate to pull image that runs test jobs
-          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
-
-          # @TODO: "aws configure get" didn't work, replace package with awscli v2
-          # and use "aws configure export-credentials"
-          python3 -m pip install --user aws-export-credentials==0.18.0
-          # set AWS vars to local environment
-          eval $(~/.local/bin/aws-export-credentials --env-export)
-
-          echo "aws_access_key_id=$AWS_ACCESS_KEY_ID" >> $GITHUB_OUTPUT
-          echo "aws_secret_access_key=$AWS_SECRET_ACCESS_KEY" >> $GITHUB_OUTPUT
-          echo "aws_session_token=$AWS_SESSION_TOKEN" >> $GITHUB_OUTPUT
-          echo "aws_credential_expiration=$AWS_CREDENTIAL_EXPIRATION" >> $GITHUB_OUTPUT
 
   start-runner-test_tag:
     if: startsWith(github.ref, 'refs/tags/')
@@ -240,32 +162,6 @@ jobs:
               {"Key": "Name", "Value": "HEA-github-autoscale-runner"},
               {"Key": "GitHubRepository", "Value": "${{ github.repository }}"}
             ]
-  ecr_login-test_tag:
-    outputs:
-      aws_access_key_id: ${{ steps.docker_login.outputs.aws_access_key_id }}
-      aws_secret_access_key: ${{ steps.docker_login.outputs.aws_secret_access_key }}
-      aws_session_token: ${{ steps.docker_login.outputs.aws_session_token }}
-      aws_credential_expiration: ${{ steps.docker_login.outputs.aws_credential_expiration }}
-    needs:
-      - start-runner-test_tag # required to start the main job when the runner is ready
-    runs-on: ${{ needs.start-runner-test_tag.outputs.label }} # run the job on the newly created runner
-    steps:
-      - name: Generate the ECR credentials
-        id: docker_login
-        run: |
-          # authenticate to pull image that runs test jobs
-          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
-
-          # @TODO: "aws configure get" didn't work, replace package with awscli v2
-          # and use "aws configure export-credentials"
-          python3 -m pip install --user aws-export-credentials==0.18.0
-          # set AWS vars to local environment
-          eval $(~/.local/bin/aws-export-credentials --env-export)
-
-          echo "aws_access_key_id=$AWS_ACCESS_KEY_ID" >> $GITHUB_OUTPUT
-          echo "aws_secret_access_key=$AWS_SECRET_ACCESS_KEY" >> $GITHUB_OUTPUT
-          echo "aws_session_token=$AWS_SESSION_TOKEN" >> $GITHUB_OUTPUT
-          echo "aws_credential_expiration=$AWS_CREDENTIAL_EXPIRATION" >> $GITHUB_OUTPUT
 
   test_branch:
     if: ${{ !(startsWith(github.ref, 'refs/tags/')) && !(github.ref == 'refs/heads/main') }}
@@ -276,7 +172,6 @@ jobs:
     runs-on: ${{ needs.start-runner-test_branch.outputs.label }} # run the job on the newly created runner
     needs:
       - start-runner-test_branch
-      - ecr_login-test_branch
     container:
       image: 888016039450.dkr.ecr.us-east-1.amazonaws.com/inf/docker:latest
     defaults:
@@ -296,26 +191,20 @@ jobs:
       COMPOSE_FILE: docker-compose.yml:docker-compose.ci.yml:docker-compose.utils.yml
       CI_REGISTRY_IMAGE: "888016039450.dkr.ecr.us-east-1.amazonaws.com/hea"
       BUILD_IMAGES: "app db"
-      AWS_ACCESS_KEY_ID: ${{ needs.ecr_login-test_branch.outputs.aws_access_key_id }}
-      AWS_SECRET_ACCESS_KEY: ${{ needs.ecr_login-test_branch.outputs.aws_secret_access_key }}
-      AWS_SESSION_TOKEN: ${{ needs.ecr_login-test_branch.outputs.aws_session_token }}
-      AWS_CREDENTIAL_EXPIRATION: ${{ needs.ecr_login-test_branch.outputs.aws_credential_expiration }}
 
     steps:
-      - name: "Authenticate with ECR"
-        run: |
-          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
-
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          mask-password: 'true'
       # Docker hub is rate-limiting unauthenticated users, so we have to
       # authenticate: https://www.docker.com/increase-rate-limits
-      - name: "Log in to Docker hub"
-        run: |
-          echo Using registry image ${CI_REGISTRY_IMAGE}
-          # log in to ECR
-          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
-
-          # log in to Docker hub
-          echo ${{ secrets.DOCKER_HUB_PASSWORD }} | docker login --username=${{ secrets.DOCKER_HUB_USERNAME }} --password-stdin
+      - name: Login to the DockerHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
       - name: "Pull previous images to speed up builds"
         run: |
           for SERVICE in ${BUILD_IMAGES}; do (docker pull ${CI_REGISTRY_IMAGE}/${SERVICE}:edge | grep -i -e 'Pulling from' -e Digest -e Status -e Error) || true; done
@@ -426,7 +315,6 @@ jobs:
     runs-on: ${{ needs.start-runner-test_keepdb.outputs.label }} # run the job on the newly created runner
     needs:
       - start-runner-test_keepdb
-      - ecr_login-test_keepdb
     container:
       image: 888016039450.dkr.ecr.us-east-1.amazonaws.com/inf/docker:latest
     defaults:
@@ -446,26 +334,20 @@ jobs:
       COMPOSE_FILE: docker-compose.yml:docker-compose.ci.yml:docker-compose.utils.yml
       CI_REGISTRY_IMAGE: "888016039450.dkr.ecr.us-east-1.amazonaws.com/hea"
       BUILD_IMAGES: "app db"
-      AWS_ACCESS_KEY_ID: ${{ needs.ecr_login-test_keepdb.outputs.aws_access_key_id }}
-      AWS_SECRET_ACCESS_KEY: ${{ needs.ecr_login-test_keepdb.outputs.aws_secret_access_key }}
-      AWS_SESSION_TOKEN: ${{ needs.ecr_login-test_keepdb.outputs.aws_session_token }}
-      AWS_CREDENTIAL_EXPIRATION: ${{ needs.ecr_login-test_keepdb.outputs.aws_credential_expiration }}
 
     steps:
-      - name: "Authenticate with ECR"
-        run: |
-          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
-
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          mask-password: 'true'
       # Docker hub is rate-limiting unauthenticated users, so we have to
       # authenticate: https://www.docker.com/increase-rate-limits
-      - name: "Log in to Docker hub"
-        run: |
-          echo Using registry image ${CI_REGISTRY_IMAGE}
-          # log in to ECR
-          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
-
-          # log in to Docker hub
-          echo ${{ secrets.DOCKER_HUB_PASSWORD }} | docker login --username=${{ secrets.DOCKER_HUB_USERNAME }} --password-stdin
+      - name: Login to the DockerHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
       - name: "Pull previous images to speed up builds"
         run: |
           for SERVICE in ${BUILD_IMAGES}; do (docker pull ${CI_REGISTRY_IMAGE}/${SERVICE}:edge | grep -i -e 'Pulling from' -e Digest -e Status -e Error) || true; done
@@ -558,7 +440,6 @@ jobs:
     runs-on: ${{ needs.start-runner-test_main.outputs.label }} # run the job on the newly created runner
     needs:
       - start-runner-test_main
-      - ecr_login-test_main
     container:
       image: 888016039450.dkr.ecr.us-east-1.amazonaws.com/inf/docker:latest
     defaults:
@@ -578,26 +459,20 @@ jobs:
       COMPOSE_FILE: docker-compose.yml:docker-compose.ci.yml:docker-compose.utils.yml
       CI_REGISTRY_IMAGE: "888016039450.dkr.ecr.us-east-1.amazonaws.com/hea"
       BUILD_IMAGES: "app db"
-      AWS_ACCESS_KEY_ID: ${{ needs.ecr_login-test_main.outputs.aws_access_key_id }}
-      AWS_SECRET_ACCESS_KEY: ${{ needs.ecr_login-test_main.outputs.aws_secret_access_key }}
-      AWS_SESSION_TOKEN: ${{ needs.ecr_login-test_main.outputs.aws_session_token }}
-      AWS_CREDENTIAL_EXPIRATION: ${{ needs.ecr_login-test_main.outputs.aws_credential_expiration }}
 
     steps:
-      - name: "Authenticate with ECR"
-        run: |
-          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
-
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          mask-password: 'true'
       # Docker hub is rate-limiting unauthenticated users, so we have to
       # authenticate: https://www.docker.com/increase-rate-limits
-      - name: "Log in to Docker hub"
-        run: |
-          echo Using registry image ${CI_REGISTRY_IMAGE}
-          # log in to ECR
-          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
-
-          # log in to Docker hub
-          echo ${{ secrets.DOCKER_HUB_PASSWORD }} | docker login --username=${{ secrets.DOCKER_HUB_USERNAME }} --password-stdin
+      - name: Login to the DockerHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
       - name: "Pull previous images to speed up builds"
         run: |
           echo Using registry image ${CI_REGISTRY_IMAGE}
@@ -693,7 +568,6 @@ jobs:
     runs-on: ${{ needs.start-runner-test_tag.outputs.label }} # run the job on the newly created runner
     needs:
       - start-runner-test_tag
-      - ecr_login-test_tag
     container:
       image: 888016039450.dkr.ecr.us-east-1.amazonaws.com/inf/docker:latest
     defaults:
@@ -713,22 +587,20 @@ jobs:
       COMPOSE_FILE: docker-compose.yml:docker-compose.ci.yml:docker-compose.utils.yml
       CI_REGISTRY_IMAGE: "888016039450.dkr.ecr.us-east-1.amazonaws.com/hea"
       BUILD_IMAGES: "app db"
-      AWS_ACCESS_KEY_ID: ${{ needs.ecr_login-test_tag.outputs.aws_access_key_id }}
-      AWS_SECRET_ACCESS_KEY: ${{ needs.ecr_login-test_tag.outputs.aws_secret_access_key }}
-      AWS_SESSION_TOKEN: ${{ needs.ecr_login-test_tag.outputs.aws_session_token }}
-      AWS_CREDENTIAL_EXPIRATION: ${{ needs.ecr_login-test_tag.outputs.aws_credential_expiration }}
 
     steps:
-      - name: "Authenticate with ECR"
-        run: |
-          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
-
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          mask-password: 'true'
       # Docker hub is rate-limiting unauthenticated users, so we have to
       # authenticate: https://www.docker.com/increase-rate-limits
-      - name: "Log in to Docker hub"
-        run: |
-          # log in to Docker hub
-          echo ${{ secrets.DOCKER_HUB_PASSWORD }} | docker login --username=${{ secrets.DOCKER_HUB_USERNAME }} --password-stdin
+      - name: Login to the DockerHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
       - uses: "actions/checkout@v4"
         with:
           ssh-key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
