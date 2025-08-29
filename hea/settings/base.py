@@ -106,7 +106,6 @@ EXTERNAL_APPS = [
     "django.contrib.admindocs",
     "binary_database_files",
     "django_extensions",
-    "ddtrace.contrib.django",
     "rest_framework_gis",
 ]
 PROJECT_APPS = ["common", "metadata", "baseline"]
@@ -259,7 +258,6 @@ LOGGING = {
         },
     },
     "loggers": {
-        "ddtrace": {"handlers": ["logfile"], "level": "INFO"},
         "django.request": {"handlers": ["console", "logfile"], "level": "INFO", "propagate": False},
         "django.db.backends": {"handlers": ["console", "logfile"], "level": "INFO", "propagate": False},
         "django.security": {"handlers": ["console", "logfile"], "level": "ERROR", "propagate": False},
