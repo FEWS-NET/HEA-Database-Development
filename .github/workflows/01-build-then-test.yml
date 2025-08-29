@@ -173,7 +173,10 @@ jobs:
     needs:
       - start-runner-test_branch
     container:
-      image: 888016039450.dkr.ecr.us-east-1.amazonaws.com/inf/docker:latest
+      image: ghcr.io/fews-net/inf/docker:latest
+      credentials:
+        username: ${{ github.repository_owner }}
+        password: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
     defaults:
       run:
         shell: ash --noprofile --norc -eo pipefail {0} # Fail on any non-zero exit code, even in piped commands
@@ -316,7 +319,10 @@ jobs:
     needs:
       - start-runner-test_keepdb
     container:
-      image: 888016039450.dkr.ecr.us-east-1.amazonaws.com/inf/docker:latest
+      image: ghcr.io/fews-net/inf/docker:latest
+      credentials:
+        username: ${{ github.repository_owner }}
+        password: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
     defaults:
       run:
         shell: ash --noprofile --norc -eo pipefail {0} # Fail on any non-zero exit code, even in piped commands
@@ -441,7 +447,10 @@ jobs:
     needs:
       - start-runner-test_main
     container:
-      image: 888016039450.dkr.ecr.us-east-1.amazonaws.com/inf/docker:latest
+      image: ghcr.io/fews-net/inf/docker:latest
+      credentials:
+        username: ${{ github.repository_owner }}
+        password: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
     defaults:
       run:
         shell: ash --noprofile --norc -eo pipefail {0} # Fail on any non-zero exit code, even in piped commands
@@ -569,7 +578,10 @@ jobs:
     needs:
       - start-runner-test_tag
     container:
-      image: 888016039450.dkr.ecr.us-east-1.amazonaws.com/inf/docker:latest
+      image: ghcr.io/fews-net/inf/docker:latest
+      credentials:
+        username: ${{ github.repository_owner }}
+        password: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
     defaults:
       run:
         shell: ash --noprofile --norc -eo pipefail {0} # Fail on any non-zero exit code, even in piped commands
