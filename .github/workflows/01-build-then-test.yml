@@ -29,11 +29,11 @@ env:
 
 jobs:
   lint:
-    runs-on: [self-hosted, ec2-runner]
+    runs-on: [ data ]
     container: "python:3.11"
 
     steps:
-      - uses: "actions/checkout@v3"
+      - uses: "actions/checkout@v4"
         with:
           ssh-key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
           # use ssh-key for updating submodules, will be removed in post-job
@@ -51,26 +51,26 @@ jobs:
   start-runner-test_branch:
     if: ${{ !(startsWith(github.ref, 'refs/tags/')) && !(github.ref == 'refs/heads/main') }}
     needs: lint
-    runs-on: [self-hosted, ec2-runner]
+    runs-on: [ data ]
     outputs:
       label: ${{ steps.start-ec2-runner.outputs.label }}
       ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
     steps:
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ env.AWS_REGION }}
       - name: Start EC2 runner test_branch
         id: start-ec2-runner
-        uses: FEWS-NET/ec2-github-runner@076da0ed4e015d7c5bc6c8e1ad0ccef7106cb433
+        uses: FEWS-NET/ec2-github-runner@1f687d4b786b21bed4ad6f420daddc7665bff857
         with:
           mode: start
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-          ec2-image-id: ami-0da7ed013d60d14dc
-          ec2-instance-type: m5.xlarge
-          subnet-id: subnet-02bc23bcdd0792516
-          security-group-id: sg-0e11a9c9e18cfb74b
-          iam-role-name: github_runner_role # optional, requires additional permissions
+          ec2-image-id: ami-092d88ab9dba1ddc0
+          ec2-instance-type: m5.large
+          subnet-id: subnet-0f50e5fa11397a87b
+          security-group-id: sg-0c844cef0ffc13cde
+          iam-role-name: data-prod-github-runner-role # optional, requires additional permissions
           aws-resource-tags: > # optional, requires additional permissions
             [
               {"Key": "Name", "Value": "ec2-github-autoscale-runner"},
@@ -105,29 +105,29 @@ jobs:
 
   start-runner-test_keepdb:
     needs: lint
-    runs-on: [self-hosted, ec2-runner]
+    runs-on: [ data ]
     outputs:
       label: ${{ steps.start-ec2-runner.outputs.label }}
       ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
     steps:
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ env.AWS_REGION }}
       - name: Start EC2 runner test_keepdb
         id: start-ec2-runner
-        uses: FEWS-NET/ec2-github-runner@076da0ed4e015d7c5bc6c8e1ad0ccef7106cb433
+        uses: FEWS-NET/ec2-github-runner@1f687d4b786b21bed4ad6f420daddc7665bff857
         with:
           mode: start
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-          ec2-image-id: ami-0da7ed013d60d14dc
-          ec2-instance-type: m5.xlarge
-          subnet-id: subnet-02bc23bcdd0792516
-          security-group-id: sg-0e11a9c9e18cfb74b
-          iam-role-name: github_runner_role # optional, requires additional permissions
+          ec2-image-id: ami-092d88ab9dba1ddc0
+          ec2-instance-type: m5.large
+          subnet-id: subnet-0f50e5fa11397a87b
+          security-group-id: sg-0c844cef0ffc13cde
+          iam-role-name: data-prod-github-runner-role # optional, requires additional permissions
           aws-resource-tags: > # optional, requires additional permissions
             [
-              {"Key": "Name", "Value": "ec2-github-autoscale-runner"},
+              {"Key": "Name", "Value": "HEA-github-autoscale-runner"},
               {"Key": "GitHubRepository", "Value": "${{ github.repository }}"}
             ]
   ecr_login-test_keepdb:
@@ -160,26 +160,26 @@ jobs:
   start-runner-test_main:
     if: github.ref == 'refs/heads/main'
     needs: lint
-    runs-on: [self-hosted, ec2-runner]
+    runs-on: [ data ]
     outputs:
       label: ${{ steps.start-ec2-runner.outputs.label }}
       ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
     steps:
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ env.AWS_REGION }}
       - name: Start EC2 runner test_main
         id: start-ec2-runner
-        uses: FEWS-NET/ec2-github-runner@076da0ed4e015d7c5bc6c8e1ad0ccef7106cb433
+        uses: FEWS-NET/ec2-github-runner@1f687d4b786b21bed4ad6f420daddc7665bff857
         with:
           mode: start
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-          ec2-image-id: ami-0da7ed013d60d14dc
-          ec2-instance-type: m5.xlarge
-          subnet-id: subnet-02bc23bcdd0792516
-          security-group-id: sg-0e11a9c9e18cfb74b
-          iam-role-name: github_runner_role # optional, requires additional permissions
+          ec2-image-id: ami-092d88ab9dba1ddc0
+          ec2-instance-type: m5.large
+          subnet-id: subnet-0f50e5fa11397a87b
+          security-group-id: sg-0c844cef0ffc13cde
+          iam-role-name: data-prod-github-runner-role # optional, requires additional permissions
           aws-resource-tags: > # optional, requires additional permissions
             [
               {"Key": "Name", "Value": "ec2-github-autoscale-runner"},
@@ -215,26 +215,26 @@ jobs:
   start-runner-test_tag:
     if: startsWith(github.ref, 'refs/tags/')
     needs: lint
-    runs-on: [self-hosted, ec2-runner]
+    runs-on: [ data ]
     outputs:
       label: ${{ steps.start-ec2-runner.outputs.label }}
       ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
     steps:
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ env.AWS_REGION }}
       - name: Start EC2 runner test_tag
         id: start-ec2-runner
-        uses: FEWS-NET/ec2-github-runner@076da0ed4e015d7c5bc6c8e1ad0ccef7106cb433
+        uses: FEWS-NET/ec2-github-runner@1f687d4b786b21bed4ad6f420daddc7665bff857
         with:
           mode: start
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-          ec2-image-id: ami-0da7ed013d60d14dc
-          ec2-instance-type: m5.xlarge
-          subnet-id: subnet-02bc23bcdd0792516
-          security-group-id: sg-0e11a9c9e18cfb74b
-          iam-role-name: github_runner_role # optional, requires additional permissions
+          ec2-image-id: ami-092d88ab9dba1ddc0
+          ec2-instance-type: m5.large
+          subnet-id: subnet-0f50e5fa11397a87b
+          security-group-id: sg-0c844cef0ffc13cde
+          iam-role-name: data-prod-github-runner-role # optional, requires additional permissions
           aws-resource-tags: > # optional, requires additional permissions
             [
               {"Key": "Name", "Value": "ec2-github-autoscale-runner"},
@@ -320,7 +320,7 @@ jobs:
         run: |
           for SERVICE in ${BUILD_IMAGES}; do (docker pull ${CI_REGISTRY_IMAGE}/${SERVICE}:edge | grep -i -e 'Pulling from' -e Digest -e Status -e Error) || true; done
           for SERVICE in ${BUILD_IMAGES}; do (docker pull ${CI_REGISTRY_IMAGE}/${SERVICE}:latest | grep -i -e 'Pulling from' -e Digest -e Status -e Error) || true; done
-      - uses: "actions/checkout@v3"
+      - uses: "actions/checkout@v4"
         with:
           ssh-key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
           # use ssh-key for updating submodules, will be removed in post-job
@@ -470,7 +470,7 @@ jobs:
         run: |
           for SERVICE in ${BUILD_IMAGES}; do (docker pull ${CI_REGISTRY_IMAGE}/${SERVICE}:edge | grep -i -e 'Pulling from' -e Digest -e Status -e Error) || true; done
           for SERVICE in ${BUILD_IMAGES}; do (docker pull ${CI_REGISTRY_IMAGE}/${SERVICE}:latest | grep -i -e 'Pulling from' -e Digest -e Status -e Error) || true; done
-      - uses: "actions/checkout@v3"
+      - uses: "actions/checkout@v4"
         with:
           ssh-key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
           # use ssh-key for updating submodules, will be removed in post-job
@@ -603,7 +603,7 @@ jobs:
           echo Using registry image ${CI_REGISTRY_IMAGE}
           for SERVICE in ${BUILD_IMAGES}; do (docker pull ${CI_REGISTRY_IMAGE}/${SERVICE}:edge | grep -i -e 'Pulling from' -e Digest -e Status -e Error) || true; done
           for SERVICE in ${BUILD_IMAGES}; do (docker pull ${CI_REGISTRY_IMAGE}/${SERVICE}:latest | grep -i -e 'Pulling from' -e Digest -e Status -e Error) || true; done
-      - uses: "actions/checkout@v3"
+      - uses: "actions/checkout@v4"
         with:
           ssh-key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
           # use ssh-key for updating submodules, will be removed in post-job
@@ -729,7 +729,7 @@ jobs:
         run: |
           # log in to Docker hub
           echo ${{ secrets.DOCKER_HUB_PASSWORD }} | docker login --username=${{ secrets.DOCKER_HUB_USERNAME }} --password-stdin
-      - uses: "actions/checkout@v3"
+      - uses: "actions/checkout@v4"
         with:
           ssh-key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
           # use ssh-key for updating submodules, will be removed in post-job
@@ -824,15 +824,15 @@ jobs:
     needs:
       - start-runner-test_branch # required to get output from the start-runner-test_branch job
       - test_branch # required to wait until the main jobs are done
-    runs-on: [self-hosted, ec2-runner]
+    runs-on: [ data ]
 
     steps:
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ env.AWS_REGION }}
       - name: Stop EC2 runner
-        uses: FEWS-NET/ec2-github-runner@076da0ed4e015d7c5bc6c8e1ad0ccef7106cb433
+        uses: FEWS-NET/ec2-github-runner@1f687d4b786b21bed4ad6f420daddc7665bff857
         with:
           mode: stop
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
@@ -844,15 +844,15 @@ jobs:
     needs:
       - start-runner-test_keepdb # required to get output from the start-runner-test_keepdb job
       - test_keepdb
-    runs-on: [self-hosted, ec2-runner]
+    runs-on: [ data ]
 
     steps:
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ env.AWS_REGION }}
       - name: Stop EC2 runner
-        uses: FEWS-NET/ec2-github-runner@076da0ed4e015d7c5bc6c8e1ad0ccef7106cb433
+        uses: FEWS-NET/ec2-github-runner@1f687d4b786b21bed4ad6f420daddc7665bff857
         with:
           mode: stop
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
@@ -864,15 +864,15 @@ jobs:
     needs:
       - start-runner-test_main # required to get output from the start-runner-test_main job
       - test_main
-    runs-on: [self-hosted, ec2-runner]
+    runs-on: [ data ]
 
     steps:
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ env.AWS_REGION }}
       - name: Stop EC2 runner
-        uses: FEWS-NET/ec2-github-runner@076da0ed4e015d7c5bc6c8e1ad0ccef7106cb433
+        uses: FEWS-NET/ec2-github-runner@1f687d4b786b21bed4ad6f420daddc7665bff857
         with:
           mode: stop
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
@@ -884,15 +884,15 @@ jobs:
     needs:
       - start-runner-test_tag # required to get output from the start-runner-test_tag job
       - test_tag
-    runs-on: [self-hosted, ec2-runner]
+    runs-on: [ data ]
 
     steps:
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ env.AWS_REGION }}
       - name: Stop EC2 runner
-        uses: FEWS-NET/ec2-github-runner@076da0ed4e015d7c5bc6c8e1ad0ccef7106cb433
+        uses: FEWS-NET/ec2-github-runner@1f687d4b786b21bed4ad6f420daddc7665bff857
         with:
           mode: stop
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
