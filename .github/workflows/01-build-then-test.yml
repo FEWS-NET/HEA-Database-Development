@@ -73,7 +73,7 @@ jobs:
           iam-role-name: data-prod-github-runner-role # optional, requires additional permissions
           aws-resource-tags: > # optional, requires additional permissions
             [
-              {"Key": "Name", "Value": "ec2-github-autoscale-runner"},
+              {"Key": "Name", "Value": "HEA-github-autoscale-runner"},
               {"Key": "GitHubRepository", "Value": "${{ github.repository }}"}
             ]
   ecr_login-test_branch:
@@ -182,7 +182,7 @@ jobs:
           iam-role-name: data-prod-github-runner-role # optional, requires additional permissions
           aws-resource-tags: > # optional, requires additional permissions
             [
-              {"Key": "Name", "Value": "ec2-github-autoscale-runner"},
+              {"Key": "Name", "Value": "HEA-github-autoscale-runner"},
               {"Key": "GitHubRepository", "Value": "${{ github.repository }}"}
             ]
   ecr_login-test_main:
@@ -237,7 +237,7 @@ jobs:
           iam-role-name: data-prod-github-runner-role # optional, requires additional permissions
           aws-resource-tags: > # optional, requires additional permissions
             [
-              {"Key": "Name", "Value": "ec2-github-autoscale-runner"},
+              {"Key": "Name", "Value": "HEA-github-autoscale-runner"},
               {"Key": "GitHubRepository", "Value": "${{ github.repository }}"}
             ]
   ecr_login-test_tag:
