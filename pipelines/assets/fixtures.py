@@ -338,8 +338,10 @@ def consolidated_fixture(
             for model_name, instances in livelihood_activity_valid_instances.items()
             if model_name != "WealthGroup"
         },
-        **wild_foods_valid_instances,
     }
+    # Add the keys: `Fishing` and `WildFoodGathering`
+    consolidated_instances["Fishing"] = []
+    consolidated_instances["WildFoodGathering"] = []
 
     # Add the wild foods and other cash income instances, if they are present
     for model_name, instances in {**other_cash_income_valid_instances, **wild_foods_valid_instances}.items():
