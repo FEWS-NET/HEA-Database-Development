@@ -535,8 +535,6 @@ R01422AD,"Oilseed, Groundnut","Groundnuts (In Shell, Large)","Groundnuts (In She
 R01422AE,"Oilseed, Groundnut","Groundnuts (In Shell, Small)","Groundnuts (In Shell, Small)",,,,,['01422b'],,Arachis hypogaea,[]
 R01424,"Oilseed, groundnut",Groundnut (without shell),Groundnut (without shell),Cacahuetes (sin cáscara),Arachides (sans coque),Amendoim (sem casca),,[],[],Arachis hypogaea,[]
 R01424AA,Arachis hypogaea,Groundnut (without shell),Groundnut (without shell),,,,,"['mani descascarado', 'mani sin cascara', 'maní descascarado', 'peanut without hull', 'groundnut without hull', 'peanut without shell', 'maní sin cascara']",,Arachis hypogaea,"[OrderedDict([('country', 'SD'), ('product', 'R01424AA'), ('aliases', ['Shelled Groundnuts'])])]"
-R01423,Bambara Groundnuts,,Bambara Groundnuts,Cacahuetes de Bambara,Voandzou (Pois bambara),Amendoim Bambara,,[],,,[]
-R01423AA,"Oleaginous Fruit, Bambara",Bambara groundnut,Bambara groundnut,,,,,"['bambara bean', 'pois de terre', 'wouandzou', '01423', 'voandzou']",,Vigna subterranea,[]
 R0143,Cottonseed,,Cottonseed,,,,,[],,,[]
 R01431,"Oilseed, Cotton Seed for Planting",Cottonseed (Seed for Planting),Cottonseed (Seed for Planting),,,,,[],['1207.21'],,[]
 R01432,"Oilseed, Cotton",Cottonseed (Other),Cottonseed (Other),Semillas de algodón (otras),Graines de coton (autres),Semente de Algodão (Outro),,[],['1207.29'],,[]
