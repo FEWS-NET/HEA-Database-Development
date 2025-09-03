@@ -108,13 +108,6 @@ services:
       AWS_ENDPOINT_URL_S3: ${MINIO_ENDPOINT_URL}
       SUPPORT_EMAIL_ADDRESS: ${SUPPORT_EMAIL_ADDRESS}
       DJANGO_MIGRATE: 1
-      DD_TRACE_ENABLED: "false"
-      DD_TRACE_AGENT_URL: http://localhost:8126
-      DD_DOGSTATSD_URL: udp://localhost:8125
-      DD_SERVICE: app
-      DD_ENV: ${ENV}
-      DD_TAGS: app:${APP},env:{ENV}
-      DD_DJANGO_CACHE_SERVICE_NAME: django.core.cache
       KILUIGI_INTERMEDIATETARGET_BACKEND_CLASS: ${KILUIGI_INTERMEDIATETARGET_BACKEND_CLASS}
       KILUIGI_INTERMEDIATETARGET_ROOT_PATH: ${KILUIGI_INTERMEDIATETARGET_ROOT_PATH}
       KILUIGI_FINALTARGET_BACKEND_CLASS: ${KILUIGI_FINALTARGET_BACKEND_CLASS}
@@ -134,7 +127,6 @@ services:
       - db
     environment:
       <<: *base_env
-      DD_SERVICE: dagster_webserver
     entrypoint: docker/app/run_dagster_webserver.sh
     x-aws-role:
       Statement:
@@ -160,7 +152,6 @@ services:
       - db
     environment:
       <<: *base_env
-      DD_SERVICE: dagster_daemon
     entrypoint: docker/app/run_dagster_daemon.sh
     x-aws-role:
       Statement:
