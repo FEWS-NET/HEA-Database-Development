@@ -339,13 +339,12 @@ def consolidated_fixture(
             if model_name != "WealthGroup"
         },
     }
-    # Add the keys: `Fishing` and `WildFoodGathering`
-    consolidated_instances["Fishing"] = []
-    consolidated_instances["WildFoodGathering"] = []
 
     # Add the wild foods and other cash income instances, if they are present
     for model_name, instances in {**other_cash_income_valid_instances, **wild_foods_valid_instances}.items():
         if instances and model_name != "WealthGroup":
+            if model_name not in consolidated_instances:
+                consolidated_instances[model_name] = []
             consolidated_instances[model_name] += instances
 
     fixture, metadata = get_fixture_from_instances(consolidated_instances)
