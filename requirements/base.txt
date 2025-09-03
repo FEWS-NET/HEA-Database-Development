@@ -4,7 +4,7 @@ dagster_aws==0.27.7
 dagster-pipes==1.11.7
 dagster-postgres==0.27.7
 dagster-webserver==1.11.7
-Django==5.1.4
+Django==5.1.12
 django-binary-database-files==1.0.18
 django-environ==0.11.2
 django-extensions==3.2.3
@@ -37,7 +37,7 @@ plotly==6.3.0
 # Upgrade to psycopg>=3 once ddtrace supports it.
 # See https://github.com/DataDog/dd-trace-py/issues/4393
 psycopg2-binary==2.9.7
-requests==2.32.2
+requests==2.32.5
 # s3fs provides S3 support for Dagster UPathIOManager subclasses
 s3fs==2024.2.0
 sentry-sdk[django]==2.8.0
