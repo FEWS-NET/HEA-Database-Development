@@ -39,9 +39,9 @@ jobs:
           # behind load balancers, so that migrations have time to run, etc.
           # Use jq to filter out meaningless event history - the events related to the re-deployment haven't happened yet
           apk --no-cache add jq=1.6-r2 aws-cli=1.25.97-r0
-          aws ecs update-service --region ${AWS_REGION} --cluster ${ECS_CLUSTER} --service ${CLIENT}${APP}${ENV}_app --force-new-deployment --health-check-grace-period-seconds 600 | jq "del(.[] | .events)"
-          aws ecs update-service --region ${AWS_REGION} --cluster ${ECS_CLUSTER} --service ${CLIENT}${APP}${ENV}_dagster_webserver --force-new-deployment --health-check-grace-period-seconds 600 | jq "del(.[] | .events)"
-          aws ecs update-service --region ${AWS_REGION} --cluster ${ECS_CLUSTER} --service ${CLIENT}${APP}${ENV}_dagster_daemon --force-new-deployment | jq "del(.[] | .events)"
+          aws ecs update-service --region ${AWS_REGION} --cluster ${ECS_CLUSTER} --service ${CLIENT}-${APP}${ENV}-app --force-new-deployment --health-check-grace-period-seconds 600 | jq "del(.[] | .events)"
+          aws ecs update-service --region ${AWS_REGION} --cluster ${ECS_CLUSTER} --service ${CLIENT}-${APP}${ENV}-dagster-webserver --force-new-deployment --health-check-grace-period-seconds 600 | jq "del(.[] | .events)"
+          aws ecs update-service --region ${AWS_REGION} --cluster ${ECS_CLUSTER} --service ${CLIENT}-${APP}${ENV}-dagster-daemon --force-new-deployment | jq "del(.[] | .events)"
           echo -n "Initiated deployment to "
           case $ENV in
             dev)
