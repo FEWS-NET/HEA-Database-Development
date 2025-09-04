@@ -420,10 +420,14 @@ def get_instances_from_dataframe(
                 # to the list, provided that it has at least one Livelihood Activity where there is some income,
                 # expediture or consumption. This excludes empty activities that only contain attributes for,
                 # for example, 'type_of_milk_sold_or_other_uses'.
+                # Also ignore any livelihood activities that don't have a Wealth Category component to the Wealth Group
+                # natural key. These are from blank columns between Wealth Category groups in the BSS, which sometimes
+                # contain data where values or formulae have been copied across all the columns in a row.
                 non_empty_livelihood_activities = [
                     livelihood_activity
                     for livelihood_activity in livelihood_activities_for_strategy
-                    if any(
+                    if livelihood_activity["wealth_group"][2]  # Make sure there is a Wealth Category
+                    and any(
                         (
                             field in livelihood_activity
                             and (livelihood_activity[field] or livelihood_activity[field] == 0)
