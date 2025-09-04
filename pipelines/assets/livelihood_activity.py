@@ -436,6 +436,11 @@ def get_instances_from_dataframe(
                     )
                 ]
 
+                # Assertion to prevent linting from complaining about possible None values
+                assert livelihood_strategy is not None, (
+                    "Found Livelihood Activities from row %s, but there is no Livelihood Strategy defined." % row
+                )
+
                 # Don't save Livelihood Strategies from the Data worksheet that are captured in more detail
                 # on the Data2 or Data3 worksheets. These strategies have entries in the Data sheet like 'Construction cash income -- see Data2'
                 if non_empty_livelihood_activities and re.match(
