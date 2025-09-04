@@ -17,14 +17,14 @@ env:
   ENV: ${{ inputs.environment }}
 
   # AWS Variables
-  ECS_CLUSTER: "fnt_ecs"
+  ECS_CLUSTER: "data-prod-ecs-cluster"
   AWS_REGION: "us-east-1"
 
 jobs:
   deploy_env:
     # this will allow us to access secrets defined for this environment
     environment: ${{ inputs.environment }}
-    runs-on: [self-hosted, ec2-runner]
+    runs-on: [ data ]
     container:
       image: alpine:3.17
     defaults:

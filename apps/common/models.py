@@ -490,6 +490,26 @@ class NonOverlappingDateFramedModel(NonOverlappingMixin, models.Model):
         return date_text
 
 
+class CountryQuerySet(SearchQueryMixin, models.QuerySet):
+    """
+    Makes country searchable
+    """
+
+    def get_search_filter(self, search_term):
+        return (
+            Q(iso3166a2__iexact=search_term)
+            | Q(iso3166a3__iexact=search_term)
+            | Q(name__icontains=search_term)
+            | Q(iso_en_name__icontains=search_term)
+            | Q(iso_en_proper__icontains=search_term)
+            | Q(iso_en_ro_name__icontains=search_term)
+            | Q(iso_en_ro_proper__icontains=search_term)
+            | Q(iso_fr_name__icontains=search_term)
+            | Q(iso_fr_proper__icontains=search_term)
+            | Q(iso_es_name__icontains=search_term)
+        )
+
+
 class Country(models.Model):
     """
     A Country (or dependent territory or special area of geographical interest) included in ISO 3166.
@@ -546,6 +566,7 @@ class Country(models.Model):
         verbose_name=_("ISO Spanish name"),
         help_text=_("The name in Spanish of the Country approved by the ISO 3166 Maintenance Agency"),
     )
+    objects = IdentifierManager.from_queryset(CountryQuerySet)()
 
     def __str__(self):
         return self.iso_en_ro_name if self.iso_en_ro_name else ""
@@ -553,6 +574,9 @@ class Country(models.Model):
     class Meta:
         verbose_name = _("Country")
         verbose_name_plural = _("Countries")
+
+    class ExtraMeta:
+        identifier = ["iso_en_ro_name"]
 
 
 class Currency(models.Model):

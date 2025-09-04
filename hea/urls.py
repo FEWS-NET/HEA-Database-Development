@@ -26,6 +26,7 @@ from baseline.viewsets import (
     LivelihoodActivityViewSet,
     LivelihoodProductCategoryViewSet,
     LivelihoodStrategyViewSet,
+    LivelihoodZoneBaselineFacetedSearchView,
     LivelihoodZoneBaselineReportViewSet,
     LivelihoodZoneBaselineViewSet,
     LivelihoodZoneViewSet,
@@ -130,6 +131,13 @@ urlpatterns = [
     path("api-auth/", include("rest_framework.urls", namespace="rest_framework")),
     # Provides il8n/set_language to change Django language:
     path("i18n/", include("django.conf.urls.i18n")),
+]
+urlpatterns += [
+    path(
+        "api/livelihoodzonebaselinefacetedsearch/",
+        LivelihoodZoneBaselineFacetedSearchView.as_view(),
+        name="livelihood-zone-baseline-faceted-search",
+    ),
 ]
 
 # Django's solution for translating JavaScript apps

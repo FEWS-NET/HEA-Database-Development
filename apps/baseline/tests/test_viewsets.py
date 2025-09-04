@@ -12,6 +12,10 @@ from rest_framework.test import APITestCase
 from baseline.models import LivelihoodZoneBaseline
 from common.fields import translation_fields
 from common.tests.factories import ClassifiedProductFactory, CountryFactory
+from metadata.tests.factories import (
+    LivelihoodCategoryFactory,
+    WealthCharacteristicFactory,
+)
 
 from .factories import (
     BaselineLivelihoodActivityFactory,
@@ -535,6 +539,157 @@ class LivelihoodZoneBaselineViewSetTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 0)
+
+    def test_filter_by_product(self):
+        product = ClassifiedProductFactory(
+            cpc="K0111",
+            description_en="my product",
+            common_name_en="common",
+            kcals_per_unit=550,
+            aliases=["test alias"],
+        )
+        ClassifiedProductFactory(cpc="K01111")
+        baseline = LivelihoodZoneBaselineFactory()
+        LivelihoodStrategyFactory(product=product, livelihood_zone_baseline=baseline)
+        response = self.client.get(self.url, {"product": "K011"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content)), 1)
+        # filter by cpc
+        response = self.client.get(self.url, {"product": "K0111"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content)), 1)
+        # filter by cpc startswith
+        response = self.client.get(self.url, {"product": "K01111"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content)), 0)
+        # filter by description icontains
+        response = self.client.get(self.url, {"product": "my"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
+        # filter by description
+        response = self.client.get(self.url, {"product": "my product"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
+        # filter by alias
+        response = self.client.get(self.url, {"product": "test"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
+
+    def test_filter_by_wealth_characteristic(self):
+        baseline = LivelihoodZoneBaselineFactory()
+        wealth_characteristic = WealthCharacteristicFactory()
+        WealthGroupCharacteristicValueFactory(
+            wealth_group__livelihood_zone_baseline=baseline, wealth_characteristic=wealth_characteristic
+        )
+        response = self.client.get(self.url, {"wealth_characteristic": wealth_characteristic.code})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
+        response = self.client.get(self.url, {"wealth_characteristic": wealth_characteristic.name})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 1)
+
+
+class LivelihoodZoneBaselineFacetedSearchViewTestCase(APITestCase):
+    def setUp(self):
+        self.category1 = LivelihoodCategoryFactory()
+        self.baseline1 = LivelihoodZoneBaselineFactory(main_livelihood_category=self.category1)
+        self.baseline2 = LivelihoodZoneBaselineFactory(main_livelihood_category=self.category1)
+        self.baseline3 = LivelihoodZoneBaselineFactory()
+        self.product1 = ClassifiedProductFactory(
+            cpc="K0111",
+            description_en="my test",
+            common_name_en="common",
+            kcals_per_unit=550,
+            aliases=["test alias"],
+        )
+        self.product2 = ClassifiedProductFactory(
+            cpc="L0111",
+            description_en="my mukera",
+            common_name_en="common mukera",
+            kcals_per_unit=550,
+        )
+        LivelihoodStrategyFactory(product=self.product1, livelihood_zone_baseline=self.baseline1)
+        self.characteristic1 = WealthCharacteristicFactory(description_en="my test")
+        self.characteristic2 = WealthCharacteristicFactory(description_en="my mukera", description_fr="my test")
+        WealthGroupCharacteristicValueFactory(
+            wealth_group__livelihood_zone_baseline=self.baseline1, wealth_characteristic=self.characteristic1
+        )
+        WealthGroupCharacteristicValueFactory(
+            wealth_group__livelihood_zone_baseline=self.baseline2, wealth_characteristic=self.characteristic2
+        )
+        self.characteristic3 = WealthCharacteristicFactory()
+        self.strategy = LivelihoodStrategyFactory(product=self.product1, livelihood_zone_baseline=self.baseline3)
+        self.baseline = LivelihoodZoneBaselineFactory(main_livelihood_category=self.category1)
+        self.url = reverse("livelihood-zone-baseline-faceted-search")
+
+    def test_search_with_product(self):
+        # Test when search matches entries
+        response = self.client.get(self.url, {"search": self.product1.description_en, "language": "en"})
+        self.assertEqual(response.status_code, 200)
+        search_data = response.data
+        self.assertEqual(len(search_data["products"]), 1)
+        self.assertEqual(search_data["products"][0]["count"], 2)  # 2 zones have this product
+        # confirm the product value is correct
+        self.assertEqual(search_data["products"][0]["value"], self.product1.cpc)
+        # Apply the filters to the baseline
+        baseline_url = reverse("livelihoodzonebaseline-list")
+        response = self.client.get(
+            baseline_url, {search_data["products"][0]["filter"]: search_data["products"][0]["value"]}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content)), 2)
+        data = json.loads(response.content)
+        self.assertTrue(any(d["name"] == self.baseline1.name for d in data))
+        self.assertTrue(any(d["name"] == self.baseline3.name for d in data))
+        self.assertFalse(any(d["name"] == self.baseline2.name for d in data))
+
+        response = self.client.get(baseline_url, {search_data["items"][0]["filter"]: search_data["items"][0]["value"]})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content)), 1)
+        data = json.loads(response.content)
+        self.assertTrue(any(d["name"] == self.baseline1.name for d in data))
+        self.assertFalse(any(d["name"] == self.baseline2.name for d in data))
+        self.assertFalse(any(d["name"] == self.baseline3.name for d in data))
+        # Search by the second product
+        response = self.client.get(
+            self.url,
+            {
+                "search": self.product2.description_en,
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        search_data = response.data
+        self.assertEqual(len(search_data["products"]), 0)
+
+    def test_search_with_wealth_characterstics(self):
+        # Test when search matches entries
+        response = self.client.get(self.url, {"search": self.characteristic1.description_en})
+        self.assertEqual(response.status_code, 200)
+        data = response.data
+        self.assertEqual(len(data["items"]), 2)
+        self.assertEqual(data["items"][0]["count"], 1)  # 1 zone for this characteristic
+        self.assertEqual(data["items"][1]["count"], 1)  # 1 zone for this characteristic
+        # Search by the second characteristic
+        response = self.client.get(
+            self.url,
+            {
+                "search": self.characteristic2.description_en,
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.data
+        self.assertEqual(len(data["items"]), 1)
+        self.assertEqual(data["items"][0]["count"], 1)  # 1 zone for this characteristic
+        # Search by the third characteristic
+        response = self.client.get(
+            self.url,
+            {
+                "search": self.characteristic3.description_en,
+            },
+        )
+        data = response.data
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(data["items"]), 0)
 
 
 class LivelihoodProductCategoryViewSetTestCase(APITestCase):

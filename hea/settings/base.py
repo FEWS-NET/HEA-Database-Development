@@ -106,7 +106,6 @@ EXTERNAL_APPS = [
     "django.contrib.admindocs",
     "binary_database_files",
     "django_extensions",
-    "ddtrace.contrib.django",
     "rest_framework_gis",
     "django_plotly_dash.apps.DjangoPlotlyDashConfig",
 ]
@@ -152,6 +151,7 @@ REST_FRAMEWORK = {
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
     "EXCEPTION_HANDLER": "apps.common.exception_handlers.drf_exception_handler",
     "STRICT_JSON": True,
+    "SEARCH_PARAM": "search",
 }
 
 ROOT_URLCONF = "hea.urls"
@@ -260,7 +260,6 @@ LOGGING = {
         },
     },
     "loggers": {
-        "ddtrace": {"handlers": ["logfile"], "level": "INFO"},
         "django.request": {"handlers": ["console", "logfile"], "level": "INFO", "propagate": False},
         "django.db.backends": {"handlers": ["console", "logfile"], "level": "INFO", "propagate": False},
         "django.security": {"handlers": ["console", "logfile"], "level": "ERROR", "propagate": False},

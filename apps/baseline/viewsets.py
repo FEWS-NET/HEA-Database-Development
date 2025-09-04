@@ -1,7 +1,15 @@
+from django.apps import apps
+from django.conf import settings
 from django.db import models
-from django.db.models import F, OuterRef, Q, Subquery
+from django.db.models import F, FloatField, Q, Subquery
 from django.db.models.functions import Coalesce, NullIf
+from django.utils.translation import override
 from django_filters import rest_framework as filters
+from django_filters.filters import CharFilter
+from rest_framework.permissions import AllowAny
+from rest_framework.renderers import JSONRenderer
+from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
 from common.fields import translation_fields
@@ -188,6 +196,50 @@ class LivelihoodZoneBaselineFilterSet(filters.FilterSet):
         label="Country",
     )
     population_estimate = filters.RangeFilter(label="Population estimate range")
+    product = CharFilter(method="filter_by_product", label="Filter by Product")
+    wealth_characteristic = CharFilter(
+        method="filter_by_wealth_characteristic", label="Filter by Wealth Characteristic"
+    )
+
+    def filter_by_product(self, queryset, name, value):
+        """
+        Filter the baseline by matching products
+        """
+        field_lookups = [
+            *[(field, "icontains") for field in translation_fields("product__common_name")],
+            ("product__cpc", "istartswith"),
+            *[(field, "icontains") for field in translation_fields("product__description")],
+            ("product__aliases", "icontains"),
+        ]
+
+        q_object = Q()
+        for field, lookup in field_lookups:
+            q_object |= Q(**{f"{field}__{lookup}": value})
+
+        matching_baselines = LivelihoodStrategy.objects.filter(q_object).values("livelihood_zone_baseline")
+
+        return queryset.filter(id__in=Subquery(matching_baselines))
+
+    def filter_by_wealth_characteristic(self, queryset, name, value):
+        """
+        Filter the baseline by matching wealth_characteristic
+        """
+        field_lookups = [
+            *[(field, "icontains") for field in translation_fields("wealth_characteristic__name")],
+            ("wealth_characteristic__code", "iexact"),
+            *[(field, "icontains") for field in translation_fields("wealth_characteristic__description")],
+            ("wealth_characteristic__aliases", "icontains"),
+        ]
+
+        q_object = Q()
+        for field, lookup in field_lookups:
+            q_object |= Q(**{f"{field}__{lookup}": value})
+
+        matching_baselines = WealthGroupCharacteristicValue.objects.filter(q_object).values(
+            "wealth_group__livelihood_zone_baseline"
+        )
+
+        return queryset.filter(id__in=Subquery(matching_baselines))
 
 
 class LivelihoodZoneBaselineViewSet(BaseModelViewSet):
@@ -1718,24 +1770,9 @@ class LivelihoodZoneBaselineReportViewSet(ModelViewSet):
         """
         global_aggregates = {}
         for field_name, aggregate in self.serializer_class.aggregates.items():
-            subquery = LivelihoodZoneBaseline.objects.all()
-
-            # The FilterSet applies the global filters, such as Wealth Group Category.
-            # We also need to apply these to the subquery that gets the kcal totals per LZB (eg, the kcal_percent
-            # denominator), to restrict the 100% value by, for example, wealth group.
-            subquery = self.filter_queryset(subquery)
-
-            # Join to outer query
-            subquery = subquery.filter(pk=OuterRef("pk"))
-
-            # Annotate with the aggregate expression, eg, sum_kcals_consumed
             aggregate_field_name = self.serializer_class.aggregate_field_name(field_name, aggregate)
-            subquery = subquery.annotate(
-                **{aggregate_field_name: aggregate(self.serializer_class.field_to_database_path(field_name))}
-            ).values(aggregate_field_name)[:1]
-
-            global_aggregates[aggregate_field_name] = Subquery(subquery)
-
+            field_path = self.serializer_class.field_to_database_path(field_name)
+            global_aggregates[aggregate_field_name] = aggregate(field_path, default=0, output_field=FloatField())
         return global_aggregates
 
     def get_slice_aggregates(self):
@@ -1751,7 +1788,9 @@ class LivelihoodZoneBaselineReportViewSet(ModelViewSet):
                 # Annotate the queryset with the aggregate, eg, slice_sum_kcals_consumed, applying the slice filters.
                 # This is then divided by, eg, sum_kcals_consumed for the percentage of the slice.
                 field_path = self.serializer_class.field_to_database_path(field_name)
-                slice_aggregates[aggregate_field_name] = aggregate(field_path, filter=slice_filter, default=0)
+                slice_aggregates[aggregate_field_name] = aggregate(
+                    field_path, filter=slice_filter, default=0, output_field=FloatField()
+                )
         return slice_aggregates
 
     def get_slice_filters(self):
@@ -1773,8 +1812,119 @@ class LivelihoodZoneBaselineReportViewSet(ModelViewSet):
         for field_name, aggregate in self.serializer_class.aggregates.items():
             slice_total = F(self.serializer_class.slice_aggregate_field_name(field_name, aggregate))
             overall_total = F(self.serializer_class.aggregate_field_name(field_name, aggregate))
-            expr = slice_total * 100 / NullIf(overall_total, 0)  # Protects against divide by zero
-            expr = Coalesce(expr, 0)  # Zero if no LivActivities found for prod/strategy slice
+            # Protect against divide by zero (divide by null returns null without error)
+            expr = slice_total * 100 / NullIf(overall_total, 0)
+            # Zero if no LivActivities found for prod/strategy slice, rather than null:
+            expr = Coalesce(expr, 0, output_field=FloatField())
             slice_percent_field_name = self.serializer_class.slice_percent_field_name(field_name, aggregate)
             calcs_on_aggregates[slice_percent_field_name] = expr
         return calcs_on_aggregates
+
+
+MODELS_TO_SEARCH = [
+    {
+        "app_name": "common",
+        "model_name": "ClassifiedProduct",
+        "filter": {"key": "product", "label": "Product", "category": "products"},
+    },
+    {
+        "app_name": "metadata",
+        "model_name": "LivelihoodCategory",
+        "filter": {"key": "main_livelihood_category", "label": "Main Livelihood Category", "category": "zone_types"},
+    },
+    {
+        "app_name": "baseline",
+        "model_name": "LivelihoodZone",
+        "filter": {"key": "livelihood_zone", "label": "Livelihood zone", "category": "zones"},
+    },
+    {
+        "app_name": "metadata",
+        "model_name": "WealthCharacteristic",
+        "filter": {"key": "wealth_characteristic", "label": "Items", "category": "items"},
+    },
+    {
+        "app_name": "common",
+        "model_name": "Country",
+        "filter": {"key": "country", "label": "Country", "category": "countries"},
+    },
+]
+
+
+class LivelihoodZoneBaselineFacetedSearchView(APIView):
+    """
+    Performs a faceted search to find Livelihood Zone Baselines using a specified search term.
+
+    The search applies to multiple related models, filtering results based on the configured
+    criteria for each model. For each matching result, it calculates the number of unique
+    livelihood zones associated with the filter and includes relevant metadata in the response.
+    """
+
+    renderer_classes = [JSONRenderer]
+    permission_classes = [AllowAny]
+
+    def get(self, request, format=None):
+        """
+        Return a faceted set of matching filters
+        """
+        results = {}
+        search_term = request.query_params.get(settings.REST_FRAMEWORK["SEARCH_PARAM"], "")
+        language = request.query_params.get("language", "en")
+
+        if search_term:
+            for model_entry in MODELS_TO_SEARCH:
+                app_name = model_entry["app_name"]
+                model_name = model_entry["model_name"]
+                filter, filter_label, filter_category = (
+                    model_entry["filter"]["key"],
+                    model_entry["filter"]["label"],
+                    model_entry["filter"]["category"],
+                )
+                ModelClass = apps.get_model(app_name, model_name)
+                search_per_model = ModelClass.objects.search(search_term)
+                results[filter_category] = []
+                # for activating language
+                with override(language):
+                    for search_result in search_per_model:
+                        if model_name == "ClassifiedProduct":
+                            unique_zones = (
+                                LivelihoodStrategy.objects.filter(product=search_result)
+                                .values("livelihood_zone_baseline")
+                                .distinct()
+                                .count()
+                            )
+                            value_label, value = search_result.description, search_result.pk
+                        elif model_name == "LivelihoodCategory":
+                            unique_zones = LivelihoodZoneBaseline.objects.filter(
+                                main_livelihood_category=search_result
+                            ).count()
+                            value_label, value = search_result.description, search_result.pk
+                        elif model_name == "LivelihoodZone":
+                            unique_zones = LivelihoodZoneBaseline.objects.filter(livelihood_zone=search_result).count()
+                            value_label, value = search_result.name, search_result.pk
+                        elif model_name == "WealthCharacteristic":
+                            unique_zones = (
+                                WealthGroupCharacteristicValue.objects.filter(wealth_characteristic=search_result)
+                                .values("wealth_group__livelihood_zone_baseline")
+                                .distinct()
+                                .count()
+                            )
+                            value_label, value = search_result.description, search_result.pk
+                        elif model_name == "Country":
+                            unique_zones = (
+                                LivelihoodZoneBaseline.objects.filter(livelihood_zone__country=search_result)
+                                .distinct()
+                                .count()
+                            )
+                            value_label, value = search_result.iso_en_name, search_result.pk
+                        if unique_zones > 0:
+                            results[filter_category].append(
+                                {
+                                    "filter": filter,
+                                    "filter_label": filter_label,
+                                    "value_label": value_label,
+                                    "value": value,
+                                    "count": unique_zones,
+                                }
+                            )
+
+        return Response(results)

@@ -1,10 +1,9 @@
 # Do not pip freeze into this file. Add only the packages you need so pip can align dependencies.
-dagster==1.6.8
-dagster_aws==0.22.8
-dagster-pipes==1.6.8
-dagster-postgres==0.22.8
-dagster-webserver==1.6.8
-ddtrace==2.6.2
+dagster==1.11.7
+dagster_aws==0.27.7
+dagster-pipes==1.11.7
+dagster-postgres==0.27.7
+dagster-webserver==1.11.7
 Django==5.1.4
 django-binary-database-files==1.0.18
 django-environ==0.11.2
@@ -20,6 +19,8 @@ docutils
 factory-boy==3.2.1
 git+https://github.com/American-Institutes-for-Research/gdrivefs.git@e870c19e1d730635e3760e7ae21eebf9ddda765e
 googletrans-py==4.0.0
+# Required for rendering Dagster graphs in Jupyter notebooks
+graphviz==0.21
 gunicorn==23.0.0
 html5lib==1.1
 json-logging-py==0.2
@@ -30,7 +31,9 @@ git+https://github.com/nolze/msoffcrypto-tool.git@0f320cbe042b94cfc9087cd0cb693d
 # Make sure that same version of numpy is specified here and in docker/app/Dockerfile
 numpy==1.26.4
 openpyxl==3.1.2
-pandas==2.2.0
+pandas==2.3.2
+# Required for rendering Dagster asset status in Jupyter notebooks
+plotly==6.3.0
 # Upgrade to psycopg>=3 once ddtrace supports it.
 # See https://github.com/DataDog/dd-trace-py/issues/4393
 psycopg2-binary==2.9.7
