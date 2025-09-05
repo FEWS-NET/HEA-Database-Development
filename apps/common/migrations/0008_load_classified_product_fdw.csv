@@ -864,8 +864,6 @@ R01706AA,Vigna unguiculata,Cowpea (unspecified),Cowpea (unspecified),,,,,"['red 
 R01706AB,Vigna unguiculata sesquipedalis,Yardlong bean,Yardlong bean,,,,,"['snake bean', 'pea bean', 'bodi', 'chinese long bean', 'long-podded cowpea']",,Vigna unguiculata sesquipedalis,[]
 R01707,Cajanus cajan,Pigeon Pea family,Pigeon Pea family,Familia de gandules,Famille du pois cajan,Família feijão-boer,,[],['0713.60'],Cajanus cajan,[]
 R01707AA,Cajanus cajan,Pigeon pea (Unspecified),Pigeon pea (Unspecified),,,,,"['quinchoncho', ""pois d'angole"", 'pois du cap', 'gandules', 'cajan pea', 'guandul', 'tur', 'toor', 'gandul', 'pois congo', 'arhar', 'congo bean']",,Cajanus cajan,"[OrderedDict([('country', 'MM'), ('product', 'R01707AA'), ('aliases', ['pesingon', 'pensingon', 'toor'])])]"
-R01708,Vigna radiata,Mung Bean family,Mung Bean family,Familia de frijol mungo,Famille du haricot mungo,Família feijão mungo,,[],['0713.34'],Vigna radiata,[]
-R01708AA,Vigna radiata,Mung bean (unspecified),Mung bean (unspecified),,,,,"['matpe', 'moong', 'frijol chino', 'green gram', 'frijol loctao', 'gram pulse', 'masho', 'krishna mung', 'black lentil']",,Vigna radiata,"[OrderedDict([('country', 'MM'), ('product', 'R01708AA'), ('aliases', ['green gram', 'golden gram', 'pedesein', 'gawya pea', 'pedeshwewar', 'penauk', 'penauk sein'])])]"
 R01709,"Pulses, not specified",Pulses,Pulses,Leguminosas,Légumineuses,Leguminosas,,[],['0713.90'],,[]
 R01709AA,"Pulses, n.e.c., cowpeas, brown",Cowpeas (Brown),Cowpeas (Brown),,,,,"['wake ja', 'brown cowpeas', '01709b', 'ewa pupa']",,,[]
 R01709AB,"Pulses, n.e.c., cowpeas, red",Cowpeas (Red),Cowpeas (Red),,,,,"['01709c', 'red cowpeas']",,,[]
