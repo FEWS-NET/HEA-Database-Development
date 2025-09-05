@@ -420,10 +420,14 @@ def get_instances_from_dataframe(
                 # to the list, provided that it has at least one Livelihood Activity where there is some income,
                 # expediture or consumption. This excludes empty activities that only contain attributes for,
                 # for example, 'type_of_milk_sold_or_other_uses'.
+                # Also ignore any livelihood activities that don't have a Wealth Category component to the Wealth Group
+                # natural key. These are from blank columns between Wealth Category groups in the BSS, which sometimes
+                # contain data where values or formulae have been copied across all the columns in a row.
                 non_empty_livelihood_activities = [
                     livelihood_activity
                     for livelihood_activity in livelihood_activities_for_strategy
-                    if any(
+                    if livelihood_activity["wealth_group"][2]  # Make sure there is a Wealth Category
+                    and any(
                         (
                             field in livelihood_activity
                             and (livelihood_activity[field] or livelihood_activity[field] == 0)
@@ -432,15 +436,26 @@ def get_instances_from_dataframe(
                     )
                 ]
 
-                # Don't save Livelihood Strategies from the Data worksheet that are captured in more detail
-                # on the Data2 or Data3 worksheets. These strategies have entries in the Data sheet like 'Construction cash income -- see Data2'
-                if non_empty_livelihood_activities and re.match(
-                    r"^.*(?:data ?[23]|prochaine feuille)$", livelihood_strategy["activity_label"], re.IGNORECASE
-                ):
-                    non_empty_livelihood_activities = []
+                # Don't save Livelihood Strategies from the Data worksheet that are captured in more detail on the
+                # Data2 or Data3 worksheets. These strategies have entries in the Data sheet like
+                # 'Construction cash income -- see Data2'
+                if non_empty_livelihood_activities:
+                    # Assertion to prevent linting from complaining about possible None values
+                    assert livelihood_strategy is not None, (
+                        "Found Livelihood Activities from row %s, but there is no Livelihood Strategy defined." % row
+                    )
+                    if re.match(
+                        r"^.*(?:data ?[23]|prochaine feuille)$", livelihood_strategy["activity_label"], re.IGNORECASE
+                    ):
+                        non_empty_livelihood_activities = []
 
                 if non_empty_livelihood_activities:
                     # Finalize the livelihood strategy and activities, making various adjustments for quirks in the BSS
+
+                    # Assertion to prevent linting from complaining about possible None values
+                    assert livelihood_strategy is not None, (
+                        "Found Livelihood Activities from row %s, but there is no Livelihood Strategy defined." % row
+                    )
 
                     # Copy the product_id for MilkProduction and ButterProduction the previous livelihood strategy if
                     # necessary.
@@ -468,15 +483,22 @@ def get_instances_from_dataframe(
                             country_id=livelihood_zone_baseline.livelihood_zone.country_id,
                         )
                         and previous_livelihood_activities_for_strategy
-                        and "milking_animals" in previous_livelihood_strategy["attribute_rows"]
-                        and "milking_animals" not in livelihood_strategy["attribute_rows"]
                     ):
-                        livelihood_strategy["attribute_rows"]["milking_animals"] = row
-                        for i in range(len(previous_livelihood_activities_for_strategy)):
-                            if "milking_animals" in previous_livelihood_activities_for_strategy[i]:
-                                livelihood_activities_for_strategy[i]["milking_animals"] = (
-                                    previous_livelihood_activities_for_strategy[i]["milking_animals"]
-                                )
+                        # Assertion to prevent linting from complaining about possible None values
+                        assert previous_livelihood_strategy is not None, (
+                            "Found Previous Livelihood Activities from row %s, but there is no Previous Livelihood Strategy defined."
+                            % row
+                        )
+                        if (
+                            "milking_animals" in previous_livelihood_strategy["attribute_rows"]
+                            and "milking_animals" not in livelihood_strategy["attribute_rows"]
+                        ):
+                            livelihood_strategy["attribute_rows"]["milking_animals"] = row
+                            for i in range(len(previous_livelihood_activities_for_strategy)):
+                                if "milking_animals" in previous_livelihood_activities_for_strategy[i]:
+                                    livelihood_activities_for_strategy[i]["milking_animals"] = (
+                                        previous_livelihood_activities_for_strategy[i]["milking_animals"]
+                                    )
 
                     # Calculate kcals_consumed if the livelihood activity only contains the percentage_kcals.
                     # This is typical for ButterProduction and consumption of green crops.
