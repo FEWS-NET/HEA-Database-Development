@@ -4,7 +4,7 @@ dagster_aws==0.27.7
 dagster-pipes==1.11.7
 dagster-postgres==0.27.7
 dagster-webserver==1.11.7
-Django==5.2.1
+Django==5.2.2
 django-binary-database-files==1.0.18
 django-environ==0.11.2
 django-extensions==3.2.3
