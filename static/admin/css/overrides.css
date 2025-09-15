@@ -318,3 +318,14 @@ input[type="text"], input[type="password"], input[type="email"], input[type="url
 .card-body{
     width: 100%;
 }
+
+.page-footer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    white-space: nowrap;
+    width: 100%;
+}
+.page-footer p {
+    margin: 0; 
+}

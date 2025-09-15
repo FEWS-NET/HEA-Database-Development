@@ -168,6 +168,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "common.context_processors.theme_context",
+                "common.context_processors.selected_settings",
             ],
         },
     },
@@ -298,3 +299,6 @@ SILENCED_SYSTEM_CHECKS = [
 
 # Ensure we can delete large numbers or records through the admin, to facilitate reloading.
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
+
+PRIVACY_URL = "https://help.fews.net/fdp/privacy-policy"
+DISCLAIMER_URL = "https://help.fews.net/fdp/data-and-information-use-and-attribution-policy"
