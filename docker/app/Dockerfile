@@ -1,4 +1,5 @@
 FROM --platform=linux/amd64 python:3.12-bookworm as base
+
 # set up apt repositories for postgres installation
 RUN curl -s https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor | tee /usr/share/keyrings/pgdg.gpg >/dev/null && \
     echo "deb [signed-by=/usr/share/keyrings/pgdg.gpg] http://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" > /etc/apt/sources.list.d/pgdg.list && \
@@ -31,6 +32,8 @@ RUN curl -s https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor |
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 ENV PIP_ROOT_USER_ACTION=ignore
 ENV PYTHONIOENCODING UTF-8
+ENV PYTHONUNBUFFERED 1
+
 # Expose Dagster (3000), Gunicorn (8000), Jupyter (8888) and SSH (8022) ports
 EXPOSE 3000 8000 8888 8022
 ENTRYPOINT ["/usr/src/app/docker/app/run_django.sh"]
