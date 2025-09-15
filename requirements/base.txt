@@ -36,7 +36,7 @@ pandas==2.3.2
 plotly==6.3.0
 # Upgrade to psycopg>=3 once ddtrace supports it.
 # See https://github.com/DataDog/dd-trace-py/issues/4393
-psycopg2-binary==2.9.7
+psycopg2-binary==2.9.10
 requests==2.32.5
 # s3fs provides S3 support for Dagster UPathIOManager subclasses
 s3fs==2024.2.0
