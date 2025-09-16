@@ -34,9 +34,7 @@ openpyxl==3.1.2
 pandas==2.3.2
 # Required for rendering Dagster asset status in Jupyter notebooks
 plotly==6.3.0
-# Upgrade to psycopg>=3 once ddtrace supports it.
-# See https://github.com/DataDog/dd-trace-py/issues/4393
-psycopg2-binary==2.9.10
+psycopg==3.2.10
 requests==2.32.5
 # s3fs provides S3 support for Dagster UPathIOManager subclasses
 s3fs==2024.2.0
