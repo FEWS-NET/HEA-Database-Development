@@ -107,6 +107,7 @@ EXTERNAL_APPS = [
     "binary_database_files",
     "django_extensions",
     "rest_framework_gis",
+    "revproxy",
 ]
 PROJECT_APPS = ["common", "metadata", "baseline"]
 INSTALLED_APPS = EXTERNAL_APPS + PROJECT_APPS

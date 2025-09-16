@@ -11,6 +11,7 @@ django-extensions==3.2.3
 django-filter==23.5
 django-guardian==2.4.0
 django_model_utils==4.4.0
+django-revproxy==0.13.0
 django-treebeard==4.7.1
 djangorestframework==3.15.2
 djangorestframework-gis==1.1
