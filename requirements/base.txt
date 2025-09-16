@@ -4,7 +4,7 @@ dagster_aws==0.27.7
 dagster-pipes==1.11.7
 dagster-postgres==0.27.7
 dagster-webserver==1.11.7
-Django==5.1.12
+Django==5.2.6
 django-binary-database-files==1.0.18
 django-environ==0.11.2
 django-extensions==3.2.3
@@ -35,9 +35,7 @@ openpyxl==3.1.2
 pandas==2.3.2
 # Required for rendering Dagster asset status in Jupyter notebooks
 plotly==6.3.0
-# Upgrade to psycopg>=3 once ddtrace supports it.
-# See https://github.com/DataDog/dd-trace-py/issues/4393
-psycopg2-binary==2.9.7
+psycopg==3.2.10
 requests==2.32.5
 # s3fs provides S3 support for Dagster UPathIOManager subclasses
 s3fs==2024.2.0
