@@ -236,6 +236,7 @@ class CommunityAdmin(GISModelAdminReadOnly):
         "livelihood_zone_alternate_code",
         "country",
         "full_name",
+        "aliases",
     )
     readonly_fields = ("livelihood_zone_alternate_code", "country")
     search_fields = (

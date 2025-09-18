@@ -86,7 +86,6 @@ from common.lookups import ClassifiedProductLookup, UnitOfMeasureLookup  # NOQA:
 from metadata.lookups import SeasonNameLookup  # NOQA: E402
 from metadata.models import (  # NOQA: E402
     ActivityLabel,
-    LabelStatus,
     LivelihoodActivityScenario,
     LivelihoodStrategyType,
 )
@@ -206,7 +205,9 @@ def get_livelihood_activity_label_map(activity_type: str) -> dict[str, dict]:
     """
     label_map = {
         instance["activity_label"].lower(): instance
-        for instance in ActivityLabel.objects.filter(status=LabelStatus.COMPLETE, activity_type=activity_type).values(
+        for instance in ActivityLabel.objects.filter(
+            status=ActivityLabel.LabelStatus.OVERRIDE, activity_type=activity_type
+        ).values(
             "activity_label",
             "strategy_type",
             "is_start",
@@ -232,12 +233,12 @@ def get_label_attributes(label: str, activity_type: str) -> pd.Series:
     individually in the ActivityLabel model.
 
     Before looking for a regex match, if the label has a corresponding instance in the ActivityLabel
-    model with status=COMPLETE, then it returns the attributes from that instance. This allows us to
+    model with status=OVERRIDE, then it returns the attributes from that instance. This allows us to
     support labels that are too complex to match with a regex. For example, the ButterProduction
     labels often contain the name of the milk that the butter is derived from, and so we need to
     return a CPC code that is different to the one matched by the product in the label. This also
     allows us to create new labels to support new BSSs without needing to update code. We use the
-    ActivityLabel instances in before testing the regexes, so that we can override the regexes if
+    ActivityLabel instances before testing the regexes, so that we can override the regexes if
     necessary, e.g. to ignore labels containing a product_id that doesn't match any of the
     ClassifiedProduct instances.
 
