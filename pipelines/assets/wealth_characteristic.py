@@ -109,7 +109,7 @@ from baseline.models import (  # NOQA: E402
     WealthGroupCharacteristicValue,
 )
 from metadata.lookups import WealthGroupCategoryLookup  # NOQA: E402
-from metadata.models import LabelStatus, WealthCharacteristicLabel  # NOQA: E402
+from metadata.models import WealthCharacteristicLabel  # NOQA: E402
 
 # Indexes of header rows in the Data3 dataframe (wealth_group_category, district, village)
 HEADER_ROWS = [3, 4, 5]
@@ -187,7 +187,9 @@ def wealth_characteristic_instances(
     wealthgroupcategorylookup = WealthGroupCategoryLookup()
     label_map = {
         instance.pop("wealth_characteristic_label").lower(): instance
-        for instance in WealthCharacteristicLabel.objects.filter(status=LabelStatus.COMPLETE).values(
+        for instance in WealthCharacteristicLabel.objects.filter(
+            status=WealthCharacteristicLabel.LabelStatus.COMPLETE
+        ).values(
             "wealth_characteristic_label",
             "wealth_characteristic_id",
             "product_id",
