@@ -332,10 +332,10 @@ def wealth_characteristic_instances(
                         # If this is the summary, then also save the min and max values
                         if reference_type == WealthGroupCharacteristicValue.CharacteristicReference.SUMMARY:
                             min_value = df.loc[row, df.columns[-2]]
-                            if min_value != "" and float(min_value) < 1:
+                            if min_value and str(min_value).strip() != "" and float(min_value) < 1:
                                 min_value = float(min_value) * 100
                             max_value = df.loc[row, df.columns[-1]]
-                            if max_value != "" and float(max_value) < 1:
+                            if max_value and str(max_value).strip() != "" and float(max_value) < 1:
                                 max_value = float(max_value) * 100
                             wealth_group_characteristic_value["min_value"] = min_value
                             wealth_group_characteristic_value["max_value"] = max_value
