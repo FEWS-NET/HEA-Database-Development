@@ -61,7 +61,7 @@ from dagster import AssetExecutionContext, MetadataValue, Output, asset
 
 from ..configs import BSSMetadataConfig
 from ..partitions import bss_instances_partitions_def
-from ..utils import class_from_name, prepare_lookup
+from ..utils import class_from_name, get_sample_data, prepare_lookup
 from .base import (
     get_all_bss_labels_dataframe,
     get_bss_dataframe,
@@ -663,20 +663,15 @@ def get_instances_from_dataframe(
                         "season" not in livelihood_strategy or not livelihood_strategy["season"]
                     ):
                         strategy_is_valid = False
+                        # Include the header rows so that we can see which Wealth Groups are affected
                         rows = df.index[:num_header_rows].tolist() + [livelihood_strategy["row"]]
-                        error_message = "Cannot determine season from %s for %s %s on row %s for label '%s':\n%s" % (
+                        error_message = "Cannot determine season from '%s' for %s %s on row %s for label '%s':\n%s" % (
                             livelihood_strategy["season_original"],
                             "summary" if non_empty_summary_activities else "non-summary",
                             livelihood_strategy["strategy_type"],
                             livelihood_strategy["row"],
                             livelihood_strategy["activity_label"],
-                            # Use replace/dropna/fillna so that the error message only includes the columns that
-                            # contain unwanted data.
-                            df.loc[rows]
-                            .replace("", pd.NA)
-                            .dropna(axis="columns", subset=livelihood_strategy["row"])
-                            .fillna("")
-                            .to_markdown(),
+                            get_sample_data(df, rows).to_markdown(),
                         )
                         if not non_empty_summary_activities:
                             # No summary activities so we don't need to log an error, a warning is sufficient
@@ -690,20 +685,18 @@ def get_instances_from_dataframe(
                         "product_id" not in livelihood_strategy or not livelihood_strategy["product_id"]
                     ):
                         strategy_is_valid = False
+                        # Include the header rows so that we can see which Wealth Groups are affected
                         rows = df.index[:num_header_rows].tolist() + [livelihood_strategy["row"]]
-                        error_message = "Cannot determine product_id from %s for %s %s on row %s for label '%s':\n%s" % (
-                            livelihood_strategy["product_id_original"],
-                            "summary" if non_empty_summary_activities else "non-summary",
-                            livelihood_strategy["strategy_type"],
-                            livelihood_strategy["row"],
-                            livelihood_strategy["activity_label"],
-                            # Use replace/dropna/fillna so that the error message only includes the columns that
-                            # contain unwanted data.
-                            df.loc[rows]
-                            .replace("", pd.NA)
-                            .dropna(axis="columns", subset=livelihood_strategy["row"])
-                            .fillna("")
-                            .to_markdown(),
+                        error_message = (
+                            "Cannot determine product_id from '%s' for %s %s on row %s for label '%s':\n%s"
+                            % (
+                                livelihood_strategy["product_id_original"],
+                                "summary" if non_empty_summary_activities else "non-summary",
+                                livelihood_strategy["strategy_type"],
+                                livelihood_strategy["row"],
+                                livelihood_strategy["activity_label"],
+                                get_sample_data(df, rows).to_markdown(),
+                            )
                         )
                         if not non_empty_summary_activities:
                             # No summary activities so we don't need to log an error, a warning is sufficient
@@ -841,8 +834,8 @@ def get_instances_from_dataframe(
                             and not livelihood_strategy["product_id"].startswith(value)
                             and not value == "L02129AA"
                         ):
-                            raise ValueError(
-                                "Found duplicate value %s from row %s for existing attribute %s with value %s from row %s"
+                            errors.append(
+                                "Found different value '%s' from row %s for existing attribute '%s' with value '%s' from row %s"
                                 % (
                                     value,
                                     row,
@@ -918,6 +911,7 @@ def get_instances_from_dataframe(
                                     and livelihood_strategy["product_id"]
                                     != product_name_df["product_id"].dropna().iloc[0]
                                 ):
+                                    # Include the header rows so that we can see which Wealth Groups are affected
                                     rows = df.index[:num_header_rows].tolist() + [row]
                                     errors.append(
                                         "Found different products %s and %s in label and other columns on row %s for label '%s':\n%s"
@@ -926,18 +920,13 @@ def get_instances_from_dataframe(
                                             product_name_df["product_id"].iloc[0],
                                             row,
                                             label,
-                                            # Use replace/dropna/fillna so that the error message only includes the columns that
-                                            # contain unwanted data.
-                                            df.loc[rows]
-                                            .replace("", pd.NA)
-                                            .dropna(axis="columns", subset=row)
-                                            .fillna("")
-                                            .to_markdown(),
+                                            get_sample_data(df, rows).to_markdown(),
                                         )
                                     )
 
                         except ValueError:
                             if not livelihood_strategy["product_id"]:
+                                # Include the header rows so that we can see which Wealth Groups are affected
                                 rows = df.index[:num_header_rows].tolist() + [row]
                                 errors.append(
                                     "Failed to identify product from %s on row %s for label '%s':\n%s"
@@ -945,13 +934,7 @@ def get_instances_from_dataframe(
                                         ", ".join(product_name_df["product__name"].dropna().astype(str).unique()),
                                         row,
                                         label,
-                                        # Use replace/dropna/fillna so that the error message only includes the columns that
-                                        # contain unwanted data.
-                                        df.loc[rows]
-                                        .replace("", pd.NA)
-                                        .dropna(axis="columns", subset=row)
-                                        .fillna("")
-                                        .to_markdown(),
+                                        get_sample_data(df, rows).to_markdown(),
                                     )
                                 )
 
@@ -984,7 +967,7 @@ def get_instances_from_dataframe(
                     # Livelihood Activity without containing any actual data.
                     values = df.loc[row, "B":].replace("", pd.NA).dropna().astype(str).str.strip().unique()
                     if values.size > 1 or values[0] not in ["0", "1"]:
-                        # Include the header rows as well as the current row in the error message to aid trouble-shooting
+                        # Include the header rows so that we can see which Wealth Groups are affected
                         rows = df.index[:num_header_rows].tolist() + [row]
                         errors.append(
                             "Found values %s without an identified attribute on row %s for label '%s':\n%s"
@@ -992,35 +975,27 @@ def get_instances_from_dataframe(
                                 ", ".join(values),
                                 row,
                                 label,
-                                # Use replace/dropna/fillna so that the error message only includes the columns that
-                                # contain unwanted data.
-                                df.loc[rows]
-                                .replace("", pd.NA)
-                                .dropna(axis="columns", subset=row)
-                                .fillna("")
-                                .to_markdown(),
+                                get_sample_data(df, rows).to_markdown(),
                             )
                         )
 
                 # If the activity label that marks the start of a Livelihood Strategy is not
-                # returned by `ActivityLabel.objects.filter(status=LabelStatus.COMPLETE)`,
-                # and hence is not in the `activity_label_map`, then repeated labels like
+                # recognized by the get_label_attributes lookup, then repeated labels like
                 # `kcals (%)` will appear to be duplicate attributes for the previous
-                # `1ivelihood_strategy`. Therefore, if we have `allow_unrecognized_labels` we
-                # need to ignore the duplicates, but if we don't, we should raise an error.
+                # LivelihoodStrategy. Therefore, if we have `allow_unrecognized_labels` we
+                # need to ignore the duplicates, and if we don't we should raise an error.
                 elif activity_attribute in livelihood_strategy["attribute_rows"]:
                     if allow_unrecognized_labels:
                         # Skip to the next row
                         continue
                     else:
                         errors.append(
-                            "Found duplicate value %s for existing attribute %s with value %s on row %s for label '%s'"
+                            "Found duplicate attribute '%s' for label '%s' in row %s that was already found in row %s for this LivelihoodStrategy"
                             % (
-                                value,
-                                attribute,
-                                livelihood_strategy[attribute],
-                                row,
+                                activity_attribute,
                                 label,
+                                row,
+                                livelihood_strategy["attribute_rows"][activity_attribute],
                             )
                         )
 
