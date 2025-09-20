@@ -69,7 +69,7 @@ def get_sample_data(df: pd.DataFrame, rows: list[int], max_columns: int = 10) ->
     """
     # Use replace/dropna/fillna so that the sample only includes the columns that have data
     sample_data = df.loc[rows].replace("", pd.NA).dropna(axis="columns", subset=rows[-1]).fillna("")
-    # Don't show more than max_columns in the error message, to make the message more unreadable
+    # Don't show more than max_columns in the error message, to make the message more readable
     leading_cols = max_columns // 2
     if sample_data.shape[1] > max_columns:
         sample_data = pd.concat(
