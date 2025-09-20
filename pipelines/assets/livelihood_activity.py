@@ -61,7 +61,7 @@ from dagster import AssetExecutionContext, MetadataValue, Output, asset
 
 from ..configs import BSSMetadataConfig
 from ..partitions import bss_instances_partitions_def
-from ..utils import class_from_name, prepare_lookup
+from ..utils import class_from_name, get_sample_data, prepare_lookup
 from .base import (
     get_all_bss_labels_dataframe,
     get_bss_dataframe,
@@ -285,6 +285,43 @@ def get_label_attributes(label: str, activity_type: str) -> pd.Series:
         return pd.Series(attributes).fillna(pd.NA)
 
 
+def get_all_label_attributes(labels: pd.Series, activity_type: str, country_code: str | None) -> pd.DataFrame:
+    """
+    Return a DataFrame of the attributes for all of the labels in the supplied Series.
+
+    The Product, Unit of Measure and Season attributes are processed using the relevant Lookup classes so that the
+    resulting DataFrame contains the correct identifiers for these attributes.
+
+    The country_code parameter is optional so that this function can be used to test individual labels,
+    but it should be provided when processing a BSS because the Season lookup is country-specific.
+    """
+    # Prepare the lookups, so they cache the individual results
+    classifiedproductlookup = ClassifiedProductLookup()
+    unitofmeasurelookup = UnitOfMeasureLookup(
+        require_match=False  # It is possible that there won't be any Unit of Measure matches, e.g. for OtherCashIncome
+    )
+    seasonnamelookup = SeasonNameLookup(
+        require_match=False  # It is possible that there won't be any Season matches, e.g. for OtherCashIncome
+    )
+
+    # Build a dataframe of the attributes for each Label, including lookups for Product, Unit of Measure and Season
+    all_label_attributes = labels.apply(lambda x: get_label_attributes(x, activity_type)).fillna("")
+    all_label_attributes = classifiedproductlookup.do_lookup(all_label_attributes, "product_id", "product_id")
+    all_label_attributes["product_id"] = all_label_attributes["product_id"].replace(pd.NA, None)
+    all_label_attributes = unitofmeasurelookup.do_lookup(
+        all_label_attributes, "unit_of_measure_id", "unit_of_measure_id"
+    )
+    all_label_attributes["unit_of_measure_id"] = all_label_attributes["unit_of_measure_id"].replace(pd.NA, None)
+    # Add the country_id because it is required for the Season lookup
+    if country_code:
+        all_label_attributes["country_id"] = country_code
+        all_label_attributes = seasonnamelookup.do_lookup(all_label_attributes, "season", "season")
+        all_label_attributes["season"] = all_label_attributes["season"].replace(pd.NA, None)
+    # Make sure we keep the same index so we can match by row number
+    all_label_attributes.index = labels.index
+    return all_label_attributes
+
+
 def get_instances_from_dataframe(
     context: AssetExecutionContext,
     df: pd.DataFrame,
@@ -320,36 +357,19 @@ def get_instances_from_dataframe(
         livelihood_zone_baseline.reference_year_end_date.isoformat(),
     ]
 
-    # Prepare the lookups, so they cache the individual results
-    seasonnamelookup = SeasonNameLookup()
-    unitofmeasurelookup = UnitOfMeasureLookup()
+    # Save the identifier for Season 2 because we need it when creating MilkProduction instances
+    season2_name = SeasonNameLookup().get("Season 2", country_id=livelihood_zone_baseline.livelihood_zone.country_id)
+
+    # Prepare a lookup for ClassifiedProduct, so it caches and reuses the results of .get() lookups
     classifiedproductlookup = ClassifiedProductLookup()
 
     # Get a dataframe of the Wealth Groups for each column
     wealth_group_df = get_wealth_group_dataframe(df, livelihood_zone_baseline, worksheet_name, partition_key)
 
-    # Prepare the label column for matching against the label_map
-    all_label_attributes = df["A"].apply(lambda x: get_label_attributes(x, activity_type)).fillna("")
-    all_label_attributes = classifiedproductlookup.do_lookup(all_label_attributes, "product_id", "product_id")
-    all_label_attributes["product_id"] = all_label_attributes["product_id"].replace(pd.NA, None)
-    try:
-        all_label_attributes = unitofmeasurelookup.do_lookup(
-            all_label_attributes, "unit_of_measure_id", "unit_of_measure_id"
-        )
-        all_label_attributes["unit_of_measure_id"] = all_label_attributes["unit_of_measure_id"].replace(pd.NA, None)
-    except ValueError:
-        # It is possible that there won't be any Unit of Measure matches, e.g. for OtherCashIncome
-        pass
-    # Add the country_id because it is required for the Season lookup
-    all_label_attributes["country_id"] = livelihood_zone_baseline.livelihood_zone.country_id
-    try:
-        all_label_attributes = seasonnamelookup.do_lookup(all_label_attributes, "season", "season")
-        all_label_attributes["season"] = all_label_attributes["season"].replace(pd.NA, None)
-    except ValueError:
-        # It is possible that there won't be any Season matches, e.g. for OtherCashIncome
-        pass
-    # Make sure we keep the same index so we can match by row number
-    all_label_attributes.index = df.index
+    # Get a dataframe of the attributes for each label in column A
+    all_label_attributes = get_all_label_attributes(
+        df["A"], activity_type, livelihood_zone_baseline.livelihood_zone.country_id
+    )
 
     # Check that we recognize all of the activity labels
     allow_unrecognized_labels = True
@@ -458,31 +478,23 @@ def get_instances_from_dataframe(
                         "Found Livelihood Activities from row %s, but there is no Livelihood Strategy defined." % row
                     )
 
-                    # Copy the product_id for MilkProduction and ButterProduction the previous livelihood strategy if
-                    # necessary.
+                    # Copy the product_id for MilkProduction and ButterProduction from the previous livelihood strategy
+                    # if necessary.
                     if (
                         livelihood_strategy["strategy_type"] in ["MilkProduction", "ButterProduction"]
                         and ("product_id" not in livelihood_strategy or not livelihood_strategy["product_id"])
-                        and livelihood_strategy["season"]
-                        == seasonnamelookup.get(
-                            "Season 2",
-                            country_id=livelihood_zone_baseline.livelihood_zone.country_id,
-                        )
+                        and livelihood_strategy["season"] == season2_name
                         and previous_livelihood_strategy
                         and previous_livelihood_strategy["product_id"]
                     ):
                         livelihood_strategy["attribute_rows"]["product_id"] = row
                         livelihood_strategy["product_id"] = previous_livelihood_strategy["product_id"]
 
-                    # Copy the milking_animals for camels and cattle from the previous livelihood activities if
-                    # necessary.
+                    # Copy the milking_animals for camels and cattle from the previous livelihood activities
+                    # if necessary.
                     if (
                         livelihood_strategy["strategy_type"] == "MilkProduction"
-                        and livelihood_strategy["season"]
-                        == seasonnamelookup.get(
-                            "Season 2",
-                            country_id=livelihood_zone_baseline.livelihood_zone.country_id,
-                        )
+                        and livelihood_strategy["season"] == season2_name
                         and previous_livelihood_activities_for_strategy
                     ):
                         # Assertion to prevent linting from complaining about possible None values
@@ -663,20 +675,15 @@ def get_instances_from_dataframe(
                         "season" not in livelihood_strategy or not livelihood_strategy["season"]
                     ):
                         strategy_is_valid = False
+                        # Include the header rows so that we can see which Wealth Groups are affected
                         rows = df.index[:num_header_rows].tolist() + [livelihood_strategy["row"]]
-                        error_message = "Cannot determine season from %s for %s %s on row %s for label '%s':\n%s" % (
+                        error_message = "Cannot determine season from '%s' for %s %s on row %s for label '%s':\n%s" % (
                             livelihood_strategy["season_original"],
                             "summary" if non_empty_summary_activities else "non-summary",
                             livelihood_strategy["strategy_type"],
                             livelihood_strategy["row"],
                             livelihood_strategy["activity_label"],
-                            # Use replace/dropna/fillna so that the error message only includes the columns that
-                            # contain unwanted data.
-                            df.loc[rows]
-                            .replace("", pd.NA)
-                            .dropna(axis="columns", subset=livelihood_strategy["row"])
-                            .fillna("")
-                            .to_markdown(),
+                            get_sample_data(df, rows).to_markdown(),
                         )
                         if not non_empty_summary_activities:
                             # No summary activities so we don't need to log an error, a warning is sufficient
@@ -690,20 +697,18 @@ def get_instances_from_dataframe(
                         "product_id" not in livelihood_strategy or not livelihood_strategy["product_id"]
                     ):
                         strategy_is_valid = False
+                        # Include the header rows so that we can see which Wealth Groups are affected
                         rows = df.index[:num_header_rows].tolist() + [livelihood_strategy["row"]]
-                        error_message = "Cannot determine product_id from %s for %s %s on row %s for label '%s':\n%s" % (
-                            livelihood_strategy["product_id_original"],
-                            "summary" if non_empty_summary_activities else "non-summary",
-                            livelihood_strategy["strategy_type"],
-                            livelihood_strategy["row"],
-                            livelihood_strategy["activity_label"],
-                            # Use replace/dropna/fillna so that the error message only includes the columns that
-                            # contain unwanted data.
-                            df.loc[rows]
-                            .replace("", pd.NA)
-                            .dropna(axis="columns", subset=livelihood_strategy["row"])
-                            .fillna("")
-                            .to_markdown(),
+                        error_message = (
+                            "Cannot determine product_id from '%s' for %s %s on row %s for label '%s':\n%s"
+                            % (
+                                livelihood_strategy["product_id_original"],
+                                "summary" if non_empty_summary_activities else "non-summary",
+                                livelihood_strategy["strategy_type"],
+                                livelihood_strategy["row"],
+                                livelihood_strategy["activity_label"],
+                                get_sample_data(df, rows).to_markdown(),
+                            )
                         )
                         if not non_empty_summary_activities:
                             # No summary activities so we don't need to log an error, a warning is sufficient
@@ -841,8 +846,8 @@ def get_instances_from_dataframe(
                             and not livelihood_strategy["product_id"].startswith(value)
                             and not value == "L02129AA"
                         ):
-                            raise ValueError(
-                                "Found duplicate value %s from row %s for existing attribute %s with value %s from row %s"
+                            errors.append(
+                                "Found different value '%s' from row %s for existing attribute '%s' with value '%s' from row %s"
                                 % (
                                     value,
                                     row,
@@ -918,6 +923,7 @@ def get_instances_from_dataframe(
                                     and livelihood_strategy["product_id"]
                                     != product_name_df["product_id"].dropna().iloc[0]
                                 ):
+                                    # Include the header rows so that we can see which Wealth Groups are affected
                                     rows = df.index[:num_header_rows].tolist() + [row]
                                     errors.append(
                                         "Found different products %s and %s in label and other columns on row %s for label '%s':\n%s"
@@ -926,18 +932,13 @@ def get_instances_from_dataframe(
                                             product_name_df["product_id"].iloc[0],
                                             row,
                                             label,
-                                            # Use replace/dropna/fillna so that the error message only includes the columns that
-                                            # contain unwanted data.
-                                            df.loc[rows]
-                                            .replace("", pd.NA)
-                                            .dropna(axis="columns", subset=row)
-                                            .fillna("")
-                                            .to_markdown(),
+                                            get_sample_data(df, rows).to_markdown(),
                                         )
                                     )
 
                         except ValueError:
                             if not livelihood_strategy["product_id"]:
+                                # Include the header rows so that we can see which Wealth Groups are affected
                                 rows = df.index[:num_header_rows].tolist() + [row]
                                 errors.append(
                                     "Failed to identify product from %s on row %s for label '%s':\n%s"
@@ -945,13 +946,7 @@ def get_instances_from_dataframe(
                                         ", ".join(product_name_df["product__name"].dropna().astype(str).unique()),
                                         row,
                                         label,
-                                        # Use replace/dropna/fillna so that the error message only includes the columns that
-                                        # contain unwanted data.
-                                        df.loc[rows]
-                                        .replace("", pd.NA)
-                                        .dropna(axis="columns", subset=row)
-                                        .fillna("")
-                                        .to_markdown(),
+                                        get_sample_data(df, rows).to_markdown(),
                                     )
                                 )
 
@@ -984,7 +979,7 @@ def get_instances_from_dataframe(
                     # Livelihood Activity without containing any actual data.
                     values = df.loc[row, "B":].replace("", pd.NA).dropna().astype(str).str.strip().unique()
                     if values.size > 1 or values[0] not in ["0", "1"]:
-                        # Include the header rows as well as the current row in the error message to aid trouble-shooting
+                        # Include the header rows so that we can see which Wealth Groups are affected
                         rows = df.index[:num_header_rows].tolist() + [row]
                         errors.append(
                             "Found values %s without an identified attribute on row %s for label '%s':\n%s"
@@ -992,35 +987,27 @@ def get_instances_from_dataframe(
                                 ", ".join(values),
                                 row,
                                 label,
-                                # Use replace/dropna/fillna so that the error message only includes the columns that
-                                # contain unwanted data.
-                                df.loc[rows]
-                                .replace("", pd.NA)
-                                .dropna(axis="columns", subset=row)
-                                .fillna("")
-                                .to_markdown(),
+                                get_sample_data(df, rows).to_markdown(),
                             )
                         )
 
                 # If the activity label that marks the start of a Livelihood Strategy is not
-                # returned by `ActivityLabel.objects.filter(status=LabelStatus.COMPLETE)`,
-                # and hence is not in the `activity_label_map`, then repeated labels like
+                # recognized by the get_label_attributes lookup, then repeated labels like
                 # `kcals (%)` will appear to be duplicate attributes for the previous
-                # `1ivelihood_strategy`. Therefore, if we have `allow_unrecognized_labels` we
-                # need to ignore the duplicates, but if we don't, we should raise an error.
+                # LivelihoodStrategy. Therefore, if we have `allow_unrecognized_labels` we
+                # need to ignore the duplicates, and if we don't we should raise an error.
                 elif activity_attribute in livelihood_strategy["attribute_rows"]:
                     if allow_unrecognized_labels:
                         # Skip to the next row
                         continue
                     else:
                         errors.append(
-                            "Found duplicate value %s for existing attribute %s with value %s on row %s for label '%s'"
+                            "Found duplicate attribute '%s' for label '%s' in row %s that was already found in row %s for this LivelihoodStrategy"
                             % (
-                                value,
-                                attribute,
-                                livelihood_strategy[attribute],
-                                row,
+                                activity_attribute,
                                 label,
+                                row,
+                                livelihood_strategy["attribute_rows"][activity_attribute],
                             )
                         )
 
