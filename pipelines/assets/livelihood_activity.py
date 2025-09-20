@@ -285,6 +285,43 @@ def get_label_attributes(label: str, activity_type: str) -> pd.Series:
         return pd.Series(attributes).fillna(pd.NA)
 
 
+def get_all_label_attributes(labels: pd.Series, activity_type: str, country_code: str | None) -> pd.DataFrame:
+    """
+    Return a DataFrame of the attributes for all of the labels in the supplied Series.
+
+    The Product, Unit of Measure and Season attributes are processed using the relevant Lookup classes so that the
+    resulting DataFrame contains the correct identifiers for these attributes.
+
+    The country_code parameter is optional so that this function can be used to test individual labels,
+    but it should be provided when processing a BSS because the Season lookup is country-specific.
+    """
+    # Prepare the lookups, so they cache the individual results
+    classifiedproductlookup = ClassifiedProductLookup()
+    unitofmeasurelookup = UnitOfMeasureLookup(
+        require_match=False  # It is possible that there won't be any Unit of Measure matches, e.g. for OtherCashIncome
+    )
+    seasonnamelookup = SeasonNameLookup(
+        require_match=False  # It is possible that there won't be any Season matches, e.g. for OtherCashIncome
+    )
+
+    # Build a dataframe of the attributes for each Label, including lookups for Product, Unit of Measure and Season
+    all_label_attributes = labels.apply(lambda x: get_label_attributes(x, activity_type)).fillna("")
+    all_label_attributes = classifiedproductlookup.do_lookup(all_label_attributes, "product_id", "product_id")
+    all_label_attributes["product_id"] = all_label_attributes["product_id"].replace(pd.NA, None)
+    all_label_attributes = unitofmeasurelookup.do_lookup(
+        all_label_attributes, "unit_of_measure_id", "unit_of_measure_id"
+    )
+    all_label_attributes["unit_of_measure_id"] = all_label_attributes["unit_of_measure_id"].replace(pd.NA, None)
+    # Add the country_id because it is required for the Season lookup
+    if country_code:
+        all_label_attributes["country_id"] = country_code
+        all_label_attributes = seasonnamelookup.do_lookup(all_label_attributes, "season", "season")
+        all_label_attributes["season"] = all_label_attributes["season"].replace(pd.NA, None)
+    # Make sure we keep the same index so we can match by row number
+    all_label_attributes.index = labels.index
+    return all_label_attributes
+
+
 def get_instances_from_dataframe(
     context: AssetExecutionContext,
     df: pd.DataFrame,
@@ -320,36 +357,19 @@ def get_instances_from_dataframe(
         livelihood_zone_baseline.reference_year_end_date.isoformat(),
     ]
 
-    # Prepare the lookups, so they cache the individual results
-    seasonnamelookup = SeasonNameLookup()
-    unitofmeasurelookup = UnitOfMeasureLookup()
+    # Save the identifier for Season 2 because we need it when creating MilkProduction instances
+    season2_name = SeasonNameLookup().get("Season 2", country_id=livelihood_zone_baseline.livelihood_zone.country_id)
+
+    # Prepare a lookup for ClassifiedProduct, so it caches and reuses the results of .get() lookups
     classifiedproductlookup = ClassifiedProductLookup()
 
     # Get a dataframe of the Wealth Groups for each column
     wealth_group_df = get_wealth_group_dataframe(df, livelihood_zone_baseline, worksheet_name, partition_key)
 
-    # Prepare the label column for matching against the label_map
-    all_label_attributes = df["A"].apply(lambda x: get_label_attributes(x, activity_type)).fillna("")
-    all_label_attributes = classifiedproductlookup.do_lookup(all_label_attributes, "product_id", "product_id")
-    all_label_attributes["product_id"] = all_label_attributes["product_id"].replace(pd.NA, None)
-    try:
-        all_label_attributes = unitofmeasurelookup.do_lookup(
-            all_label_attributes, "unit_of_measure_id", "unit_of_measure_id"
-        )
-        all_label_attributes["unit_of_measure_id"] = all_label_attributes["unit_of_measure_id"].replace(pd.NA, None)
-    except ValueError:
-        # It is possible that there won't be any Unit of Measure matches, e.g. for OtherCashIncome
-        pass
-    # Add the country_id because it is required for the Season lookup
-    all_label_attributes["country_id"] = livelihood_zone_baseline.livelihood_zone.country_id
-    try:
-        all_label_attributes = seasonnamelookup.do_lookup(all_label_attributes, "season", "season")
-        all_label_attributes["season"] = all_label_attributes["season"].replace(pd.NA, None)
-    except ValueError:
-        # It is possible that there won't be any Season matches, e.g. for OtherCashIncome
-        pass
-    # Make sure we keep the same index so we can match by row number
-    all_label_attributes.index = df.index
+    # Get a dataframe of the attributes for each label in column A
+    all_label_attributes = get_all_label_attributes(
+        df["A"], activity_type, livelihood_zone_baseline.livelihood_zone.country_id
+    )
 
     # Check that we recognize all of the activity labels
     allow_unrecognized_labels = True
@@ -458,31 +478,23 @@ def get_instances_from_dataframe(
                         "Found Livelihood Activities from row %s, but there is no Livelihood Strategy defined." % row
                     )
 
-                    # Copy the product_id for MilkProduction and ButterProduction the previous livelihood strategy if
-                    # necessary.
+                    # Copy the product_id for MilkProduction and ButterProduction from the previous livelihood strategy
+                    # if necessary.
                     if (
                         livelihood_strategy["strategy_type"] in ["MilkProduction", "ButterProduction"]
                         and ("product_id" not in livelihood_strategy or not livelihood_strategy["product_id"])
-                        and livelihood_strategy["season"]
-                        == seasonnamelookup.get(
-                            "Season 2",
-                            country_id=livelihood_zone_baseline.livelihood_zone.country_id,
-                        )
+                        and livelihood_strategy["season"] == season2_name
                         and previous_livelihood_strategy
                         and previous_livelihood_strategy["product_id"]
                     ):
                         livelihood_strategy["attribute_rows"]["product_id"] = row
                         livelihood_strategy["product_id"] = previous_livelihood_strategy["product_id"]
 
-                    # Copy the milking_animals for camels and cattle from the previous livelihood activities if
-                    # necessary.
+                    # Copy the milking_animals for camels and cattle from the previous livelihood activities
+                    # if necessary.
                     if (
                         livelihood_strategy["strategy_type"] == "MilkProduction"
-                        and livelihood_strategy["season"]
-                        == seasonnamelookup.get(
-                            "Season 2",
-                            country_id=livelihood_zone_baseline.livelihood_zone.country_id,
-                        )
+                        and livelihood_strategy["season"] == season2_name
                         and previous_livelihood_activities_for_strategy
                     ):
                         # Assertion to prevent linting from complaining about possible None values
