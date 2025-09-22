@@ -57,7 +57,7 @@ jobs:
       ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
     steps:
       - name: Configure AWS credentials
-        uses: FEWS-NET/infra-ops/.github/actions/configure-aws-credentials@stable
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ vars.AWS_REGION }}
       - name: Start EC2 runner test_branch
@@ -85,7 +85,7 @@ jobs:
       ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
     steps:
       - name: Configure AWS credentials
-        uses: FEWS-NET/infra-ops/.github/actions/configure-aws-credentials@stable
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ env.AWS_REGION }}
       - name: Start EC2 runner test_keepdb
@@ -114,7 +114,7 @@ jobs:
       ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
     steps:
       - name: Configure AWS credentials
-        uses: FEWS-NET/infra-ops/.github/actions/configure-aws-credentials@stable
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ vars.AWS_REGION }}
       - name: Start EC2 runner test_main
@@ -143,7 +143,7 @@ jobs:
       ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
     steps:
       - name: Configure AWS credentials
-        uses: FEWS-NET/infra-ops/.github/actions/configure-aws-credentials@stable
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ env.AWS_REGION }}
       - name: Start EC2 runner test_tag
@@ -712,7 +712,7 @@ jobs:
 
     steps:
       - name: Configure AWS credentials
-        uses: FEWS-NET/infra-ops/.github/actions/configure-aws-credentials@stable
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ env.AWS_REGION }}
       - name: Stop EC2 runner
@@ -732,7 +732,7 @@ jobs:
 
     steps:
       - name: Configure AWS credentials
-        uses: FEWS-NET/infra-ops/.github/actions/configure-aws-credentials@stable
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ env.AWS_REGION }}
       - name: Stop EC2 runner
@@ -752,7 +752,7 @@ jobs:
 
     steps:
       - name: Configure AWS credentials
-        uses: FEWS-NET/infra-ops/.github/actions/configure-aws-credentials@stable
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ env.AWS_REGION }}
       - name: Stop EC2 runner
@@ -772,7 +772,7 @@ jobs:
 
     steps:
       - name: Configure AWS credentials
-        uses: FEWS-NET/infra-ops/.github/actions/configure-aws-credentials@stable
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ env.AWS_REGION }}
       - name: Stop EC2 runner
