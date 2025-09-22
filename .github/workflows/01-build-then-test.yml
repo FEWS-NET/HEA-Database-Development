@@ -29,7 +29,7 @@ env:
 
 jobs:
   lint:
-    runs-on: [ data ]
+    runs-on: [data]
     container: "python:3.11"
 
     steps:
@@ -51,13 +51,13 @@ jobs:
   start-runner-test_branch:
     if: ${{ !(startsWith(github.ref, 'refs/tags/')) && !(github.ref == 'refs/heads/main') }}
     needs: lint
-    runs-on: [ data ]
+    runs-on: [data]
     outputs:
       label: ${{ steps.start-ec2-runner.outputs.label }}
       ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
     steps:
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v4.0.3
         with:
           aws-region: ${{ env.AWS_REGION }}
       - name: Start EC2 runner test_branch
@@ -79,13 +79,13 @@ jobs:
 
   start-runner-test_keepdb:
     needs: lint
-    runs-on: [ data ]
+    runs-on: [data]
     outputs:
       label: ${{ steps.start-ec2-runner.outputs.label }}
       ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
     steps:
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v4.0.3
         with:
           aws-region: ${{ env.AWS_REGION }}
       - name: Start EC2 runner test_keepdb
@@ -108,13 +108,13 @@ jobs:
   start-runner-test_main:
     if: github.ref == 'refs/heads/main'
     needs: lint
-    runs-on: [ data ]
+    runs-on: [data]
     outputs:
       label: ${{ steps.start-ec2-runner.outputs.label }}
       ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
     steps:
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v4.0.3
         with:
           aws-region: ${{ env.AWS_REGION }}
       - name: Start EC2 runner test_main
@@ -137,13 +137,13 @@ jobs:
   start-runner-test_tag:
     if: startsWith(github.ref, 'refs/tags/')
     needs: lint
-    runs-on: [ data ]
+    runs-on: [data]
     outputs:
       label: ${{ steps.start-ec2-runner.outputs.label }}
       ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
     steps:
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v4.0.3
         with:
           aws-region: ${{ env.AWS_REGION }}
       - name: Start EC2 runner test_tag
@@ -200,7 +200,7 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
         with:
-          mask-password: 'true'
+          mask-password: "true"
       # Docker hub is rate-limiting unauthenticated users, so we have to
       # authenticate: https://www.docker.com/increase-rate-limits
       - name: Login to the DockerHub Container Registry
@@ -346,7 +346,7 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
         with:
-          mask-password: 'true'
+          mask-password: "true"
       # Docker hub is rate-limiting unauthenticated users, so we have to
       # authenticate: https://www.docker.com/increase-rate-limits
       - name: Login to the DockerHub Container Registry
@@ -474,7 +474,7 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
         with:
-          mask-password: 'true'
+          mask-password: "true"
       # Docker hub is rate-limiting unauthenticated users, so we have to
       # authenticate: https://www.docker.com/increase-rate-limits
       - name: Login to the DockerHub Container Registry
@@ -605,7 +605,7 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
         with:
-          mask-password: 'true'
+          mask-password: "true"
       # Docker hub is rate-limiting unauthenticated users, so we have to
       # authenticate: https://www.docker.com/increase-rate-limits
       - name: Login to the DockerHub Container Registry
@@ -708,11 +708,11 @@ jobs:
     needs:
       - start-runner-test_branch # required to get output from the start-runner-test_branch job
       - test_branch # required to wait until the main jobs are done
-    runs-on: [ data ]
+    runs-on: [data]
 
     steps:
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v4.0.3
         with:
           aws-region: ${{ env.AWS_REGION }}
       - name: Stop EC2 runner
@@ -728,11 +728,11 @@ jobs:
     needs:
       - start-runner-test_keepdb # required to get output from the start-runner-test_keepdb job
       - test_keepdb
-    runs-on: [ data ]
+    runs-on: [data]
 
     steps:
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v4.0.3
         with:
           aws-region: ${{ env.AWS_REGION }}
       - name: Stop EC2 runner
@@ -748,11 +748,11 @@ jobs:
     needs:
       - start-runner-test_main # required to get output from the start-runner-test_main job
       - test_main
-    runs-on: [ data ]
+    runs-on: [data]
 
     steps:
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v4.0.3
         with:
           aws-region: ${{ env.AWS_REGION }}
       - name: Stop EC2 runner
@@ -768,11 +768,11 @@ jobs:
     needs:
       - start-runner-test_tag # required to get output from the start-runner-test_tag job
       - test_tag
-    runs-on: [ data ]
+    runs-on: [data]
 
     steps:
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v4.0.3
         with:
           aws-region: ${{ env.AWS_REGION }}
       - name: Stop EC2 runner
