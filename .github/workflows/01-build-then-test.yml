@@ -60,10 +60,9 @@ jobs:
         run: |
           echo "aws sts get-caller-identity: $(aws sts get-caller-identity)"
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v5.0.0
+        uses: aws-actions/configure-aws-credentials@v4.1.0
         with:
           aws-region: ${{ env.AWS_REGION }}
-          force-skip-oidc: true
       - name: Start EC2 runner test_branch
         id: start-ec2-runner
         uses: FEWS-NET/ec2-github-runner@1f687d4b786b21bed4ad6f420daddc7665bff857
@@ -89,10 +88,9 @@ jobs:
       ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
     steps:
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v5.0.0
+        uses: aws-actions/configure-aws-credentials@v4.1.0
         with:
           aws-region: ${{ env.AWS_REGION }}
-          force-skip-oidc: true
       - name: Start EC2 runner test_keepdb
         id: start-ec2-runner
         uses: FEWS-NET/ec2-github-runner@1f687d4b786b21bed4ad6f420daddc7665bff857
@@ -119,10 +117,9 @@ jobs:
       ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
     steps:
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v5.0.0
+        uses: aws-actions/configure-aws-credentials@v4.1.0
         with:
           aws-region: ${{ env.AWS_REGION }}
-          force-skip-oidc: true
       - name: Start EC2 runner test_main
         id: start-ec2-runner
         uses: FEWS-NET/ec2-github-runner@1f687d4b786b21bed4ad6f420daddc7665bff857
@@ -149,10 +146,9 @@ jobs:
       ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
     steps:
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v5.0.0
+        uses: aws-actions/configure-aws-credentials@v4.1.0
         with:
           aws-region: ${{ env.AWS_REGION }}
-          force-skip-oidc: true
       - name: Start EC2 runner test_tag
         id: start-ec2-runner
         uses: FEWS-NET/ec2-github-runner@1f687d4b786b21bed4ad6f420daddc7665bff857
@@ -719,10 +715,9 @@ jobs:
 
     steps:
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v5.0.0
+        uses: aws-actions/configure-aws-credentials@v4.1.0
         with:
           aws-region: ${{ env.AWS_REGION }}
-          force-skip-oidc: true
       - name: Stop EC2 runner
         uses: FEWS-NET/ec2-github-runner@1f687d4b786b21bed4ad6f420daddc7665bff857
         with:
@@ -740,10 +735,9 @@ jobs:
 
     steps:
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v5.0.0
+        uses: aws-actions/configure-aws-credentials@v4.1.0
         with:
           aws-region: ${{ env.AWS_REGION }}
-          force-skip-oidc: true
       - name: Stop EC2 runner
         uses: FEWS-NET/ec2-github-runner@1f687d4b786b21bed4ad6f420daddc7665bff857
         with:
@@ -761,10 +755,9 @@ jobs:
 
     steps:
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v5.0.0
+        uses: aws-actions/configure-aws-credentials@v4.1.0
         with:
           aws-region: ${{ env.AWS_REGION }}
-          force-skip-oidc: true
       - name: Stop EC2 runner
         uses: FEWS-NET/ec2-github-runner@1f687d4b786b21bed4ad6f420daddc7665bff857
         with:
@@ -782,10 +775,9 @@ jobs:
 
     steps:
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v5.0.0
+        uses: aws-actions/configure-aws-credentials@v4.1.0
         with:
           aws-region: ${{ env.AWS_REGION }}
-          force-skip-oidc: true
       - name: Stop EC2 runner
         uses: FEWS-NET/ec2-github-runner@1f687d4b786b21bed4ad6f420daddc7665bff857
         with:
