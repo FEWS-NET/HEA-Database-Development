@@ -17,6 +17,7 @@ RUN curl -s https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor |
         less \
         libgdal-dev \
         libgraphviz-dev \
+        graphviz \
         make \
         nano \
         pkg-config \
