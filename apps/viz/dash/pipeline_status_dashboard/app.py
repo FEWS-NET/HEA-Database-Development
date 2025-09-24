@@ -22,10 +22,8 @@ def get_pipeline_data():
 # Layout with data stores and main content
 app.layout = html.Div(
     [
-        # Data stores to share data between callbacks
         dcc.Store(id="pipeline-data-store"),
         dcc.Store(id="countries-store"),
-        # Interval component to trigger initial load (runs once)
         dcc.Interval(id="init-interval", interval=100, n_intervals=0, max_intervals=1),
         dcc.Loading(
             id="loading-initial",
@@ -38,7 +36,7 @@ app.layout = html.Div(
 )
 
 
-# Separate callback ONLY for initial data loading
+# Separate callback for initial data loading
 @app.callback(
     [
         Output("pipeline-data-store", "data"),
@@ -57,7 +55,6 @@ def load_initial_data(n_intervals):
     try:
         df, countries = get_pipeline_data()
 
-        # Convert DataFrame to dict for storage in dcc.Store
         df_dict = df.to_dict("records")
 
         return df_dict, countries, [], {"display": "block"}
@@ -77,7 +74,6 @@ def load_initial_data(n_intervals):
     Output("main-dashboard-content", "children"), [Input("countries-store", "data")], prevent_initial_call=True
 )
 def create_dashboard_layout(countries):
-    # Create dashboard layout after countries data is available
     if not countries:
         return html.Div("No countries data available")
 
@@ -130,13 +126,10 @@ def create_main_layout(countries):
                 ],
                 style={"padding": "20px"},
             ),
-            # Cache info (optional - remove in production)
-            html.Div([html.P(id="cache-info", style={"fontSize": "12px", "color": "#7f8c8d", "textAlign": "center"})]),
         ]
     )
 
 
-# Helper function to get DataFrame from stored data
 def get_df_from_store(stored_data):
     if not stored_data:
         return pd.DataFrame()
@@ -196,12 +189,17 @@ def update_heat_map_content(selected_country, selected_partitions, stored_data):
     if selected_partitions:
         country_df = country_df[country_df["partition_key"].isin(selected_partitions)]
 
+    print(country_df)
     return create_heatmap(country_df, selected_country)
 
 
 @app.callback(
     Output("graph-content", "children"),
-    [Input("country-dropdown", "value"), Input("partition-dropdown", "value"), Input("pipeline-data-store", "data")],
+    [
+        Input("country-dropdown", "value"),
+        Input("partition-dropdown", "value"),
+        Input("pipeline-data-store", "data"),
+    ],
 )
 def update_graph_content(selected_country, selected_partitions, stored_data):
     if not stored_data:
@@ -212,10 +210,9 @@ def update_graph_content(selected_country, selected_partitions, stored_data):
 
     df = get_df_from_store(stored_data)
 
-    # The graph can only be displayed for a single partition.
     if len(selected_partitions) == 1:
         country_df = df[df["country"] == selected_country]
-        return create_graph_viz(country_df, selected_partitions[0])
+        return create_or_update_graph_viz(country_df, selected_partitions[0])
     else:
         return html.Div(
             "Please select a single partition to view its dependency graph.",
@@ -280,10 +277,11 @@ def create_kpi_layout(country_df, title_segment):
 
 
 def create_heatmap(country_df, country):
-    # Enhanced status matrix visualization
+    # create the matrix heatmap
     fig_df = country_df.pivot(index="partition_key", columns="asset_key", values="status")
     status_map = {"Materialized": 2, "Failed": -1, "Missing": 0, None: 0}
     fig_df_numeric = fig_df.replace(status_map)
+    text_labels = fig_df_numeric.replace({-1: "Failed", 0: "Missing", 2: "Materialized"})
 
     asset_order = []
     asset_dependencies = {
@@ -309,6 +307,8 @@ def create_heatmap(country_df, country):
             z=fig_df_numeric.values,
             x=fig_df_numeric.columns,
             y=fig_df_numeric.index,
+            text=text_labels.values,
+            texttemplate="",
             colorscale=[[0.0, "#FF6B6B"], [0.5, "#95A5A6"], [1.0, "#2ECC71"]],
             zmid=0,
             textfont={"size": 8},
@@ -332,8 +332,8 @@ def create_heatmap(country_df, country):
     return html.Div([dcc.Graph(figure=heatmap_fig)])
 
 
-def create_graph_viz(country_df, selected_partition):
-    """Dependency graph tab for a single partition"""
+def create_or_update_graph_viz(country_df, selected_partition):
+    # Dependency graph tab for a single partition
     partition_df = country_df[country_df["partition_key"] == selected_partition]
 
     if partition_df.empty:
@@ -376,18 +376,3 @@ def create_graph_viz(country_df, selected_partition):
             ),
         ]
     )
-
-
-def prepare_heatmap_data(metadata_df):
-    """
-    Prepare data for heatmap visualization using partition_key directly.
-    """
-    metadata_df = metadata_df.copy()
-    # Create pivot table for heatmap: partition_keys vs asset_keys
-    heatmap_data = metadata_df.pivot_table(
-        index="partition_key",
-        columns="asset_key",
-        values="pct_rows_recognized",
-        aggfunc="mean",  # In case there are duplicates
-    )
-    return heatmap_data
