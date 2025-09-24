@@ -116,6 +116,7 @@ def livelihood_activity_dataframe(config: BSSMetadataConfig, corrected_files) ->
             "Revenus moins dépenses",
             "Revenu moins dépense",
             "revenu moins dépenses",  # 2023 Mali BSSs
+            "revenu mois dépenses",  # 2024 DRC BSSs
         ],
         header_rows=HEADER_ROWS,
     )
