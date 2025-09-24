@@ -1,206 +1,261 @@
-import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.express as px
-from dash import dash_table, dcc, html
-from dash.dependencies import Input, Output
-from django_plotly_dash import DjangoDash
+import plotly.graph_objects as go
+from dash import Input, Output, dcc, html
 
-from .functions import clean_livelihood_data, clean_wealth_group_data
+from ...dash_wrapper import SecureDjangoDash
+from .functions import (
+    get_bss_corrections,
+    get_livelihood_activity_dataframe,
+    get_livelihood_zone_baseline,
+    get_wealthcharactestics,
+)
 
-# Unique countries and livelihood zones for dropdowns
-unique_countries = sorted(clean_livelihood_data["country_code"].dropna().unique())
-unique_zones = sorted(clean_livelihood_data["livelihood_zone_baseline_label"].dropna().unique())
+app = SecureDjangoDash("bss_inventory", suppress_callback_exceptions=True)
+app.title = "BSS Inventory"
 
-# Dash app
-app = DjangoDash("Inventory_dashboard", suppress_callback_exceptions=True, external_stylesheets=[dbc.themes.BOOTSTRAP])
-app.title = "HEA Dashboard"
+baseline_df = get_livelihood_zone_baseline()
+countries = sorted(baseline_df["country"].unique().tolist())
+livelihood_activity_df = get_livelihood_activity_dataframe()
+corrections_df = get_bss_corrections()
+wealthcharactestics_df = get_wealthcharactestics()
 
-# Layout
 app.layout = html.Div(
     [
-        html.H1("HEA Data Inventory Dashboard", style={"textAlign": "center"}),
+        html.Div([html.H1("BSS Inventories", style={"textAlign": "center", "color": "#2c3e50"})]),
         html.Div(
             [
                 html.Div(
                     [
+                        html.Label("Select Country:", style={"fontWeight": "bold"}),
                         dcc.Dropdown(
                             id="country-dropdown",
-                            options=[{"label": country, "value": country} for country in unique_countries],
-                            placeholder=f"Select Country(s) (e.g., {unique_countries[0]})",
-                            multi=True,
+                            options=[{"label": country, "value": country} for country in countries],
+                            value=countries[0] if countries else None,
+                            clearable=True,
+                            placeholder="Select a country (or leave blank for all)",
                         ),
                     ],
-                    style={"flex": "1", "marginRight": "10px"},
+                    style={"width": "30%", "display": "inline-block", "marginRight": "20px"},
                 ),
                 html.Div(
                     [
-                        dcc.Dropdown(
-                            id="livelihood-zone-dropdown",
-                            options=[{"label": zone, "value": zone} for zone in unique_zones],
-                            placeholder=f"Select Livelihood Zone(s) (e.g., {unique_zones[0]})",
-                            multi=True,
-                        ),
+                        html.Label("Select Livelihood Zone(s):", style={"fontWeight": "bold"}),
+                        dcc.Dropdown(id="zone-dropdown", multi=True),
                     ],
-                    style={"flex": "1"},
+                    style={"width": "65%", "display": "inline-block"},
                 ),
             ],
-            style={
-                "display": "flex",
-                "width": "100%",
-                "justifyContent": "space-between",
-                "marginBottom": "20px",
-            },
+            style={"margin": "20px", "padding": "20px", "backgroundColor": "#f8f9fa", "borderRadius": "10px"},
         ),
         html.Div(
-            [
-                html.Div(
-                    dcc.Graph(id="wealth-chart"),
-                    style={"width": "30%", "display": "inline-block"},
-                ),
-                html.Div(
-                    dcc.Graph(id="livelihood-chart"),
-                    style={"width": "30%", "display": "inline-block"},
-                ),
-                html.Div(
-                    dcc.Graph(id="wealth-monthly-chart"),
-                    style={"width": "30%", "display": "inline-block"},
-                ),
-            ],
-        ),
-        html.Div(
-            [
-                html.H3("Data Table", style={"textAlign": "center"}),
-                dash_table.DataTable(
-                    id="data-table",
-                    columns=[
-                        {"name": "Livelihood Zone", "id": "livelihood_zone_baseline_label"},
-                        {"name": "Total Strategy Type Count", "id": "Strategy Type Count"},
-                        {"name": "Summary Wealth Characteristics", "id": "Summary Data"},
-                        {"name": "Community Wealth Characteristics", "id": "Community Data"},
-                    ],
-                    style_table={"overflowX": "auto"},
-                    style_cell={
-                        "textAlign": "left",
-                        "fontSize": "15px",  # Increase font size
-                        "padding": "10px",  # Add padding
-                    },
-                    style_header={
-                        "fontSize": "18px",  # Increase font size for header
-                        "fontWeight": "bold",  # Make header bold
-                        "textAlign": "center",
-                    },
-                    page_size=10,
-                ),
-            ],
-            className="inventory-filter inventory-filter-last",
+            [dcc.Loading(id="loading-overview", type="circle", children=html.Div(id="overview-content"))],
+            style={"padding": "20px"},
         ),
     ],
-    className="div-wrapper control-panel-wrapper",
+    style={"fontFamily": "Arial, sans-serif"},
 )
 
 
-# Callbacks
+@app.callback(Output("zone-dropdown", "options"), Output("zone-dropdown", "value"), Input("country-dropdown", "value"))
+def update_livelihood_zone_dropdown(selected_country):
+    if not selected_country:
+        return [], []
+    zones = sorted(baseline_df[baseline_df["country"] == selected_country]["zone_code"].unique())
+    options = [{"label": zone, "value": zone} for zone in zones]
+    return options, zones
+
+
 @app.callback(
-    [
-        Output("livelihood-zone-dropdown", "options"),
-        Output("wealth-chart", "figure"),
-        Output("livelihood-chart", "figure"),
-        Output("wealth-monthly-chart", "figure"),
-        Output("data-table", "data"),
-    ],
-    [Input("country-dropdown", "value"), Input("livelihood-zone-dropdown", "value")],
+    Output("overview-content", "children"), Input("country-dropdown", "value"), Input("zone-dropdown", "value")
 )
-def update_charts(selected_countries, selected_zones):
-    # Handle multi-country selection
-    if selected_countries:
-        filtered_livelihood = clean_livelihood_data[clean_livelihood_data["country_code"].isin(selected_countries)]
-        filtered_wealth = clean_wealth_group_data[clean_wealth_group_data["country_code"].isin(selected_countries)]
-        filtered_zones = sorted(filtered_livelihood["livelihood_zone_baseline_label"].unique())
+def update_kpi_content(selected_country, selected_zone):
+    title_segment = selected_country if selected_country else "All Countries"
+
+    if selected_country:
+        filtered_baseline_df = baseline_df[baseline_df["country"] == selected_country].copy()
+        if not livelihood_activity_df.empty:
+            filtered_activity_df = livelihood_activity_df[livelihood_activity_df["country"] == selected_country].copy()
+        else:
+            filtered_activity_df = pd.DataFrame()
+        filtered_corrections_df = pd.DataFrame()
+        if not corrections_df.empty:
+            filtered_corrections_df = corrections_df[corrections_df["country"] == selected_country].copy()
+
+        most_frequent_wc = ""
+        if not wealthcharactestics_df.empty:
+            filtered_wc = wealthcharactestics_df[wealthcharactestics_df["country"] == selected_country].copy()
+            counts = filtered_wc["wealth_characteristic"].value_counts()
+            # Drop "household size" as it is in almost all bsses
+            counts = counts.drop("household size", errors="ignore")
+            if not counts.empty:
+                most_frequent_wc = counts.idxmax()
+
     else:
-        filtered_livelihood = clean_livelihood_data
-        filtered_wealth = clean_wealth_group_data
-        filtered_zones = unique_zones
+        filtered_baseline_df = baseline_df.copy()
+        filtered_activity_df = livelihood_activity_df.copy()
+        filtered_corrections_df = corrections_df.copy()
+        most_frequent_wc = ""
+        if not wealthcharactestics_df.empty:
+            counts = wealthcharactestics_df["wealth_characteristic"].value_counts()
+            # Drop "household size" as it is in almost all bsses
+            counts = counts.drop("household size", errors="ignore")
+            if not counts.empty:
+                most_frequent_wc = counts.idxmax()
 
-    # Update options for livelihood zone dropdown
-    zone_options = [{"label": zone, "value": zone} for zone in filtered_zones]
+    if filtered_baseline_df.empty:
+        return html.Div(f"No data available for {title_segment}.", style={"padding": "20px"})
 
-    # Filter data based on selected livelihood zones
-    if selected_zones:
-        filtered_livelihood = filtered_livelihood[
-            filtered_livelihood["livelihood_zone_baseline_label"].isin(selected_zones)
+    return create_kpi_layout(filtered_baseline_df, filtered_activity_df, filtered_corrections_df, most_frequent_wc)
+
+
+def create_livelihood_pie_chart(df):
+    if df.empty:
+        return go.Figure().update_layout(title_text="No Livelihood Category Data")
+    livelihood_counts = df["main_livelihood_category"].value_counts()
+    fig = px.pie(
+        values=livelihood_counts.values,
+        names=livelihood_counts.index,
+        title="Distribution of Main Livelihood Categories",
+        hole=0.4,
+        color_discrete_sequence=px.colors.sequential.Plasma_r,
+    )
+    fig.update_traces(textposition="inside", textinfo="percent+label")
+    fig.update_layout(legend_title_text="Category", uniformtext_minsize=12, uniformtext_mode="hide")
+    return fig
+
+
+def create_organization_treemap(df):
+    if df.empty:
+        return go.Figure().update_layout(title_text="No Source Organization Data")
+    org_counts = df["source_organization"].value_counts().reset_index()
+    org_counts.columns = ["source_organization", "count"]
+    fig = px.treemap(
+        org_counts,
+        path=[px.Constant("All Organizations"), "source_organization"],
+        values="count",
+        title="Data Contribution by Source Organization",
+        color="count",
+        color_continuous_scale="Blues",
+    )
+    fig.update_traces(textinfo="label+value")
+    fig.update_layout(margin=dict(t=50, l=25, r=25, b=25))
+    return fig
+
+
+def create_strategy_barchart(activity_df):
+    """
+    Creates a bar chart showing the count of livelihood activities by strategy type.
+    """
+    if activity_df.empty or "strategy_type" not in activity_df.columns:
+        return go.Figure().update_layout(title_text="No Livelihood Strategy Data")
+
+    strategy_counts = activity_df["strategy_type"].value_counts().reset_index()
+    strategy_counts.columns = ["strategy_type", "count"]
+
+    fig = px.bar(
+        strategy_counts,
+        x="strategy_type",
+        y="count",
+        title="Livelihood Activities by Strategy Type",
+        labels={"strategy_type": "Strategy Type", "count": "Number of Activities"},
+        color="strategy_type",
+        text_auto=True,
+    )
+    fig.update_layout(xaxis_title=None, yaxis_title="Number of Activities", showlegend=False)
+    fig.update_traces(textposition="outside")
+    return fig
+
+
+def get_livelihood_activity_kpis(activity_df):
+    if activity_df.empty:
+        return 0, 0
+    counts = activity_df["data_level"].value_counts().to_dict()
+    return counts.get("community", 0), counts.get("baseline", 0)
+
+
+def create_strategy_sunburst_chart(activity_df):
+    """Creates a sunburst chart for livelihood strategy types."""
+    if activity_df.empty or "strategy_type" not in activity_df.columns:
+        return go.Figure().update_layout(title_text="No Livelihood Activity Data Available")
+
+    strategy_counts = activity_df.groupby(["data_level", "strategy_type"]).size().reset_index(name="count")
+    fig = px.sunburst(
+        strategy_counts,
+        path=["data_level", "strategy_type"],
+        values="count",
+        title="Livelihood Activities by Strategy Type",
+        color="data_level",
+        color_discrete_map={"community": "#2980b9", "baseline": "#8e44ad", "(?)": "#7f8c8d"},
+    )
+    fig.update_traces(textinfo="label+percent parent", insidetextorientation="radial")
+    fig.update_layout(margin=dict(t=50, l=25, r=25, b=25))
+    return fig
+
+
+def create_kpi_layout(filtered_baseline_df, filtered_activity_df, filtered_corrections_df, most_frequent_wc):
+    """Assembles the KPI cards and charts into a single layout component."""
+    total_bsses = len(filtered_baseline_df)
+    community_count, baseline_count = get_livelihood_activity_kpis(filtered_activity_df)
+    total_corrections = len(filtered_corrections_df)
+    return html.Div(
+        [
+            html.Div(
+                [
+                    html.Div(
+                        [html.H3(f"{total_bsses}"), html.P("Total BSSes loaded")],
+                        className="summary-card",
+                    ),
+                    html.Div(
+                        [
+                            html.H3("Livelihood Activity Data"),
+                            html.Div(
+                                [
+                                    html.Div([html.H4(community_count), html.P("Community")], className="sub-kpi"),
+                                    html.Div([html.H4(baseline_count), html.P("Baseline")], className="sub-kpi"),
+                                ],
+                                style={"display": "flex", "justifyContent": "space-around", "marginTop": "10px"},
+                            ),
+                        ],
+                        className="summary-card",
+                    ),
+                    html.Div(
+                        [html.H3(f"{total_corrections}"), html.P("Corrections")],
+                        className="summary-card",
+                    ),
+                    html.Div(
+                        [
+                            html.H3("Most Frequent Wealth Characterstics"),
+                            html.P(f"{most_frequent_wc}"),
+                        ],
+                        className="summary-card",
+                    ),
+                ],
+                className="kpi-card-container",
+            ),
+            html.Div(
+                [
+                    html.Div(
+                        [dcc.Graph(figure=create_livelihood_pie_chart(filtered_baseline_df))],
+                        style={"width": "49%", "display": "inline-block", "verticalAlign": "top"},
+                    ),
+                    html.Div(
+                        [dcc.Graph(figure=create_organization_treemap(filtered_baseline_df))],
+                        style={"width": "49%", "display": "inline-block", "verticalAlign": "top"},
+                    ),
+                ],
+                style={"marginTop": "30px"},
+            ),
+            html.Div(
+                [
+                    html.Div(
+                        [dcc.Graph(figure=create_strategy_sunburst_chart(filtered_activity_df))],
+                    ),
+                    html.Div(
+                        [dcc.Graph(figure=create_strategy_barchart(filtered_activity_df))],
+                    ),
+                ],
+                style={"marginTop": "30px"},
+            ),
         ]
-        filtered_wealth = filtered_wealth[filtered_wealth["livelihood_zone_baseline_label"].isin(selected_zones)]
-
-    # Group and aggregate Strategy Type Count
-    livelihood_grouped = (
-        filtered_livelihood.groupby(["livelihood_zone_baseline_label", "strategy_type_label"])
-        .size()
-        .reset_index(name="Strategy Type Count")
     )
-    livelihood_summary = (
-        livelihood_grouped.groupby("livelihood_zone_baseline_label")["Strategy Type Count"].sum().reset_index()
-    )
-
-    # Group and pivot Wealth Characteristics Count
-    wealth_grouped = (
-        filtered_wealth.groupby(["livelihood_zone_baseline_label", "Record Type"])
-        .size()
-        .reset_index(name="Wealth Characteristics Count")
-    )
-    wealth_grouped_pivot = wealth_grouped.pivot_table(
-        index="livelihood_zone_baseline_label",
-        columns="Record Type",
-        values="Wealth Characteristics Count",
-        aggfunc="sum",
-        fill_value=0,
-    ).reset_index()
-
-    # Merge livelihood and wealth data
-    merged_data = pd.merge(livelihood_summary, wealth_grouped_pivot, on="livelihood_zone_baseline_label", how="left")
-
-    # Create charts
-    wealth_fig = px.bar(
-        wealth_grouped,
-        x="livelihood_zone_baseline_label",
-        y="Wealth Characteristics Count",
-        color="Record Type",
-        barmode="stack",
-        title="Wealth Characteristics by Type",
-        labels={
-            "livelihood_zone_baseline_label": "Livelihood Zone",
-        },
-    )
-
-    livelihood_fig = px.bar(
-        livelihood_grouped,
-        x="strategy_type_label",
-        y="Strategy Type Count",
-        color="livelihood_zone_baseline_label",
-        barmode="stack",
-        title="Strategy Types by Baseline",
-        labels={
-            "strategy_type_label": "Strategy Type",
-            "livelihood_zone_baseline_label": "Baseline Zone",
-        },
-    )
-
-    wealth_monthly_fig = px.bar(
-        filtered_wealth.groupby(["created_month", "Record Type"])
-        .size()
-        .reset_index(name="Wealth Characteristics Count"),
-        x="created_month",
-        y="Wealth Characteristics Count",
-        color="Record Type",
-        barmode="stack",
-        title="Wealth Characteristics by Month",
-        labels={
-            "created_month": "Month",
-        },
-    )
-
-    return zone_options, wealth_fig, livelihood_fig, wealth_monthly_fig, merged_data.to_dict("records")
-
-
-# Run the app
-if __name__ == "__main__":
-    app.run_server(debug=True)

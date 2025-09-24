@@ -21,11 +21,25 @@ class DeconstructingJSONEncoder(json.JSONEncoder):
 
 class InventoryDashboardView(TemplateView):
 
-    dash_app = "Inventory_dashboard"
+    dash_app = "bss_inventory"
 
-    template_name = "dashboard/dashboard_inventory_dashboard.html"
+    template_name = "dashboard/pipeline_dashboard.html"
 
-    app_title = "HEA Inventory Dashboard"
+    app_title = "Inventory Dashboard"
+
+    def get_context_data(self, **kwargs) -> dict[str, any]:
+        context = super().get_context_data(**kwargs)
+        context["dash_app"] = self.dash_app
+        return context
+
+
+class PipelineStatusDashboardView(TemplateView):
+
+    dash_app = "pipeline_status_dashboard"
+
+    template_name = "dashboard/pipeline_dashboard.html"
+
+    app_title = "Pipeline Status Dashboard"
 
     def get_context_data(self, **kwargs) -> dict[str, any]:
         context = super().get_context_data(**kwargs)

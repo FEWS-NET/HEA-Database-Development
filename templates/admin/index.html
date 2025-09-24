@@ -142,6 +142,23 @@
             </div>
     
         {% endif %}
+       <div class="container">
+                <p class="home_page_header_text">{% translate 'Dashboards' %}</p>
+                <div class="grid">
+                    <!-- Card 1 -->
+                    <div class="card">
+                            <div class="card-body">
+                                  <a href="{% url 'viz:inventory_dashboard' %}" rel="noreferrer"> {% trans "BSS Inventory Dashboard" %}</a>
+                            </div>
+                        </div>
+                    <!-- Card 2 -->
+                            <div class="card">
+                                <div class="card-body">
+                                      <a href="{% url 'viz:pipeline_status_dashboard' %}" rel="noreferrer"> {% trans "Pipeline Status Dashboard" %}</a>
+                                </div>
+                            </div>
+                </div>
+            </div>
         {% if 'baseline.view_communitycropproduction' in perms or  'baseline.view_communitylivestock'  in perms %}
             <div class="container">
                 <p class="home_page_header_text">{% translate 'BSS Production Sheet' %}</p>
@@ -375,10 +392,6 @@
                     <li style="list-style: none;">
                         <a class="home_page_button" href="{{ site_url }}" target="_blank"
                            rel="noreferrer"> {% trans "Livelihood Explorer" %}</a>
-                    </li>
-                    <li style="list-style: none;">
-                        <a class="home_page_button" href="{% url 'viz:inventory_dashboard' %}"
-                           rel="noreferrer"> {% trans "HEA Inventory Dashboard" %}</a>
                     </li>
                 </ul>
             </div>

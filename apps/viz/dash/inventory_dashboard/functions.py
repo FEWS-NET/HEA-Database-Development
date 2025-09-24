@@ -1,67 +1,114 @@
 import pandas as pd
-import requests
 
-# API Endpoints
-LIVELIHOOD_STRATEGY_URL = "https://headev.fews.net/api/livelihoodstrategy/"
-WEALTH_GROUP_URL = "https://headev.fews.net/api/wealthgroupcharacteristicvalue/"
-LIVELIHOOD_ACTIVITY_URL = "https://headev.fews.net/api/livelihoodactivity/"
-
-
-def fetch_data(api_url):
-    """
-    Fetch data from the given API endpoint and return as a Pandas DataFrame.
-    """
-    try:
-        response = requests.get(api_url)
-        response.raise_for_status()
-        data = response.json()
-        return pd.DataFrame(data)
-    except Exception as e:
-        print(f"Error fetching data: {e}")
-        return pd.DataFrame()
+from baseline.models import (
+    LivelihoodActivity,
+    LivelihoodZoneBaseline,
+    LivelihoodZoneBaselineCorrection,
+    WealthGroupCharacteristicValue,
+)
 
 
-def prepare_livelihood_data(df):
-    """
-    Prepare livelihood strategy data for visualization.
-    """
-    df.rename(columns={"livelihood_zone_country": "country_code"}, inplace=True)
-    df["ls_baseline_date"] = df["livelihood_zone_baseline_label"].str.split(": ").str[1]
-    df["ls_baseline_month"] = pd.to_datetime(df["ls_baseline_date"], errors="coerce").dt.month
-    return df
-
-
-def prepare_wealth_group_data(df):
-    """
-    Prepare wealth group data for visualization.
-    """
-    df.rename(columns={"livelihood_zone_country_code": "country_code"}, inplace=True)
-
-    if "livelihood_zone_baseline_label" in df.columns:
-        df["ls_baseline_date"] = df["livelihood_zone_baseline_label"].str.split(": ").str[1]
-    else:
-        df["ls_baseline_date"] = None
-
-    df["ls_baseline_month"] = pd.to_datetime(df["ls_baseline_date"], errors="coerce").dt.month
-
-    month_mapping = {month: pd.Timestamp(f"2023-{month:02}-01").strftime("%B") for month in range(1, 13)}
-
-    if "created_date" in df.columns:
-        df["created_month"] = pd.to_datetime(df["created_date"], errors="coerce").dt.month.map(month_mapping)
-    else:
-        df["created_month"] = pd.to_datetime(df["ls_baseline_date"], errors="coerce").dt.month.map(month_mapping)
-
-    if "community_name" in df.columns:
-        df["Record Type"] = df["community_name"].apply(lambda x: "Summary Data" if pd.isna(x) else "Community Data")
-    else:
-        df["Record Type"] = "Community Data"
+def get_livelihood_zone_baseline():
+    qs = LivelihoodZoneBaseline.objects.select_related(
+        "livelihood_zone__country",
+        "source_organization",
+    ).values_list(
+        "id",
+        "livelihood_zone__country__name",
+        "livelihood_zone__name_en",
+        "source_organization__name",
+        "livelihood_zone__code",
+        "main_livelihood_category__name_en",
+    )
+    columns = [
+        "id",
+        "country",
+        "livelihood_zone",
+        "source_organization",
+        "zone_code",
+        "main_livelihood_category",
+    ]
+    df = pd.DataFrame(list(qs), columns=columns)
 
     return df
 
 
-# Fetch and prepare data
-livelihood_data = fetch_data(LIVELIHOOD_STRATEGY_URL)
-wealth_group_data = fetch_data(WEALTH_GROUP_URL)
+def get_livelihood_activity_dataframe():
+    queryset = LivelihoodActivity.objects.select_related(
+        "livelihood_strategy",
+        "livelihood_zone_baseline__livelihood_zone__country",
+        "wealth_group__community__livelihood_zone_baseline__source_organization",
+        "wealth_group__wealth_group_category",
+    ).values(
+        "id",
+        "livelihood_zone_baseline__livelihood_zone__country__name",
+        "livelihood_strategy__strategy_type",
+        "wealth_group",
+        "wealth_group__community",
+    )
 
-clean_livelihood_data = prepare_livelihood_data(livelihood_data)
-clean_wealth_group_data = prepare_wealth_group_data(wealth_group_data)
+    df = pd.DataFrame(list(queryset))
+
+    df = df.rename(
+        columns={
+            "id": "activity_id",
+            "livelihood_zone_baseline__livelihood_zone__country__name": "country",
+            "livelihood_strategy__strategy_type": "strategy_type",
+            "wealth_group": "wealth_group_id",
+            "wealth_group__community": "community_id",
+        }
+    )
+    if df.empty:
+        return df
+    # Add baseline/community flag
+    df["data_level"] = df["community_id"].apply(lambda x: "baseline" if pd.isna(x) else "community")
+
+    return df
+
+
+def get_bss_corrections():
+    queryset = LivelihoodZoneBaselineCorrection.objects.select_related(
+        "livelihood_zone_baseline__livelihood_zone__country",
+    )
+
+    data = []
+    for correction in queryset:
+        data.append(
+            {
+                "id": correction.id,
+                "country": correction.livelihood_zone_baseline.livelihood_zone.country.name,
+                "bss": str(correction.livelihood_zone_baseline),
+            }
+        )
+
+    df = pd.DataFrame(data)
+    return df
+
+
+def get_wealthcharactestics():
+    queryset = (
+        WealthGroupCharacteristicValue.objects.select_related(
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country", "wealth_characteristic"
+        )
+        .exclude(value__isnull=True)
+        .exclude(value__exact="")
+    )
+
+    data = []
+    for wc in queryset:
+        wealth_characteristic = str(wc.wealth_characteristic)
+        if wc.wealth_characteristic.has_product:
+            wealth_characteristic += f":{wc.product}"
+
+        data.append(
+            {
+                "id": wc.id,
+                "country": wc.wealth_group.livelihood_zone_baseline.livelihood_zone.country.name,
+                "bss": str(wc.wealth_group.livelihood_zone_baseline),
+                "wealth_characteristic": wealth_characteristic,
+                "value": wc.value,
+            }
+        )
+
+    df = pd.DataFrame(data)
+    return df
