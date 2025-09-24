@@ -108,6 +108,7 @@ EXTERNAL_APPS = [
     "django_extensions",
     "rest_framework_gis",
     "revproxy",
+    "corsheaders",
 ]
 PROJECT_APPS = ["common", "metadata", "baseline"]
 INSTALLED_APPS = EXTERNAL_APPS + PROJECT_APPS
@@ -116,6 +117,7 @@ MIDDLEWARE = [
     "django.middleware.gzip.GZipMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "common.middleware.language.LanguageMiddleware",
@@ -152,6 +154,19 @@ REST_FRAMEWORK = {
     "STRICT_JSON": True,
     "SEARCH_PARAM": "search",
 }
+
+
+########## CORS CONFIGURATION
+# See: https://github.com/ottoyiu/django-cors-headers
+CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[])
+CORS_ALLOWED_ORIGIN_REGEXES = env.list("CORS_ALLOWED_ORIGIN_REGEXES", default=[])
+# when CORS_ALLOW_CREDENTIALS is True, it is not allowed to use
+# the wildcard / CORS_ALLOW_ALL_ORIGINS
+CORS_ALLOW_ALL_ORIGINS = False if (CORS_ALLOWED_ORIGINS or CORS_ALLOWED_ORIGIN_REGEXES) else True
+CORS_ALLOW_CREDENTIALS = True if (CORS_ALLOWED_ORIGINS or CORS_ALLOWED_ORIGIN_REGEXES) else False
+
+CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
+########## End CORS CONFIGURATION
 
 ROOT_URLCONF = "hea.urls"
 
