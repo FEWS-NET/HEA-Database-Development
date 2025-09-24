@@ -380,13 +380,6 @@ class Season(common_models.Model):
         verbose_name_plural = _("Seasons")
 
 
-# Defined outside ActivityLabel to make it easy to share between ActivityLabel and WealthCharacteristicLabel
-class LabelStatus(models.TextChoices):
-    COMPLETE = "Complete", _("Complete")
-    DISCUSSION = "Discussion", _("Under Discussion")
-    CORRECT_BSS = "Correct BSS", _("Correct the BSS")
-
-
 class ActivityLabel(common_models.Model):
     """
     A label from Column A of the 'Data', 'Data2' or 'Data3' worksheet in a BSS and associated attributes.
@@ -394,6 +387,12 @@ class ActivityLabel(common_models.Model):
     Used by the data ingestion pipeline for LivelihoodStrategy and LivelihoodActivity to determine the attributes for
     the LivelihoodStrategy and/or LivelihoodActivity for a given row in a BSS.
     """
+
+    class LabelStatus(models.TextChoices):
+        REGULAR_EXPRESSION = "Regular Expression", _("Processed by Regular Expression")
+        OVERRIDE = "Override", _("Override automatically recognized metadata")
+        DISCUSSION = "Discussion", _("Under Discussion")
+        CORRECT_BSS = "Correct BSS", _("Correct the BSS")
 
     class LivelihoodActivityType(models.TextChoices):
         LIVELIHOOD_ACTIVITY = "LivelihoodActivity", _("Livelihood Activity")  # Labels from the 'Data' worksheet
@@ -475,6 +474,11 @@ class WealthCharacteristicLabel(common_models.Model):
 
     Used by the ingestion pipeline for WealthCharacteristicValue to determine the attributes for a given row in a BSS.
     """
+
+    class LabelStatus(models.TextChoices):
+        COMPLETE = "Complete", _("Complete")
+        DISCUSSION = "Discussion", _("Under Discussion")
+        CORRECT_BSS = "Correct BSS", _("Correct the BSS")
 
     wealth_characteristic_label = common_models.NameField(
         max_length=200, unique=True, verbose_name=_("Wealth Characteristic Label")

@@ -1,7 +1,9 @@
+import os
+
 from django.conf import settings
 from django.conf.urls.i18n import i18n_patterns
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import include, path, re_path
 from django.views.decorators.cache import cache_page
 from django.views.decorators.http import etag
 from django.views.i18n import JavaScriptCatalog
@@ -47,6 +49,7 @@ from baseline.viewsets import (
     WealthGroupViewSet,
     WildFoodGatheringViewSet,
 )
+from common.views import DagsterProxyView
 from common.viewsets import (
     ClassifiedProductViewSet,
     CountryViewSet,
@@ -137,6 +140,7 @@ urlpatterns += [
         LivelihoodZoneBaselineFacetedSearchView.as_view(),
         name="livelihood-zone-baseline-faceted-search",
     ),
+    re_path(os.environ.get("DAGSTER_WEBSERVER_PREFIX", "pipelines") + r"/(?P<path>.*)", DagsterProxyView.as_view()),
 ]
 
 # Django's solution for translating JavaScript apps

@@ -9,6 +9,7 @@ from abc import ABC
 
 import pandas as pd
 from django.contrib.auth.models import User
+from django.db.models import Model
 
 from .fields import translation_fields
 from .models import (
@@ -31,7 +32,7 @@ class Lookup(ABC):
 
     # The primary key fields for the model being retrieved, typically
     # a single auto-incremented surrogate key named `id`
-    id_fields = None
+    id_fields = []
 
     # The fields passed from the dataframe that are used to constrain the lookup,
     # typically the fields that are foreign keys from the model being looked up to
@@ -346,7 +347,7 @@ class Lookup(ABC):
             return None
 
     @functools.cache
-    def get_instance(self, value: str, **parent_values) -> str | None:
+    def get_instance(self, value: str, **parent_values) -> Model | None:
         """
         Return the Django model instance for a single string, or None if there is no match.
 

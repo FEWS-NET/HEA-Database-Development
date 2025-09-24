@@ -42,7 +42,7 @@ jobs:
       - name: Install lint dependencies
         run: pip install -r requirements/lint.txt
       - name: Run ruff check
-        run: ruff .
+        run: ruff check .
       - name: Run black check
         run: black --check .
       - name: Run isort check
@@ -59,7 +59,7 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region: ${{ vars.AWS_REGION }}
       - name: Start EC2 runner test_branch
         id: start-ec2-runner
         uses: FEWS-NET/ec2-github-runner@1f687d4b786b21bed4ad6f420daddc7665bff857
@@ -67,7 +67,7 @@ jobs:
           mode: start
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
           ec2-image-id: ami-092d88ab9dba1ddc0
-          ec2-instance-type: m5.large
+          ec2-instance-type: m5a.large
           subnet-id: subnet-0f50e5fa11397a87b
           security-group-id: sg-0c844cef0ffc13cde
           iam-role-name: data-prod-github-runner-role # optional, requires additional permissions
@@ -95,7 +95,7 @@ jobs:
           mode: start
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
           ec2-image-id: ami-092d88ab9dba1ddc0
-          ec2-instance-type: m5.large
+          ec2-instance-type: m5a.large
           subnet-id: subnet-0f50e5fa11397a87b
           security-group-id: sg-0c844cef0ffc13cde
           iam-role-name: data-prod-github-runner-role # optional, requires additional permissions
@@ -116,7 +116,7 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region: ${{ vars.AWS_REGION }}
       - name: Start EC2 runner test_main
         id: start-ec2-runner
         uses: FEWS-NET/ec2-github-runner@1f687d4b786b21bed4ad6f420daddc7665bff857
@@ -124,7 +124,7 @@ jobs:
           mode: start
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
           ec2-image-id: ami-092d88ab9dba1ddc0
-          ec2-instance-type: m5.large
+          ec2-instance-type: m5a.large
           subnet-id: subnet-0f50e5fa11397a87b
           security-group-id: sg-0c844cef0ffc13cde
           iam-role-name: data-prod-github-runner-role # optional, requires additional permissions
@@ -153,7 +153,7 @@ jobs:
           mode: start
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
           ec2-image-id: ami-092d88ab9dba1ddc0
-          ec2-instance-type: m5.large
+          ec2-instance-type: m5a.large
           subnet-id: subnet-0f50e5fa11397a87b
           security-group-id: sg-0c844cef0ffc13cde
           iam-role-name: data-prod-github-runner-role # optional, requires additional permissions

@@ -524,7 +524,7 @@
         "quantity_purchased"
     ],
     [
-        "(?P<product_id>lait de {label_pattern})",
+        "(?P<product_id>lait (?:du|de) {label_pattern})",
         "MilkProduction",
         true,
         null

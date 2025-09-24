@@ -109,7 +109,7 @@ from baseline.models import (  # NOQA: E402
     WealthGroupCharacteristicValue,
 )
 from metadata.lookups import WealthGroupCategoryLookup  # NOQA: E402
-from metadata.models import LabelStatus, WealthCharacteristicLabel  # NOQA: E402
+from metadata.models import WealthCharacteristicLabel  # NOQA: E402
 
 # Indexes of header rows in the Data3 dataframe (wealth_group_category, district, village)
 HEADER_ROWS = [3, 4, 5]
@@ -187,7 +187,9 @@ def wealth_characteristic_instances(
     wealthgroupcategorylookup = WealthGroupCategoryLookup()
     label_map = {
         instance.pop("wealth_characteristic_label").lower(): instance
-        for instance in WealthCharacteristicLabel.objects.filter(status=LabelStatus.COMPLETE).values(
+        for instance in WealthCharacteristicLabel.objects.filter(
+            status=WealthCharacteristicLabel.LabelStatus.COMPLETE
+        ).values(
             "wealth_characteristic_label",
             "wealth_characteristic_id",
             "product_id",
@@ -315,26 +317,50 @@ def wealth_characteristic_instances(
 
                         wealth_group_characteristic_value["reference_type"] = reference_type
 
-                        # The percentagme of households should be stored as a number between 1 and 100,
+                        # The percentage of households should be stored as a number between 1 and 100,
                         # but may be stored in the BSS (particularly in the summary column) as a
                         # decimal fraction between 0 and 1, so correct those values
-                        if (
-                            wealth_group_characteristic_value["wealth_characteristic_id"] == "percentage of households"
-                            and value != ""
-                            and float(value) < 1
-                        ):
-                            value = float(value) * 100
+                        try:
+                            if (
+                                wealth_group_characteristic_value["wealth_characteristic_id"]
+                                == "percentage of households"
+                                and str(value).strip()
+                                and float(value) < 1
+                            ):
+                                value = float(value) * 100
+                        except Exception as e:
+                            raise ValueError(
+                                "Error in %s converting percentage of households value '%s' to float from 'WB'!%s%s"
+                                % (partition_key, value, column, row)
+                            ) from e
 
                         wealth_group_characteristic_value["value"] = value
 
                         # If this is the summary, then also save the min and max values
                         if reference_type == WealthGroupCharacteristicValue.CharacteristicReference.SUMMARY:
                             min_value = df.loc[row, df.columns[-2]]
-                            if min_value != "" and float(min_value) < 1:
-                                min_value = float(min_value) * 100
                             max_value = df.loc[row, df.columns[-1]]
-                            if max_value != "" and float(max_value) < 1:
-                                max_value = float(max_value) * 100
+                            # Convert min/max percentage of households values from decimal fractions to percentages
+                            if (
+                                wealth_group_characteristic_value["wealth_characteristic_id"]
+                                == "percentage of households"
+                            ):
+                                try:
+                                    if str(min_value).strip() and float(min_value) < 1:
+                                        min_value = float(min_value) * 100
+                                except Exception as e:
+                                    raise ValueError(
+                                        "Error in %s converting percentage of households value '%s' to float from 'WB'!%s%s"
+                                        % (partition_key, min_value, df.columns[-2], row)
+                                    ) from e
+                                try:
+                                    if str(max_value).strip() and float(max_value) < 1:
+                                        max_value = float(max_value) * 100
+                                except Exception as e:
+                                    raise ValueError(
+                                        "Error in %s converting percentage of households value '%s' to float from 'WB'!%s%s"
+                                        % (partition_key, max_value, df.columns[-1], row)
+                                    ) from e
                             wealth_group_characteristic_value["min_value"] = min_value
                             wealth_group_characteristic_value["max_value"] = max_value
 

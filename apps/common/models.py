@@ -1002,3 +1002,14 @@ class UserProfile(Model):
     class Meta:
         verbose_name = _("user profile")
         verbose_name_plural = _("user profiles")
+
+
+class AdditionalPermissions(models.Model):
+    """
+    A generic model to capture custom permissions.
+    """
+
+    class Meta:
+        managed = False
+        default_permissions = ()
+        permissions = (("access_dagster_ui", "Can access Dagster user interface"),)
