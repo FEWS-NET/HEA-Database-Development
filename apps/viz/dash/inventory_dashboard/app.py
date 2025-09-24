@@ -14,11 +14,6 @@ from .functions import (
 app = SecureDjangoDash("bss_inventory", suppress_callback_exceptions=True)
 app.title = "BSS Inventory"
 
-baseline_df = get_livelihood_zone_baseline()
-countries = sorted(baseline_df["country"].unique().tolist())
-livelihood_activity_df = get_livelihood_activity_dataframe()
-corrections_df = get_bss_corrections()
-wealthcharactestics_df = get_wealthcharactestics()
 
 app.layout = html.Div(
     [
@@ -30,8 +25,9 @@ app.layout = html.Div(
                         html.Label("Select Country:", style={"fontWeight": "bold"}),
                         dcc.Dropdown(
                             id="country-dropdown",
-                            options=[{"label": country, "value": country} for country in countries],
-                            value=countries[0] if countries else None,
+                            # Options will be loaded dynamically in callback
+                            options=[],
+                            value=None,
                             clearable=True,
                             placeholder="Select a country (or leave blank for all)",
                         ),
@@ -52,61 +48,106 @@ app.layout = html.Div(
             [dcc.Loading(id="loading-overview", type="circle", children=html.Div(id="overview-content"))],
             style={"padding": "20px"},
         ),
+        # Hidden div to trigger initial loading
+        html.Div(id="initial-load-trigger", style={"display": "none"}),
     ],
     style={"fontFamily": "Arial, sans-serif"},
 )
 
 
+@app.callback(
+    Output("country-dropdown", "options"),
+    Output("country-dropdown", "value"),
+    Input("initial-load-trigger", "children"),
+)
+def initialize_country_dropdown(_):
+    """Initialize country dropdown options on first load."""
+    try:
+        baseline_df = get_livelihood_zone_baseline()
+        countries = sorted(baseline_df["country"].unique().tolist()) if not baseline_df.empty else []
+        options = [{"label": country, "value": country} for country in countries]
+        default_value = countries[0] if countries else None
+        return options, default_value
+    except Exception as e:
+        # Handle gracefully in case of connection issues
+        print(f"Error loading baseline data: {e}")
+        return [], None
+
+
 @app.callback(Output("zone-dropdown", "options"), Output("zone-dropdown", "value"), Input("country-dropdown", "value"))
 def update_livelihood_zone_dropdown(selected_country):
+    """Update zone dropdown based on selected country."""
     if not selected_country:
         return [], []
-    zones = sorted(baseline_df[baseline_df["country"] == selected_country]["zone_code"].unique())
-    options = [{"label": zone, "value": zone} for zone in zones]
-    return options, zones
+
+    try:
+        baseline_df = get_livelihood_zone_baseline()
+        zones = sorted(baseline_df[baseline_df["country"] == selected_country]["zone_code"].unique())
+        options = [{"label": zone, "value": zone} for zone in zones]
+        return options, zones
+    except Exception as e:
+        print(f"Error loading zone data: {e}")
+        return [], []
 
 
 @app.callback(
     Output("overview-content", "children"), Input("country-dropdown", "value"), Input("zone-dropdown", "value")
 )
 def update_kpi_content(selected_country, selected_zone):
-    title_segment = selected_country if selected_country else "All Countries"
+    """Update main content based on selected filters."""
+    try:
+        # Load all required data fresh each time
+        baseline_df = get_livelihood_zone_baseline()
+        livelihood_activity_df = get_livelihood_activity_dataframe()
+        corrections_df = get_bss_corrections()
+        wealthcharactestics_df = get_wealthcharactestics()
 
-    if selected_country:
-        filtered_baseline_df = baseline_df[baseline_df["country"] == selected_country].copy()
-        if not livelihood_activity_df.empty:
-            filtered_activity_df = livelihood_activity_df[livelihood_activity_df["country"] == selected_country].copy()
+        title_segment = selected_country if selected_country else "All Countries"
+
+        if selected_country:
+            filtered_baseline_df = baseline_df[baseline_df["country"] == selected_country].copy()
+            if not livelihood_activity_df.empty:
+                filtered_activity_df = livelihood_activity_df[
+                    livelihood_activity_df["country"] == selected_country
+                ].copy()
+            else:
+                filtered_activity_df = pd.DataFrame()
+            filtered_corrections_df = pd.DataFrame()
+            if not corrections_df.empty:
+                filtered_corrections_df = corrections_df[corrections_df["country"] == selected_country].copy()
+
+            most_frequent_wc = ""
+            if not wealthcharactestics_df.empty:
+                filtered_wc = wealthcharactestics_df[wealthcharactestics_df["country"] == selected_country].copy()
+                counts = filtered_wc["wealth_characteristic"].value_counts()
+                # Drop "household size" as it is in almost all bsses
+                counts = counts.drop("household size", errors="ignore")
+                if not counts.empty:
+                    most_frequent_wc = counts.idxmax()
+
         else:
-            filtered_activity_df = pd.DataFrame()
-        filtered_corrections_df = pd.DataFrame()
-        if not corrections_df.empty:
-            filtered_corrections_df = corrections_df[corrections_df["country"] == selected_country].copy()
+            filtered_baseline_df = baseline_df.copy()
+            filtered_activity_df = livelihood_activity_df.copy()
+            filtered_corrections_df = corrections_df.copy()
+            most_frequent_wc = ""
+            if not wealthcharactestics_df.empty:
+                counts = wealthcharactestics_df["wealth_characteristic"].value_counts()
+                # Drop "household size" as it is in almost all bsses
+                counts = counts.drop("household size", errors="ignore")
+                if not counts.empty:
+                    most_frequent_wc = counts.idxmax()
 
-        most_frequent_wc = ""
-        if not wealthcharactestics_df.empty:
-            filtered_wc = wealthcharactestics_df[wealthcharactestics_df["country"] == selected_country].copy()
-            counts = filtered_wc["wealth_characteristic"].value_counts()
-            # Drop "household size" as it is in almost all bsses
-            counts = counts.drop("household size", errors="ignore")
-            if not counts.empty:
-                most_frequent_wc = counts.idxmax()
+        if filtered_baseline_df.empty:
+            return html.Div(f"No data available for {title_segment}.", style={"padding": "20px"})
 
-    else:
-        filtered_baseline_df = baseline_df.copy()
-        filtered_activity_df = livelihood_activity_df.copy()
-        filtered_corrections_df = corrections_df.copy()
-        most_frequent_wc = ""
-        if not wealthcharactestics_df.empty:
-            counts = wealthcharactestics_df["wealth_characteristic"].value_counts()
-            # Drop "household size" as it is in almost all bsses
-            counts = counts.drop("household size", errors="ignore")
-            if not counts.empty:
-                most_frequent_wc = counts.idxmax()
+        return create_kpi_layout(filtered_baseline_df, filtered_activity_df, filtered_corrections_df, most_frequent_wc)
 
-    if filtered_baseline_df.empty:
-        return html.Div(f"No data available for {title_segment}.", style={"padding": "20px"})
-
-    return create_kpi_layout(filtered_baseline_df, filtered_activity_df, filtered_corrections_df, most_frequent_wc)
+    except Exception as e:
+        print(f"Error updating content: {e}")
+        return html.Div(
+            "Error loading data. Please try again later.",
+            style={"padding": "20px", "color": "red", "textAlign": "center"},
+        )
 
 
 def create_livelihood_pie_chart(df):
@@ -175,7 +216,9 @@ def get_livelihood_activity_kpis(activity_df):
 
 
 def create_strategy_sunburst_chart(activity_df):
-    """Creates a sunburst chart for livelihood strategy types."""
+    """
+    Creates a sunburst chart for livelihood strategy types.
+    """
     if activity_df.empty or "strategy_type" not in activity_df.columns:
         return go.Figure().update_layout(title_text="No Livelihood Activity Data Available")
 
@@ -194,7 +237,10 @@ def create_strategy_sunburst_chart(activity_df):
 
 
 def create_kpi_layout(filtered_baseline_df, filtered_activity_df, filtered_corrections_df, most_frequent_wc):
-    """Assembles the KPI cards and charts into a single layout component."""
+    """
+    All KPI cards and charts into a single layout component.
+    """
+
     total_bsses = len(filtered_baseline_df)
     community_count, baseline_count = get_livelihood_activity_kpis(filtered_activity_df)
     total_corrections = len(filtered_corrections_df)
