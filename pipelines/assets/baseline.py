@@ -78,17 +78,15 @@ def get_wealth_group_dataframe(
         # In the Summary columns in the Data, Data2, Data3 worksheets, the Wealth
         # Group Category is in Row 4 (District)rather than Row 3 (Wealth Group Category)
         # so do a second lookup to update the blank rows.
-        # If this doesn't find any new values, then it's because in a WB worksheet
-        # there are no extra Wealth Group Categories on Row 4
-        try:
+        # Note that in a WB worksheet there are no extra Wealth Group Categories on Row 4
+        if worksheet_name != "WB":
             wealth_group_df = wealthgroupcategorylookup.do_lookup(
                 wealth_group_df, "district", "wealth_group_category", update=True
             )
             # Remove the duplicate wealth_group_category_original column created by the second do_lookup(),
             # which otherwise causes problems when trying to merge dataframes, e.g. when building the wealth_group_df.
             wealth_group_df = wealth_group_df.loc[:, ~wealth_group_df.columns.duplicated()]
-        except ValueError:
-            pass
+
         # Check if there are unrecognized wealth group categories and report
         wealth_group_missing_category_df = wealth_group_df[
             wealth_group_df["wealth_group_category"].isnull()
