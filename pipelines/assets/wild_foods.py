@@ -181,7 +181,9 @@ def wild_foods_valid_instances(
     valid_instances, metadata = validate_instances(context, wild_foods_instances, partition_key)
     metadata = {f"num_{key.lower()}": len(value) for key, value in valid_instances.items()}
     metadata["total_instances"] = sum(len(value) for value in valid_instances.values())
-    metadata["preview"] = MetadataValue.md(f"```json\n{json.dumps(valid_instances, indent=4)}\n```")
+    metadata["preview"] = MetadataValue.md(
+        f"```json\n{json.dumps(valid_instances, indent=4, ensure_ascii=False)}\n```"
+    )
     return Output(
         valid_instances,
         metadata=metadata,
