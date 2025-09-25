@@ -154,12 +154,22 @@ def create_livelihood_pie_chart(df):
     if df.empty:
         return go.Figure().update_layout(title_text="No Livelihood Category Data")
     livelihood_counts = df["main_livelihood_category"].value_counts()
+    color_map = {
+        "Agricultural": "#096640",  # brand green
+        "Agropastoral": "#0B7A4A",  # slightly brighter
+        "Fishing": "#0E8E54",  # lighter green
+        "Irrigation": "#12A35F",  # medium green
+        "Pastoral": "#27B96B",  # fresh green
+        "Peri-Urban": "#52CC85",  # soft green
+        "Urban": "#7FE09F",  # lightest green
+    }
     fig = px.pie(
         values=livelihood_counts.values,
         names=livelihood_counts.index,
         title="Distribution of Main Livelihood Categories",
         hole=0.4,
-        color_discrete_sequence=px.colors.sequential.Plasma_r,
+        color=livelihood_counts.index,
+        color_discrete_map=color_map,
     )
     fig.update_traces(textposition="inside", textinfo="percent+label")
     fig.update_layout(legend_title_text="Category", uniformtext_minsize=12, uniformtext_mode="hide")
@@ -249,12 +259,12 @@ def create_kpi_layout(filtered_baseline_df, filtered_activity_df, filtered_corre
             html.Div(
                 [
                     html.Div(
-                        [html.H3(f"{total_bsses}"), html.P("Total BSSes loaded")],
+                        [html.H3(f"{total_bsses}", style={"color": "#2ECC71"}), html.P("Total BSSes loaded")],
                         className="summary-card",
                     ),
                     html.Div(
                         [
-                            html.H3("Livelihood Activity Data"),
+                            html.H3("Livelihood Activity Data", style={"color": "#3498db"}),
                             html.Div(
                                 [
                                     html.Div([html.H4(community_count), html.P("Community")], className="sub-kpi"),
@@ -266,12 +276,12 @@ def create_kpi_layout(filtered_baseline_df, filtered_activity_df, filtered_corre
                         className="summary-card",
                     ),
                     html.Div(
-                        [html.H3(f"{total_corrections}"), html.P("Corrections")],
+                        [html.H3(f"{total_corrections}", style={"color": "#9b59b6"}), html.P("Corrections")],
                         className="summary-card",
                     ),
                     html.Div(
                         [
-                            html.H3("Most Frequent Wealth Characterstics"),
+                            html.H3("Most Frequent Wealth Characterstics", style={"color": "#f39c12"}),
                             html.P(f"{most_frequent_wc}"),
                         ],
                         className="summary-card",

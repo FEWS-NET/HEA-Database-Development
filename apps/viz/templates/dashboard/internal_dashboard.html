@@ -1,4 +1,4 @@
-{% extends "admin/base.html" %}
+{% extends "../viz/base.html" %}
 {% load i18n static plotly_dash %}
 {% load static %}
 
@@ -51,5 +51,4 @@
         {% plotly_footer %}
     {% endblock foot_script %}
 
-    <script defer src="{% static "viz/js/remove_header_for_iframe.js" %}"></script>
 {% endblock content %}

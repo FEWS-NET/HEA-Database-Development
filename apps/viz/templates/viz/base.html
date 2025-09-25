@@ -8,8 +8,11 @@
 <title>{% block title %}{% endblock %}</title>
 <link rel="stylesheet" href="{% block stylesheet %}
 {% static "admin/css/base.css" %}
-
-{% endblock %}">
+ {% if theme == 'hea_default' %}
+    <script src="{% static "admin/js/load_content_css.js" %}" defer></script>
+         <link rel="stylesheet" type="text/css" href="{% static 'admin/css/hea_default.css' %}">
+   {% endif %}
+{% endblock %}
 <link rel="stylesheet" href="{% static "admin/css/overrides.css" %}">
 {% block dark-mode-vars %}
   <link rel="stylesheet" href="{% static "admin/css/dark_mode.css" %}">
@@ -49,8 +52,7 @@
       {% block branding %}
       <div id="branding" style="display: inline-flex; padding: 0">
           <a class="navbar-brand" href="/">
-              <img class="img_logo" src="{% static "themes/{{theme}}/img/logo.png" %}"
-                   alt= {%translate 'HEA Baseline Database Administration' %} />
+                   <a href="/en/admin/">HEA Baseline Database Administration</a>
           </a>
       </div>
   {% endblock %}
