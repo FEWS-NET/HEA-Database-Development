@@ -451,7 +451,7 @@ class ActivityLabel(common_models.Model):
         verbose_name=_("Currency"),
     )
     season = models.CharField(max_length=60, blank=True, verbose_name=_("Season"))
-    additional_identifier = models.CharField(max_length=200, blank=True, verbose_name=_("Season"))
+    additional_identifier = models.CharField(max_length=200, blank=True, verbose_name=_("Additional Identifier"))
     attribute = models.CharField(max_length=60, blank=True, verbose_name=_("Attribute"))
     notes = models.TextField(blank=True, verbose_name=_("Notes"))
 
