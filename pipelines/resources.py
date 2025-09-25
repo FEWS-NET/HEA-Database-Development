@@ -70,7 +70,7 @@ class JSONFilesystemIOManager(UPathIOManager):
             self.unlink(path)
 
         with path.open("w") as file:
-            file.write(json.dumps(obj, indent=4))
+            file.write(json.dumps(obj, indent=4, ensure_ascii=False))
 
     def load_from_path(self, context: InputContext, path: "UPath") -> Any:
         with path.open("r") as file:
