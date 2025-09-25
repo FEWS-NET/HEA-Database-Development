@@ -1059,7 +1059,7 @@ def get_instances_from_dataframe(
             )
             * 100
         ),
-        "preview": MetadataValue.md(f"```json\n{json.dumps(result, indent=4)}\n```"),
+        "preview": MetadataValue.md(f"```json\n{json.dumps(result, indent=4, ensure_ascii=False)}\n```"),
     }
     if not unrecognized_labels.empty:
         metadata["unrecognized_labels"] = MetadataValue.md(unrecognized_labels.to_markdown(index=False))
@@ -1114,7 +1114,9 @@ def livelihood_activity_valid_instances(
     valid_instances, metadata = validate_instances(context, livelihood_activity_instances, partition_key)
     metadata = {f"num_{key.lower()}": len(value) for key, value in valid_instances.items()}
     metadata["total_instances"] = sum(len(value) for value in valid_instances.values())
-    metadata["preview"] = MetadataValue.md(f"```json\n{json.dumps(valid_instances, indent=4)}\n```")
+    metadata["preview"] = MetadataValue.md(
+        f"```json\n{json.dumps(valid_instances, indent=4, ensure_ascii=False)}\n```"
+    )
     return Output(
         valid_instances,
         metadata=metadata,

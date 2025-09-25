@@ -266,7 +266,7 @@ def baseline_instances(
     }
 
     try:
-        preview = json.dumps(result, indent=4)
+        preview = json.dumps(result, indent=4, ensure_ascii=False)
     except TypeError as e:
         raise ValueError("Cannot serialize Community fixture to JSON. Failing dict is\n %s" % result) from e
 
@@ -359,7 +359,7 @@ def community_instances(context: AssetExecutionContext, config: BSSMetadataConfi
     result = {"Community": community_df.to_dict(orient="records")}
 
     try:
-        preview = json.dumps(result, indent=4)
+        preview = json.dumps(result, indent=4, ensure_ascii=False)
     except TypeError as e:
         raise ValueError("Cannot serialize Community fixture to JSON. Failing dict is\n %s" % result) from e
 
