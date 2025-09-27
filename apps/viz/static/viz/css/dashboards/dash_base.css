@@ -1,0 +1,223 @@
+#content {
+  font-family: "Segoe UI", "Open Sans", Arial, sans-serif !important;
+  color: #212721 !important;
+  background-color: #e6e7e8;
+  /* font-size:18px !important; */
+}
+
+.div-wrapper {
+  display: flex;
+  border-radius: 5px;
+  background-color: #fff;
+  padding: 10px;
+  box-shadow: 1px 1px 1px #bec1c3;
+  -webkit-transition: box-shadow 0.1s ease-in-out 0.2s;
+  -moz-transition: box-shadow 0.1s ease-in-out 0.2s;
+  -o-transition: box-shadow 0.1s ease-in-out 0.2s;
+  transition: box-shadow 0.1s ease-in-out 0.2s;
+  /* border: 2px solid #D1D3D4; */
+}
+
+.div-wrapper:hover {
+  box-shadow: 2px 2px 7px #9fa1a1;
+}
+
+.dash-spreadsheet-inner {
+  padding: 0 15px;
+}
+
+/* Add class to all chart headers */
+.chart-header {
+  font-weight: 700;
+  font-size: 28px;
+  text-align: left;
+  padding-bottom: 10px;
+  font-family: "Georgia", "Tinos", serif;
+}
+
+/* Add class to all sub headers */
+.sub-header {
+  text-align: start;
+  padding-right: 10px;
+}
+
+.sub-header-vertic {
+  text-align: start;
+  padding-bottom: 10px;
+  padding-top: 15px;
+}
+
+.information-icon {
+  font-size: 36px;
+  font-weight: 900;
+  color: #096640;
+}
+
+.information-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal {
+  position: fixed;
+  z-index: 10000;
+  left: 0;
+  top: 0px;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+}
+
+.modal-content {
+  width: 50%;
+  top: 150px;
+  margin: auto;
+  padding: 30px;
+  background-color: white;
+}
+
+.modal-content li,
+.modal-content h4 {
+  text-align: left;
+}
+
+/* Add styles to dropdowns */
+.Select-control {
+  border: none !important;
+}
+
+.Select {
+  border: 1px solid #7c888d !important;
+  /* height: 40px !important; */
+  color: #585858 !important;
+  border-radius: 5px;
+}
+
+.Select-control {
+  height: 34px;
+}
+
+.Select:hover,
+.Select.is-focused {
+  border: 1px solid #096640 !important;
+}
+
+.Select-placeholder {
+  /* margin-top: 8px; */
+  color: #585858 !important;
+}
+
+.VirtualizedSelectOption {
+  color: #212721;
+  font-weight: bold;
+}
+
+.VirtualizedSelectFocusedOption {
+  background-color: #bddbd6;
+}
+
+.Select-value-label,
+.Select-value-icon {
+  /* background-color: #BDDBD6; */
+  background-color: #00000000 !important;
+  color: #212721;
+  border: 0px solid #00000000 !important;
+}
+
+.has-value.Select--single>.Select-control .Select-value .Select-value-label {
+  color: #212721;
+}
+
+/* .Select--single>.Select-control .Select-value {
+    top: 10px;
+} */
+
+.Select--multi .Select-value {
+  /* margin-top: 10px !important; */
+  background-color: #00000000 !important;
+  color: #212721 !important;
+  border: 1px solid #bddbd6 !important;
+}
+
+#search_filter::placeholder,
+input.DateInput_input.DateInput_input_1::placeholder,
+input.DateInput_input.DateInput_input_1 {
+  font-size: 14px;
+  font-family: "Segoe UI", "Open Sans", Arial, sans-serif;
+  color: #585858;
+}
+
+input.DateInput_input.DateInput_input_1 {
+  color: #212721;
+}
+
+.submit-button {
+  padding: 5px;
+  margin-bottom: 15px;
+  margin-top: 25px;
+  font-size: 18px;
+  border: 1px solid #096640;
+  background-color: #096640;
+  color: #ffffff;
+}
+
+.submit-button2 {
+  padding: 5px;
+  margin-bottom: 15px;
+  margin-top: 25px;
+  font-size: 18px;
+  border: 1px solid #096640;
+  background-color: #bddbd6;
+  color: #212721;
+}
+
+/* Dash table radio and checkbox input styling */
+.dash-table-container .dash-spreadsheet-container input[type="radio"],
+.dash-table-container .dash-spreadsheet-container input[type="checkbox"] {
+  border: 1px solid #212721;
+  color: #096640;
+  font-weight: bold;
+  width: 15px;
+  height: 15px;
+}
+
+.dash-table-container .dash-spreadsheet-container input[type="radio"] {
+  border-radius: 50%;
+  position: relative;
+  margin-right: 5px;
+}
+
+.dash-table-container .dash-spreadsheet-container input[type="radio"]:checked:before {
+  content: "";
+  background-color: #096640;
+  float: left;
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  transform: scale(0.65);
+  border-radius: 50%;
+  -webkit-border-radius: 50%;
+  -moz-border-radius: 50%;
+}
+
+.dash-table-container .dash-spreadsheet-container input[type="checkbox"]:checked:before {
+  content: "";
+  background-color: #096640;
+  border-radius: 5%;
+  float: left;
+  width: 15px;
+  height: 15px;
+  text-align: center;
+}
+
+/* Plotly annotations rendered in a separate div */
+.plotly-chart-annotation {
+  font-weight: 300;
+  font-size: 16px;
+  text-align: right;
+}
+
+#header ul#navigation-menu li a {
+  text-transform: none !important;
+}
