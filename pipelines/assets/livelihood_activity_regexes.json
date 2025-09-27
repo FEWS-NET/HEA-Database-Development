@@ -224,7 +224,7 @@
         "times_per_month"
     ],
     [
-        "(?:nom de la mesure|nom du mesure|nom d'unité)",
+        "(?:nom de la mesure|nom du mesure|nom d'unité|nom mesure locale)",
         null,
         false,
         "name_of_local_measure"
@@ -824,7 +824,7 @@
         "expenditure"
     ],
     [
-        "(?:autre nouriture de base|autre legumineuse|autre culture)?{separator_pattern} ?\\(?{product_pattern}\\)?{separator_pattern} ?(?:nom de la mesure locale?|nom du mesure|nom unité de mesure|nom)",
+        "(?:autre nouriture de base|autre legumineuse|autre culture)?{separator_pattern} ?\\(?{product_pattern}\\)?{separator_pattern} ?(?:nom de la mesure locale?|nom mesure locale|nom du mesure|nom unité de mesure|nom)",
         null,
         true,
         "name_of_local_measure"

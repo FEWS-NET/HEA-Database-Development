@@ -636,6 +636,11 @@
         "product_id": "pâte alimentaire",
         "attribute": "name_of_local_measure"
     },
+    "Mais graine: nom mesure locale": {
+        "is_start": true,
+        "product_id": "mais graine",
+        "attribute": "name_of_local_measure"
+    },
     "Maïs : nom du mesure": {
         "is_start": true,
         "product_id": "maïs",
