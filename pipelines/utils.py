@@ -93,12 +93,14 @@ def prepare_lookup(data: str | list[str] | pd.Series | pd.DataFrame) -> pd.Serie
     elif isinstance(data, (list, pd.Series)):
         result = pd.DataFrame(data)
     else:
-        result = data
+        # Handle unexpected types (like int, float)
+        result = pd.DataFrame([str(data)])
+
     result = result.map(str).map(str.strip).map(str.lower).replace(r"\s+", " ", regex=True)
-    if isinstance(data, str):
-        result = result.iloc[0, 0]
+    if isinstance(data, str) or (not isinstance(data, (list, pd.Series))):
+        return result.iloc[0, 0]
     elif isinstance(data, (list, pd.Series)):
-        result = result.iloc[:, 0]
+        return result.iloc[:, 0]
     return result
 
 
