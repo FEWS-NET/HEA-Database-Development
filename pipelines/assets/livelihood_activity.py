@@ -123,6 +123,24 @@ def livelihood_activity_dataframe(config: BSSMetadataConfig, corrected_files) ->
 
 
 @asset(partitions_def=bss_instances_partitions_def)
+def livelihood_summary_dataframe(config: BSSMetadataConfig, corrected_files) -> Output[pd.DataFrame]:
+    """
+    DataFrame of the Livelihood Activity Summary from a BSS
+
+    The summary is at the end of the Data worksheet, after the main Livelihood Activities.
+    It contains the total values for income, expenditure, kcals consumed, etc. for each Wealth Group.
+    """
+    return get_bss_dataframe(
+        config,
+        corrected_files,
+        "Data",
+        start_strings=["food summary: total (%)", "synthèse de nourriture : total (%)"],
+        end_strings=["wealth characteristics", "caractéristiques socio-économiques"],
+        header_rows=HEADER_ROWS,
+    )
+
+
+@asset(partitions_def=bss_instances_partitions_def)
 def livelihood_activity_label_dataframe(
     context: AssetExecutionContext,
     config: BSSMetadataConfig,
