@@ -630,7 +630,9 @@ def get_instances_from_dataframe(
                             ) or livelihood_activity.get("people_per_household", None)
                             livelihood_activity["times_per_year"] = (
                                 round(livelihood_activity["kcals_consumed"] / kcals_per_unit / number_of_units)
-                                if number_of_units and kcals_per_unit
+                                if number_of_units
+                                and kcals_per_unit
+                                and livelihood_activity["kcals_consumed"] is not None
                                 else 0
                             )
 
