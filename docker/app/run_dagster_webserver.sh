@@ -13,5 +13,8 @@ echo Setting up logs
 touch log/django.log
 chown -R django:django log/*
 
-echo Starting Dagster
-gosu django dagster-webserver -h 0.0.0.0 -p 3000 -m pipelines --path-prefix /${DAGSTER_WEBSERVER_PREFIX} $*
+echo Starting Dagster Webserver
+if [ x"$LAUNCHER" != x"" ]; then
+    echo using ${LAUNCHER}
+fi
+gosu django ${LAUNCHER} /usr/local/bin/dagster-webserver -h 0.0.0.0 -p 3000 -m pipelines --path-prefix /${DAGSTER_WEBSERVER_PREFIX} $*
