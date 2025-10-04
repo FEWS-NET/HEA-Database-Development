@@ -40,7 +40,10 @@ touch log/django_sql.log
 chown -R django:django log/*
 
 echo Starting Gunicorn with DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE}
-gosu django  gunicorn ${APP}.wsgi:application \
+if [ x"$LAUNCHER" != x"" ]; then
+    echo using ${LAUNCHER}
+fi
+gosu django ${LAUNCHER} /usr/local/bin/gunicorn ${APP}.wsgi:application \
     --name ${APP}${ENV} \
     --config $(dirname $(readlink -f "$0"))/gunicorn_config.py \
     $* 2>&1

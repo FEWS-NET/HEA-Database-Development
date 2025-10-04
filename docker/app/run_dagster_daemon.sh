@@ -13,5 +13,8 @@ echo Setting up logs
 touch log/django.log
 chown -R django:django log/*
 
-echo Starting Dagster
-gosu django dagster-daemon run $*
+echo Starting Dagster Daemon
+if [ x"$LAUNCHER" != x"" ]; then
+    echo using ${LAUNCHER}
+fi
+gosu django ${LAUNCHER} /usr/local/bin/dagster-daemon run $*
