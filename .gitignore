@@ -54,7 +54,6 @@ reports/
 # Compiled Assets and Media
 assets/
 media/
-notebooks/
 static/dojo/
 
 # any node or bower installation folders
