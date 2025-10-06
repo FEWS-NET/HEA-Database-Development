@@ -97,9 +97,6 @@ vagrant_ansible_inventory*
 # PyCharm Settings
 .idea/
 
-# Jupyter Notebooks
-*.ipynb
-
 # Jupyter Notebook Checkpoints
 .ipynb_checkpoints/
 
