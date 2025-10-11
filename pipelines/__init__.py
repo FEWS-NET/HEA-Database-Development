@@ -25,8 +25,8 @@ from .assets.livelihood_activity import (
     livelihood_activity_label_dataframe,
     livelihood_activity_valid_instances,
     livelihood_summary_dataframe,
-    summary_livelihood_activity_labels_dataframe,
     livelihood_summary_label_dataframe,
+    summary_livelihood_activity_labels_dataframe,
     summary_livelihood_summary_labels_dataframe,
 )
 from .assets.other_cash_income import (
