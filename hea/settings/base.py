@@ -158,7 +158,6 @@ REST_FRAMEWORK = {
 
 ASGI_APPLICATION = "hea.asgi.application"
 CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
-WEBSOCKET_ACCEPT_ALL = False  # Require authentication
 
 ########## CORS CONFIGURATION
 # See: https://github.com/ottoyiu/django-cors-headers
