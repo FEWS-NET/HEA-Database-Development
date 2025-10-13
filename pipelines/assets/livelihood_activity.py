@@ -387,6 +387,7 @@ def get_all_label_attributes(labels: pd.Series, activity_type: str, country_code
 
 def get_instances_from_dataframe(
     context: AssetExecutionContext,
+    config: BSSMetadataConfig,
     df: pd.DataFrame,
     livelihood_zone_baseline: LivelihoodZoneBaseline,
     activity_type: str,
@@ -727,8 +728,9 @@ def get_instances_from_dataframe(
                     for i, livelihood_activity in enumerate(livelihood_activities_for_strategy):
                         livelihood_activity["livelihood_strategy"] = livelihood_zone_baseline_key + [
                             livelihood_strategy["strategy_type"],
-                            livelihood_strategy["season"] if livelihood_strategy["season"] else "",
-                            livelihood_strategy["product_id"] if livelihood_strategy["product_id"] else "",
+                            livelihood_strategy["season"] or "",  # Natural key components must be "" rather than None
+                            livelihood_strategy["product_id"]
+                            or "",  # Natural key components must be "" rather than None
                             livelihood_strategy["additional_identifier"],
                         ]
 
@@ -1149,13 +1151,6 @@ def get_instances_from_dataframe(
                     % (partition_key, worksheet_name, row, label)
                 ) from e
 
-    raise_errors = True
-    if errors and raise_errors:
-        errors = "\n".join(errors)
-        raise RuntimeError(
-            "Missing or inconsistent metadata in BSS %s worksheet '%s':\n%s" % (partition_key, worksheet_name, errors)
-        )
-
     result = {
         "LivelihoodStrategy": livelihood_strategies,
         "LivelihoodActivity": livelihood_activities,
@@ -1177,6 +1172,19 @@ def get_instances_from_dataframe(
     if not unrecognized_labels.empty:
         metadata["unrecognized_labels"] = MetadataValue.md(unrecognized_labels.to_markdown(index=False))
 
+    if errors:
+        if config.strict:
+            raise RuntimeError(
+                "Missing or inconsistent metadata in BSS %s worksheet '%s':\n%s"
+                % (partition_key, worksheet_name, "\n".join(errors))
+            )
+        else:
+            context.log.error(
+                "Missing or inconsistent metadata in BSS %s worksheet '%s':\n%s"
+                % (partition_key, worksheet_name, "\n".join(errors))
+            )
+            metadata["errors"] = MetadataValue.md(f'```text\n{"\n".join(errors)}\n```')
+
     return Output(
         result,
         metadata=metadata,
@@ -1185,6 +1193,7 @@ def get_instances_from_dataframe(
 
 def get_annotated_instances_from_dataframe(
     context: AssetExecutionContext,
+    config: BSSMetadataConfig,
     livelihood_activity_dataframe: pd.DataFrame,
     livelihood_summary_dataframe: pd.DataFrame,
     activity_type: str,
@@ -1203,6 +1212,7 @@ def get_annotated_instances_from_dataframe(
     # Get the detail LivelihoodStrategy and LivelihoodActivity instances
     output = get_instances_from_dataframe(
         context,
+        config,
         livelihood_activity_dataframe,
         livelihood_zone_baseline,
         activity_type,
@@ -1214,6 +1224,7 @@ def get_annotated_instances_from_dataframe(
         # Get the summary instances
         reported_summary_output = get_instances_from_dataframe(
             context,
+            config,
             livelihood_summary_dataframe,
             livelihood_zone_baseline,
             ActivityLabel.LivelihoodActivityType.LIVELIHOOD_SUMMARY,
@@ -1325,7 +1336,9 @@ def get_annotated_instances_from_dataframe(
             summary_df.replace(pd.NA, None).to_markdown(floatfmt=",.0f")
         )
 
-        # Move the preview and metadata item to the end of the dict
+        # Move the preview and errors metadata item to the end of the dict
+        if "errors" in output.metadata:
+            output.metadata["errors"] = output.metadata.pop("errors")
         output.metadata["preview"] = output.metadata.pop("preview")
 
     return output
@@ -1340,7 +1353,7 @@ def livelihood_activity_instances(
     """
     LivelhoodStrategy and LivelihoodActivity instances extracted from the BSS.
     """
-    output = get_annotated_instances_from_dataframe(
+    return get_annotated_instances_from_dataframe(
         context,
         livelihood_activity_dataframe,
         livelihood_summary_dataframe,
@@ -1348,12 +1361,11 @@ def livelihood_activity_instances(
         len(HEADER_ROWS),
     )
 
-    return output
-
 
 @asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
 def livelihood_activity_valid_instances(
     context: AssetExecutionContext,
+    config: BSSMetadataConfig,
     livelihood_activity_instances: dict,
     wealth_characteristic_instances: dict,
 ) -> Output[dict]:
@@ -1369,16 +1381,7 @@ def livelihood_activity_valid_instances(
             **{"WealthGroup": wealth_characteristic_instances["WealthGroup"]},
             **livelihood_activity_instances,
         }
-    valid_instances, metadata = validate_instances(context, livelihood_activity_instances, partition_key)
-    metadata = {f"num_{key.lower()}": len(value) for key, value in valid_instances.items()}
-    metadata["total_instances"] = sum(len(value) for value in valid_instances.values())
-    metadata["preview"] = MetadataValue.md(
-        f"```json\n{json.dumps(valid_instances, indent=4, ensure_ascii=False)}\n```"
-    )
-    return Output(
-        valid_instances,
-        metadata=metadata,
-    )
+    return validate_instances(context, config, livelihood_activity_instances, partition_key)
 
 
 @asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
@@ -1390,11 +1393,7 @@ def livelihood_activity_fixture(
     """
     Django fixture for the Livelihood Activities from a BSS.
     """
-    fixture, metadata = get_fixture_from_instances(livelihood_activity_valid_instances)
-    return Output(
-        fixture,
-        metadata=metadata,
-    )
+    return get_fixture_from_instances(livelihood_activity_valid_instances)
 
 
 @asset(partitions_def=bss_instances_partitions_def)
@@ -1405,8 +1404,4 @@ def imported_livelihood_activities(
     """
     Imported Django fixtures for a BSS, added to the Django database.
     """
-    metadata = import_fixture(livelihood_activity_fixture)
-    return Output(
-        None,
-        metadata=metadata,
-    )
+    return import_fixture(livelihood_activity_fixture)
