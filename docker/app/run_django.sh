@@ -40,7 +40,8 @@ touch log/django_sql.log
 chown -R django:django log/*
 
 echo Starting Gunicorn with DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE}
-gosu django  gunicorn ${APP}.wsgi:application \
+gosu django gunicorn ${APP}.asgi:application \
     --name ${APP}${ENV} \
+    --worker-class uvicorn.workers.UvicornWorker \
     --config $(dirname $(readlink -f "$0"))/gunicorn_config.py \
     $* 2>&1
