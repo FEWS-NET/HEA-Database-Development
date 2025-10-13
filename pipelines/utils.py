@@ -88,18 +88,21 @@ def prepare_lookup(data: str | list[str] | pd.Series | pd.DataFrame) -> pd.Serie
     """
     Prepare a Series or DataFrame for lookup operations by converting to lowercase strings and stripping whitespace.
     """
-    if isinstance(data, str):
-        result = pd.DataFrame([data])
+    if isinstance(data, pd.DataFrame):
+        result = data
     elif isinstance(data, (list, pd.Series)):
         result = pd.DataFrame(data)
     else:
-        result = data
+        # Handle other types (like str, int, float)
+        result = pd.DataFrame([data])
+
     result = result.map(str).map(str.strip).map(str.lower).replace(r"\s+", " ", regex=True)
-    if isinstance(data, str):
-        result = result.iloc[0, 0]
+
+    if isinstance(data, pd.DataFrame):
+        return result
     elif isinstance(data, (list, pd.Series)):
-        result = result.iloc[:, 0]
-    return result
+        return result.iloc[:, 0]
+    return result.iloc[0, 0]
 
 
 def verbose_pivot(df: pd.DataFrame, values: str | list[str], index: str | list[str], columns: str | list[str]):
