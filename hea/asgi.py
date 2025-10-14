@@ -18,9 +18,6 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hea.settings")
 
 django_asgi_app = get_asgi_application()
 
-
-django_asgi_app = get_asgi_application()
-
 # Import routing after Django setup
 from common.routing import websocket_urlpatterns  # noqa: E402
 

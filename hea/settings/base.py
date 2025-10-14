@@ -283,11 +283,11 @@ LOGGING = {
         "django.security": {"handlers": ["console", "logfile"], "level": "ERROR", "propagate": False},
         "factory": {"handlers": ["console", "logfile"], "level": "INFO"},
         "faker": {"handlers": ["console", "logfile"], "level": "INFO"},
-        "luigi": {"level": "INFO"},
-        "luigi-interface": {"level": "INFO"},
         "urllib3": {"handlers": ["console", "logfile"], "level": "INFO", "propagate": False},
         "common.models": {"handlers": ["console", "logfile"], "level": "INFO", "propagate": False},
         "common.signals": {"handlers": ["console", "logfile"], "level": "INFO", "propagate": False},
+        "uvicorn.error": {"handlers": ["console"], "level": "WARNING", "propagate": False},
+        "uvicorn.access": {"handlers": ["console"], "level": "WARNING", "propagate": False},
     },
     # Keep root at DEBUG and use the `level` on the handler to control logging output,
     # so that additional handlers can be used to get additional detail, e.g. `common.resources.LoggingResourceMixin`
