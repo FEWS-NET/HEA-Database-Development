@@ -1359,7 +1359,7 @@ def livelihood_activity_instances(
         config,
         livelihood_activity_dataframe,
         livelihood_summary_dataframe,
-        ActivityLabel.LivelihoodActivityType.LIVELIHOOD_SUMMARY,
+        ActivityLabel.LivelihoodActivityType.LIVELIHOOD_ACTIVITY,
         len(HEADER_ROWS),
     )
 
