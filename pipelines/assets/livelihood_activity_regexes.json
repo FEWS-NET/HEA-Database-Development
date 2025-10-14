@@ -704,6 +704,24 @@
         "quantity_produced"
     ],
     [
+        "(?:wild foods?{separator_pattern} )?{product_pattern}{separator_pattern} \\(?{unit_of_measure_pattern} gathered\\)?",
+        null,
+        true,
+        "quantity_produced"
+    ],
+    [
+        "(?:fish|fish \\(?dry\\)?|fish \\(?fresh\\)?){separator_pattern} {product_pattern}{separator_pattern} \\(?{unit_of_measure_pattern} gathered\\)?",
+        null,
+        true,
+        "quantity_produced"
+    ],
+    [
+        "{product_pattern}{separator_pattern}\\(?{unit_of_measure_pattern} gathered\\)?",
+        null,
+        true,
+        "quantity_produced"
+    ],
+    [
         "{product_pattern} (?P<season>[1|2]è[m|r]e récolte){separator_pattern} {nbr_pattern} mois",
         null,
         true,
