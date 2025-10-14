@@ -109,6 +109,7 @@ EXTERNAL_APPS = [
     "rest_framework_gis",
     "revproxy",
     "corsheaders",
+    "channels",
 ]
 PROJECT_APPS = ["common", "metadata", "baseline"]
 INSTALLED_APPS = EXTERNAL_APPS + PROJECT_APPS
@@ -155,6 +156,8 @@ REST_FRAMEWORK = {
     "SEARCH_PARAM": "search",
 }
 
+ASGI_APPLICATION = "hea.asgi.application"
+CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
 
 ########## CORS CONFIGURATION
 # See: https://github.com/ottoyiu/django-cors-headers

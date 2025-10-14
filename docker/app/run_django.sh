@@ -43,7 +43,8 @@ echo Starting Gunicorn with DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE}
 if [ x"$LAUNCHER" != x"" ]; then
     echo using ${LAUNCHER}
 fi
-gosu django ${LAUNCHER} /usr/local/bin/gunicorn ${APP}.wsgi:application \
+gosu django ${LAUNCHER} /usr/local/bin/gunicorn ${APP}.asgi:application \
     --name ${APP}${ENV} \
+    --worker-class uvicorn.workers.UvicornWorker \
     --config $(dirname $(readlink -f "$0"))/gunicorn_config.py \
     $* 2>&1
