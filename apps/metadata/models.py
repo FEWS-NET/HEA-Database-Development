@@ -393,11 +393,15 @@ class ActivityLabel(common_models.Model):
         OVERRIDE = "Override", _("Override automatically recognized metadata")
         DISCUSSION = "Discussion", _("Under Discussion")
         CORRECT_BSS = "Correct BSS", _("Correct the BSS")
+        IGNORE = "Ignore", _("Ignore this label and associated data in the row")
 
     class LivelihoodActivityType(models.TextChoices):
         LIVELIHOOD_ACTIVITY = "LivelihoodActivity", _("Livelihood Activity")  # Labels from the 'Data' worksheet
         OTHER_CASH_INCOME = "OtherCashIncome", _("Other Cash Income")  # Labels from the 'Data2' worksheet
-        WILD_FOODS = "WildFoods", _("Wild Foods")  # Labels from the 'Data3' worksheet
+        WILD_FOODS = "WildFoods", _("Wild Foods, Fishing or Hunting")  # Labels from the 'Data3' worksheet
+        LIVELIHOOD_SUMMARY = "LivelihoodSummary", _(
+            "Livelihood Summary"
+        )  # Labels from the 'Summary' section of the 'Data' worksheet
 
     activity_label = common_models.NameField(max_length=200, verbose_name=_("Activity Label"))
     activity_type = models.CharField(
@@ -406,9 +410,9 @@ class ActivityLabel(common_models.Model):
         choices=LivelihoodActivityType.choices,
         default=LivelihoodActivityType.LIVELIHOOD_ACTIVITY,
         help_text=_(
-            "The type of Livelihood Activity, either a general Livelihood Activity, or an Other Cash Income "
-            "activity from the 'Data2' worksheet, or a Wild Foods, Fishing or Hunting activity from the "
-            "'Data3' worksheet."
+            "The type of Livelihood Activity the label is for: either a general Livelihood Activity, or an Other Cash "
+            "Income activity from the 'Data2' worksheet, or a Wild Foods, Fishing or Hunting activity from the "
+            "'Data3' worksheet, or a label from the 'Summary' section of the 'Data' worksheet."
         ),
     )
     status = models.CharField(blank=True, max_length=20, choices=LabelStatus.choices, verbose_name=_("Status"))
@@ -420,7 +424,10 @@ class ActivityLabel(common_models.Model):
     strategy_type = models.CharField(
         max_length=30,
         blank=True,
-        choices=LivelihoodStrategyType.choices,
+        # We add an additional choice for LivestockProduction here, which is only valid when
+        # activity_type is LivelihoodSummary. LivestockProduction is the total of MeatProduction,
+        # MilkProduction and ButterProduction, and is used in the Summary section of the Data worksheet only
+        choices=LivelihoodStrategyType.choices + [("LivestockProduction", _("Livestock Production"))],  # type: ignore
         verbose_name=_("Strategy Type"),
         help_text=_("The type of livelihood strategy, such as crop production, or wild food gathering."),
     )
