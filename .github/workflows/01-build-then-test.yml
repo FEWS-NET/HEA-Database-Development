@@ -271,9 +271,6 @@ jobs:
           docker cp ci-${APP}-${CI_PIPELINE_ID}-${{ github.job }}:/usr/src/app/log ./ || true
           docker cp ci-${APP}-${CI_PIPELINE_ID}-${{ github.job }}:/usr/src/app/coverage.txt ./ || true
 
-          # Save the database schema as an artifact
-          docker compose run --no-deps --rm --entrypoint dbtoyaml app --no-owner --no-privileges test_${PGDATABASE} > schema.yml
-          diff pyrseas/schema.yaml schema.yml > schema.diff || true
       - name: "Upload test artifacts"
         if: success() || failure()
         uses: actions/upload-artifact@v4
@@ -400,9 +397,6 @@ jobs:
           # Copy the artifacts out of the Docker container to project directory
           docker cp ci-${APP}-${CI_PIPELINE_ID}-${{ github.job }}:/usr/src/app/log ./ || true
           docker cp ci-${APP}-${CI_PIPELINE_ID}-${{ github.job }}:/usr/src/app/coverage.txt ./ || true
-          # Save the database schema as an artifact
-          docker compose run --no-deps --rm --entrypoint dbtoyaml app --no-owner --no-privileges test_${PGDATABASE} > schema.yml
-          diff pyrseas/schema.yaml schema.yml > schema.diff || true
       - name: "Upload test artifacts"
         if: success() || failure()
         uses: actions/upload-artifact@v4
@@ -530,9 +524,6 @@ jobs:
           # Copy the artifacts out of the Docker container to project directory
           docker cp ci-${APP}-${CI_PIPELINE_ID}-${{ github.job }}:/usr/src/app/log ./ || true
           docker cp ci-${APP}-${CI_PIPELINE_ID}-${{ github.job }}:/usr/src/app/coverage.txt ./ || true
-          # Save the database schema as an artifact
-          docker compose run --no-deps --rm --entrypoint dbtoyaml app --no-owner --no-privileges test_${PGDATABASE} > schema.yml
-          diff pyrseas/schema.yaml schema.yml > schema.diff || true
       - name: "Upload test artifacts"
         if: success() || failure()
         uses: actions/upload-artifact@v4
@@ -661,11 +652,6 @@ jobs:
           # Copy the artifacts out of the Docker container to project directory
           docker cp ci-${APP}-${CI_PIPELINE_ID}-${{ github.job }}:/usr/src/app/log ./ || true
           docker cp ci-${APP}-${CI_PIPELINE_ID}-${{ github.job }}:/usr/src/app/coverage.txt ./ || true
-          # The prod image does not include pyrseas/dbtoyaml. Building a test image to include that
-          docker compose build app
-          # Save the database schema as an artifact
-          docker compose run --no-deps --rm --entrypoint dbtoyaml app --no-owner --no-privileges test_${PGDATABASE} > schema.yml
-          diff pyrseas/schema.yaml schema.yml > schema.diff || true
       - name: "Upload test artifacts"
         if: success() || failure()
         uses: actions/upload-artifact@v4
