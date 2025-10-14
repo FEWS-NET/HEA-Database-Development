@@ -54,9 +54,10 @@ def validate_instances(
 
         instances = {**instances, **subclass_livelihood_activities}
 
-    valid_instances = {}
-    valid_keys = {}
+    valid_instances = {model_name: [] for model_name in instances}
+    valid_keys = {model_name: [] for model_name in instances}
     errors = []
+    current_timestamp = datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
     for model_name, model_instances in instances.items():
 
         # Ignore models where we don't have any instances to validate.
@@ -72,9 +73,6 @@ def validate_instances(
             for field in model._meta.concrete_fields
             if field.get_attname() not in valid_field_names
         ]
-        valid_instances[model_name] = []
-        valid_keys[model_name] = []
-        current_timestamp = datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
 
         # Iterate over the instances, validating each one in turn
         for i, instance in enumerate(model_instances):
@@ -99,7 +97,10 @@ def validate_instances(
             elif model_name == "LivelihoodStrategy":
                 instance["natural_key"] = instance["livelihood_zone_baseline"] + [
                     instance["strategy_type"],
-                    instance["season"] or "",  # Natural key components must be "" rather than None
+                    # instance['season'] is a natural key itself, so it is stored as a list even though it only
+                    # has a single component - the season name - so take the first element of the list.
+                    # Natural key components must be "" rather than None
+                    instance["season"][0] if instance["season"] else "",
                     instance["product_id"] or "",  # Natural key components must be "" rather than None
                     instance["additional_identifier"],
                 ]

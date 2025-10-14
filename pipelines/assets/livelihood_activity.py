@@ -1347,6 +1347,7 @@ def get_annotated_instances_from_dataframe(
 @asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
 def livelihood_activity_instances(
     context: AssetExecutionContext,
+    config: BSSMetadataConfig,
     livelihood_activity_dataframe: pd.DataFrame,
     livelihood_summary_dataframe: pd.DataFrame,
 ) -> Output[dict]:
@@ -1355,9 +1356,10 @@ def livelihood_activity_instances(
     """
     return get_annotated_instances_from_dataframe(
         context,
+        config,
         livelihood_activity_dataframe,
         livelihood_summary_dataframe,
-        ActivityLabel.LivelihoodActivityType.LIVELIHOOD_SUMMARY,
+        ActivityLabel.LivelihoodActivityType.LIVELIHOOD_ACTIVITY,
         len(HEADER_ROWS),
     )
 

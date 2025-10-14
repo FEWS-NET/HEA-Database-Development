@@ -144,7 +144,7 @@ def wild_foods_instances(
     LivelhoodStrategy and LivelihoodActivity instances extracted from the BSS.
     """
     if wild_foods_dataframe.empty:
-        return {}
+        return Output({}, metadata={"message": "No Data3 worksheet found in this BSS"})
 
     return get_annotated_instances_from_dataframe(
         context,

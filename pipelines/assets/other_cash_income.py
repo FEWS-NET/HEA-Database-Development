@@ -134,7 +134,7 @@ def other_cash_income_instances(
     LivelhoodStrategy and LivelihoodActivity instances extracted from the BSS.
     """
     if other_cash_income_dataframe.empty:
-        return {}
+        return Output({}, metadata={"message": "No Data2 worksheet found in this BSS"})
 
     return get_annotated_instances_from_dataframe(
         context,
