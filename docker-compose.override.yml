@@ -15,6 +15,7 @@ services:
     build:
       target: dev
     ports:
+      - "5678:5678"
       - "8000:8000"
       - "8888:8888"
     volumes:
@@ -30,6 +31,9 @@ services:
       - ./env.example:/usr/src/app/.env
     environment:
       DJANGO_SETTINGS_MODULE: hea.settings.local
+      LAUNCHER: ${LAUNCHER}  # e.g. "debugpy" or "ddtrace"
+      # Disable frozen modules warning
+      PYDEVD_DISABLE_FILE_VALIDATION: 1
       # Put .coverage in a writable directory
       COVERAGE_FILE: log/.coverage
     command:
@@ -41,6 +45,7 @@ services:
     restart: no
     ports:
       - "3000:3000"
+      - "5679:5678"
     volumes:
       - ./:/usr/src/app
       # Separate volumes for writable directories inside the container
@@ -54,9 +59,14 @@ services:
       - ./env.example:/usr/src/app/.env
     environment:
       DJANGO_SETTINGS_MODULE: hea.settings.local
+      LAUNCHER: ${LAUNCHER}  # e.g. "debugpy" or "ddtrace"
+      # Disable frozen modules warning
+      PYDEVD_DISABLE_FILE_VALIDATION: 1
 
   dagster_daemon:
     restart: no
+    ports:
+      - "5680:5678"
     volumes:
       - ./:/usr/src/app
       # Separate volumes for writable directories inside the container
@@ -70,4 +80,7 @@ services:
       - ./env.example:/usr/src/app/.env
     environment:
       DJANGO_SETTINGS_MODULE: hea.settings.local
+      LAUNCHER: ${LAUNCHER}  # e.g. "debugpy" or "ddtrace"
+      # Disable frozen modules warning
+      PYDEVD_DISABLE_FILE_VALIDATION: 1
 

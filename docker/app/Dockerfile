@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 python:3.12-bookworm as base
+FROM python:3.12-bookworm as base
 
 # set up apt repositories for postgres installation
 RUN curl -s https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor | tee /usr/share/keyrings/pgdg.gpg >/dev/null && \
