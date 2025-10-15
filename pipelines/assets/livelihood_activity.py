@@ -478,7 +478,7 @@ def livelihood_activity_label_recognition_dataframe(
     # Save the dataframe to an Excel workbook
     with p.fs.open(p.path, mode="wb") as f:
         with pd.ExcelWriter(f, engine="openpyxl") as writer:
-            all_labels_df[:50].to_excel(writer, index=False, sheet_name="All Labels")
+            all_labels_df.to_excel(writer, index=False, sheet_name="All Labels")
 
 
 def get_instances_from_dataframe(
