@@ -38,12 +38,11 @@ An example of relevant rows from the worksheet:
 | 32 | income                                                 |        |        |        |           |          |          |           |          |          |
 """  # NOQA: E501
 
-import json
 import os
 
 import django
 import pandas as pd
-from dagster import AssetExecutionContext, MetadataValue, Output, asset
+from dagster import AssetExecutionContext, Output, asset
 
 from ..configs import BSSMetadataConfig
 from ..partitions import bss_instances_partitions_def
@@ -127,6 +126,7 @@ def summary_other_cash_income_labels_dataframe(
 @asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
 def other_cash_income_instances(
     context: AssetExecutionContext,
+    config: BSSMetadataConfig,
     other_cash_income_dataframe: pd.DataFrame,
     livelihood_summary_dataframe: pd.DataFrame,
 ) -> Output[dict]:
@@ -134,22 +134,22 @@ def other_cash_income_instances(
     LivelhoodStrategy and LivelihoodActivity instances extracted from the BSS.
     """
     if other_cash_income_dataframe.empty:
-        output = {}
+        return Output({}, metadata={"message": "No Data2 worksheet found in this BSS"})
 
-    output = get_annotated_instances_from_dataframe(
+    return get_annotated_instances_from_dataframe(
         context,
+        config,
         other_cash_income_dataframe,
         livelihood_summary_dataframe,
         ActivityLabel.LivelihoodActivityType.OTHER_CASH_INCOME,
         len(HEADER_ROWS),
     )
 
-    return output
-
 
 @asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
 def other_cash_income_valid_instances(
     context: AssetExecutionContext,
+    config: BSSMetadataConfig,
     other_cash_income_instances: dict,
     wealth_characteristic_instances: dict,
 ) -> Output[dict]:
@@ -165,16 +165,7 @@ def other_cash_income_valid_instances(
             **{"WealthGroup": wealth_characteristic_instances["WealthGroup"]},
             **other_cash_income_instances,
         }
-    valid_instances, metadata = validate_instances(context, other_cash_income_instances, partition_key)
-    metadata = {f"num_{key.lower()}": len(value) for key, value in valid_instances.items()}
-    metadata["total_instances"] = sum(len(value) for value in valid_instances.values())
-    metadata["preview"] = MetadataValue.md(
-        f"```json\n{json.dumps(valid_instances, indent=4, ensure_ascii=False)}\n```"
-    )
-    return Output(
-        valid_instances,
-        metadata=metadata,
-    )
+    return validate_instances(context, config, other_cash_income_instances, partition_key)
 
 
 @asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
@@ -186,11 +177,7 @@ def other_cash_income_fixture(
     """
     Django fixture for the Livelihood Activities from a BSS.
     """
-    fixture, metadata = get_fixture_from_instances(other_cash_income_valid_instances)
-    return Output(
-        fixture,
-        metadata=metadata,
-    )
+    return get_fixture_from_instances(other_cash_income_valid_instances)
 
 
 @asset(partitions_def=bss_instances_partitions_def)
@@ -201,8 +188,4 @@ def imported_other_cash_income_activities(
     """
     Imported Django fixtures for a BSS, added to the Django database.
     """
-    metadata = import_fixture(other_cash_income_fixture)
-    return Output(
-        None,
-        metadata=metadata,
-    )
+    return import_fixture(other_cash_income_fixture)
