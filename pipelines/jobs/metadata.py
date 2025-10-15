@@ -144,14 +144,15 @@ def load_metadata_for_model(context: OpExecutionContext, sheet_name: str, model:
             df[model._meta.pk.name] = df[model._meta.pk.name].replace(np.nan, None)
         # Turn the dataframe into a set of unsaved model instances
         instances = []
+        fields = [k for k in df.columns if k in valid_field_names]
         for record in df.to_dict(orient="records"):
-            record = {k: v for k, v in record.items() if k in valid_field_names}
+            record = {k: v for k, v in record.items() if k in fields}
             instances.append(model(**record))
         try:
             instances = model.objects.bulk_create(
                 instances,
                 update_conflicts=True,
-                update_fields=[k for k in valid_field_names if k not in id_fields and k != model._meta.pk.name],
+                update_fields=[k for k in fields if k not in id_fields and k != model._meta.pk.name],
                 unique_fields=id_fields,
             )
             context.log.info(f"Created or updated {len(instances)} {sheet_name} instances")
