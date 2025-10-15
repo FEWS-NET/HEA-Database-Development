@@ -296,7 +296,7 @@
         "times_per_year"
     ],
     [
-        "{nbr_pattern} (?:people per HH|personnes par ménage)",
+        "{nbr_pattern} (?:people per HH|personnes par ménage|personnes par mènage)",
         null,
         false,
         "people_per_household"
@@ -699,6 +699,24 @@
     ],
     [
         "{product_pattern}{separator_pattern} qtité produite",
+        null,
+        true,
+        "quantity_produced"
+    ],
+    [
+        "(?:wild foods?{separator_pattern} )?{product_pattern}{separator_pattern} \\(?{unit_of_measure_pattern} gathered\\)?",
+        null,
+        true,
+        "quantity_produced"
+    ],
+    [
+        "(?:fish|fish \\(?dry\\)?|fish \\(?fresh\\)?){separator_pattern} {product_pattern}{separator_pattern} \\(?{unit_of_measure_pattern} gathered\\)?",
+        null,
+        true,
+        "quantity_produced"
+    ],
+    [
+        "{product_pattern}{separator_pattern}\\(?{unit_of_measure_pattern} gathered\\)?",
         null,
         true,
         "quantity_produced"

@@ -17,13 +17,17 @@ from .assets.fixtures import (
 )
 from .assets.livelihood_activity import (
     all_livelihood_activity_labels_dataframe,
+    all_livelihood_summary_labels_dataframe,
     imported_livelihood_activities,
     livelihood_activity_dataframe,
     livelihood_activity_fixture,
     livelihood_activity_instances,
     livelihood_activity_label_dataframe,
     livelihood_activity_valid_instances,
+    livelihood_summary_dataframe,
+    livelihood_summary_label_dataframe,
     summary_livelihood_activity_labels_dataframe,
+    summary_livelihood_summary_labels_dataframe,
 )
 from .assets.other_cash_income import (
     all_other_cash_income_labels_dataframe,
@@ -85,6 +89,10 @@ defs = Definitions(
         livelihood_activity_label_dataframe,
         all_livelihood_activity_labels_dataframe,
         summary_livelihood_activity_labels_dataframe,
+        livelihood_summary_dataframe,
+        livelihood_summary_label_dataframe,
+        all_livelihood_summary_labels_dataframe,
+        summary_livelihood_summary_labels_dataframe,
         livelihood_activity_instances,
         livelihood_activity_valid_instances,
         livelihood_activity_fixture,

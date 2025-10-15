@@ -78,6 +78,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hea.settings.production")
 django.setup()
 
 from baseline.models import (  # NOQA: E402
+    LivelihoodActivity,
     LivelihoodStrategy,
     LivelihoodZoneBaseline,
     MilkProduction,
@@ -98,6 +99,7 @@ WORKSHEET_MAP = {
     ActivityLabel.LivelihoodActivityType.LIVELIHOOD_ACTIVITY: "Data",
     ActivityLabel.LivelihoodActivityType.OTHER_CASH_INCOME: "Data2",
     ActivityLabel.LivelihoodActivityType.WILD_FOODS: "Data3",
+    ActivityLabel.LivelihoodActivityType.LIVELIHOOD_SUMMARY: "Data",
 }
 
 
@@ -129,7 +131,7 @@ def livelihood_activity_label_dataframe(
     livelihood_activity_dataframe,
 ) -> Output[pd.DataFrame]:
     """
-    Dataframe of Livelihood Activity Label References
+    Dataframe of Livelihood Activity Label References for a single BSS.
     """
     return get_bss_label_dataframe(
         context, config, livelihood_activity_dataframe, "livelihood_activity_dataframe", len(HEADER_ROWS)
@@ -158,6 +160,60 @@ def summary_livelihood_activity_labels_dataframe(
     )
 
 
+@asset(partitions_def=bss_instances_partitions_def)
+def livelihood_summary_dataframe(config: BSSMetadataConfig, corrected_files) -> Output[pd.DataFrame]:
+    """
+    DataFrame of the Livelihood Activity Summary from a BSS
+
+    The summary is at the beginning of the Data worksheet, before the main Livelihood Activities.
+    It contains the total values for income, expenditure, kcals consumed, etc. by Strategy Type for each Wealth Group.
+    """
+    return get_bss_dataframe(
+        config,
+        corrected_files,
+        "Data",
+        start_strings=["food summary: total (%)", "synthèse de nourriture : total (%)"],
+        end_strings=["wealth characteristics", "caractéristiques socio-économiques"],
+        header_rows=HEADER_ROWS,
+    )
+
+
+@asset(partitions_def=bss_instances_partitions_def)
+def livelihood_summary_label_dataframe(
+    context: AssetExecutionContext,
+    config: BSSMetadataConfig,
+    livelihood_summary_dataframe,
+) -> Output[pd.DataFrame]:
+    """
+    Dataframe of Livelihood Summary Label References for a single BSS
+    """
+    return get_bss_label_dataframe(
+        context, config, livelihood_summary_dataframe, "livelihood_summary_dataframe", len(HEADER_ROWS)
+    )
+
+
+@asset(io_manager_key="dataframe_csv_io_manager")
+def all_livelihood_summary_labels_dataframe(
+    config: BSSMetadataConfig, livelihood_summary_label_dataframe: dict[str, pd.DataFrame]
+) -> Output[pd.DataFrame]:
+    """
+    Combined dataframe of the Livelihood Summary labels in use across all BSSs.
+    """
+    return get_all_bss_labels_dataframe(config, livelihood_summary_label_dataframe)
+
+
+@asset(io_manager_key="dataframe_csv_io_manager")
+def summary_livelihood_summary_labels_dataframe(
+    config: BSSMetadataConfig, all_livelihood_summary_labels_dataframe: pd.DataFrame
+) -> Output[pd.DataFrame]:
+    """
+    Summary of the Livelihood Summary labels in use across all BSSs.
+    """
+    return get_summary_bss_label_dataframe(
+        config, all_livelihood_summary_labels_dataframe, ActivityLabel.LivelihoodActivityType.LIVELIHOOD_ACTIVITY
+    )
+
+
 @functools.cache
 def get_livelihood_activity_regexes() -> list:
     """
@@ -179,7 +235,7 @@ def get_livelihood_activity_regexes() -> list:
     # Create regex patterns for metadata attributes to replace the placeholders in the regexes
     placeholder_patterns = {
         "label_pattern": r"[a-zà-ÿ][a-zà-ÿ',/ \.\>\-\(\)]+?",
-        "product_pattern": r"(?P<product_id>[a-zà-ÿ][a-zà-ÿ',/ \.\>\-\(\)]+?)",
+        "product_pattern": r"(?P<product_id>[a-zà-ÿ][a-zà-ÿ1-9',/ \.\>\-\(\)]+?)",
         "season_pattern": r"(?P<season>season [12]|saison [12]|[12][a-z] season||[12][a-zà-ÿ] saison|r[eé]colte principale|principale r[eé]colte|gu|deyr+?)",  # NOQA: E501
         "additional_identifier_pattern": r"\(?(?P<additional_identifier>rainfed|irrigated|pluviale?|irriguée|submersion libre|submersion contrôlée|flottant)\)?",
         "unit_of_measure_pattern": r"(?P<unit_of_measure_id>[a-z]+)",
@@ -296,8 +352,14 @@ def get_all_label_attributes(labels: pd.Series, activity_type: str, country_code
     The country_code parameter is optional so that this function can be used to test individual labels,
     but it should be provided when processing a BSS because the Season lookup is country-specific.
     """
+    # Clear caches for the functions, so that we use the lastest data from the database
+    get_label_attributes.cache_clear()
+    get_livelihood_activity_label_map.cache_clear()
+
     # Prepare the lookups, so they cache the individual results
-    classifiedproductlookup = ClassifiedProductLookup()
+    classifiedproductlookup = ClassifiedProductLookup(
+        require_match=False  # It is possible that there won't be any Product matches, e.g. for LivelihoodSummary labels
+    )
     unitofmeasurelookup = UnitOfMeasureLookup(
         require_match=False  # It is possible that there won't be any Unit of Measure matches, e.g. for OtherCashIncome
     )
@@ -379,7 +441,7 @@ def get_instances_from_dataframe(
             (df["A"].iloc[num_header_rows:] != "") & (all_label_attributes.iloc[num_header_rows:, 0].isna())
         ]
         .groupby("A")
-        .apply(lambda x: ", ".join(x.index.astype(str)))
+        .apply(lambda x: ", ".join(x.index.astype(str)), include_groups=False)
     )
     if unrecognized_labels.empty:
         unrecognized_labels = pd.DataFrame(columns=["label", "rows"])
@@ -437,6 +499,10 @@ def get_instances_from_dataframe(
                 # Ignore rows that don't contain any relevant data (or which aren't recognized by get_label_attributes)
                 continue
 
+            # When we process the values for the LivelihoodActivity records, we need to know the actual attribute
+            # that the values in this row are for
+            activity_attribute = label_attributes["attribute"]
+
             if label_attributes["is_start"]:
                 # We are starting a new livelihood activity, so append the previous livelihood strategy
                 # to the list, provided that it has at least one Livelihood Activity where there is some income,
@@ -478,6 +544,23 @@ def get_instances_from_dataframe(
                     assert livelihood_strategy is not None, (
                         "Found Livelihood Activities from row %s, but there is no Livelihood Strategy defined." % row
                     )
+
+                    # Copy the attribute from the previous livelihood strategy if this is a Livelihood Summary and the
+                    # attribute hasn't been set by the label_attributes.
+                    if (
+                        activity_type == ActivityLabel.LivelihoodActivityType.LIVELIHOOD_SUMMARY
+                        and not activity_attribute
+                        and previous_livelihood_strategy
+                        and previous_livelihood_activities_for_strategy
+                    ):
+                        for attribute in ["income", "expenditure", "percentage_kcals"]:
+                            if attribute in previous_livelihood_activities_for_strategy[0]:
+                                activity_attribute = attribute
+                                break
+                        if not activity_attribute:
+                            raise ValueError(
+                                f"Could not determine attribute for Livelihood Summary strategy from row {row}"
+                            )
 
                     # Copy the product_id for MilkProduction and ButterProduction from the previous livelihood strategy
                     # if necessary.
@@ -674,8 +757,10 @@ def get_instances_from_dataframe(
 
                     # Check the Livelihood Strategy has a Season if one is required.
                     # (e.g. for MilkProduction and ButterProduction).
-                    if livelihood_strategy["strategy_type"] in LivelihoodStrategy.REQUIRES_SEASON and (
-                        "season" not in livelihood_strategy or not livelihood_strategy["season"]
+                    if (
+                        livelihood_strategy["strategy_type"] in LivelihoodStrategy.REQUIRES_SEASON
+                        and activity_type != ActivityLabel.LivelihoodActivityType.LIVELIHOOD_SUMMARY
+                        and ("season" not in livelihood_strategy or not livelihood_strategy["season"])
                     ):
                         strategy_is_valid = False
                         # Include the header rows so that we can see which Wealth Groups are affected
@@ -696,8 +781,10 @@ def get_instances_from_dataframe(
                             errors.append(error_message)
 
                     # Check the Livelihood Strategy has a product_id if one is required.
-                    if livelihood_strategy["strategy_type"] in LivelihoodStrategy.REQUIRES_PRODUCT and (
-                        "product_id" not in livelihood_strategy or not livelihood_strategy["product_id"]
+                    if (
+                        livelihood_strategy["strategy_type"] in LivelihoodStrategy.REQUIRES_PRODUCT
+                        and activity_type != ActivityLabel.LivelihoodActivityType.LIVELIHOOD_SUMMARY
+                        and ("product_id" not in livelihood_strategy or not livelihood_strategy["product_id"])
                     ):
                         strategy_is_valid = False
                         # Include the header rows so that we can see which Wealth Groups are affected
@@ -742,7 +829,14 @@ def get_instances_from_dataframe(
                 if label_attributes["strategy_type"]:
                     strategy_type = label_attributes["strategy_type"]
                     # Get the valid fields names so we can determine if the attribute is stored in LivelihoodActivity.extra
-                    model = class_from_name(f"baseline.models.{strategy_type}")
+                    # LivestockProduction is an artificial, composite strategy type representing the sum of
+                    # MilkProduction, ButterProduction and MeatProduction. It isn't stored in the database, and it only
+                    # requires income, expenditure and kcals_consumed, so we use the base LivelihoodActivity model.
+                    model = (
+                        LivelihoodActivity
+                        if strategy_type == "LivestockProduction"
+                        else class_from_name(f"baseline.models.{strategy_type}")
+                    )
                     activity_field_names = [field.name for field in model._meta.concrete_fields]
                     # Also include values that point directly to the primary key of related objects
                     activity_field_names += [
@@ -751,7 +845,10 @@ def get_instances_from_dataframe(
                         if field.get_attname() not in activity_field_names
                     ]
 
-                if not strategy_type:
+                # Raise an error if we find attributes without a strategy_type being set, unless we are processing
+                # the Livelihood Summary section, where we set the attribute from the section heading without wanting
+                # to save the actual data.
+                if not strategy_type and activity_type != ActivityLabel.LivelihoodActivityType.LIVELIHOOD_SUMMARY:
                     raise ValueError(
                         "Found attributes %s from row %s without a strategy_type set" % (label_attributes, row)
                     )
@@ -808,9 +905,20 @@ def get_instances_from_dataframe(
                 # We are not starting a new Livelihood Strategy, but there may be
                 # additional attributes that need to be added to the current one.
                 if not livelihood_strategy:
+                    additional_attributes = [label_attributes["attribute"]] if label_attributes["attribute"] else []
+                    for attribute in [
+                        "is_start",
+                        "product_id",
+                        "unit_of_measure_id",
+                        "season",
+                        "additional_identifier",
+                        "notes",
+                    ]:
+                        if label_attributes[attribute]:
+                            additional_attributes.append(attribute)
                     raise ValueError(
-                        "Found additional attributes %s from row %s without an existing LivelihoodStrategy"
-                        % (label_attributes, row)
+                        "Found attributes from label '%s' in row %s without an existing LivelihoodStrategy: %s"
+                        % (label_attributes["activity_label"], row, ", ".join(additional_attributes))
                     )
 
                 # Only update expected keys, and only if we found a value for that attribute.
@@ -862,10 +970,6 @@ def get_instances_from_dataframe(
 
             # Update the LivelihoodActivity records
             if any(value for value in df.loc[row, "B":].astype(str).str.strip()):
-
-                # When we get the values for the LivelihoodActivity records, we just want the actual attribute
-                # that the values in the row are for
-                activity_attribute = label_attributes["attribute"]
 
                 # Some labels are ambiguous and map to different attributes depending on the strategy_type.
                 if activity_attribute == "quantity_produced_or_purchased":
@@ -1014,9 +1118,16 @@ def get_instances_from_dataframe(
                             )
                         )
 
-                # Add the attribute to the LivelihoodStrategy.attribute_rows
-                else:
+                # Add the attribute to the LivelihoodStrategy.attribute_rows, assuming we have a strategy_type.
+                # Some rows may have set attributes without setting a strategy_type, for example in the
+                # Livelihood Summary section.
+                elif strategy_type:
                     livelihood_strategy["attribute_rows"][activity_attribute] = row
+                    # Assertion to prevent linting from complaining about possible None values
+                    assert activity_field_names is not None, (
+                        "Found activity_attribute %s from row %s, but there is no Livelihood Strategy and therefore no activity_field_names defined."
+                        % (activity_attribute, row)
+                    )
                     for i, value in enumerate(df.loc[row, "B":]):
                         # Some attributes are stored in LivelihoodActivity.extra rather than individual fields.
                         if activity_attribute not in activity_field_names:
@@ -1072,34 +1183,179 @@ def get_instances_from_dataframe(
     )
 
 
-@asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
-def livelihood_activity_instances(
+def get_annotated_instances_from_dataframe(
     context: AssetExecutionContext,
-    livelihood_activity_dataframe,
+    livelihood_activity_dataframe: pd.DataFrame,
+    livelihood_summary_dataframe: pd.DataFrame,
+    activity_type: str,
+    num_header_rows: int,
 ) -> Output[dict]:
     """
-    LivelhoodStrategy and LivelihoodActivity instances extracted from the BSS.
+    Get the LivelhoodStrategy and LivelihoodActivity instances from the BSS, annotated with completeness information.
+
+    Completeness of the recognized detail livelihood activities is calculated as a percentage of the total income,
+    expenditure and kcals_consumed reported in the livelihood summary section at the top of the Data worksheet.
     """
     # Find the metadata for this BSS
     partition_key = context.asset_partition_key_for_output()
     livelihood_zone_baseline = LivelihoodZoneBaseline.objects.get_by_natural_key(*partition_key.split("~")[1:])
 
+    # Get the detail LivelihoodStrategy and LivelihoodActivity instances
     output = get_instances_from_dataframe(
         context,
         livelihood_activity_dataframe,
         livelihood_zone_baseline,
-        ActivityLabel.LivelihoodActivityType.LIVELIHOOD_ACTIVITY,
-        len(HEADER_ROWS),
+        activity_type,
+        num_header_rows,
         partition_key,
     )
+
+    if output.value["LivelihoodActivity"]:
+        # Get the summary instances
+        reported_summary_output = get_instances_from_dataframe(
+            context,
+            livelihood_summary_dataframe,
+            livelihood_zone_baseline,
+            ActivityLabel.LivelihoodActivityType.LIVELIHOOD_SUMMARY,
+            # The summary section is on the Data worksheet, so has the same number of header rows
+            # regardless of the activity_type
+            len(HEADER_ROWS),
+            partition_key,
+        )
+
+        # Annotate the output metadata with completeness information
+        # Get the summary dataframe, grouped by strategy_type
+        summary_df = pd.DataFrame(reported_summary_output.value["LivelihoodActivity"])
+        summary_df = (
+            summary_df[["strategy_type", "income", "expenditure", "kcals_consumed"]].groupby("strategy_type").sum()
+        )
+
+        # Add the recognized Livelihood Activities, also grouped by strategy_type
+        recognized_activities_df = pd.DataFrame(output.value["LivelihoodActivity"])
+        for column in ["income", "expenditure", "kcals_consumed"]:
+            if column in recognized_activities_df:
+                recognized_activities_df[column] = pd.to_numeric(
+                    recognized_activities_df[column], errors="coerce"
+                ).fillna(0)
+            else:
+                recognized_activities_df[column] = 0
+        summary_df = summary_df.join(
+            recognized_activities_df[["strategy_type", "income", "expenditure", "kcals_consumed"]]
+            .groupby("strategy_type")
+            .sum(),
+            on="strategy_type",
+            lsuffix="_summary",
+            rsuffix="_recognized",
+        ).fillna(0)
+
+        # Add a totals row at the end
+        summary_df.loc["Total"] = summary_df.sum(numeric_only=True)
+
+        # Add completeness percentages
+        summary_df = summary_df.round(0)
+        summary_df["income_completeness"] = summary_df.apply(
+            lambda row: (
+                round(row["income_recognized"] / row["income_summary"] * 100, 1)
+                if row["income_summary"] > 0
+                else pd.NA
+            ),
+            axis=1,
+        )
+        summary_df["expenditure_completeness"] = summary_df.apply(
+            lambda row: (
+                round(row["expenditure_recognized"] / row["expenditure_summary"] * 100, 1)
+                if row["expenditure_summary"] > 0
+                else pd.NA
+            ),
+            axis=1,
+        )
+        summary_df["kcals_consumed_completeness"] = summary_df.apply(
+            lambda row: (
+                round(row["kcals_consumed_recognized"] / row["kcals_consumed_summary"] * 100, 1)
+                if row["kcals_consumed_summary"] > 0
+                else pd.NA
+            ),
+            axis=1,
+        )
+        # Format the numbers as integers, for better display in the markdown table
+        for column in ["income", "expenditure", "kcals_consumed"]:
+            for source in ["recognized", "summary"]:
+                summary_df[f"{column}_{source}"] = summary_df.apply(
+                    lambda row: (
+                        int(row[f"{column}_{source}"])
+                        if (pd.notna(row[f"{column}_recognized"]) and row[f"{column}_recognized"] > 0)
+                        or (pd.notna(row[f"{column}_summary"]) and row[f"{column}_summary"] > 0)
+                        else pd.NA
+                    ),
+                    axis="columns",
+                )
+
+        # Transpose and reorder the columns and rows
+        # Sort the rows so that Strategy Types appear in the same order as in the BSS
+        ordered_strategy_types = ["LivestockProduction"] + [x for x in LivelihoodStrategyType] + ["Total"]
+        summary_df["strategy_type"] = pd.Categorical(
+            summary_df.reset_index(drop=False)["strategy_type"],
+            categories=ordered_strategy_types,
+            ordered=True,
+        )
+        summary_df = summary_df.reset_index(drop=True).sort_values(by="strategy_type")
+        summary_df = summary_df[
+            [
+                "strategy_type",
+                "kcals_consumed_recognized",
+                "kcals_consumed_summary",
+                "kcals_consumed_completeness",
+                "income_recognized",
+                "income_summary",
+                "income_completeness",
+                "expenditure_recognized",
+                "expenditure_summary",
+                "expenditure_completeness",
+            ]
+        ]
+        summary_df = summary_df.set_index("strategy_type").transpose()
+
+        # Add the completeness summary to the output metadata
+        output.metadata["pct_kcals_consumed_recognized"] = float(
+            summary_df.loc["kcals_consumed_completeness", "Total"]
+        )
+        output.metadata["pct_income_recognized"] = float(summary_df.loc["income_completeness", "Total"])
+        output.metadata["pct_expenditure_recognized"] = float(summary_df.loc["expenditure_completeness", "Total"])
+        output.metadata["completeness_summary"] = MetadataValue.md(
+            summary_df.replace(pd.NA, None).to_markdown(floatfmt=",.0f")
+        )
+
+        # Move the preview and metadata item to the end of the dict
+        output.metadata["preview"] = output.metadata.pop("preview")
+
+    return output
+
+
+@asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
+def livelihood_activity_instances(
+    context: AssetExecutionContext,
+    livelihood_activity_dataframe: pd.DataFrame,
+    livelihood_summary_dataframe: pd.DataFrame,
+) -> Output[dict]:
+    """
+    LivelhoodStrategy and LivelihoodActivity instances extracted from the BSS.
+    """
+    output = get_annotated_instances_from_dataframe(
+        context,
+        livelihood_activity_dataframe,
+        livelihood_summary_dataframe,
+        ActivityLabel.LivelihoodActivityType.LIVELIHOOD_SUMMARY,
+        len(HEADER_ROWS),
+    )
+
     return output
 
 
 @asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
 def livelihood_activity_valid_instances(
     context: AssetExecutionContext,
-    livelihood_activity_instances,
-    wealth_characteristic_instances,
+    livelihood_activity_instances: dict,
+    wealth_characteristic_instances: dict,
 ) -> Output[dict]:
     """
     Valid LivelhoodStrategy and LivelihoodActivity instances from a BSS, ready to be loaded via a Django fixture.
@@ -1129,7 +1385,7 @@ def livelihood_activity_valid_instances(
 def livelihood_activity_fixture(
     context: AssetExecutionContext,
     config: BSSMetadataConfig,
-    livelihood_activity_valid_instances,
+    livelihood_activity_valid_instances: dict,
 ) -> Output[list[dict]]:
     """
     Django fixture for the Livelihood Activities from a BSS.

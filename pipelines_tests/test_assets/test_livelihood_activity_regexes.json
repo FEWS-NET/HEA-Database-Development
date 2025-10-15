@@ -278,9 +278,6 @@
         "attribute": "quantity_produced",
         "unit_of_measure_id": "kg"
     },
-    "no. people per HH": {
-        "attribute": "people_per_household"
-    },
     "PRODUCTION ANIMALE:": {},
     "nb d'animaux laitiers": {
         "attribute": "milking_animals"
@@ -762,6 +759,15 @@
     "quantité": {
         "attribute": "quantity_produced_or_purchased"
     },
+    "no. people per HH": {
+        "attribute": "people_per_household"
+    },
+    "nbr. personnes par ménage": {
+        "attribute": "people_per_household"
+    },
+    "nbr. personnes par mènage": {
+        "attribute": "people_per_household"
+    },
     "no. personnes par ménage": {
         "attribute": "people_per_household"
     },
@@ -829,5 +835,35 @@
         "attribute": "payment_per_time",
         "product_id": "grain",
         "unit_of_measure_id": "kg"
+    },
+    "wild food: avocado (kg gathered)": {
+        "is_start": true,
+        "product_id": "avocado",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
+    },
+    "mangoes (kg gathered)": {
+        "is_start": true,
+        "product_id": "mangoes",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
+    },
+    "okra - kg gathered": {
+        "is_start": true,
+        "product_id": "okra",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
+    },
+    "Fish (dry) : Tilapia (dry/smoked) (kg gathered)": {
+        "is_start": true,
+        "product_id": "tilapia (dry/smoked)",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
+    },
+    "Fish type 2 (dried) - kg gathered": {
+        "is_start": true,
+        "product_id": "fish type 2 (dried)",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
     }
 }

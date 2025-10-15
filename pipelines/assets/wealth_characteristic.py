@@ -172,6 +172,7 @@ def wealth_characteristic_instances(
     context: AssetExecutionContext,
     config: BSSMetadataConfig,
     wealth_characteristic_dataframe,
+    livelihood_summary_dataframe,
 ) -> Output[dict]:
     """
     WealthGroup and WealthGroupCharacteristicValue instances extracted from the BSS.
@@ -382,17 +383,29 @@ def wealth_characteristic_instances(
     wealth_group_df = wealth_group_df[wealth_group_df["wealth_group_category"].notnull()]
     # We also need to add an extra row for each Wealth Group Category with a null Community, to create the
     # Baseline Wealth Groups.
+    baseline_wealth_group_df = wealth_group_df[wealth_group_df["community"] == wealth_group_df.iloc[0]["community"]][
+        [
+            "wealth_group_category_original",
+            "wealth_group_category",
+            "livelihood_zone_baseline",
+        ]
+    ].reset_index(drop=True)
+    baseline_wealth_group_df["community"] = None
+    baseline_wealth_group_df["district"] = ""
+    baseline_wealth_group_df["name"] = ""
+    baseline_wealth_group_df["full_name"] = ""
+    baseline_wealth_group_df["natural_key"] = baseline_wealth_group_df["wealth_group_category"].apply(
+        lambda wealth_group_category: [
+            livelihood_zone_baseline.livelihood_zone_id,
+            livelihood_zone_baseline.reference_year_end_date.isoformat(),
+            wealth_group_category,
+            "",
+        ]
+    )
     wealth_group_df = pd.concat(
         [
             wealth_group_df,
-            wealth_group_df[wealth_group_df["community"] == wealth_group_df.iloc[0]["community"]][
-                [
-                    "wealth_group_category_original",
-                    "wealth_group_category",
-                    "livelihood_zone_baseline",
-                    "community",
-                ]
-            ].assign(community=None),
+            baseline_wealth_group_df,
         ]
     )
 
@@ -432,6 +445,53 @@ def wealth_characteristic_instances(
     # Add the extra attributes to the Wealth Groups
     wealth_group_df = pd.merge(
         wealth_group_df, extra_attributes_df, on=["full_name", "wealth_group_category"], how="left"
+    )
+
+    # We also need total income, expenditure and kcals from the summary section on the Data worksheet
+    # First drop any rows that aren't the header rows except the totals. The totals rows are identified by
+    # having a label that starts with "Total" or "Synthèse"
+    summary_df = livelihood_summary_dataframe[
+        (livelihood_summary_dataframe.index.isin(HEADER_ROWS))
+        | (livelihood_summary_dataframe["A"].str.lower().str.startswith("total"))
+        | (livelihood_summary_dataframe["A"].str.lower().str.startswith("synthèse"))
+        | (livelihood_summary_dataframe["A"].str.lower().str.startswith("food summary"))
+        | (livelihood_summary_dataframe["A"].str.lower().str.startswith("income summary"))
+        | (livelihood_summary_dataframe["A"].str.lower().str.startswith("expenditure summary"))
+    ]
+    # Check we found the expected number of rows
+    if summary_df.shape[0] != 6:
+        raise ValueError(
+            f'Expected 6 rows in summary_df, but found {summary_df.shape[0]}: {", ".join(summary_df.iloc[:, 0].tolist())}'
+        )
+    # Rename the headings in column A for the totals rows
+    summary_df.iloc[3, 0] = "percentage_kcals"
+    summary_df.iloc[4, 0] = "income"
+    summary_df.iloc[5, 0] = "expenditure"
+
+    # Now transpose the dataframe and then join it to the wealth groups so we can access
+    # the real full_name and wealth_category
+    summary_df = pd.merge(
+        summary_df.set_index("A").transpose(),
+        get_wealth_group_dataframe(summary_df, livelihood_zone_baseline, "Data", partition_key).set_index(
+            "bss_column"
+        ),
+        left_index=True,
+        right_index=True,
+    )
+
+    # Add the summary attributes to the Wealth Groups
+    wealth_group_df = pd.merge(
+        wealth_group_df,
+        summary_df[["full_name", "wealth_group_category", "income", "expenditure", "percentage_kcals"]],
+        on=["full_name", "wealth_group_category"],
+        how="left",
+    )
+
+    # Calculate the kcals_consumed
+    # Derive it by multiplying percentage_kcals by:
+    #   2100 (kcals per person per day) * 365 (days per year) * average_household_size
+    wealth_group_df["kcals_consumed"] = (
+        wealth_group_df["percentage_kcals"] * 2100 * 365 * wealth_group_df["average_household_size"]
     )
 
     result = {

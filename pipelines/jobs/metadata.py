@@ -35,7 +35,7 @@ from common.lookups import ClassifiedProductLookup, UserLookup  # NOQA: E402
 from metadata.models import ActivityLabel  # NOQA: E402
 
 
-def load_metadata_for_model(context: OpExecutionContext, model: models.Model, df: pd.DataFrame):
+def load_metadata_for_model(context: OpExecutionContext, sheet_name: str, model: models.Model, df: pd.DataFrame):
     """
     Load the metadata from a single worksheet, passed as a DataFrame, into a Django model.
     """
@@ -112,7 +112,7 @@ def load_metadata_for_model(context: OpExecutionContext, model: models.Model, df
             existing_instances.values(),
             fields=record.keys(),
         )
-        context.log.info(f"Updated {num_instances} {model_name} instances")
+        context.log.info(f"Updated {num_instances} {sheet_name} instances")
 
     else:
         if model_name == "SourceOrganization":
@@ -140,7 +140,7 @@ def load_metadata_for_model(context: OpExecutionContext, model: models.Model, df
             update_fields=[k for k in record if k not in id_fields],
             unique_fields=id_fields,
         )
-        context.log.info(f"Created or updated {len(instances)} {model_name} instances")
+        context.log.info(f"Created or updated {len(instances)} {sheet_name} instances")
 
 
 @op
@@ -164,7 +164,7 @@ def load_all_metadata(context: OpExecutionContext, config: ReferenceDataConfig):
             # Iterate over the sheets in the ReferenceData workbook, in reverse order (because the Label sheets that
             # need Subject Matter Expert input are at beginning, and depend on the sheets at the end).
             for sheet_name in reversed(sheet_names):
-                if sheet_name in ["ActivityLabel", "OtherCashIncomeLabel", "WildFoodsLabel"]:
+                if sheet_name in ["ActivityLabel", "OtherCashIncomeLabel", "WildFoodsLabel", "SummaryLabel"]:
                     model = ActivityLabel
                 else:
                     # Check whether the ReferenceData worksheet matches a Django model.
@@ -179,7 +179,7 @@ def load_all_metadata(context: OpExecutionContext, config: ReferenceDataConfig):
                     # If we found a model, then update the model from the contents of the Reference Data worksheet
                     df = pd.read_excel(f, sheet_name).fillna("")
                     try:
-                        load_metadata_for_model(context, model, df)
+                        load_metadata_for_model(context, sheet_name, model, df)
                     except Exception as e:
                         raise RuntimeError("Failed to create/update %s" % sheet_name) from e
 
