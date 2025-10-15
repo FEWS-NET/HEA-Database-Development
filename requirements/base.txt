@@ -20,7 +20,7 @@ djangorestframework-gis==1.1
 djangorestframework-xml==2.0.0
 docutils
 factory-boy==3.2.1
-git+https://github.com/American-Institutes-for-Research/gdrivefs.git@e870c19e1d730635e3760e7ae21eebf9ddda765e
+git+https://github.com/American-Institutes-for-Research/gdrivefs.git@f4ec53446e6a27be2e368b24dadfa9081e1272f2
 googletrans-py==4.0.0
 # Required for rendering Dagster graphs in Jupyter notebooks
 graphviz==0.21

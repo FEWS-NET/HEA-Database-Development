@@ -58,6 +58,8 @@ from pathlib import Path
 import django
 import pandas as pd
 from dagster import AssetExecutionContext, MetadataValue, Output, asset
+from django.db.models.functions import Lower
+from upath import UPath
 
 from ..configs import BSSMetadataConfig
 from ..partitions import bss_instances_partitions_def
@@ -256,6 +258,49 @@ def get_livelihood_activity_regexes() -> list:
 
 
 @functools.cache
+def get_livelihood_activity_regular_expression_attributes(label: str) -> dict:
+    """
+    Return a dict of the attributes for a well-known Livelihood Activity label using regular expression matches.
+    """
+    label = prepare_lookup(label)
+    attributes = {
+        "activity_label": None,
+        "strategy_type": None,
+        "is_start": None,
+        "product_id": None,
+        "unit_of_measure_id": None,
+        "season": None,
+        "additional_identifier": None,
+        "attribute": None,
+        "notes": None,
+    }
+    for pattern, strategy_type, is_start, attribute in get_livelihood_activity_regexes():
+        match = pattern.fullmatch(label)
+        if match:
+            attributes.update(match.groupdict())
+            attributes["activity_label"] = label
+            attributes["strategy_type"] = strategy_type
+            attributes["is_start"] = is_start
+            if isinstance(attribute, dict):
+                # Attribute contains a dict of attributes, e.g. notes, etc.
+                attributes.update(attribute)
+            else:
+                # Attribute is a string containing the attribute name
+                attributes["attribute"] = attribute
+            # Save the matched pattern to aid trouble-shooting
+            attributes["notes"] = (
+                attributes["notes"] + " " + f' r"{pattern.pattern}"'
+                if attributes["notes"]
+                else f'r"{pattern.pattern}"'
+            )
+            # Return the first matching pattern
+            return attributes
+
+    # Didn't match any patterns, so return empty attributes
+    return attributes
+
+
+@functools.cache
 def get_livelihood_activity_label_map(activity_type: str) -> dict[str, dict]:
     """
     Return a dict of the attributes for the Livelihood Activities, stored in the ActivityLabel Django model.
@@ -306,40 +351,9 @@ def get_label_attributes(label: str, activity_type: str) -> pd.Series:
     try:
         return pd.Series(get_livelihood_activity_label_map(activity_type)[label])
     except KeyError:
-        # No entry in the ActivityLabel model for this label, so attempt to match the label against the regexes
-        attributes = {
-            "activity_label": None,
-            "strategy_type": None,
-            "is_start": None,
-            "product_id": None,
-            "unit_of_measure_id": None,
-            "season": None,
-            "additional_identifier": None,
-            "attribute": None,
-            "notes": None,
-        }
-        for pattern, strategy_type, is_start, attribute in get_livelihood_activity_regexes():
-            match = pattern.fullmatch(label)
-            if match:
-                attributes.update(match.groupdict())
-                attributes["activity_label"] = label
-                attributes["strategy_type"] = strategy_type
-                attributes["is_start"] = is_start
-                if isinstance(attribute, dict):
-                    # Attribute contains a dict of attributes, e.g. notes, etc.
-                    attributes.update(attribute)
-                else:
-                    # Attribute is a string containing the attribute name
-                    attributes["attribute"] = attribute
-                # Save the matched pattern to aid trouble-shooting
-                attributes["notes"] = (
-                    attributes["notes"] + " " + f' r"{pattern.pattern}"'
-                    if attributes["notes"]
-                    else f'r"{pattern.pattern}"'
-                )
-                return pd.Series(attributes)
-        # No pattern matched
-        return pd.Series(attributes).fillna(pd.NA)
+        # No entry in the ActivityLabel model instance for this label, so attempt to match against the regexes
+        attributes = get_livelihood_activity_regular_expression_attributes(label)
+        return pd.Series(attributes)
 
 
 def get_all_label_attributes(labels: pd.Series, activity_type: str, country_code: str | None) -> pd.DataFrame:
@@ -385,8 +399,91 @@ def get_all_label_attributes(labels: pd.Series, activity_type: str, country_code
     return all_label_attributes
 
 
+@asset
+def livelihood_activity_label_recognition_dataframe(
+    context: AssetExecutionContext,
+    config: BSSMetadataConfig,
+    all_livelihood_activity_labels_dataframe: pd.DataFrame,
+    all_other_cash_income_labels_dataframe: pd.DataFrame,
+    all_wild_foods_labels_dataframe: pd.DataFrame,
+    all_livelihood_summary_labels_dataframe: pd.DataFrame,
+):
+    """
+    A saved spreadsheet showing how each BSS label is recognized, either from the ActivityLabel model or a regex.
+    """
+    # Path to the output spreadsheet
+    p = UPath(config.bss_label_recognition_workbook, **config.bss_label_recognition_storage_options)
+
+    all_livelihood_activity_labels_dataframe["activity_type"] = (
+        ActivityLabel.LivelihoodActivityType.LIVELIHOOD_ACTIVITY
+    )
+    all_other_cash_income_labels_dataframe["activity_type"] = ActivityLabel.LivelihoodActivityType.OTHER_CASH_INCOME
+    all_wild_foods_labels_dataframe["activity_type"] = ActivityLabel.LivelihoodActivityType.WILD_FOODS
+    all_livelihood_summary_labels_dataframe["activity_type"] = ActivityLabel.LivelihoodActivityType.LIVELIHOOD_SUMMARY
+
+    # Build a dataframe of all the Activity Labels from all BSSs
+    all_labels_df = pd.concat(
+        [
+            all_livelihood_activity_labels_dataframe,
+            all_other_cash_income_labels_dataframe,
+            all_wild_foods_labels_dataframe,
+            all_livelihood_summary_labels_dataframe,
+        ],
+        ignore_index=True,
+    )
+
+    # Add the regular expressions
+    regex_attributes_df = pd.DataFrame.from_records(
+        all_labels_df["label"].astype(str).map(get_livelihood_activity_regular_expression_attributes)
+    )
+    all_labels_df = all_labels_df.join(
+        regex_attributes_df,
+        how="left",
+    )
+
+    # Add the labels from the database
+    db_labels_df = pd.DataFrame.from_records(
+        ActivityLabel.objects.annotate(label_lower=Lower("activity_label")).values(
+            "label_lower",
+            "activity_type",
+            "status",
+            "strategy_type",
+            "is_start",
+            "product_id",
+            "unit_of_measure_id",
+            "currency_id",
+            "season",
+            "additional_identifier",
+            "attribute",
+            "notes",
+        )
+    )
+    all_labels_df = all_labels_df.join(
+        db_labels_df.set_index(["label_lower", "activity_type"]),
+        on=("label_lower", "activity_type"),
+        how="left",
+        rsuffix="_db",
+        lsuffix="_regex",
+    )
+
+    # GDriveFS doesn't support updating existing files, it always create a new file with same name.
+    # This leads to multiple files with the same name in the folder, so we delete any existing files first.
+    if p.exists():
+        # @TODO This doesn't work with the current version of gdrivefs, possibly because of an error
+        # with accessing Shared Drives. For now, we need to manually delete the old files before running
+        # the asset again.
+        # We need to experiment and possibly create a custom gdrivefs that reuses code from KiLuigi's GoogleDriveTarget
+        p.unlink()
+
+    # Save the dataframe to an Excel workbook
+    with p.fs.open(p.path, mode="wb") as f:
+        with pd.ExcelWriter(f, engine="openpyxl") as writer:
+            all_labels_df.to_excel(writer, index=False, sheet_name="All Labels")
+
+
 def get_instances_from_dataframe(
     context: AssetExecutionContext,
+    config: BSSMetadataConfig,
     df: pd.DataFrame,
     livelihood_zone_baseline: LivelihoodZoneBaseline,
     activity_type: str,
@@ -435,10 +532,14 @@ def get_instances_from_dataframe(
     )
 
     # Check that we recognize all of the activity labels
+    # The unrecognized labels are rows after the header rows where column A is not blank,
+    # but the matching row in all_label_attributes dataframe has a blank activity_label.
+    # Group the resulting dataframe so that we have a label and a list of the rows where it occurs.
     allow_unrecognized_labels = True
     unrecognized_labels = (
         df.iloc[num_header_rows:][
-            (df["A"].iloc[num_header_rows:] != "") & (all_label_attributes.iloc[num_header_rows:, 0].isna())
+            (df["A"].iloc[num_header_rows:] != "")
+            & (all_label_attributes.iloc[num_header_rows:]["activity_label"] == "")
         ]
         .groupby("A")
         .apply(lambda x: ", ".join(x.index.astype(str)), include_groups=False)
@@ -727,8 +828,9 @@ def get_instances_from_dataframe(
                     for i, livelihood_activity in enumerate(livelihood_activities_for_strategy):
                         livelihood_activity["livelihood_strategy"] = livelihood_zone_baseline_key + [
                             livelihood_strategy["strategy_type"],
-                            livelihood_strategy["season"] if livelihood_strategy["season"] else "",
-                            livelihood_strategy["product_id"] if livelihood_strategy["product_id"] else "",
+                            livelihood_strategy["season"] or "",  # Natural key components must be "" rather than None
+                            livelihood_strategy["product_id"]
+                            or "",  # Natural key components must be "" rather than None
                             livelihood_strategy["additional_identifier"],
                         ]
 
@@ -1149,13 +1251,6 @@ def get_instances_from_dataframe(
                     % (partition_key, worksheet_name, row, label)
                 ) from e
 
-    raise_errors = True
-    if errors and raise_errors:
-        errors = "\n".join(errors)
-        raise RuntimeError(
-            "Missing or inconsistent metadata in BSS %s worksheet '%s':\n%s" % (partition_key, worksheet_name, errors)
-        )
-
     result = {
         "LivelihoodStrategy": livelihood_strategies,
         "LivelihoodActivity": livelihood_activities,
@@ -1177,6 +1272,19 @@ def get_instances_from_dataframe(
     if not unrecognized_labels.empty:
         metadata["unrecognized_labels"] = MetadataValue.md(unrecognized_labels.to_markdown(index=False))
 
+    if errors:
+        if config.strict:
+            raise RuntimeError(
+                "Missing or inconsistent metadata in BSS %s worksheet '%s':\n%s"
+                % (partition_key, worksheet_name, "\n".join(errors))
+            )
+        else:
+            context.log.error(
+                "Missing or inconsistent metadata in BSS %s worksheet '%s':\n%s"
+                % (partition_key, worksheet_name, "\n".join(errors))
+            )
+            metadata["errors"] = MetadataValue.md(f'```text\n{"\n".join(errors)}\n```')
+
     return Output(
         result,
         metadata=metadata,
@@ -1185,6 +1293,7 @@ def get_instances_from_dataframe(
 
 def get_annotated_instances_from_dataframe(
     context: AssetExecutionContext,
+    config: BSSMetadataConfig,
     livelihood_activity_dataframe: pd.DataFrame,
     livelihood_summary_dataframe: pd.DataFrame,
     activity_type: str,
@@ -1203,6 +1312,7 @@ def get_annotated_instances_from_dataframe(
     # Get the detail LivelihoodStrategy and LivelihoodActivity instances
     output = get_instances_from_dataframe(
         context,
+        config,
         livelihood_activity_dataframe,
         livelihood_zone_baseline,
         activity_type,
@@ -1214,6 +1324,7 @@ def get_annotated_instances_from_dataframe(
         # Get the summary instances
         reported_summary_output = get_instances_from_dataframe(
             context,
+            config,
             livelihood_summary_dataframe,
             livelihood_zone_baseline,
             ActivityLabel.LivelihoodActivityType.LIVELIHOOD_SUMMARY,
@@ -1325,7 +1436,9 @@ def get_annotated_instances_from_dataframe(
             summary_df.replace(pd.NA, None).to_markdown(floatfmt=",.0f")
         )
 
-        # Move the preview and metadata item to the end of the dict
+        # Move the preview and errors metadata item to the end of the dict
+        if "errors" in output.metadata:
+            output.metadata["errors"] = output.metadata.pop("errors")
         output.metadata["preview"] = output.metadata.pop("preview")
 
     return output
@@ -1334,26 +1447,27 @@ def get_annotated_instances_from_dataframe(
 @asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
 def livelihood_activity_instances(
     context: AssetExecutionContext,
+    config: BSSMetadataConfig,
     livelihood_activity_dataframe: pd.DataFrame,
     livelihood_summary_dataframe: pd.DataFrame,
 ) -> Output[dict]:
     """
     LivelhoodStrategy and LivelihoodActivity instances extracted from the BSS.
     """
-    output = get_annotated_instances_from_dataframe(
+    return get_annotated_instances_from_dataframe(
         context,
+        config,
         livelihood_activity_dataframe,
         livelihood_summary_dataframe,
-        ActivityLabel.LivelihoodActivityType.LIVELIHOOD_SUMMARY,
+        ActivityLabel.LivelihoodActivityType.LIVELIHOOD_ACTIVITY,
         len(HEADER_ROWS),
     )
-
-    return output
 
 
 @asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
 def livelihood_activity_valid_instances(
     context: AssetExecutionContext,
+    config: BSSMetadataConfig,
     livelihood_activity_instances: dict,
     wealth_characteristic_instances: dict,
 ) -> Output[dict]:
@@ -1369,16 +1483,7 @@ def livelihood_activity_valid_instances(
             **{"WealthGroup": wealth_characteristic_instances["WealthGroup"]},
             **livelihood_activity_instances,
         }
-    valid_instances, metadata = validate_instances(context, livelihood_activity_instances, partition_key)
-    metadata = {f"num_{key.lower()}": len(value) for key, value in valid_instances.items()}
-    metadata["total_instances"] = sum(len(value) for value in valid_instances.values())
-    metadata["preview"] = MetadataValue.md(
-        f"```json\n{json.dumps(valid_instances, indent=4, ensure_ascii=False)}\n```"
-    )
-    return Output(
-        valid_instances,
-        metadata=metadata,
-    )
+    return validate_instances(context, config, livelihood_activity_instances, partition_key)
 
 
 @asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
@@ -1390,11 +1495,7 @@ def livelihood_activity_fixture(
     """
     Django fixture for the Livelihood Activities from a BSS.
     """
-    fixture, metadata = get_fixture_from_instances(livelihood_activity_valid_instances)
-    return Output(
-        fixture,
-        metadata=metadata,
-    )
+    return get_fixture_from_instances(livelihood_activity_valid_instances)
 
 
 @asset(partitions_def=bss_instances_partitions_def)
@@ -1405,8 +1506,4 @@ def imported_livelihood_activities(
     """
     Imported Django fixtures for a BSS, added to the Django database.
     """
-    metadata = import_fixture(livelihood_activity_fixture)
-    return Output(
-        None,
-        metadata=metadata,
-    )
+    return import_fixture(livelihood_activity_fixture)
