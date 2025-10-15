@@ -155,19 +155,19 @@ def load_metadata_for_model(context: OpExecutionContext, sheet_name: str, model:
                 unique_fields=id_fields,
             )
             context.log.info(f"Created or updated {len(instances)} {sheet_name} instances")
-        except Exception as e:
+        except Exception:
             # Bulk create failed, so try creating/updating the instances one at a time to see which one failed
             for i, instance in enumerate(instances):
                 try:
                     instance.save()
-                except Exception as e2:
+                except Exception as e:
                     key = [getattr(instance, id_field) for id_field in id_fields]
                     instance = {
                         k: v for k, v in instance.__dict__.items() if k not in ["_state", "created", "modified"]
                     }
                     raise RuntimeError(
                         f"Failed to create/update {model_name} instance {i} {key} from:\n{json.dumps(instance, indent=4, ensure_ascii=False)}"
-                    ) from e2
+                    ) from e
 
 
 @op
