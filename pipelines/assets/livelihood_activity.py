@@ -260,7 +260,7 @@ def get_livelihood_activity_regexes() -> list:
 @functools.cache
 def get_livelihood_activity_regular_expression_attributes(label: str) -> dict:
     """
-    Return a dict of the attributes for a well-known Livelihood Activity label using regular expression mactches.
+    Return a dict of the attributes for a well-known Livelihood Activity label using regular expression matches.
     """
     label = prepare_lookup(label)
     attributes = {
