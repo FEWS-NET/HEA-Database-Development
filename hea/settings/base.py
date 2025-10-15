@@ -253,6 +253,12 @@ LOGGING = {
     },
     "filters": {
         "require_debug_false": {"()": "django.utils.log.RequireDebugFalse"},
+        "suppress_ws_pings": {
+            "()": "common.logging_filters.SuppressWebSocketPings",
+        },
+        "suppress_revproxy_noise": {
+            "()": "common.logging_filters.SuppressRevProxyNoise",
+        },
     },
     "handlers": {
         "logfile": {
@@ -269,6 +275,7 @@ LOGGING = {
             "stream": sys.stdout,
             "class": "logging.StreamHandler",
             "formatter": env.str("LOG_FORMATTER", "standard"),
+            "filters": ["suppress_ws_pings", "suppress_revproxy_noise"],
         },
         "mail_admins": {
             "level": "ERROR",
@@ -286,8 +293,40 @@ LOGGING = {
         "urllib3": {"handlers": ["console", "logfile"], "level": "INFO", "propagate": False},
         "common.models": {"handlers": ["console", "logfile"], "level": "INFO", "propagate": False},
         "common.signals": {"handlers": ["console", "logfile"], "level": "INFO", "propagate": False},
-        "uvicorn.error": {"handlers": ["console"], "level": "WARNING", "propagate": False},
-        "uvicorn.access": {"handlers": ["console"], "level": "WARNING", "propagate": False},
+        "uvicorn": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "uvicorn.error": {
+            "handlers": ["console"],
+            "level": "DEBUG",
+            "propagate": False,
+            "filters": ["suppress_ws_pings"],
+        },
+        "uvicorn.access": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "revproxy": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+            "filters": ["suppress_revproxy_noise"],
+        },
+        "revproxy.view": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+            "filters": ["suppress_revproxy_noise"],
+        },
+        "revproxy.response": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+            "filters": ["suppress_revproxy_noise"],
+        },
     },
     # Keep root at DEBUG and use the `level` on the handler to control logging output,
     # so that additional handlers can be used to get additional detail, e.g. `common.resources.LoggingResourceMixin`

@@ -58,7 +58,7 @@ class DagsterWebSocketProxyConsumer(AsyncWebsocketConsumer):
         try:
             self.websocket = await websockets.connect(
                 target_url,
-                max_size=2097152,
+                max_size=10485760,
                 ping_interval=20,
                 subprotocols=subprotocols if subprotocols else None,
             )
