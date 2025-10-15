@@ -296,7 +296,7 @@
         "times_per_year"
     ],
     [
-        "{nbr_pattern} (?:people per HH|personnes par ménage)",
+        "{nbr_pattern} (?:people per HH|personnes par ménage|personnes par mènage)",
         null,
         false,
         "people_per_household"

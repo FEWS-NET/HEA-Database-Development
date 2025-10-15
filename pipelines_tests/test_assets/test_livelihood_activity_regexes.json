@@ -278,9 +278,6 @@
         "attribute": "quantity_produced",
         "unit_of_measure_id": "kg"
     },
-    "no. people per HH": {
-        "attribute": "people_per_household"
-    },
     "PRODUCTION ANIMALE:": {},
     "nb d'animaux laitiers": {
         "attribute": "milking_animals"
@@ -761,6 +758,15 @@
     },
     "quantité": {
         "attribute": "quantity_produced_or_purchased"
+    },
+    "no. people per HH": {
+        "attribute": "people_per_household"
+    },
+    "nbr. personnes par ménage": {
+        "attribute": "people_per_household"
+    },
+    "nbr. personnes par mènage": {
+        "attribute": "people_per_household"
     },
     "no. personnes par ménage": {
         "attribute": "people_per_household"
