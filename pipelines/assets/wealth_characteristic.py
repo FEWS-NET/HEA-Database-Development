@@ -531,16 +531,7 @@ def wealth_characteristic_valid_instances(
     Valid  WealthGroup and WealthGroupCharacteristicValue instances from a BSS, ready to be loaded via a Django fixture.
     """
     partition_key = context.asset_partition_key_for_output()
-    valid_instances, metadata = validate_instances(context, config, wealth_characteristic_instances, partition_key)
-    metadata = {f"num_{key.lower()}": len(value) for key, value in valid_instances.items()}
-    metadata["total_instances"] = sum(len(value) for value in valid_instances.values())
-    metadata["preview"] = MetadataValue.md(
-        f"```json\n{json.dumps(valid_instances, indent=4, ensure_ascii=False)}\n```"
-    )
-    return Output(
-        valid_instances,
-        metadata=metadata,
-    )
+    return validate_instances(context, config, wealth_characteristic_instances, partition_key)
 
 
 @asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
