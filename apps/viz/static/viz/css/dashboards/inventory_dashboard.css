@@ -1,0 +1,92 @@
+.dashboard-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.dropdown-row {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+.dropdown-item {
+    flex: 1;
+    margin-right: 10px;
+}
+
+.dropdown-item:last-child {
+    margin-right: 0;
+}
+
+.graph-container {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.graph-item {
+    width: 48%;
+}
+
+
+.control-panel-wrapper {
+    grid-area: control-panel-wrapper;
+}
+
+.control-panel2-wrapper {
+    grid-area: control-panel2-wrapper;
+}
+
+.main-wrapper {
+    margin: 0px;
+    padding: 0;
+    display: grid;
+    gap: 10px;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    grid-template-areas:
+        "control-panel-wrapper"
+        "scatter-map-row-wrapper"
+        "control-panel2-wrapper"
+        "choropleth-map-wrapper"
+    ;
+}
+
+
+.control-panel-wrapper {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.inventory-filter {
+    width: 100%;
+    padding-right: 5px;
+}
+
+.inventory-filter-last {
+    padding-right: 0px;
+}
+
+.filters-wrapper {
+    display: flex;
+}
+
+.dash-graph {
+    width: 100%;
+}
+
+.table-wrapper {
+    display: flex;
+    flex-direction: column;
+}
+
+.one-third-div {
+    width: 32%;
+    box-shadow: none;
+    transition: box-shadow none;
+    -webkit-transition: box-shadow none;
+    -moz-transition: box-shadow none;
+}
+
