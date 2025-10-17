@@ -110,6 +110,15 @@ def validate_instances(
                     + instance["livelihood_strategy"][2:]  # strategy_type, season, product_id, additional_identifier
                     + [instance["wealth_group"][3]]  # full_name
                 )
+            elif model_name == "WealthGroupCharacteristicValue":
+                instance["natural_key"] = instance["wealth_group"][
+                    :3  # livelihood_zone, reference_year_end_date, wealth_group_category
+                ] + [
+                    instance["wealth_characteristic_id"],
+                    instance["reference_type"],
+                    instance["product_id"] or "",  # Natural key components must be "" rather than None
+                    instance["wealth_group"][3],  # full_name
+                ]
             # The natural key is a list of strings, or possibly numbers, so validate that here to avoid confusing
             # error messages later.
             if "natural_key" not in instance:
@@ -145,7 +154,7 @@ def validate_instances(
                     if column not in instance:
                         error = f"Missing mandatory field {field.name} for {record_reference}"
                         model_errors.append(error)
-                    elif not instance[column]:
+                    elif not instance[column] and not instance[column] == 0:
                         error = f"Missing value for mandatory field {column} for {record_reference}"
                         model_errors.append(error)
                 # Ensure the instances contain valid parent references for foreign keys
@@ -419,13 +428,8 @@ def imported_communities(
     """
     Communities from a BSS, imported to the Django database using a fixture.
     """
-    fixture, metadata = get_fixture_from_instances(community_instances)
-    metadata = import_fixture(fixture)
-
-    return Output(
-        None,
-        metadata=metadata,
-    )
+    output = get_fixture_from_instances(community_instances)
+    return import_fixture(output.value)
 
 
 @asset(partitions_def=bss_instances_partitions_def)
