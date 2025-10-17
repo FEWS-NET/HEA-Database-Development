@@ -382,12 +382,7 @@ def consolidated_fixture(
                 consolidated_instances[model_name] = []
             consolidated_instances[model_name] += instances
 
-    fixture, metadata = get_fixture_from_instances(consolidated_instances)
-
-    return Output(
-        fixture,
-        metadata=metadata,
-    )
+    return get_fixture_from_instances(consolidated_instances)
 
 
 @asset(partitions_def=bss_files_partitions_def)
@@ -403,7 +398,8 @@ def uploaded_baselines(
     Downstream assets apply corrections to the original file and then process
     the contents to create Communities, Wealth Groups, Livelihood Strategies, etc.
     """
-    fixture, metadata = get_fixture_from_instances(baseline_instances)
+    output = get_fixture_from_instances(baseline_instances)
+    fixture = output.value
     metadata = import_fixture(fixture)
 
     # Add the file objects `bss` and `profile_report` FileFields to the model instances
@@ -416,7 +412,7 @@ def uploaded_baselines(
 
     return Output(
         None,
-        metadata=metadata,
+        metadata=metadata.metadata,
     )
 
 
