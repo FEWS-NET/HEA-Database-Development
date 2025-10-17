@@ -543,11 +543,7 @@ def wealth_characteristic_fixture(
     """
     Django fixture for the Livelihood Activities from a BSS.
     """
-    fixture, metadata = get_fixture_from_instances(wealth_characteristic_valid_instances)
-    return Output(
-        fixture,
-        metadata=metadata,
-    )
+    return get_fixture_from_instances(wealth_characteristic_valid_instances)
 
 
 @asset(partitions_def=bss_instances_partitions_def)
