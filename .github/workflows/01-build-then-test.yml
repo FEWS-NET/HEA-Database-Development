@@ -133,10 +133,10 @@ jobs:
     needs:
       - start-runner-test_branch
     container:
-      image: ghcr.io/fews-net/inf/docker:latest
+      image: ghcr.io/american-institutes-for-research/actions-cli:latest
       credentials:
         username: ${{ github.repository_owner }}
-        password: ${{ secrets.GHCR_PAT }}
+        password: ${{ secrets.CR_PAT }}
     defaults:
       run:
         shell: ash --noprofile --norc -eo pipefail {0} # Fail on any non-zero exit code, even in piped commands
@@ -167,7 +167,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
       - name: "Pull previous images to speed up builds"
         run: |
           for SERVICE in ${BUILD_IMAGES}; do (docker pull ${CI_REGISTRY_IMAGE}/${SERVICE}:edge | grep -i -e 'Pulling from' -e Digest -e Status -e Error) || true; done
@@ -276,10 +276,10 @@ jobs:
     needs:
       - start-runner-test_keepdb
     container:
-      image: ghcr.io/fews-net/inf/docker:latest
+      image: ghcr.io/american-institutes-for-research/actions-cli:latest
       credentials:
         username: ${{ github.repository_owner }}
-        password: ${{ secrets.GHCR_PAT }}
+        password: ${{ secrets.CR_PAT }}
     defaults:
       run:
         shell: ash --noprofile --norc -eo pipefail {0} # Fail on any non-zero exit code, even in piped commands
@@ -310,7 +310,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
       - name: "Pull previous images to speed up builds"
         run: |
           for SERVICE in ${BUILD_IMAGES}; do (docker pull ${CI_REGISTRY_IMAGE}/${SERVICE}:edge | grep -i -e 'Pulling from' -e Digest -e Status -e Error) || true; done
@@ -401,10 +401,10 @@ jobs:
     needs:
       - start-runner-test_main
     container:
-      image: ghcr.io/fews-net/inf/docker:latest
+      image: ghcr.io/american-institutes-for-research/actions-cli:latest
       credentials:
         username: ${{ github.repository_owner }}
-        password: ${{ secrets.GHCR_PAT }}
+        password: ${{ secrets.CR_PAT }}
     defaults:
       run:
         shell: ash --noprofile --norc -eo pipefail {0} # Fail on any non-zero exit code, even in piped commands
@@ -435,7 +435,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
       - name: "Pull previous images to speed up builds"
         run: |
           echo Using registry image ${CI_REGISTRY_IMAGE}
@@ -529,10 +529,10 @@ jobs:
     needs:
       - start-runner-test_tag
     container:
-      image: ghcr.io/fews-net/inf/docker:latest
+      image: ghcr.io/american-institutes-for-research/actions-cli:latest
       credentials:
         username: ${{ github.repository_owner }}
-        password: ${{ secrets.GHCR_PAT }}
+        password: ${{ secrets.CR_PAT }}
     defaults:
       run:
         shell: ash --noprofile --norc -eo pipefail {0} # Fail on any non-zero exit code, even in piped commands
@@ -563,7 +563,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
       - uses: "actions/checkout@v4"
         with:
           ssh-key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
