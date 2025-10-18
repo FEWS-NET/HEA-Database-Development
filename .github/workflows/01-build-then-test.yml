@@ -29,7 +29,7 @@ env:
 
 jobs:
   lint:
-    runs-on: [ data ]
+    runs-on: [ fewsnet ]
     container: "python:3.11"
 
     steps:
@@ -51,7 +51,7 @@ jobs:
   start-runner-test_branch:
     if: ${{ !(startsWith(github.ref, 'refs/tags/')) && !(github.ref == 'refs/heads/main') }}
     needs: lint
-    runs-on: [ data ]
+    runs-on: [ fewsnet ]
     outputs:
       label: ${{ steps.start-ec2-runner.outputs.label }}
       ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
@@ -62,24 +62,14 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
       - name: Start EC2 runner test_branch
         id: start-ec2-runner
-        uses: FEWS-NET/ec2-github-runner@1f687d4b786b21bed4ad6f420daddc7665bff857
+        uses: American-Institutes-for-Research/gitops-actions/fewsnet-start-runner@main
         with:
-          mode: start
-          github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-          ec2-image-id: ami-092d88ab9dba1ddc0
-          ec2-instance-type: m5a.large
-          subnet-id: subnet-0f50e5fa11397a87b
-          security-group-id: sg-0c844cef0ffc13cde
-          iam-role-name: data-prod-github-runner-role # optional, requires additional permissions
-          aws-resource-tags: > # optional, requires additional permissions
-            [
-              {"Key": "Name", "Value": "HEA-github-autoscale-runner"},
-              {"Key": "GitHubRepository", "Value": "${{ github.repository }}"}
-            ]
+          gh_personal_access_token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+          project-key: "HEA"
 
   start-runner-test_keepdb:
     needs: lint
-    runs-on: [ data ]
+    runs-on: [ fewsnet ]
     outputs:
       label: ${{ steps.start-ec2-runner.outputs.label }}
       ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
@@ -90,25 +80,15 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
       - name: Start EC2 runner test_keepdb
         id: start-ec2-runner
-        uses: FEWS-NET/ec2-github-runner@1f687d4b786b21bed4ad6f420daddc7665bff857
+        uses: American-Institutes-for-Research/gitops-actions/fewsnet-start-runner@main
         with:
-          mode: start
-          github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-          ec2-image-id: ami-092d88ab9dba1ddc0
-          ec2-instance-type: m5a.large
-          subnet-id: subnet-0f50e5fa11397a87b
-          security-group-id: sg-0c844cef0ffc13cde
-          iam-role-name: data-prod-github-runner-role # optional, requires additional permissions
-          aws-resource-tags: > # optional, requires additional permissions
-            [
-              {"Key": "Name", "Value": "HEA-github-autoscale-runner"},
-              {"Key": "GitHubRepository", "Value": "${{ github.repository }}"}
-            ]
+          gh_personal_access_token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+          project-key: "HEA"
 
   start-runner-test_main:
     if: github.ref == 'refs/heads/main'
     needs: lint
-    runs-on: [ data ]
+    runs-on: [ fewsnet ]
     outputs:
       label: ${{ steps.start-ec2-runner.outputs.label }}
       ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
@@ -119,25 +99,15 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
       - name: Start EC2 runner test_main
         id: start-ec2-runner
-        uses: FEWS-NET/ec2-github-runner@1f687d4b786b21bed4ad6f420daddc7665bff857
+        uses: American-Institutes-for-Research/gitops-actions/fewsnet-start-runner@main
         with:
-          mode: start
-          github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-          ec2-image-id: ami-092d88ab9dba1ddc0
-          ec2-instance-type: m5a.large
-          subnet-id: subnet-0f50e5fa11397a87b
-          security-group-id: sg-0c844cef0ffc13cde
-          iam-role-name: data-prod-github-runner-role # optional, requires additional permissions
-          aws-resource-tags: > # optional, requires additional permissions
-            [
-              {"Key": "Name", "Value": "HEA-github-autoscale-runner"},
-              {"Key": "GitHubRepository", "Value": "${{ github.repository }}"}
-            ]
+          gh_personal_access_token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+          project-key: "HEA"
 
   start-runner-test_tag:
     if: startsWith(github.ref, 'refs/tags/')
     needs: lint
-    runs-on: [ data ]
+    runs-on: [ fewsnet ]
     outputs:
       label: ${{ steps.start-ec2-runner.outputs.label }}
       ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
@@ -148,20 +118,10 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
       - name: Start EC2 runner test_tag
         id: start-ec2-runner
-        uses: FEWS-NET/ec2-github-runner@1f687d4b786b21bed4ad6f420daddc7665bff857
+        uses: American-Institutes-for-Research/gitops-actions/fewsnet-start-runner@main
         with:
-          mode: start
-          github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-          ec2-image-id: ami-092d88ab9dba1ddc0
-          ec2-instance-type: m5a.large
-          subnet-id: subnet-0f50e5fa11397a87b
-          security-group-id: sg-0c844cef0ffc13cde
-          iam-role-name: data-prod-github-runner-role # optional, requires additional permissions
-          aws-resource-tags: > # optional, requires additional permissions
-            [
-              {"Key": "Name", "Value": "HEA-github-autoscale-runner"},
-              {"Key": "GitHubRepository", "Value": "${{ github.repository }}"}
-            ]
+          gh_personal_access_token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+          project-key: "HEA"
 
   test_branch:
     if: ${{ !(startsWith(github.ref, 'refs/tags/')) && !(github.ref == 'refs/heads/main') }}
@@ -694,7 +654,7 @@ jobs:
     needs:
       - start-runner-test_branch # required to get output from the start-runner-test_branch job
       - test_branch # required to wait until the main jobs are done
-    runs-on: [ data ]
+    runs-on: [ fewsnet ]
 
     steps:
       - name: Configure AWS credentials
@@ -702,7 +662,7 @@ jobs:
         with:
           aws-region: ${{ env.AWS_REGION }}
       - name: Stop EC2 runner
-        uses: FEWS-NET/ec2-github-runner@1f687d4b786b21bed4ad6f420daddc7665bff857
+        uses: American-Institutes-for-Research/ec2-github-runner@598310b0225c539534b6ef47575f36404dedf3b1
         with:
           mode: stop
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
@@ -714,7 +674,7 @@ jobs:
     needs:
       - start-runner-test_keepdb # required to get output from the start-runner-test_keepdb job
       - test_keepdb
-    runs-on: [ data ]
+    runs-on: [ fewsnet ]
 
     steps:
       - name: Configure AWS credentials
@@ -722,7 +682,7 @@ jobs:
         with:
           aws-region: ${{ env.AWS_REGION }}
       - name: Stop EC2 runner
-        uses: FEWS-NET/ec2-github-runner@1f687d4b786b21bed4ad6f420daddc7665bff857
+        uses: American-Institutes-for-Research/ec2-github-runner@598310b0225c539534b6ef47575f36404dedf3b1
         with:
           mode: stop
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
@@ -734,7 +694,7 @@ jobs:
     needs:
       - start-runner-test_main # required to get output from the start-runner-test_main job
       - test_main
-    runs-on: [ data ]
+    runs-on: [ fewsnet ]
 
     steps:
       - name: Configure AWS credentials
@@ -742,7 +702,7 @@ jobs:
         with:
           aws-region: ${{ env.AWS_REGION }}
       - name: Stop EC2 runner
-        uses: FEWS-NET/ec2-github-runner@1f687d4b786b21bed4ad6f420daddc7665bff857
+        uses: American-Institutes-for-Research/ec2-github-runner@598310b0225c539534b6ef47575f36404dedf3b1
         with:
           mode: stop
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
@@ -754,7 +714,7 @@ jobs:
     needs:
       - start-runner-test_tag # required to get output from the start-runner-test_tag job
       - test_tag
-    runs-on: [ data ]
+    runs-on: [ fewsnet ]
 
     steps:
       - name: Configure AWS credentials
@@ -762,7 +722,7 @@ jobs:
         with:
           aws-region: ${{ env.AWS_REGION }}
       - name: Stop EC2 runner
-        uses: FEWS-NET/ec2-github-runner@1f687d4b786b21bed4ad6f420daddc7665bff857
+        uses: American-Institutes-for-Research/ec2-github-runner@598310b0225c539534b6ef47575f36404dedf3b1
         with:
           mode: stop
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
