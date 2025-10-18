@@ -133,10 +133,10 @@ jobs:
     needs:
       - start-runner-test_branch
     container:
-      image: ghcr.io/american-institutes-for-research/actions-cli:latest
+      image: airorg/fewsnet-inf:docker-latest
       credentials:
-        username: ${{ github.repository_owner }}
-        password: ${{ secrets.CR_PAT }}
+        username: ${{ secrets.DOCKER_HUB_USERNAME }}
+        password: ${{ secrets.DOCKER_HUB_TOKEN }}
     defaults:
       run:
         shell: ash --noprofile --norc -eo pipefail {0} # Fail on any non-zero exit code, even in piped commands
@@ -276,10 +276,10 @@ jobs:
     needs:
       - start-runner-test_keepdb
     container:
-      image: ghcr.io/american-institutes-for-research/actions-cli:latest
+      image: airorg/fewsnet-inf:docker-latest
       credentials:
-        username: ${{ github.repository_owner }}
-        password: ${{ secrets.CR_PAT }}
+        username: ${{ secrets.DOCKER_HUB_USERNAME }}
+        password: ${{ secrets.DOCKER_HUB_TOKEN }}
     defaults:
       run:
         shell: ash --noprofile --norc -eo pipefail {0} # Fail on any non-zero exit code, even in piped commands
@@ -401,10 +401,10 @@ jobs:
     needs:
       - start-runner-test_main
     container:
-      image: ghcr.io/american-institutes-for-research/actions-cli:latest
+      image: airorg/fewsnet-inf:docker-latest
       credentials:
-        username: ${{ github.repository_owner }}
-        password: ${{ secrets.CR_PAT }}
+        username: ${{ secrets.DOCKER_HUB_USERNAME }}
+        password: ${{ secrets.DOCKER_HUB_TOKEN }}
     defaults:
       run:
         shell: ash --noprofile --norc -eo pipefail {0} # Fail on any non-zero exit code, even in piped commands
@@ -529,10 +529,10 @@ jobs:
     needs:
       - start-runner-test_tag
     container:
-      image: ghcr.io/american-institutes-for-research/actions-cli:latest
+      image: airorg/fewsnet-inf:docker-latest
       credentials:
-        username: ${{ github.repository_owner }}
-        password: ${{ secrets.CR_PAT }}
+        username: ${{ secrets.DOCKER_HUB_USERNAME }}
+        password: ${{ secrets.DOCKER_HUB_TOKEN }}
     defaults:
       run:
         shell: ash --noprofile --norc -eo pipefail {0} # Fail on any non-zero exit code, even in piped commands
