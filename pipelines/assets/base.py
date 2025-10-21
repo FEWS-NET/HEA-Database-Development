@@ -6,7 +6,6 @@ import numbers
 import os
 from io import BytesIO
 from typing import Optional
-from urllib.parse import urljoin
 
 import django
 import msoffcrypto
@@ -20,7 +19,6 @@ from dagster import (
     EventRecordsFilter,
     MetadataValue,
     Output,
-    OutputContext,
     asset,
 )
 from django.db.models import F
@@ -41,8 +39,6 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hea.settings.production")
 
 # Configure Django with our custom settings before importing any Django classes
 django.setup()
-
-from django.urls import reverse  # NOQA: E402
 
 from baseline.models import LivelihoodZoneBaseline  # NOQA: E402
 from common.lookups import CountryLookup  # NOQA: E402
@@ -613,28 +609,3 @@ def get_summary_bss_label_dataframe(
             ),
         },
     )
-
-
-ENV_DOMAINS = {
-    "lcl": {"scheme": "http", "domain": "localhost:8000"},
-    "dev": {"scheme": "https", "domain": "headev.fews.net"},
-    "tst": {"scheme": "https", "domain": "heastage.fews.net"},
-    "prd": {"scheme": "https", "domain": "hea.fews.net"},
-}
-
-
-def get_asset_download_url(context: "OutputContext") -> str:
-    asset_name = context.asset_key.path[-1]
-    env = os.getenv("ENV", "lcl")
-
-    config = ENV_DOMAINS.get(env, ENV_DOMAINS["lcl"])
-    scheme, domain = config["scheme"], config["domain"]
-
-    kwargs = {"asset_name": asset_name}
-    if context.has_partition_key:
-        kwargs["partition_name"] = context.partition_key
-        relative_url = reverse("asset_download_partitioned", kwargs=kwargs)
-    else:
-        relative_url = reverse("asset_download", kwargs=kwargs)
-
-    return urljoin(f"{scheme}://{domain}", relative_url)

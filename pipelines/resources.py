@@ -1,7 +1,9 @@
 import json
+import os
 import pickle
 from abc import abstractmethod
 from typing import Any, Optional, Type
+from urllib.parse import urljoin
 
 import dagster._check as check
 import pandas as pd
@@ -10,15 +12,50 @@ from dagster import (
     DagsterInvariantViolationError,
     InitResourceContext,
     InputContext,
+    MetadataValue,
     OutputContext,
 )
 from dagster._core.storage.upath_io_manager import UPathIOManager
 from dagster._utils import PICKLE_PROTOCOL
+from django.urls import reverse
 from pydantic.fields import Field
 from upath import UPath
 
+ENV_DOMAINS = {
+    "lcl": {"scheme": "http", "domain": "localhost:8000"},
+    "dev": {"scheme": "https", "domain": "headev.fews.net"},
+    "tst": {"scheme": "https", "domain": "heastage.fews.net"},
+    "prd": {"scheme": "https", "domain": "hea.fews.net"},
+}
 
-class PickleFilesystemIOManager(UPathIOManager):
+
+class DownloadMetadataMixin:
+    """
+    Mixin that adds download URL metadata to any IOManager.
+    Override handle_output to inject download metadata.
+    """
+
+    def get_download_url(self, context: OutputContext) -> str:
+        if not context or not getattr(context, "has_asset_key", False) or not context.has_asset_key:
+            return ""
+
+        asset_name = context.asset_key.path[-1]
+        env = os.getenv("ENV", "lcl")
+
+        config = ENV_DOMAINS.get(env, ENV_DOMAINS["lcl"])
+        scheme, domain = config["scheme"], config["domain"]
+
+        kwargs = {"asset_name": asset_name}
+        if context.has_partition_key:
+            kwargs["partition_name"] = context.partition_key
+            relative_url = reverse("asset_download_partitioned", kwargs=kwargs)
+        else:
+            relative_url = reverse("asset_download", kwargs=kwargs)
+
+        return urljoin(f"{scheme}://{domain}", relative_url)
+
+
+class PickleFilesystemIOManager(UPathIOManager, DownloadMetadataMixin):
     """
     Dagster I/O Manager that serializes Python objects to files using Pickle.
 
@@ -56,8 +93,18 @@ class PickleFilesystemIOManager(UPathIOManager):
         with path.open("rb") as file:
             return pickle.load(file)
 
+    def handle_output(self, context: OutputContext, obj):
+        super().handle_output(context, obj)
+        download_url = self.get_download_url(context)
+        if download_url:
+            context.add_output_metadata(
+                {
+                    "download": MetadataValue.url(download_url),
+                }
+            )
 
-class JSONFilesystemIOManager(UPathIOManager):
+
+class JSONFilesystemIOManager(UPathIOManager, DownloadMetadataMixin):
     """
     Dagster I/O Manager that serializes Python objects to JSON files.
     """
@@ -76,8 +123,18 @@ class JSONFilesystemIOManager(UPathIOManager):
         with path.open("r") as file:
             return json.loads(file.read())
 
+    def handle_output(self, context: OutputContext, obj):
+        super().handle_output(context, obj)
+        download_url = self.get_download_url(context)
+        if download_url:
+            context.add_output_metadata(
+                {
+                    "download": MetadataValue.url(download_url),
+                }
+            )
 
-class DataFrameCSVFilesystemIOManager(UPathIOManager):
+
+class DataFrameCSVFilesystemIOManager(UPathIOManager, DownloadMetadataMixin):
     """
     Dagster I/O Manager that serializes DataFrames to CSV files.
     """
@@ -94,8 +151,18 @@ class DataFrameCSVFilesystemIOManager(UPathIOManager):
     def load_from_path(self, context: InputContext, path: UPath) -> pd.DataFrame:
         return pd.read_csv(path)
 
+    def handle_output(self, context: OutputContext, obj):
+        super().handle_output(context, obj)
+        download_url = self.get_download_url(context)
+        if download_url:
+            context.add_output_metadata(
+                {
+                    "download": MetadataValue.url(download_url),
+                }
+            )
 
-class DataFrameExcelFilesystemIOManager(UPathIOManager):
+
+class DataFrameExcelFilesystemIOManager(UPathIOManager, DownloadMetadataMixin):
     """
     Dagster I/O Manager that serializes DataFrames to Excel .xlsx using the OpenPyXL engine.
 
@@ -150,6 +217,16 @@ class DataFrameExcelFilesystemIOManager(UPathIOManager):
         with pd.ExcelFile(path, engine="openpyxl") as xls:
             return xls.parse(sheet_name=None)  # Get all sheets as a dict
 
+    def handle_output(self, context: OutputContext, obj):
+        super().handle_output(context, obj)
+        download_url = self.get_download_url(context)
+        if download_url:
+            context.add_output_metadata(
+                {
+                    "download": MetadataValue.url(download_url),
+                }
+            )
+
 
 class ConfigurableUPathIOManagerFactory(
     ConfigurableIOManagerFactory[
@@ -190,12 +267,12 @@ class ConfigurableDataFrameExcelFilesystemIOManagerFactory(ConfigurableUPathIOMa
         )
 
 
-class PickleIOManager(ConfigurableUPathIOManagerFactory):
+class PickleIOManager(ConfigurableUPathIOManagerFactory, DownloadMetadataMixin):
     def get_iomanager_class(self) -> Type[UPathIOManager]:
         return PickleFilesystemIOManager
 
 
-class JSONIOManager(ConfigurableUPathIOManagerFactory):
+class JSONIOManager(ConfigurableUPathIOManagerFactory, DownloadMetadataMixin):
     def get_iomanager_class(self) -> Type[UPathIOManager]:
         return JSONFilesystemIOManager
 
