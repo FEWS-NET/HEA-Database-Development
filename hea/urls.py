@@ -49,7 +49,7 @@ from baseline.viewsets import (
     WealthGroupViewSet,
     WildFoodGatheringViewSet,
 )
-from common.views import DagsterProxyView
+from common.views import AssetDownloadView, DagsterProxyView
 from common.viewsets import (
     ClassifiedProductViewSet,
     CountryViewSet,
@@ -141,7 +141,14 @@ urlpatterns += [
         name="livelihood-zone-baseline-faceted-search",
     ),
     re_path(os.environ.get("DAGSTER_WEBSERVER_PREFIX", "pipelines") + r"/(?P<path>.*)", DagsterProxyView.as_view()),
+    path("assetdownload/<str:asset_name>/", AssetDownloadView.as_view(), name="asset_download"),
+    path(
+        "assetdownload/<str:asset_name>/<str:partition_name>/",
+        AssetDownloadView.as_view(),
+        name="asset_download_partitioned",
+    ),
 ]
+
 
 # Django's solution for translating JavaScript apps
 # Provides gettext translation functionality for Javascript clients (and ngettext, pgettext, iterpolate, etc.)
