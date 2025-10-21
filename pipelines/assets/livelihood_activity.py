@@ -66,6 +66,7 @@ from ..partitions import bss_instances_partitions_def
 from ..utils import class_from_name, get_sample_data, prepare_lookup
 from .base import (
     get_all_bss_labels_dataframe,
+    get_asset_download_url,
     get_bss_dataframe,
     get_bss_label_dataframe,
     get_summary_bss_label_dataframe,
@@ -1443,6 +1444,8 @@ def get_annotated_instances_from_dataframe(
             output.metadata["errors"] = output.metadata.pop("errors")
         output.metadata["preview"] = output.metadata.pop("preview")
 
+        download_url = get_asset_download_url(context)
+        output.metadata["download_url"] = MetadataValue.url(download_url)
     return output
 
 
