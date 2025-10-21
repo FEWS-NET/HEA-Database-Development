@@ -15,10 +15,14 @@ class DagsterProxyView(LoginRequiredMixin, PermissionRequiredMixin, ProxyView):
     raise_exception = False
 
 
-class AssetDownloadView(View):
+class AssetDownloadView(LoginRequiredMixin, PermissionRequiredMixin, View):
     """
     A view that generates the s3 url for direct download of materialized assets
     """
+
+    permission_required = "common.access_dagster_ui"
+    login_url = "/admin/login/"
+    raise_exception = False
 
     def get(self, request, asset_name, partition_name=None):
         try:
