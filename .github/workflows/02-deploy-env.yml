@@ -24,7 +24,7 @@ jobs:
   deploy_env:
     # this will allow us to access secrets defined for this environment
     environment: ${{ inputs.environment }}
-    runs-on: [ data ]
+    runs-on: [ fewsnet ]
     container:
       image: alpine:3.17
     defaults:
