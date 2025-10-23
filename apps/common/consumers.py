@@ -20,19 +20,22 @@ class DagsterWebSocketProxyConsumer(AsyncWebsocketConsumer):
             logger.error("Authentication required")
             raise DenyConnection("Authentication required")
 
-        if not self.scope["user"].has_perm("common.access_dagster_ui"):
-            logger.error(f"User {self.scope['user'].username} lacks permission")
+        perm = "common.access_dagster_ui"
+        if not self.scope["user"].has_perm(perm):
+            logger.error(
+                f"User {self.scope['user'].username} lacks permission {perm} for accessing {self.scope['path']}"
+            )
             raise DenyConnection("Permission denied")
 
         logger.info(f"User {self.scope['user'].username} authenticated")
 
         # Build upstream URL
         dagster_url = os.environ.get("DAGSTER_WEBSERVER_URL", "http://localhost:3000")
-        dagster_prefix = os.environ.get("DAGSTER_WEBSERVER_PREFIX", "")
+        dagster_prefix = os.environ.get("DAGSTER_WEBSERVER_PREFIX", "pipelines")
 
         path = self.scope["path"]
-        if path.startswith("/pipelines/"):
-            path = path[len("/pipelines/") :]
+        if path.startswith(f"/{dagster_prefix}/"):
+            path = path[len(f"/{dagster_prefix}/") :]
 
         # Convert http to ws
         if dagster_url.startswith("https://"):
@@ -45,7 +48,6 @@ class DagsterWebSocketProxyConsumer(AsyncWebsocketConsumer):
             target_url = f"{ws_url}/{dagster_prefix}/{path}"
         else:
             target_url = f"{ws_url}/{path}"
-
         # Add query string
         if self.scope.get("query_string"):
             target_url += f"?{self.scope['query_string'].decode()}"
