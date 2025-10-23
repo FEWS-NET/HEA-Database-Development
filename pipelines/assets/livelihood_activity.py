@@ -1337,6 +1337,8 @@ def get_annotated_instances_from_dataframe(
         # Annotate the output metadata with completeness information
         # Get the summary dataframe, grouped by strategy_type
         summary_df = pd.DataFrame(reported_summary_output.value["LivelihoodActivity"])
+        for col in ["income", "expenditure", "kcals_consumed"]:
+            summary_df[col] = pd.to_numeric(summary_df[col], errors="coerce").fillna(0)
         summary_df = (
             summary_df[["strategy_type", "income", "expenditure", "kcals_consumed"]].groupby("strategy_type").sum()
         )
