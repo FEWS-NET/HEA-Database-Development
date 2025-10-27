@@ -30,7 +30,7 @@ from metadata.models import LivelihoodStrategyType  # NOQA: E402
 
 def validate_instances(
     context: AssetExecutionContext, config: BSSMetadataConfig, instances: dict[str, list[dict]], partition_key: str
-) -> tuple[dict[str, list[dict]], dict]:
+) -> Output[dict[str, list[dict]]]:
     """
     Validate the instances for a set of related models, prior to loading them as a fixture.
 
@@ -322,7 +322,7 @@ def get_fixture_from_instances(instance_dict: dict[str, list[dict]]) -> tuple[li
     return Output(fixture, metadata=metadata)
 
 
-def import_fixture(fixture: list[dict]) -> dict:
+def import_fixture(fixture: list[dict]) -> Output[None]:
     """
     Import a Django fixture and return a metadata dictionary.
     """
@@ -436,9 +436,4 @@ def imported_baseline(
     """
     Imported Django fixture for a BSS, added to the Django database.
     """
-    metadata = import_fixture(consolidated_fixture)
-
-    return Output(
-        None,
-        metadata=metadata,
-    )
+    return import_fixture(consolidated_fixture)
