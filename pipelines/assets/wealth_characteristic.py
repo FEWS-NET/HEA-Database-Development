@@ -554,8 +554,4 @@ def imported_wealth_characteristics(
     """
     Imported Django fixtures for a BSS, added to the Django database.
     """
-    metadata = import_fixture(wealth_characteristic_fixture)
-    return Output(
-        None,
-        metadata=metadata,
-    )
+    return import_fixture(wealth_characteristic_fixture)
