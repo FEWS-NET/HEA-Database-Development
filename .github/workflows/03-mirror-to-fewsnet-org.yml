@@ -1,4 +1,4 @@
-name: Mirror to FDW
+name: Mirror to FEWS-NET/HEA-Database-Development
 
 permissions:
   contents: read
