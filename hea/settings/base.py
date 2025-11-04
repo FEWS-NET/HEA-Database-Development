@@ -107,11 +107,12 @@ EXTERNAL_APPS = [
     "binary_database_files",
     "django_extensions",
     "rest_framework_gis",
+    "django_plotly_dash.apps.DjangoPlotlyDashConfig",
     "revproxy",
     "corsheaders",
     "channels",
 ]
-PROJECT_APPS = ["common", "metadata", "baseline"]
+PROJECT_APPS = ["common", "metadata", "baseline", "viz"]
 INSTALLED_APPS = EXTERNAL_APPS + PROJECT_APPS
 
 MIDDLEWARE = [
@@ -127,6 +128,7 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    "django_plotly_dash.middleware.BaseMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
