@@ -71,8 +71,31 @@ class LivelihoodCategoryViewSet(ReferenceDataViewSet):
     serializer_class = LivelihoodCategorySerializer
 
 
+class WealthGroupCategoryFilter(ReferenceDataFilterSet):
+
+    def __init__(self, data=None, queryset=None, *, request=None, prefix=None):
+        # Add default values for ease of filtering, if nothing passed for has_wealthgroups
+        # we will include those that have data, if "all" is passed, all will be available
+        data = data.copy() if data is not None else {}
+        if "has_wealthgroups" not in data or data["has_wealthgroups"] == "":
+            data["has_wealthgroups"] = "true"
+        elif data["has_wealthgroups"] == "all":
+            # Remove the filter — show all
+            data.pop("has_wealthgroups")
+
+        super().__init__(data, queryset, request=request, prefix=prefix)
+
+    has_wealthgroups = filters.BooleanFilter(
+        field_name="wealth_groups",
+        lookup_expr="isnull",
+        exclude=True,
+        label="Has wealth groups",
+    )
+
+
 class WealthGroupCategoryViewSet(ReferenceDataViewSet):
     queryset = WealthGroupCategory.objects.all()
+    filterset_class = WealthGroupCategoryFilter
     serializer_class = WealthGroupCategorySerializer
 
 

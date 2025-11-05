@@ -1,3 +1,4 @@
+import importlib
 import json
 
 from rest_framework.reverse import reverse
@@ -196,3 +197,49 @@ class SeasonViewSetTestCase(APITestCase):
         self.assertIn("end_month", result)
         self.assertEqual(result["start_month"], 7)
         self.assertEqual(result["end_month"], 9)
+
+
+class WealthGroupCategoryTestCase(APITestCase):
+    def setUp(self):
+        self.url = reverse("wealthgroupcategory-list")
+        # Create categories
+        self.cat_with_groups = WealthGroupCategoryFactory()
+        self.cat_without_groups = WealthGroupCategoryFactory()
+
+        # import baseline factory to avoid circular depdnecies
+        module = importlib.import_module("baseline.tests.factories")
+        WealthGroupFactory = getattr(module, "WealthGroupFactory")
+
+        WealthGroupFactory(wealth_group_category=self.cat_with_groups)
+
+    def test_filter_by_has_wealthgroups(self):
+        # test by has_wealthgroups set to true
+        filter_data = {"has_wealthgroups": "true"}
+        response = self.client.get(self.url, filter_data)
+        self.assertEqual(response.status_code, 200)
+        result = json.loads(response.content.decode("utf-8"))
+        self.assertEqual(len(result), 1)
+        self.assertEqual(self.cat_with_groups.name, result[0]["name"])
+
+        # test by has_wealthgroups set to false
+        filter_data = {"has_wealthgroups": "false"}
+        response = self.client.get(self.url, filter_data)
+        self.assertEqual(response.status_code, 200)
+        result = json.loads(response.content.decode("utf-8"))
+        self.assertEqual(len(result), 1)
+        self.assertEqual(self.cat_without_groups.name, result[0]["name"])
+
+        # test by has_wealthgroups set to all
+        filter_data = {"has_wealthgroups": "all"}
+        response = self.client.get(self.url, filter_data)
+        self.assertEqual(response.status_code, 200)
+        result = json.loads(response.content.decode("utf-8"))
+        self.assertEqual(len(result), 2)
+
+        # test by has_wealthgroups set empty value for default filter
+        filter_data = {"has_wealthgroups": ""}
+        response = self.client.get(self.url, filter_data)
+        self.assertEqual(response.status_code, 200)
+        result = json.loads(response.content.decode("utf-8"))
+        self.assertEqual(len(result), 1)
+        self.assertEqual(self.cat_with_groups.name, result[0]["name"])
