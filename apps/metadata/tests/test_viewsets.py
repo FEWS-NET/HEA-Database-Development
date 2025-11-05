@@ -50,7 +50,7 @@ class ReferenceDataViewSetTestCase(APITestCase):
         self.seasonalactivitytype_url = reverse("seasonalactivitytype-list")
         self.wealthcharacteristic_url = reverse("wealthcharacteristic-list")
 
-    def test_list_returns_all_records(self, filter_data={}):
+    def test_list_returns_all_records(self):
         # LivelihoodCategory
         response = self.client.get(self.livelihoodcategory_url)
         self.assertEqual(response.status_code, 200)
