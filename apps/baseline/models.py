@@ -540,6 +540,7 @@ class WealthGroup(common_models.Model):
     )
     wealth_group_category = models.ForeignKey(
         WealthGroupCategory,
+        related_name="wealth_groups",
         db_column="wealth_group_category_code",
         on_delete=models.CASCADE,
         verbose_name=_("Wealth Group Category"),
