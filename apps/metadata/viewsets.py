@@ -1,8 +1,11 @@
+from django.apps import apps
+from django.db.models import Exists, OuterRef, Q
 from django.utils.text import format_lazy
 from django.utils.translation import gettext_lazy as _
 from django_filters import rest_framework as filters
 
 from common.fields import translation_fields
+from common.filters import CaseInsensitiveModelMultipleChoiceFilter
 from common.models import Country
 from common.viewsets import BaseModelViewSet
 from metadata.models import (
@@ -66,24 +69,41 @@ class ReferenceDataViewSet(BaseModelViewSet):
     )
 
 
+class LivelihoodCategoryFilter(ReferenceDataFilterSet):
+
+    has_wealthgroups = filters.BooleanFilter(method="filter_has_wealthgroups")
+    country = CaseInsensitiveModelMultipleChoiceFilter(queryset=Country.objects.all(), method="filter_country")
+
+    def filter_has_wealthgroups(self, queryset, name, value):
+        if value is None:
+            return queryset
+        WealthGroup = apps.get_model("baseline", "WealthGroup")
+        wealth_group_exists = WealthGroup.objects.filter(
+            livelihood_zone_baseline__main_livelihood_category=OuterRef("pk")
+        )
+        if value:
+            return queryset.filter(Exists(wealth_group_exists))
+        else:
+            return queryset.exclude(Exists(wealth_group_exists))
+
+    def filter_country(self, queryset, name, value):
+        if not value:
+            return queryset
+
+        country_queries = Q()
+        for country in value:
+            country_queries |= Q(livelihoodzonebaseline__livelihood_zone__country__iso3166a2__iexact=country.iso3166a2)
+
+        return queryset.filter(country_queries).distinct()
+
+
 class LivelihoodCategoryViewSet(ReferenceDataViewSet):
     queryset = LivelihoodCategory.objects.all()
     serializer_class = LivelihoodCategorySerializer
+    filterset_class = LivelihoodCategoryFilter
 
 
 class WealthGroupCategoryFilter(ReferenceDataFilterSet):
-
-    def __init__(self, data=None, queryset=None, *, request=None, prefix=None):
-        # Add default values for ease of filtering, if nothing passed for has_wealthgroups
-        # we will include those that have data, if "all" is passed, all will be available
-        data = data.copy() if data is not None else {}
-        if "has_wealthgroups" not in data or data["has_wealthgroups"] == "":
-            data["has_wealthgroups"] = "true"
-        elif data["has_wealthgroups"] == "all":
-            # Remove the filter — show all
-            data.pop("has_wealthgroups")
-
-        super().__init__(data, queryset, request=request, prefix=prefix)
 
     has_wealthgroups = filters.BooleanFilter(
         field_name="wealth_groups",

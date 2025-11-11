@@ -4,6 +4,7 @@ import json
 from rest_framework.reverse import reverse
 from rest_framework.test import APITestCase
 
+from common.tests.factories import CountryFactory
 from metadata.models import (
     HazardCategory,
     LivelihoodCategory,
@@ -64,8 +65,7 @@ class ReferenceDataViewSetTestCase(APITestCase):
         self.assertEqual(len(result), 2)
 
         # WealthGroupCategory
-        filter_data = {"has_wealthgroups": "all"}
-        response = self.client.get(self.wealthgroupcategory_url, filter_data)
+        response = self.client.get(self.wealthgroupcategory_url)
         self.assertEqual(response.status_code, 200)
         result = json.loads(response.content.decode("utf-8"))
         self.assertEqual(len(result), 3)
@@ -82,7 +82,7 @@ class ReferenceDataViewSetTestCase(APITestCase):
         result = json.loads(response.content.decode("utf-8"))
         self.assertEqual(len(result), 3)
 
-    def _test_search_by_code(self, model_cls, filter_data={}):
+    def _test_search_by_code(self, model_cls):
         # Test search by code for each model
         url = reverse(f"{model_cls._meta.model_name}-list")
         # Sort queryset, so that test results are deterministic and don't depend on random ordering of query results.
@@ -90,30 +90,27 @@ class ReferenceDataViewSetTestCase(APITestCase):
         # Likewise "Poor" matches "Very Poor". Max code is "VP" so shouldn't match other instances or fields, and
         # because the test is now deterministic, this will reliably fail if a factory change breaks this assumption.
         sought_instance = model_cls.objects.order_by("-code").first()
-        search_filter = {"search": sought_instance.code, **filter_data}
-        response = self.client.get(url, search_filter)
+        response = self.client.get(url, {"search": sought_instance.code})
         self.assertEqual(response.status_code, 200)
         result = response.json()
         self.assertEqual(len(result), 1, f"Code {sought_instance.code}")
         self.assertEqual(sought_instance.code, result[0]["code"])
 
-    def _test_search_by_name(self, model_cls, filter_data={}):
+    def _test_search_by_name(self, model_cls):
         # Test search by name for each model
         url = reverse(f"{model_cls._meta.model_name}-list")
         sought_instance = model_cls.objects.order_by("-code").first()
-        search_filter = {"search": sought_instance.name_pt, **filter_data}
-        response = self.client.get(url, search_filter)
+        response = self.client.get(url, {"search": sought_instance.name_pt})
         self.assertEqual(response.status_code, 200)
         result = response.json()
         self.assertEqual(len(result), 1)
         self.assertEqual(sought_instance.code, result[0]["code"])
 
-    def _test_filter_by_name(self, model_cls, filter_data={}):
+    def _test_filter_by_name(self, model_cls):
         # Test filter by name for each model
         url = reverse(f"{model_cls._meta.model_name}-list")
         sought_instance = model_cls.objects.order_by("-code").first()
-        search_filter = {"search": sought_instance.name_pt, **filter_data}
-        response = self.client.get(url, search_filter)
+        response = self.client.get(url, {"name_pt": sought_instance.name_pt})
         self.assertEqual(response.status_code, 200)
         result = response.json()
         self.assertEqual(len(result), 1)
@@ -129,13 +126,10 @@ class ReferenceDataViewSetTestCase(APITestCase):
         ]
 
         for model_cls in models_to_test:
-            filter_data = {}
-            if model_cls == WealthGroupCategory:
-                filter_data = {"has_wealthgroups": "all"}
             with self.subTest(model=model_cls):
-                self._test_search_by_code(model_cls, filter_data)
-                self._test_search_by_name(model_cls, filter_data)
-                self._test_filter_by_name(model_cls, filter_data)
+                self._test_search_by_code(model_cls)
+                self._test_search_by_name(model_cls)
+                self._test_filter_by_name(model_cls)
 
     def test_seasonalactivitytype_filter_by_activity_category(self):
         response = self.client.get(
@@ -206,7 +200,7 @@ class SeasonViewSetTestCase(APITestCase):
         self.assertEqual(result["end_month"], 9)
 
 
-class WealthGroupCategoryTestCase(APITestCase):
+class WealthGroupCategoryViewSetTestCase(APITestCase):
     def setUp(self):
         self.url = reverse("wealthgroupcategory-list")
         # Create categories
@@ -236,17 +230,88 @@ class WealthGroupCategoryTestCase(APITestCase):
         self.assertEqual(len(result), 1)
         self.assertEqual(self.cat_without_groups.name, result[0]["name"])
 
-        # test by has_wealthgroups set to all
-        filter_data = {"has_wealthgroups": "all"}
-        response = self.client.get(self.url, filter_data)
+        # test list all without has_wealthgroups
+        response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         result = json.loads(response.content.decode("utf-8"))
         self.assertEqual(len(result), 2)
 
-        # test by has_wealthgroups set empty value for default filter
-        filter_data = {"has_wealthgroups": ""}
+
+class LivelihoodCategoryViewSetTestCase(APITestCase):
+    def setUp(self):
+        self.url = reverse("livelihoodcategory-list")
+        # Create livelihood categories
+        self.livelihood_category_with_groups = LivelihoodCategoryFactory()
+        self.livelihood_category_without_groups = LivelihoodCategoryFactory()
+
+        # import baseline factory to avoid circular depdnecies
+        module = importlib.import_module("baseline.tests.factories")
+        WealthGroupFactory = getattr(module, "WealthGroupFactory")
+
+        self.country_a = CountryFactory(
+            iso3166a2="AA",
+            iso3166a3="AAA",
+            iso3166n3=911,
+            iso_en_ro_name="A Country",
+            iso_en_name="AA Country",
+            name="AA Country",
+        )
+        self.country_b = CountryFactory(
+            iso3166a2="BB",
+            iso3166a3="BBB",
+            iso3166n3=912,
+            iso_en_ro_name="B Country",
+            iso_en_name="BB Country",
+            name="BB Country",
+        )
+        WealthGroupFactory(livelihood_zone_baseline__main_livelihood_category=self.livelihood_category_with_groups)
+        WealthGroupFactory(
+            livelihood_zone_baseline__main_livelihood_category=self.livelihood_category_with_groups,
+            livelihood_zone_baseline__livelihood_zone__country=self.country_a,
+        )
+
+    def test_filter_by_has_wealthgroups(self):
+        # test by has_wealthgroups set to true
+        filter_data = {"has_wealthgroups": "true"}
         response = self.client.get(self.url, filter_data)
         self.assertEqual(response.status_code, 200)
         result = json.loads(response.content.decode("utf-8"))
         self.assertEqual(len(result), 1)
-        self.assertEqual(self.cat_with_groups.name, result[0]["name"])
+        self.assertEqual(self.livelihood_category_with_groups.name, result[0]["name"])
+
+        # test by has_wealthgroups set to false
+        filter_data = {"has_wealthgroups": "false"}
+        response = self.client.get(self.url, filter_data)
+        self.assertEqual(response.status_code, 200)
+        result = json.loads(response.content.decode("utf-8"))
+        self.assertEqual(len(result), 1)
+        self.assertEqual(self.livelihood_category_without_groups.name, result[0]["name"])
+
+        # test by all returns without filtering
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        result = json.loads(response.content.decode("utf-8"))
+        self.assertEqual(len(result), 2)
+
+    def test_filter_by_country(self):
+
+        # test filter by country
+        filter_data = {"country": self.country_a.iso3166a2}
+        response = self.client.get(self.url, filter_data)
+        self.assertEqual(response.status_code, 200)
+        result = json.loads(response.content.decode("utf-8"))
+        self.assertEqual(len(result), 1)
+        self.assertEqual(self.livelihood_category_with_groups.name, result[0]["name"])
+
+        filter_data = {"country": self.country_b.iso3166a2}
+        response = self.client.get(self.url, filter_data)
+        self.assertEqual(response.status_code, 200)
+        result = json.loads(response.content.decode("utf-8"))
+        self.assertEqual(len(result), 0)
+
+        filter_data = {"country": self.country_a.iso3166a2.lower()}
+        response = self.client.get(self.url, filter_data)
+        self.assertEqual(response.status_code, 200)
+        result = json.loads(response.content.decode("utf-8"))
+        self.assertEqual(len(result), 1)
+        self.assertEqual(self.livelihood_category_with_groups.name, result[0]["name"])
