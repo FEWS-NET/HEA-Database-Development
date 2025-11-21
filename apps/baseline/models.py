@@ -345,41 +345,6 @@ class LivelihoodZoneBaselineCorrection(common_models.Model):
         ]
 
 
-# @TODO Decide whether to change the name of this model when we review the
-# LIAS and finalize models for expandability and coping. Ideally we want to be
-# able to identify Livelihood Activities that are produce staple foods, and/or
-# are part of the different baskets.
-class LivelihoodProductCategory(common_models.Model):
-    """
-    The usage category of the Product in the Livelihood Zone, such as staple food or livelihood protection.
-    """
-
-    class ProductBasket(models.IntegerChoices):
-        MAIN_STAPLE = 1, _("Main Staple")
-        OTHER_STAPLE = 2, _("Other Staple")
-        SURVIVAL_NON_FOOD = 3, _("Non-food survival")
-        LIVELIHOODS_PROTECTION = 4, _("Livelihoods Protection")
-
-    livelihood_zone_baseline = models.ForeignKey(
-        LivelihoodZoneBaseline,
-        on_delete=models.RESTRICT,
-        related_name="staple_foods",
-        verbose_name=_("Livelihood Zone Baseline"),
-    )
-    product = models.ForeignKey(
-        ClassifiedProduct,
-        db_column="product_code",
-        on_delete=models.RESTRICT,
-        related_name="staple_foods",
-        verbose_name=_("Product"),
-    )
-    basket = models.PositiveSmallIntegerField(choices=ProductBasket.choices, verbose_name=_("Product Basket"))
-
-    class Meta:
-        verbose_name = _("Livelihood Product Category")
-        verbose_name_plural = _("Livelihood Product Categories")
-
-
 class CommunityManager(common_models.IdentifierManager):
     def get_by_natural_key(self, code: str, reference_year_end_date: str, full_name: str):
         try:
@@ -1398,6 +1363,52 @@ class ResponseLivelihoodActivity(LivelihoodActivity):
         verbose_name = _("Response Livelihood Activity")
         verbose_name_plural = _("Response Livelihood Activities")
         proxy = True
+
+
+# @TODO Decide whether to change the name of this model when we review the
+# LIAS and finalize models for expandability and coping. Ideally we want to be
+# able to identify Livelihood Activities that are produce staple foods, and/or
+# are part of the different baskets.
+class LivelihoodProductCategory(common_models.Model):
+    """
+    The usage category of the Product in the Livelihood Zone, such as staple food or livelihood protection.
+    """
+
+    class ProductBasket(models.IntegerChoices):
+        MAIN_STAPLE = 1, _("Main Staple")
+        OTHER_STAPLE = 2, _("Other Staple")
+        SURVIVAL_NON_FOOD = 3, _("Non-food survival")
+        LIVELIHOODS_PROTECTION = 4, _("Livelihoods Protection")
+
+    baseline_livelihood_activity = models.ForeignKey(
+        BaselineLivelihoodActivity,
+        on_delete=models.RESTRICT,
+        verbose_name=_("Baseline Livelihood Activity"),
+    )
+    basket = models.PositiveSmallIntegerField(choices=ProductBasket.choices, verbose_name=_("Product Basket"))
+    percentage_allocation_to_basket = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+        verbose_name=_("Percentage allocation to basket"),
+        help_text=_(
+            "The percentage of expenditure or kcals from the Livelihood Activity that is allocated to this Basket. The remainder is implicitly part of the 'Other' basket"
+        ),
+    )
+
+    def clean(self):
+        super().clean()
+        if self.percentage_allocation_to_basket and self.percentage_allocation_to_basket > 100:
+            raise ValidationError(
+                {
+                    "percentage_allocation_to_basket": _(
+                        f"Percentage allocation cannot exceed 100%. Got: {self.percentage_allocation_to_basket}%"
+                    )
+                }
+            )
+
+    class Meta:
+        verbose_name = _("Livelihood Product Category")
+        verbose_name_plural = _("Livelihood Product Categories")
 
 
 class MilkProduction(LivelihoodActivity):

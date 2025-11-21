@@ -271,8 +271,7 @@ class LivelihoodProductCategoryFilterSet(filters.FilterSet):
     class Meta:
         model = LivelihoodProductCategory
         fields = [
-            "livelihood_zone_baseline",
-            "product",
+            "baseline_livelihood_activity",
             "basket",
         ]
 
@@ -283,8 +282,9 @@ class LivelihoodProductCategoryViewSet(BaseModelViewSet):
     """
 
     queryset = LivelihoodProductCategory.objects.select_related(
-        "livelihood_zone_baseline__livelihood_zone__country",
-        "livelihood_zone_baseline__source_organization",
+        "baseline_livelihood_activity__livelihood_zone_baseline__livelihood_zone__country",
+        "baseline_livelihood_activity__livelihood_zone_baseline__source_organization",
+        "baseline_livelihood_activity__livelihood_strategy__product",
     )
     serializer_class = LivelihoodProductCategorySerializer
     filterset_class = LivelihoodProductCategoryFilterSet

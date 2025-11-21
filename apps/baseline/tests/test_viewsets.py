@@ -711,7 +711,7 @@ class LivelihoodProductCategoryViewSetTestCase(APITestCase):
             "id",
             "source_organization",
             "source_organization_name",
-            "livelihood_zone_baseline",
+            "baseline_livelihood_activity",
             "livelihood_zone_baseline_label",
             "livelihood_zone",
             "livelihood_zone_name",
@@ -722,6 +722,7 @@ class LivelihoodProductCategoryViewSetTestCase(APITestCase):
             "product_description",
             "basket",
             "basket_name",
+            "percentage_allocation_to_basket",
         )
         self.assertCountEqual(
             response.json().keys(),
@@ -765,8 +766,7 @@ class LivelihoodProductCategoryViewSetTestCase(APITestCase):
         response = self.client.get(
             self.url,
             {
-                "livelihood_zone_baseline": self.data[0].livelihood_zone_baseline.pk,
-                "product": self.data[0].product.pk,
+                "baseline_livelihood_activity": self.data[0].baseline_livelihood_activity.pk,
                 "basket": self.data[0].basket,
             },
         )
