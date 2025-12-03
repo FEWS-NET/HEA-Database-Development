@@ -1,8 +1,11 @@
+from django.apps import apps
+from django.db.models import Exists, OuterRef, Q
 from django.utils.text import format_lazy
 from django.utils.translation import gettext_lazy as _
 from django_filters import rest_framework as filters
 
 from common.fields import translation_fields
+from common.filters import CaseInsensitiveModelMultipleChoiceFilter
 from common.models import Country
 from common.viewsets import BaseModelViewSet
 from metadata.models import (
@@ -66,13 +69,53 @@ class ReferenceDataViewSet(BaseModelViewSet):
     )
 
 
+class LivelihoodCategoryFilter(ReferenceDataFilterSet):
+
+    has_wealthgroups = filters.BooleanFilter(method="filter_has_wealthgroups")
+    country = CaseInsensitiveModelMultipleChoiceFilter(queryset=Country.objects.all(), method="filter_country")
+
+    def filter_has_wealthgroups(self, queryset, name, value):
+        if value is None:
+            return queryset
+        WealthGroup = apps.get_model("baseline", "WealthGroup")
+        wealth_group_exists = WealthGroup.objects.filter(
+            livelihood_zone_baseline__main_livelihood_category=OuterRef("pk")
+        )
+        if value:
+            return queryset.filter(Exists(wealth_group_exists))
+        else:
+            return queryset.exclude(Exists(wealth_group_exists))
+
+    def filter_country(self, queryset, name, value):
+        if not value:
+            return queryset
+
+        country_queries = Q()
+        for country in value:
+            country_queries |= Q(livelihoodzonebaseline__livelihood_zone__country__iso3166a2__iexact=country.iso3166a2)
+
+        return queryset.filter(country_queries).distinct()
+
+
 class LivelihoodCategoryViewSet(ReferenceDataViewSet):
     queryset = LivelihoodCategory.objects.all()
     serializer_class = LivelihoodCategorySerializer
+    filterset_class = LivelihoodCategoryFilter
+
+
+class WealthGroupCategoryFilter(ReferenceDataFilterSet):
+
+    has_wealthgroups = filters.BooleanFilter(
+        field_name="wealth_groups",
+        lookup_expr="isnull",
+        exclude=True,
+        label="Has wealth groups",
+    )
 
 
 class WealthGroupCategoryViewSet(ReferenceDataViewSet):
     queryset = WealthGroupCategory.objects.all()
+    filterset_class = WealthGroupCategoryFilter
     serializer_class = WealthGroupCategorySerializer
 
 
