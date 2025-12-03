@@ -432,7 +432,7 @@ def livelihood_activity_label_recognition_dataframe(
     all_other_cash_income_labels_dataframe: pd.DataFrame,
     all_wild_foods_labels_dataframe: pd.DataFrame,
     all_livelihood_summary_labels_dataframe: pd.DataFrame,
-):
+) -> Output[dict[str, pd.DataFrame]]:
     """
     A saved spreadsheet showing how each BSS label is recognized, either from the ActivityLabel model or a regex.
     """
@@ -570,8 +570,34 @@ def livelihood_activity_label_recognition_dataframe(
         how="inner",
     )
 
-    # Save the dataframes to an Excel workbook
-    return {"Label Summary": summary_label_df, "All Labels": all_labels_df}
+    return Output(
+        {"Label Summary": summary_label_df, "All Labels": all_labels_df},
+        metadata={
+            "num_labels": len(all_labels_df),
+            "num_distinct_labels": len(summary_label_df),
+            "num_used_labels": len(summary_label_df[summary_label_df["datapoint_count"] > 0]),
+            "num_recognized_labels": len(summary_label_df[summary_label_df["activity_label"] != ""]),
+            "pct_recognized_labels": (
+                round(len(summary_label_df[summary_label_df["activity_label"] != ""]) / len(summary_label_df) * 100, 1)
+                if len(summary_label_df) > 0
+                else 0
+            ),
+            "pct_recognized_used_labels": (
+                round(
+                    len(
+                        summary_label_df[
+                            (summary_label_df["datapoint_count"] > 0) & (summary_label_df["activity_label"] != "")
+                        ]
+                    )
+                    / len(summary_label_df[summary_label_df["datapoint_count"] > 0])
+                    * 100,
+                    1,
+                )
+                if len(summary_label_df) > 0
+                else 0
+            ),
+        },
+    )
 
 
 def get_instances_from_dataframe(
@@ -642,15 +668,15 @@ def get_instances_from_dataframe(
         # Keep the same shape as the non-empty case (label, rows, datapoint_count, in_summary)
         unrecognized_labels = pd.DataFrame(columns=["label", "rows", "datapoint_count", "in_summary"])
     else:
-        # Boolean mask of which cells are numeric (coerce non-numeric to NaN then notna)
-        numeric_mask = unrecognized_labels.loc[:, "B":].apply(lambda col: pd.to_numeric(col, errors="coerce").notna())
-        # Count numeric datapoints per row
-        unrecognized_labels["datapoint_count"] = numeric_mask.sum(axis=1)
-        # Count numeric datapoints per row that are in the summary columns
-        summary_numeric_mask = unrecognized_labels.loc[:, summary_columns].apply(
-            lambda col: pd.to_numeric(col, errors="coerce").notna()
+        # Boolean mask of which cells are used
+        # Count datapoints per row
+        unrecognized_labels["datapoint_count"] = unrecognized_labels.loc[:, "B":].apply(
+            lambda row: sum((row != 0) & (row != "")), axis="columns"
         )
-        unrecognized_labels["summary_datapoint_count"] = summary_numeric_mask.sum(axis=1)
+        # Count datapoints per row that are in the summary columns
+        unrecognized_labels["summary_datapoint_count"] = unrecognized_labels.loc[:, summary_columns].apply(
+            lambda row: sum((row != 0) & (row != "")), axis="columns"
+        )
         # Aggregate datapoint count by label
         unrecognized_labels.loc[:, "label"] = prepare_lookup(unrecognized_labels["A"])
         unrecognized_labels = (
@@ -1396,7 +1422,25 @@ def get_instances_from_dataframe(
         "pct_rows_recognized": round(
             (
                 1
-                - len(df.iloc[num_header_rows:][df.iloc[num_header_rows:]["A"].isin(unrecognized_labels["label"])])
+                - len(
+                    df.iloc[num_header_rows:][
+                        prepare_lookup(df.iloc[num_header_rows:]["A"]).isin(unrecognized_labels["label"])
+                    ]
+                )
+                / len(df.iloc[num_header_rows:])
+            )
+            * 100
+        ),
+        "pct_used_rows_recognized": round(
+            (
+                1
+                - len(
+                    df.iloc[num_header_rows:][
+                        prepare_lookup(df.iloc[num_header_rows:]["A"]).isin(
+                            unrecognized_labels[unrecognized_labels["datapoints"] > 0]["label"]
+                        )
+                    ]
+                )
                 / len(df.iloc[num_header_rows:])
             )
             * 100
