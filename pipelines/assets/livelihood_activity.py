@@ -394,8 +394,34 @@ def get_all_label_attributes(labels: pd.Series, activity_type: str, country_code
         all_label_attributes["country_id"] = country_code
         all_label_attributes = seasonnamelookup.do_lookup(all_label_attributes, "season", "season")
         all_label_attributes["season"] = all_label_attributes["season"].replace(pd.NA, None)
+
     # Make sure we keep the same index so we can match by row number
     all_label_attributes.index = labels.index
+
+    # Sometimes, particularly for FoodPurchase, OtherExpenditure and OtherCashIncome, the label in column A
+    # is the name of a Product, or an alias for one, with no other text. Therefore, for labels where we haven't
+    # identified any attributes, we attempt to match the label as a Product name.  If we find a match, we set the
+    # `activity_label` and the `additional_identifier` to the text of the label and set the `product_id`. We set the
+    # `additional_identifier` so that we can differentiate between aggregate Livelihood Strategies under a high-level
+    # Classified Product, e.g. Skilled Labor, without losing the specific text that was provided in the BSS.
+    product_labels = labels[all_label_attributes["activity_label"] == ""].to_frame(name="label")
+    product_labels = classifiedproductlookup.do_lookup(product_labels, "label", "product_id")
+    # Set the activity_label so that get_instances_from_dataframe() doesn't treat these as unrecognized labels
+    product_labels.loc[product_labels["product_id"].notna(), "activity_label"] = product_labels.loc[
+        product_labels["product_id"].notna(), "label"
+    ]
+    # Set the additional_identifier so that we can differentiate between different labels that map to the same product
+    product_labels.loc[product_labels["product_id"].notna(), "additional_identifier"] = product_labels.loc[
+        product_labels["product_id"].notna(), "label"
+    ]
+    # Labels that contain just a product name or alias and weren't recognized by an Activity Label or regular
+    # expression always indicate a new Livelihood Strategy with the values in the row containing income or expenditure,
+    # depending on the Livelihood Strategy.
+    product_labels.loc[product_labels["product_id"].notna(), "is_start"] = True
+    product_labels.loc[product_labels["product_id"].notna(), "attribute"] = "income_or_expenditure"
+    # Copy the product labels back into the main dataframe
+    all_label_attributes.update(product_labels.drop(columns=["label"]))
+
     return all_label_attributes
 
 
@@ -1113,6 +1139,19 @@ def get_instances_from_dataframe(
                         activity_attribute = "unit_multiple"
                     elif livelihood_strategy["strategy_type"] == LivelihoodStrategyType.OTHER_CASH_INCOME:
                         activity_attribute = "payment_per_time"
+                    else:
+                        errors.append(
+                            "Invalid strategy_type %s for attribute %s from label '%s'"
+                            % (strategy_type, activity_attribute, label)
+                        )
+                        activity_attribute = None
+                elif activity_attribute == "income_or_expenditure":
+                    if livelihood_strategy["strategy_type"] == LivelihoodStrategyType.FOOD_PURCHASE:
+                        activity_attribute = "expenditure"
+                    elif livelihood_strategy["strategy_type"] == LivelihoodStrategyType.OTHER_PURCHASE:
+                        activity_attribute = "expenditure"
+                    elif livelihood_strategy["strategy_type"] == LivelihoodStrategyType.OTHER_CASH_INCOME:
+                        activity_attribute = "income"
                     else:
                         errors.append(
                             "Invalid strategy_type %s for attribute %s from label '%s'"
