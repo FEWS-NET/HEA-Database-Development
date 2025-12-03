@@ -59,7 +59,6 @@ import django
 import pandas as pd
 from dagster import AssetExecutionContext, MetadataValue, Output, asset
 from django.db.models.functions import Lower
-from upath import UPath
 
 from ..configs import BSSMetadataConfig
 from ..partitions import bss_instances_partitions_def
@@ -425,7 +424,7 @@ def get_all_label_attributes(labels: pd.Series, activity_type: str, country_code
     return all_label_attributes
 
 
-@asset
+@asset(io_manager_key="dataframe_excel_io_manager")
 def livelihood_activity_label_recognition_dataframe(
     context: AssetExecutionContext,
     config: BSSMetadataConfig,
@@ -437,9 +436,6 @@ def livelihood_activity_label_recognition_dataframe(
     """
     A saved spreadsheet showing how each BSS label is recognized, either from the ActivityLabel model or a regex.
     """
-    # Path to the output spreadsheet
-    p = UPath(config.bss_label_recognition_workbook, **config.bss_label_recognition_storage_options)
-
     all_livelihood_activity_labels_dataframe["activity_type"] = (
         ActivityLabel.LivelihoodActivityType.LIVELIHOOD_ACTIVITY
     )
@@ -447,16 +443,26 @@ def livelihood_activity_label_recognition_dataframe(
     all_wild_foods_labels_dataframe["activity_type"] = ActivityLabel.LivelihoodActivityType.WILD_FOODS
     all_livelihood_summary_labels_dataframe["activity_type"] = ActivityLabel.LivelihoodActivityType.LIVELIHOOD_SUMMARY
 
-    # Build a dataframe of all the Activity Labels from all BSSs
-    all_labels_df = pd.concat(
-        [
-            all_livelihood_activity_labels_dataframe,
-            all_other_cash_income_labels_dataframe,
-            all_wild_foods_labels_dataframe,
-            all_livelihood_summary_labels_dataframe,
-        ],
-        ignore_index=True,
-    )
+    # Build a dataframe of all the Activity Labels from all BSSs, including the attributes recognized from the labels,
+    # including any labels that are matched directly as Products.
+    all_labels_df = pd.DataFrame()
+    for summary_label_df in [
+        all_livelihood_activity_labels_dataframe,
+        all_other_cash_income_labels_dataframe,
+        all_wild_foods_labels_dataframe,
+        all_livelihood_summary_labels_dataframe,
+    ]:
+        recognized_attributes_df = get_all_label_attributes(
+            summary_label_df["label"],
+            summary_label_df["activity_type"].iloc[0],
+            country_code=None,  # We don't need the Season lookup for this asset
+        )
+        # Join the recognized attributes to the label dataframe
+        summary_label_df = summary_label_df.join(
+            recognized_attributes_df,
+            how="left",
+        )
+        all_labels_df = pd.concat([all_labels_df, summary_label_df], ignore_index=True)
 
     # Add the regular expressions
     regex_attributes_df = pd.DataFrame.from_records(
@@ -465,6 +471,8 @@ def livelihood_activity_label_recognition_dataframe(
     all_labels_df = all_labels_df.join(
         regex_attributes_df,
         how="left",
+        lsuffix="",
+        rsuffix="_regex",
     )
 
     # Add the labels from the database
@@ -488,23 +496,82 @@ def livelihood_activity_label_recognition_dataframe(
         db_labels_df.set_index(["label_lower", "activity_type"]),
         on=("label_lower", "activity_type"),
         how="left",
+        lsuffix="",
         rsuffix="_db",
-        lsuffix="_regex",
     )
 
-    # GDriveFS doesn't support updating existing files, it always create a new file with same name.
-    # This leads to multiple files with the same name in the folder, so we delete any existing files first.
-    if p.exists():
-        # @TODO This doesn't work with the current version of gdrivefs, possibly because of an error
-        # with accessing Shared Drives. For now, we need to manually delete the old files before running
-        # the asset again.
-        # We need to experiment and possibly create a custom gdrivefs that reuses code from KiLuigi's GoogleDriveTarget
-        p.unlink()
+    # Create a deduplicated dataframe of all of the labels
+    summary_label_df = all_labels_df.sort_values(by=["label_lower", "row_number", "bss"])
+    summary_label_df = (
+        summary_label_df.groupby(
+            "label_lower",
+        )
+        .agg(
+            langs=(
+                "lang",
+                lambda x: ", ".join(x.sort_values().unique()),
+            ),  # Create comma-separated list of unique languages
+            datapoint_count_sum=("datapoint_count", "sum"),
+            in_summary_sum=("in_summary", "sum"),
+            unique_bss_count=("bss", pd.Series.nunique),
+            min_row_number=("row_number", "min"),
+            max_row_number=("row_number", "max"),
+            bss_for_min_row=("bss", "first"),  # Assuming df is sorted by row_number within each group
+            bss_for_max_row=("bss", "last"),  # Assuming df is sorted by row_number within each group
+        )
+        .reset_index()
+    )
+    summary_label_df = summary_label_df.sort_values(
+        by=["min_row_number", "label_lower", "bss_for_min_row", "bss_for_max_row"]
+    )
+    summary_label_df = summary_label_df.rename(
+        columns={"label_lower": "label", "datapoint_count_sum": "datapoint_count", "in_summary_sum": "summary_count"}
+    )
+    summary_label_df = summary_label_df.join(
+        all_labels_df[
+            [
+                "label_lower",
+                "activity_type",
+                "activity_label",
+                "strategy_type",
+                "is_start",
+                "product_id_original",
+                "unit_of_measure_id_original",
+                "season",
+                "additional_identifier",
+                "attribute",
+                "notes",
+                "product_id",
+                "unit_of_measure_id",
+                "activity_label_regex",
+                "strategy_type_regex",
+                "is_start_regex",
+                "product_id_regex",
+                "unit_of_measure_id_regex",
+                "season_regex",
+                "additional_identifier_regex",
+                "attribute_regex",
+                "notes_regex",
+                "status",
+                "strategy_type_db",
+                "is_start_db",
+                "product_id_db",
+                "unit_of_measure_id_db",
+                "currency_id",
+                "season_db",
+                "additional_identifier_db",
+                "attribute_db",
+                "notes_db",
+            ]
+        ]
+        .drop_duplicates()
+        .set_index("label_lower"),
+        on="label",
+        how="inner",
+    )
 
-    # Save the dataframe to an Excel workbook
-    with p.fs.open(p.path, mode="wb") as f:
-        with pd.ExcelWriter(f, engine="openpyxl") as writer:
-            all_labels_df.to_excel(writer, index=False, sheet_name="All Labels")
+    # Save the dataframes to an Excel workbook
+    return {"Label Summary": summary_label_df, "All Labels": all_labels_df}
 
 
 def get_instances_from_dataframe(
