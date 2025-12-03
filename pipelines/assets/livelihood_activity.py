@@ -526,6 +526,11 @@ def get_instances_from_dataframe(
     # Get a dataframe of the Wealth Groups for each column
     wealth_group_df = get_wealth_group_dataframe(df, livelihood_zone_baseline, worksheet_name, partition_key)
 
+    # Summary columns are those with a Wealth Group Category but not a Community
+    summary_columns = wealth_group_df[
+        (wealth_group_df["wealth_group_category"].notnull()) & (wealth_group_df["community"].isnull())
+    ]["bss_column"].tolist()
+
     # Get a dataframe of the attributes for each label in column A
     all_label_attributes = get_all_label_attributes(
         df["A"], activity_type, livelihood_zone_baseline.livelihood_zone.country_id
@@ -536,19 +541,38 @@ def get_instances_from_dataframe(
     # but the matching row in all_label_attributes dataframe has a blank activity_label.
     # Group the resulting dataframe so that we have a label and a list of the rows where it occurs.
     allow_unrecognized_labels = True
-    unrecognized_labels = (
-        df.iloc[num_header_rows:][
-            (df["A"].iloc[num_header_rows:] != "")
-            & (all_label_attributes.iloc[num_header_rows:]["activity_label"] == "")
-        ]
-        .groupby("A")
-        .apply(lambda x: ", ".join(x.index.astype(str)), include_groups=False)
-    )
+    # Identify rows where Column A is non-empty and the label wasn't recognized
+    unrecognized_labels = df.iloc[num_header_rows:][
+        (df["A"].iloc[num_header_rows:] != "") & (all_label_attributes.iloc[num_header_rows:]["activity_label"] == "")
+    ]
     if unrecognized_labels.empty:
-        unrecognized_labels = pd.DataFrame(columns=["label", "rows"])
+        # Keep the same shape as the non-empty case (label, rows, datapoint_count, in_summary)
+        unrecognized_labels = pd.DataFrame(columns=["label", "rows", "datapoint_count", "in_summary"])
     else:
-        unrecognized_labels = unrecognized_labels.reset_index()
-        unrecognized_labels.columns = ["label", "rows"]
+        # Boolean mask of which cells are numeric (coerce non-numeric to NaN then notna)
+        numeric_mask = unrecognized_labels.loc[:, "B":].apply(lambda col: pd.to_numeric(col, errors="coerce").notna())
+        # Count numeric datapoints per row
+        unrecognized_labels["datapoint_count"] = numeric_mask.sum(axis=1)
+        # Count numeric datapoints per row that are in the summary columns
+        summary_numeric_mask = unrecognized_labels.loc[:, summary_columns].apply(
+            lambda col: pd.to_numeric(col, errors="coerce").notna()
+        )
+        unrecognized_labels["summary_datapoint_count"] = summary_numeric_mask.sum(axis=1)
+        # Aggregate datapoint count by label
+        unrecognized_labels.loc[:, "label"] = prepare_lookup(unrecognized_labels["A"])
+        unrecognized_labels = (
+            unrecognized_labels.groupby("label")
+            .agg(
+                rows=("A", lambda x: ",".join(x.index.astype(str))),
+                datapoints=("datapoint_count", "sum"),
+                summary_datapoints=("summary_datapoint_count", "sum"),
+            )
+            .reset_index()
+        )
+        # Sort the rows by the first row number where the label occurs
+        unrecognized_labels = unrecognized_labels.sort_values(
+            by="rows", key=lambda x: x.str.split(",").str.get(0).astype(int)
+        )
         message = "Unrecognized activity labels:\n\n" + unrecognized_labels.to_markdown(index=False)
         if allow_unrecognized_labels:
             context.log.warning(message)
@@ -1006,6 +1030,8 @@ def get_instances_from_dataframe(
 
                 # We are not starting a new Livelihood Strategy, but there may be
                 # additional attributes that need to be added to the current one.
+
+                # If we have attributes but haven't started a livelihood_strategy, then raise an error.
                 if not livelihood_strategy:
                     additional_attributes = [label_attributes["attribute"]] if label_attributes["attribute"] else []
                     for attribute in [
@@ -1023,10 +1049,12 @@ def get_instances_from_dataframe(
                         % (label_attributes["activity_label"], row, ", ".join(additional_attributes))
                     )
 
-                # Only update expected keys, and only if we found a value for that attribute.
+                # Only update expected keys, and only if we found a value for that attribute that doesn't conflict with
+                # an existing value.
                 for attribute, value in label_attributes.items():
                     if attribute in livelihood_strategy and attribute not in ["activity_label", "pattern"] and value:
                         if not livelihood_strategy[attribute]:
+                            # Attribute not yet set for the `livelihood_strategy`, so it is safe to set it.
                             livelihood_strategy[attribute] = value
                             livelihood_strategy["attribute_rows"][attribute] = row
 
