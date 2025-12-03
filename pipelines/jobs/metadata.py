@@ -78,6 +78,7 @@ def load_metadata_for_model(context: OpExecutionContext, sheet_name: str, model:
         for record in df.to_dict(orient="records"):
             cpc = record.pop("cpc")
             if cpc in existing_instances:
+                # For existing Classified Products, prevent updates to the core CPC fields such as cpc and description.
                 instance = existing_instances[cpc]
                 for k, v in record.items():
                     if k in valid_field_names:
@@ -102,17 +103,29 @@ def load_metadata_for_model(context: OpExecutionContext, sheet_name: str, model:
                                     continue
                             setattr(instance, k, v)
             else:
+                # For new Classified Products, place them at the correct place in the CPC hierarchy.
                 if cpc[1:].isnumeric():
                     raise ValueError("Missing real CPC code %s" % cpc)
-                parent_instance = model.objects.get(pk=cpc[:-2])
+                try:
+                    parent_instance = model.objects.get(pk=cpc[:-2])
+                except model.DoesNotExist:
+                    raise ValueError(f"Parent instance with CPC code {cpc[:-2]} for {cpc} does not exist")
                 record = {k: v for k, v in record.items() if k in valid_field_names}
                 record["cpc"] = cpc
                 instance = parent_instance.add_child(**record)
                 context.log.info(f"Created {model_name} {str(instance)} as a child of {str(parent_instance)}")
+        # Do a bulk update to save any changes to editable attributes of existing instances
         num_instances = model.objects.bulk_update(
             existing_instances.values(),
-            fields=record.keys(),
+            fields=[k for k in df.columns if k in valid_field_names and k != model._meta.pk.name],
         )
+        # Report on redundant instances that are in the database but not in the worksheet
+        for instance in model.objects.exclude(pk__in=df["cpc"]):
+            # Only report redundant instances that are HEA products
+            if instance.cpc[-2] == "H":
+                context.log.warning(
+                    f"Redundant {model_name} instance {str(instance)} in database but not in worksheet '{sheet_name}'"
+                )
         context.log.info(f"Updated {num_instances} {sheet_name} instances")
 
     else:
@@ -136,6 +149,8 @@ def load_metadata_for_model(context: OpExecutionContext, sheet_name: str, model:
             keys_df = pd.DataFrame.from_records(
                 model.objects.all().values(model._meta.pk.name, *id_fields)
             )  # NOQA: E501
+            if keys_df.empty:
+                keys_df = pd.DataFrame(columns=[model._meta.pk.name] + id_fields)
             df = df.merge(
                 keys_df,
                 how="left",
