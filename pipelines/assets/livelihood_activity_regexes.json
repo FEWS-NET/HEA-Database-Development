@@ -296,7 +296,13 @@
         "times_per_year"
     ],
     [
-        "{nbr_pattern} (?:people per HH|personnes par ménage|personnes par mènage)",
+        "{product_pattern}{separator_pattern} {nbr_pattern} (?:de )?fois / an(?:née)?",
+        null,
+        false,
+        "times_per_year"
+    ],
+    [
+        "{nbr_pattern} (?:people per hh|personnes par ménage|personnes par mènage|pers par mènage)",
         null,
         false,
         "people_per_household"
@@ -836,6 +842,12 @@
         null
     ],
     [
+        "autre auto-emploi{separator_pattern} ?{product_pattern}",
+        null,
+        true,
+        null
+    ],
+    [
         "(?P<product_id>autres intrants \\(dont location de terre\\))",
         null,
         true,
@@ -860,7 +872,7 @@
         "unit_multiple"
     ],
     [
-        "{product_pattern}{separator_pattern} (?:{nbr_pattern} people per hh|{nbr_pattern} pers par mènage|{nbr_pattern} personnes par mènage)",
+        "{product_pattern}{separator_pattern} {nbr_pattern} (?:people per hh|personnes par ménage|personnes par mènage|pers par mènage)",
         null,
         true,
         "people_per_household"
