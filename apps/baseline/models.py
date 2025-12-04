@@ -1396,17 +1396,6 @@ class LivelihoodProductCategory(common_models.Model):
         ),
     )
 
-    def clean(self):
-        super().clean()
-        if self.percentage_allocation_to_basket and self.percentage_allocation_to_basket > 100:
-            raise ValidationError(
-                {
-                    "percentage_allocation_to_basket": _(
-                        f"Percentage allocation cannot exceed 100%. Got: {self.percentage_allocation_to_basket}%"
-                    )
-                }
-            )
-
     class Meta:
         verbose_name = _("Livelihood Product Category")
         verbose_name_plural = _("Livelihood Product Categories")

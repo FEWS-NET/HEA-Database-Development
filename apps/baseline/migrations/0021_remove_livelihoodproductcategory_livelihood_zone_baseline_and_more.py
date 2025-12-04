@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("baseline", "0019_alter_foodpurchase_times_per_year_and_more"),
+        ("baseline", "0020_alter_wealthgroup_wealth_group_category"),
     ]
 
     operations = [
