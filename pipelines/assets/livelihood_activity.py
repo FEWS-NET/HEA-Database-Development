@@ -802,6 +802,7 @@ def get_instances_from_dataframe(
                         and ("product_id" not in livelihood_strategy or not livelihood_strategy["product_id"])
                         and livelihood_strategy["season"] == season2_name
                         and previous_livelihood_strategy
+                        and "product_id" in previous_livelihood_strategy
                         and previous_livelihood_strategy["product_id"]
                     ):
                         livelihood_strategy["attribute_rows"]["product_id"] = row
