@@ -54,7 +54,7 @@ class DownloadAssetMixin:
         super().handle_output(context, obj)
 
 
-class PickleFilesystemIOManager(UPathIOManager):
+class PickleFilesystemIOManager(DownloadAssetMixin, UPathIOManager):
     """
     Dagster I/O Manager that serializes Python objects to files using Pickle.
 
