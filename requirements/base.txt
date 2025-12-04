@@ -1,4 +1,5 @@
 # Do not pip freeze into this file. Add only the packages you need so pip can align dependencies.
+channels==4.3.1
 dagster==1.11.7
 dagster_aws==0.27.7
 dagster-pipes==1.11.7
@@ -26,7 +27,7 @@ graphviz==0.21
 gunicorn==23.0.0
 html5lib==1.1
 json-logging-py==0.2
-jupyterlab==4.2.5
+jupyterlab==4.4.8
 lxml==4.9.3
 # Support .xls files that use transparent encryption to lock worksheets
 git+https://github.com/nolze/msoffcrypto-tool.git@0f320cbe042b94cfc9087cd0cb693d6ae90d518e
@@ -46,6 +47,7 @@ sqlparse==0.5.0
 tabulate==0.9.0
 # Need universal-pathlib > 0.2.0 for gdrivefs support
 universal-pathlib==0.2.1
+uvicorn==0.37.0
 whitenoise==6.4.0
 xlrd==2.0.1
 xlutils==2.0.0

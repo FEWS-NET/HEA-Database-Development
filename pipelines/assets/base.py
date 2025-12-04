@@ -314,7 +314,7 @@ def get_bss_dataframe(
     end_strings: Optional[list[str]] = None,
     header_rows: list[int] = [3, 4, 5],  # List of row indexes that contain the Wealth Group and other headers
     num_summary_cols: Optional[int] = None,
-) -> pd.DataFrame:
+) -> Output[pd.DataFrame]:
     """
     Retrieve a worksheet from a BSS and return it as a DataFrame.
 
