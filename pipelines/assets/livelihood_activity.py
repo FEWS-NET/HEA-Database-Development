@@ -744,8 +744,14 @@ def get_instances_from_dataframe(
                 continue
 
             # When we process the values for the LivelihoodActivity records, we need to know the actual attribute
-            # that the values in this row are for
-            activity_attribute = label_attributes["attribute"]
+            # that the values in this row are for. Livelihood Summary rows are grouped by percentage_kcals, income and
+            # expenditure, so we can keep the activity_attribute from the previous Livelihood Strategy if it hasn't
+            # been set by the label_attributes.
+            if (
+                activity_type != ActivityLabel.LivelihoodActivityType.LIVELIHOOD_SUMMARY
+                or label_attributes["attribute"]
+            ):
+                activity_attribute = label_attributes["attribute"]
 
             if label_attributes["is_start"]:
                 # We are starting a new livelihood activity, so append the previous livelihood strategy
@@ -788,23 +794,6 @@ def get_instances_from_dataframe(
                     assert livelihood_strategy is not None, (
                         "Found Livelihood Activities from row %s, but there is no Livelihood Strategy defined." % row
                     )
-
-                    # Copy the attribute from the previous livelihood strategy if this is a Livelihood Summary and the
-                    # attribute hasn't been set by the label_attributes.
-                    if (
-                        activity_type == ActivityLabel.LivelihoodActivityType.LIVELIHOOD_SUMMARY
-                        and not activity_attribute
-                        and previous_livelihood_strategy
-                        and previous_livelihood_activities_for_strategy
-                    ):
-                        for attribute in ["income", "expenditure", "percentage_kcals"]:
-                            if attribute in previous_livelihood_activities_for_strategy[0]:
-                                activity_attribute = attribute
-                                break
-                        if not activity_attribute:
-                            raise ValueError(
-                                f"Could not determine attribute for Livelihood Summary strategy from row {row}"
-                            )
 
                     # Copy the product_id for MilkProduction and ButterProduction from the previous livelihood strategy
                     # if necessary.
@@ -1071,15 +1060,45 @@ def get_instances_from_dataframe(
 
                 # Headings like CROP PRODUCTION: set the strategy type for subsequent rows.
                 # Some other labels imply specific strategy types, such as MilkProduction, MeatProduction or LivestockSales
-                if label_attributes["strategy_type"]:
+                # For Livelihood Summary activities, the strategy_type is always set from the label_attributes.
+                if (
+                    label_attributes["strategy_type"]
+                    or activity_type == ActivityLabel.LivelihoodActivityType.LIVELIHOOD_SUMMARY
+                ):
                     strategy_type = label_attributes["strategy_type"]
+
+                    # In the Summary section at the top of the Data worksheet, many of the labels are ambiguous but the
+                    # rows are organized into percentage_kcals, income and expenditure sections. Therefore, we can set the
+                    # Strategy Type based on the activity_attribute.
+                    if strategy_type == "ReliefGift_or_Purchase":
+                        if activity_attribute in ("percentage_kcals", "income"):
+                            strategy_type = LivelihoodStrategyType.RELIEF_GIFT_OTHER
+                        elif activity_attribute == "expenditure":
+                            strategy_type = LivelihoodStrategyType.OTHER_PURCHASE
+                        else:
+                            errors.append(
+                                "Invalid strategy_type %s for attribute %s from label '%s'"
+                                % (strategy_type, activity_attribute, label)
+                            )
+                            activity_attribute = None
+                    elif strategy_type == "CashIncome_or_Purchase":
+                        if activity_attribute == "income":
+                            strategy_type = LivelihoodStrategyType.OTHER_CASH_INCOME
+                        elif activity_attribute == "expenditure":
+                            strategy_type = LivelihoodStrategyType.OTHER_PURCHASE
+                        else:
+                            errors.append(
+                                "Invalid strategy_type %s for attribute %s from label '%s'"
+                                % (strategy_type, activity_attribute, label)
+                            )
+                            activity_attribute = None
+
                     # Get the valid fields names so we can determine if the attribute is stored in LivelihoodActivity.extra
-                    # LivestockProduction is an artificial, composite strategy type representing the sum of
-                    # MilkProduction, ButterProduction and MeatProduction. It isn't stored in the database, and it only
-                    # requires income, expenditure and kcals_consumed, so we use the base LivelihoodActivity model.
+                    # Livelihood Summary activities only contain kcals, income and expenditure, and aren't stored in
+                    # the database, so can use the base LivelihoodActivity model.
                     model = (
                         LivelihoodActivity
-                        if strategy_type == "LivestockProduction"
+                        if activity_type == ActivityLabel.LivelihoodActivityType.LIVELIHOOD_SUMMARY
                         else class_from_name(f"baseline.models.{strategy_type}")
                     )
                     activity_field_names = [field.name for field in model._meta.concrete_fields]
@@ -1419,36 +1438,53 @@ def get_instances_from_dataframe(
         "num_livelihood_strategies": len(livelihood_strategies),
         "num_livelihood_activities": len(livelihood_activities),
         "num_unrecognized_labels": len(unrecognized_labels),
-        "pct_rows_recognized": round(
-            (
-                1
-                - len(
-                    df.iloc[num_header_rows:][
-                        prepare_lookup(df.iloc[num_header_rows:]["A"]).isin(unrecognized_labels["label"])
-                    ]
-                )
-                / len(df.iloc[num_header_rows:])
-            )
-            * 100
-        ),
-        "pct_used_rows_recognized": round(
-            (
-                1
-                - len(
-                    df.iloc[num_header_rows:][
-                        prepare_lookup(df.iloc[num_header_rows:]["A"]).isin(
-                            unrecognized_labels[unrecognized_labels["datapoints"] > 0]["label"]
-                        )
-                    ]
-                )
-                / len(df.iloc[num_header_rows:])
-            )
-            * 100
-        ),
-        "preview": MetadataValue.md(f"```json\n{json.dumps(result, indent=4, ensure_ascii=False)}\n```"),
     }
     if not unrecognized_labels.empty:
         metadata["unrecognized_labels"] = MetadataValue.md(unrecognized_labels.to_markdown(index=False))
+    metadata["pct_rows_recognized"] = round(
+        (
+            1
+            - len(
+                df.iloc[num_header_rows:][
+                    prepare_lookup(df.iloc[num_header_rows:]["A"]).isin(unrecognized_labels["label"])
+                ]
+            )
+            / len(df.iloc[num_header_rows:])
+        )
+        * 100,
+        1,
+    )
+    metadata["pct_used_rows_recognized"] = round(
+        (
+            1
+            - len(
+                df.iloc[num_header_rows:][
+                    prepare_lookup(df.iloc[num_header_rows:]["A"]).isin(
+                        unrecognized_labels[unrecognized_labels["datapoints"] > 0]["label"]
+                    )
+                ]
+            )
+            / len(df.iloc[num_header_rows:])
+        )
+        * 100,
+        1,
+    )
+    metadata["pct_used_summary_rows_recognized"] = round(
+        (
+            1
+            - len(
+                df.iloc[num_header_rows:][
+                    prepare_lookup(df.iloc[num_header_rows:]["A"]).isin(
+                        unrecognized_labels[unrecognized_labels["summary_datapoints"] > 0]["label"]
+                    )
+                ]
+            )
+            / len(df.iloc[num_header_rows:])
+        )
+        * 100,
+        1,
+    )
+    metadata["preview"] = MetadataValue.md(f"```json\n{json.dumps(result, indent=4, ensure_ascii=False)}\n```")
 
     if errors:
         if config.strict:
@@ -1515,10 +1551,12 @@ def get_annotated_instances_from_dataframe(
         # Annotate the output metadata with completeness information
         # Get the summary dataframe, grouped by strategy_type
         summary_df = pd.DataFrame(reported_summary_output.value["LivelihoodActivity"])
-        for col in ["income", "expenditure", "kcals_consumed"]:
+        for col in ["income", "expenditure", "percentage_kcals", "kcals_consumed"]:
             summary_df[col] = pd.to_numeric(summary_df[col], errors="coerce").fillna(0)
         summary_df = (
-            summary_df[["strategy_type", "income", "expenditure", "kcals_consumed"]].groupby("strategy_type").sum()
+            summary_df[["strategy_type", "income", "expenditure", "percentage_kcals", "kcals_consumed"]]
+            .groupby("strategy_type")
+            .sum()
         )
 
         # Add the recognized Livelihood Activities, also grouped by strategy_type
