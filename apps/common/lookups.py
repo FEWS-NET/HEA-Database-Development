@@ -307,7 +307,8 @@ class Lookup(ABC):
         if lookup_column:
             merge_df = merge_df.drop(["lookup_candidate", "lookup_key"], axis="columns")
 
-        return merge_df
+        # Preserve the original index
+        return merge_df.set_index(df.index)
 
     def get_instances(self, df, column, related_models=None):
         """

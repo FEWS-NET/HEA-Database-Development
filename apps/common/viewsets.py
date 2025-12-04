@@ -1,4 +1,6 @@
+from django.apps import apps
 from django.contrib.auth.models import User
+from django.db.models import Exists, OuterRef, Q
 from django.utils.text import format_lazy
 from django.utils.translation import gettext_lazy as _
 from django_filters import rest_framework as filters
@@ -7,6 +9,8 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import NotAcceptable
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import BasePermission, IsAuthenticated
+
+from common.filters import CaseInsensitiveModelMultipleChoiceFilter
 
 from .fields import translation_fields
 from .filters import MultiFieldFilter
@@ -97,6 +101,20 @@ class CountryFilterSet(filters.FilterSet):
         lookup_expr="iexact",
         label="Country",
     )
+
+    has_wealthgroups = filters.BooleanFilter(method="filter_has_wealthgroups")
+
+    def filter_has_wealthgroups(self, queryset, name, value):
+        if value is None:
+            return queryset
+        WealthGroup = apps.get_model("baseline", "WealthGroup")
+        wealth_group_exists = WealthGroup.objects.filter(
+            livelihood_zone_baseline__livelihood_zone__country=OuterRef("pk")
+        )
+        if value:
+            return queryset.filter(Exists(wealth_group_exists))
+        else:
+            return queryset.exclude(Exists(wealth_group_exists))
 
 
 class CountryViewSet(BaseModelViewSet):
@@ -287,6 +305,35 @@ class ClassifiedProductFilterSet(filters.FilterSet):
         lookup_expr="icontains", label=format_lazy("{} ({})", _("Common Name"), _("Portuguese"))
     )
     unit_of_measure = filters.ModelChoiceFilter(queryset=UnitOfMeasure.objects.all(), field_name="unit_of_measure")
+    has_wealthgroups = filters.BooleanFilter(method="filter_has_wealthgroups")
+    country = CaseInsensitiveModelMultipleChoiceFilter(queryset=Country.objects.all(), method="filter_by_country")
+
+    def filter_has_wealthgroups(self, queryset, name, value):
+        if value is None:
+            return queryset
+
+        WealthGroup = apps.get_model("baseline", "WealthGroup")
+
+        # Get baseline IDs that have wealth groups
+        baselines_with_wg = WealthGroup.objects.values_list("livelihood_zone_baseline_id", flat=True).distinct()
+
+        if value:
+            # Return products with strategies in those baselines
+            return queryset.filter(livelihood_strategies__livelihood_zone_baseline_id__in=baselines_with_wg).distinct()
+        else:
+            return queryset
+
+    def filter_by_country(self, queryset, name, value):
+        if not value:
+            return queryset
+
+        country_queries = Q()
+        for country in value:
+            country_queries |= Q(
+                livelihood_strategies__livelihood_zone_baseline__livelihood_zone__country__iso3166a2__iexact=country.iso3166a2
+            )
+
+        return queryset.filter(country_queries).distinct()
 
     class Meta:
         """

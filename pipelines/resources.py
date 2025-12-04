@@ -127,24 +127,36 @@ class DataFrameExcelFilesystemIOManager(UPathIOManager):
             obj = {f"Sheet{i+1}": df for i, df in enumerate(obj)}
 
         # Set the ExcelWriter parameters
-        mode = "w"
+        mode = "wb"
         if self.path_exists(path):
-            mode = "a"
+            mode = "ab"
             if self.if_sheet_exists is None:
                 self.if_sheet_exists = "replace"
             if "keep_vba" not in self.engine_kwargs:
                 self.engine_kwargs["keep_vba"] = True
 
         # Write the DataFrames to the Excel file
-        with pd.ExcelWriter(
-            path,
-            engine="openpyxl",
-            mode=mode,
-            if_sheet_exists=self.if_sheet_exists,
-            engine_kwargs=self.engine_kwargs,
-        ) as writer:
-            for sheet_name, df in obj.items():
-                df.to_excel(writer, sheet_name=sheet_name, **self.to_excel_kwargs)
+        try:
+            with pd.ExcelWriter(
+                path,
+                engine="openpyxl",
+                mode=mode,
+                if_sheet_exists=self.if_sheet_exists,
+                engine_kwargs=self.engine_kwargs,
+            ) as writer:
+                for sheet_name, df in obj.items():
+                    df.to_excel(writer, sheet_name=sheet_name, **self.to_excel_kwargs)
+        except NotImplementedError:
+            context.log.warning(
+                f"Storage layer does not support appending to existing files. Overwriting file: {path}"
+            )
+            with pd.ExcelWriter(
+                path,
+                engine="openpyxl",
+                mode="w",
+            ) as writer:
+                for sheet_name, df in obj.items():
+                    df.to_excel(writer, sheet_name=sheet_name, **self.to_excel_kwargs)
 
     def load_from_path(self, context: InputContext, path: UPath) -> dict[str, pd.DataFrame]:
         with pd.ExcelFile(path, engine="openpyxl") as xls:

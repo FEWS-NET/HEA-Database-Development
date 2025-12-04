@@ -471,6 +471,15 @@ class WealthGroupCharacteristicValueFilterSet(filters.FilterSet):
         lookup_expr="iexact",
         label="Country",
     )
+    product = MultiFieldFilter(
+        [
+            *[(field, "icontains") for field in translation_fields("product__common_name")],
+            ("product__cpc", "istartswith"),
+            *[(field, "icontains") for field in translation_fields("product__description")],
+            ("product__aliases", "icontains"),
+        ],
+        label="Product",
+    )
 
 
 class WealthGroupCharacteristicValueViewSet(BaseModelViewSet):
