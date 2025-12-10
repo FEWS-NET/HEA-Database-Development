@@ -872,6 +872,12 @@
         "unit_multiple"
     ],
     [
+        "(?:petit commerce|petty trade): (?:nbr?\\.? (?:pers|de personnes|personnes|people)(?: ?/ ?| par | per )(?:ménage|mènage|hh)|nbre de personnes par (?:ménage|mènage)|no\\.? people per hh)",
+        null,
+        true,
+        "people_per_household"
+    ],
+    [
         "{product_pattern}{separator_pattern} {nbr_pattern} (?:people per hh|personnes par ménage|personnes par mènage|pers par mènage)",
         null,
         true,
