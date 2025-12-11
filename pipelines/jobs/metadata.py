@@ -513,58 +513,93 @@ def load_all_community_aliases(context: OpExecutionContext):
 def load_all_fewsnet_geographies(context: OpExecutionContext):
     """
     Load all Livelihood Zone Baseline geographies from the FEWS NET Data Warehouse via the API.
+    Reads the 'Metadata' sheet from BSS Metadata Google Sheet to get fnid for each baseline.
     """
-    baseline_countries = (
-        LivelihoodZoneBaseline.objects.all()
-        .values_list("livelihood_zone__country__iso3166a2", flat=True)
-        .order_by("livelihood_zone__country__iso3166a2")
-        .distinct()
-    )
-    all_geometries = {}
-    for iso3166a2 in baseline_countries:
-        response = requests.get(
-            f"https://fdw.fews.net/api/feature/?format=geojson&unit_type=livelihood_zone&ordering=fnid&country_code={iso3166a2}"
-        )
-        response.raise_for_status()
-        srid = int(response.json()["crs"]["properties"]["name"].split(":")[-1])
-        for feature in response.json()["features"]:
-            # Also save the geometry for the Livelihood Zone Baseline
-            all_geometries[
-                (
-                    feature["properties"]["attributes"]["EFF_YEAR"],
-                    feature["properties"]["attributes"]["LZCODE"],
-                )
-            ] = feature
+    # Read the Metadata sheet from BSS Metadata Google Sheet
+    storage_options = {"token": "service_account", "access": "read_only", "root_file_id": "0AOJ0gJ8sjnO7Uk9PVA"}
+    storage_options["creds"] = json.loads(os.environ["GOOGLE_APPLICATION_CREDENTIALS"])
+    p = UPath("gdrive://Database Design/BSS Metadata", **storage_options)
 
-        for livelihood_zone_baseline in LivelihoodZoneBaseline.objects.filter(
-            livelihood_zone__country_id=iso3166a2
-        ).order_by(
-            "livelihood_zone__country__iso3166a2",
-            "reference_year_end_date",
-            "livelihood_zone__code",
-        ):
-            for feature in all_geometries.values():
-                start_date = (
-                    datetime.date.fromisoformat(feature["properties"]["start_date"])
-                    if feature["properties"]["start_date"]
-                    else datetime.date.min
-                )
-                end_date = (
-                    datetime.date.fromisoformat(feature["properties"]["end_date"])
-                    if feature["properties"]["end_date"]
-                    else datetime.date.max
-                )
-                if (
-                    feature["properties"]["attributes"]["LZCODE"] == livelihood_zone_baseline.livelihood_zone.code
-                ) and (start_date <= livelihood_zone_baseline.valid_from_date <= end_date):
-                    geometry = GEOSGeometry(json.dumps(feature["geometry"]), srid=srid)
-                    if isinstance(geometry, Polygon):
-                        geometry = MultiPolygon(geometry)
-                    livelihood_zone_baseline.geography = geometry
-                    livelihood_zone_baseline.save()
-                    context.log.info(f"Updated geometry for {livelihood_zone_baseline}")
-                    continue
-            context.log.warning(f"Failed to find FEWS NET geometry for {livelihood_zone_baseline}")
+    with p.fs.open(p.path, mode="rb", cache_type="bytes") as f:
+        # Google Sheets have to be exported rather than read directly
+        if isinstance(f, GoogleDriveFile) and (f.details["mimeType"] == "application/vnd.google-apps.spreadsheet"):
+            f = BytesIO(p.fs.export(p.path, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+
+        # Read the Metadata sheet with columns: code, reference_year_end_date, fnid
+        metadata_df = pd.read_excel(f, sheet_name="Metadata", engine="openpyxl")
+
+        # Filter out rows without fnid
+        metadata_df = metadata_df[metadata_df["fnid"].notna()]
+
+        context.log.info(f"Found {len(metadata_df)} baseline zones with fnid in Metadata sheet")
+
+    # Process each baseline zone
+    for _, row in metadata_df.iterrows():
+        zone_code = row["code"]
+        reference_year_end_date = pd.to_datetime(row["reference_year_end_date"]).date()
+        fnid = row["fnid"]
+
+        try:
+            livelihood_zone_baseline = LivelihoodZoneBaseline.objects.get(
+                livelihood_zone__code=zone_code, reference_year_end_date=reference_year_end_date
+            )
+        except LivelihoodZoneBaseline.DoesNotExist:
+            context.log.warning(
+                f"Baseline not found for code={zone_code}, reference_year_end_date={reference_year_end_date}"
+            )
+            continue
+        except LivelihoodZoneBaseline.MultipleObjectsReturned:
+            context.log.error(
+                f"Multiple baselines found for code={zone_code}, reference_year_end_date={reference_year_end_date}"
+            )
+            continue
+
+        try:
+            response = requests.get(
+                f"https://fdw.fews.net/api/feature/?format=geojson&unit_type=livelihood_zone&fnid={fnid}&fields=with_population"
+            )
+            response.raise_for_status()
+
+            geojson_data = response.json()
+
+            if not geojson_data.get("features"):
+                context.log.warning(f"No features found for fnid={fnid}, baseline={livelihood_zone_baseline}")
+                continue
+
+            srid = int(geojson_data["crs"]["properties"]["name"].split(":")[-1])
+
+            feature = geojson_data["features"][0]
+
+            # Convert to Django geometry
+            geometry = GEOSGeometry(json.dumps(feature["geometry"]), srid=srid)
+            if isinstance(geometry, Polygon):
+                geometry = MultiPolygon(geometry)
+
+            # Update the baseline with the geometry
+            livelihood_zone_baseline.geography = geometry
+
+            # Extract population estimate if available
+            population_estimate = feature["properties"].get("estimated_population")
+            if population_estimate is not None:
+                try:
+                    livelihood_zone_baseline.population_estimate = int(population_estimate)
+                    livelihood_zone_baseline.population_source = "Landscan 2020"
+                except (ValueError, TypeError) as e:
+                    context.log.warning(f"Invalid population data for {livelihood_zone_baseline} (fnid={fnid}): {e}")
+
+            livelihood_zone_baseline.save()
+
+            log_msg = f"Updated geometry for {livelihood_zone_baseline} (fnid={fnid})"
+            if population_estimate is not None:
+                log_msg += f" with population={livelihood_zone_baseline.population_estimate}"
+            context.log.info(log_msg)
+
+        except requests.RequestException as e:
+            context.log.error(f"Failed to fetch geography for fnid={fnid}, baseline={livelihood_zone_baseline}: {e}")
+        except (KeyError, ValueError, json.JSONDecodeError) as e:
+            context.log.error(
+                f"Failed to parse geography response for fnid={fnid}, baseline={livelihood_zone_baseline}: {e}"
+            )
 
 
 @job
