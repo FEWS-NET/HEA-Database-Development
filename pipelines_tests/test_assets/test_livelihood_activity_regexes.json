@@ -881,7 +881,7 @@
         "product_id": "sucre",
         "attribute": "name_of_local_measure"
     },
-    "eau pour humains: nom de mesure locale": {
+    "eau pour humains: nom de mesure locale:.": { 
         "is_start": true,
         "product_id": "eau pour humains",
         "attribute": "name_of_local_measure",

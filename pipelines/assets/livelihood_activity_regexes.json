@@ -854,7 +854,7 @@
         "expenditure"
     ],
     [
-        "(?P<product_id>eau pour (?:humains|bétail|betail)|farine de [a-zà-ÿ]+) *(?::| -) ?(?:name of meas\\.?|nom de la mesure locale:?\\.?|nom de mesure locale|nom de la mesure local|nom de la mesure|nom d'unité|nom du mesure|nom mesure locale|nom unité de mesure)",
+        "(?P<product_id>eau pour (?:humains|bétail|betail)|farine de [a-zà-ÿ]+) *(?::| -) ?(?:name of meas|nom de la mesure locale|nom de mesure locale|nom de la mesure local|nom de la mesure|nom d'unité|nom du mesure|nom mesure locale|nom unité de mesure):?\\.?",
         "FoodPurchase",
         true,
         "name_of_local_measure"
