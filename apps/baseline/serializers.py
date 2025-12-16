@@ -270,6 +270,7 @@ class WealthGroupSerializer(serializers.ModelSerializer):
             "community",
             "community_name",
             "wealth_group_category",
+            "wealth_group_category_name",
             "percentage_of_households",
             "average_household_size",
         ]
@@ -296,6 +297,7 @@ class WealthGroupSerializer(serializers.ModelSerializer):
     source_organization_name = serializers.CharField(
         source="livelihood_zone_baseline.source_organization.name", read_only=True
     )
+    wealth_group_category_name = serializers.CharField(source="wealth_group_category.name", read_only=True)
 
 
 class BaselineWealthGroupSerializer(WealthGroupSerializer):
@@ -1554,7 +1556,8 @@ class LivelihoodZoneBaselineReportSerializer(AggregatingSerializer):
             "id",
             "name",
             "description",
-            "wealth_group_category_code",
+            "wealth_group_category",
+            "wealth_group_category_name",
             "main_livelihood_category",
             "bss",
             "currency",
@@ -1601,7 +1604,8 @@ class LivelihoodZoneBaselineReportSerializer(AggregatingSerializer):
             "valid_to_date": "valid_to_date",
             "livelihood_strategy_pk": "livelihood_strategies__pk",
             "livelihood_activity_pk": "livelihood_strategies__livelihoodactivity__pk",
-            "wealth_group_category_code": "livelihood_strategies__livelihoodactivity__wealth_group__wealth_group_category__code",  # NOQA: E501
+            "wealth_group_category": "livelihood_strategies__livelihoodactivity__wealth_group__wealth_group_category__code",  # NOQA: E501
+            "wealth_group_category_name": f"livelihood_strategies__livelihoodactivity__wealth_group__wealth_group_category__name_{language_code}",  # NOQA: E501
             "kcals_consumed": "livelihood_strategies__livelihoodactivity__kcals_consumed",
             "income": "livelihood_strategies__livelihoodactivity__income",
             "expenditure": "livelihood_strategies__livelihoodactivity__expenditure",

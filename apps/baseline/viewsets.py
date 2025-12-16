@@ -370,6 +370,12 @@ class WealthGroupViewSet(BaseModelViewSet):
     )
     serializer_class = WealthGroupSerializer
     filterset_class = WealthGroupFilterSet
+    ordering = [
+        "livelihood_zone_baseline__livelihood_zone__code",
+        "livelihood_zone_baseline__reference_year_end_date",
+        "wealth_group_category__ordering",
+        "community__name",
+    ]
 
 
 class BaselineWealthGroupFilterSet(filters.FilterSet):

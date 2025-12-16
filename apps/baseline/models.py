@@ -554,6 +554,12 @@ class WealthGroup(common_models.Model):
     class Meta:
         verbose_name = _("Wealth Group")
         verbose_name_plural = _("Wealth Groups")
+        ordering = [
+            "livelihood_zone_baseline__livelihood_zone__code",
+            "livelihood_zone_baseline__reference_year_end_date",
+            "wealth_group_category__ordering",
+            "community__name",
+        ]
         constraints = [
             models.UniqueConstraint(
                 fields=("livelihood_zone_baseline", "wealth_group_category", "community"),
