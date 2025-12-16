@@ -23,6 +23,7 @@ class ReferenceDataAdmin(admin.ModelAdmin):
         *translation_fields("name"),
         "aliases",
         *translation_fields("description"),
+        "ordering",
     )
     list_display = (
         "code",
