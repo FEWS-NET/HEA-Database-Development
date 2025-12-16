@@ -380,13 +380,6 @@ class Season(common_models.Model):
         verbose_name_plural = _("Seasons")
 
 
-# Defined outside ActivityLabel to make it easy to share between ActivityLabel and WealthCharacteristicLabel
-class LabelStatus(models.TextChoices):
-    COMPLETE = "Complete", _("Complete")
-    DISCUSSION = "Discussion", _("Under Discussion")
-    CORRECT_BSS = "Correct BSS", _("Correct the BSS")
-
-
 class ActivityLabel(common_models.Model):
     """
     A label from Column A of the 'Data', 'Data2' or 'Data3' worksheet in a BSS and associated attributes.
@@ -395,10 +388,20 @@ class ActivityLabel(common_models.Model):
     the LivelihoodStrategy and/or LivelihoodActivity for a given row in a BSS.
     """
 
+    class LabelStatus(models.TextChoices):
+        REGULAR_EXPRESSION = "Regular Expression", _("Processed by Regular Expression")
+        OVERRIDE = "Override", _("Override automatically recognized metadata")
+        DISCUSSION = "Discussion", _("Under Discussion")
+        CORRECT_BSS = "Correct BSS", _("Correct the BSS")
+        IGNORE = "Ignore", _("Ignore this label and associated data in the row")
+
     class LivelihoodActivityType(models.TextChoices):
         LIVELIHOOD_ACTIVITY = "LivelihoodActivity", _("Livelihood Activity")  # Labels from the 'Data' worksheet
         OTHER_CASH_INCOME = "OtherCashIncome", _("Other Cash Income")  # Labels from the 'Data2' worksheet
-        WILD_FOODS = "WildFoods", _("Wild Foods")  # Labels from the 'Data3' worksheet
+        WILD_FOODS = "WildFoods", _("Wild Foods, Fishing or Hunting")  # Labels from the 'Data3' worksheet
+        LIVELIHOOD_SUMMARY = "LivelihoodSummary", _(
+            "Livelihood Summary"
+        )  # Labels from the 'Summary' section of the 'Data' worksheet
 
     activity_label = common_models.NameField(max_length=200, verbose_name=_("Activity Label"))
     activity_type = models.CharField(
@@ -407,9 +410,9 @@ class ActivityLabel(common_models.Model):
         choices=LivelihoodActivityType.choices,
         default=LivelihoodActivityType.LIVELIHOOD_ACTIVITY,
         help_text=_(
-            "The type of Livelihood Activity, either a general Livelihood Activity, or an Other Cash Income "
-            "activity from the 'Data2' worksheet, or a Wild Foods, Fishing or Hunting activity from the "
-            "'Data3' worksheet."
+            "The type of Livelihood Activity the label is for: either a general Livelihood Activity, or an Other Cash "
+            "Income activity from the 'Data2' worksheet, or a Wild Foods, Fishing or Hunting activity from the "
+            "'Data3' worksheet, or a label from the 'Summary' section of the 'Data' worksheet."
         ),
     )
     status = models.CharField(blank=True, max_length=20, choices=LabelStatus.choices, verbose_name=_("Status"))
@@ -421,7 +424,10 @@ class ActivityLabel(common_models.Model):
     strategy_type = models.CharField(
         max_length=30,
         blank=True,
-        choices=LivelihoodStrategyType.choices,
+        # We add an additional choice for LivestockProduction here, which is only valid when
+        # activity_type is LivelihoodSummary. LivestockProduction is the total of MeatProduction,
+        # MilkProduction and ButterProduction, and is used in the Summary section of the Data worksheet only
+        choices=LivelihoodStrategyType.choices + [("LivestockProduction", _("Livestock Production"))],  # type: ignore
         verbose_name=_("Strategy Type"),
         help_text=_("The type of livelihood strategy, such as crop production, or wild food gathering."),
     )
@@ -452,7 +458,7 @@ class ActivityLabel(common_models.Model):
         verbose_name=_("Currency"),
     )
     season = models.CharField(max_length=60, blank=True, verbose_name=_("Season"))
-    additional_identifier = models.CharField(max_length=200, blank=True, verbose_name=_("Season"))
+    additional_identifier = models.CharField(max_length=200, blank=True, verbose_name=_("Additional Identifier"))
     attribute = models.CharField(max_length=60, blank=True, verbose_name=_("Attribute"))
     notes = models.TextField(blank=True, verbose_name=_("Notes"))
 
@@ -475,6 +481,11 @@ class WealthCharacteristicLabel(common_models.Model):
 
     Used by the ingestion pipeline for WealthCharacteristicValue to determine the attributes for a given row in a BSS.
     """
+
+    class LabelStatus(models.TextChoices):
+        COMPLETE = "Complete", _("Complete")
+        DISCUSSION = "Discussion", _("Under Discussion")
+        CORRECT_BSS = "Correct BSS", _("Correct the BSS")
 
     wealth_characteristic_label = common_models.NameField(
         max_length=200, unique=True, verbose_name=_("Wealth Characteristic Label")

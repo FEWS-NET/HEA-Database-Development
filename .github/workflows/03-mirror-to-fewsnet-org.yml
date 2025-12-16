@@ -1,0 +1,41 @@
+name: Mirror to FEWS-NET/HEA-Database-Development
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches:
+      - "main"
+    tags:
+      - "*"
+
+jobs:
+  mirror:
+    runs-on: [ fewsnet ]
+    # run in container to avoid file permission issues like EACCES: permission denied
+    container: "python:3.12"
+    steps:
+      - uses: "actions/checkout@v4"
+        with:
+          # we don't want the current commit only,
+          # but also previous commits in case those haven't been synced
+          fetch-depth: 0
+
+        # since we are running this on the runner controller (like lint), action/checkout
+        # will not create a new repo for subsequent runs. This lead to
+        # error: remote mirror already exists.
+        # We will just remove the remote here if it already exists, so mirror-action works
+      - name: Remove existing remote
+        run: |
+          # seems to be necessary to run git commands
+          git config --global --add safe.directory /__w/FEWSNET-HEA-Database-Development/FEWSNET-HEA-Database-Development
+          git remote remove mirror || echo "No remote 'mirror' existed"
+
+      - uses: yesolutions/mirror-action@v0.7.0
+        with:
+          REMOTE: "ssh://git@github.com/FEWS-NET/HEA-Database-Development.git"
+          GIT_SSH_PRIVATE_KEY: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
+          # @TODO: change this to secrets.GIT_SSH_KNOWN_HOSTS
+          GIT_SSH_NO_VERIFY_HOST: "true"
+          PUSH_ALL_REFS: "false"

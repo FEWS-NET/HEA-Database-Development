@@ -8,6 +8,7 @@ import os
 from io import BytesIO
 
 import django
+import numpy as np
 import pandas as pd
 import requests
 from dagster import OpExecutionContext, job, op
@@ -35,7 +36,7 @@ from common.lookups import ClassifiedProductLookup, UserLookup  # NOQA: E402
 from metadata.models import ActivityLabel  # NOQA: E402
 
 
-def load_metadata_for_model(context: OpExecutionContext, model: models.Model, df: pd.DataFrame):
+def load_metadata_for_model(context: OpExecutionContext, sheet_name: str, model: models.Model, df: pd.DataFrame):
     """
     Load the metadata from a single worksheet, passed as a DataFrame, into a Django model.
     """
@@ -69,12 +70,15 @@ def load_metadata_for_model(context: OpExecutionContext, model: models.Model, df
         df["wealth_characteristic_id"] = df["wealth_characteristic_id"].replace("", None)
     if "ordering" in df:
         df["ordering"] = df["ordering"].replace("", None)
+    if "activity_type" in df:
+        df["activity_type"] = df["activity_type"].replace("", ActivityLabel.LivelihoodActivityType.LIVELIHOOD_ACTIVITY)
 
     if model_name == "ClassifiedProduct":
         existing_instances = {instance.pk: instance for instance in model.objects.filter(pk__in=df["cpc"])}
         for record in df.to_dict(orient="records"):
             cpc = record.pop("cpc")
             if cpc in existing_instances:
+                # For existing Classified Products, prevent updates to the core CPC fields such as cpc and description.
                 instance = existing_instances[cpc]
                 for k, v in record.items():
                     if k in valid_field_names:
@@ -99,18 +103,30 @@ def load_metadata_for_model(context: OpExecutionContext, model: models.Model, df
                                     continue
                             setattr(instance, k, v)
             else:
+                # For new Classified Products, place them at the correct place in the CPC hierarchy.
                 if cpc[1:].isnumeric():
                     raise ValueError("Missing real CPC code %s" % cpc)
-                parent_instance = model.objects.get(pk=cpc[:-2])
+                try:
+                    parent_instance = model.objects.get(pk=cpc[:-2])
+                except model.DoesNotExist:
+                    raise ValueError(f"Parent instance with CPC code {cpc[:-2]} for {cpc} does not exist")
                 record = {k: v for k, v in record.items() if k in valid_field_names}
                 record["cpc"] = cpc
                 instance = parent_instance.add_child(**record)
                 context.log.info(f"Created {model_name} {str(instance)} as a child of {str(parent_instance)}")
+        # Do a bulk update to save any changes to editable attributes of existing instances
         num_instances = model.objects.bulk_update(
             existing_instances.values(),
-            fields=record.keys(),
+            fields=[k for k in df.columns if k in valid_field_names and k != model._meta.pk.name],
         )
-        context.log.info(f"Updated {num_instances} {model_name} instances")
+        # Report on redundant instances that are in the database but not in the worksheet
+        for instance in model.objects.exclude(pk__in=df["cpc"]):
+            # Only report redundant instances that are HEA products
+            if instance.cpc[-2] == "H":
+                context.log.warning(
+                    f"Redundant {model_name} instance {str(instance)} in database but not in worksheet '{sheet_name}'"
+                )
+        context.log.info(f"Updated {num_instances} {sheet_name} instances")
 
     else:
         if model_name == "SourceOrganization":
@@ -125,20 +141,49 @@ def load_metadata_for_model(context: OpExecutionContext, model: models.Model, df
             id_fields = "wealth_characteristic_label"
         else:
             id_fields = "code"
+        # Add primary keys if they are not already in the id_fields,
+        # so that we can save individual instances if required
+        if isinstance(id_fields, str):
+            id_fields = [id_fields]
+        if model._meta.pk.name not in id_fields:
+            keys_df = pd.DataFrame.from_records(
+                model.objects.all().values(model._meta.pk.name, *id_fields)
+            )  # NOQA: E501
+            if keys_df.empty:
+                keys_df = pd.DataFrame(columns=[model._meta.pk.name] + id_fields)
+            df = df.merge(
+                keys_df,
+                how="left",
+                on=id_fields,
+            )
+            df[model._meta.pk.name] = df[model._meta.pk.name].replace(np.nan, None)
+        # Turn the dataframe into a set of unsaved model instances
         instances = []
+        fields = [k for k in df.columns if k in valid_field_names]
         for record in df.to_dict(orient="records"):
-            if isinstance(id_fields, str):
-                id_fields = [id_fields]
-
-            record = {k: v for k, v in record.items() if k in valid_field_names}
+            record = {k: v for k, v in record.items() if k in fields}
             instances.append(model(**record))
-        instances = model.objects.bulk_create(
-            instances,
-            update_conflicts=True,
-            update_fields=[k for k in record if k not in id_fields],
-            unique_fields=id_fields,
-        )
-        context.log.info(f"Created or updated {len(instances)} {model_name} instances")
+        try:
+            instances = model.objects.bulk_create(
+                instances,
+                update_conflicts=True,
+                update_fields=[k for k in fields if k not in id_fields and k != model._meta.pk.name],
+                unique_fields=id_fields,
+            )
+            context.log.info(f"Created or updated {len(instances)} {sheet_name} instances")
+        except Exception:
+            # Bulk create failed, so try creating/updating the instances one at a time to see which one failed
+            for i, instance in enumerate(instances):
+                try:
+                    instance.save()
+                except Exception as e:
+                    key = [getattr(instance, id_field) for id_field in id_fields]
+                    instance = {
+                        k: v for k, v in instance.__dict__.items() if k not in ["_state", "created", "modified"]
+                    }
+                    raise RuntimeError(
+                        f"Failed to create/update {model_name} instance {i} {key} from:\n{json.dumps(instance, indent=4, ensure_ascii=False)}"
+                    ) from e
 
 
 @op
@@ -162,7 +207,7 @@ def load_all_metadata(context: OpExecutionContext, config: ReferenceDataConfig):
             # Iterate over the sheets in the ReferenceData workbook, in reverse order (because the Label sheets that
             # need Subject Matter Expert input are at beginning, and depend on the sheets at the end).
             for sheet_name in reversed(sheet_names):
-                if sheet_name in ["ActivityLabel", "OtherCashIncomeLabel", "WildFoodsLabel"]:
+                if sheet_name in ["ActivityLabel", "OtherCashIncomeLabel", "WildFoodsLabel", "SummaryLabel"]:
                     model = ActivityLabel
                 else:
                     # Check whether the ReferenceData worksheet matches a Django model.
@@ -177,7 +222,7 @@ def load_all_metadata(context: OpExecutionContext, config: ReferenceDataConfig):
                     # If we found a model, then update the model from the contents of the Reference Data worksheet
                     df = pd.read_excel(f, sheet_name).fillna("")
                     try:
-                        load_metadata_for_model(context, model, df)
+                        load_metadata_for_model(context, sheet_name, model, df)
                     except Exception as e:
                         raise RuntimeError("Failed to create/update %s" % sheet_name) from e
 

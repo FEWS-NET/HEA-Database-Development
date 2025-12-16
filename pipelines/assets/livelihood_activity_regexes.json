@@ -224,7 +224,7 @@
         "times_per_month"
     ],
     [
-        "(?:nom de la mesure|nom du mesure|nom d'unité)",
+        "(?:nom de la mesure|nom du mesure|nom d'unité|nom mesure locale)",
         null,
         false,
         "name_of_local_measure"
@@ -296,7 +296,13 @@
         "times_per_year"
     ],
     [
-        "{nbr_pattern} (?:people per HH|personnes par ménage)",
+        "{product_pattern}{separator_pattern} {nbr_pattern} (?:de )?fois / an(?:née)?",
+        null,
+        false,
+        "times_per_year"
+    ],
+    [
+        "{nbr_pattern} (?:people per hh|personnes par ménage|personnes par mènage|pers par mènage)",
         null,
         false,
         "people_per_household"
@@ -524,7 +530,7 @@
         "quantity_purchased"
     ],
     [
-        "(?P<product_id>lait de {label_pattern})",
+        "(?P<product_id>lait (?:du|de) {label_pattern})",
         "MilkProduction",
         true,
         null
@@ -704,6 +710,24 @@
         "quantity_produced"
     ],
     [
+        "(?:wild foods?{separator_pattern} )?{product_pattern}{separator_pattern} \\(?{unit_of_measure_pattern} gathered\\)?",
+        null,
+        true,
+        "quantity_produced"
+    ],
+    [
+        "(?:fish|fish \\(?dry\\)?|fish \\(?fresh\\)?){separator_pattern} {product_pattern}{separator_pattern} \\(?{unit_of_measure_pattern} gathered\\)?",
+        null,
+        true,
+        "quantity_produced"
+    ],
+    [
+        "{product_pattern}{separator_pattern}\\(?{unit_of_measure_pattern} gathered\\)?",
+        null,
+        true,
+        "quantity_produced"
+    ],
+    [
         "{product_pattern} (?P<season>[1|2]è[m|r]e récolte){separator_pattern} {nbr_pattern} mois",
         null,
         true,
@@ -818,13 +842,19 @@
         null
     ],
     [
+        "autre auto-emploi{separator_pattern} ?{product_pattern}",
+        null,
+        true,
+        null
+    ],
+    [
         "(?P<product_id>autres intrants \\(dont location de terre\\))",
         null,
         true,
         "expenditure"
     ],
     [
-        "(?:autre nouriture de base|autre legumineuse|autre culture)?{separator_pattern} ?\\(?{product_pattern}\\)?{separator_pattern} ?(?:nom de la mesure locale?|nom du mesure|nom unité de mesure|nom)",
+        "(?:autre nouriture de base|autre legumineuse|autre culture)?{separator_pattern} ?\\(?{product_pattern}\\)?{separator_pattern} ?(?:nom de la mesure locale?|nom mesure locale|nom du mesure|nom unité de mesure|nom)",
         null,
         true,
         "name_of_local_measure"
@@ -842,7 +872,7 @@
         "unit_multiple"
     ],
     [
-        "{product_pattern}{separator_pattern} (?:{nbr_pattern} people per hh|{nbr_pattern} pers par mènage|{nbr_pattern} personnes par mènage)",
+        "{product_pattern}{separator_pattern} {nbr_pattern} (?:people per hh|personnes par ménage|personnes par mènage|pers par mènage)",
         null,
         true,
         "people_per_household"

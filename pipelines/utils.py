@@ -59,22 +59,50 @@ def get_index(search_text: str | list[str], data: pd.Series, offset: int = 0) ->
     return result
 
 
+def get_sample_data(df: pd.DataFrame, rows: list[int], max_columns: int = 10) -> pd.DataFrame:
+    """
+    Get a sample of the data to include in an error message.
+
+    The BSS contains many columns, and including all of them in an error
+    message makes the message unreadable, so return the first and last columns
+    up to the specified number of columns.
+    """
+    # Use replace/dropna/fillna so that the sample only includes the columns that have data
+    sample_data = df.loc[rows].replace("", pd.NA).dropna(axis="columns", subset=rows[-1]).fillna("")
+    # Don't show more than max_columns in the error message, to make the message more readable
+    leading_cols = max_columns // 2
+    if sample_data.shape[1] > max_columns:
+        sample_data = pd.concat(
+            [
+                sample_data.iloc[:, :leading_cols],
+                # Add a column of "..." to indicate that there are more columns
+                pd.DataFrame(["..."] * sample_data.shape[0], columns=["..."], index=sample_data.index),
+                sample_data.iloc[:, (leading_cols + 1 - max_columns) :],
+            ],
+            axis="columns",
+        )
+    return sample_data
+
+
 def prepare_lookup(data: str | list[str] | pd.Series | pd.DataFrame) -> pd.Series | pd.DataFrame:
     """
     Prepare a Series or DataFrame for lookup operations by converting to lowercase strings and stripping whitespace.
     """
-    if isinstance(data, str):
-        result = pd.DataFrame([data])
+    if isinstance(data, pd.DataFrame):
+        result = data
     elif isinstance(data, (list, pd.Series)):
         result = pd.DataFrame(data)
     else:
-        result = data
+        # Handle other types (like str, int, float)
+        result = pd.DataFrame([data])
+
     result = result.map(str).map(str.strip).map(str.lower).replace(r"\s+", " ", regex=True)
-    if isinstance(data, str):
-        result = result.iloc[0, 0]
+
+    if isinstance(data, pd.DataFrame):
+        return result
     elif isinstance(data, (list, pd.Series)):
-        result = result.iloc[:, 0]
-    return result
+        return result.iloc[:, 0]
+    return result.iloc[0, 0]
 
 
 def verbose_pivot(df: pd.DataFrame, values: str | list[str], index: str | list[str], columns: str | list[str]):

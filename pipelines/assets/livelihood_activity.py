@@ -58,10 +58,11 @@ from pathlib import Path
 import django
 import pandas as pd
 from dagster import AssetExecutionContext, MetadataValue, Output, asset
+from django.db.models.functions import Lower
 
 from ..configs import BSSMetadataConfig
 from ..partitions import bss_instances_partitions_def
-from ..utils import class_from_name, prepare_lookup
+from ..utils import class_from_name, get_sample_data, prepare_lookup
 from .base import (
     get_all_bss_labels_dataframe,
     get_bss_dataframe,
@@ -78,6 +79,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hea.settings.production")
 django.setup()
 
 from baseline.models import (  # NOQA: E402
+    LivelihoodActivity,
     LivelihoodStrategy,
     LivelihoodZoneBaseline,
     MilkProduction,
@@ -86,7 +88,6 @@ from common.lookups import ClassifiedProductLookup, UnitOfMeasureLookup  # NOQA:
 from metadata.lookups import SeasonNameLookup  # NOQA: E402
 from metadata.models import (  # NOQA: E402
     ActivityLabel,
-    LabelStatus,
     LivelihoodActivityScenario,
     LivelihoodStrategyType,
 )
@@ -99,6 +100,7 @@ WORKSHEET_MAP = {
     ActivityLabel.LivelihoodActivityType.LIVELIHOOD_ACTIVITY: "Data",
     ActivityLabel.LivelihoodActivityType.OTHER_CASH_INCOME: "Data2",
     ActivityLabel.LivelihoodActivityType.WILD_FOODS: "Data3",
+    ActivityLabel.LivelihoodActivityType.LIVELIHOOD_SUMMARY: "Data",
 }
 
 
@@ -117,6 +119,7 @@ def livelihood_activity_dataframe(config: BSSMetadataConfig, corrected_files) ->
             "Revenus moins dépenses",
             "Revenu moins dépense",
             "revenu moins dépenses",  # 2023 Mali BSSs
+            "revenu mois dépenses",  # 2024 DRC BSSs
         ],
         header_rows=HEADER_ROWS,
     )
@@ -129,7 +132,7 @@ def livelihood_activity_label_dataframe(
     livelihood_activity_dataframe,
 ) -> Output[pd.DataFrame]:
     """
-    Dataframe of Livelihood Activity Label References
+    Dataframe of Livelihood Activity Label References for a single BSS.
     """
     return get_bss_label_dataframe(
         context, config, livelihood_activity_dataframe, "livelihood_activity_dataframe", len(HEADER_ROWS)
@@ -158,6 +161,60 @@ def summary_livelihood_activity_labels_dataframe(
     )
 
 
+@asset(partitions_def=bss_instances_partitions_def)
+def livelihood_summary_dataframe(config: BSSMetadataConfig, corrected_files) -> Output[pd.DataFrame]:
+    """
+    DataFrame of the Livelihood Activity Summary from a BSS
+
+    The summary is at the beginning of the Data worksheet, before the main Livelihood Activities.
+    It contains the total values for income, expenditure, kcals consumed, etc. by Strategy Type for each Wealth Group.
+    """
+    return get_bss_dataframe(
+        config,
+        corrected_files,
+        "Data",
+        start_strings=["food summary: total (%)", "synthèse de nourriture : total (%)"],
+        end_strings=["wealth characteristics", "caractéristiques socio-économiques"],
+        header_rows=HEADER_ROWS,
+    )
+
+
+@asset(partitions_def=bss_instances_partitions_def)
+def livelihood_summary_label_dataframe(
+    context: AssetExecutionContext,
+    config: BSSMetadataConfig,
+    livelihood_summary_dataframe,
+) -> Output[pd.DataFrame]:
+    """
+    Dataframe of Livelihood Summary Label References for a single BSS
+    """
+    return get_bss_label_dataframe(
+        context, config, livelihood_summary_dataframe, "livelihood_summary_dataframe", len(HEADER_ROWS)
+    )
+
+
+@asset(io_manager_key="dataframe_csv_io_manager")
+def all_livelihood_summary_labels_dataframe(
+    config: BSSMetadataConfig, livelihood_summary_label_dataframe: dict[str, pd.DataFrame]
+) -> Output[pd.DataFrame]:
+    """
+    Combined dataframe of the Livelihood Summary labels in use across all BSSs.
+    """
+    return get_all_bss_labels_dataframe(config, livelihood_summary_label_dataframe)
+
+
+@asset(io_manager_key="dataframe_csv_io_manager")
+def summary_livelihood_summary_labels_dataframe(
+    config: BSSMetadataConfig, all_livelihood_summary_labels_dataframe: pd.DataFrame
+) -> Output[pd.DataFrame]:
+    """
+    Summary of the Livelihood Summary labels in use across all BSSs.
+    """
+    return get_summary_bss_label_dataframe(
+        config, all_livelihood_summary_labels_dataframe, ActivityLabel.LivelihoodActivityType.LIVELIHOOD_ACTIVITY
+    )
+
+
 @functools.cache
 def get_livelihood_activity_regexes() -> list:
     """
@@ -179,7 +236,7 @@ def get_livelihood_activity_regexes() -> list:
     # Create regex patterns for metadata attributes to replace the placeholders in the regexes
     placeholder_patterns = {
         "label_pattern": r"[a-zà-ÿ][a-zà-ÿ',/ \.\>\-\(\)]+?",
-        "product_pattern": r"(?P<product_id>[a-zà-ÿ][a-zà-ÿ',/ \.\>\-\(\)]+?)",
+        "product_pattern": r"(?P<product_id>[a-zà-ÿ][a-zà-ÿ1-9',/ \.\>\-\(\)]+?)",
         "season_pattern": r"(?P<season>season [12]|saison [12]|[12][a-z] season||[12][a-zà-ÿ] saison|r[eé]colte principale|principale r[eé]colte|gu|deyr+?)",  # NOQA: E501
         "additional_identifier_pattern": r"\(?(?P<additional_identifier>rainfed|irrigated|pluviale?|irriguée|submersion libre|submersion contrôlée|flottant)\)?",
         "unit_of_measure_pattern": r"(?P<unit_of_measure_id>[a-z]+)",
@@ -200,13 +257,58 @@ def get_livelihood_activity_regexes() -> list:
 
 
 @functools.cache
+def get_livelihood_activity_regular_expression_attributes(label: str) -> dict:
+    """
+    Return a dict of the attributes for a well-known Livelihood Activity label using regular expression matches.
+    """
+    label = prepare_lookup(label)
+    attributes = {
+        "activity_label": None,
+        "strategy_type": None,
+        "is_start": None,
+        "product_id": None,
+        "unit_of_measure_id": None,
+        "season": None,
+        "additional_identifier": None,
+        "attribute": None,
+        "notes": None,
+    }
+    for pattern, strategy_type, is_start, attribute in get_livelihood_activity_regexes():
+        match = pattern.fullmatch(label)
+        if match:
+            attributes.update(match.groupdict())
+            attributes["activity_label"] = label
+            attributes["strategy_type"] = strategy_type
+            attributes["is_start"] = is_start
+            if isinstance(attribute, dict):
+                # Attribute contains a dict of attributes, e.g. notes, etc.
+                attributes.update(attribute)
+            else:
+                # Attribute is a string containing the attribute name
+                attributes["attribute"] = attribute
+            # Save the matched pattern to aid trouble-shooting
+            attributes["notes"] = (
+                attributes["notes"] + " " + f' r"{pattern.pattern}"'
+                if attributes["notes"]
+                else f'r"{pattern.pattern}"'
+            )
+            # Return the first matching pattern
+            return attributes
+
+    # Didn't match any patterns, so return empty attributes
+    return attributes
+
+
+@functools.cache
 def get_livelihood_activity_label_map(activity_type: str) -> dict[str, dict]:
     """
     Return a dict of the attributes for the Livelihood Activities, stored in the ActivityLabel Django model.
     """
     label_map = {
         instance["activity_label"].lower(): instance
-        for instance in ActivityLabel.objects.filter(status=LabelStatus.COMPLETE, activity_type=activity_type).values(
+        for instance in ActivityLabel.objects.filter(
+            status=ActivityLabel.LabelStatus.OVERRIDE, activity_type=activity_type
+        ).values(
             "activity_label",
             "strategy_type",
             "is_start",
@@ -232,12 +334,12 @@ def get_label_attributes(label: str, activity_type: str) -> pd.Series:
     individually in the ActivityLabel model.
 
     Before looking for a regex match, if the label has a corresponding instance in the ActivityLabel
-    model with status=COMPLETE, then it returns the attributes from that instance. This allows us to
+    model with status=OVERRIDE, then it returns the attributes from that instance. This allows us to
     support labels that are too complex to match with a regex. For example, the ButterProduction
     labels often contain the name of the milk that the butter is derived from, and so we need to
     return a CPC code that is different to the one matched by the product in the label. This also
     allows us to create new labels to support new BSSs without needing to update code. We use the
-    ActivityLabel instances in before testing the regexes, so that we can override the regexes if
+    ActivityLabel instances before testing the regexes, so that we can override the regexes if
     necessary, e.g. to ignore labels containing a product_id that doesn't match any of the
     ClassifiedProduct instances.
 
@@ -248,44 +350,259 @@ def get_label_attributes(label: str, activity_type: str) -> pd.Series:
     try:
         return pd.Series(get_livelihood_activity_label_map(activity_type)[label])
     except KeyError:
-        # No entry in the ActivityLabel model for this label, so attempt to match the label against the regexes
-        attributes = {
-            "activity_label": None,
-            "strategy_type": None,
-            "is_start": None,
-            "product_id": None,
-            "unit_of_measure_id": None,
-            "season": None,
-            "additional_identifier": None,
-            "attribute": None,
-            "notes": None,
-        }
-        for pattern, strategy_type, is_start, attribute in get_livelihood_activity_regexes():
-            match = pattern.fullmatch(label)
-            if match:
-                attributes.update(match.groupdict())
-                attributes["activity_label"] = label
-                attributes["strategy_type"] = strategy_type
-                attributes["is_start"] = is_start
-                if isinstance(attribute, dict):
-                    # Attribute contains a dict of attributes, e.g. notes, etc.
-                    attributes.update(attribute)
-                else:
-                    # Attribute is a string containing the attribute name
-                    attributes["attribute"] = attribute
-                # Save the matched pattern to aid trouble-shooting
-                attributes["notes"] = (
-                    attributes["notes"] + " " + f' r"{pattern.pattern}"'
-                    if attributes["notes"]
-                    else f'r"{pattern.pattern}"'
+        # No entry in the ActivityLabel model instance for this label, so attempt to match against the regexes
+        attributes = get_livelihood_activity_regular_expression_attributes(label)
+        return pd.Series(attributes)
+
+
+def get_all_label_attributes(labels: pd.Series, activity_type: str, country_code: str | None) -> pd.DataFrame:
+    """
+    Return a DataFrame of the attributes for all of the labels in the supplied Series.
+
+    The Product, Unit of Measure and Season attributes are processed using the relevant Lookup classes so that the
+    resulting DataFrame contains the correct identifiers for these attributes.
+
+    The country_code parameter is optional so that this function can be used to test individual labels,
+    but it should be provided when processing a BSS because the Season lookup is country-specific.
+    """
+    # Clear caches for the functions, so that we use the lastest data from the database
+    get_label_attributes.cache_clear()
+    get_livelihood_activity_label_map.cache_clear()
+
+    # Prepare the lookups, so they cache the individual results
+    classifiedproductlookup = ClassifiedProductLookup(
+        require_match=False  # It is possible that there won't be any Product matches, e.g. for LivelihoodSummary labels
+    )
+    unitofmeasurelookup = UnitOfMeasureLookup(
+        require_match=False  # It is possible that there won't be any Unit of Measure matches, e.g. for OtherCashIncome
+    )
+    seasonnamelookup = SeasonNameLookup(
+        require_match=False  # It is possible that there won't be any Season matches, e.g. for OtherCashIncome
+    )
+
+    # Build a dataframe of the attributes for each Label, including lookups for Product, Unit of Measure and Season
+    all_label_attributes = labels.apply(lambda x: get_label_attributes(x, activity_type)).fillna("")
+    all_label_attributes = classifiedproductlookup.do_lookup(all_label_attributes, "product_id", "product_id")
+    all_label_attributes["product_id"] = all_label_attributes["product_id"].replace(pd.NA, None)
+    all_label_attributes = unitofmeasurelookup.do_lookup(
+        all_label_attributes, "unit_of_measure_id", "unit_of_measure_id"
+    )
+    all_label_attributes["unit_of_measure_id"] = all_label_attributes["unit_of_measure_id"].replace(pd.NA, None)
+    # Add the country_id because it is required for the Season lookup
+    if country_code:
+        all_label_attributes["country_id"] = country_code
+        all_label_attributes = seasonnamelookup.do_lookup(all_label_attributes, "season", "season")
+        all_label_attributes["season"] = all_label_attributes["season"].replace(pd.NA, None)
+
+    # Make sure we keep the same index so we can match by row number
+    all_label_attributes.index = labels.index
+
+    # Sometimes, particularly for FoodPurchase, OtherExpenditure and OtherCashIncome, the label in column A
+    # is the name of a Product, or an alias for one, with no other text. Therefore, for labels where we haven't
+    # identified any attributes, we attempt to match the label as a Product name.  If we find a match, we set the
+    # `activity_label` and the `additional_identifier` to the text of the label and set the `product_id`. We set the
+    # `additional_identifier` so that we can differentiate between aggregate Livelihood Strategies under a high-level
+    # Classified Product, e.g. Skilled Labor, without losing the specific text that was provided in the BSS.
+    product_labels = labels[all_label_attributes["activity_label"] == ""].to_frame(name="label")
+    product_labels = classifiedproductlookup.do_lookup(product_labels, "label", "product_id")
+    # Set the activity_label so that get_instances_from_dataframe() doesn't treat these as unrecognized labels
+    product_labels.loc[product_labels["product_id"].notna(), "activity_label"] = product_labels.loc[
+        product_labels["product_id"].notna(), "label"
+    ]
+    # Set the additional_identifier so that we can differentiate between different labels that map to the same product
+    product_labels.loc[product_labels["product_id"].notna(), "additional_identifier"] = product_labels.loc[
+        product_labels["product_id"].notna(), "label"
+    ]
+    # Labels that contain just a product name or alias and weren't recognized by an Activity Label or regular
+    # expression always indicate a new Livelihood Strategy with the values in the row containing income or expenditure,
+    # depending on the Livelihood Strategy.
+    product_labels.loc[product_labels["product_id"].notna(), "is_start"] = True
+    product_labels.loc[product_labels["product_id"].notna(), "attribute"] = "income_or_expenditure"
+    # Copy the product labels back into the main dataframe
+    all_label_attributes.update(product_labels.drop(columns=["label"]))
+
+    return all_label_attributes
+
+
+@asset(io_manager_key="dataframe_excel_io_manager")
+def livelihood_activity_label_recognition_dataframe(
+    context: AssetExecutionContext,
+    config: BSSMetadataConfig,
+    all_livelihood_activity_labels_dataframe: pd.DataFrame,
+    all_other_cash_income_labels_dataframe: pd.DataFrame,
+    all_wild_foods_labels_dataframe: pd.DataFrame,
+    all_livelihood_summary_labels_dataframe: pd.DataFrame,
+) -> Output[dict[str, pd.DataFrame]]:
+    """
+    A saved spreadsheet showing how each BSS label is recognized, either from the ActivityLabel model or a regex.
+    """
+    all_livelihood_activity_labels_dataframe["activity_type"] = (
+        ActivityLabel.LivelihoodActivityType.LIVELIHOOD_ACTIVITY
+    )
+    all_other_cash_income_labels_dataframe["activity_type"] = ActivityLabel.LivelihoodActivityType.OTHER_CASH_INCOME
+    all_wild_foods_labels_dataframe["activity_type"] = ActivityLabel.LivelihoodActivityType.WILD_FOODS
+    all_livelihood_summary_labels_dataframe["activity_type"] = ActivityLabel.LivelihoodActivityType.LIVELIHOOD_SUMMARY
+
+    # Build a dataframe of all the Activity Labels from all BSSs, including the attributes recognized from the labels,
+    # including any labels that are matched directly as Products.
+    all_labels_df = pd.DataFrame()
+    for summary_label_df in [
+        all_livelihood_activity_labels_dataframe,
+        all_other_cash_income_labels_dataframe,
+        all_wild_foods_labels_dataframe,
+        all_livelihood_summary_labels_dataframe,
+    ]:
+        recognized_attributes_df = get_all_label_attributes(
+            summary_label_df["label"],
+            summary_label_df["activity_type"].iloc[0],
+            country_code=None,  # We don't need the Season lookup for this asset
+        )
+        # Join the recognized attributes to the label dataframe
+        summary_label_df = summary_label_df.join(
+            recognized_attributes_df,
+            how="left",
+        )
+        all_labels_df = pd.concat([all_labels_df, summary_label_df], ignore_index=True)
+
+    # Add the regular expressions
+    regex_attributes_df = pd.DataFrame.from_records(
+        all_labels_df["label"].astype(str).map(get_livelihood_activity_regular_expression_attributes)
+    )
+    all_labels_df = all_labels_df.join(
+        regex_attributes_df,
+        how="left",
+        lsuffix="",
+        rsuffix="_regex",
+    )
+
+    # Add the labels from the database
+    db_labels_df = pd.DataFrame.from_records(
+        ActivityLabel.objects.annotate(label_lower=Lower("activity_label")).values(
+            "label_lower",
+            "activity_type",
+            "status",
+            "strategy_type",
+            "is_start",
+            "product_id",
+            "unit_of_measure_id",
+            "currency_id",
+            "season",
+            "additional_identifier",
+            "attribute",
+            "notes",
+        )
+    )
+    all_labels_df = all_labels_df.join(
+        db_labels_df.set_index(["label_lower", "activity_type"]),
+        on=("label_lower", "activity_type"),
+        how="left",
+        lsuffix="",
+        rsuffix="_db",
+    )
+
+    # Create a deduplicated dataframe of all of the labels
+    summary_label_df = all_labels_df.sort_values(by=["label_lower", "row_number", "bss"])
+    summary_label_df = (
+        summary_label_df.groupby(
+            "label_lower",
+        )
+        .agg(
+            langs=(
+                "lang",
+                lambda x: ", ".join(x.sort_values().unique()),
+            ),  # Create comma-separated list of unique languages
+            datapoint_count_sum=("datapoint_count", "sum"),
+            in_summary_sum=("in_summary", "sum"),
+            unique_bss_count=("bss", pd.Series.nunique),
+            min_row_number=("row_number", "min"),
+            max_row_number=("row_number", "max"),
+            bss_for_min_row=("bss", "first"),  # Assuming df is sorted by row_number within each group
+            bss_for_max_row=("bss", "last"),  # Assuming df is sorted by row_number within each group
+        )
+        .reset_index()
+    )
+    summary_label_df = summary_label_df.sort_values(
+        by=["min_row_number", "label_lower", "bss_for_min_row", "bss_for_max_row"]
+    )
+    summary_label_df = summary_label_df.rename(
+        columns={"label_lower": "label", "datapoint_count_sum": "datapoint_count", "in_summary_sum": "summary_count"}
+    )
+    summary_label_df = summary_label_df.join(
+        all_labels_df[
+            [
+                "label_lower",
+                "activity_type",
+                "activity_label",
+                "strategy_type",
+                "is_start",
+                "product_id_original",
+                "unit_of_measure_id_original",
+                "season",
+                "additional_identifier",
+                "attribute",
+                "notes",
+                "product_id",
+                "unit_of_measure_id",
+                "activity_label_regex",
+                "strategy_type_regex",
+                "is_start_regex",
+                "product_id_regex",
+                "unit_of_measure_id_regex",
+                "season_regex",
+                "additional_identifier_regex",
+                "attribute_regex",
+                "notes_regex",
+                "status",
+                "strategy_type_db",
+                "is_start_db",
+                "product_id_db",
+                "unit_of_measure_id_db",
+                "currency_id",
+                "season_db",
+                "additional_identifier_db",
+                "attribute_db",
+                "notes_db",
+            ]
+        ]
+        .drop_duplicates()
+        .set_index("label_lower"),
+        on="label",
+        how="inner",
+    )
+
+    return Output(
+        {"Label Summary": summary_label_df, "All Labels": all_labels_df},
+        metadata={
+            "num_labels": len(all_labels_df),
+            "num_distinct_labels": len(summary_label_df),
+            "num_used_labels": len(summary_label_df[summary_label_df["datapoint_count"] > 0]),
+            "num_recognized_labels": len(summary_label_df[summary_label_df["activity_label"] != ""]),
+            "pct_recognized_labels": (
+                round(len(summary_label_df[summary_label_df["activity_label"] != ""]) / len(summary_label_df) * 100, 1)
+                if len(summary_label_df) > 0
+                else 0
+            ),
+            "pct_recognized_used_labels": (
+                round(
+                    len(
+                        summary_label_df[
+                            (summary_label_df["datapoint_count"] > 0) & (summary_label_df["activity_label"] != "")
+                        ]
+                    )
+                    / len(summary_label_df[summary_label_df["datapoint_count"] > 0])
+                    * 100,
+                    1,
                 )
-                return pd.Series(attributes)
-        # No pattern matched
-        return pd.Series(attributes).fillna(pd.NA)
+                if len(summary_label_df) > 0
+                else 0
+            ),
+        },
+    )
 
 
 def get_instances_from_dataframe(
     context: AssetExecutionContext,
+    config: BSSMetadataConfig,
     df: pd.DataFrame,
     livelihood_zone_baseline: LivelihoodZoneBaseline,
     activity_type: str,
@@ -319,51 +636,62 @@ def get_instances_from_dataframe(
         livelihood_zone_baseline.reference_year_end_date.isoformat(),
     ]
 
-    # Prepare the lookups, so they cache the individual results
-    seasonnamelookup = SeasonNameLookup()
-    unitofmeasurelookup = UnitOfMeasureLookup()
+    # Save the identifier for Season 2 because we need it when creating MilkProduction instances
+    season2_name = SeasonNameLookup().get("Season 2", country_id=livelihood_zone_baseline.livelihood_zone.country_id)
+
+    # Prepare a lookup for ClassifiedProduct, so it caches and reuses the results of .get() lookups
     classifiedproductlookup = ClassifiedProductLookup()
 
     # Get a dataframe of the Wealth Groups for each column
     wealth_group_df = get_wealth_group_dataframe(df, livelihood_zone_baseline, worksheet_name, partition_key)
 
-    # Prepare the label column for matching against the label_map
-    all_label_attributes = df["A"].apply(lambda x: get_label_attributes(x, activity_type)).fillna("")
-    all_label_attributes = classifiedproductlookup.do_lookup(all_label_attributes, "product_id", "product_id")
-    all_label_attributes["product_id"] = all_label_attributes["product_id"].replace(pd.NA, None)
-    try:
-        all_label_attributes = unitofmeasurelookup.do_lookup(
-            all_label_attributes, "unit_of_measure_id", "unit_of_measure_id"
-        )
-        all_label_attributes["unit_of_measure_id"] = all_label_attributes["unit_of_measure_id"].replace(pd.NA, None)
-    except ValueError:
-        # It is possible that there won't be any Unit of Measure matches, e.g. for OtherCashIncome
-        pass
-    # Add the country_id because it is required for the Season lookup
-    all_label_attributes["country_id"] = livelihood_zone_baseline.livelihood_zone.country_id
-    try:
-        all_label_attributes = seasonnamelookup.do_lookup(all_label_attributes, "season", "season")
-        all_label_attributes["season"] = all_label_attributes["season"].replace(pd.NA, None)
-    except ValueError:
-        # It is possible that there won't be any Season matches, e.g. for OtherCashIncome
-        pass
-    # Make sure we keep the same index so we can match by row number
-    all_label_attributes.index = df.index
+    # Summary columns are those with a Wealth Group Category but not a Community
+    summary_columns = wealth_group_df[
+        (wealth_group_df["wealth_group_category"].notnull()) & (wealth_group_df["community"].isnull())
+    ]["bss_column"].tolist()
+
+    # Get a dataframe of the attributes for each label in column A
+    all_label_attributes = get_all_label_attributes(
+        df["A"], activity_type, livelihood_zone_baseline.livelihood_zone.country_id
+    )
 
     # Check that we recognize all of the activity labels
+    # The unrecognized labels are rows after the header rows where column A is not blank,
+    # but the matching row in all_label_attributes dataframe has a blank activity_label.
+    # Group the resulting dataframe so that we have a label and a list of the rows where it occurs.
     allow_unrecognized_labels = True
-    unrecognized_labels = (
-        df.iloc[num_header_rows:][
-            (df["A"].iloc[num_header_rows:] != "") & (all_label_attributes.iloc[num_header_rows:, 0].isna())
-        ]
-        .groupby("A")
-        .apply(lambda x: ", ".join(x.index.astype(str)))
-    )
+    # Identify rows where Column A is non-empty and the label wasn't recognized
+    unrecognized_labels = df.iloc[num_header_rows:][
+        (df["A"].iloc[num_header_rows:] != "") & (all_label_attributes.iloc[num_header_rows:]["activity_label"] == "")
+    ]
     if unrecognized_labels.empty:
-        unrecognized_labels = pd.DataFrame(columns=["label", "rows"])
+        # Keep the same shape as the non-empty case (label, rows, datapoint_count, in_summary)
+        unrecognized_labels = pd.DataFrame(columns=["label", "rows", "datapoint_count", "in_summary"])
     else:
-        unrecognized_labels = unrecognized_labels.reset_index()
-        unrecognized_labels.columns = ["label", "rows"]
+        # Boolean mask of which cells are used
+        # Count datapoints per row
+        unrecognized_labels["datapoint_count"] = unrecognized_labels.loc[:, "B":].apply(
+            lambda row: sum((row != 0) & (row != "")), axis="columns"
+        )
+        # Count datapoints per row that are in the summary columns
+        unrecognized_labels["summary_datapoint_count"] = unrecognized_labels.loc[:, summary_columns].apply(
+            lambda row: sum((row != 0) & (row != "")), axis="columns"
+        )
+        # Aggregate datapoint count by label
+        unrecognized_labels.loc[:, "label"] = prepare_lookup(unrecognized_labels["A"])
+        unrecognized_labels = (
+            unrecognized_labels.groupby("label")
+            .agg(
+                rows=("A", lambda x: ",".join(x.index.astype(str))),
+                datapoints=("datapoint_count", "sum"),
+                summary_datapoints=("summary_datapoint_count", "sum"),
+            )
+            .reset_index()
+        )
+        # Sort the rows by the first row number where the label occurs
+        unrecognized_labels = unrecognized_labels.sort_values(
+            by="rows", key=lambda x: x.str.split(",").str.get(0).astype(int)
+        )
         message = "Unrecognized activity labels:\n\n" + unrecognized_labels.to_markdown(index=False)
         if allow_unrecognized_labels:
             context.log.warning(message)
@@ -415,15 +743,29 @@ def get_instances_from_dataframe(
                 # Ignore rows that don't contain any relevant data (or which aren't recognized by get_label_attributes)
                 continue
 
+            # When we process the values for the LivelihoodActivity records, we need to know the actual attribute
+            # that the values in this row are for. Livelihood Summary rows are grouped by percentage_kcals, income and
+            # expenditure, so we can keep the activity_attribute from the previous Livelihood Strategy if it hasn't
+            # been set by the label_attributes.
+            if (
+                activity_type != ActivityLabel.LivelihoodActivityType.LIVELIHOOD_SUMMARY
+                or label_attributes["attribute"]
+            ):
+                activity_attribute = label_attributes["attribute"]
+
             if label_attributes["is_start"]:
                 # We are starting a new livelihood activity, so append the previous livelihood strategy
                 # to the list, provided that it has at least one Livelihood Activity where there is some income,
                 # expediture or consumption. This excludes empty activities that only contain attributes for,
                 # for example, 'type_of_milk_sold_or_other_uses'.
+                # Also ignore any livelihood activities that don't have a Wealth Category component to the Wealth Group
+                # natural key. These are from blank columns between Wealth Category groups in the BSS, which sometimes
+                # contain data where values or formulae have been copied across all the columns in a row.
                 non_empty_livelihood_activities = [
                     livelihood_activity
                     for livelihood_activity in livelihood_activities_for_strategy
-                    if any(
+                    if livelihood_activity["wealth_group"][2]  # Make sure there is a Wealth Category
+                    and any(
                         (
                             field in livelihood_activity
                             and (livelihood_activity[field] or livelihood_activity[field] == 0)
@@ -432,51 +774,62 @@ def get_instances_from_dataframe(
                     )
                 ]
 
-                # Don't save Livelihood Strategies from the Data worksheet that are captured in more detail
-                # on the Data2 or Data3 worksheets. These strategies have entries in the Data sheet like 'Construction cash income -- see Data2'
-                if non_empty_livelihood_activities and re.match(
-                    r"^.*(?:data ?[23]|prochaine feuille)$", livelihood_strategy["activity_label"], re.IGNORECASE
-                ):
-                    non_empty_livelihood_activities = []
+                # Don't save Livelihood Strategies from the Data worksheet that are captured in more detail on the
+                # Data2 or Data3 worksheets. These strategies have entries in the Data sheet like
+                # 'Construction cash income -- see Data2'
+                if non_empty_livelihood_activities:
+                    # Assertion to prevent linting from complaining about possible None values
+                    assert livelihood_strategy is not None, (
+                        "Found Livelihood Activities from row %s, but there is no Livelihood Strategy defined." % row
+                    )
+                    if re.match(
+                        r"^.*(?:data ?[23]|prochaine feuille)$", livelihood_strategy["activity_label"], re.IGNORECASE
+                    ):
+                        non_empty_livelihood_activities = []
 
                 if non_empty_livelihood_activities:
                     # Finalize the livelihood strategy and activities, making various adjustments for quirks in the BSS
 
-                    # Copy the product_id for MilkProduction and ButterProduction the previous livelihood strategy if
-                    # necessary.
+                    # Assertion to prevent linting from complaining about possible None values
+                    assert livelihood_strategy is not None, (
+                        "Found Livelihood Activities from row %s, but there is no Livelihood Strategy defined." % row
+                    )
+
+                    # Copy the product_id for MilkProduction and ButterProduction from the previous livelihood strategy
+                    # if necessary.
                     if (
                         livelihood_strategy["strategy_type"] in ["MilkProduction", "ButterProduction"]
                         and ("product_id" not in livelihood_strategy or not livelihood_strategy["product_id"])
-                        and livelihood_strategy["season"]
-                        == seasonnamelookup.get(
-                            "Season 2",
-                            country_id=livelihood_zone_baseline.livelihood_zone.country_id,
-                        )
+                        and livelihood_strategy["season"] == season2_name
                         and previous_livelihood_strategy
+                        and "product_id" in previous_livelihood_strategy
                         and previous_livelihood_strategy["product_id"]
                     ):
                         livelihood_strategy["attribute_rows"]["product_id"] = row
                         livelihood_strategy["product_id"] = previous_livelihood_strategy["product_id"]
 
-                    # Copy the milking_animals for camels and cattle from the previous livelihood activities if
-                    # necessary.
+                    # Copy the milking_animals for camels and cattle from the previous livelihood activities
+                    # if necessary.
                     if (
                         livelihood_strategy["strategy_type"] == "MilkProduction"
-                        and livelihood_strategy["season"]
-                        == seasonnamelookup.get(
-                            "Season 2",
-                            country_id=livelihood_zone_baseline.livelihood_zone.country_id,
-                        )
+                        and livelihood_strategy["season"] == season2_name
                         and previous_livelihood_activities_for_strategy
-                        and "milking_animals" in previous_livelihood_strategy["attribute_rows"]
-                        and "milking_animals" not in livelihood_strategy["attribute_rows"]
                     ):
-                        livelihood_strategy["attribute_rows"]["milking_animals"] = row
-                        for i in range(len(previous_livelihood_activities_for_strategy)):
-                            if "milking_animals" in previous_livelihood_activities_for_strategy[i]:
-                                livelihood_activities_for_strategy[i]["milking_animals"] = (
-                                    previous_livelihood_activities_for_strategy[i]["milking_animals"]
-                                )
+                        # Assertion to prevent linting from complaining about possible None values
+                        assert previous_livelihood_strategy is not None, (
+                            "Found Previous Livelihood Activities from row %s, but there is no Previous Livelihood Strategy defined."
+                            % row
+                        )
+                        if (
+                            "milking_animals" in previous_livelihood_strategy["attribute_rows"]
+                            and "milking_animals" not in livelihood_strategy["attribute_rows"]
+                        ):
+                            livelihood_strategy["attribute_rows"]["milking_animals"] = row
+                            for i in range(len(previous_livelihood_activities_for_strategy)):
+                                if "milking_animals" in previous_livelihood_activities_for_strategy[i]:
+                                    livelihood_activities_for_strategy[i]["milking_animals"] = (
+                                        previous_livelihood_activities_for_strategy[i]["milking_animals"]
+                                    )
 
                     # Calculate kcals_consumed if the livelihood activity only contains the percentage_kcals.
                     # This is typical for ButterProduction and consumption of green crops.
@@ -576,7 +929,9 @@ def get_instances_from_dataframe(
                             ) or livelihood_activity.get("people_per_household", None)
                             livelihood_activity["times_per_year"] = (
                                 round(livelihood_activity["kcals_consumed"] / kcals_per_unit / number_of_units)
-                                if number_of_units and kcals_per_unit
+                                if number_of_units
+                                and kcals_per_unit
+                                and livelihood_activity["kcals_consumed"] is not None
                                 else 0
                             )
 
@@ -606,8 +961,9 @@ def get_instances_from_dataframe(
                     for i, livelihood_activity in enumerate(livelihood_activities_for_strategy):
                         livelihood_activity["livelihood_strategy"] = livelihood_zone_baseline_key + [
                             livelihood_strategy["strategy_type"],
-                            livelihood_strategy["season"] if livelihood_strategy["season"] else "",
-                            livelihood_strategy["product_id"] if livelihood_strategy["product_id"] else "",
+                            livelihood_strategy["season"] or "",  # Natural key components must be "" rather than None
+                            livelihood_strategy["product_id"]
+                            or "",  # Natural key components must be "" rather than None
                             livelihood_strategy["additional_identifier"],
                         ]
 
@@ -636,24 +992,21 @@ def get_instances_from_dataframe(
 
                     # Check the Livelihood Strategy has a Season if one is required.
                     # (e.g. for MilkProduction and ButterProduction).
-                    if livelihood_strategy["strategy_type"] in LivelihoodStrategy.REQUIRES_SEASON and (
-                        "season" not in livelihood_strategy or not livelihood_strategy["season"]
+                    if (
+                        livelihood_strategy["strategy_type"] in LivelihoodStrategy.REQUIRES_SEASON
+                        and activity_type != ActivityLabel.LivelihoodActivityType.LIVELIHOOD_SUMMARY
+                        and ("season" not in livelihood_strategy or not livelihood_strategy["season"])
                     ):
                         strategy_is_valid = False
+                        # Include the header rows so that we can see which Wealth Groups are affected
                         rows = df.index[:num_header_rows].tolist() + [livelihood_strategy["row"]]
-                        error_message = "Cannot determine season from %s for %s %s on row %s for label '%s':\n%s" % (
+                        error_message = "Cannot determine season from '%s' for %s %s on row %s for label '%s':\n%s" % (
                             livelihood_strategy["season_original"],
                             "summary" if non_empty_summary_activities else "non-summary",
                             livelihood_strategy["strategy_type"],
                             livelihood_strategy["row"],
                             livelihood_strategy["activity_label"],
-                            # Use replace/dropna/fillna so that the error message only includes the columns that
-                            # contain unwanted data.
-                            df.loc[rows]
-                            .replace("", pd.NA)
-                            .dropna(axis="columns", subset=livelihood_strategy["row"])
-                            .fillna("")
-                            .to_markdown(),
+                            get_sample_data(df, rows).to_markdown(),
                         )
                         if not non_empty_summary_activities:
                             # No summary activities so we don't need to log an error, a warning is sufficient
@@ -663,24 +1016,24 @@ def get_instances_from_dataframe(
                             errors.append(error_message)
 
                     # Check the Livelihood Strategy has a product_id if one is required.
-                    if livelihood_strategy["strategy_type"] in LivelihoodStrategy.REQUIRES_PRODUCT and (
-                        "product_id" not in livelihood_strategy or not livelihood_strategy["product_id"]
+                    if (
+                        livelihood_strategy["strategy_type"] in LivelihoodStrategy.REQUIRES_PRODUCT
+                        and activity_type != ActivityLabel.LivelihoodActivityType.LIVELIHOOD_SUMMARY
+                        and ("product_id" not in livelihood_strategy or not livelihood_strategy["product_id"])
                     ):
                         strategy_is_valid = False
+                        # Include the header rows so that we can see which Wealth Groups are affected
                         rows = df.index[:num_header_rows].tolist() + [livelihood_strategy["row"]]
-                        error_message = "Cannot determine product_id from %s for %s %s on row %s for label '%s':\n%s" % (
-                            livelihood_strategy["product_id_original"],
-                            "summary" if non_empty_summary_activities else "non-summary",
-                            livelihood_strategy["strategy_type"],
-                            livelihood_strategy["row"],
-                            livelihood_strategy["activity_label"],
-                            # Use replace/dropna/fillna so that the error message only includes the columns that
-                            # contain unwanted data.
-                            df.loc[rows]
-                            .replace("", pd.NA)
-                            .dropna(axis="columns", subset=livelihood_strategy["row"])
-                            .fillna("")
-                            .to_markdown(),
+                        error_message = (
+                            "Cannot determine product_id from '%s' for %s %s on row %s for label '%s':\n%s"
+                            % (
+                                livelihood_strategy["product_id_original"],
+                                "summary" if non_empty_summary_activities else "non-summary",
+                                livelihood_strategy["strategy_type"],
+                                livelihood_strategy["row"],
+                                livelihood_strategy["activity_label"],
+                                get_sample_data(df, rows).to_markdown(),
+                            )
                         )
                         if not non_empty_summary_activities:
                             # No summary activities so we don't need to log an error, a warning is sufficient
@@ -708,10 +1061,47 @@ def get_instances_from_dataframe(
 
                 # Headings like CROP PRODUCTION: set the strategy type for subsequent rows.
                 # Some other labels imply specific strategy types, such as MilkProduction, MeatProduction or LivestockSales
-                if label_attributes["strategy_type"]:
+                # For Livelihood Summary activities, the strategy_type is always set from the label_attributes.
+                if (
+                    label_attributes["strategy_type"]
+                    or activity_type == ActivityLabel.LivelihoodActivityType.LIVELIHOOD_SUMMARY
+                ):
                     strategy_type = label_attributes["strategy_type"]
+
+                    # In the Summary section at the top of the Data worksheet, many of the labels are ambiguous but the
+                    # rows are organized into percentage_kcals, income and expenditure sections. Therefore, we can set the
+                    # Strategy Type based on the activity_attribute.
+                    if strategy_type == "ReliefGift_or_Purchase":
+                        if activity_attribute in ("percentage_kcals", "income"):
+                            strategy_type = LivelihoodStrategyType.RELIEF_GIFT_OTHER
+                        elif activity_attribute == "expenditure":
+                            strategy_type = LivelihoodStrategyType.OTHER_PURCHASE
+                        else:
+                            errors.append(
+                                "Invalid strategy_type %s for attribute %s from label '%s'"
+                                % (strategy_type, activity_attribute, label)
+                            )
+                            activity_attribute = None
+                    elif strategy_type == "CashIncome_or_Purchase":
+                        if activity_attribute == "income":
+                            strategy_type = LivelihoodStrategyType.OTHER_CASH_INCOME
+                        elif activity_attribute == "expenditure":
+                            strategy_type = LivelihoodStrategyType.OTHER_PURCHASE
+                        else:
+                            errors.append(
+                                "Invalid strategy_type %s for attribute %s from label '%s'"
+                                % (strategy_type, activity_attribute, label)
+                            )
+                            activity_attribute = None
+
                     # Get the valid fields names so we can determine if the attribute is stored in LivelihoodActivity.extra
-                    model = class_from_name(f"baseline.models.{strategy_type}")
+                    # Livelihood Summary activities only contain kcals, income and expenditure, and aren't stored in
+                    # the database, so can use the base LivelihoodActivity model.
+                    model = (
+                        LivelihoodActivity
+                        if activity_type == ActivityLabel.LivelihoodActivityType.LIVELIHOOD_SUMMARY
+                        else class_from_name(f"baseline.models.{strategy_type}")
+                    )
                     activity_field_names = [field.name for field in model._meta.concrete_fields]
                     # Also include values that point directly to the primary key of related objects
                     activity_field_names += [
@@ -720,7 +1110,10 @@ def get_instances_from_dataframe(
                         if field.get_attname() not in activity_field_names
                     ]
 
-                if not strategy_type:
+                # Raise an error if we find attributes without a strategy_type being set, unless we are processing
+                # the Livelihood Summary section, where we set the attribute from the section heading without wanting
+                # to save the actual data.
+                if not strategy_type and activity_type != ActivityLabel.LivelihoodActivityType.LIVELIHOOD_SUMMARY:
                     raise ValueError(
                         "Found attributes %s from row %s without a strategy_type set" % (label_attributes, row)
                     )
@@ -776,16 +1169,31 @@ def get_instances_from_dataframe(
 
                 # We are not starting a new Livelihood Strategy, but there may be
                 # additional attributes that need to be added to the current one.
+
+                # If we have attributes but haven't started a livelihood_strategy, then raise an error.
                 if not livelihood_strategy:
+                    additional_attributes = [label_attributes["attribute"]] if label_attributes["attribute"] else []
+                    for attribute in [
+                        "is_start",
+                        "product_id",
+                        "unit_of_measure_id",
+                        "season",
+                        "additional_identifier",
+                        "notes",
+                    ]:
+                        if label_attributes[attribute]:
+                            additional_attributes.append(attribute)
                     raise ValueError(
-                        "Found additional attributes %s from row %s without an existing LivelihoodStrategy"
-                        % (label_attributes, row)
+                        "Found attributes from label '%s' in row %s without an existing LivelihoodStrategy: %s"
+                        % (label_attributes["activity_label"], row, ", ".join(additional_attributes))
                     )
 
-                # Only update expected keys, and only if we found a value for that attribute.
+                # Only update expected keys, and only if we found a value for that attribute that doesn't conflict with
+                # an existing value.
                 for attribute, value in label_attributes.items():
                     if attribute in livelihood_strategy and attribute not in ["activity_label", "pattern"] and value:
                         if not livelihood_strategy[attribute]:
+                            # Attribute not yet set for the `livelihood_strategy`, so it is safe to set it.
                             livelihood_strategy[attribute] = value
                             livelihood_strategy["attribute_rows"][attribute] = row
 
@@ -818,8 +1226,8 @@ def get_instances_from_dataframe(
                             and not livelihood_strategy["product_id"].startswith(value)
                             and not value == "L02129AA"
                         ):
-                            raise ValueError(
-                                "Found duplicate value %s from row %s for existing attribute %s with value %s from row %s"
+                            errors.append(
+                                "Found different value '%s' from row %s for existing attribute '%s' with value '%s' from row %s"
                                 % (
                                     value,
                                     row,
@@ -831,10 +1239,6 @@ def get_instances_from_dataframe(
 
             # Update the LivelihoodActivity records
             if any(value for value in df.loc[row, "B":].astype(str).str.strip()):
-
-                # When we get the values for the LivelihoodActivity records, we just want the actual attribute
-                # that the values in the row are for
-                activity_attribute = label_attributes["attribute"]
 
                 # Some labels are ambiguous and map to different attributes depending on the strategy_type.
                 if activity_attribute == "quantity_produced_or_purchased":
@@ -848,6 +1252,19 @@ def get_instances_from_dataframe(
                         activity_attribute = "unit_multiple"
                     elif livelihood_strategy["strategy_type"] == LivelihoodStrategyType.OTHER_CASH_INCOME:
                         activity_attribute = "payment_per_time"
+                    else:
+                        errors.append(
+                            "Invalid strategy_type %s for attribute %s from label '%s'"
+                            % (strategy_type, activity_attribute, label)
+                        )
+                        activity_attribute = None
+                elif activity_attribute == "income_or_expenditure":
+                    if livelihood_strategy["strategy_type"] == LivelihoodStrategyType.FOOD_PURCHASE:
+                        activity_attribute = "expenditure"
+                    elif livelihood_strategy["strategy_type"] == LivelihoodStrategyType.OTHER_PURCHASE:
+                        activity_attribute = "expenditure"
+                    elif livelihood_strategy["strategy_type"] == LivelihoodStrategyType.OTHER_CASH_INCOME:
+                        activity_attribute = "income"
                     else:
                         errors.append(
                             "Invalid strategy_type %s for attribute %s from label '%s'"
@@ -895,6 +1312,7 @@ def get_instances_from_dataframe(
                                     and livelihood_strategy["product_id"]
                                     != product_name_df["product_id"].dropna().iloc[0]
                                 ):
+                                    # Include the header rows so that we can see which Wealth Groups are affected
                                     rows = df.index[:num_header_rows].tolist() + [row]
                                     errors.append(
                                         "Found different products %s and %s in label and other columns on row %s for label '%s':\n%s"
@@ -903,18 +1321,13 @@ def get_instances_from_dataframe(
                                             product_name_df["product_id"].iloc[0],
                                             row,
                                             label,
-                                            # Use replace/dropna/fillna so that the error message only includes the columns that
-                                            # contain unwanted data.
-                                            df.loc[rows]
-                                            .replace("", pd.NA)
-                                            .dropna(axis="columns", subset=row)
-                                            .fillna("")
-                                            .to_markdown(),
+                                            get_sample_data(df, rows).to_markdown(),
                                         )
                                     )
 
                         except ValueError:
                             if not livelihood_strategy["product_id"]:
+                                # Include the header rows so that we can see which Wealth Groups are affected
                                 rows = df.index[:num_header_rows].tolist() + [row]
                                 errors.append(
                                     "Failed to identify product from %s on row %s for label '%s':\n%s"
@@ -922,13 +1335,7 @@ def get_instances_from_dataframe(
                                         ", ".join(product_name_df["product__name"].dropna().astype(str).unique()),
                                         row,
                                         label,
-                                        # Use replace/dropna/fillna so that the error message only includes the columns that
-                                        # contain unwanted data.
-                                        df.loc[rows]
-                                        .replace("", pd.NA)
-                                        .dropna(axis="columns", subset=row)
-                                        .fillna("")
-                                        .to_markdown(),
+                                        get_sample_data(df, rows).to_markdown(),
                                     )
                                 )
 
@@ -961,7 +1368,7 @@ def get_instances_from_dataframe(
                     # Livelihood Activity without containing any actual data.
                     values = df.loc[row, "B":].replace("", pd.NA).dropna().astype(str).str.strip().unique()
                     if values.size > 1 or values[0] not in ["0", "1"]:
-                        # Include the header rows as well as the current row in the error message to aid trouble-shooting
+                        # Include the header rows so that we can see which Wealth Groups are affected
                         rows = df.index[:num_header_rows].tolist() + [row]
                         errors.append(
                             "Found values %s without an identified attribute on row %s for label '%s':\n%s"
@@ -969,41 +1376,40 @@ def get_instances_from_dataframe(
                                 ", ".join(values),
                                 row,
                                 label,
-                                # Use replace/dropna/fillna so that the error message only includes the columns that
-                                # contain unwanted data.
-                                df.loc[rows]
-                                .replace("", pd.NA)
-                                .dropna(axis="columns", subset=row)
-                                .fillna("")
-                                .to_markdown(),
+                                get_sample_data(df, rows).to_markdown(),
                             )
                         )
 
                 # If the activity label that marks the start of a Livelihood Strategy is not
-                # returned by `ActivityLabel.objects.filter(status=LabelStatus.COMPLETE)`,
-                # and hence is not in the `activity_label_map`, then repeated labels like
+                # recognized by the get_label_attributes lookup, then repeated labels like
                 # `kcals (%)` will appear to be duplicate attributes for the previous
-                # `1ivelihood_strategy`. Therefore, if we have `allow_unrecognized_labels` we
-                # need to ignore the duplicates, but if we don't, we should raise an error.
+                # LivelihoodStrategy. Therefore, if we have `allow_unrecognized_labels` we
+                # need to ignore the duplicates, and if we don't we should raise an error.
                 elif activity_attribute in livelihood_strategy["attribute_rows"]:
                     if allow_unrecognized_labels:
                         # Skip to the next row
                         continue
                     else:
                         errors.append(
-                            "Found duplicate value %s for existing attribute %s with value %s on row %s for label '%s'"
+                            "Found duplicate attribute '%s' for label '%s' in row %s that was already found in row %s for this LivelihoodStrategy"
                             % (
-                                value,
-                                attribute,
-                                livelihood_strategy[attribute],
-                                row,
+                                activity_attribute,
                                 label,
+                                row,
+                                livelihood_strategy["attribute_rows"][activity_attribute],
                             )
                         )
 
-                # Add the attribute to the LivelihoodStrategy.attribute_rows
-                else:
+                # Add the attribute to the LivelihoodStrategy.attribute_rows, assuming we have a strategy_type.
+                # Some rows may have set attributes without setting a strategy_type, for example in the
+                # Livelihood Summary section.
+                elif strategy_type:
                     livelihood_strategy["attribute_rows"][activity_attribute] = row
+                    # Assertion to prevent linting from complaining about possible None values
+                    assert activity_field_names is not None, (
+                        "Found activity_attribute %s from row %s, but there is no Livelihood Strategy and therefore no activity_field_names defined."
+                        % (activity_attribute, row)
+                    )
                     for i, value in enumerate(df.loc[row, "B":]):
                         # Some attributes are stored in LivelihoodActivity.extra rather than individual fields.
                         if activity_attribute not in activity_field_names:
@@ -1025,13 +1431,6 @@ def get_instances_from_dataframe(
                     % (partition_key, worksheet_name, row, label)
                 ) from e
 
-    raise_errors = True
-    if errors and raise_errors:
-        errors = "\n".join(errors)
-        raise RuntimeError(
-            "Missing or inconsistent metadata in BSS %s worksheet '%s':\n%s" % (partition_key, worksheet_name, errors)
-        )
-
     result = {
         "LivelihoodStrategy": livelihood_strategies,
         "LivelihoodActivity": livelihood_activities,
@@ -1040,18 +1439,66 @@ def get_instances_from_dataframe(
         "num_livelihood_strategies": len(livelihood_strategies),
         "num_livelihood_activities": len(livelihood_activities),
         "num_unrecognized_labels": len(unrecognized_labels),
-        "pct_rows_recognized": round(
-            (
-                1
-                - len(df.iloc[num_header_rows:][df.iloc[num_header_rows:]["A"].isin(unrecognized_labels["label"])])
-                / len(df.iloc[num_header_rows:])
-            )
-            * 100
-        ),
-        "preview": MetadataValue.md(f"```json\n{json.dumps(result, indent=4)}\n```"),
     }
     if not unrecognized_labels.empty:
         metadata["unrecognized_labels"] = MetadataValue.md(unrecognized_labels.to_markdown(index=False))
+    metadata["pct_rows_recognized"] = round(
+        (
+            1
+            - len(
+                df.iloc[num_header_rows:][
+                    prepare_lookup(df.iloc[num_header_rows:]["A"]).isin(unrecognized_labels["label"])
+                ]
+            )
+            / len(df.iloc[num_header_rows:])
+        )
+        * 100,
+        1,
+    )
+    metadata["pct_used_rows_recognized"] = round(
+        (
+            1
+            - len(
+                df.iloc[num_header_rows:][
+                    prepare_lookup(df.iloc[num_header_rows:]["A"]).isin(
+                        unrecognized_labels[unrecognized_labels["datapoints"] > 0]["label"]
+                    )
+                ]
+            )
+            / len(df.iloc[num_header_rows:])
+        )
+        * 100,
+        1,
+    )
+    metadata["pct_used_summary_rows_recognized"] = round(
+        (
+            1
+            - len(
+                df.iloc[num_header_rows:][
+                    prepare_lookup(df.iloc[num_header_rows:]["A"]).isin(
+                        unrecognized_labels[unrecognized_labels["summary_datapoints"] > 0]["label"]
+                    )
+                ]
+            )
+            / len(df.iloc[num_header_rows:])
+        )
+        * 100,
+        1,
+    )
+    metadata["preview"] = MetadataValue.md(f"```json\n{json.dumps(result, indent=4, ensure_ascii=False)}\n```")
+
+    if errors:
+        if config.strict:
+            raise RuntimeError(
+                "Missing or inconsistent metadata in BSS %s worksheet '%s':\n%s"
+                % (partition_key, worksheet_name, "\n".join(errors))
+            )
+        else:
+            context.log.error(
+                "Missing or inconsistent metadata in BSS %s worksheet '%s':\n%s"
+                % (partition_key, worksheet_name, "\n".join(errors))
+            )
+            metadata["errors"] = MetadataValue.md(f'```text\n{"\n".join(errors)}\n```')
 
     return Output(
         result,
@@ -1059,34 +1506,189 @@ def get_instances_from_dataframe(
     )
 
 
-@asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
-def livelihood_activity_instances(
+def get_annotated_instances_from_dataframe(
     context: AssetExecutionContext,
-    livelihood_activity_dataframe,
+    config: BSSMetadataConfig,
+    livelihood_activity_dataframe: pd.DataFrame,
+    livelihood_summary_dataframe: pd.DataFrame,
+    activity_type: str,
+    num_header_rows: int,
 ) -> Output[dict]:
     """
-    LivelhoodStrategy and LivelihoodActivity instances extracted from the BSS.
+    Get the LivelhoodStrategy and LivelihoodActivity instances from the BSS, annotated with completeness information.
+
+    Completeness of the recognized detail livelihood activities is calculated as a percentage of the total income,
+    expenditure and kcals_consumed reported in the livelihood summary section at the top of the Data worksheet.
     """
     # Find the metadata for this BSS
     partition_key = context.asset_partition_key_for_output()
     livelihood_zone_baseline = LivelihoodZoneBaseline.objects.get_by_natural_key(*partition_key.split("~")[1:])
 
+    # Get the detail LivelihoodStrategy and LivelihoodActivity instances
     output = get_instances_from_dataframe(
         context,
+        config,
         livelihood_activity_dataframe,
         livelihood_zone_baseline,
-        ActivityLabel.LivelihoodActivityType.LIVELIHOOD_ACTIVITY,
-        len(HEADER_ROWS),
+        activity_type,
+        num_header_rows,
         partition_key,
     )
+
+    if output.value["LivelihoodActivity"]:
+        # Get the summary instances
+        reported_summary_output = get_instances_from_dataframe(
+            context,
+            config,
+            livelihood_summary_dataframe,
+            livelihood_zone_baseline,
+            ActivityLabel.LivelihoodActivityType.LIVELIHOOD_SUMMARY,
+            # The summary section is on the Data worksheet, so has the same number of header rows
+            # regardless of the activity_type
+            len(HEADER_ROWS),
+            partition_key,
+        )
+
+        # Annotate the output metadata with completeness information
+        # Get the summary dataframe, grouped by strategy_type
+        summary_df = pd.DataFrame(reported_summary_output.value["LivelihoodActivity"])
+        for col in ["income", "expenditure", "percentage_kcals", "kcals_consumed"]:
+            summary_df[col] = pd.to_numeric(summary_df[col], errors="coerce").fillna(0)
+        summary_df = (
+            summary_df[["strategy_type", "income", "expenditure", "percentage_kcals", "kcals_consumed"]]
+            .groupby("strategy_type")
+            .sum()
+        )
+
+        # Add the recognized Livelihood Activities, also grouped by strategy_type
+        recognized_activities_df = pd.DataFrame(output.value["LivelihoodActivity"])
+        for column in ["income", "expenditure", "kcals_consumed"]:
+            if column in recognized_activities_df:
+                recognized_activities_df[column] = pd.to_numeric(
+                    recognized_activities_df[column], errors="coerce"
+                ).fillna(0)
+            else:
+                recognized_activities_df[column] = 0
+        summary_df = summary_df.join(
+            recognized_activities_df[["strategy_type", "income", "expenditure", "kcals_consumed"]]
+            .groupby("strategy_type")
+            .sum(),
+            on="strategy_type",
+            lsuffix="_summary",
+            rsuffix="_recognized",
+        ).fillna(0)
+
+        # Add a totals row at the end
+        summary_df.loc["Total"] = summary_df.sum(numeric_only=True)
+
+        # Add completeness percentages
+        summary_df = summary_df.round(0)
+        summary_df["income_completeness"] = summary_df.apply(
+            lambda row: (
+                round(row["income_recognized"] / row["income_summary"] * 100, 1)
+                if row["income_summary"] > 0
+                else pd.NA
+            ),
+            axis=1,
+        )
+        summary_df["expenditure_completeness"] = summary_df.apply(
+            lambda row: (
+                round(row["expenditure_recognized"] / row["expenditure_summary"] * 100, 1)
+                if row["expenditure_summary"] > 0
+                else pd.NA
+            ),
+            axis=1,
+        )
+        summary_df["kcals_consumed_completeness"] = summary_df.apply(
+            lambda row: (
+                round(row["kcals_consumed_recognized"] / row["kcals_consumed_summary"] * 100, 1)
+                if row["kcals_consumed_summary"] > 0
+                else pd.NA
+            ),
+            axis=1,
+        )
+        # Format the numbers as integers, for better display in the markdown table
+        for column in ["income", "expenditure", "kcals_consumed"]:
+            for source in ["recognized", "summary"]:
+                summary_df[f"{column}_{source}"] = summary_df.apply(
+                    lambda row: (
+                        int(row[f"{column}_{source}"])
+                        if (pd.notna(row[f"{column}_recognized"]) and row[f"{column}_recognized"] > 0)
+                        or (pd.notna(row[f"{column}_summary"]) and row[f"{column}_summary"] > 0)
+                        else pd.NA
+                    ),
+                    axis="columns",
+                )
+
+        # Transpose and reorder the columns and rows
+        # Sort the rows so that Strategy Types appear in the same order as in the BSS
+        ordered_strategy_types = ["LivestockProduction"] + [x for x in LivelihoodStrategyType] + ["Total"]
+        summary_df["strategy_type"] = pd.Categorical(
+            summary_df.reset_index(drop=False)["strategy_type"],
+            categories=ordered_strategy_types,
+            ordered=True,
+        )
+        summary_df = summary_df.reset_index(drop=True).sort_values(by="strategy_type")
+        summary_df = summary_df[
+            [
+                "strategy_type",
+                "kcals_consumed_recognized",
+                "kcals_consumed_summary",
+                "kcals_consumed_completeness",
+                "income_recognized",
+                "income_summary",
+                "income_completeness",
+                "expenditure_recognized",
+                "expenditure_summary",
+                "expenditure_completeness",
+            ]
+        ]
+        summary_df = summary_df.set_index("strategy_type").transpose()
+
+        # Add the completeness summary to the output metadata
+        output.metadata["pct_kcals_consumed_recognized"] = float(
+            summary_df.loc["kcals_consumed_completeness", "Total"]
+        )
+        output.metadata["pct_income_recognized"] = float(summary_df.loc["income_completeness", "Total"])
+        output.metadata["pct_expenditure_recognized"] = float(summary_df.loc["expenditure_completeness", "Total"])
+        output.metadata["completeness_summary"] = MetadataValue.md(
+            summary_df.replace(pd.NA, None).to_markdown(floatfmt=",.0f")
+        )
+
+        # Move the preview and errors metadata item to the end of the dict
+        if "errors" in output.metadata:
+            output.metadata["errors"] = output.metadata.pop("errors")
+        output.metadata["preview"] = output.metadata.pop("preview")
+
     return output
+
+
+@asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
+def livelihood_activity_instances(
+    context: AssetExecutionContext,
+    config: BSSMetadataConfig,
+    livelihood_activity_dataframe: pd.DataFrame,
+    livelihood_summary_dataframe: pd.DataFrame,
+) -> Output[dict]:
+    """
+    LivelhoodStrategy and LivelihoodActivity instances extracted from the BSS.
+    """
+    return get_annotated_instances_from_dataframe(
+        context,
+        config,
+        livelihood_activity_dataframe,
+        livelihood_summary_dataframe,
+        ActivityLabel.LivelihoodActivityType.LIVELIHOOD_ACTIVITY,
+        len(HEADER_ROWS),
+    )
 
 
 @asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
 def livelihood_activity_valid_instances(
     context: AssetExecutionContext,
-    livelihood_activity_instances,
-    wealth_characteristic_instances,
+    config: BSSMetadataConfig,
+    livelihood_activity_instances: dict,
+    wealth_characteristic_instances: dict,
 ) -> Output[dict]:
     """
     Valid LivelhoodStrategy and LivelihoodActivity instances from a BSS, ready to be loaded via a Django fixture.
@@ -1100,30 +1702,19 @@ def livelihood_activity_valid_instances(
             **{"WealthGroup": wealth_characteristic_instances["WealthGroup"]},
             **livelihood_activity_instances,
         }
-    valid_instances, metadata = validate_instances(context, livelihood_activity_instances, partition_key)
-    metadata = {f"num_{key.lower()}": len(value) for key, value in valid_instances.items()}
-    metadata["total_instances"] = sum(len(value) for value in valid_instances.values())
-    metadata["preview"] = MetadataValue.md(f"```json\n{json.dumps(valid_instances, indent=4)}\n```")
-    return Output(
-        valid_instances,
-        metadata=metadata,
-    )
+    return validate_instances(context, config, livelihood_activity_instances, partition_key)
 
 
 @asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
 def livelihood_activity_fixture(
     context: AssetExecutionContext,
     config: BSSMetadataConfig,
-    livelihood_activity_valid_instances,
+    livelihood_activity_valid_instances: dict,
 ) -> Output[list[dict]]:
     """
     Django fixture for the Livelihood Activities from a BSS.
     """
-    fixture, metadata = get_fixture_from_instances(livelihood_activity_valid_instances)
-    return Output(
-        fixture,
-        metadata=metadata,
-    )
+    return get_fixture_from_instances(livelihood_activity_valid_instances)
 
 
 @asset(partitions_def=bss_instances_partitions_def)
@@ -1134,8 +1725,4 @@ def imported_livelihood_activities(
     """
     Imported Django fixtures for a BSS, added to the Django database.
     """
-    metadata = import_fixture(livelihood_activity_fixture)
-    return Output(
-        None,
-        metadata=metadata,
-    )
+    return import_fixture(livelihood_activity_fixture)

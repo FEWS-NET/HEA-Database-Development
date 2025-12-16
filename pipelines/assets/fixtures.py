@@ -6,7 +6,6 @@ from collections import defaultdict
 from io import StringIO
 
 import django
-import numpy as np
 import pandas as pd
 from dagster import AssetExecutionContext, MetadataValue, Output, asset
 from django.core.files import File
@@ -24,13 +23,14 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hea.settings.production")
 django.setup()
 
 from baseline.models import LivelihoodZoneBaseline  # NOQA: E402
-from common.lookups import ClassifiedProductLookup  # NOQA: E402
 from common.management.commands import verbose_load_data  # NOQA: E402
+from common.models import ClassifiedProduct  # NOQA: E402
+from metadata.models import LivelihoodStrategyType  # NOQA: E402
 
 
 def validate_instances(
-    context: AssetExecutionContext, instances: dict[str, list[dict]], partition_key: str
-) -> tuple[dict[str, list[dict]], dict]:
+    context: AssetExecutionContext, config: BSSMetadataConfig, instances: dict[str, list[dict]], partition_key: str
+) -> Output[dict[str, list[dict]]]:
     """
     Validate the instances for a set of related models, prior to loading them as a fixture.
 
@@ -46,182 +46,213 @@ def validate_instances(
             subclass_instance = instance.copy()
             # The subclass instances also need a pointer to the base class instance
             subclass_instance["livelihoodactivity_ptr"] = (
-                instance["wealth_group"][:3] + instance["livelihood_strategy"][2:] + [instance["wealth_group"][3]]
+                instance["wealth_group"][:3]  # livelihood_zone, reference_year_end_date, wealth_group_category
+                + instance["livelihood_strategy"][2:]  # strategy_type, season, product_id, additional_identifier
+                + [instance["wealth_group"][3]]  # full_name
             )
             subclass_livelihood_activities[instance["strategy_type"]].append(subclass_instance)
 
         instances = {**instances, **subclass_livelihood_activities}
 
-    # Create a dict to contain a dataframe of the instances for each model
-    dfs = {}
+    valid_instances = {model_name: [] for model_name in instances}
+    valid_keys = {model_name: [] for model_name in instances}
     errors = []
+    current_timestamp = datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
     for model_name, model_instances in instances.items():
+
         # Ignore models where we don't have any instances to validate.
-        if model_instances:
-            model = class_from_name(f"baseline.models.{model_name}")
-            # Build a list of expected field names
-            valid_field_names = [field.name for field in model._meta.concrete_fields]
-            # Also include values that point directly to the primary key of related objects
-            valid_field_names += [
-                field.get_attname()
-                for field in model._meta.concrete_fields
-                if field.get_attname() not in valid_field_names
-            ]
+        if not model_instances:
+            continue
 
-            # Apply some model-level defaults. We do this by iterating over the instances rather than using the dataframe
-            # because we want to return the instances without any other changes that might be made by the dataframe as a
-            # result of dtype conversion or NaNs.
-            current_timestamp = datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
-            for instance in model_instances:
-                for field in ["created", "modified"]:
-                    if field in valid_field_names and field not in instance:
-                        instance[field] = current_timestamp
+        model = class_from_name(f"baseline.models.{model_name}")
+        # Build a list of expected field names
+        valid_field_names = [field.name for field in model._meta.concrete_fields]
+        # Also include values that point directly to the primary key of related objects
+        valid_field_names += [
+            field.get_attname()
+            for field in model._meta.concrete_fields
+            if field.get_attname() not in valid_field_names
+        ]
 
-            df = pd.DataFrame.from_records(model_instances)
+        # Iterate over the instances, validating each one in turn
+        for i, instance in enumerate(model_instances):
+            model_errors = []
+            # Add created and modified timestamps if they are missing
+            for field in ["created", "modified"]:
+                if field in valid_field_names and field not in instance:
+                    instance[field] = current_timestamp
 
-            # Add the natural key for the instances to the dataframe,
-            # so we can validate foreign keys in child models.
+            # Add the natural key so we can validate foreign keys in child models.
             if model_name == "LivelihoodZone":
-                df["key"] = df["code"]
+                instance["natural_key"] = instance["code"]
             elif model_name == "LivelihoodZoneBaseline":
-                df["key"] = df[["livelihood_zone_id", "reference_year_end_date"]].apply(
-                    lambda x: [x.iloc[0], x.iloc[1]], axis="columns"
-                )
+                instance["natural_key"] = [instance["livelihood_zone_id"], instance["reference_year_end_date"]]
             elif model_name == "Community":
-                df["key"] = df[["livelihood_zone_baseline", "full_name"]].apply(
-                    lambda x: x.iloc[0] + [x.iloc[1]], axis="columns"
-                )
+                instance["natural_key"] = instance["livelihood_zone_baseline"] + [instance["full_name"]]
             elif model_name == "WealthGroup":
-                df["key"] = df[["livelihood_zone_baseline", "wealth_group_category", "community"]].apply(
-                    lambda x: x.iloc[0] + [x.iloc[1], x.iloc[2][-1] if x.iloc[2] else ""], axis="columns"
-                )
+                instance["natural_key"] = instance["livelihood_zone_baseline"] + [
+                    instance["wealth_group_category"],
+                    instance["full_name"],
+                ]
             elif model_name == "LivelihoodStrategy":
-                df["key"] = df[
-                    ["livelihood_zone_baseline", "strategy_type", "season", "product_id", "additional_identifier"]
-                ].apply(
-                    lambda x: x.iloc[0]
-                    + [x.iloc[1], x.iloc[2][0] if x.iloc[2] else "", x.iloc[3] if x.iloc[3] else "", x.iloc[4]],
-                    axis="columns",
+                instance["natural_key"] = instance["livelihood_zone_baseline"] + [
+                    instance["strategy_type"],
+                    # instance['season'] is a natural key itself, so it is stored as a list even though it only
+                    # has a single component - the season name - so take the first element of the list.
+                    # Natural key components must be "" rather than None
+                    instance["season"][0] if instance["season"] else "",
+                    instance["product_id"] or "",  # Natural key components must be "" rather than None
+                    instance["additional_identifier"],
+                ]
+            elif model_name in ["LivelihoodActivity"] + [x for x in LivelihoodStrategyType]:
+                instance["natural_key"] = (
+                    instance["wealth_group"][:3]  # livelihood_zone, reference_year_end_date, wealth_group_category
+                    + instance["livelihood_strategy"][2:]  # strategy_type, season, product_id, additional_identifier
+                    + [instance["wealth_group"][3]]  # full_name
                 )
-            elif model_name == "LivelihoodActivity":
-                df["key"] = df[["livelihood_zone_baseline", "wealth_group", "livelihood_strategy"]].apply(
-                    lambda x: [
-                        x.iloc[0][0],
-                        x.iloc[0][1],
-                        x.iloc[1][2],
-                        x.iloc[2][2],
-                        x.iloc[2][3],
-                        x.iloc[2][4],
-                        x.iloc[2][5],
-                        x.iloc[1][3],
-                    ],
-                    axis="columns",
+            elif model_name == "WealthGroupCharacteristicValue":
+                instance["natural_key"] = instance["wealth_group"][
+                    :3  # livelihood_zone, reference_year_end_date, wealth_group_category
+                ] + [
+                    instance["wealth_characteristic_id"],
+                    instance["reference_type"],
+                    instance["product_id"] or "",  # Natural key components must be "" rather than None
+                    instance["wealth_group"][3],  # full_name
+                ]
+            # The natural key is a list of strings, or possibly numbers, so validate that here to avoid confusing
+            # error messages later.
+            if "natural_key" not in instance:
+                raise RuntimeError(f"Missing natural_key for {model_name} {i} from {str(instance)}")
+            if not isinstance(instance["natural_key"], list):
+                raise RuntimeError(
+                    f"Invalid natural_key {instance['natural_key']} for {model_name} {i} from {str(instance)}"
                 )
+            for component in instance["natural_key"]:
+                if not isinstance(component, (str, int)):
+                    raise RuntimeError(
+                        f"Invalid component '{component}' in natural_key {instance['natural_key']} for {model_name} {i} from {str(instance)}"
+                    )
 
-            # Save the model and dataframe so we can use them validate natural foreign keys later
-            dfs[model_name] = (model, df)
+            # Create a string reference to the record for error messages
+            record_reference = f"{model_name} {i} from "
+            if "bss_sheet" in instance:
+                record_reference += f"'{instance['bss_sheet']}'!"
+            if "bss_column" in instance and "bss_row" in instance:
+                record_reference += f"{instance['bss_column']}{instance['bss_row']}: "
+            elif "bss_column" in instance:
+                record_reference += f"{instance['bss_column']}:{instance['bss_column']}: "
+            elif "bss_row" in instance:
+                record_reference += f"{instance['bss_row']}:{instance['bss_row']}: "
+            record_reference += f"{str({k: v for k,v in instance.items()})}"
 
             # Apply field-level checks
             for field in model._meta.concrete_fields:
-                column = field.name if field.name in df else field.get_attname()
+                column = field.name if field.name in instance else field.get_attname()
+
                 # Ensure that mandatory fields have values
                 if not field.blank:
-                    if column not in df:
-                        error = f"Missing mandatory field {field.name} for {model_name}"
-                        errors.append(error)
-                        continue
-                    else:
-                        for record in df[df[column].isnull()].itertuples():
-                            error = (
-                                f"Missing value for mandatory field {column} for {model_name} in record "
-                                f"{record.Index} from cell '{record.bss_sheet}'!{record.bss_column}{record.bss_row}"
-                                f'{str({k: v for k,v in record._asdict().items() if k != "Index"})}'
-                            )
-                            errors.append(error)
+                    if column not in instance:
+                        error = f"Missing mandatory field {field.name} for {record_reference}"
+                        model_errors.append(error)
+                    elif not instance[column] and not instance[column] == 0:
+                        error = f"Missing value for mandatory field {column} for {record_reference}"
+                        model_errors.append(error)
                 # Ensure the instances contain valid parent references for foreign keys
                 if isinstance(field, models.ForeignKey):
-                    if column not in df:
-                        error = f"Missing mandatory foreign key {column} for {model_name}"
-                        errors.append(error)
-                        continue
-                    if not field.null:
-                        for record in df[df[column].isnull()].itertuples():
-                            error = (
-                                f"Missing mandatory foreign key {column} for {model_name} in record "
-                                f"{record.Index} from cell '{record.bss_sheet}'!{record.bss_column}{record.bss_row}"
-                                f'{str({k: v for k,v in record._asdict().items() if k != "Index"})}'
-                            )
-                            errors.append(error)
-                    # Validate foreign key values
-                    if field.related_model.__name__ in dfs:
-                        # The model is part of the fixture, so use the saved key from the dataframe
-                        remote_keys = dfs[field.related_model.__name__][1]["key"]
-                    else:
-                        # The model is not in the fixture, so use the primary and natural keys for already saved instances
-                        remote_keys = [instance.pk for instance in field.related_model.objects.all()]
-                        if "natural_key" in dir(field.related_model):
-                            remote_keys += [
-                                list(instance.natural_key()) for instance in field.related_model.objects.all()
-                            ]
-                    # Check the non-null foreign key values are in the remote keys
-                    for record in df[
-                        df[column].replace("", pd.NA).notna() & ~df[column].isin(remote_keys)
-                    ].itertuples():
-                        error = (
-                            f"Unrecognized '{column}' foreign key {getattr(record, column)} "
-                            f"for {model_name} in record "
-                            f"{record.Index} from cell '{record.bss_sheet}'!{record.bss_column}{record.bss_row}"
-                            f'{str({k: v for k,v in record._asdict().items() if k != "Index"})}'
-                        )
-                        errors.append(error)
+                    if column not in instance:
+                        error = f"Missing mandatory foreign key {column} for {record_reference}"
+                        model_errors.append(error)
+                    elif not field.null:
+                        if not instance[column]:
+                            error = f"Missing mandatory foreign key {column} for {record_reference}"
+                            model_errors.append(error)
+                        else:
+                            # Validate foreign key values
+                            if field.related_model.__name__ in instances:
+                                # The related model is part of the fixture, so check that we already validated it
+                                if field.related_model.__name__ not in valid_keys:
+                                    raise RuntimeError(
+                                        "Related model %s not validated yet but needed for %s"
+                                        % (field.related_model.__name__, model_name)
+                                    )
+                            elif field.related_model.__name__ not in valid_keys:
+                                # The model is not in the fixture, and hasn't been checked already, so use the primary and
+                                # natural keys for already saved instances
+                                remote_keys = [instance.pk for instance in field.related_model.objects.all()]
+                                if "natural_key" in dir(field.related_model):
+                                    remote_keys += [
+                                        list(instance.natural_key()) for instance in field.related_model.objects.all()
+                                    ]
+                                valid_keys[field.related_model.__name__] = remote_keys
+                            # Check the non-null foreign key values are in the remote keys
+                            if instance[column] not in valid_keys[field.related_model.__name__]:
+                                error = (
+                                    f"Unrecognized '{column}' foreign key {instance[column]} for {record_reference}."
+                                )
+                                model_errors.append(error)
 
             # Use the Django model to validate the fields, so we can apply already defined model validations and
             # return informative error messages.
             fields = [
                 field
                 for field in model._meta.concrete_fields
-                if not isinstance(field, models.ForeignKey) and field.name in df
+                if not isinstance(field, models.ForeignKey) and field.name in instance
             ]
-            instance = model()
-            for record in df.replace(np.nan, None).itertuples():
-                for field in fields:
-                    value = getattr(record, field.name)
-                    if not value and field.null:
-                        # Replace empty strings with None for optional fields
-                        value = None
-                    try:
-                        field.clean(value, instance)
-                    except Exception as e:
-                        error = (
-                            f'Invalid {field.name} value {value}:  "{", ".join(e.error_list[0].messages)}"\nRecord '
-                            f"{record.Index} from cell '{record.bss_sheet}'!{record.bss_column}{record.bss_row} "
-                            f"for {model_name} in record "
-                            f'{str({k: v for k,v in record._asdict().items() if k != "Index"})}.'
-                        )
-                        errors.append(error)
+            model_instance = model()
+            for field in fields:
+                value = instance[field.name]
+                if not value and field.null:
+                    # Replace empty strings with None for optional fields
+                    value = None
+                try:
+                    field.clean(value, model_instance)
+                except Exception as e:
+                    error = (
+                        f'Invalid {field.name} value {value}:  "{", ".join(e.error_list[0].messages)}"\n'
+                        f"for {record_reference}."
+                    )
+                    model_errors.append(error)
 
             # Check that the kcals/kg matches the values in the ClassifiedProduct model, if it's present in the BSS
-            if model_name == "LivelihoodActivity" and "product__kcals_per_unit" in df:
-                df["product"] = df["livelihood_strategy"].apply(lambda x: x[4])
-                df = ClassifiedProductLookup().get_instances(df, "product", "product")
-                df["reference_kcals_per_unit"] = df["product"].apply(lambda x: x.kcals_per_unit)
-                df["reference_unit_of_measure"] = df["product"].apply(lambda x: x.unit_of_measure)
-                for record in df[df["product__kcals_per_unit"] != df["reference_kcals_per_unit"]].itertuples():
+            if model_name == "LivelihoodActivity" and "product__kcals_per_unit" in instance:
+                product = ClassifiedProduct.objects.get(pk=instance["product_id"])
+                if instance["product__kcals_per_unit"] != product.kcals_per_unit:
                     error = (
-                        f"Non-standard value {record.product__kcals_per_unit} in '{record.column}' "
-                        f"for {model_name} in record "
-                        f'{str({k: v for k,v in record._asdict().items() if k != "Index"})}. '
-                        f"Expected {record.reference_kcals_per_unit}/{record.reference_unit_of_measure} for {record.product}"
+                        f"Non-standard value {instance['product__kcals_per_unit']}; "
+                        f"expected {product.kcals_per_unit}/{product.unit_of_measure} for {product}\n"
+                        f"for {record_reference}."
                     )
-                    errors.append(error)
+                    model_errors.append(error)
+
+            if model_errors:
+                errors += model_errors
+            else:
+                # Instance is valid, so add it to the list of valid instances
+                valid_instances[model_name].append(instance)
+                valid_keys[model_name].append(instance["natural_key"])
+
+    metadata = {}
+    for model_name in instances.keys():
+        metadata[f"valid_{model_name}"] = f"{len(valid_instances[model_name])}/{len(instances[model_name])}"
+    metadata["total_valid_instances"] = (
+        f"{sum(len(value) for value in valid_instances.values())}/{sum(len(value) for value in instances.values())}"
+    )
+    metadata["preview"] = MetadataValue.md(
+        f"```json\n{json.dumps(valid_instances, indent=4, ensure_ascii=False)}\n```"
+    )
 
     if errors:
-        raise RuntimeError("Missing or inconsistent metadata in BSS %s:\n%s" % (partition_key, "\n".join(errors)))
+        if config.strict:
+            raise RuntimeError("Missing or inconsistent metadata in BSS %s:\n%s" % (partition_key, "\n".join(errors)))
+        else:
+            context.log.warning(
+                "Ignoring missing or inconsistent metadata in BSS %s:\n%s" % (partition_key, "\n".join(errors))
+            )
+            metadata["errors"] = MetadataValue.md(f'```text\n{"\n".join(errors)}\n```')
+            # Move the preview metadata item to the end of the dict
+            metadata["preview"] = metadata.pop("preview")
 
-    metadata = {f"num_{key.lower()}": len(value) for key, value in instances.items()}
-    metadata["total_instances"] = sum(len(value) for value in instances.values())
-    metadata["preview"] = MetadataValue.md(f"```json\n{json.dumps(instances, indent=4)}\n```")
-    return instances, metadata
+    return Output(valid_instances, metadata=metadata)
 
 
 def get_fixture_from_instances(instance_dict: dict[str, list[dict]]) -> tuple[list[dict], dict]:
@@ -287,11 +318,11 @@ def get_fixture_from_instances(instance_dict: dict[str, list[dict]]) -> tuple[li
             metadata[f'num_{str(model._meta).split(".")[-1]}'] += 1
 
     metadata["total_instances"] = len(fixture)
-    metadata["preview"] = MetadataValue.md(f"```json\n{json.dumps(fixture, indent=4)}\n```")
-    return fixture, metadata
+    metadata["preview"] = MetadataValue.md(f"```json\n{json.dumps(fixture, indent=4, ensure_ascii=False)}\n```")
+    return Output(fixture, metadata=metadata)
 
 
-def import_fixture(fixture: list[dict]) -> dict:
+def import_fixture(fixture: list[dict]) -> Output[None]:
     """
     Import a Django fixture and return a metadata dictionary.
     """
@@ -300,7 +331,7 @@ def import_fixture(fixture: list[dict]) -> dict:
     # We need to use a .verbose_json file extension for Django to use the correct serializer.
     with tempfile.NamedTemporaryFile(mode="w+", suffix=".verbose_json") as f:
         # Write the fixture to a temporary file so that Django can access it
-        f.write(json.dumps(fixture))
+        f.write(json.dumps(fixture, indent=4, ensure_ascii=False))
         f.seek(0)
         call_command(verbose_load_data.Command(), f.name, verbosity=2, format="verbose_json", stdout=output_buffer)
 
@@ -309,9 +340,13 @@ def import_fixture(fixture: list[dict]) -> dict:
     for instance in fixture:
         metadata[f'num_{instance["model"].split(".")[-1]}'] += 1
     metadata["total_instances"] = len(fixture)
-    metadata["preview"] = MetadataValue.md(f"```json\n{json.dumps(fixture, indent=4)}\n```")
+    metadata["preview"] = MetadataValue.md(f"```json\n{json.dumps(fixture, indent=4, ensure_ascii=False)}\n```")
     metadata["output"] = MetadataValue.md(f"```\n{output_buffer.getvalue()}\n```")
-    return metadata
+    # No downstream assets, so we only need to return the metadata
+    return Output(
+        None,
+        metadata=metadata,
+    )
 
 
 @asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
@@ -339,17 +374,15 @@ def consolidated_fixture(
             if model_name != "WealthGroup"
         },
     }
+
     # Add the wild foods and other cash income instances, if they are present
     for model_name, instances in {**other_cash_income_valid_instances, **wild_foods_valid_instances}.items():
         if instances and model_name != "WealthGroup":
+            if model_name not in consolidated_instances:
+                consolidated_instances[model_name] = []
             consolidated_instances[model_name] += instances
 
-    fixture, metadata = get_fixture_from_instances(consolidated_instances)
-
-    return Output(
-        fixture,
-        metadata=metadata,
-    )
+    return get_fixture_from_instances(consolidated_instances)
 
 
 @asset(partitions_def=bss_files_partitions_def)
@@ -365,7 +398,8 @@ def uploaded_baselines(
     Downstream assets apply corrections to the original file and then process
     the contents to create Communities, Wealth Groups, Livelihood Strategies, etc.
     """
-    fixture, metadata = get_fixture_from_instances(baseline_instances)
+    output = get_fixture_from_instances(baseline_instances)
+    fixture = output.value
     metadata = import_fixture(fixture)
 
     # Add the file objects `bss` and `profile_report` FileFields to the model instances
@@ -378,7 +412,7 @@ def uploaded_baselines(
 
     return Output(
         None,
-        metadata=metadata,
+        metadata=metadata.metadata,
     )
 
 
@@ -390,13 +424,8 @@ def imported_communities(
     """
     Communities from a BSS, imported to the Django database using a fixture.
     """
-    fixture, metadata = get_fixture_from_instances(community_instances)
-    metadata = import_fixture(fixture)
-
-    return Output(
-        None,
-        metadata=metadata,
-    )
+    output = get_fixture_from_instances(community_instances)
+    return import_fixture(output.value)
 
 
 @asset(partitions_def=bss_instances_partitions_def)
@@ -407,9 +436,4 @@ def imported_baseline(
     """
     Imported Django fixture for a BSS, added to the Django database.
     """
-    metadata = import_fixture(consolidated_fixture)
-
-    return Output(
-        None,
-        metadata=metadata,
-    )
+    return import_fixture(consolidated_fixture)

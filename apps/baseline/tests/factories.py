@@ -123,20 +123,6 @@ class LivelihoodZoneBaselineFactory(factory.django.DjangoModelFactory):
     currency = factory.SubFactory(CurrencyFactory)
 
 
-class LivelihoodProductCategoryFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = LivelihoodProductCategory
-        django_get_or_create = [
-            "livelihood_zone_baseline",
-            "product",
-            "basket",
-        ]
-
-    livelihood_zone_baseline = factory.SubFactory(LivelihoodZoneBaselineFactory)
-    product = factory.SubFactory(ClassifiedProductFactory)
-    basket = factory.Iterator(["1", "2", "3", "4"])
-
-
 class CommunityFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Community
@@ -356,6 +342,19 @@ class ResponseLivelihoodActivityFactory(LivelihoodActivityFactory):
         ]
 
     scenario = LivelihoodActivityScenario.RESPONSE
+
+
+class LivelihoodProductCategoryFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = LivelihoodProductCategory
+        django_get_or_create = [
+            "baseline_livelihood_activity",
+            "basket",
+        ]
+
+    baseline_livelihood_activity = factory.SubFactory(BaselineLivelihoodActivityFactory)
+    basket = factory.Iterator([1, 2, 3, 4])
+    percentage_allocation_to_basket = fuzzy.FuzzyInteger(0, 100)
 
 
 class MilkProductionFactory(LivelihoodActivityFactory):

@@ -711,7 +711,7 @@ class LivelihoodProductCategoryViewSetTestCase(APITestCase):
             "id",
             "source_organization",
             "source_organization_name",
-            "livelihood_zone_baseline",
+            "baseline_livelihood_activity",
             "livelihood_zone_baseline_label",
             "livelihood_zone",
             "livelihood_zone_name",
@@ -722,6 +722,7 @@ class LivelihoodProductCategoryViewSetTestCase(APITestCase):
             "product_description",
             "basket",
             "basket_name",
+            "percentage_allocation_to_basket",
         )
         self.assertCountEqual(
             response.json().keys(),
@@ -765,8 +766,7 @@ class LivelihoodProductCategoryViewSetTestCase(APITestCase):
         response = self.client.get(
             self.url,
             {
-                "livelihood_zone_baseline": self.data[0].livelihood_zone_baseline.pk,
-                "product": self.data[0].product.pk,
+                "baseline_livelihood_activity": self.data[0].baseline_livelihood_activity.pk,
                 "basket": self.data[0].basket,
             },
         )
@@ -1410,6 +1410,45 @@ class WealthGroupCharacteristicValueViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(json.loads(response.content)), 1)
         response = self.client.get(self.url, {"country": country.iso_en_ro_name})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
+
+    def test_filter_by_product(self):
+        parent = ClassifiedProductFactory(cpc="K011")
+        product = ClassifiedProductFactory(
+            cpc="K0111",
+            description_en="my product",
+            common_name_en="common",
+            kcals_per_unit=550,
+            parent=parent,
+            aliases=["test alias"],
+        )
+        ClassifiedProductFactory(cpc="K01111")
+        characteristic1 = WealthCharacteristicFactory(
+            code="IOO", description_en="item one ownership", has_product=True
+        )
+        WealthGroupCharacteristicValueFactory(wealth_characteristic=characteristic1, product=product)
+        response = self.client.get(self.url, {"product": "K011"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content)), 1)
+        # filter by cpc
+        response = self.client.get(self.url, {"product": "K0111"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content)), 1)
+        # filter by cpc startswith
+        response = self.client.get(self.url, {"product": "K01111"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content)), 0)
+        # filter by description icontains
+        response = self.client.get(self.url, {"product": "my"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
+        # filter by description
+        response = self.client.get(self.url, {"product": "my product"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
+        # filter by alias
+        response = self.client.get(self.url, {"product": "test"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
 

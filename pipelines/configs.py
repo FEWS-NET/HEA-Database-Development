@@ -9,6 +9,12 @@ class BSSMetadataConfig(Config):
     bss_metadata_workbook: str = EnvVar("BSS_METADATA_WORKBOOK")
     # The fsspec storage options for the BSS metadata spreadsheet
     bss_metadata_storage_options: dict = json.loads(EnvVar("BSS_METADATA_STORAGE_OPTIONS").get_value("{}"))
+    # The fspec path of the spreadsheet containing the BSS Labels and their recognition mechanism
+    bss_label_recognition_workbook: str = EnvVar("BSS_LABEL_RECOGNITION_WORKBOOK")
+    # The fsspec storage options for the BSS label recognition spreadsheet
+    bss_label_recognition_storage_options: dict = json.loads(
+        EnvVar("BSS_LABEL_RECOGNITION_STORAGE_OPTIONS").get_value("{}")
+    )
     # The fspec path of the root folder containing the BSSs
     # For example:
     # "/home/user/Temp/Baseline Storage Sheets (BSS)"

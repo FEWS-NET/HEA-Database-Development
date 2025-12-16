@@ -29,11 +29,11 @@ env:
 
 jobs:
   lint:
-    runs-on: [self-hosted, ec2-runner]
+    runs-on: [ fewsnet ]
     container: "python:3.11"
 
     steps:
-      - uses: "actions/checkout@v3"
+      - uses: "actions/checkout@v4"
         with:
           ssh-key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
           # use ssh-key for updating submodules, will be removed in post-job
@@ -42,7 +42,7 @@ jobs:
       - name: Install lint dependencies
         run: pip install -r requirements/lint.txt
       - name: Run ruff check
-        run: ruff .
+        run: ruff check .
       - name: Run black check
         run: black --check .
       - name: Run isort check
@@ -51,221 +51,77 @@ jobs:
   start-runner-test_branch:
     if: ${{ !(startsWith(github.ref, 'refs/tags/')) && !(github.ref == 'refs/heads/main') }}
     needs: lint
-    runs-on: [self-hosted, ec2-runner]
+    runs-on: [ fewsnet ]
     outputs:
       label: ${{ steps.start-ec2-runner.outputs.label }}
       ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
     steps:
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region: ${{ vars.AWS_REGION }}
       - name: Start EC2 runner test_branch
         id: start-ec2-runner
-        uses: FEWS-NET/ec2-github-runner@076da0ed4e015d7c5bc6c8e1ad0ccef7106cb433
+        uses: American-Institutes-for-Research/gitops-actions/fewsnet-start-runner@main
         with:
-          mode: start
-          github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-          ec2-image-id: ami-0da7ed013d60d14dc
-          ec2-instance-type: m5.xlarge
-          subnet-id: subnet-02bc23bcdd0792516
-          security-group-id: sg-0e11a9c9e18cfb74b
-          iam-role-name: github_runner_role # optional, requires additional permissions
-          aws-resource-tags: > # optional, requires additional permissions
-            [
-              {"Key": "Name", "Value": "ec2-github-autoscale-runner"},
-              {"Key": "GitHubRepository", "Value": "${{ github.repository }}"}
-            ]
-  ecr_login-test_branch:
-    outputs:
-      aws_access_key_id: ${{ steps.docker_login.outputs.aws_access_key_id }}
-      aws_secret_access_key: ${{ steps.docker_login.outputs.aws_secret_access_key }}
-      aws_session_token: ${{ steps.docker_login.outputs.aws_session_token }}
-      aws_credential_expiration: ${{ steps.docker_login.outputs.aws_credential_expiration }}
-    needs:
-      - start-runner-test_branch # required to start the main job when the runner is ready
-    runs-on: ${{ needs.start-runner-test_branch.outputs.label }} # run the job on the newly created runner
-    steps:
-      - name: Generate the ECR credentials
-        id: docker_login
-        run: |
-          # authenticate to pull image that runs test jobs
-          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
-
-          # @TODO: "aws configure get" didn't work, replace package with awscli v2
-          # and use "aws configure export-credentials"
-          python3 -m pip install --user aws-export-credentials==0.18.0
-          # set AWS vars to local environment
-          eval $(~/.local/bin/aws-export-credentials --env-export)
-
-          echo "aws_access_key_id=$AWS_ACCESS_KEY_ID" >> $GITHUB_OUTPUT
-          echo "aws_secret_access_key=$AWS_SECRET_ACCESS_KEY" >> $GITHUB_OUTPUT
-          echo "aws_session_token=$AWS_SESSION_TOKEN" >> $GITHUB_OUTPUT
-          echo "aws_credential_expiration=$AWS_CREDENTIAL_EXPIRATION" >> $GITHUB_OUTPUT
+          gh_personal_access_token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+          project-key: "HEA"
 
   start-runner-test_keepdb:
     needs: lint
-    runs-on: [self-hosted, ec2-runner]
+    runs-on: [ fewsnet ]
     outputs:
       label: ${{ steps.start-ec2-runner.outputs.label }}
       ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
     steps:
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ env.AWS_REGION }}
       - name: Start EC2 runner test_keepdb
         id: start-ec2-runner
-        uses: FEWS-NET/ec2-github-runner@076da0ed4e015d7c5bc6c8e1ad0ccef7106cb433
+        uses: American-Institutes-for-Research/gitops-actions/fewsnet-start-runner@main
         with:
-          mode: start
-          github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-          ec2-image-id: ami-0da7ed013d60d14dc
-          ec2-instance-type: m5.xlarge
-          subnet-id: subnet-02bc23bcdd0792516
-          security-group-id: sg-0e11a9c9e18cfb74b
-          iam-role-name: github_runner_role # optional, requires additional permissions
-          aws-resource-tags: > # optional, requires additional permissions
-            [
-              {"Key": "Name", "Value": "ec2-github-autoscale-runner"},
-              {"Key": "GitHubRepository", "Value": "${{ github.repository }}"}
-            ]
-  ecr_login-test_keepdb:
-    outputs:
-      aws_access_key_id: ${{ steps.docker_login.outputs.aws_access_key_id }}
-      aws_secret_access_key: ${{ steps.docker_login.outputs.aws_secret_access_key }}
-      aws_session_token: ${{ steps.docker_login.outputs.aws_session_token }}
-      aws_credential_expiration: ${{ steps.docker_login.outputs.aws_credential_expiration }}
-    needs:
-      - start-runner-test_keepdb # required to start the main job when the runner is ready
-    runs-on: ${{ needs.start-runner-test_keepdb.outputs.label }} # run the job on the newly created runner
-    steps:
-      - name: Generate the ECR credentials
-        id: docker_login
-        run: |
-          # authenticate to pull image that runs test jobs
-          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
-
-          # @TODO: "aws configure get" didn't work, replace package with awscli v2
-          # and use "aws configure export-credentials"
-          python3 -m pip install --user aws-export-credentials==0.18.0
-          # set AWS vars to local environment
-          eval $(~/.local/bin/aws-export-credentials --env-export)
-
-          echo "aws_access_key_id=$AWS_ACCESS_KEY_ID" >> $GITHUB_OUTPUT
-          echo "aws_secret_access_key=$AWS_SECRET_ACCESS_KEY" >> $GITHUB_OUTPUT
-          echo "aws_session_token=$AWS_SESSION_TOKEN" >> $GITHUB_OUTPUT
-          echo "aws_credential_expiration=$AWS_CREDENTIAL_EXPIRATION" >> $GITHUB_OUTPUT
+          gh_personal_access_token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+          project-key: "HEA"
 
   start-runner-test_main:
     if: github.ref == 'refs/heads/main'
     needs: lint
-    runs-on: [self-hosted, ec2-runner]
+    runs-on: [ fewsnet ]
     outputs:
       label: ${{ steps.start-ec2-runner.outputs.label }}
       ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
     steps:
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region: ${{ vars.AWS_REGION }}
       - name: Start EC2 runner test_main
         id: start-ec2-runner
-        uses: FEWS-NET/ec2-github-runner@076da0ed4e015d7c5bc6c8e1ad0ccef7106cb433
+        uses: American-Institutes-for-Research/gitops-actions/fewsnet-start-runner@main
         with:
-          mode: start
-          github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-          ec2-image-id: ami-0da7ed013d60d14dc
-          ec2-instance-type: m5.xlarge
-          subnet-id: subnet-02bc23bcdd0792516
-          security-group-id: sg-0e11a9c9e18cfb74b
-          iam-role-name: github_runner_role # optional, requires additional permissions
-          aws-resource-tags: > # optional, requires additional permissions
-            [
-              {"Key": "Name", "Value": "ec2-github-autoscale-runner"},
-              {"Key": "GitHubRepository", "Value": "${{ github.repository }}"}
-            ]
-  ecr_login-test_main:
-    outputs:
-      aws_access_key_id: ${{ steps.docker_login.outputs.aws_access_key_id }}
-      aws_secret_access_key: ${{ steps.docker_login.outputs.aws_secret_access_key }}
-      aws_session_token: ${{ steps.docker_login.outputs.aws_session_token }}
-      aws_credential_expiration: ${{ steps.docker_login.outputs.aws_credential_expiration }}
-    needs:
-      - start-runner-test_main # required to start the main job when the runner is ready
-    runs-on: ${{ needs.start-runner-test_main.outputs.label }} # run the job on the newly created runner
-    steps:
-      - name: Generate the ECR credentials
-        id: docker_login
-        run: |
-          # authenticate to pull image that runs test jobs
-          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
-
-          # @TODO: "aws configure get" didn't work, replace package with awscli v2
-          # and use "aws configure export-credentials"
-          python3 -m pip install --user aws-export-credentials==0.18.0
-          # set AWS vars to local environment
-          eval $(~/.local/bin/aws-export-credentials --env-export)
-
-          echo "aws_access_key_id=$AWS_ACCESS_KEY_ID" >> $GITHUB_OUTPUT
-          echo "aws_secret_access_key=$AWS_SECRET_ACCESS_KEY" >> $GITHUB_OUTPUT
-          echo "aws_session_token=$AWS_SESSION_TOKEN" >> $GITHUB_OUTPUT
-          echo "aws_credential_expiration=$AWS_CREDENTIAL_EXPIRATION" >> $GITHUB_OUTPUT
+          gh_personal_access_token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+          project-key: "HEA"
 
   start-runner-test_tag:
     if: startsWith(github.ref, 'refs/tags/')
     needs: lint
-    runs-on: [self-hosted, ec2-runner]
+    runs-on: [ fewsnet ]
     outputs:
       label: ${{ steps.start-ec2-runner.outputs.label }}
       ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
     steps:
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ env.AWS_REGION }}
       - name: Start EC2 runner test_tag
         id: start-ec2-runner
-        uses: FEWS-NET/ec2-github-runner@076da0ed4e015d7c5bc6c8e1ad0ccef7106cb433
+        uses: American-Institutes-for-Research/gitops-actions/fewsnet-start-runner@main
         with:
-          mode: start
-          github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-          ec2-image-id: ami-0da7ed013d60d14dc
-          ec2-instance-type: m5.xlarge
-          subnet-id: subnet-02bc23bcdd0792516
-          security-group-id: sg-0e11a9c9e18cfb74b
-          iam-role-name: github_runner_role # optional, requires additional permissions
-          aws-resource-tags: > # optional, requires additional permissions
-            [
-              {"Key": "Name", "Value": "ec2-github-autoscale-runner"},
-              {"Key": "GitHubRepository", "Value": "${{ github.repository }}"}
-            ]
-  ecr_login-test_tag:
-    outputs:
-      aws_access_key_id: ${{ steps.docker_login.outputs.aws_access_key_id }}
-      aws_secret_access_key: ${{ steps.docker_login.outputs.aws_secret_access_key }}
-      aws_session_token: ${{ steps.docker_login.outputs.aws_session_token }}
-      aws_credential_expiration: ${{ steps.docker_login.outputs.aws_credential_expiration }}
-    needs:
-      - start-runner-test_tag # required to start the main job when the runner is ready
-    runs-on: ${{ needs.start-runner-test_tag.outputs.label }} # run the job on the newly created runner
-    steps:
-      - name: Generate the ECR credentials
-        id: docker_login
-        run: |
-          # authenticate to pull image that runs test jobs
-          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
-
-          # @TODO: "aws configure get" didn't work, replace package with awscli v2
-          # and use "aws configure export-credentials"
-          python3 -m pip install --user aws-export-credentials==0.18.0
-          # set AWS vars to local environment
-          eval $(~/.local/bin/aws-export-credentials --env-export)
-
-          echo "aws_access_key_id=$AWS_ACCESS_KEY_ID" >> $GITHUB_OUTPUT
-          echo "aws_secret_access_key=$AWS_SECRET_ACCESS_KEY" >> $GITHUB_OUTPUT
-          echo "aws_session_token=$AWS_SESSION_TOKEN" >> $GITHUB_OUTPUT
-          echo "aws_credential_expiration=$AWS_CREDENTIAL_EXPIRATION" >> $GITHUB_OUTPUT
+          gh_personal_access_token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+          project-key: "HEA"
 
   test_branch:
     if: ${{ !(startsWith(github.ref, 'refs/tags/')) && !(github.ref == 'refs/heads/main') }}
@@ -276,9 +132,11 @@ jobs:
     runs-on: ${{ needs.start-runner-test_branch.outputs.label }} # run the job on the newly created runner
     needs:
       - start-runner-test_branch
-      - ecr_login-test_branch
     container:
-      image: 888016039450.dkr.ecr.us-east-1.amazonaws.com/inf/docker:latest
+      image: airorg/fewsnet-inf:docker-latest
+      credentials:
+        username: ${{ secrets.DOCKER_HUB_USERNAME }}
+        password: ${{ secrets.DOCKER_HUB_TOKEN }}
     defaults:
       run:
         shell: ash --noprofile --norc -eo pipefail {0} # Fail on any non-zero exit code, even in piped commands
@@ -296,31 +154,25 @@ jobs:
       COMPOSE_FILE: docker-compose.yml:docker-compose.ci.yml:docker-compose.utils.yml
       CI_REGISTRY_IMAGE: "888016039450.dkr.ecr.us-east-1.amazonaws.com/hea"
       BUILD_IMAGES: "app db"
-      AWS_ACCESS_KEY_ID: ${{ needs.ecr_login-test_branch.outputs.aws_access_key_id }}
-      AWS_SECRET_ACCESS_KEY: ${{ needs.ecr_login-test_branch.outputs.aws_secret_access_key }}
-      AWS_SESSION_TOKEN: ${{ needs.ecr_login-test_branch.outputs.aws_session_token }}
-      AWS_CREDENTIAL_EXPIRATION: ${{ needs.ecr_login-test_branch.outputs.aws_credential_expiration }}
 
     steps:
-      - name: "Authenticate with ECR"
-        run: |
-          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
-
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          mask-password: 'true'
       # Docker hub is rate-limiting unauthenticated users, so we have to
       # authenticate: https://www.docker.com/increase-rate-limits
-      - name: "Log in to Docker hub"
-        run: |
-          echo Using registry image ${CI_REGISTRY_IMAGE}
-          # log in to ECR
-          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
-
-          # log in to Docker hub
-          echo ${{ secrets.DOCKER_HUB_PASSWORD }} | docker login --username=${{ secrets.DOCKER_HUB_USERNAME }} --password-stdin
+      - name: Login to the DockerHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
       - name: "Pull previous images to speed up builds"
         run: |
           for SERVICE in ${BUILD_IMAGES}; do (docker pull ${CI_REGISTRY_IMAGE}/${SERVICE}:edge | grep -i -e 'Pulling from' -e Digest -e Status -e Error) || true; done
           for SERVICE in ${BUILD_IMAGES}; do (docker pull ${CI_REGISTRY_IMAGE}/${SERVICE}:latest | grep -i -e 'Pulling from' -e Digest -e Status -e Error) || true; done
-      - uses: "actions/checkout@v3"
+      - uses: "actions/checkout@v4"
         with:
           ssh-key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
           # use ssh-key for updating submodules, will be removed in post-job
@@ -379,12 +231,9 @@ jobs:
           docker cp ci-${APP}-${CI_PIPELINE_ID}-${{ github.job }}:/usr/src/app/log ./ || true
           docker cp ci-${APP}-${CI_PIPELINE_ID}-${{ github.job }}:/usr/src/app/coverage.txt ./ || true
 
-          # Save the database schema as an artifact
-          docker compose run --no-deps --rm --entrypoint dbtoyaml app --no-owner --no-privileges test_${PGDATABASE} > schema.yml
-          diff pyrseas/schema.yaml schema.yml > schema.diff || true
       - name: "Upload test artifacts"
         if: success() || failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ env.CI_PIPELINE_ID }}-${{ github.job }}-artifacts
           path: |
@@ -426,9 +275,11 @@ jobs:
     runs-on: ${{ needs.start-runner-test_keepdb.outputs.label }} # run the job on the newly created runner
     needs:
       - start-runner-test_keepdb
-      - ecr_login-test_keepdb
     container:
-      image: 888016039450.dkr.ecr.us-east-1.amazonaws.com/inf/docker:latest
+      image: airorg/fewsnet-inf:docker-latest
+      credentials:
+        username: ${{ secrets.DOCKER_HUB_USERNAME }}
+        password: ${{ secrets.DOCKER_HUB_TOKEN }}
     defaults:
       run:
         shell: ash --noprofile --norc -eo pipefail {0} # Fail on any non-zero exit code, even in piped commands
@@ -446,31 +297,25 @@ jobs:
       COMPOSE_FILE: docker-compose.yml:docker-compose.ci.yml:docker-compose.utils.yml
       CI_REGISTRY_IMAGE: "888016039450.dkr.ecr.us-east-1.amazonaws.com/hea"
       BUILD_IMAGES: "app db"
-      AWS_ACCESS_KEY_ID: ${{ needs.ecr_login-test_keepdb.outputs.aws_access_key_id }}
-      AWS_SECRET_ACCESS_KEY: ${{ needs.ecr_login-test_keepdb.outputs.aws_secret_access_key }}
-      AWS_SESSION_TOKEN: ${{ needs.ecr_login-test_keepdb.outputs.aws_session_token }}
-      AWS_CREDENTIAL_EXPIRATION: ${{ needs.ecr_login-test_keepdb.outputs.aws_credential_expiration }}
 
     steps:
-      - name: "Authenticate with ECR"
-        run: |
-          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
-
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          mask-password: 'true'
       # Docker hub is rate-limiting unauthenticated users, so we have to
       # authenticate: https://www.docker.com/increase-rate-limits
-      - name: "Log in to Docker hub"
-        run: |
-          echo Using registry image ${CI_REGISTRY_IMAGE}
-          # log in to ECR
-          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
-
-          # log in to Docker hub
-          echo ${{ secrets.DOCKER_HUB_PASSWORD }} | docker login --username=${{ secrets.DOCKER_HUB_USERNAME }} --password-stdin
+      - name: Login to the DockerHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
       - name: "Pull previous images to speed up builds"
         run: |
           for SERVICE in ${BUILD_IMAGES}; do (docker pull ${CI_REGISTRY_IMAGE}/${SERVICE}:edge | grep -i -e 'Pulling from' -e Digest -e Status -e Error) || true; done
           for SERVICE in ${BUILD_IMAGES}; do (docker pull ${CI_REGISTRY_IMAGE}/${SERVICE}:latest | grep -i -e 'Pulling from' -e Digest -e Status -e Error) || true; done
-      - uses: "actions/checkout@v3"
+      - uses: "actions/checkout@v4"
         with:
           ssh-key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
           # use ssh-key for updating submodules, will be removed in post-job
@@ -512,12 +357,9 @@ jobs:
           # Copy the artifacts out of the Docker container to project directory
           docker cp ci-${APP}-${CI_PIPELINE_ID}-${{ github.job }}:/usr/src/app/log ./ || true
           docker cp ci-${APP}-${CI_PIPELINE_ID}-${{ github.job }}:/usr/src/app/coverage.txt ./ || true
-          # Save the database schema as an artifact
-          docker compose run --no-deps --rm --entrypoint dbtoyaml app --no-owner --no-privileges test_${PGDATABASE} > schema.yml
-          diff pyrseas/schema.yaml schema.yml > schema.diff || true
       - name: "Upload test artifacts"
         if: success() || failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ env.CI_PIPELINE_ID }}-${{ github.job }}-artifacts
           path: |
@@ -558,9 +400,11 @@ jobs:
     runs-on: ${{ needs.start-runner-test_main.outputs.label }} # run the job on the newly created runner
     needs:
       - start-runner-test_main
-      - ecr_login-test_main
     container:
-      image: 888016039450.dkr.ecr.us-east-1.amazonaws.com/inf/docker:latest
+      image: airorg/fewsnet-inf:docker-latest
+      credentials:
+        username: ${{ secrets.DOCKER_HUB_USERNAME }}
+        password: ${{ secrets.DOCKER_HUB_TOKEN }}
     defaults:
       run:
         shell: ash --noprofile --norc -eo pipefail {0} # Fail on any non-zero exit code, even in piped commands
@@ -578,32 +422,26 @@ jobs:
       COMPOSE_FILE: docker-compose.yml:docker-compose.ci.yml:docker-compose.utils.yml
       CI_REGISTRY_IMAGE: "888016039450.dkr.ecr.us-east-1.amazonaws.com/hea"
       BUILD_IMAGES: "app db"
-      AWS_ACCESS_KEY_ID: ${{ needs.ecr_login-test_main.outputs.aws_access_key_id }}
-      AWS_SECRET_ACCESS_KEY: ${{ needs.ecr_login-test_main.outputs.aws_secret_access_key }}
-      AWS_SESSION_TOKEN: ${{ needs.ecr_login-test_main.outputs.aws_session_token }}
-      AWS_CREDENTIAL_EXPIRATION: ${{ needs.ecr_login-test_main.outputs.aws_credential_expiration }}
 
     steps:
-      - name: "Authenticate with ECR"
-        run: |
-          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
-
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          mask-password: 'true'
       # Docker hub is rate-limiting unauthenticated users, so we have to
       # authenticate: https://www.docker.com/increase-rate-limits
-      - name: "Log in to Docker hub"
-        run: |
-          echo Using registry image ${CI_REGISTRY_IMAGE}
-          # log in to ECR
-          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
-
-          # log in to Docker hub
-          echo ${{ secrets.DOCKER_HUB_PASSWORD }} | docker login --username=${{ secrets.DOCKER_HUB_USERNAME }} --password-stdin
+      - name: Login to the DockerHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
       - name: "Pull previous images to speed up builds"
         run: |
           echo Using registry image ${CI_REGISTRY_IMAGE}
           for SERVICE in ${BUILD_IMAGES}; do (docker pull ${CI_REGISTRY_IMAGE}/${SERVICE}:edge | grep -i -e 'Pulling from' -e Digest -e Status -e Error) || true; done
           for SERVICE in ${BUILD_IMAGES}; do (docker pull ${CI_REGISTRY_IMAGE}/${SERVICE}:latest | grep -i -e 'Pulling from' -e Digest -e Status -e Error) || true; done
-      - uses: "actions/checkout@v3"
+      - uses: "actions/checkout@v4"
         with:
           ssh-key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
           # use ssh-key for updating submodules, will be removed in post-job
@@ -646,12 +484,9 @@ jobs:
           # Copy the artifacts out of the Docker container to project directory
           docker cp ci-${APP}-${CI_PIPELINE_ID}-${{ github.job }}:/usr/src/app/log ./ || true
           docker cp ci-${APP}-${CI_PIPELINE_ID}-${{ github.job }}:/usr/src/app/coverage.txt ./ || true
-          # Save the database schema as an artifact
-          docker compose run --no-deps --rm --entrypoint dbtoyaml app --no-owner --no-privileges test_${PGDATABASE} > schema.yml
-          diff pyrseas/schema.yaml schema.yml > schema.diff || true
       - name: "Upload test artifacts"
         if: success() || failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ env.CI_PIPELINE_ID }}-${{ github.job }}-artifacts
           path: |
@@ -693,9 +528,11 @@ jobs:
     runs-on: ${{ needs.start-runner-test_tag.outputs.label }} # run the job on the newly created runner
     needs:
       - start-runner-test_tag
-      - ecr_login-test_tag
     container:
-      image: 888016039450.dkr.ecr.us-east-1.amazonaws.com/inf/docker:latest
+      image: airorg/fewsnet-inf:docker-latest
+      credentials:
+        username: ${{ secrets.DOCKER_HUB_USERNAME }}
+        password: ${{ secrets.DOCKER_HUB_TOKEN }}
     defaults:
       run:
         shell: ash --noprofile --norc -eo pipefail {0} # Fail on any non-zero exit code, even in piped commands
@@ -713,23 +550,21 @@ jobs:
       COMPOSE_FILE: docker-compose.yml:docker-compose.ci.yml:docker-compose.utils.yml
       CI_REGISTRY_IMAGE: "888016039450.dkr.ecr.us-east-1.amazonaws.com/hea"
       BUILD_IMAGES: "app db"
-      AWS_ACCESS_KEY_ID: ${{ needs.ecr_login-test_tag.outputs.aws_access_key_id }}
-      AWS_SECRET_ACCESS_KEY: ${{ needs.ecr_login-test_tag.outputs.aws_secret_access_key }}
-      AWS_SESSION_TOKEN: ${{ needs.ecr_login-test_tag.outputs.aws_session_token }}
-      AWS_CREDENTIAL_EXPIRATION: ${{ needs.ecr_login-test_tag.outputs.aws_credential_expiration }}
 
     steps:
-      - name: "Authenticate with ECR"
-        run: |
-          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
-
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          mask-password: 'true'
       # Docker hub is rate-limiting unauthenticated users, so we have to
       # authenticate: https://www.docker.com/increase-rate-limits
-      - name: "Log in to Docker hub"
-        run: |
-          # log in to Docker hub
-          echo ${{ secrets.DOCKER_HUB_PASSWORD }} | docker login --username=${{ secrets.DOCKER_HUB_USERNAME }} --password-stdin
-      - uses: "actions/checkout@v3"
+      - name: Login to the DockerHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+      - uses: "actions/checkout@v4"
         with:
           ssh-key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
           # use ssh-key for updating submodules, will be removed in post-job
@@ -777,14 +612,9 @@ jobs:
           # Copy the artifacts out of the Docker container to project directory
           docker cp ci-${APP}-${CI_PIPELINE_ID}-${{ github.job }}:/usr/src/app/log ./ || true
           docker cp ci-${APP}-${CI_PIPELINE_ID}-${{ github.job }}:/usr/src/app/coverage.txt ./ || true
-          # The prod image does not include pyrseas/dbtoyaml. Building a test image to include that
-          docker compose build app
-          # Save the database schema as an artifact
-          docker compose run --no-deps --rm --entrypoint dbtoyaml app --no-owner --no-privileges test_${PGDATABASE} > schema.yml
-          diff pyrseas/schema.yaml schema.yml > schema.diff || true
       - name: "Upload test artifacts"
         if: success() || failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ env.CI_PIPELINE_ID }}-${{ github.job }}-artifacts
           path: |
@@ -824,15 +654,15 @@ jobs:
     needs:
       - start-runner-test_branch # required to get output from the start-runner-test_branch job
       - test_branch # required to wait until the main jobs are done
-    runs-on: [self-hosted, ec2-runner]
+    runs-on: [ fewsnet ]
 
     steps:
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ env.AWS_REGION }}
       - name: Stop EC2 runner
-        uses: FEWS-NET/ec2-github-runner@076da0ed4e015d7c5bc6c8e1ad0ccef7106cb433
+        uses: American-Institutes-for-Research/ec2-github-runner@598310b0225c539534b6ef47575f36404dedf3b1
         with:
           mode: stop
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
@@ -844,15 +674,15 @@ jobs:
     needs:
       - start-runner-test_keepdb # required to get output from the start-runner-test_keepdb job
       - test_keepdb
-    runs-on: [self-hosted, ec2-runner]
+    runs-on: [ fewsnet ]
 
     steps:
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ env.AWS_REGION }}
       - name: Stop EC2 runner
-        uses: FEWS-NET/ec2-github-runner@076da0ed4e015d7c5bc6c8e1ad0ccef7106cb433
+        uses: American-Institutes-for-Research/ec2-github-runner@598310b0225c539534b6ef47575f36404dedf3b1
         with:
           mode: stop
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
@@ -864,15 +694,15 @@ jobs:
     needs:
       - start-runner-test_main # required to get output from the start-runner-test_main job
       - test_main
-    runs-on: [self-hosted, ec2-runner]
+    runs-on: [ fewsnet ]
 
     steps:
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ env.AWS_REGION }}
       - name: Stop EC2 runner
-        uses: FEWS-NET/ec2-github-runner@076da0ed4e015d7c5bc6c8e1ad0ccef7106cb433
+        uses: American-Institutes-for-Research/ec2-github-runner@598310b0225c539534b6ef47575f36404dedf3b1
         with:
           mode: stop
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
@@ -884,15 +714,15 @@ jobs:
     needs:
       - start-runner-test_tag # required to get output from the start-runner-test_tag job
       - test_tag
-    runs-on: [self-hosted, ec2-runner]
+    runs-on: [ fewsnet ]
 
     steps:
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ env.AWS_REGION }}
       - name: Stop EC2 runner
-        uses: FEWS-NET/ec2-github-runner@076da0ed4e015d7c5bc6c8e1ad0ccef7106cb433
+        uses: American-Institutes-for-Research/ec2-github-runner@598310b0225c539534b6ef47575f36404dedf3b1
         with:
           mode: stop
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}

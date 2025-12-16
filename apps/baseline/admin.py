@@ -236,6 +236,7 @@ class CommunityAdmin(GISModelAdminReadOnly):
         "livelihood_zone_alternate_code",
         "country",
         "full_name",
+        "aliases",
     )
     readonly_fields = ("livelihood_zone_alternate_code", "country")
     search_fields = (
@@ -767,7 +768,8 @@ class WealthGroupAdmin(admin.ModelAdmin):
     )
     search_fields = (
         "community__name",
-        "wealth_group_category",
+        "wealth_group_category__code__iexact",
+        *translation_fields("wealth_group_category__name"),
     )
     list_filter = (
         "livelihood_zone_baseline__source_organization",

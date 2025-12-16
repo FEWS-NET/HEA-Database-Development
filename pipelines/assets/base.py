@@ -314,7 +314,7 @@ def get_bss_dataframe(
     end_strings: Optional[list[str]] = None,
     header_rows: list[int] = [3, 4, 5],  # List of row indexes that contain the Wealth Group and other headers
     num_summary_cols: Optional[int] = None,
-) -> pd.DataFrame:
+) -> Output[pd.DataFrame]:
     """
     Retrieve a worksheet from a BSS and return it as a DataFrame.
 
@@ -417,7 +417,7 @@ def get_bss_dataframe(
                 df.loc[:, "B":].apply(lambda row: sum((row != 0) & (row != "")), axis="columns").sum()
             ),
             "preview": MetadataValue.md(df.head(config.preview_rows).to_markdown()),
-            "sample": MetadataValue.md(sample_df.sample(sample_rows).to_markdown()),
+            "sample": MetadataValue.md(sample_df.sample(sample_rows).sort_index().to_markdown()),
         },
     )
 
@@ -477,7 +477,7 @@ def get_bss_label_dataframe(
             "num_summaries": int(label_df["in_summary"].sum()),
             # Escape the ~ in the partition_key, otherwise it is rendered as strikethrough
             "preview": MetadataValue.md(label_df.head(config.preview_rows).to_markdown().replace("~", "\\~")),
-            "sample": MetadataValue.md(sample_df.sample(sample_rows).to_markdown().replace("~", "\\~")),
+            "sample": MetadataValue.md(sample_df.sample(sample_rows).sort_index().to_markdown().replace("~", "\\~")),
         },
     )
 
@@ -498,7 +498,7 @@ def get_all_bss_labels_dataframe(
             # Escape the ~ in the partition_key, otherwise it is rendered as strikethrough
             "preview": MetadataValue.md(df.head(config.preview_rows).to_markdown().replace("~", "\\~")),
             "sample": MetadataValue.md(
-                df[df["in_summary"]].sample(config.preview_rows).to_markdown().replace("~", "\\~")
+                df[df["in_summary"]].sample(config.preview_rows).sort_index().to_markdown().replace("~", "\\~")
             ),
         },
     )
@@ -587,7 +587,8 @@ def get_summary_bss_label_dataframe(
     label_metadata_df = pd.DataFrame.from_records(queryset)
 
     # Merge the label metadata into the dataframe
-    df = df.merge(label_metadata_df, left_on="label", right_on="label", how="left")
+    if not label_metadata_df.empty:
+        df = df.merge(label_metadata_df, left_on="label", right_on="label", how="left")
 
     # Rename the columns to match what we need in the GSheet when we run jobs.metadata.load_all_metadata
     df = df.rename(

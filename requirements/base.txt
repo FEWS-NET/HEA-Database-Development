@@ -1,40 +1,44 @@
 # Do not pip freeze into this file. Add only the packages you need so pip can align dependencies.
-dagster==1.6.8
-dagster_aws==0.22.8
-dagster-pipes==1.6.8
-dagster-postgres==0.22.8
-dagster-webserver==1.6.8
-ddtrace==2.6.2
-Django==5.1.4
+channels==4.3.1
+dagster==1.11.7
+dagster_aws==0.27.7
+dagster-pipes==1.11.7
+dagster-postgres==0.27.7
+dagster-webserver==1.11.7
+Django==5.2.7
 django-binary-database-files==1.0.18
+django-cors-headers==4.9.0
 django-environ==0.11.2
 django-extensions==3.2.3
 django-filter==23.5
 django-guardian==2.4.0
 django_model_utils==4.4.0
+django-revproxy==0.13.0
 django-treebeard==4.7.1
 djangorestframework==3.15.2
 djangorestframework-gis==1.1
 djangorestframework-xml==2.0.0
 docutils
 factory-boy==3.2.1
-git+https://github.com/American-Institutes-for-Research/gdrivefs.git@e870c19e1d730635e3760e7ae21eebf9ddda765e
+git+https://github.com/American-Institutes-for-Research/gdrivefs.git@f4ec53446e6a27be2e368b24dadfa9081e1272f2
 googletrans-py==4.0.0
+# Required for rendering Dagster graphs in Jupyter notebooks
+graphviz==0.21
 gunicorn==23.0.0
 html5lib==1.1
 json-logging-py==0.2
-jupyterlab==4.2.5
+jupyterlab==4.4.8
 lxml==4.9.3
 # Support .xls files that use transparent encryption to lock worksheets
 git+https://github.com/nolze/msoffcrypto-tool.git@0f320cbe042b94cfc9087cd0cb693d6ae90d518e
 # Make sure that same version of numpy is specified here and in docker/app/Dockerfile
 numpy==1.26.4
 openpyxl==3.1.2
-pandas==2.2.0
-# Upgrade to psycopg>=3 once ddtrace supports it.
-# See https://github.com/DataDog/dd-trace-py/issues/4393
-psycopg2-binary==2.9.7
-requests==2.32.2
+pandas==2.3.2
+# Required for rendering Dagster asset status in Jupyter notebooks
+plotly==6.3.0
+psycopg==3.2.10
+requests==2.32.5
 # s3fs provides S3 support for Dagster UPathIOManager subclasses
 s3fs==2024.2.0
 sentry-sdk[django]==2.8.0
@@ -43,6 +47,7 @@ sqlparse==0.5.0
 tabulate==0.9.0
 # Need universal-pathlib > 0.2.0 for gdrivefs support
 universal-pathlib==0.2.1
+uvicorn==0.37.0
 whitenoise==6.4.0
 xlrd==2.0.1
 xlutils==2.0.0

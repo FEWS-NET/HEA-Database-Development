@@ -109,7 +109,7 @@ from baseline.models import (  # NOQA: E402
     WealthGroupCharacteristicValue,
 )
 from metadata.lookups import WealthGroupCategoryLookup  # NOQA: E402
-from metadata.models import LabelStatus, WealthCharacteristicLabel  # NOQA: E402
+from metadata.models import WealthCharacteristicLabel  # NOQA: E402
 
 # Indexes of header rows in the Data3 dataframe (wealth_group_category, district, village)
 HEADER_ROWS = [3, 4, 5]
@@ -172,6 +172,7 @@ def wealth_characteristic_instances(
     context: AssetExecutionContext,
     config: BSSMetadataConfig,
     wealth_characteristic_dataframe,
+    livelihood_summary_dataframe,
 ) -> Output[dict]:
     """
     WealthGroup and WealthGroupCharacteristicValue instances extracted from the BSS.
@@ -187,7 +188,9 @@ def wealth_characteristic_instances(
     wealthgroupcategorylookup = WealthGroupCategoryLookup()
     label_map = {
         instance.pop("wealth_characteristic_label").lower(): instance
-        for instance in WealthCharacteristicLabel.objects.filter(status=LabelStatus.COMPLETE).values(
+        for instance in WealthCharacteristicLabel.objects.filter(
+            status=WealthCharacteristicLabel.LabelStatus.COMPLETE
+        ).values(
             "wealth_characteristic_label",
             "wealth_characteristic_id",
             "product_id",
@@ -315,26 +318,50 @@ def wealth_characteristic_instances(
 
                         wealth_group_characteristic_value["reference_type"] = reference_type
 
-                        # The percentagme of households should be stored as a number between 1 and 100,
+                        # The percentage of households should be stored as a number between 1 and 100,
                         # but may be stored in the BSS (particularly in the summary column) as a
                         # decimal fraction between 0 and 1, so correct those values
-                        if (
-                            wealth_group_characteristic_value["wealth_characteristic_id"] == "percentage of households"
-                            and value != ""
-                            and float(value) < 1
-                        ):
-                            value = float(value) * 100
+                        try:
+                            if (
+                                wealth_group_characteristic_value["wealth_characteristic_id"]
+                                == "percentage of households"
+                                and str(value).strip()
+                                and float(value) < 1
+                            ):
+                                value = float(value) * 100
+                        except Exception as e:
+                            raise ValueError(
+                                "Error in %s converting percentage of households value '%s' to float from 'WB'!%s%s"
+                                % (partition_key, value, column, row)
+                            ) from e
 
                         wealth_group_characteristic_value["value"] = value
 
                         # If this is the summary, then also save the min and max values
                         if reference_type == WealthGroupCharacteristicValue.CharacteristicReference.SUMMARY:
                             min_value = df.loc[row, df.columns[-2]]
-                            if min_value != "" and float(min_value) < 1:
-                                min_value = float(min_value) * 100
                             max_value = df.loc[row, df.columns[-1]]
-                            if max_value != "" and float(max_value) < 1:
-                                max_value = float(max_value) * 100
+                            # Convert min/max percentage of households values from decimal fractions to percentages
+                            if (
+                                wealth_group_characteristic_value["wealth_characteristic_id"]
+                                == "percentage of households"
+                            ):
+                                try:
+                                    if str(min_value).strip() and float(min_value) < 1:
+                                        min_value = float(min_value) * 100
+                                except Exception as e:
+                                    raise ValueError(
+                                        "Error in %s converting percentage of households value '%s' to float from 'WB'!%s%s"
+                                        % (partition_key, min_value, df.columns[-2], row)
+                                    ) from e
+                                try:
+                                    if str(max_value).strip() and float(max_value) < 1:
+                                        max_value = float(max_value) * 100
+                                except Exception as e:
+                                    raise ValueError(
+                                        "Error in %s converting percentage of households value '%s' to float from 'WB'!%s%s"
+                                        % (partition_key, max_value, df.columns[-1], row)
+                                    ) from e
                             wealth_group_characteristic_value["min_value"] = min_value
                             wealth_group_characteristic_value["max_value"] = max_value
 
@@ -356,17 +383,29 @@ def wealth_characteristic_instances(
     wealth_group_df = wealth_group_df[wealth_group_df["wealth_group_category"].notnull()]
     # We also need to add an extra row for each Wealth Group Category with a null Community, to create the
     # Baseline Wealth Groups.
+    baseline_wealth_group_df = wealth_group_df[wealth_group_df["community"] == wealth_group_df.iloc[0]["community"]][
+        [
+            "wealth_group_category_original",
+            "wealth_group_category",
+            "livelihood_zone_baseline",
+        ]
+    ].reset_index(drop=True)
+    baseline_wealth_group_df["community"] = None
+    baseline_wealth_group_df["district"] = ""
+    baseline_wealth_group_df["name"] = ""
+    baseline_wealth_group_df["full_name"] = ""
+    baseline_wealth_group_df["natural_key"] = baseline_wealth_group_df["wealth_group_category"].apply(
+        lambda wealth_group_category: [
+            livelihood_zone_baseline.livelihood_zone_id,
+            livelihood_zone_baseline.reference_year_end_date.isoformat(),
+            wealth_group_category,
+            "",
+        ]
+    )
     wealth_group_df = pd.concat(
         [
             wealth_group_df,
-            wealth_group_df[wealth_group_df["community"] == wealth_group_df.iloc[0]["community"]][
-                [
-                    "wealth_group_category_original",
-                    "wealth_group_category",
-                    "livelihood_zone_baseline",
-                    "community",
-                ]
-            ].assign(community=None),
+            baseline_wealth_group_df,
         ]
     )
 
@@ -408,6 +447,53 @@ def wealth_characteristic_instances(
         wealth_group_df, extra_attributes_df, on=["full_name", "wealth_group_category"], how="left"
     )
 
+    # We also need total income, expenditure and kcals from the summary section on the Data worksheet
+    # First drop any rows that aren't the header rows except the totals. The totals rows are identified by
+    # having a label that starts with "Total" or "Synthèse"
+    summary_df = livelihood_summary_dataframe[
+        (livelihood_summary_dataframe.index.isin(HEADER_ROWS))
+        | (livelihood_summary_dataframe["A"].str.lower().str.startswith("total"))
+        | (livelihood_summary_dataframe["A"].str.lower().str.startswith("synthèse"))
+        | (livelihood_summary_dataframe["A"].str.lower().str.startswith("food summary"))
+        | (livelihood_summary_dataframe["A"].str.lower().str.startswith("income summary"))
+        | (livelihood_summary_dataframe["A"].str.lower().str.startswith("expenditure summary"))
+    ]
+    # Check we found the expected number of rows
+    if summary_df.shape[0] != 6:
+        raise ValueError(
+            f'Expected 6 rows in summary_df, but found {summary_df.shape[0]}: {", ".join(summary_df.iloc[:, 0].tolist())}'
+        )
+    # Rename the headings in column A for the totals rows
+    summary_df.iloc[3, 0] = "percentage_kcals"
+    summary_df.iloc[4, 0] = "income"
+    summary_df.iloc[5, 0] = "expenditure"
+
+    # Now transpose the dataframe and then join it to the wealth groups so we can access
+    # the real full_name and wealth_category
+    summary_df = pd.merge(
+        summary_df.set_index("A").transpose(),
+        get_wealth_group_dataframe(summary_df, livelihood_zone_baseline, "Data", partition_key).set_index(
+            "bss_column"
+        ),
+        left_index=True,
+        right_index=True,
+    )
+
+    # Add the summary attributes to the Wealth Groups
+    wealth_group_df = pd.merge(
+        wealth_group_df,
+        summary_df[["full_name", "wealth_group_category", "income", "expenditure", "percentage_kcals"]],
+        on=["full_name", "wealth_group_category"],
+        how="left",
+    )
+
+    # Calculate the kcals_consumed
+    # Derive it by multiplying percentage_kcals by:
+    #   2100 (kcals per person per day) * 365 (days per year) * average_household_size
+    wealth_group_df["kcals_consumed"] = (
+        wealth_group_df["percentage_kcals"] * 2100 * 365 * wealth_group_df["average_household_size"]
+    )
+
     result = {
         "WealthGroup": wealth_group_df.to_dict(orient="records"),
         "WealthGroupCharacteristicValue": wealth_group_characteristic_values,
@@ -424,7 +510,7 @@ def wealth_characteristic_instances(
             )
             * 100
         ),
-        "preview": MetadataValue.md(f"```json\n{json.dumps(result, indent=4)}\n```"),
+        "preview": MetadataValue.md(f"```json\n{json.dumps(result, indent=4, ensure_ascii=False)}\n```"),
     }
     if not unrecognized_labels.empty:
         metadata["unrecognized_labels"] = MetadataValue.md(unrecognized_labels.to_markdown(index=False))
@@ -438,20 +524,14 @@ def wealth_characteristic_instances(
 @asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
 def wealth_characteristic_valid_instances(
     context: AssetExecutionContext,
+    config: BSSMetadataConfig,
     wealth_characteristic_instances,
 ) -> Output[dict]:
     """
     Valid  WealthGroup and WealthGroupCharacteristicValue instances from a BSS, ready to be loaded via a Django fixture.
     """
     partition_key = context.asset_partition_key_for_output()
-    valid_instances, metadata = validate_instances(context, wealth_characteristic_instances, partition_key)
-    metadata = {f"num_{key.lower()}": len(value) for key, value in valid_instances.items()}
-    metadata["total_instances"] = sum(len(value) for value in valid_instances.values())
-    metadata["preview"] = MetadataValue.md(f"```json\n{json.dumps(valid_instances, indent=4)}\n```")
-    return Output(
-        valid_instances,
-        metadata=metadata,
-    )
+    return validate_instances(context, config, wealth_characteristic_instances, partition_key)
 
 
 @asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
@@ -463,11 +543,7 @@ def wealth_characteristic_fixture(
     """
     Django fixture for the Livelihood Activities from a BSS.
     """
-    fixture, metadata = get_fixture_from_instances(wealth_characteristic_valid_instances)
-    return Output(
-        fixture,
-        metadata=metadata,
-    )
+    return get_fixture_from_instances(wealth_characteristic_valid_instances)
 
 
 @asset(partitions_def=bss_instances_partitions_def)
@@ -478,8 +554,4 @@ def imported_wealth_characteristics(
     """
     Imported Django fixtures for a BSS, added to the Django database.
     """
-    metadata = import_fixture(wealth_characteristic_fixture)
-    return Output(
-        None,
-        metadata=metadata,
-    )
+    return import_fixture(wealth_characteristic_fixture)

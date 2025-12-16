@@ -154,9 +154,9 @@ class LivelihoodProductCategorySerializer(serializers.ModelSerializer):
             "id",
             "source_organization",
             "source_organization_name",
-            "livelihood_zone_baseline",
-            "livelihood_zone_baseline_label",
+            "baseline_livelihood_activity",
             "livelihood_zone",
+            "livelihood_zone_baseline_label",
             "livelihood_zone_name",
             "livelihood_zone_country",
             "livelihood_zone_country_name",
@@ -165,33 +165,45 @@ class LivelihoodProductCategorySerializer(serializers.ModelSerializer):
             "product_description",
             "basket",
             "basket_name",
+            "percentage_allocation_to_basket",
         ]
 
     source_organization = serializers.CharField(
-        source="livelihood_zone_baseline.source_organization.pk", read_only=True
+        source="baseline_livelihood_activity.livelihood_zone_baseline.source_organization.pk", read_only=True
     )
     source_organization_name = serializers.CharField(
-        source="livelihood_zone_baseline.source_organization.name", read_only=True
+        source="baseline_livelihood_activity.livelihood_zone_baseline.source_organization.name", read_only=True
     )
     livelihood_zone_baseline_label = serializers.SerializerMethodField()
 
     def get_livelihood_zone_baseline_label(self, obj):
-        return str(obj.livelihood_zone_baseline)
+        return str(obj.baseline_livelihood_activity.livelihood_zone_baseline)
 
-    product_description = serializers.CharField(source="product.description", read_only=True)
-    product_common_name = serializers.CharField(source="product.common_name", read_only=True)
-    livelihood_zone_name = serializers.CharField(
-        source="livelihood_zone_baseline.livelihood_zone.name", read_only=True
+    product = serializers.SerializerMethodField()
+
+    def get_product(self, obj):
+        return str(obj.baseline_livelihood_activity.livelihood_strategy.product)
+
+    product_description = serializers.CharField(
+        source="baseline_livelihood_activity.livelihood_strategy.product.description", read_only=True
     )
-    livelihood_zone = serializers.CharField(source="livelihood_zone_baseline.livelihood_zone.pk", read_only=True)
+    product_common_name = serializers.CharField(
+        source="baseline_livelihood_activity.livelihood_strategy.product.common_name", read_only=True
+    )
+    livelihood_zone_name = serializers.CharField(
+        source="baseline_livelihood_activity.livelihood_zone_baseline.livelihood_zone.name", read_only=True
+    )
+    livelihood_zone = serializers.CharField(
+        source="baseline_livelihood_activity.livelihood_zone_baseline.livelihood_zone.pk", read_only=True
+    )
     source_organization_name = serializers.CharField(
-        source="livelihood_zone_baseline.source_organization.name", read_only=True
+        source="baseline_livelihood_activity.livelihood_zone_baseline.source_organization.name", read_only=True
     )
     livelihood_zone_country = serializers.CharField(
-        source="livelihood_zone_baseline.livelihood_zone.country.pk", read_only=True
+        source="baseline_livelihood_activity.livelihood_zone_baseline.livelihood_zone.country.pk", read_only=True
     )
     livelihood_zone_country_name = serializers.CharField(
-        source="livelihood_zone_baseline.livelihood_zone.country.name", read_only=True
+        source="baseline_livelihood_activity.livelihood_zone_baseline.livelihood_zone.country.name", read_only=True
     )
     basket_name = serializers.SerializerMethodField()
 
