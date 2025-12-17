@@ -638,7 +638,7 @@
         "percentage_kcals"
     ],
     [
-        "{product_pattern}: {nbr_pattern} d'animaux abattus",
+        "{product_pattern}: {nbr_pattern} d'animaux (?:abattus|égorgés)",
         "MeatProduction",
         true,
         "animals_slaughtered"
