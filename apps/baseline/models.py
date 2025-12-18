@@ -1312,7 +1312,12 @@ class LivelihoodActivity(common_models.Model):
 
 class BaselineLivelihoodActivityManager(InheritanceManager):
     def get_queryset(self):
-        return super().get_queryset().filter(scenario=LivelihoodActivityScenario.BASELINE).select_subclasses()
+        return (
+            super()
+            .get_queryset()
+            .filter(wealth_group__community__isnull=True, scenario=LivelihoodActivityScenario.BASELINE)
+            .select_subclasses()
+        )
 
 
 class BaselineLivelihoodActivity(LivelihoodActivity):
@@ -1320,8 +1325,8 @@ class BaselineLivelihoodActivity(LivelihoodActivity):
     An activity undertaken by households in a Wealth Group that produces food or income or requires expenditure.
 
     A Baseline Livelihood Activity contains the outputs of a Livelihood Strategy
-    employed by a Wealth Group in a Community or a Wealth Group representing
-    the Baseline as a whole in the reference year.
+    employed by a Wealth Group representing the Baseline as a whole during the
+    reference year.
 
     Stored on the BSS 'Data' worksheet.
     """
@@ -1341,7 +1346,12 @@ class BaselineLivelihoodActivity(LivelihoodActivity):
 
 class ResponseLivelihoodActivityManager(InheritanceManager):
     def get_queryset(self):
-        return super().get_queryset().filter(scenario=LivelihoodActivityScenario.RESPONSE).select_subclasses()
+        return (
+            super()
+            .get_queryset()
+            .filter(wealth_group__community__isnull=True, scenario=LivelihoodActivityScenario.RESPONSE)
+            .select_subclasses()
+        )
 
 
 class ResponseLivelihoodActivity(LivelihoodActivity):
