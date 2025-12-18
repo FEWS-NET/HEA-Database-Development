@@ -540,27 +540,25 @@ class LivelihoodActivitySerializer(serializers.ModelSerializer):
         ]
 
     livelihood_zone_name = serializers.CharField(
-        source="wealth_group.community.livelihood_zone_baseline.livelihood_zone.name", read_only=True
+        source="livelihood_zone_baseline.livelihood_zone.name", read_only=True
     )
-    livelihood_zone = serializers.CharField(
-        source="wealth_group.community.livelihood_zone_baseline.livelihood_zone.pk", read_only=True
-    )
+    livelihood_zone = serializers.CharField(source="livelihood_zone_baseline.livelihood_zone.pk", read_only=True)
     livelihood_zone_country = serializers.CharField(
-        source="wealth_group.community.livelihood_zone_baseline.livelihood_zone.country.pk", read_only=True
+        source="livelihood_zone_baseline.livelihood_zone.country.pk", read_only=True
     )
     livelihood_zone_country_name = serializers.CharField(
-        source="wealth_group.community.livelihood_zone_baseline.livelihood_zone.country.name", read_only=True
+        source="livelihood_zone_baseline.livelihood_zone.country.name", read_only=True
     )
     source_organization = serializers.IntegerField(
-        source="wealth_group.community.livelihood_zone_baseline.source_organization.pk", read_only=True
+        source="livelihood_zone_baseline.source_organization.pk", read_only=True
     )
     source_organization_name = serializers.CharField(
-        source="wealth_group.community.livelihood_zone_baseline.source_organization.name", read_only=True
+        source="livelihood_zone_baseline.source_organization.name", read_only=True
     )
     livelihood_zone_baseline_label = serializers.SerializerMethodField()
 
     def get_livelihood_zone_baseline_label(self, obj):
-        return str(obj.livelihood_strategy.livelihood_zone_baseline)
+        return str(obj.livelihood_zone_baseline)
 
     additional_identifier = serializers.CharField(source="livelihood_strategy.additional_identifier", read_only=True)
     currency = serializers.CharField(source="livelihood_strategy.currency.pk", read_only=True)
@@ -620,13 +618,13 @@ class LivelihoodActivitySerializer(serializers.ModelSerializer):
 class BaselineLivelihoodActivitySerializer(LivelihoodActivitySerializer):
     class Meta:
         model = BaselineLivelihoodActivity
-        fields = LivelihoodActivitySerializer.Meta.fields
+        fields = [f for f in LivelihoodActivitySerializer.Meta.fields if f not in ["community", "community_label"]]
 
 
 class ResponseLivelihoodActivitySerializer(LivelihoodActivitySerializer):
     class Meta:
         model = ResponseLivelihoodActivity
-        fields = LivelihoodActivitySerializer.Meta.fields
+        fields = BaselineLivelihoodActivitySerializer.Meta.fields
 
 
 class MilkProductionSerializer(LivelihoodActivitySerializer):
