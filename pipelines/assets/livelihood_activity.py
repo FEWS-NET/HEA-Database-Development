@@ -239,6 +239,7 @@ def get_livelihood_activity_regexes() -> list:
         "product_pattern": r"(?P<product_id>[a-zà-ÿ][a-zà-ÿ1-9',/ \.\>\-\(\)]+?)",
         "season_pattern": r"(?P<season>season [12]|saison [12]|[12][a-z] season||[12][a-zà-ÿ] saison|r[eé]colte principale|principale r[eé]colte|gu|deyr+?)",  # NOQA: E501
         "additional_identifier_pattern": r"\(?(?P<additional_identifier>rainfed|irrigated|pluviale?|irriguée|submersion libre|submersion contrôlée|flottant)\)?",
+        "age_gender_pattern": r"(?P<additional_identifier>filles/garçons|garçons/filles|garcons/filles|filles/garcons|boys/girls|girls/boys|men|hommes|women|femmes|boys|garcons|garçons|girls|filles)",
         "unit_of_measure_pattern": r"(?P<unit_of_measure_id>[a-z]+)",
         "nbr_pattern": r"(?:n[b|o]r?)\.?",
         "vendu_pattern": r"(?:quantité )?vendu(?:e|s|ss|es|ses)?",

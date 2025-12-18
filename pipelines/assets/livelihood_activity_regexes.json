@@ -56,6 +56,12 @@
         null
     ],
     [
+        "{age_gender_pattern}",
+        null,
+        false,
+        null
+    ],
+    [
         "(?:other purchases?|autres? achats?|achats?):?",
         "OtherPurchase",
         true,

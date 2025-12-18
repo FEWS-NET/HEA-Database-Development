@@ -865,5 +865,50 @@
         "product_id": "fish type 2 (dried)",
         "unit_of_measure_id": "kg",
         "attribute": "quantity_produced"
-    }
+    },
+  "men": {
+    "additional_identifier": "men"
+  },
+  "women": {
+    "additional_identifier": "women"
+  },
+  "boys": {
+    "additional_identifier": "boys"
+  },
+  "girls": {
+    "additional_identifier": "girls"
+  },
+  "hommes": {
+    "additional_identifier": "hommes"
+  },
+  "femmes": {
+    "additional_identifier": "femmes"
+  },
+  "garcons": {
+    "additional_identifier": "garcons"
+  },
+  "garçons": {
+    "additional_identifier": "garçons"
+  },
+  "filles": {
+    "additional_identifier": "filles"
+  },
+  "filles/garçons": {
+    "additional_identifier": "filles/garçons"
+  },
+  "garçons/filles": {
+    "additional_identifier": "garçons/filles"
+  },
+  "garcons/filles": {
+    "additional_identifier": "garcons/filles"
+  },
+  "filles/garcons": {
+    "additional_identifier": "filles/garcons"
+  },
+  "boys/girls": {
+    "additional_identifier": "boys/girls"
+  },
+  "girls/boys": {
+    "additional_identifier": "girls/boys"
+  }
 }
