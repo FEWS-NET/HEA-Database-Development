@@ -4888,6 +4888,17 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
             self.assertEqual(row["expenditure_sum_slice"], 0)
             self.assertEqual(row["expenditure_sum_slice_percentage_of_row"], 0)
 
+    def test_baseline_explorer_example(self):
+        response = self.client.get(
+            self.url,
+            {
+                "fields": "livelihood_zone_baseline,livelihood_zone_baseline_name,livelihood_zone,wealth_group_category,country",
+                "min_kcals_consumed_sum_slice_percentage_of_row": 1,
+                "slice_by_product": "R01122",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+
 
 class SeasonalActivityViewSetTestCase(APITestCase):
     @classmethod

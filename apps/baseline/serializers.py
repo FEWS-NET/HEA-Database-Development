@@ -1501,9 +1501,9 @@ class LivelihoodActivitySummarySerializer(AggregatingSerializer):
     class Meta:
         model = LivelihoodActivity
         fields = (
-            "country",
+            "country",  # Country name
             "source_organization_name",
-            "livelihood_zone",
+            "livelihood_zone",  # E.g. ML01, etc.
             "livelihood_zone_baseline_name",
             "reference_year_start_date",
             "reference_year_end_date",
@@ -1511,21 +1511,21 @@ class LivelihoodActivitySummarySerializer(AggregatingSerializer):
             "valid_to_date",  # to display "is latest" / "is historic" in the UI for each ref yr
             "main_livelihood_category",
             "livelihood_zone_baseline_description",
-            "wealth_group_category",
+            "wealth_group_category",  # E.g. VP, P, M, B/O
             "wealth_group_category_name",
             "currency",
             "population_source",
             "population_estimate",
-            "product",
+            "product",  # cpc code for the Product
             "product_common_name",
-            "strategy_type",
-            "scenario",
-            "id",
-            "livelihood_strategy",
-            "wealth_group",
-            "livelihood_zone_baseline",
-            "source_organization",
-            "iso3166a2",
+            "strategy_type",  # CropProduction, etc.
+            "scenario",  # baseline or response
+            "id",  # Primary key of the LivelihoodActivity
+            "livelihood_strategy",  # Primary key of the LivelihoodStrategy
+            "wealth_group",  # Primary key of the WealthGroup
+            "livelihood_zone_baseline",  # Primary key of the LivelihoodZoneBaseline
+            "source_organization",  # Primary key of the SourceOrganization
+            "iso3166a2",  # Primary key of the Country, e.g. KE
         )
 
     aggregates = {
