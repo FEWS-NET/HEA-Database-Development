@@ -2,7 +2,16 @@ from inspect import isclass
 
 from django.apps import apps
 from django.contrib.auth.models import User
-from django.db.models import Exists, ExpressionWrapper, F, FloatField, OuterRef, Q
+from django.db.models import (
+    Exists,
+    Expression,
+    ExpressionWrapper,
+    F,
+    FloatField,
+    OuterRef,
+    Q,
+    QuerySet,
+)
 from django.db.models.functions import Coalesce, NullIf
 from django.utils.text import format_lazy
 from django.utils.translation import gettext_lazy as _
@@ -468,8 +477,7 @@ class AggregatingViewSet(GenericViewSet):
      * filters and ordering parameters provided by the FilterSet
 
     To use, inherit from this class, and ensure the linked serializer inherits from AggregatingSerializer and includes
-    the Meta.model, Meta.fields, aggregates, slice_fields properties, and the field_to_database_path method if
-    necessary. Field class attributes are not necessary.
+    the Meta.model, Meta.fields, aggregates, and slice_fields properties. Field class attributes are not necessary.
 
     The results will include all valid fields specified in the fields parameter, plus values aggregated to the model,
     row and slice levels, plus the percentage the slice represents of the row and model.
@@ -508,18 +516,15 @@ class AggregatingViewSet(GenericViewSet):
         """
 
         # These filters are applied to global, row and slice totals.
-        queryset = super().get_queryset()
+        queryset = self.get_queryset()
         queryset = self.filter_queryset(queryset)
 
         # Get the field list to group/disaggregate the results by:
         # TODO: Should get_fields be on the viewset? This is prematurely instantiating it before we've a queryset.
-        group_by_fields = self.get_serializer().get_fields().keys()
-
-        # Convert user-friendly field name (eg, livelihood_strategy_pk) into db field path (livelihood_strategies__pk).
-        group_by_field_paths = [self.serializer_class.field_to_database_path(field) for field in group_by_fields]
+        group_by_fields = list(self.get_serializer().get_fields().keys())
 
         # Get them from the query. The ORM converts this qs.values() call into a SQL `GROUP BY *field_paths` clause.
-        queryset = queryset.values(*group_by_field_paths)
+        queryset = queryset.values(*group_by_fields)
 
         # Add the row aggregations, eg, total consumption filtered by wealth group and row but not prd/strtgy slice:
         row_aggregates = self.get_aggregates(AggregationScope.ROW)
@@ -539,7 +544,7 @@ class AggregatingViewSet(GenericViewSet):
         queryset = queryset.filter(self.get_filters_by_calculated_fields(slice_aggregates))
 
         # If no ordering has been specified by the FilterSet, order by value descending:
-        if not self.request.query_params.get(api_settings.ORDERING_PARAM):
+        if not request.query_params.get(api_settings.ORDERING_PARAM):
             if slice_aggregates:
                 # If a slice has been specified, order by slice_percentage_of_row desc
                 order_by_value_desc = [
@@ -562,6 +567,23 @@ class AggregatingViewSet(GenericViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
+    def get_queryset(self) -> QuerySet:
+        """
+        Returns the queryset for this viewset, with any necessary annotations applied.
+
+        Annotations are required for fields in the serializer that are not direct model fields, so that they can
+        be used for filtering, ordering, and grouping.
+        """
+        queryset = super().get_queryset()
+        annotations = self.get_queryset_annotations()
+        return queryset.annotate(**annotations)
+
+    def get_queryset_annotations(self) -> dict[str, F | Expression]:
+        """
+        Additional annotations required to support Serializer fields that aren't a direct model field.
+        """
+        return {}
+
     def get_aggregates(self, scope):
         """
         Produces aggregate expressions for scopes row or slice.
@@ -576,14 +598,17 @@ class AggregatingViewSet(GenericViewSet):
 
         aggregates = {}
         for field_name, aggregate in self.serializer_class.aggregates.items():
-            aggregate_field_name = self.serializer_class.get_aggregate_field_name(field_name, aggregate, scope)
+            aggregate_field_name = self.serializer_class.get_aggregate_field_name(
+                field_name,
+                aggregate,
+                scope,
+            )
 
             if isclass(aggregate):
-                field_path = self.serializer_class.field_to_database_path(field_name)
                 aggregate_args = {"default": 0, "output_field": FloatField()}
                 if scope == AggregationScope.SLICE:
                     aggregate_args["filter"] = slice_filters
-                scoped_aggregate = aggregate(field_path, **aggregate_args)
+                scoped_aggregate = aggregate(field_name, **aggregate_args)
 
             else:
                 scoped_aggregate = aggregate.copy()
@@ -610,9 +635,8 @@ class AggregatingViewSet(GenericViewSet):
         # Also support slices on any field, but user must specify ORM lookup type in URL parameter name, and prefix
         # the parameter with 'slice_by_', for example, ?slice_by_product_cpc__startswith=R011
         # An error is returned if the user uses an inappropriate lookup type for a field. Note that string lookup
-        # types cannot be used on Foreign Key fields, even if they are string codes - field_to_database_path must
-        # reach the corresponding primary key, eg, livelihood_strategies__product__cpc not
-        # livelihood_strategies__product.
+        # types cannot be used on Foreign Key fields, even if they are string codes — queries must reach the
+        # corresponding primary key, eg, livelihood_strategies__product__cpc not livelihood_strategies__product.
         for field_name in set(self.serializer_class.Meta.fields) - self.get_serializer().get_fields().keys():
             # fmt: off
             # Copied from https://docs.djangoproject.com/en/5.1/ref/models/querysets/#field-lookups
@@ -620,8 +644,7 @@ class AggregatingViewSet(GenericViewSet):
             # fmt: on
             for lookup_type in lookup_types:
                 slice_filter = Q()
-                field_path = self.serializer_class.field_to_database_path(field_name)
-                slice_expr = f"{field_path}__{lookup_type}"
+                slice_expr = f"{field_name}__{lookup_type}"
                 for item in self.request.query_params.getlist(f"slice_by_{field_name}__{lookup_type}"):
                     slice_filter |= Q(**{slice_expr: item})
                 # Slice must match ANY of the products AND any of the strategy types AND any of the custom slices

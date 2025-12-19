@@ -1,5 +1,4 @@
 from django.db.models import F, FloatField, Sum
-from django.utils import translation
 from rest_framework import serializers
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
 
@@ -1513,6 +1512,9 @@ class LivelihoodActivitySummarySerializer(AggregatingSerializer):
             "livelihood_zone_baseline_description",
             "wealth_group_category",  # E.g. VP, P, M, B/O
             "wealth_group_category_name",
+            "wealth_group_category_ordering",
+            "percentage_of_households",
+            "average_household_size",
             "currency",
             "population_source",
             "population_estimate",
@@ -1543,30 +1545,3 @@ class LivelihoodActivitySummarySerializer(AggregatingSerializer):
         "product": "livelihood_strategy__product__cpc__istartswith",
         "strategy_type": "strategy_type__iexact",
     }
-
-    @staticmethod
-    def field_to_database_path(field_name):
-        language_code = translation.get_language()
-        return {
-            "country": "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name",
-            "source_organization_name": "livelihood_zone_baseline__source_organization__name",
-            "livelihood_zone": "livelihood_zone_baseline__livelihood_zone__code",
-            "livelihood_zone_baseline_name": f"livelihood_zone_baseline__name_{language_code}",
-            "reference_year_start_date": "livelihood_zone_baseline__reference_year_start_date",
-            "reference_year_end_date": "livelihood_zone_baseline__reference_year_end_date",
-            "valid_from_date": "livelihood_zone_baseline__valid_from_date",
-            "valid_to_date": "livelihood_zone_baseline__valid_to_date",
-            "main_livelihood_category": "livelihood_zone_baseline__main_livelihood_category__code",
-            "livelihood_zone_baseline_description": f"livelihood_zone_baseline__description_{language_code}",
-            "wealth_group_category": "wealth_group__wealth_group_category__code",
-            "wealth_group_category_name": f"wealth_group__wealth_group_category__name_{language_code}",
-            "currency": "livelihood_zone_baseline__currency__pk",
-            "population_source": "livelihood_zone_baseline__population_source",
-            "population_estimate": "livelihood_zone_baseline__population_estimate",
-            "product": "livelihood_strategy__product__cpc",
-            "product_common_name": f"livelihood_strategy__product__common_name_{language_code}",
-            "livelihood_strategy": "livelihood_strategy__pk",
-            "wealth_group": "wealth_group__pk",
-            "source_organization": "livelihood_zone_baseline__source_organization__pk",
-            "iso3166a2": "livelihood_zone_baseline__livelihood_zone__country__iso3166a2",
-        }.get(field_name, field_name)

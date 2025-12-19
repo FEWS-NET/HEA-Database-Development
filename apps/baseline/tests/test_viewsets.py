@@ -4460,7 +4460,7 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
         ("S88537", "Stone cutting, shaping and finishing services", "Stone cutting"),
         ("P34510", "Wood charcoal", "Charcoal Sales"),
     )
-    WEALTH_GROUP_CODES = ("VP", "P")
+    WEALTH_GROUP_CATEGORIES = {"VP": 1, "P": 2}
 
     @classmethod
     def setUpTestData(cls):
@@ -4482,18 +4482,20 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
                             livelihood_zone_baseline=baseline, name=f"Community {community_code}"
                         )
                         # Create community wealth groups and activities
-                        for wealth_category in cls.WEALTH_GROUP_CODES:
+                        for wealth_category, wealth_group_category_ordering in cls.WEALTH_GROUP_CATEGORIES.items():
                             wealth_group = CommunityWealthGroupFactory(
                                 livelihood_zone_baseline=baseline,
                                 wealth_group_category__code=wealth_category,
+                                wealth_group_category__ordering=wealth_group_category_ordering,
                                 community=community,
                             )
                             cls._create_livelihood_activities(wealth_group, product)
                     # Create baseline wealth groups and activities
-                    for wealth_category in cls.WEALTH_GROUP_CODES:
+                    for wealth_category, wealth_group_category_ordering in cls.WEALTH_GROUP_CATEGORIES.items():
                         wealth_group = BaselineWealthGroupFactory(
                             livelihood_zone_baseline=baseline,
                             wealth_group_category__code=wealth_category,
+                            wealth_group_category__ordering=wealth_group_category_ordering,
                         )
                         cls._create_livelihood_activities(wealth_group, product)
         activity_df = pd.DataFrame(
@@ -4508,6 +4510,7 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
                 reference_year_end_date=F("livelihood_zone_baseline__reference_year_end_date"),
                 product=F("livelihood_strategy__product__cpc"),
                 wealth_group_category=F("wealth_group__wealth_group_category__code"),
+                wealth_group_category_ordering=F("wealth_group__wealth_group_category__ordering"),
             )
             .values()
         )
@@ -4692,6 +4695,29 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
         for row in response.json():
             with self.subTest(row=row):
                 self.check_row_against_expected_slices(row, fields, expected, expected_slice)
+
+    def test_ordering(self):
+        fields = ["wealth_group_category_ordering", "strategy_type", "reference_year_end_date"]
+        expected = (
+            self.activity_df.groupby(fields)
+            .size()
+            .reset_index()[fields]
+            .sort_values(
+                by=["wealth_group_category_ordering", "strategy_type", "reference_year_end_date"],
+                ascending=[True, True, False],
+            )
+            .to_dict("records")
+        )
+        response = self.client.get(
+            self.url,
+            {
+                "fields": ",".join(fields),
+                "ordering": "wealth_group_category_ordering,strategy_type,-reference_year_end_date",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        response_rows = [{field: row[field] for field in fields} for row in response.json()]
+        self.assertEqual(response_rows, expected)
 
     def test_summary_supports_combined_product_and_strategy_type_slices(self):
         fields = ["livelihood_zone_baseline", "scenario"]

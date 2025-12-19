@@ -1,7 +1,9 @@
 from django.apps import apps
 from django.conf import settings
 from django.db import models
-from django.db.models import Q, Subquery
+from django.db.models import Expression, F, Q, Subquery, TextField, Value
+from django.db.models.functions import Coalesce, NullIf
+from django.utils import translation
 from django.utils.translation import override
 from django_filters import rest_framework as filters
 from django_filters.filters import CharFilter
@@ -1737,9 +1739,80 @@ class LivelihoodActivitySummaryViewSet(AggregatingViewSet):
 
     """
 
-    queryset = LivelihoodActivity.objects.filter(wealth_group__community__isnull=True)
+    queryset = LivelihoodActivity.objects.filter(wealth_group__community__isnull=True).select_related(
+        "livelihood_zone_baseline__livelihood_zone__country",
+        "livelihood_zone_baseline__source_organization",
+        "livelihood_zone_baseline__main_livelihood_category",
+        "wealth_group__wealth_group_category",
+        "livelihood_strategy__product",
+        "livelihood_strategy__season",
+    )
     serializer_class = LivelihoodActivitySummarySerializer
     filterset_class = LivelihoodActivityFilterSet
+
+    def get_queryset_annotations(self) -> dict[str, F | Expression]:
+        """
+        AggregatingViewSet requires an annotation for every field in the Serializer that isn't a direct model field.
+        """
+        language_code = translation.get_language()
+
+        def translated_field(path):
+            """Return a Coalesce expression for a translated field so that we return the English value
+            if the translation for the current language is empty."""
+            return Coalesce(
+                NullIf(
+                    F(f"{path}_{language_code}"),
+                    Value(""),
+                ),
+                F(f"{path}_en"),
+                output_field=TextField(),
+            )
+
+        def country_field():
+            """Return a Coalesce expression for a translated field so that we return the English value
+            if the translation for the current language is empty."""
+            path = {
+                "fr": "livelihood_zone_baseline__livelihood_zone__country__iso_fr_name",
+                "pt": "livelihood_zone_baseline__livelihood_zone__country__iso_pt_name",
+            }.get(language_code)
+            if path:
+                return Coalesce(
+                    NullIf(
+                        F(path),
+                        Value(""),
+                    ),
+                    F("livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name"),
+                )
+            return F("livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name")
+
+        return {
+            "country": country_field(),
+            "source_organization_name": F("livelihood_zone_baseline__source_organization__name"),
+            "livelihood_zone": F("livelihood_zone_baseline__livelihood_zone__code"),
+            "livelihood_zone_baseline_name": translated_field("livelihood_zone_baseline__name"),
+            "reference_year_start_date": F("livelihood_zone_baseline__reference_year_start_date"),
+            "reference_year_end_date": F("livelihood_zone_baseline__reference_year_end_date"),
+            "valid_from_date": F("livelihood_zone_baseline__valid_from_date"),
+            "valid_to_date": F("livelihood_zone_baseline__valid_to_date"),
+            "main_livelihood_category": F("livelihood_zone_baseline__main_livelihood_category__code"),
+            "livelihood_zone_baseline_description": translated_field("livelihood_zone_baseline__description"),
+            "wealth_group_category": F("wealth_group__wealth_group_category__code"),
+            "wealth_group_category_name": translated_field(
+                "wealth_group__wealth_group_category__name",
+            ),
+            "wealth_group_category_ordering": F("wealth_group__wealth_group_category__ordering"),
+            "percentage_of_households": F("wealth_group__percentage_of_households"),
+            "average_household_size": F("wealth_group__average_household_size"),
+            "currency": F("livelihood_zone_baseline__currency__pk"),
+            "population_source": F("livelihood_zone_baseline__population_source"),
+            "population_estimate": F("livelihood_zone_baseline__population_estimate"),
+            "product": F("livelihood_strategy__product__cpc"),
+            "product_common_name": translated_field(
+                "livelihood_strategy__product__common_name",
+            ),
+            "source_organization": F("livelihood_zone_baseline__source_organization__pk"),
+            "iso3166a2": F("livelihood_zone_baseline__livelihood_zone__country__iso3166a2"),
+        }
 
 
 MODELS_TO_SEARCH = [
