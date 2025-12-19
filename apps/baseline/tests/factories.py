@@ -333,7 +333,7 @@ class BaselineLivelihoodActivityFactory(LivelihoodActivityFactory):
         ]
 
     scenario = LivelihoodActivityScenario.BASELINE
-    ## Baseline Livelihood Activities are always for Baseline Wealth Groups
+    # Baseline Livelihood Activities are always for Baseline Wealth Groups
     wealth_group = factory.SubFactory(
         BaselineWealthGroupFactory, livelihood_zone_baseline=factory.SelfAttribute("..livelihood_zone_baseline")
     )
@@ -351,7 +351,7 @@ class ResponseLivelihoodActivityFactory(LivelihoodActivityFactory):
         ]
 
     scenario = LivelihoodActivityScenario.RESPONSE
-    ## Response Livelihood Activities are always for Baseline Wealth Groups
+    # Response Livelihood Activities are always for Baseline Wealth Groups
     wealth_group = factory.SubFactory(
         BaselineWealthGroupFactory, livelihood_zone_baseline=factory.SelfAttribute("..livelihood_zone_baseline")
     )

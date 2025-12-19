@@ -535,8 +535,8 @@ class AggregatingViewSet(GenericViewSet):
             percentage_expressions = self.get_percentage_expressions()
             queryset = queryset.annotate(**percentage_expressions)
 
-            # Add the filters on aggregates, eg, kcals_consumed_percent > 50%
-            queryset = queryset.filter(self.get_filters_by_calculated_fields())
+        # Add the filters on aggregates, eg, kcals_consumed_percent > 50%
+        queryset = queryset.filter(self.get_filters_by_calculated_fields())
 
         # If no ordering has been specified by the FilterSet, order by value descending:
         if not self.request.query_params.get(api_settings.ORDERING_PARAM):
@@ -608,7 +608,7 @@ class AggregatingViewSet(GenericViewSet):
             slice_filters &= slice_filter
 
         # Also support slices on any field, but user must specify ORM lookup type in URL parameter name, and prefix
-        # the parameter with 'slice_by_', for example, ?slice_by_product_cpc__startswith=botswana
+        # the parameter with 'slice_by_', for example, ?slice_by_product_cpc__startswith=R011
         # An error is returned if the user uses an inappropriate lookup type for a field. Note that string lookup
         # types cannot be used on Foreign Key fields, even if they are string codes - field_to_database_path must
         # reach the corresponding primary key, eg, livelihood_strategies__product__cpc not
@@ -693,6 +693,11 @@ class AggregatingViewSet(GenericViewSet):
                         field_name,
                         aggregate,
                         AggregationScope.ROW,
+                    ),
+                    self.serializer_class.get_aggregate_field_name(
+                        field_name,
+                        aggregate,
+                        AggregationScope.SLICE,
                     ),
                     self.serializer_class.get_aggregate_field_name(
                         field_name,

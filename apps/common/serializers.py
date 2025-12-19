@@ -184,7 +184,7 @@ class AggregatingSerializer(serializers.ModelSerializer):
         # Add the ordering field if specified
         ordering = self.context["request"].query_params.get(api_settings.ORDERING_PARAM)
         if ordering:
-            field_names.append(ordering)
+            field_names += [o.lstrip("-") for o in ordering.split(",")]
 
         # Remove any that don't match one of self.Meta.fields
         # Return Field() to save sub-classes having to specify Field class attributes for model and aggregate fields.

@@ -69,10 +69,10 @@ from .serializers import (
     HazardSerializer,
     HuntingSerializer,
     LivelihoodActivitySerializer,
+    LivelihoodActivitySummarySerializer,
     LivelihoodProductCategorySerializer,
     LivelihoodStrategySerializer,
     LivelihoodZoneBaselineGeoSerializer,
-    LivelihoodZoneBaselineReportSerializer,
     LivelihoodZoneBaselineSerializer,
     LivelihoodZoneSerializer,
     LivestockSaleSerializer,
@@ -1641,57 +1641,84 @@ class CopingStrategyViewSet(BaseModelViewSet):
     ]
 
 
-class LivelihoodZoneBaselineReportViewSet(AggregatingViewSet):
+class LivelihoodActivitySummaryViewSet(AggregatingViewSet):
     """
-    There are two ‘levels’ of filter needed on this endpoint. The standard ones which are already on the LZB endpoint
-    filter the LZBs that are returned (eg, population range and wealth group). Let’s call them ‘global’ filters.
-    Everything needs filtering by wealth group or population, if those filters are active.
+    Aggregated summary of LivelihoodActivity data for Baseline Wealth Groups.
 
-    The strategy type and product filters do not remove LZBs from the results by themselves; they only filter the
-    statistics. I suggest we call them data ‘slice’ filters.
+    The viewset accepts additional `slice` parameters in addition to the regular filter parameters.  The regular
+    filter parameters determine Livelihood Activities that are included in the data to be aggregated. The `slice`
+    parameters areused to calculate the amount of overall income, expenditure, kcals_consumed and percentage_kcals
+    that are derived from the slice.
 
-    If a user selects Sorghum, that filters the kcals income for our slice. The kcals income for the slice is then
-    divided by the kcals income on the global set for the kcals income percent.
+    Each row in the results contains the total amount for each indicator (income, expenditure, kcals_consumed,
+    percentage_kcals), the amount contributed by the slice, and the percentage of the total contributed by the slice.
 
-    The global filters are identical to those already on the LZB endpoint (and will always be - it is sharing the
-    code).
+    Each row contains the aggregated indicator values for a group based on a distinct set of metadata. The groups
+    are defined using the `&fields` parameter. If you omit the fields parameter all fields are returned.
 
-    The slice filters are:
+    Note that because the viewset aggregates across the requested fields, it is very easy to over count the values.
+    It is important to understand exactly what data is being aggregated and ensure that appropriate filters have been
+    applied. For example, if a Baseline contains data for both the Baseline and the Response scenario, and you don't
+    specify a scenario filter, then the resulting indicator values will be the sum of the values for both scenarios.
 
-      - slice_product (for multiple, repeat the parameter, eg, slice_product=R0&slice_product=B01). These
+    The slice parameters are:
+
+      - slice_by_product (for multiple, repeat the parameter, eg, slice_by_product=R0&slice_by_product=B01). These
         match any CPC code that starts with the value. (The client needs to convert the selected product to CPC.)
 
-      - slice_strategy_type - you can specify multiple, and you need to pass the code not the label (which could be
+      - slice_by_strategy_type - you can specify multiple, and you need to pass the code not the label (which could be
         translated). (These are case-insensitive but otherwise must be an exact match.)
 
-    The slice is defined by matching any of the products, AND any of the strategy types (as opposed to OR).
+    The slice selects Livelihood Activities that match both the Products and the Strategy Types. I.e. if you pass
+    a slice_by_product for a Product that isn't relevant for the selected `slice_by_strategy_type` then no activities
+    will be selected and the slice values will be zero.
+
+    The aggregates produced are:
+
+        income_sum_row
+        expenditure_sum_row
+        kcals_consumed_sum_row
+        percentage_kcals_sum_row
+
+    If a slice is specified, the following additional aggregates are produced:
+
+        income_sum_slice
+        income_sum_slice_percentage_of_row
+        expenditure_sum_slice
+        expenditure_sum_slice_percentage_of_row
+        kcals_consumed_sum_slice
+        kcals_consumed_sum_slice_percentage_of_row
+        percentage_kcals_sum_slice
+        percentage_kcals_sum_slice_percentage_of_row
+
+    You can filter by any calculated slice or row aggregate by prefixing its name with `min_` or `max_`. For example:
+
+        &min_income_sum_slice_percentage_of_row=52
+
+    The viewset currently only supports a single slice at a time. For combining slices, run multiple searches, and
+    compare them externally.
 
     Translated fields, eg, name, description, are rendered in the currently selected locale if possible. (Except
-    Country, which has different translations following ISO.) This can be selected in the UI or set using eg,
-    &language=pt which overrides the UI selection.
+    Country, which has different translations following ISO.) This can be selected in the UI or set using
+    `&language=pt`, for example, which overrides the UI selection.
 
-    You select the fields you want using the &fields= parameter in the usual way. If you omit the fields parameter all
-    fields are returned. These are currently the same field list as the normal LZB endpoint, plus the aggregations,
-    called slice_sum_kcals_consumed, sum_kcals_consumed, kcals_consumed_percent, plus product CPC and product common
-    name translated. If you omit a field, the statistics for that field will be aggregated together.
+    The product hierarchy can be retrieved from the classified product endpoint /api/classifiedproduct/.
 
     The ordering code is also shared with the normal LZB endpoint, which uses the standard &ordering= parameter. If
     none are specified, the results are sorted by the aggregations descending, ie, biggest percentage first.
 
     Example URL:
 
-    http://localhost:8000/api/livelihoodzonebaselinereport/
+    http://localhost:8000/api/livelihoodzoneactivitysummary/
         ?language=pt
-        &slice_product=R09
-        &slice_strategy_type=MilkProduction
-        &fields=id,name,description,source_organization,source_organization_name,livelihood_zone,livelihood_zone_name,
-            country_pk,country_iso_en_name,main_livelihood_category,bss,currency,reference_year_start_date,
+        &country=KE
+        &scenario=baseline
+        &slice_by_product=R011
+        &slice_by_strategy_type=CropProduction
+        &fields=country,livelihood_zone_baseline_name,main_livelihood_category,currency,reference_year_start_date,
             reference_year_end_date,valid_from_date,valid_to_date,population_source,population_estimate,
-            livelihoodzone_pk,livelihood_strategy_pk,strategy_type,livelihood_activity_pk,wealth_group_category_code,
-            product_cpc,product_common_name
-        &source_organization=1
-        &min_kcals_consumed_percent=52
-        &max_kcals_consumed_percent=99
+            wealth_group_category,product,product_common_name
+        &min_income_sum_slice_percentage_of_row=52
 
     The strategy type codes are:
         MilkProduction
@@ -1708,18 +1735,11 @@ class LivelihoodZoneBaselineReportViewSet(AggregatingViewSet):
         OtherCashIncome
         OtherPurchase
 
-    The product hierarchy can be retrieved from the classified product endpoint /api/classifiedproduct/.
-
-    You can then filter by the percentage of your slice. The only value we have data for so far is kcals_consumed,
-    filtered using, eg, &min_kcals_consumed_percent=52&max_kcals_consumed_percent=99.
-
-    The API currently only supports a single slice at a time. For combining please run multiple searches, and add
-    the desired results to the Compare tab.
     """
 
-    queryset = LivelihoodZoneBaseline.objects.all()
-    serializer_class = LivelihoodZoneBaselineReportSerializer
-    filterset_class = LivelihoodZoneBaselineFilterSet
+    queryset = LivelihoodActivity.objects.filter(wealth_group__community__isnull=True)
+    serializer_class = LivelihoodActivitySummarySerializer
+    filterset_class = LivelihoodActivityFilterSet
 
 
 MODELS_TO_SEARCH = [
