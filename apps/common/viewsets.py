@@ -536,7 +536,7 @@ class AggregatingViewSet(GenericViewSet):
             queryset = queryset.annotate(**percentage_expressions)
 
         # Add the filters on aggregates, eg, kcals_consumed_percent > 50%
-        queryset = queryset.filter(self.get_filters_by_calculated_fields())
+        queryset = queryset.filter(self.get_filters_by_calculated_fields(slice_aggregates))
 
         # If no ordering has been specified by the FilterSet, order by value descending:
         if not self.request.query_params.get(api_settings.ORDERING_PARAM):
@@ -674,7 +674,7 @@ class AggregatingViewSet(GenericViewSet):
             percentage_expressions[pct_field_name] = ExpressionWrapper(expr, output_field=FloatField())
         return percentage_expressions
 
-    def get_filters_by_calculated_fields(self):
+    def get_filters_by_calculated_fields(self, slice_aggregates=None):
         """
         Add min/max range filters. Filters are available for any aggregate or percentage field, by prefixing
         min_ or max_ to the aggregate field name.
@@ -688,24 +688,29 @@ class AggregatingViewSet(GenericViewSet):
         filters_on_aggregates = Q()
         for field_name, aggregate in self.serializer_class.aggregates.items():
             for url_param_prefix, orm_expr in (("min", "gte"), ("max", "lte")):
-                for agg_field_name in (
+                agg_field_names = [
                     self.serializer_class.get_aggregate_field_name(
                         field_name,
                         aggregate,
                         AggregationScope.ROW,
-                    ),
-                    self.serializer_class.get_aggregate_field_name(
-                        field_name,
-                        aggregate,
-                        AggregationScope.SLICE,
-                    ),
-                    self.serializer_class.get_aggregate_field_name(
-                        field_name,
-                        aggregate,
-                        AggregationScope.SLICE,
-                        AggregationScope.ROW,
-                    ),
-                ):
+                    )
+                ]
+                # Only include the slice filters is a slice has been defined.
+                if slice_aggregates:
+                    agg_field_names += [
+                        self.serializer_class.get_aggregate_field_name(
+                            field_name,
+                            aggregate,
+                            AggregationScope.SLICE,
+                        ),
+                        self.serializer_class.get_aggregate_field_name(
+                            field_name,
+                            aggregate,
+                            AggregationScope.SLICE,
+                            AggregationScope.ROW,
+                        ),
+                    ]
+                for agg_field_name in agg_field_names:
                     url_param_name = f"{url_param_prefix}_{agg_field_name}"
                     limit = self.request.query_params.get(url_param_name)
                     if limit is not None:

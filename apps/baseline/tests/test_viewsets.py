@@ -4499,7 +4499,7 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
         activity_df = pd.DataFrame(
             LivelihoodActivity.objects.filter(
                 livelihood_zone_baseline__livelihood_zone__code__in=["ML01", "ML02"],
-                # The LivelihoodZoneBaselineReportViewSet only aggregates Baseline-level LivelihoodActivities.
+                # The LivelihoodActivitySummaryViewSet only aggregates Baseline-level LivelihoodActivities.
                 wealth_group__community__isnull=True,
             )
             .annotate(
@@ -4550,7 +4550,7 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), len(self.activity_df))
 
-    def test_summary_filter(self):
+    def test_summary_uses_filters(self):
         response = self.client.get(self.url, {"scenario": LivelihoodActivityScenario.BASELINE})
         self.assertLess(
             len(self.activity_df[self.activity_df["scenario"] == LivelihoodActivityScenario.BASELINE]),
@@ -4643,7 +4643,7 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
                 (expected_slice_row["expenditure"] / expected_row["expenditure"]) * 100,
             )
 
-    def test_summary_supports_product_slice_filters(self):
+    def test_summary_supports_product_slices(self):
         fields = ["livelihood_zone_baseline", "scenario"]
         expected = self.activity_df.groupby(fields).agg(
             kcals_consumed=("kcals_consumed", "sum"),
@@ -4668,7 +4668,7 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
             with self.subTest(row=row):
                 self.check_row_against_expected_slices(row, fields, expected, expected_slice)
 
-    def test_summary_supports_strategy_type_slice_filters(self):
+    def test_summary_supports_strategy_type_slices(self):
         fields = ["livelihood_zone_baseline", "scenario"]
         expected = self.activity_df.groupby(fields).agg(
             kcals_consumed=("kcals_consumed", "sum"),
@@ -4870,7 +4870,17 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
             self.assertIn(row["income_sum_slice"], list(matched_rows["income"]))
             self.assertIn(row["income_sum_row"], list(matched_rows["total_income"]))
 
-    def test_slice_filters_require_matching_product_and_strategy(self):
+    def test_incorrect_use_of_slice_filters_is_ignored(self):
+        response = self.client.get(
+            self.url,
+            {
+                "fields": "livelihood_zone_baseline,scenario",
+                "min_income_sum_slice_percentage_of_row": 50,
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+
+    def test_slices_require_matching_product_and_strategy(self):
         response = self.client.get(
             self.url,
             {

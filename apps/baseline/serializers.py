@@ -1548,7 +1548,7 @@ class LivelihoodActivitySummarySerializer(AggregatingSerializer):
     def field_to_database_path(field_name):
         language_code = translation.get_language()
         return {
-            "country": "livelihood_zone_baseline__livelihood_zone__country__iso_en_name",
+            "country": "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name",
             "source_organization_name": "livelihood_zone_baseline__source_organization__name",
             "livelihood_zone": "livelihood_zone_baseline__livelihood_zone__code",
             "livelihood_zone_baseline_name": f"livelihood_zone_baseline__name_{language_code}",

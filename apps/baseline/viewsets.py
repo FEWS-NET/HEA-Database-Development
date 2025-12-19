@@ -1647,7 +1647,7 @@ class LivelihoodActivitySummaryViewSet(AggregatingViewSet):
 
     The viewset accepts additional `slice` parameters in addition to the regular filter parameters.  The regular
     filter parameters determine Livelihood Activities that are included in the data to be aggregated. The `slice`
-    parameters areused to calculate the amount of overall income, expenditure, kcals_consumed and percentage_kcals
+    parameters are used to calculate the amount of overall income, expenditure, kcals_consumed and percentage_kcals
     that are derived from the slice.
 
     Each row in the results contains the total amount for each indicator (income, expenditure, kcals_consumed,
@@ -1709,7 +1709,7 @@ class LivelihoodActivitySummaryViewSet(AggregatingViewSet):
 
     Example URL:
 
-    http://localhost:8000/api/livelihoodzoneactivitysummary/
+    http://localhost:8000/api/livelihoodactivitysummary/
         ?language=pt
         &country=KE
         &scenario=baseline
