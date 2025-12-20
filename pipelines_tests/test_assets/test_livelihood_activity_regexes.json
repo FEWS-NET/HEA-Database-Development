@@ -114,6 +114,10 @@
         "product_id": "cattle",
         "attribute": "percentage_sold_slaughtered"
     },
+    "shoat offtake (% sold/slaughtered)": {
+        "product_id": "shoat",
+        "attribute": "percentage_sold_slaughtered"
+    },
     "Chicken  sales: no. sold": {
         "strategy_type": "LivestockSale",
         "is_start": true,
@@ -383,12 +387,19 @@
         "attribute": "price"
     },
     "diminution gros bétail (% vendus/abattu)": {
+        "product_id": "gros bétail",
         "attribute": "percentage_sold_slaughtered"
     },
     "diminution petits ruminants (% vendus/abattu)": {
+        "product_id": "petits ruminants",
         "attribute": "percentage_sold_slaughtered"
     },
     "prélèvement des pts ruminants (% vendus/egorgés)": {
+        "product_id": "pts ruminants",
+        "attribute": "percentage_sold_slaughtered"
+    },
+    "prélèvement bovins (% vendu/égorgé)": {
+        "product_id": "bovins",
         "attribute": "percentage_sold_slaughtered"
     },
     "Vente des oeufs: nb  venduss": {
