@@ -718,7 +718,7 @@ class AggregatingViewSet(GenericViewSet):
                         AggregationScope.ROW,
                     )
                 ]
-                # Only include the slice filters is a slice has been defined.
+                # Only include the slice filters if a slice has been defined.
                 if slice_aggregates:
                     agg_field_names += [
                         self.serializer_class.get_aggregate_field_name(

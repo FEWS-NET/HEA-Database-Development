@@ -1769,8 +1769,9 @@ class LivelihoodActivitySummaryViewSet(AggregatingViewSet):
             )
 
         def country_field():
-            """Return a Coalesce expression for a translated field so that we return the English value
-            if the translation for the current language is empty."""
+            """Return an expression for the country name based on ISO name fields, using the
+            localized ISO name (e.g. French or Portuguese) when available and falling back to
+            the English ISO romanized name if the localized value is empty or not defined."""
             path = {
                 "fr": "livelihood_zone_baseline__livelihood_zone__country__iso_fr_name",
                 "pt": "livelihood_zone_baseline__livelihood_zone__country__iso_pt_name",
