@@ -1239,7 +1239,7 @@ class LivelihoodActivity(common_models.Model):
             )
 
     def validate_kcals_consumed(self):
-        if self.kcals_consumed or self.quantity_consumed:
+        if self.kcals_consumed and self.quantity_consumed and self.livelihood_strategy.product.kcals_per_unit:
             try:
                 conversion_factor = UnitOfMeasureConversion.objects.get_conversion_factor(
                     from_unit=self.livelihood_strategy.unit_of_measure,
@@ -1256,10 +1256,10 @@ class LivelihoodActivity(common_models.Model):
                         "product": self.livelihood_strategy.product,
                     }
                 )
-            kcals_per_unit = self.livelihood_strategy.product.kcals_per_unit or 0
-            quantity_consumed = self.quantity_consumed or 0
-            kcals_consumed = self.kcals_consumed or 0
-            if self.kcals_consumed and kcals_consumed != quantity_consumed * conversion_factor * kcals_per_unit:
+            if (
+                self.kcals_consumed
+                != self.quantity_consumed * conversion_factor * self.livelihood_strategy.product.kcals_per_unit
+            ):
                 raise ValidationError(
                     _(
                         "Kcals consumed for a Livelihood Activity must be quantity consumed multiplied by kcals per unit"
