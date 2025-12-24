@@ -866,7 +866,7 @@
         "unit_multiple"
     ],
     [
-        "{product_pattern}{separator_pattern} {nbr_pattern} (?:people per hh|personnes par ménage|personnes par mènage|pers par mènage)",
+        "{product_pattern}{separator_pattern} {nbr_pattern} (?:de )?(?:pers|personnes|people)(?: ?/ ?| par | per )(?:ménage|mènage|hh)",
         null,
         true,
         "people_per_household"
