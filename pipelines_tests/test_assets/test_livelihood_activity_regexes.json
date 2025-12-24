@@ -91,6 +91,24 @@
         "season": "2nd season",
         "attribute": "percentage_kcals"
     },
+    "viande de chameau: nbr d'animaux égorgés": {
+        "strategy_type": "MeatProduction",
+        "is_start": true,
+        "product_id": "viande de chameau",
+        "attribute": "animals_slaughtered"
+    },
+    "viande de boeuf: nbr d'animaux égorgés": {
+        "strategy_type": "MeatProduction",
+        "is_start": true,
+        "product_id": "viande de boeuf",
+        "attribute": "animals_slaughtered"
+    },
+    "viande de pts ruminants: nbr d'animaux égorgés": {
+        "strategy_type": "MeatProduction",
+        "is_start": true,
+        "product_id": "viande de pts ruminants",
+        "attribute": "animals_slaughtered"
+    },
     "Goat meat: no. animals slaughtered": {
         "strategy_type": "MeatProduction",
         "is_start": true,
