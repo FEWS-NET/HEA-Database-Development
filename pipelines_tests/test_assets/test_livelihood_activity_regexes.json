@@ -881,22 +881,19 @@
         "product_id": "sucre",
         "attribute": "name_of_local_measure"
     },
-    "eau pour humains: nom de mesure locale:.": { 
+    "eau pour humains: nom de mesure locale:.": {
         "is_start": true,
         "product_id": "eau pour humains",
-        "attribute": "name_of_local_measure",
-        "strategy_type": "FoodPurchase"
+        "attribute": "name_of_local_measure"
     },
     "eau pour betail: nom de la mesure locale": {
         "is_start": true,
         "product_id": "eau pour betail",
-        "attribute": "name_of_local_measure",
-        "strategy_type": "FoodPurchase"
+        "attribute": "name_of_local_measure"
     },
     "farine de ble - nom de la mesure locale": {
         "is_start": true,
         "product_id": "farine de ble",
-        "attribute": "name_of_local_measure",
-        "strategy_type": "FoodPurchase"
+        "attribute": "name_of_local_measure"
     }
 }

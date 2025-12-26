@@ -494,12 +494,6 @@
         "quantity_sold"
     ],
     [
-        "(?P<product_id>eau pour (?:humains|bétail|betail)|farine de [a-zà-ÿ]+){separator_pattern} {name_of_local_measure_pattern}:?\\.?",
-        "FoodPurchase",
-        true,
-        "name_of_local_measure"
-    ],
-    [
         "autre culture(?: de rente)?{separator_pattern} (?:type|nom)",
         null,
         true,
@@ -512,7 +506,7 @@
         "name_of_local_measure"
     ],
     [
-        "{product_pattern}{separator_pattern} {name_of_local_measure_pattern}\\.?",
+        "{product_pattern}{separator_pattern} {name_of_local_measure_pattern}:?\\.?",
         null,
         true,
         "name_of_local_measure"
