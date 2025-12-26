@@ -556,7 +556,7 @@ def load_all_fewsnet_geographies(context: OpExecutionContext):
 
         try:
             response = requests.get(
-                f"https://fdw.fews.net/api/feature/?format=geojson&unit_type=livelihood_zone&fnid={fnid}&fields=with_population"
+                f"https://fdw.fews.net/api/feature/?format=geojson&unit_type=livelihood_zone&fnid={fnid}&fields=with_population&demography_year={livelihood_zone_baseline.reference_year_end_date.year}"
             )
             response.raise_for_status()
 
@@ -583,7 +583,31 @@ def load_all_fewsnet_geographies(context: OpExecutionContext):
             if population_estimate is not None:
                 try:
                     livelihood_zone_baseline.population_estimate = int(population_estimate)
-                    livelihood_zone_baseline.population_source = "Landscan 2020"
+                    # Population sources are in the geographicunit metadata url
+                    unit_id = geojson_data["features"][0].get("id")
+                    metadata_url = f"https://fdw.fews.net/api/geographicunit/metadata/?id={unit_id}&format=json&fields=with_population"
+                    context.log.info(f"Fetching population metadata from {metadata_url}")
+                    metadata_response = requests.get(metadata_url)
+                    metadata_response.raise_for_status()
+
+                    metadata_json = metadata_response.json()
+
+                    # Extract population source from metadata
+                    population_source = None
+                    if "metadata" in metadata_json and "Population" in metadata_json["metadata"]:
+                        population_list = metadata_json["metadata"]["Population"]
+                        for pop_item in population_list:
+                            if pop_item.get("Name") == "Population distribution":
+                                population_source = pop_item.get("Description")
+                                context.log.info(f"Found population source: {population_source}")
+                                break
+
+                    if population_source:
+                        livelihood_zone_baseline.population_source = population_source
+                    else:
+                        context.log.warning(
+                            f"No population source found in metadata for {livelihood_zone_baseline} (fnid={fnid})"
+                        )
                 except (ValueError, TypeError) as e:
                     context.log.warning(f"Invalid population data for {livelihood_zone_baseline} (fnid={fnid}): {e}")
 
