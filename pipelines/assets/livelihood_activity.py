@@ -240,7 +240,7 @@ def get_livelihood_activity_regexes() -> list:
         "season_pattern": r"(?P<season>season [12]|saison [12]|[12][a-z] season||[12][a-zà-ÿ] saison|r[eé]colte principale|principale r[eé]colte|gu|deyr+?)",  # NOQA: E501
         "additional_identifier_pattern": r"\(?(?P<additional_identifier>rainfed|irrigated|pluviale?|irriguée|submersion libre|submersion contrôlée|flottant)\)?",
         "unit_of_measure_pattern": r"(?P<unit_of_measure_id>[a-z]+)",
-        "nbr_pattern": r"(?:n[b|o]r?)\.?",
+        "nbr_pattern": r"(?:n[bo]?r?e?|no)\.?",
         "vendu_pattern": r"(?:quantité )?vendu(?:e|s|ss|es|ses)?",
         "separator_pattern": r" ?[:-]?",
     }

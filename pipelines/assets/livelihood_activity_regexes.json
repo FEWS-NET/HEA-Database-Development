@@ -416,7 +416,7 @@
         "carcass_weight"
     ],
     [
-        "{product_pattern} offtake \\(% sold/slaughtered\\)",
+        "(?:(?:prélèvement|diminution)(?: des?)?)? ?{product_pattern}(?: offtake)? \\(% (?:vendus?|sold)/(?:égorgés?|egorgés?|abattus?|slaughtered)\\)",
         null,
         false,
         "percentage_sold_slaughtered"
@@ -638,7 +638,7 @@
         "percentage_kcals"
     ],
     [
-        "{product_pattern}: {nbr_pattern} d'animaux abattus",
+        "{product_pattern}: {nbr_pattern} d'animaux (?:abattus|égorgés)",
         "MeatProduction",
         true,
         "animals_slaughtered"
@@ -648,12 +648,6 @@
         null,
         false,
         "carcass_weight"
-    ],
-    [
-        "(?:prélèvement des .* \\(% vendus/egorgés\\)|diminution .* \\(% vendus/abattu\\))",
-        null,
-        false,
-        "percentage_sold_slaughtered"
     ],
     [
         "vente (?:des? |d')?{product_pattern}: {nbr_pattern} {vendu_pattern}",
@@ -872,7 +866,7 @@
         "unit_multiple"
     ],
     [
-        "{product_pattern}{separator_pattern} {nbr_pattern} (?:people per hh|personnes par ménage|personnes par mènage|pers par mènage)",
+        "{product_pattern}{separator_pattern} {nbr_pattern} (?:de )?(?:pers|personnes|people)(?: ?/ ?| par | per )(?:ménage|mènage|hh)",
         null,
         true,
         "people_per_household"
