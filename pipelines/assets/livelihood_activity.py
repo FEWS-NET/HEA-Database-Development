@@ -239,7 +239,7 @@ def get_livelihood_activity_regexes() -> list:
         "product_pattern": r"(?P<product_id>[a-zà-ÿ][a-zà-ÿ1-9',/ \.\>\-\(\)]+?)",
         "season_pattern": r"(?P<season>season [12]|saison [12]|[12][a-z] season||[12][a-zà-ÿ] saison|r[eé]colte principale|principale r[eé]colte|gu|deyr+?)",  # NOQA: E501
         "additional_identifier_pattern": r"\(?(?P<additional_identifier>rainfed|irrigated|pluviale?|irriguée|submersion libre|submersion contrôlée|flottant)\)?",
-        "age_gender_pattern": r"(?P<additional_identifier>filles/garçons|garçons/filles|garcons/filles|filles/garcons|boys/girls|girls/boys|men|hommes|women|femmes|boys|garcons|garçons|girls|filles)",
+        "age_gender_pattern": r"(?P<household_labor_provider>boys/girls|girls/boys|garçons/filles|filles/garçons|garcons/filles|filles/garcons|men|hommes|homme|women|femmes|femme|boys|garçons|garçon|garcons|garcon|girls|filles|fille)",
         "unit_of_measure_pattern": r"(?P<unit_of_measure_id>[a-z]+)",
         "nbr_pattern": r"(?:n[bo]?r?e?|no)\.?",
         "vendu_pattern": r"(?:quantité )?vendu(?:e|s|ss|es|ses)?",
@@ -271,6 +271,7 @@ def get_livelihood_activity_regular_expression_attributes(label: str) -> dict:
         "unit_of_measure_id": None,
         "season": None,
         "additional_identifier": None,
+        "household_labor_provider": None,
         "attribute": None,
         "notes": None,
     }
@@ -278,6 +279,28 @@ def get_livelihood_activity_regular_expression_attributes(label: str) -> dict:
         match = pattern.fullmatch(label)
         if match:
             attributes.update(match.groupdict())
+
+            # Map French age/gender identifiers to English household_labor_provider enum values
+            if "household_labor_provider" in attributes and attributes["household_labor_provider"]:
+                hlp = attributes["household_labor_provider"].lower()
+                if hlp in ["garçons", "garçon", "garcons", "garcon"]:
+                    attributes["household_labor_provider"] = "boys"
+                elif hlp in ["filles", "fille"]:
+                    attributes["household_labor_provider"] = "girls"
+                elif hlp in [
+                    "boys/girls",
+                    "girls/boys",
+                    "garçons/filles",
+                    "filles/garçons",
+                    "garcons/filles",
+                    "filles/garcons",
+                ]:
+                    attributes["household_labor_provider"] = "children"
+                elif hlp in ["hommes", "homme"]:
+                    attributes["household_labor_provider"] = "men"
+                elif hlp in ["femmes", "femme"]:
+                    attributes["household_labor_provider"] = "women"
+
             attributes["activity_label"] = label
             attributes["strategy_type"] = strategy_type
             attributes["is_start"] = is_start

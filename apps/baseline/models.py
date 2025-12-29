@@ -1149,6 +1149,9 @@ class LivelihoodActivity(common_models.Model):
         MEN = "men", _("Mainly Men")
         WOMEN = "women", _("Mainly Women")
         CHILDREN = "children", _("Mainly Children")
+        BOYS = "boys", _("Mainly Boys")
+        GIRLS = "girls", _("Mainly Girls")
+        ADULTS = "adults", _("Mainly Adults")
         ALL = "all", _("All Together")
 
     household_labor_provider = models.CharField(
