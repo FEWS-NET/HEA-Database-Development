@@ -122,7 +122,7 @@
         "times_per_month"
     ],
     [
-        "name of measure",
+        "{name_of_local_measure_pattern}",
         null,
         false,
         "name_of_local_measure"
@@ -222,12 +222,6 @@
         null,
         false,
         "times_per_month"
-    ],
-    [
-        "(?:nom de la mesure|nom du mesure|nom d'unité|nom mesure locale)",
-        null,
-        false,
-        "name_of_local_measure"
     ],
     [
         "(?:poids? de la mesure|poids? du mesure|poids? d'unité)",
@@ -500,7 +494,19 @@
         "quantity_sold"
     ],
     [
-        "{product_pattern}: name of meas\\.",
+        "autre culture(?: de rente)?{separator_pattern} (?:type|nom)",
+        null,
+        true,
+        "product__name"
+    ],
+    [
+        "(?:autre nouriture de base|autre legumineuse|autre culture)?{separator_pattern} ?\\(?{product_pattern}\\)?{separator_pattern} ?{name_of_local_measure_pattern}",
+        null,
+        true,
+        "name_of_local_measure"
+    ],
+    [
+        "{product_pattern}{separator_pattern} {name_of_local_measure_pattern}:?\\.?",
         null,
         true,
         "name_of_local_measure"
@@ -758,12 +764,6 @@
         "number_of_local_measures"
     ],
     [
-        "autre culture(?: de rente)?{separator_pattern} (?:type|nom)",
-        null,
-        true,
-        "product__name"
-    ],
-    [
         "autre culture{separator_pattern} \\(?{product_pattern}\\)?(?: type)?",
         null,
         true,
@@ -846,12 +846,6 @@
         null,
         true,
         "expenditure"
-    ],
-    [
-        "(?:autre nouriture de base|autre legumineuse|autre culture)?{separator_pattern} ?\\(?{product_pattern}\\)?{separator_pattern} ?(?:nom de la mesure locale?|nom mesure locale|nom du mesure|nom unité de mesure|nom)",
-        null,
-        true,
-        "name_of_local_measure"
     ],
     [
         "{product_pattern} achetée?: quantité ?\\(?{unit_of_measure_pattern}\\)?",
