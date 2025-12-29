@@ -846,18 +846,27 @@ def get_instances_from_dataframe(
                             # worksheets
                             column = df.columns[i + 1]
                             household_size = df.iloc[3, i + 1]
-                            # Convert household_size to int
+
+                            # Convert to numeric to handle string values (e.g., "6" instead of 6)
                             try:
-                                if pd.notna(household_size) and household_size != "":
-                                    # Convert to float first to handle "5.0" or "5.7", then to int
-                                    household_size = int(float(household_size))
-                                else:
-                                    household_size = None
+                                percentage_kcals = (
+                                    float(livelihood_activity["percentage_kcals"])
+                                    if livelihood_activity.get("percentage_kcals")
+                                    else None
+                                )
                             except (ValueError, TypeError):
-                                household_size = None
+                                percentage_kcals = None
+
+                            try:
+                                household_size_numeric = (
+                                    float(household_size) if household_size not in ("", None) else None
+                                )
+                            except (ValueError, TypeError):
+                                household_size_numeric = None
+
                             livelihood_activity["kcals_consumed"] = (
-                                livelihood_activity["percentage_kcals"] * 2100 * 365 * household_size
-                                if livelihood_activity["percentage_kcals"] and household_size
+                                percentage_kcals * 2100 * 365 * household_size_numeric
+                                if percentage_kcals and household_size_numeric
                                 else None
                             )
 

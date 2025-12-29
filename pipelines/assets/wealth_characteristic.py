@@ -490,10 +490,14 @@ def wealth_characteristic_instances(
     # Calculate the kcals_consumed
     # Derive it by multiplying percentage_kcals by:
     #   2100 (kcals per person per day) * 365 (days per year) * average_household_size
+    # Convert columns to numeric to handle string values from the dataframe
+    wealth_group_df["percentage_kcals"] = pd.to_numeric(wealth_group_df["percentage_kcals"], errors="coerce")
+    wealth_group_df["average_household_size"] = pd.to_numeric(
+        wealth_group_df["average_household_size"], errors="coerce"
+    )
     wealth_group_df["kcals_consumed"] = (
         wealth_group_df["percentage_kcals"] * 2100 * 365 * wealth_group_df["average_household_size"]
     )
-
     result = {
         "WealthGroup": wealth_group_df.to_dict(orient="records"),
         "WealthGroupCharacteristicValue": wealth_group_characteristic_values,

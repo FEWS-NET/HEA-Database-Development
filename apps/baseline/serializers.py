@@ -581,7 +581,7 @@ class LivelihoodActivitySerializer(serializers.ModelSerializer):
     wealth_group_percentage_of_households = serializers.IntegerField(
         source="wealth_group.percentage_of_households", read_only=True
     )
-    wealth_group_average_household_size = serializers.IntegerField(
+    wealth_group_average_household_size = serializers.FloatField(
         source="wealth_group.average_household_size", read_only=True
     )
     wealth_group_category = serializers.CharField(source="wealth_group.wealth_group_category.pk", read_only=True)
@@ -1336,7 +1336,7 @@ class ExpandabilityFactorSerializer(serializers.ModelSerializer):
     wealth_group_percentage_of_households = serializers.IntegerField(
         source="wealth_group.percentage_of_households", read_only=True
     )
-    wealth_group_average_household_size = serializers.IntegerField(
+    wealth_group_average_household_size = serializers.FloatField(
         source="wealth_group.average_household_size", read_only=True
     )
     wealth_group_category = serializers.CharField(source="wealth_group.wealth_group_category.pk", read_only=True)
@@ -1452,7 +1452,7 @@ class CopingStrategySerializer(serializers.ModelSerializer):
     wealth_group_percentage_of_households = serializers.IntegerField(
         source="wealth_group.percentage_of_households", read_only=True
     )
-    wealth_group_average_household_size = serializers.IntegerField(
+    wealth_group_average_household_size = serializers.FloatField(
         source="wealth_group.average_household_size", read_only=True
     )
     wealth_group_category = serializers.CharField(source="wealth_group.wealth_group_category.pk", read_only=True)

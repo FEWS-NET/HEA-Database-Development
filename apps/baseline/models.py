@@ -517,8 +517,12 @@ class WealthGroup(common_models.Model):
         verbose_name=_("Percentage of households"),
         help_text=_("Percentage of households in the Community or Livelihood Zone that are in this Wealth Group"),
     )
-    average_household_size = models.PositiveSmallIntegerField(
-        blank=True, null=True, verbose_name=_("Average household size")
+    average_household_size = models.FloatField(
+        blank=True,
+        null=True,
+        validators=[common_models.validate_positive],
+        verbose_name=_("Average household size"),
+        help_text=_("Average number of people per household in this Wealth Group"),
     )
 
     objects = WealthGroupManager()
