@@ -91,6 +91,24 @@
         "season": "2nd season",
         "attribute": "percentage_kcals"
     },
+    "viande de chameau: nbr d'animaux égorgés": {
+        "strategy_type": "MeatProduction",
+        "is_start": true,
+        "product_id": "viande de chameau",
+        "attribute": "animals_slaughtered"
+    },
+    "viande de boeuf: nbr d'animaux égorgés": {
+        "strategy_type": "MeatProduction",
+        "is_start": true,
+        "product_id": "viande de boeuf",
+        "attribute": "animals_slaughtered"
+    },
+    "viande de pts ruminants: nbr d'animaux égorgés": {
+        "strategy_type": "MeatProduction",
+        "is_start": true,
+        "product_id": "viande de pts ruminants",
+        "attribute": "animals_slaughtered"
+    },
     "Goat meat: no. animals slaughtered": {
         "strategy_type": "MeatProduction",
         "is_start": true,
@@ -112,6 +130,10 @@
     },
     "cattle offtake (% sold/slaughtered)": {
         "product_id": "cattle",
+        "attribute": "percentage_sold_slaughtered"
+    },
+    "shoat offtake (% sold/slaughtered)": {
+        "product_id": "shoat",
         "attribute": "percentage_sold_slaughtered"
     },
     "Chicken  sales: no. sold": {
@@ -383,12 +405,19 @@
         "attribute": "price"
     },
     "diminution gros bétail (% vendus/abattu)": {
+        "product_id": "gros bétail",
         "attribute": "percentage_sold_slaughtered"
     },
     "diminution petits ruminants (% vendus/abattu)": {
+        "product_id": "petits ruminants",
         "attribute": "percentage_sold_slaughtered"
     },
     "prélèvement des pts ruminants (% vendus/egorgés)": {
+        "product_id": "pts ruminants",
+        "attribute": "percentage_sold_slaughtered"
+    },
+    "prélèvement bovins (% vendu/égorgé)": {
+        "product_id": "bovins",
         "attribute": "percentage_sold_slaughtered"
     },
     "Vente des oeufs: nb  venduss": {
@@ -866,49 +895,94 @@
         "unit_of_measure_id": "kg",
         "attribute": "quantity_produced"
     },
-  "men": {
-    "additional_identifier": "men"
-  },
-  "women": {
-    "additional_identifier": "women"
-  },
-  "boys": {
-    "additional_identifier": "boys"
-  },
-  "girls": {
-    "additional_identifier": "girls"
-  },
-  "hommes": {
-    "additional_identifier": "hommes"
-  },
-  "femmes": {
-    "additional_identifier": "femmes"
-  },
-  "garcons": {
-    "additional_identifier": "garcons"
-  },
-  "garçons": {
-    "additional_identifier": "garçons"
-  },
-  "filles": {
-    "additional_identifier": "filles"
-  },
-  "filles/garçons": {
-    "additional_identifier": "filles/garçons"
-  },
-  "garçons/filles": {
-    "additional_identifier": "garçons/filles"
-  },
-  "garcons/filles": {
-    "additional_identifier": "garcons/filles"
-  },
-  "filles/garcons": {
-    "additional_identifier": "filles/garcons"
-  },
-  "boys/girls": {
-    "additional_identifier": "boys/girls"
-  },
-  "girls/boys": {
-    "additional_identifier": "girls/boys"
-  }
+    "petit commerce: nbre de personnes par mènage": {
+        "is_start": true,
+        "product_id": "petit commerce",
+        "attribute": "people_per_household"
+    },
+    "petit commerce: nbr. pers par mènage": {
+        "is_start": true,
+        "product_id": "petit commerce",
+        "attribute": "people_per_household"
+    },
+    "petit commerce: nb de personnes par ménage": {
+        "is_start": true,
+        "product_id": "petit commerce",
+        "attribute": "people_per_household"
+    },
+    "petit commerce: nb de personnes/ménage": {
+        "is_start": true,
+        "product_id": "petit commerce",
+        "attribute": "people_per_household"
+    },
+    "petit commerce: nbr de personnes par ménage": {
+        "is_start": true,
+        "product_id": "petit commerce",
+        "attribute": "people_per_household"
+    },
+    "petit commerce: nbr. personnes par ménage": {
+        "is_start": true,
+        "product_id": "petit commerce",
+        "attribute": "people_per_household"
+    },
+    "petit commerce: nb. personnes par ménage": {
+        "is_start": true,
+        "product_id": "petit commerce",
+        "attribute": "people_per_household"
+    },
+    "petty trade: no. people per hh": {
+        "is_start": true,
+        "product_id": "petty trade",
+        "attribute": "people_per_household"
+    },
+    "petty trade: nbr. people per hh": {
+        "is_start": true,
+        "product_id": "petty trade",
+        "attribute": "people_per_household"
+},
+"men": {
+"additional_identifier": "men"
+},
+"women": {
+"additional_identifier": "women"
+},
+"boys": {
+"additional_identifier": "boys"
+},
+"girls": {
+"additional_identifier": "girls"
+},
+"hommes": {
+"additional_identifier": "hommes"
+},
+"femmes": {
+"additional_identifier": "femmes"
+},
+"garcons": {
+"additional_identifier": "garcons"
+},
+"garçons": {
+"additional_identifier": "garçons"
+},
+"filles": {
+"additional_identifier": "filles"
+},
+"filles/garçons": {
+"additional_identifier": "filles/garçons"
+},
+"garçons/filles": {
+"additional_identifier": "garçons/filles"
+},
+"garcons/filles": {
+"additional_identifier": "garcons/filles"
+},
+"filles/garcons": {
+"additional_identifier": "filles/garcons"
+},
+"boys/girls": {
+"additional_identifier": "boys/girls"
+},
+"girls/boys": {
+"additional_identifier": "girls/boys"
+}
 }

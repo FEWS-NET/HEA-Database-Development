@@ -241,7 +241,7 @@ def get_livelihood_activity_regexes() -> list:
         "additional_identifier_pattern": r"\(?(?P<additional_identifier>rainfed|irrigated|pluviale?|irriguée|submersion libre|submersion contrôlée|flottant)\)?",
         "age_gender_pattern": r"(?P<additional_identifier>filles/garçons|garçons/filles|garcons/filles|filles/garcons|boys/girls|girls/boys|men|hommes|women|femmes|boys|garcons|garçons|girls|filles)",
         "unit_of_measure_pattern": r"(?P<unit_of_measure_id>[a-z]+)",
-        "nbr_pattern": r"(?:n[b|o]r?)\.?",
+        "nbr_pattern": r"(?:n[bo]?r?e?|no)\.?",
         "vendu_pattern": r"(?:quantité )?vendu(?:e|s|ss|es|ses)?",
         "separator_pattern": r" ?[:-]?",
     }
