@@ -89,6 +89,7 @@ class ReferenceData(common_models.Model):
 
     class Meta:
         abstract = True
+        ordering = ["ordering", "code"]
 
     class ExtraMeta:
         identifier = ["name_en"]

@@ -952,6 +952,7 @@ class WealthGroupViewSetTestCase(APITestCase):
             "community",
             "community_name",
             "wealth_group_category",
+            "wealth_group_category_name",
             "percentage_of_households",
             "average_household_size",
         )
@@ -1056,6 +1057,7 @@ class BaselineWealthGroupViewSetTestCase(APITestCase):
             "livelihood_zone_country_code",
             "livelihood_zone_country_name",
             "wealth_group_category",
+            "wealth_group_category_name",
             "percentage_of_households",
             "average_household_size",
         )
@@ -1178,6 +1180,7 @@ class CommunityWealthGroupViewSetTestCase(APITestCase):
             "community",
             "community_name",
             "wealth_group_category",
+            "wealth_group_category_name",
             "percentage_of_households",
             "average_household_size",
         )

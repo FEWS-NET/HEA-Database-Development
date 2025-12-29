@@ -1,8 +1,7 @@
 from django.apps import apps
 from django.conf import settings
 from django.db import models
-from django.db.models import F, FloatField, Q, Subquery
-from django.db.models.functions import Coalesce, NullIf
+from django.db.models import Q, Subquery
 from django.utils.translation import override
 from django_filters import rest_framework as filters
 from django_filters.filters import CharFilter
@@ -10,11 +9,10 @@ from rest_framework.permissions import AllowAny
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.viewsets import ModelViewSet
 
 from common.fields import translation_fields
 from common.filters import MultiFieldFilter, UpperCaseFilter
-from common.viewsets import BaseModelViewSet
+from common.viewsets import AggregatingViewSet, BaseModelViewSet
 
 from .models import (
     BaselineLivelihoodActivity,
@@ -372,6 +370,12 @@ class WealthGroupViewSet(BaseModelViewSet):
     )
     serializer_class = WealthGroupSerializer
     filterset_class = WealthGroupFilterSet
+    ordering = [
+        "livelihood_zone_baseline__livelihood_zone__code",
+        "livelihood_zone_baseline__reference_year_end_date",
+        "wealth_group_category__ordering",
+        "community__name",
+    ]
 
 
 class BaselineWealthGroupFilterSet(filters.FilterSet):
@@ -1637,7 +1641,7 @@ class CopingStrategyViewSet(BaseModelViewSet):
     ]
 
 
-class LivelihoodZoneBaselineReportViewSet(ModelViewSet):
+class LivelihoodZoneBaselineReportViewSet(AggregatingViewSet):
     """
     There are two ‘levels’ of filter needed on this endpoint. The standard ones which are already on the LZB endpoint
     filter the LZBs that are returned (eg, population range and wealth group). Let’s call them ‘global’ filters.
@@ -1716,118 +1720,6 @@ class LivelihoodZoneBaselineReportViewSet(ModelViewSet):
     queryset = LivelihoodZoneBaseline.objects.all()
     serializer_class = LivelihoodZoneBaselineReportSerializer
     filterset_class = LivelihoodZoneBaselineFilterSet
-
-    def get_queryset(self):
-        """
-        Aggregates the values specified in the serializer.aggregates property, grouping and aggregating by any
-        fields not requested by the user.
-        """
-
-        # Add the global filters, eg, wealth group, population range, that apply to global search results AND slices:
-        queryset = self.filter_queryset(super().get_queryset())
-
-        # Add the global aggregations, eg, total consumption filtered by wealth group but not by prod/strategy slice:
-        queryset = queryset.annotate(**self.global_aggregates())
-
-        # Work out the slice aggregates, eg, slice_sum_kcals_consumed for product/strategy slice:
-        slice_aggregates = self.get_slice_aggregates()
-        # Work out the calculations on aggregates, eg,
-        #   kcals_consumed_percent = slice_sum_kcals_consumed * 100 / sum_kcals_consumed
-        calcs_on_aggregates = self.get_calculations_on_aggregates()
-
-        # Extract the model fields from the combined list of model and calculated fields:
-        model_fields = self.get_serializer().get_fields().keys() - slice_aggregates.keys() - calcs_on_aggregates.keys()
-
-        # Convert user-friendly field name (eg, livelihood_strategy_pk) into db field path (livelihood_strategies__pk).
-        obj_field_paths = [self.serializer_class.field_to_database_path(field) for field in model_fields]
-
-        # Get them from the query. The ORM converts this qs.values() call into a SQL `GROUP BY *field_paths` clause.
-        queryset = queryset.values(*obj_field_paths)
-
-        # The ORM converts these annotations into grouped SELECT ..., SUM(lzb.population), SUM(la.kcals_consumed), etc.
-        queryset = queryset.annotate(**slice_aggregates, **calcs_on_aggregates)
-
-        # Add the filters on aggregates, eg, kcals_consumed_percent > 50%
-        queryset = queryset.filter(self.get_filters_on_aggregates())
-
-        # If no ordering has been specified by the FilterSet, order by final value fields descending:
-        if not self.request.query_params.get("ordering"):
-            order_by_value_desc = [
-                f"-{self.serializer_class.slice_percent_field_name(field_name, aggregate)}"
-                for field_name, aggregate in self.serializer_class.aggregates.items()
-            ]
-            queryset = queryset.order_by(*order_by_value_desc)
-
-        return queryset
-
-    def get_filters_on_aggregates(self):
-        # Add filters on aggregates, eg, .filter(kcals_consumed_percent__gte=params.get("min_kcals_consumed_percent"))
-        filters_on_aggregates = Q()
-        for url_param_prefix, orm_expr in (("min", "gte"), ("max", "lte")):
-            for field in self.serializer_class.aggregates.keys():
-                url_param_name = f"{url_param_prefix}_{field}_percent"
-                limit = self.request.query_params.get(url_param_name)
-                if limit is not None:
-                    filters_on_aggregates &= Q(**{f"{field}_percent__{orm_expr}": float(limit)})
-        return filters_on_aggregates
-
-    def global_aggregates(self):
-        """
-        Produced a subquery per LZB-wide statistic that we need, eg, kcals_consumed for selected wealth groups for all
-        products and strategies. The kcals_consumed for a specific set of products and strategy types is divided by
-        this figure to obtain a percentage.
-        """
-        global_aggregates = {}
-        for field_name, aggregate in self.serializer_class.aggregates.items():
-            aggregate_field_name = self.serializer_class.aggregate_field_name(field_name, aggregate)
-            field_path = self.serializer_class.field_to_database_path(field_name)
-            global_aggregates[aggregate_field_name] = aggregate(field_path, default=0, output_field=FloatField())
-        return global_aggregates
-
-    def get_slice_aggregates(self):
-        # Construct the filters for the slice, for example specific products & strategy types, to apply to each measure
-        slice_filter = self.get_slice_filters()
-        # Remove the aggregated fields from the obj field list, and instead add them as sliced aggregate annotations:
-        slice_aggregates = {}
-        required_fields = set(self.get_serializer().get_fields().keys())
-        required_fields.add(self.request.query_params.get("ordering", ""))
-        for field_name, aggregate in self.serializer_class.aggregates.items():
-            aggregate_field_name = self.serializer_class.slice_aggregate_field_name(field_name, aggregate)
-            if aggregate_field_name in required_fields:
-                # Annotate the queryset with the aggregate, eg, slice_sum_kcals_consumed, applying the slice filters.
-                # This is then divided by, eg, sum_kcals_consumed for the percentage of the slice.
-                field_path = self.serializer_class.field_to_database_path(field_name)
-                slice_aggregates[aggregate_field_name] = aggregate(
-                    field_path, filter=slice_filter, default=0, output_field=FloatField()
-                )
-        return slice_aggregates
-
-    def get_slice_filters(self):
-        # Filters to slice the aggregations, to obtain, eg, the kcals for the selected products/strategy types.
-        # This is then divided by the total for the LZB for the slice percentage.
-        slice_filters = Q()
-        for slice_field, slice_expr in self.serializer_class.slice_fields.items():
-            slice_filter = Q()
-            for item in self.request.query_params.getlist(f"slice_{slice_field}"):
-                slice_filter |= Q(**{slice_expr: item})
-            # Slice must match any of the products AND any of the strategy types (if selected)
-            slice_filters &= slice_filter
-        return slice_filters
-
-    def get_calculations_on_aggregates(self):
-        # Aggregate slice percentages
-        # TODO: Add complex kcal income calculations from LIAS
-        calcs_on_aggregates = {}
-        for field_name, aggregate in self.serializer_class.aggregates.items():
-            slice_total = F(self.serializer_class.slice_aggregate_field_name(field_name, aggregate))
-            overall_total = F(self.serializer_class.aggregate_field_name(field_name, aggregate))
-            # Protect against divide by zero (divide by null returns null without error)
-            expr = slice_total * 100 / NullIf(overall_total, 0)
-            # Zero if no LivActivities found for prod/strategy slice, rather than null:
-            expr = Coalesce(expr, 0, output_field=FloatField())
-            slice_percent_field_name = self.serializer_class.slice_percent_field_name(field_name, aggregate)
-            calcs_on_aggregates[slice_percent_field_name] = expr
-        return calcs_on_aggregates
 
 
 MODELS_TO_SEARCH = [
