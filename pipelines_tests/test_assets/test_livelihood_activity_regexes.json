@@ -18,6 +18,12 @@
     "no. milking animals": {
         "attribute": "milking_animals"
     },
+    "no milking animals": {
+        "attribute": "milking_animals"
+    },
+    "number milking animals": {
+        "attribute": "milking_animals"
+    },
     "season 1: lactation period (days)": {
         "strategy_type": "MilkProduction",
         "season": "season 1",
@@ -304,15 +310,60 @@
     "nb d'animaux laitiers": {
         "attribute": "milking_animals"
     },
+    "nbr d'animaux laitiers": {
+        "attribute": "milking_animals"
+    },
+    "nb animaux laitiers": {
+        "attribute": "milking_animals"
+    },
+    "nbr animaux lactants": {
+        "attribute": "milking_animals"
+    },
+    "nbr d'animaux lactants": {
+        "attribute": "milking_animals"
+    },
     "saison 1: nb animaux laitiers": {
         "strategy_type": "MilkProduction",
         "season": "saison 1",
+        "attribute": "milking_animals"
+    },
+    "saison 1: nbr d'animaux lactants": {
+        "strategy_type": "MilkProduction",
+        "season": "saison 1",
+        "attribute": "milking_animals"
+    },
+    "saison pluvieuse: nb animaux laitiers": {
+        "strategy_type": "MilkProduction",
+        "season": "saison pluvieuse",
+        "attribute": "milking_animals"
+    },
+    "saison hivernage: nbr animaux lactants": {
+        "strategy_type": "MilkProduction",
+        "season": "saison hivernage",
         "attribute": "milking_animals"
     },
     "saison 2: nb animaux laitiers": {
         "strategy_type": "MilkProduction",
         "is_start": true,
         "season": "saison 2",
+        "attribute": "milking_animals"
+    },
+    "saison 2: nbr d'animaux lactants": {
+        "strategy_type": "MilkProduction",
+        "is_start": true,
+        "season": "saison 2",
+        "attribute": "milking_animals"
+    },
+    "saison seche: nb animaux laitiers": {
+        "strategy_type": "MilkProduction",
+        "is_start": true,
+        "season": "saison seche",
+        "attribute": "milking_animals"
+    },
+    "saison sèche: nbr animaux lactants": {
+        "strategy_type": "MilkProduction",
+        "is_start": true,
+        "season": "saison sèche",
         "attribute": "milking_animals"
     },
     "période de lactation (jours)": {
