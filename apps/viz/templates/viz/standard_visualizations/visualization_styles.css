@@ -1,0 +1,5 @@
+.standard-visualization-container {
+    {% for variable, value in style_variables.items %}
+        {{ variable }}: {{ value }};
+    {% endfor %}
+}
