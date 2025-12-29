@@ -8,7 +8,7 @@ import common.models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("baseline", "0021_remove_livelihoodproductcategory_livelihood_zone_baseline_and_more"),
+        ("baseline", "0022_alter_wealthgroup_options"),
     ]
 
     operations = [
