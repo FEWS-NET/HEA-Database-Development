@@ -243,7 +243,7 @@ def get_livelihood_activity_regexes() -> list:
         "nbr_pattern": r"(?:n[b|o]r?)\.?",
         "vendu_pattern": r"(?:quantité )?vendu(?:e|s|ss|es|ses)?",
         "separator_pattern": r" ?[:-]?",
-        "name_of_local_measure_pattern": r"(?:name of (?:meas(?:ure)?)|nom(?: (?:de la mesure(?: locale)?|de mesure locale|du mesure|d'unité|mesure locale|unité de mesure))?)",
+        "name_of_local_measure_pattern": r"(?:name of (?:meas(?:ure)?\.?)|nom(?: (?:de la mesure(?: locale)?|de mesure locale|du mesure|d'unité|mesure locale|unité de mesure))?)",
     }
     # Compile the regexes
     compiled_regexes = []
