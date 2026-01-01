@@ -56,6 +56,18 @@
         null
     ],
     [
+        "vente (?:de |d')?{product_pattern}",
+        "OtherCashIncome",
+        true,
+        null
+    ],
+    [
+        "{product_pattern} sales",
+        "OtherCashIncome",
+        true,
+        null
+    ],
+    [
         "(?:other purchases?|autres? achats?|achats?):?",
         "OtherPurchase",
         true,
