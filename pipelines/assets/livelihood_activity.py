@@ -234,12 +234,18 @@ def get_livelihood_activity_regexes() -> list:
         livelihood_activity_regexes = json.load(f)
 
     # Create regex patterns for metadata attributes to replace the placeholders in the regexes
+
+    # Dynamically build age_gender_pattern from HouseholdLaborProvider
+    age_gender_labels = LivelihoodActivity.HouseholdLaborProvider.get_all_labels()
+    age_gender_labels_escaped = [re.escape(label) for label in age_gender_labels]
+    age_gender_pattern = r"(?P<household_labor_provider>" + "|".join(age_gender_labels_escaped) + ")"
+
     placeholder_patterns = {
         "label_pattern": r"[a-zà-ÿ][a-zà-ÿ',/ \.\>\-\(\)]+?",
         "product_pattern": r"(?P<product_id>[a-zà-ÿ][a-zà-ÿ1-9',/ \.\>\-\(\)]+?)",
         "season_pattern": r"(?P<season>season [12]|saison [12]|[12][a-z] season||[12][a-zà-ÿ] saison|r[eé]colte principale|principale r[eé]colte|gu|deyr+?)",  # NOQA: E501
         "additional_identifier_pattern": r"\(?(?P<additional_identifier>rainfed|irrigated|pluviale?|irriguée|submersion libre|submersion contrôlée|flottant)\)?",
-        "age_gender_pattern": r"(?P<household_labor_provider>boys/girls|girls/boys|garçons/filles|filles/garçons|garcons/filles|filles/garcons|men|hommes|homme|women|femmes|femme|boys|garçons|garçon|garcons|garcon|girls|filles|fille)",
+        "age_gender_pattern": age_gender_pattern,
         "unit_of_measure_pattern": r"(?P<unit_of_measure_id>[a-z]+)",
         "nbr_pattern": r"(?:n[bo]?r?e?|no)\.?",
         "vendu_pattern": r"(?:quantité )?vendu(?:e|s|ss|es|ses)?",
@@ -281,26 +287,25 @@ def get_livelihood_activity_regular_expression_attributes(label: str) -> dict:
         if match:
             attributes.update(match.groupdict())
 
-            # Map French age/gender identifiers to English household_labor_provider enum values
+            # Map household_labor_provider to canonical values using TextChoices
             if "household_labor_provider" in attributes and attributes["household_labor_provider"]:
-                hlp = attributes["household_labor_provider"].lower()
-                if hlp in ["garçons", "garçon", "garcons", "garcon"]:
-                    attributes["household_labor_provider"] = "boys"
-                elif hlp in ["filles", "fille"]:
-                    attributes["household_labor_provider"] = "girls"
-                elif hlp in [
-                    "boys/girls",
-                    "girls/boys",
-                    "garçons/filles",
-                    "filles/garçons",
-                    "garcons/filles",
-                    "filles/garcons",
-                ]:
-                    attributes["household_labor_provider"] = "children"
-                elif hlp in ["hommes", "homme"]:
-                    attributes["household_labor_provider"] = "men"
-                elif hlp in ["femmes", "femme"]:
-                    attributes["household_labor_provider"] = "women"
+                hlp_label = attributes["household_labor_provider"].lower()
+                # First check if it's already a canonical value
+                canonical_values = [value for value, _ in LivelihoodActivity.HouseholdLaborProvider.choices]
+                if hlp_label in canonical_values:
+                    # Already a canonical value, use as-is
+                    attributes["household_labor_provider"] = hlp_label
+                else:
+                    # Check if it's an alias
+                    aliases = LivelihoodActivity.HouseholdLaborProvider.get_aliases()
+                    if hlp_label in aliases:
+                        attributes["household_labor_provider"] = aliases[hlp_label]
+                    else:
+                        # Check if it's a display label
+                        for choice_value, choice_label in LivelihoodActivity.HouseholdLaborProvider.choices:
+                            if str(choice_label).lower() == hlp_label:
+                                attributes["household_labor_provider"] = choice_value
+                                break
 
             attributes["activity_label"] = label
             attributes["strategy_type"] = strategy_type

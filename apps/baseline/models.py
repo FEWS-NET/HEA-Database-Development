@@ -1154,6 +1154,57 @@ class LivelihoodActivity(common_models.Model):
         ADULTS = "adults", _("Mainly Adults")
         ALL = "all", _("All Together")
 
+        @classmethod
+        def get_aliases(cls):
+            """
+            Return a dict mapping alias labels to their canonical values.
+            """
+            return {
+                # French singular/plural for men
+                "hommes": cls.MEN,
+                "homme": cls.MEN,
+                # French singular/plural for women
+                "femmes": cls.WOMEN,
+                "femme": cls.WOMEN,
+                # French singular/plural for boys
+                "garçons": cls.BOYS,
+                "garçon": cls.BOYS,
+                "garcons": cls.BOYS,  # without accent
+                "garcon": cls.BOYS,  # without accent
+                # French singular/plural for girls
+                "filles": cls.GIRLS,
+                "fille": cls.GIRLS,
+                # French for adults
+                "adultes": cls.ADULTS,
+                # Children combinations (boys/girls in any order)
+                "boys/girls": cls.CHILDREN,
+                "girls/boys": cls.CHILDREN,
+                "garçons/filles": cls.CHILDREN,
+                "filles/garçons": cls.CHILDREN,
+                "garcons/filles": cls.CHILDREN,  # without accent
+                "filles/garcons": cls.CHILDREN,  # without accent
+                # Adults combinations (men/women in any order)
+                "men/women": cls.ADULTS,
+                "women/men": cls.ADULTS,
+                "men & women": cls.ADULTS,
+                "women & men": cls.ADULTS,
+                "hommes/femmes": cls.ADULTS,
+                "femmes/hommes": cls.ADULTS,
+                "hommes & femmes": cls.ADULTS,
+                "femmes & hommes": cls.ADULTS,
+            }
+
+        @classmethod
+        def get_all_labels(cls):
+            """
+            Return all possible labels (canonical values + display labels + aliases) for pattern matching.
+            """
+            canonical_values = [value for value, _label in cls.choices]
+            display_labels = [str(label) for _value, label in cls.choices]
+            alias_labels = list(cls.get_aliases().keys())
+            all_labels = canonical_values + display_labels + alias_labels
+            return sorted(all_labels, key=len, reverse=True)
+
     household_labor_provider = models.CharField(
         max_length=10, choices=HouseholdLaborProvider.choices, blank=True, verbose_name=_("Activity done by")
     )

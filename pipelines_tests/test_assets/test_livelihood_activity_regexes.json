@@ -1041,6 +1041,36 @@
         "product_id": "petty trade",
         "household_labor_provider": "women"
     },
+    "adults": {
+        "household_labor_provider": "adults"
+    },
+    "adultes": {
+        "household_labor_provider": "adults"
+    },
+    "men/women": {
+        "household_labor_provider": "adults"
+    },
+    "women/men": {
+        "household_labor_provider": "adults"
+    },
+    "men & women": {
+        "household_labor_provider": "adults"
+    },
+    "women & men": {
+        "household_labor_provider": "adults"
+    },
+    "hommes/femmes": {
+        "household_labor_provider": "adults"
+    },
+    "femmes/hommes": {
+        "household_labor_provider": "adults"
+    },
+    "hommes & femmes": {
+        "household_labor_provider": "adults"
+    },
+    "femmes & hommes": {
+        "household_labor_provider": "adults"
+    },
     "other self-employment: petty trade - boys": {
         "strategy_type": "OtherCashIncome",
         "is_start": true,
