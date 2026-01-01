@@ -301,6 +301,7 @@ def community_instances(context: AssetExecutionContext, config: BSSMetadataConfi
             "Région et cercle",  # 2023 Mali BSSs
             "LGA",  # Local Government Area, in the 2023 Nigeria BSSs
             "Province et territoire",  # 2024 DRC BSSs
+            "District (Departamiento/Municipio)",  # 2019 GT06
         ],
         [
             "Village",
@@ -313,6 +314,7 @@ def community_instances(context: AssetExecutionContext, config: BSSMetadataConfi
             "Commune et village",  # 2023 Mali BSSs
             "Quartier",
             "Quartier/Secteur",
+            "Village ou Fokotony",  # 2017 MG BSSs
         ],
         ["Interview number:", "Numéro d'entretien", "Numero d'entretien"],
         ["Interviewers", "Enquetêur(s)", "Intervieweurs"],
