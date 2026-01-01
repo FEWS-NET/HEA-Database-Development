@@ -284,6 +284,12 @@
         "expenditure"
     ],
     [
+        "(?:dépense annuelle|unité)",
+        null,
+        true,
+        "expenditure"
+    ],
+    [
         "{nbr_pattern} (?:de )?fois / an(?:née)?",
         null,
         false,
@@ -759,6 +765,12 @@
     ],
     [
         "{nbr_pattern} de mesures locales",
+        null,
+        false,
+        "number_of_local_measures"
+    ],
+    [
+        "{nbr_pattern} (?:d')?unités(?: locales)?",
         null,
         false,
         "number_of_local_measures"
