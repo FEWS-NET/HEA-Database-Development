@@ -155,7 +155,7 @@ class WealthGroupFactory(factory.django.DjangoModelFactory):
     )
     wealth_group_category = factory.SubFactory(WealthGroupCategoryFactory)
     percentage_of_households = fuzzy.FuzzyInteger(10, 91)
-    average_household_size = fuzzy.FuzzyInteger(2, 31)
+    average_household_size = fuzzy.FuzzyDecimal(2.0, 31.0, precision=2)
 
 
 class BaselineWealthGroupFactory(WealthGroupFactory):
