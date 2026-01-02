@@ -42,7 +42,7 @@ requests==2.32.5
 # s3fs provides S3 support for Dagster UPathIOManager subclasses
 s3fs==2024.2.0
 sentry-sdk[django]==2.8.0
-sqlparse==0.5.0
+sqlparse==0.5.5
 # Required for DataFrame.to_markdown()
 tabulate==0.9.0
 # Need universal-pathlib > 0.2.0 for gdrivefs support
