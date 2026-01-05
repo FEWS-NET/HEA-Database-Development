@@ -1192,20 +1192,27 @@ class LivelihoodActivity(common_models.Model):
     def validate_quantity_consumed(self):
         # Default to 0 if any of the quantities are None
         quantity_produced = self.quantity_produced or 0
+        quantity_purchased = self.quantity_purchased or 0
         quantity_sold = self.quantity_sold or 0
         quantity_other_uses = self.quantity_other_uses or 0
+        try:
+            quantity_butter_production = self.quantity_butter_production or 0
+        except AttributeError:
+            # Only MilkProduction has quantity_butter_production
+            quantity_butter_production = 0
 
         # Calculate the expected quantity_consumed with default values considered
-        expected_quantity_consumed = quantity_produced - quantity_sold - quantity_other_uses
-        quantity_consumed = self.quantity_consumed or 0
+        expected_quantity_consumed = (
+            quantity_produced + quantity_purchased - quantity_sold - quantity_other_uses - quantity_butter_production
+        )
 
         # Check if the actual quantity_consumed matches the expected quantity_consumed
-        if self.quantity_consumed and quantity_consumed != expected_quantity_consumed:
-            raise ValidationError(
-                _(
-                    "Quantity consumed for a Livelihood Activity must be quantity produced - quantity sold - quantity used for other things"  # NOQA: E501
-                )
-            )
+        if self.quantity_consumed and self.quantity_consumed != expected_quantity_consumed:
+            if quantity_butter_production:
+                message = "Quantity consumed for Milk Production must be quantity produced + quantity purchased - quantity sold - quantity used for butter production - quantity used for other things"  # NOQA: E501
+            else:
+                message = "Quantity consumed for a Livelihood Activity must be quantity produced + quantity purchased - quantity sold - quantity used for other things"  # NOQA: E501
+            raise ValidationError(_(message))
 
     def validate_income(self):
         income = self.income or 0
@@ -1236,17 +1243,32 @@ class LivelihoodActivity(common_models.Model):
             )
 
     def validate_kcals_consumed(self):
-        conversion_factor = UnitOfMeasureConversion.objects.get_conversion_factor(
-            from_unit=self.livelihood_strategy.unit_of_measure,
-            to_unit=self.livelihood_strategy.product.unit_of_measure,
-        )
-        kcals_per_unit = self.livelihood_strategy.product.kcals_per_unit or 0
-        quantity_consumed = self.quantity_consumed or 0
-        kcals_consumed = self.kcals_consumed or 0
-        if self.kcals_consumed and kcals_consumed != quantity_consumed * conversion_factor * kcals_per_unit:
-            raise ValidationError(
-                _("Kcals consumed for a Livelihood Activity must be quantity consumed multiplied by kcals per unit")
-            )
+        if self.kcals_consumed and self.quantity_consumed and self.livelihood_strategy.product.kcals_per_unit:
+            try:
+                conversion_factor = UnitOfMeasureConversion.objects.get_conversion_factor(
+                    from_unit=self.livelihood_strategy.unit_of_measure,
+                    to_unit=self.livelihood_strategy.product.unit_of_measure,
+                )
+            except UnitOfMeasureConversion.DoesNotExist:
+                raise ValidationError(
+                    _(
+                        "No conversion factor found from unit %(from_unit)s for Livelihood Activity to unit %(to_unit)s for Product %(product)s for calculating kcals consumed."  # NOQA: E501
+                    )
+                    % {
+                        "from_unit": self.livelihood_strategy.unit_of_measure,
+                        "to_unit": self.livelihood_strategy.product.unit_of_measure,
+                        "product": self.livelihood_strategy.product,
+                    }
+                )
+            if (
+                self.kcals_consumed
+                != self.quantity_consumed * conversion_factor * self.livelihood_strategy.product.kcals_per_unit
+            ):
+                raise ValidationError(
+                    _(
+                        "Kcals consumed for a Livelihood Activity must be quantity consumed multiplied by kcals per unit"
+                    )
+                )
 
     def validate_strategy_type(self):
         if (
@@ -1316,7 +1338,12 @@ class LivelihoodActivity(common_models.Model):
 
 class BaselineLivelihoodActivityManager(InheritanceManager):
     def get_queryset(self):
-        return super().get_queryset().filter(scenario=LivelihoodActivityScenario.BASELINE).select_subclasses()
+        return (
+            super()
+            .get_queryset()
+            .filter(wealth_group__community__isnull=True, scenario=LivelihoodActivityScenario.BASELINE)
+            .select_subclasses()
+        )
 
 
 class BaselineLivelihoodActivity(LivelihoodActivity):
@@ -1324,8 +1351,8 @@ class BaselineLivelihoodActivity(LivelihoodActivity):
     An activity undertaken by households in a Wealth Group that produces food or income or requires expenditure.
 
     A Baseline Livelihood Activity contains the outputs of a Livelihood Strategy
-    employed by a Wealth Group in a Community or a Wealth Group representing
-    the Baseline as a whole in the reference year.
+    employed by a Wealth Group representing the Baseline as a whole during the
+    reference year.
 
     Stored on the BSS 'Data' worksheet.
     """
@@ -1345,7 +1372,12 @@ class BaselineLivelihoodActivity(LivelihoodActivity):
 
 class ResponseLivelihoodActivityManager(InheritanceManager):
     def get_queryset(self):
-        return super().get_queryset().filter(scenario=LivelihoodActivityScenario.RESPONSE).select_subclasses()
+        return (
+            super()
+            .get_queryset()
+            .filter(wealth_group__community__isnull=True, scenario=LivelihoodActivityScenario.RESPONSE)
+            .select_subclasses()
+        )
 
 
 class ResponseLivelihoodActivity(LivelihoodActivity):
