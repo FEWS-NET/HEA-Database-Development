@@ -289,23 +289,16 @@ def get_livelihood_activity_regular_expression_attributes(label: str) -> dict:
 
             # Map household_labor_provider to canonical values using TextChoices
             if "household_labor_provider" in attributes and attributes["household_labor_provider"]:
-                hlp_label = attributes["household_labor_provider"].lower()
-                # First check if it's already a canonical value
-                canonical_values = [value for value, _ in LivelihoodActivity.HouseholdLaborProvider.choices]
-                if hlp_label in canonical_values:
-                    # Already a canonical value, use as-is
-                    attributes["household_labor_provider"] = hlp_label
-                else:
-                    # Check if it's an alias
-                    aliases = LivelihoodActivity.HouseholdLaborProvider.get_aliases()
-                    if hlp_label in aliases:
-                        attributes["household_labor_provider"] = aliases[hlp_label]
-                    else:
-                        # Check if it's a display label
-                        for choice_value, choice_label in LivelihoodActivity.HouseholdLaborProvider.choices:
-                            if str(choice_label).lower() == hlp_label:
-                                attributes["household_labor_provider"] = choice_value
-                                break
+                try:
+                    hlp = LivelihoodActivity.HouseholdLaborProvider(attributes["household_labor_provider"].lower())
+                    attributes["household_labor_provider"] = hlp.value
+                except ValueError:
+                    # Check if it's a display label
+                    hlp_label = attributes["household_labor_provider"].lower()
+                    for choice_value, choice_label in LivelihoodActivity.HouseholdLaborProvider.choices:
+                        if str(choice_label).lower() == hlp_label:
+                            attributes["household_labor_provider"] = choice_value
+                            break
 
             attributes["activity_label"] = label
             attributes["strategy_type"] = strategy_type
