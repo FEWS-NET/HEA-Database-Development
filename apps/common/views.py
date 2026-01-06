@@ -61,7 +61,7 @@ class AssetDownloadView(LoginRequiredMixin, PermissionRequiredMixin, View):
             raise Http404(f"Failed to locate or sign asset '{asset_name}': {str(e)}")
 
 
-class DataExplorerProxyView(ProxyView):
+class BaselineExplorerProxyView(ProxyView):
     """
     A revproxy view to serve the data explorer assets via a cloudfront distribution.
     """

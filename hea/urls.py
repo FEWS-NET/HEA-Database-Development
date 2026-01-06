@@ -49,7 +49,7 @@ from baseline.viewsets import (
     WealthGroupViewSet,
     WildFoodGatheringViewSet,
 )
-from common.views import AssetDownloadView, DagsterProxyView, DataExplorerProxyView
+from common.views import AssetDownloadView, BaselineExplorerProxyView, DagsterProxyView
 from common.viewsets import (
     ClassifiedProductViewSet,
     CountryViewSet,
@@ -148,10 +148,10 @@ urlpatterns += [
         name="asset_download_partitioned",
     ),
     # Baseline Explorer React GUI using Django rev proxy to serve a cloudfront distro
-    path("baseline-explorer/<path:path>", DataExplorerProxyView.as_view(), name="baseline_explorer"),
+    path("baseline-explorer/<path:path>", BaselineExplorerProxyView.as_view(), name="baseline_explorer"),
     # The URL pattern below does not capture any path parameter from the URL. But django-revproxy views
     # require a path argument. We manually pass a default: {"path": ""}.
-    path("baseline-explorer/", DataExplorerProxyView.as_view(), {"path": ""}, name="baseline_explorer"),
+    path("baseline-explorer/", BaselineExplorerProxyView.as_view(), {"path": ""}, name="baseline_explorer"),
 ]
 
 
