@@ -361,6 +361,11 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
 PRIVACY_URL = "https://help.fews.net/fdp/privacy-policy"
 DISCLAIMER_URL = "https://help.fews.net/fdp/data-and-information-use-and-attribution-policy"
 
+
+########## DATA EXPLORER CONFIGURATION
+EXPLORER_CLOUDFRONT_URL = env.str("EXPLORER_CLOUDFRONT_URL")
+########## End DATA EXPLORER CONFIGURATION
+
 # Allow GDAL/GEOS library path overrides to be set in the environment, for MacOS.
 GDAL_LIBRARY_PATH = env("GDAL_LIBRARY_PATH", default=None)  # For example, /opt/homebrew/lib/libgdal.dylib
 GEOS_LIBRARY_PATH = env("GEOS_LIBRARY_PATH", default=None)  # For example, /opt/homebrew/lib/libgeos_c.dylib
