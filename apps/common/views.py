@@ -2,15 +2,19 @@ import os
 
 import fsspec
 from dagster import AssetKey, DagsterEventType, DagsterInstance, EventRecordsFilter
+from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.http import Http404, HttpResponseRedirect
 from django.views import View
 from revproxy.views import ProxyView
 
+EXPLORER_CLOUDFRONT_URL = settings.EXPLORER_CLOUDFRONT_URL
+
 
 class DagsterProxyView(LoginRequiredMixin, PermissionRequiredMixin, ProxyView):
     login_url = "/admin/login/"
-    upstream = f"{os.environ.get('DAGSTER_WEBSERVER_URL')}/{os.environ.get('DAGSTER_WEBSERVER_PREFIX')}/"
+    # ignore type warning because parent class uses a property for "upstream"
+    upstream = f"{os.environ.get('DAGSTER_WEBSERVER_URL')}/{os.environ.get('DAGSTER_WEBSERVER_PREFIX')}/"  # type: ignore
     permission_required = "common.access_dagster_ui"
     raise_exception = False
 
@@ -55,3 +59,11 @@ class AssetDownloadView(LoginRequiredMixin, PermissionRequiredMixin, View):
 
         except Exception as e:
             raise Http404(f"Failed to locate or sign asset '{asset_name}': {str(e)}")
+
+
+class DataExplorerProxyView(ProxyView):
+    """
+    A revproxy view to serve the data explorer assets via a cloudfront distribution.
+    """
+
+    upstream = EXPLORER_CLOUDFRONT_URL  # type: ignore
