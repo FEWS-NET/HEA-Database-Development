@@ -363,7 +363,10 @@ DISCLAIMER_URL = "https://help.fews.net/fdp/data-and-information-use-and-attribu
 
 
 ########## DATA EXPLORER CONFIGURATION
-EXPLORER_CLOUDFRONT_URL = env.str("EXPLORER_CLOUDFRONT_URL")
+# setting a default, so app startup doesn't fail when this variable isn't set
+# in services that don't use it.
+# It only needs an actually working upstream when the ProxyView view is invoked.
+EXPLORER_CLOUDFRONT_URL = env.str("EXPLORER_CLOUDFRONT_URL", default="http://localhost:3000")
 ########## End DATA EXPLORER CONFIGURATION
 
 # Allow GDAL/GEOS library path overrides to be set in the environment, for MacOS.
