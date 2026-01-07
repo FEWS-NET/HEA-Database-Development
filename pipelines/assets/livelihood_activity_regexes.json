@@ -284,6 +284,12 @@
         "expenditure"
     ],
     [
+        "(?:dépense annuelle|unité)",
+        null,
+        true,
+        "expenditure"
+    ],
+    [
         "{nbr_pattern} (?:de )?fois / an(?:née)?",
         null,
         false,
@@ -752,13 +758,13 @@
         "percentage_monthly_kcals"
     ],
     [
-        "(?:autre culture)?{separator_pattern} ?{product_pattern}{separator_pattern} {nbr_pattern} (?:de mesures locales|d'unités locales|unités loc.)",
+        "(?:autre culture)?{separator_pattern} ?{product_pattern}{separator_pattern} {nbr_pattern} (?:de mesures|mesures|d'unités|unités)(?: locales| loc\\.?)?",
         null,
         true,
         "number_of_local_measures"
     ],
     [
-        "{nbr_pattern} de mesures locales",
+        "{nbr_pattern} (?:de mesures|mesures|d'unités|unités)(?: locales| loc\\.?)?",
         null,
         false,
         "number_of_local_measures"

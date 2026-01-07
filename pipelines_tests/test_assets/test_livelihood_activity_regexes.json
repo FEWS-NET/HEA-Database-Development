@@ -571,6 +571,15 @@
         "product_id": "manioc",
         "attribute": "number_of_local_measures"
     },
+    "nbr d'unités locales": {
+        "attribute": "number_of_local_measures"
+    },
+    "nbr unités": {
+        "attribute": "number_of_local_measures"
+    },
+    "nbr unités locales": {
+        "attribute": "number_of_local_measures"
+    },
     "nom de la mesure": {
         "attribute": "name_of_local_measure"
     },
@@ -830,6 +839,14 @@
         "attribute": "sales_price"
     },
     "dépense": {
+        "attribute": "expenditure"
+    },
+    "dépense annuelle": {
+        "is_start": true,
+        "attribute": "expenditure"
+    },
+    "unité": {
+        "is_start": true,
         "attribute": "expenditure"
     },
     "quantité (kg)": {
