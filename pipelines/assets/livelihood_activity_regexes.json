@@ -57,13 +57,13 @@
     ],
     [
         "vente (?:de |d')?{product_pattern}",
-        "OtherCashIncome",
+        null,
         true,
         null
     ],
     [
         "{product_pattern} sales",
-        "OtherCashIncome",
+        null,
         true,
         null
     ],

@@ -155,32 +155,26 @@
         "attribute": "quantity_sold"
     },
     "Vente de bois de chauffage": {
-        "strategy_type": "OtherCashIncome",
         "is_start": true,
         "product_id": "bois de chauffage"
     },
     "Vente prods de cueillette": {
-        "strategy_type": "OtherCashIncome",
         "is_start": true,
         "product_id": "prods de cueillette"
     },
     "vente de mangue": {
-        "strategy_type": "OtherCashIncome",
         "is_start": true,
         "product_id": "mangue"
     },
     "vente artisanat": {
-        "strategy_type": "OtherCashIncome",
         "is_start": true,
         "product_id": "artisanat"
     },
     "vente d'orange": {
-        "strategy_type": "OtherCashIncome",
         "is_start": true,
         "product_id": "orange"
     },
     "sand sales": {
-        "strategy_type": "OtherCashIncome",
         "is_start": true,
         "product_id": "sand"
     },
