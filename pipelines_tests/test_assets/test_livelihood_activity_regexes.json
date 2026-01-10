@@ -24,6 +24,17 @@
     "number milking animals": {
         "attribute": "milking_animals"
     },
+    "season 1: no. milking animals": {
+        "strategy_type": "MilkProduction",
+        "season": "season 1",
+        "attribute": "milking_animals"
+    },
+    "season 2: no. milking animals": {
+        "strategy_type": "MilkProduction",
+        "is_start": true,
+        "season": "season 2",
+        "attribute": "milking_animals"
+    },
     "season 1: lactation period (days)": {
         "strategy_type": "MilkProduction",
         "season": "season 1",
