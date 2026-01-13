@@ -11,6 +11,7 @@ from rest_framework import routers
 
 from baseline.viewsets import (
     BaselineLivelihoodActivityViewSet,
+    BaselineWealthCharacteristicsValueViewSet,
     BaselineWealthGroupViewSet,
     ButterProductionViewSet,
     CommunityCropProductionViewSet,
@@ -96,6 +97,9 @@ router.register(r"wealthgroup", WealthGroupViewSet)
 router.register(r"baselinewealthgroup", BaselineWealthGroupViewSet)
 router.register(r"communitywealthgroup", CommunityWealthGroupViewSet)
 router.register(r"wealthgroupcharacteristicvalue", WealthGroupCharacteristicValueViewSet)
+router.register(
+    r"baselinewealthcharacteristicsvalue", BaselineWealthCharacteristicsValueViewSet, "baselinewealthcharacteristics"
+)
 router.register(r"livelihoodstrategy", LivelihoodStrategyViewSet)
 router.register(r"livelihoodactivity", LivelihoodActivityViewSet)
 router.register(r"baselinelivelihoodactivity", BaselineLivelihoodActivityViewSet)

@@ -54,6 +54,7 @@ from .models import (
 )
 from .serializers import (
     BaselineLivelihoodActivitySerializer,
+    BaselineWealthCharacteristicsValueSerializer,
     BaselineWealthGroupSerializer,
     ButterProductionSerializer,
     CommunityCropProductionSerializer,
@@ -510,6 +511,70 @@ class WealthGroupCharacteristicValueViewSet(BaseModelViewSet):
     )
     serializer_class = WealthGroupCharacteristicValueSerializer
     filterset_class = WealthGroupCharacteristicValueFilterSet
+
+
+class BaselineWealthCharacteristicsFilterSet(filters.FilterSet):
+
+    class Meta:
+        model = WealthGroupCharacteristicValue
+        fields = ["wealth_characteristic", "wealth_group"]
+
+    livelihood_zone_baseline = filters.NumberFilter(
+        field_name="wealth_group__livelihood_zone_baseline",
+        label="Livelihood Zone Baseline ID",
+    )
+
+    country = MultiFieldFilter(
+        [
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso3166a2",
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name",
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_en_name",
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_proper",
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_en_proper",
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_fr_name",
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_fr_proper",
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_es_name",
+        ],
+        lookup_expr="iexact",
+        label="Country",
+    )
+
+    has_value = filters.BooleanFilter(
+        method="filter_has_value",
+        label="Has Value",
+    )
+
+    def filter_has_value(self, queryset, name, value):
+        if value:
+            return queryset.exclude(value__isnull=True).exclude(value__exact="")
+        else:
+            return queryset.filter(Q(value__isnull=True) | Q(value__exact=""))
+
+
+class BaselineWealthCharacteristicsValueViewSet(BaseModelViewSet):
+    """
+    API endpoint for baseline wealth characteristics with grouping.
+    """
+
+    queryset = (
+        WealthGroupCharacteristicValue.objects.select_related(
+            "wealth_characteristic",
+            "wealth_group__wealth_group_category",
+            "wealth_group__livelihood_zone_baseline",
+            "product",
+            "unit_of_measure",
+        )
+        .filter(wealth_group__community__isnull=True)
+        .order_by(
+            "wealth_characteristic__characteristic_group",
+            "wealth_characteristic__ordering",
+            "wealth_characteristic__code",
+            "wealth_group__wealth_group_category__ordering",
+        )
+    )
+
+    serializer_class = BaselineWealthCharacteristicsValueSerializer
+    filterset_class = BaselineWealthCharacteristicsFilterSet
 
 
 class LivelihoodStrategyFilterSet(filters.FilterSet):

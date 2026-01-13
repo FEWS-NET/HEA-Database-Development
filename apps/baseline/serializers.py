@@ -412,6 +412,52 @@ class WealthGroupCharacteristicValueSerializer(serializers.ModelSerializer):
     )
 
 
+class BaselineWealthCharacteristicsValueSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = WealthGroupCharacteristicValue
+        fields = [
+            "id",
+            "wealth_group",
+            "wealth_group_category",
+            "wealth_group_category_name",
+            "livelihood_zone_baseline",
+            "livelihood_zone_baseline_label",
+            "wealth_characteristic",
+            "wealth_characteristic_name",
+            "characteristic_group",
+            "product",
+            "product_name",
+            "unit_of_measure",
+            "unit_of_measure_name",
+            "value",
+            "min_value",
+            "max_value",
+        ]
+
+    wealth_group_category = serializers.CharField(source="wealth_group.wealth_group_category.pk", read_only=True)
+    wealth_group_category_name = serializers.CharField(
+        source="wealth_group.wealth_group_category.name", read_only=True
+    )
+    livelihood_zone_baseline = serializers.IntegerField(
+        source="wealth_group.livelihood_zone_baseline.pk", read_only=True, allow_null=True
+    )
+    livelihood_zone_baseline_label = serializers.SerializerMethodField()
+
+    def get_livelihood_zone_baseline_label(self, obj):
+        """Get label for livelihood zone baseline."""
+        if hasattr(obj.wealth_group, "livelihood_zone_baseline") and obj.wealth_group.livelihood_zone_baseline:
+            return str(obj.wealth_group.livelihood_zone_baseline)
+        return None
+
+    wealth_characteristic_name = serializers.CharField(source="wealth_characteristic.name", read_only=True)
+    characteristic_group = serializers.CharField(
+        source="wealth_characteristic.characteristic_group", read_only=True, allow_null=True
+    )
+    product_name = serializers.CharField(source="product.name", read_only=True, allow_null=True)
+    unit_of_measure_name = serializers.CharField(source="unit_of_measure.name", read_only=True, allow_null=True)
+
+
 class LivelihoodStrategySerializer(serializers.ModelSerializer):
     class Meta:
         model = LivelihoodStrategy
