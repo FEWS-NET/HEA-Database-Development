@@ -9,11 +9,13 @@ from factory import fuzzy
 from baseline.models import (
     BaselineLivelihoodActivity,
     BaselineWealthGroup,
+    BaselineWealthGroupCharacteristicValue,
     ButterProduction,
     Community,
     CommunityCropProduction,
     CommunityLivestock,
     CommunityWealthGroup,
+    CommunityWealthGroupCharacteristicValue,
     CopingStrategy,
     CropProduction,
     Event,
@@ -217,6 +219,34 @@ class WealthGroupCharacteristicValueFactory(factory.django.DjangoModelFactory):
             return UnitOfMeasureFactory()
         else:
             return None
+
+
+class BaselineWealthGroupCharacteristicValueFactory(WealthGroupCharacteristicValueFactory):
+    class Meta:
+        model = BaselineWealthGroupCharacteristicValue
+        django_get_or_create = [
+            "wealth_group",
+            "wealth_characteristic",
+        ]
+
+    wealth_group = factory.SubFactory(WealthGroupFactory, community=None)
+
+
+class CommunityWealthGroupCharacteristicValueFactory(WealthGroupCharacteristicValueFactory):
+    class Meta:
+        model = CommunityWealthGroupCharacteristicValue
+        django_get_or_create = [
+            "wealth_group",
+            "wealth_characteristic",
+        ]
+
+    wealth_group = factory.SubFactory(
+        WealthGroupFactory,
+        community=factory.SubFactory(
+            CommunityFactory,
+            livelihood_zone_baseline=factory.SelfAttribute("..livelihood_zone_baseline"),
+        ),
+    )
 
 
 class LivelihoodStrategyFactory(factory.django.DjangoModelFactory):

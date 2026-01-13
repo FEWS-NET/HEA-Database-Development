@@ -843,6 +843,56 @@ class WealthGroupCharacteristicValue(common_models.Model):
         ]
 
 
+class BaselineWealthGroupCharacteristicValueManager(InheritanceManager):
+    def get_queryset(self):
+        return super().get_queryset().filter(wealth_group__community__isnull=True).select_subclasses()
+
+
+class BaselineWealthGroupCharacteristicValue(WealthGroupCharacteristicValue):
+    """
+    An attribute of a Baseline Wealth Group such as the number of school-age children.
+    """
+
+    objects = BaselineWealthGroupCharacteristicValueManager()
+
+    def clean(self):
+        if self.wealth_group.community:
+            raise ValidationError(
+                _("A Baseline Wealth Group Characteristic Value cannot be for a Community Wealth Group")
+            )
+        super().clean()
+
+    class Meta:
+        verbose_name = _("Baseline Wealth Group Characteristic Value")
+        verbose_name_plural = _("Baseline Wealth Group Characteristic Values")
+        proxy = True
+
+
+class CommunityWealthGroupCharacteristicValueManager(InheritanceManager):
+    def get_queryset(self):
+        return super().get_queryset().exclude(wealth_group__community__isnull=True).select_subclasses()
+
+
+class CommunityWealthGroupCharacteristicValue(WealthGroupCharacteristicValue):
+    """
+    An attribute of a Community Wealth Group such as the number of school-age children.
+    """
+
+    objects = CommunityWealthGroupCharacteristicValueManager()
+
+    def clean(self):
+        if not self.wealth_group.community:
+            raise ValidationError(
+                _("A Community Wealth Group Characteristic Value must be for a Community Wealth Group")
+            )
+        super().clean()
+
+    class Meta:
+        verbose_name = _("Community Wealth Group Characteristic Value")
+        verbose_name_plural = _("Community Wealth Group Characteristic Values")
+        proxy = True
+
+
 class LivelihoodStrategyManager(common_models.IdentifierManager):
     def get_by_natural_key(
         self,

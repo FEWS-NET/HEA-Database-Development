@@ -21,6 +21,7 @@ from metadata.models import LivelihoodActivityScenario
 from metadata.tests.factories import (
     LivelihoodCategoryFactory,
     WealthCharacteristicFactory,
+    WealthGroupCategoryFactory,
 )
 
 from .factories import (
@@ -1321,6 +1322,12 @@ class WealthGroupCharacteristicValueViewSetTestCase(APITestCase):
             "wealth_characteristic",
             "wealth_characteristic_name",
             "wealth_characteristic_description",
+            "variable_type",
+            "characteristic_group",
+            "product",
+            "product_common_name",
+            "unit_of_measure",
+            "unit_of_measure_description",
             "value",
             "min_value",
             "max_value",
@@ -1463,6 +1470,158 @@ class WealthGroupCharacteristicValueViewSetTestCase(APITestCase):
         response = self.client.get(self.url, {"product": "test"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
+
+
+class BaselineWealthGroupCharacteristicValueViewSetTestCase(APITestCase):
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.baseline = LivelihoodZoneBaselineFactory()
+
+        cls.very_poor_wg = WealthGroupCategoryFactory(code="VP", name_en="Very Poor")
+        cls.poor_wg = WealthGroupCategoryFactory(code="P", name_en="Poor")
+
+        cls.baseline_wg_vp = BaselineWealthGroupFactory(
+            livelihood_zone_baseline=cls.baseline,
+            wealth_group_category=cls.very_poor_wg,
+        )
+        cls.baseline_wg_p = BaselineWealthGroupFactory(
+            livelihood_zone_baseline=cls.baseline,
+            wealth_group_category=cls.poor_wg,
+        )
+
+        # Create community wealth groups (should be excluded)
+        cls.community = CommunityFactory(livelihood_zone_baseline=cls.baseline)
+        cls.community_wg = CommunityWealthGroupFactory(
+            livelihood_zone_baseline=cls.baseline,
+            wealth_group_category=cls.very_poor_wg,
+            community=cls.community,
+        )
+        # Create wealth characteristics
+        cls.char_with_group = WealthCharacteristicFactory(
+            code="household size",
+            name_en="Household size",
+            characteristic_group="Population",
+        )
+        cls.char_without_group = WealthCharacteristicFactory(
+            code="other",
+            name_en="Other characteristic",
+            characteristic_group=None,
+        )
+        # Create characteristic values for baseline wealth groups (with values)
+        cls.value_baseline_vp = WealthGroupCharacteristicValueFactory(
+            wealth_group=cls.baseline_wg_vp,
+            wealth_characteristic=cls.char_with_group,
+            value=5,
+            min_value=4,
+            max_value=6,
+        )
+        cls.value_baseline_p = WealthGroupCharacteristicValueFactory(
+            wealth_group=cls.baseline_wg_p,
+            wealth_characteristic=cls.char_with_group,
+            value=6,
+            min_value=5,
+            max_value=7,
+        )
+
+        # Create characteristic value for community wealth group (should be excluded)
+        cls.value_community = WealthGroupCharacteristicValueFactory(
+            wealth_group=cls.community_wg,
+            wealth_characteristic=cls.char_with_group,
+            value=3,
+        )
+
+    def setUp(self):
+        self.url = reverse("baselinewealthgroupcharacteristicvalue-list")
+
+    def test_only_baseline_wealth_groups_included(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        results = response.json()
+        baseline_ids = {self.value_baseline_vp.id, self.value_baseline_p.id}
+        returned_ids = {r["id"] for r in results}
+
+        # All baseline records should be present
+        self.assertTrue(baseline_ids.issubset(returned_ids))
+        # Community record should not be present
+        self.assertNotIn(self.value_community.id, returned_ids)
+
+    def test_filter_by_livelihood_zone_baseline(self):
+        # Create another baseline with its own data
+        other_baseline = LivelihoodZoneBaselineFactory()
+        other_wg = BaselineWealthGroupFactory(
+            livelihood_zone_baseline=other_baseline,
+            wealth_group_category=self.very_poor_wg,
+        )
+        WealthGroupCharacteristicValueFactory(
+            wealth_group=other_wg,
+            wealth_characteristic=self.char_with_group,
+            value=10,
+        )
+        # Filter by our original baseline
+        response = self.client.get(self.url, {"livelihood_zone_baseline": self.baseline.pk})
+        self.assertEqual(response.status_code, 200)
+        results = response.json()
+        # Should only have our 2 original baseline records
+        self.assertEqual(len([r for r in results if r["livelihood_zone_baseline"] == self.baseline.pk]), 2)
+
+    def test_filter_has_value_true(self):
+        # Create another baseline with its own data
+        other_baseline = LivelihoodZoneBaselineFactory()
+        other_wg = BaselineWealthGroupFactory(
+            livelihood_zone_baseline=other_baseline,
+            wealth_group_category=self.very_poor_wg,
+        )
+        WealthGroupCharacteristicValueFactory(
+            wealth_group=other_wg,
+            wealth_characteristic=self.char_with_group,
+            value=0,
+            min_value=None,
+            max_value=None,
+        )
+        response = self.client.get(self.url, {"has_value": "true"})
+        self.assertEqual(response.status_code, 200)
+        results = response.json()
+        # Should include records with values
+        returned_ids = {r["id"] for r in results}
+        self.assertIn(self.value_baseline_vp.id, returned_ids)
+        self.assertIn(self.value_baseline_p.id, returned_ids)
+        self.assertNotIn(other_baseline.id, returned_ids)
+
+    def test_response_fields(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        results = response.json()
+        if len(results) > 0:
+            expected_fields = {
+                "id",
+                "wealth_group",
+                "wealth_group_label",
+                "source_organization",
+                "source_organization_name",
+                "livelihood_zone_baseline",
+                "livelihood_zone_baseline_label",
+                "livelihood_zone",
+                "livelihood_zone_name",
+                "livelihood_zone_country_code",
+                "livelihood_zone_country_name",
+                "wealth_group_category",
+                "wealth_group_category_name",
+                "wealth_group_category_description",
+                "wealth_characteristic",
+                "wealth_characteristic_name",
+                "wealth_characteristic_description",
+                "variable_type",
+                "characteristic_group",
+                "product",
+                "product_common_name",
+                "unit_of_measure",
+                "unit_of_measure_description",
+                "value",
+                "min_value",
+                "max_value",
+            }
+            self.assertEqual(set(results[0].keys()), expected_fields)
 
 
 class LivelihoodStrategyViewSetTestCase(APITestCase):
