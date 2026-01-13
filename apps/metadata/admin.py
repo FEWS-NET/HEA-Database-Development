@@ -96,6 +96,7 @@ class WealthCharacteristicAdmin(ReferenceDataAdmin):
         *translation_fields("name"),
         "aliases",
         *translation_fields("description"),
+        "characteristic_group",
     )
     list_filter = ("variable_type",)
 

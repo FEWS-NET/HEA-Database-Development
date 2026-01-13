@@ -545,10 +545,17 @@ class BaselineWealthCharacteristicsFilterSet(filters.FilterSet):
     )
 
     def filter_has_value(self, queryset, name, value):
+        """
+        Filter records based on whether they have meaningful values.
+        """
         if value:
-            return queryset.exclude(value__isnull=True).exclude(value__exact="")
-        else:
-            return queryset.filter(Q(value__isnull=True) | Q(value__exact=""))
+            return queryset.exclude(
+                Q(value__isnull=True)
+                | Q(value__exact="")
+                | Q(value__exact=0)
+                | Q(value__exact=[])
+                | Q(value__exact={})
+            )
 
 
 class BaselineWealthCharacteristicsValueViewSet(BaseModelViewSet):
