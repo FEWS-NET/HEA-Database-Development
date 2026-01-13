@@ -364,7 +364,7 @@ class WealthGroupCharacteristicValueSerializer(serializers.ModelSerializer):
             "product",
             "product_common_name",
             "unit_of_measure",
-            "unit_of_measure_name",
+            "unit_of_measure_description",
             "value",
             "min_value",
             "max_value",
@@ -435,7 +435,9 @@ class WealthGroupCharacteristicValueSerializer(serializers.ModelSerializer):
         return obj.wealth_characteristic.characteristic_group
 
     product_common_name = serializers.CharField(source="product.common_name", read_only=True, allow_null=True)
-    unit_of_measure_name = serializers.CharField(source="unit_of_measure.description", read_only=True, allow_null=True)
+    unit_of_measure_description = serializers.CharField(
+        source="unit_of_measure.description", read_only=True, allow_null=True
+    )
 
 
 class BaselineWealthGroupCharacteristicValueSerializer(serializers.ModelSerializer):
@@ -465,7 +467,7 @@ class BaselineWealthGroupCharacteristicValueSerializer(serializers.ModelSerializ
             "product",
             "product_common_name",
             "unit_of_measure",
-            "unit_of_measure_name",
+            "unit_of_measure_description",
             "value",
             "min_value",
             "max_value",
@@ -534,7 +536,9 @@ class BaselineWealthGroupCharacteristicValueSerializer(serializers.ModelSerializ
         return obj.wealth_characteristic.characteristic_group
 
     product_common_name = serializers.CharField(source="product.common_name", read_only=True, allow_null=True)
-    unit_of_measure_name = serializers.CharField(source="unit_of_measure.description", read_only=True, allow_null=True)
+    unit_of_measure_description = serializers.CharField(
+        source="unit_of_measure.description", read_only=True, allow_null=True
+    )
 
 
 class CommunityWealthGroupCharacteristicValueSerializer(WealthGroupCharacteristicValueSerializer):
@@ -567,7 +571,6 @@ class LivelihoodStrategySerializer(serializers.ModelSerializer):
             "product_common_name",
             "product_description",
             "unit_of_measure",
-            "unit_of_measure_name",
             "unit_of_measure_description",
             "currency",
             "additional_identifier",
@@ -589,7 +592,6 @@ class LivelihoodStrategySerializer(serializers.ModelSerializer):
     source_organization_name = serializers.CharField(
         source="livelihood_zone_baseline.source_organization.name", read_only=True
     )
-    unit_of_measure_name = serializers.CharField(source="unit_of_measure.description", read_only=True)
     unit_of_measure_description = serializers.CharField(source="unit_of_measure.description", read_only=True)
     product_common_name = serializers.CharField(source="product.common_name", read_only=True)
     product_description = serializers.CharField(source="product.description", read_only=True)
@@ -638,7 +640,6 @@ class LivelihoodActivitySerializer(serializers.ModelSerializer):
             "product_common_name",
             "product_description",
             "unit_of_measure",
-            "unit_of_measure_name",
             "unit_of_measure_description",
             "currency",
             "additional_identifier",
@@ -698,9 +699,6 @@ class LivelihoodActivitySerializer(serializers.ModelSerializer):
     community = serializers.IntegerField(source="wealth_group.community.pk", read_only=True)
     community_name = serializers.CharField(source="wealth_group.community.name", read_only=True)
     unit_of_measure = serializers.CharField(source="livelihood_strategy.unit_of_measure.pk", read_only=True)
-    unit_of_measure_name = serializers.CharField(
-        source="livelihood_strategy.unit_of_measure.description", read_only=True
-    )
     unit_of_measure_description = serializers.CharField(
         source="livelihood_strategy.unit_of_measure.description", read_only=True
     )
@@ -1036,19 +1034,15 @@ class CommunityCropProductionSerializer(serializers.ModelSerializer):
             "yield_without_inputs",
             "seed_requirement",
             "crop_unit_of_measure",
-            "crop_unit_of_measure_name",
             "crop_unit_of_measure_description",
             "land_unit_of_measure",
-            "land_unit_of_measure_name",
             "land_unit_of_measure_description",
         ]
 
     crop_common_name = serializers.CharField(source="crop.common_name", read_only=True)
     crop_description = serializers.CharField(source="crop.description", read_only=True)
     community_name = serializers.CharField(source="community.name", read_only=True)
-    crop_unit_of_measure_name = serializers.CharField(source="crop_unit_of_measure.description", read_only=True)
     crop_unit_of_measure_description = serializers.CharField(source="crop_unit_of_measure.description", read_only=True)
-    land_unit_of_measure_name = serializers.CharField(source="land_unit_of_measure.description", read_only=True)
     land_unit_of_measure_description = serializers.CharField(source="land_unit_of_measure.description", read_only=True)
     season_name = serializers.CharField(source="season.name", read_only=True)
     season_description = serializers.CharField(source="season.description", read_only=True)
@@ -1166,7 +1160,6 @@ class MarketPriceSerializer(serializers.ModelSerializer):
             "product_common_name",
             "product_description",
             "unit_of_measure",
-            "unit_of_measure_name",
             "unit_of_measure_description",
             "currency",
             "description",
@@ -1183,7 +1176,6 @@ class MarketPriceSerializer(serializers.ModelSerializer):
     product = serializers.CharField(source="product.pk", read_only=True)
     product_common_name = serializers.CharField(source="product.common_name", read_only=True)
     product_description = serializers.CharField(source="product.description", read_only=True)
-    unit_of_measure_name = serializers.CharField(source="unit_of_measure.description", read_only=True)
     unit_of_measure_description = serializers.CharField(source="unit_of_measure.description", read_only=True)
     livelihood_zone_baseline = serializers.IntegerField(source="community.livelihood_zone_baseline.pk", read_only=True)
     livelihood_zone_name = serializers.CharField(
@@ -1400,7 +1392,6 @@ class ExpandabilityFactorSerializer(serializers.ModelSerializer):
             "product_common_name",
             "product_description",
             "unit_of_measure",
-            "unit_of_measure_name",
             "unit_of_measure_description",
             "currency",
             "additional_identifier",
@@ -1455,9 +1446,6 @@ class ExpandabilityFactorSerializer(serializers.ModelSerializer):
     community = serializers.IntegerField(source="wealth_group.community.pk", read_only=True)
     community_name = serializers.CharField(source="wealth_group.community.name", read_only=True)
     unit_of_measure = serializers.CharField(source="livelihood_strategy.unit_of_measure.pk", read_only=True)
-    unit_of_measure_name = serializers.CharField(
-        source="livelihood_strategy.unit_of_measure.description", read_only=True
-    )
     unit_of_measure_description = serializers.CharField(
         source="livelihood_strategy.unit_of_measure.description", read_only=True
     )
@@ -1536,7 +1524,6 @@ class CopingStrategySerializer(serializers.ModelSerializer):
             "product_common_name",
             "product_description",
             "unit_of_measure",
-            "unit_of_measure_name",
             "unit_of_measure_description",
             "currency",
             "additional_identifier",
@@ -1573,9 +1560,6 @@ class CopingStrategySerializer(serializers.ModelSerializer):
     additional_identifier = serializers.CharField(source="livelihood_strategy.additional_identifier", read_only=True)
     currency = serializers.CharField(source="livelihood_strategy.currency.pk", read_only=True)
     unit_of_measure = serializers.CharField(source="livelihood_strategy.unit_of_measure.pk", read_only=True)
-    unit_of_measure_name = serializers.CharField(
-        source="livelihood_strategy.unit_of_measure.description", read_only=True
-    )
     unit_of_measure_description = serializers.CharField(
         source="livelihood_strategy.unit_of_measure.description", read_only=True
     )
