@@ -426,13 +426,10 @@ class WealthGroupCharacteristicValueSerializer(serializers.ModelSerializer):
 
     def get_characteristic_group(self, obj):
         """
-        Override the default characteristic_group for Livestock and Poultry.
+        Override the default characteristic_group for Livestock.
 
-        This allows us to use the same wealth characteristic, e.g. 'Number owned' for both Livestock and Poultry,
-        as well as other wealth characteristics.
+        Allows use of the same label, e.g. 'Number owned' for both Livestock and other wealth characteristics.
         """
-        if obj.product and obj.product.cpc.startswith("L0215"):
-            return "Poultry"
         if obj.product and obj.product.cpc.startswith("L02"):
             return "Livestock"
         return obj.wealth_characteristic.characteristic_group
@@ -527,13 +524,10 @@ class BaselineWealthGroupCharacteristicValueSerializer(serializers.ModelSerializ
 
     def get_characteristic_group(self, obj):
         """
-        Override the default characteristic_group for Livestock and Poultry.
+        Override the default characteristic_group for Livestock.
 
-        This allows us to use the same wealth characteristic, e.g. 'Number owned' for both Livestock and Poultry,
-        as well as other wealth characteristics.
+        Allows use of the same label, e.g. 'Number owned' for both Livestock and other wealth characteristics.
         """
-        if obj.product and obj.product.cpc.startswith("L0215"):
-            return "Poultry"
         if obj.product and obj.product.cpc.startswith("L02"):
             return "Livestock"
         return obj.wealth_characteristic.characteristic_group
