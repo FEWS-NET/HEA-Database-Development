@@ -358,9 +358,11 @@ class WealthGroupCharacteristicValueSerializer(serializers.ModelSerializer):
             "wealth_group_category",
             "wealth_group_category_name",
             "wealth_group_category_description",
+            "wealth_group_category_ordering",
             "wealth_characteristic",
             "wealth_characteristic_name",
             "wealth_characteristic_description",
+            "wealth_characteristic_ordering",
             "variable_type",
             "characteristic_group",
             "product",
@@ -393,10 +395,14 @@ class WealthGroupCharacteristicValueSerializer(serializers.ModelSerializer):
     wealth_group_category_description = serializers.CharField(
         source="wealth_group.wealth_group_category.description", read_only=True
     )
+    wealth_group_category_ordering = serializers.IntegerField(
+        source="wealth_group.wealth_group_category.ordering", read_only=True
+    )
     wealth_characteristic_name = serializers.CharField(source="wealth_characteristic.name", read_only=True)
     wealth_characteristic_description = serializers.CharField(
         source="wealth_characteristic.description", read_only=True
     )
+    wealth_characteristic_ordering = serializers.IntegerField(source="wealth_characteristic.ordering", read_only=True)
     variable_type = serializers.CharField(source="wealth_characteristic.variable_type", read_only=True)
     livelihood_zone_baseline = serializers.IntegerField(
         source="wealth_group.community.livelihood_zone_baseline.pk", read_only=True
@@ -459,9 +465,11 @@ class BaselineWealthGroupCharacteristicValueSerializer(serializers.ModelSerializ
             "wealth_group_category",
             "wealth_group_category_name",
             "wealth_group_category_description",
+            "wealth_group_category_ordering",
             "wealth_characteristic",
             "wealth_characteristic_name",
             "wealth_characteristic_description",
+            "wealth_characteristic_ordering",
             "variable_type",
             "characteristic_group",
             "product",
@@ -494,10 +502,14 @@ class BaselineWealthGroupCharacteristicValueSerializer(serializers.ModelSerializ
     wealth_group_category_description = serializers.CharField(
         source="wealth_group.wealth_group_category.description", read_only=True
     )
+    wealth_group_category_ordering = serializers.IntegerField(
+        source="wealth_group.wealth_group_category.ordering", read_only=True
+    )
     wealth_characteristic_name = serializers.CharField(source="wealth_characteristic.name", read_only=True)
     wealth_characteristic_description = serializers.CharField(
         source="wealth_characteristic.description", read_only=True
     )
+    wealth_characteristic_ordering = serializers.IntegerField(source="wealth_characteristic.ordering", read_only=True)
     variable_type = serializers.CharField(source="wealth_characteristic.variable_type", read_only=True)
     livelihood_zone_baseline = serializers.IntegerField(
         source="wealth_group.livelihood_zone_baseline.pk", read_only=True
