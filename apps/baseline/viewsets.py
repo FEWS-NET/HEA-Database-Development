@@ -12,6 +12,7 @@ from rest_framework.views import APIView
 
 from common.fields import translation_fields
 from common.filters import MultiFieldFilter, UpperCaseFilter
+from common.utils import etag_response
 from common.viewsets import AggregatingViewSet, BaseModelViewSet
 
 from .models import (
@@ -263,6 +264,10 @@ class LivelihoodZoneBaselineViewSet(BaseModelViewSet):
         if self.request.accepted_renderer.format == "geojson":
             return LivelihoodZoneBaselineGeoSerializer  # Use GeoFeatureModelSerializer for GeoJSON
         return LivelihoodZoneBaselineSerializer
+
+    @etag_response()
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
 
 class LivelihoodProductCategoryFilterSet(filters.FilterSet):

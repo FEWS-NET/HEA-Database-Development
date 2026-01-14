@@ -1,10 +1,12 @@
 import contextlib
 import csv
+import hashlib
 import importlib
 import logging
 import re
 from copy import deepcopy
 from datetime import datetime, timedelta
+from functools import wraps
 from io import BytesIO, StringIO
 from pathlib import Path
 
@@ -14,6 +16,7 @@ from django.db.migrations.operations.base import Operation
 from django.forms.models import modelform_factory
 from openpyxl.utils import get_column_letter
 from treebeard.mp_tree import MP_Node
+from rest_framework.response import Response
 
 logger = logging.getLogger(__name__)
 
@@ -349,3 +352,58 @@ normal_map = {'À': 'A', 'Á': 'A', 'Â': 'A', 'Ã': 'A', 'Ä': 'A',
 # Minimal normalization, doesn't attempt to coerce characters such as æ, which are locale-dependent.
 # Example usage: "café".translate(normalize)
 normalize = str.maketrans(normal_map)
+
+
+def generate_etag_for_request(request, include_timestamp=None):
+    """
+    Generate an ETag hash based on the request path and query parameters.
+    """
+    # Build cache key from path and all query parameters
+    cache_key_parts = [
+        request.path,
+        request.GET.urlencode() if hasattr(request, 'GET') else '',
+    ]
+
+    # Include optional timestamp for cache invalidation
+    if include_timestamp:
+        cache_key_parts.append(str(include_timestamp))
+
+    cache_key = "|".join(cache_key_parts)
+    etag_hash = hashlib.md5(cache_key.encode()).hexdigest()
+
+    return f'"{etag_hash}"'
+
+
+def etag_response(etag_func=None):
+    """
+    Decorator that adds ETag support with 304 Not Modified responses for DRF viewsets.
+    """
+
+    if etag_func is None:
+        etag_func = generate_etag_for_request
+
+    def decorator(view_func):
+        @wraps(view_func)
+        def wrapped_view(self, request, *args, **kwargs):
+            # Generate ETag based on request
+            etag = etag_func(request, *args, **kwargs)
+
+            client_etag = request.META.get('HTTP_IF_NONE_MATCH')
+            if client_etag == etag:
+                logger.info(f"ETag match - returning 304 for {request.path}")
+                response = Response(status=304)
+                response['ETag'] = etag
+                return response
+
+            response = view_func(self, request, *args, **kwargs)
+            response['ETag'] = etag
+
+            # Add cache control headers for browser caching
+            response['Cache-Control'] = 'public, max-age=2592000'  # 30 days
+
+            logger.info(f"ETag generated for {request.path}: {etag}")
+
+            return response
+
+        return wrapped_view
+    return decorator
