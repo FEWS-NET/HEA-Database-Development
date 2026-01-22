@@ -4,19 +4,24 @@ import hashlib
 import importlib
 import logging
 import re
+import time
 from copy import deepcopy
 from datetime import datetime, timedelta
 from functools import wraps
 from io import BytesIO, StringIO
 from pathlib import Path
+from urllib.parse import parse_qs, urlencode, urlparse
 
 import pandas as pd
 from django.apps import apps
+from django.db import connection, reset_queries
 from django.db.migrations.operations.base import Operation
 from django.forms.models import modelform_factory
+from django.utils.cache import set_response_etag
+from django.utils.timezone import now
 from openpyxl.utils import get_column_letter
-from treebeard.mp_tree import MP_Node
 from rest_framework.response import Response
+from treebeard.mp_tree import MP_Node
 
 logger = logging.getLogger(__name__)
 
@@ -354,56 +359,196 @@ normal_map = {'À': 'A', 'Á': 'A', 'Â': 'A', 'Ã': 'A', 'Ä': 'A',
 normalize = str.maketrans(normal_map)
 
 
-def generate_etag_for_request(request, include_timestamp=None):
+class Timer:
     """
-    Generate an ETag hash based on the request path and query parameters.
+    See http://www.machinalis.com/blog/how-to-unit-test-python/
     """
-    # Build cache key from path and all query parameters
-    cache_key_parts = [
-        request.path,
-        request.GET.urlencode() if hasattr(request, 'GET') else '',
-    ]
 
-    # Include optional timestamp for cache invalidation
-    if include_timestamp:
-        cache_key_parts.append(str(include_timestamp))
+    def start(self):
+        self._start = now()
 
-    cache_key = "|".join(cache_key_parts)
-    etag_hash = hashlib.md5(cache_key.encode()).hexdigest()
+    def stop(self):
+        self._stop = now()
+
+    def elapsed(self):
+        try:
+            return self._stop - self._start
+        except AttributeError:
+            return now() - self._start
+
+    def assertHasDate(self, date):
+        assert self._start <= date <= self._stop, "%s was not during the timer" % date
+
+    def assertNotHasDate(self, date):
+        assert not (self._start <= date <= self._stop), "%s was during the timer" % date
+
+
+@contextlib.contextmanager
+def timekeeper():
+    t = Timer()
+    t.start()
+    try:
+        yield t
+    finally:
+        t.stop()
+
+
+def get_etag_for_cachedrequest(request, *args, **kwargs):
+    """
+    Generate an ETag for the request based on path and query parameters.
+
+    This is a simplified version that generates ETags without requiring a CachedRequest model
+    or permissions system. The ETag is deterministic based on the request URL.
+
+    If the request includes a _refresh parameter, returns None to force a cache miss.
+    """
+    u = urlparse(request.get_full_path())
+    query = parse_qs(u.query, keep_blank_values=True)
+    query.pop("_store_result", None)
+
+    # Check for refresh parameter - if present, return None to force cache miss
+    _refresh = query.pop("_refresh", None)
+    if _refresh:
+        return None
+
+    u = u._replace(query=urlencode(sorted(query.items()), True))
+    path = u.geturl()
+
+    if "format" in kwargs:
+        path += f"|format={kwargs['format']}"
+
+    etag_hash = hashlib.md5(path.encode()).hexdigest()
 
     return f'"{etag_hash}"'
 
 
-def etag_response(etag_func=None):
+def set_etag_for_response(response):
+    """
+    Add the etag header to a response.
+
+    This is a thin wrapper around `django.utils.cache.set_response_etag`, to report
+    the time taken to calculate the header.
+    """
+    with timekeeper() as t:
+        response = set_response_etag(response)
+    if response.has_header("ETag"):
+        logger.info("Created etag header in %s seconds" % round(t.elapsed().total_seconds(), 2))
+
+    return response
+
+
+def etag_response(etag_func=None, enable_etag=True):
     """
     Decorator that adds ETag support with 304 Not Modified responses for DRF viewsets.
     """
 
     if etag_func is None:
-        etag_func = generate_etag_for_request
+        etag_func = get_etag_for_cachedrequest
 
     def decorator(view_func):
         @wraps(view_func)
         def wrapped_view(self, request, *args, **kwargs):
-            # Generate ETag based on request
+            start_time = time.time()
+
+            # Reset query count for accurate measurement
+            reset_queries()
+            initial_query_count = len(connection.queries)
+
+            # Generate ETag based on request using existing function
+            etag_start = time.time()
             etag = etag_func(request, *args, **kwargs)
+            etag_time = time.time() - etag_start
 
-            client_etag = request.META.get('HTTP_IF_NONE_MATCH')
-            if client_etag == etag:
-                logger.info(f"ETag match - returning 304 for {request.path}")
+            # Check if ETag caching is enabled and client sent matching ETag
+            client_etag = request.META.get("HTTP_IF_NONE_MATCH")
+
+            # Normalize ETags for comparison (handle weak ETags with W/ prefix)
+            def normalize_etag(etag_value):
+                """Strip W/ prefix from weak ETags for comparison."""
+                if etag_value:
+                    return etag_value.replace("W/", "").strip()
+                return etag_value
+
+            normalized_client_etag = normalize_etag(client_etag)
+            normalized_server_etag = normalize_etag(etag)
+
+            # Log for debugging browser issues
+            if client_etag:
+                logger.debug(
+                    f"Client ETag: {client_etag} (normalized: {normalized_client_etag}), "
+                    f"Server ETag: {etag} (normalized: {normalized_server_etag})"
+                )
+
+            if enable_etag and etag and normalized_client_etag == normalized_server_etag:
+                # Cache HIT - return 304
                 response = Response(status=304)
-                response['ETag'] = etag
+                response["ETag"] = etag
+                # Ensure Vary header is set for browser caching
+                response["Vary"] = "Accept, Accept-Language, Cookie"
+
+                elapsed_time = time.time() - start_time
+                query_count = len(connection.queries) - initial_query_count
+
+                logger.info(
+                    f"[ETAG HIT] "
+                    f"path={request.path} | "
+                    f"etag={etag[:12]}... | "
+                    f"time={elapsed_time:.3f}s | "
+                    f"etag_gen={etag_time:.3f}s | "
+                    f"queries={query_count} | "
+                    f"size=0 bytes | "
+                    f"status=304"
+                )
                 return response
+            elif enable_etag and client_etag and etag:
+                # Client sent ETag but it doesn't match
+                logger.debug(f"[ETAG MISMATCH] Client: {client_etag} vs Server: {etag}")
 
+            # Cache MISS or ETag disabled - render full response
+            render_start = time.time()
             response = view_func(self, request, *args, **kwargs)
-            response['ETag'] = etag
+            render_time = time.time() - render_start
 
-            # Add cache control headers for browser caching
-            response['Cache-Control'] = 'public, max-age=2592000'  # 30 days
+            if enable_etag and etag:
+                response["ETag"] = etag
+                response["Cache-Control"] = "public, max-age=2592000"  # 30 days
+                existing_vary = response.get("Vary", "")
+                if "Accept" not in existing_vary:
+                    response["Vary"] = "Accept, Accept-Language, Cookie"
 
-            logger.info(f"ETag generated for {request.path}: {etag}")
+            # Calculate metrics
+            elapsed_time = time.time() - start_time
+            query_count = len(connection.queries) - initial_query_count
+
+            # Get response size safely
+            response_size = 0
+            try:
+                # Try to get size from data attribute first (DRF Response)
+                if hasattr(response, "data"):
+                    # Estimate size from data length
+                    response_size = len(str(response.data))
+                elif hasattr(response, "content"):
+                    response_size = len(response.content)
+            except (AssertionError, AttributeError):
+                # If we can't determine size, just log 0
+                response_size = 0
+
+            # Log with different prefix based on whether ETag is enabled
+            log_prefix = "[ETAG MISS]" if enable_etag else "[NO ETAG]"
+            logger.info(
+                f"{log_prefix} "
+                f"path={request.path} | "
+                f"etag={etag[:12] if etag else 'None'}... | "
+                f"time={elapsed_time:.3f}s | "
+                f"etag_gen={etag_time:.3f}s | "
+                f"render={render_time:.3f}s | "
+                f"queries={query_count} | "
+                f"size={response_size:,} bytes (estimated) | "
+                f"status={response.status_code}"
+            )
 
             return response
 
         return wrapped_view
+
     return decorator
