@@ -115,6 +115,18 @@ class LivelihoodCategory(ReferenceData):
         verbose_name_plural = _("Livelihood Categories")
 
 
+class CharacteristicGroup(ReferenceData):
+    """
+    A grouping for Wealth Characteristics, such as 'Population', 'Income', 'Land', 'Livestock', 'Other assets'.
+    """
+
+    objects = IdentifierManager.from_queryset(ReferenceDataQuerySet)()
+
+    class Meta:
+        verbose_name = _("Characteristic Group")
+        verbose_name_plural = _("Characteristic Groups")
+
+
 class WealthCharacteristic(ReferenceData):
     """
     A Characteristic of a Wealth Group, such as `Number of children at school`, etc.
@@ -154,14 +166,16 @@ class WealthCharacteristic(ReferenceData):
         default=VariableType.STR,
         help_text=_("Whether the field is numeric, character, boolean, etc."),
     )
-    characteristic_group = models.CharField(
-        max_length=20,
+    characteristic_group = models.ForeignKey(
+        CharacteristicGroup,
+        db_column="characteristic_group",
         blank=True,
         null=True,
+        on_delete=models.PROTECT,
         verbose_name=_("Characteristic Group"),
         help_text=_(
             "Optional grouping for characteristics, such as 'Population', 'Income', "
-            "'Land', 'Livestock', 'Poultry', 'Other assets'"
+            "'Land', 'Livestock', 'Other assets'"
         ),
     )
     objects = IdentifierManager.from_queryset(ReferenceDataQuerySet)()
