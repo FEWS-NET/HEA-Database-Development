@@ -1,7 +1,13 @@
 import factory
 
 from common.tests.factories import CountryFactory
-from metadata.models import Market, Season, SeasonalActivityType, WealthCharacteristic
+from metadata.models import (
+    CharacteristicGroup,
+    Market,
+    Season,
+    SeasonalActivityType,
+    WealthCharacteristic,
+)
 
 
 class LivelihoodCategoryFactory(factory.django.DjangoModelFactory):
@@ -58,6 +64,24 @@ class WealthGroupCategoryFactory(factory.django.DjangoModelFactory):
     description_fr = factory.LazyAttribute(lambda o: f"{o.name_fr} Wealth Group Category Description fr")
 
 
+class CharacteristicGroupFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = CharacteristicGroup
+        django_get_or_create = ("code",)
+
+    code = factory.Iterator(["Population", "Income", "Land", "Livestock", "Other assets"])
+    name_en = factory.LazyAttribute(lambda o: f"{o.code}")
+    name_pt = factory.LazyAttribute(lambda o: f"{o.code} pt")
+    name_es = factory.LazyAttribute(lambda o: f"{o.code} es")
+    name_fr = factory.LazyAttribute(lambda o: f"{o.code} fr")
+    name_ar = factory.LazyAttribute(lambda o: f"{o.code} ar")
+    description_en = factory.LazyAttribute(lambda o: f"{o.code} Description en")
+    description_pt = factory.LazyAttribute(lambda o: f"{o.code} Description pt")
+    description_es = factory.LazyAttribute(lambda o: f"{o.code} Description es")
+    description_ar = factory.LazyAttribute(lambda o: f"{o.code} Description ar")
+    description_fr = factory.LazyAttribute(lambda o: f"{o.code} Description fr")
+
+
 class WealthCharacteristicFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = "metadata.WealthCharacteristic"
@@ -73,6 +97,7 @@ class WealthCharacteristicFactory(factory.django.DjangoModelFactory):
     )
     has_product = factory.Iterator([False, True])
     has_unit_of_measure = factory.Iterator([False, True])
+    characteristic_group = factory.SubFactory(CharacteristicGroupFactory)
     name_en = factory.LazyAttribute(lambda o: f"{o.code} Wealth Characteristic en")
     name_pt = factory.LazyAttribute(lambda o: f"{o.code} Wealth Characteristic pt")
     name_es = factory.LazyAttribute(lambda o: f"{o.code} Wealth Characteristic es")

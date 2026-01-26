@@ -6,6 +6,7 @@ from common.fields import translation_fields
 
 from .models import (
     ActivityLabel,
+    CharacteristicGroup,
     HazardCategory,
     LivelihoodCategory,
     Market,
@@ -85,6 +86,12 @@ class WealthGroupCategoryAdmin(ReferenceDataAdmin):
     """
 
 
+class CharacteristicGroupAdmin(ReferenceDataAdmin):
+    """
+    A concrete admin for CharacteristicGroup
+    """
+
+
 class WealthCharacteristicAdmin(ReferenceDataAdmin):
     """
     A concrete admin for WealthCharacteristic
@@ -98,7 +105,7 @@ class WealthCharacteristicAdmin(ReferenceDataAdmin):
         *translation_fields("description"),
         "characteristic_group",
     )
-    list_filter = ("variable_type",)
+    list_filter = ("variable_type", "characteristic_group")
 
 
 class HazardCategoryAdmin(ReferenceDataAdmin):
@@ -226,6 +233,7 @@ class WealthCharacteristicLabelAdmin(admin.ModelAdmin):
 
 admin.site.register(LivelihoodCategory, LivelihoodCategoryAdmin)
 admin.site.register(WealthGroupCategory, WealthGroupCategoryAdmin)
+admin.site.register(CharacteristicGroup, CharacteristicGroupAdmin)
 admin.site.register(SeasonalActivityType, SeasonalActivityTypeAdmin)
 
 admin.site.register(Market, MarketAdmin)
