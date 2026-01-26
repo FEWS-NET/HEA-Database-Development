@@ -2,7 +2,10 @@ from django.apps import apps
 from django.conf import settings
 from django.db import models
 from django.db.models import Q, Subquery
+from django.utils.decorators import method_decorator
 from django.utils.translation import override
+from django.views.decorators.cache import cache_page
+from django.views.decorators.http import etag
 from django_filters import rest_framework as filters
 from django_filters.filters import CharFilter
 from rest_framework.permissions import AllowAny
@@ -12,7 +15,7 @@ from rest_framework.views import APIView
 
 from common.fields import translation_fields
 from common.filters import MultiFieldFilter, UpperCaseFilter
-from common.utils import etag_response
+from common.utils import get_etag_for_cachedrequest
 from common.viewsets import AggregatingViewSet, BaseModelViewSet
 
 from .models import (
@@ -265,7 +268,8 @@ class LivelihoodZoneBaselineViewSet(BaseModelViewSet):
             return LivelihoodZoneBaselineGeoSerializer  # Use GeoFeatureModelSerializer for GeoJSON
         return LivelihoodZoneBaselineSerializer
 
-    @etag_response()
+    @method_decorator(cache_page(60 * 60 * 24))  # Cache on server for 24 hours
+    @method_decorator(etag(get_etag_for_cachedrequest))
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
 
