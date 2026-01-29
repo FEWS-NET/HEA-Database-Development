@@ -898,6 +898,12 @@
     "nb  personnes par ménage": {
         "attribute": "people_per_household"
     },
+    "Aide alimentaire - céréales: quantité (kg)": {
+        "is_start": true,
+        "product_id": "céréales",
+        "unit_of_measure_id": "kg",
+        "attribute": "unit_multiple"
+    },
     "Aide - céréale: quantité (kg)": {
         "is_start": true,
         "product_id": "céréale",
