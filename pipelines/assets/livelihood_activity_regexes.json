@@ -860,7 +860,7 @@
         "unit_multiple"
     ],
     [
-        "aide{separator_pattern} {product_pattern}{separator_pattern} quantité ?\\(?{unit_of_measure_pattern}\\)?",
+        "aide(?: alimentaire)?{separator_pattern} {product_pattern}{separator_pattern} quantité ?\\(?{unit_of_measure_pattern}\\)?",
         null,
         true,
         "unit_multiple"
