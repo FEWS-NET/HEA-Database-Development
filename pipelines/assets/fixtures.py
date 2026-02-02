@@ -155,9 +155,6 @@ def validate_instances(
                     if column not in instance:
                         error = f"Missing mandatory field {field.name} for {record_reference}"
                         model_errors.append(error)
-                    elif not instance[column] and not instance[column] == 0:
-                        error = f"Missing value for mandatory field {column} for {record_reference}"
-                        model_errors.append(error)
                 # Ensure the instances contain valid parent references for foreign keys
                 if isinstance(field, models.ForeignKey):
                     if column not in instance:
@@ -202,7 +199,7 @@ def validate_instances(
                 if instance["product__kcals_per_unit"] != product.kcals_per_unit:
                     error = (
                         f"Non-standard value {instance['product__kcals_per_unit']}; "
-                        f"expected {product.kcals_per_unit}/{product.unit_of_measure} for {product}\n"
+                        f"expected {product.kcals_per_unit}/{product.unit_of_measure} for {product} "
                         f"for {record_reference}."
                     )
                     model_errors.append(error)
@@ -214,8 +211,8 @@ def validate_instances(
                     column = field.name if field.name in instance else field.get_attname()
                     if column in instance:
                         value = instance[column]
-                        # Replace empty strings with None for optional fields
-                        if field.null and not value:
+                        # Replace empty strings with None for optional and numeric fields
+                        if value == "" and (field.null or field.get_internal_type() not in ["CharField", "TextField"]):
                             value = None
                         # Handle foreign key fields, resolving natural keys to model instances
                         if isinstance(field, models.ForeignKey):
@@ -229,7 +226,7 @@ def validate_instances(
                                 field.clean(value, model_instance)
                             except Exception as e:
                                 error = (
-                                    f'Invalid {field.name} value {value}:  "{", ".join(e.error_list[0].messages)}"\n'
+                                    f'Invalid {field.name} value {value}:  "{", ".join(e.error_list[0].messages)}" '
                                     f"for {record_reference}."
                                 )
                                 model_errors.append(error)
@@ -253,13 +250,13 @@ def validate_instances(
                             else:
                                 msgs = e.messages if hasattr(e, "messages") else [str(e)]
                             for msg in msgs:
-                                error = f"{msg}\nfor {record_reference}."
+                                error = f"{msg} for {record_reference}."
                                 model_errors.append(error)
                         else:
                             # Record unexpected errors from clean() so the author can investigate
-                            model_errors.append(f"Error during clean(): {e}\nfor {record_reference}.")
+                            model_errors.append(f"Error during clean(): {e} for {record_reference}.")
             except Exception as e:
-                model_errors.append(f"Error creating {model_name} instance: {e}\nfor {record_reference}.")
+                model_errors.append(f"Error creating {model_name} instance: {e} for {record_reference}.")
                 # Ignore errors creating the instance for clean()
                 pass
 

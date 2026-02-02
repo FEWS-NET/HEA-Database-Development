@@ -1012,8 +1012,12 @@ class LivelihoodStrategy(common_models.Model):
         """
         if self.strategy_type in self.REQUIRES_PRODUCT and not self.product:
             raise ValidationError(_("A %s Livelihood Strategy must have a Product" % self.strategy_type))
-        if self.strategy_type in ["MilkProduction", "ButterProduction"] and not self.season:
+        if self.strategy_type in self.REQUIRES_SEASON and not self.season:
             raise ValidationError(_("A %s Livelihood Strategy must have a Season" % self.strategy_type))
+        # All strategies require either a product or an additional identifier to distinguish them
+        if not self.product and not self.additional_identifier:
+            raise ValidationError(_("A Livelihood Strategy must have either a Product or an Additional Identifier"))
+
         super().clean()
 
     def save(self, *args, **kwargs):
@@ -1239,6 +1243,17 @@ class LivelihoodActivity(common_models.Model):
         """
         pass
 
+    def validate_quantity_purchased(self):
+        """
+        Validate the quantity_purchased.
+
+        In for most LivelihoodActivity subclasses the quantity_purchased is not used.
+
+        However, FoodPurchase has additional fields that allow the quantity_purchased
+        to be validated. This method is overwritten in that subclass.
+        """
+        pass
+
     def validate_quantity_consumed(self):
         # Default to 0 if any of the quantities are None
         quantity_produced = self.quantity_produced or 0
@@ -1347,6 +1362,7 @@ class LivelihoodActivity(common_models.Model):
         self.validate_livelihood_zone_baseline()
         self.validate_strategy_type()
         self.validate_quantity_produced()
+        self.validate_quantity_purchased()
         self.validate_quantity_consumed()
         self.validate_income()
         self.validate_expenditure()
@@ -1505,7 +1521,12 @@ class MilkProduction(LivelihoodActivity):
         WHOLE = "whole", _("whole")
 
     # Production calculation /validation is `lactation days * daily_production`
-    milking_animals = models.PositiveSmallIntegerField(verbose_name=_("Number of milking animals"))
+    # Although logically we can't have a MilkProduction without milking animals,
+    # the BSS may contain records with 0 production and a blank milking_animals
+    # field, particularly in Season 2 in a Baseline, or in a Response scenario
+    milking_animals = models.PositiveSmallIntegerField(
+        blank=True, null=True, verbose_name=_("Number of milking animals")
+    )
     lactation_days = models.PositiveSmallIntegerField(
         blank=True, null=True, verbose_name=_("Average number of days of lactation")
     )
@@ -1551,9 +1572,13 @@ class MilkProduction(LivelihoodActivity):
 
     def clean(self):
         super().clean()
-        if self.milking_animals and not self.lactation_days:
+        # Note that we check that lactation_days and daily_production are not None
+        # because 0 is a valid value for both fields.  It is possible to have a
+        # non-zero milking_animals but zero lactation_days or daily_production,
+        # particularly in Season 2 in a Baseline, or in a Response scenario.
+        if self.milking_animals and self.lactation_days is None:
             raise ValidationError(_("Lactation days must be provided if there are milking animals"))
-        if self.milking_animals and not self.daily_production:
+        if self.milking_animals and self.daily_production is None:
             raise ValidationError(_("Daily production must be provided if there are milking animals"))
 
     class Meta:
@@ -1618,7 +1643,7 @@ class MeatProduction(LivelihoodActivity):
     carcass_weight = models.FloatField(verbose_name=_("Carcass weight per animal"))
 
     def validate_quantity_produced(self):
-        if self.quantity_produced != self.animals_slaughtered * self.carcass_weight:
+        if self.quantity_produced and self.quantity_produced != self.animals_slaughtered * self.carcass_weight:
             raise ValidationError(
                 _("Quantity Produced for a Meat Production must be animals slaughtered multiplied by carcass weight")
             )
@@ -1691,19 +1716,27 @@ class FoodPurchase(LivelihoodActivity):
         help_text=_("Number of times in a year that the purchase is made"),
     )
 
-    def validate_quantity_produced(self):
+    def validate_quantity_purchased(self):
         if (
-            self.quantity_produced is not None
+            self.quantity_purchased is not None
             and self.unit_multiple is not None
             and self.times_per_month is not None
             and self.months_per_year is not None
         ):
-            if self.quantity_produced != self.unit_multiple * self.times_per_month * self.months_per_year:
+            if self.quantity_purchased != self.unit_multiple * self.times_per_month * self.months_per_year:
                 raise ValidationError(
                     _(
-                        "Quantity produced for a Food Purchase must be purchase amount * purchases per month * months per year"  # NOQA: E501
+                        "Quantity purchased for a Food Purchase must be purchase amount * purchases per month * months per year"  # NOQA: E501
                     )
                 )
+
+    def validate_expenditure(self):
+        quantity_purchased = self.quantity_purchased or 0
+        price = self.price or 0
+        expenditure = self.expenditure or 0
+
+        if self.expenditure and expenditure != quantity_purchased * price:
+            raise ValidationError(_("Expenditure for a Food Purchase must be quantity purchased multiplied by price"))
 
     class Meta:
         verbose_name = LivelihoodStrategyType.FOOD_PURCHASE.label

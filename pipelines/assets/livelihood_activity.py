@@ -954,6 +954,23 @@ def get_instances_from_dataframe(
                                 else 0
                             )
 
+                    # Add the `quantity_purchased` to FoodPurchase and OtherPurchase, if it is missing.
+                    if (
+                        livelihood_strategy["strategy_type"] in ["FoodPurchase", "OtherPurchase"]
+                        and "quantity_purchased" in activity_field_names
+                        and "quantity_purchased" not in livelihood_strategy["attribute_rows"]
+                        and "times_per_year" in livelihood_strategy["attribute_rows"]
+                        and "unit_multiple" in livelihood_strategy["attribute_rows"]
+                    ):
+                        livelihood_strategy["attribute_rows"]["quantity_purchased"] = row
+                        for i, livelihood_activity in enumerate(livelihood_activities_for_strategy):
+                            livelihood_activity["quantity_purchased"] = (
+                                livelihood_activity["unit_multiple"] * livelihood_activity["times_per_year"]
+                                if livelihood_activity.get("times_per_year")
+                                and livelihood_activity.get("unit_multiple")
+                                else 0
+                            )
+
                     # Add the `payment_per_time` and `unit_of_measure` to PaymentInKind, if they are missing.
                     # For example, labor migration is recorded in the BSS as the number of household members who
                     # migrate, and the number of months that they are absent for. This is coded as a product (S9HD)
@@ -1018,12 +1035,12 @@ def get_instances_from_dataframe(
                     ):
                         strategy_is_valid = False
                         # Include the header rows so that we can see which Wealth Groups are affected
-                        rows = df.index[:num_header_rows].tolist() + [livelihood_strategy["row"]]
+                        rows = df.index[:num_header_rows].tolist() + [livelihood_strategy["bss_row"]]
                         error_message = "Cannot determine season from '%s' for %s %s on row %s for label '%s':\n%s" % (
                             livelihood_strategy["season_original"],
                             "summary" if non_empty_summary_activities else "non-summary",
                             livelihood_strategy["strategy_type"],
-                            livelihood_strategy["row"],
+                            livelihood_strategy["bss_row"],
                             livelihood_strategy["activity_label"],
                             get_sample_data(df, rows).to_markdown(),
                         )
@@ -1042,14 +1059,14 @@ def get_instances_from_dataframe(
                     ):
                         strategy_is_valid = False
                         # Include the header rows so that we can see which Wealth Groups are affected
-                        rows = df.index[:num_header_rows].tolist() + [livelihood_strategy["row"]]
+                        rows = df.index[:num_header_rows].tolist() + [livelihood_strategy["bss_row"]]
                         error_message = (
                             "Cannot determine product_id from '%s' for %s %s on row %s for label '%s':\n%s"
                             % (
                                 livelihood_strategy["product_id_original"],
                                 "summary" if non_empty_summary_activities else "non-summary",
                                 livelihood_strategy["strategy_type"],
-                                livelihood_strategy["row"],
+                                livelihood_strategy["bss_row"],
                                 livelihood_strategy["activity_label"],
                                 get_sample_data(df, rows).to_markdown(),
                             )
@@ -1146,8 +1163,9 @@ def get_instances_from_dataframe(
                     "unit_of_measure_id": label_attributes.get("unit_of_measure_id", None),
                     "currency_id": livelihood_zone_baseline.currency_id,
                     "additional_identifier": label_attributes.get("additional_identifier", None),
-                    # Save the row, label and attribute/row map, to aid trouble-shooting
-                    "row": row,
+                    # Save the sheet, row, label and attribute/row map, to aid trouble-shooting
+                    "bss_sheet": worksheet_name,
+                    "bss_row": row,
                     "activity_label": label,
                     # Similarly, save the original values (i.e. aliases) for season, product and unit of measure.
                     "season_original": label_attributes.get("season_original", None),
@@ -1198,10 +1216,9 @@ def get_instances_from_dataframe(
                         "unit_of_measure_id",
                         "season",
                         "additional_identifier",
-                        "notes",
                     ]:
-                        if label_attributes[attribute]:
-                            additional_attributes.append(attribute)
+                        if label_attributes[attribute] and not pd.isna(label_attributes[attribute]):
+                            additional_attributes.append(f"{attribute}={label_attributes[attribute]}")
                     raise ValueError(
                         "Found attributes from label '%s' in row %s without an existing LivelihoodStrategy: %s"
                         % (label_attributes["activity_label"], row, ", ".join(additional_attributes))
