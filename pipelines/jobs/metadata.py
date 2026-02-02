@@ -85,6 +85,8 @@ def load_metadata_for_model(context: OpExecutionContext, sheet_name: str, model:
                         current = getattr(instance, k)
                         if isinstance(current, list):
                             current = sorted(current)
+                        # Note that we only allow changes to the fields. If a field is blank in the worksheet,
+                        # we leave any value that may have been set manually in the database.
                         if v and v != current:
                             if cpc[-2] != "H" and k not in [
                                 "aliases",
