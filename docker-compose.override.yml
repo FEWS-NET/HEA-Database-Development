@@ -26,9 +26,6 @@ services:
       - /usr/src/app/jupyter
       - /usr/src/app/log
       - /usr/src/app/media
-      # Ignore the local .env file, to avoid it conflicting with variables set
-      # in the docker-compose.yml file, particularly by Dagster
-      - ./env.example:/usr/src/app/.env
     environment:
       DJANGO_SETTINGS_MODULE: hea.settings.local
       LAUNCHER: ${LAUNCHER}  # e.g. "debugpy" or "ddtrace"
@@ -54,9 +51,6 @@ services:
       - /usr/src/app/jupyter
       - /usr/src/app/log
       - /usr/src/app/media
-      # Ignore the local .env file, to avoid it conflicting with variables set
-      # in the docker-compose.yml file, particularly by Dagster
-      - ./env.example:/usr/src/app/.env
     environment:
       DJANGO_SETTINGS_MODULE: hea.settings.local
       LAUNCHER: ${LAUNCHER}  # e.g. "debugpy" or "ddtrace"
@@ -75,9 +69,6 @@ services:
       - /usr/src/app/jupyter
       - /usr/src/app/log
       - /usr/src/app/media
-      # Ignore the local .env file, to avoid it conflicting with variables set
-      # in the docker-compose.yml file, particularly by Dagster
-      - ./env.example:/usr/src/app/.env
     environment:
       DJANGO_SETTINGS_MODULE: hea.settings.local
       LAUNCHER: ${LAUNCHER}  # e.g. "debugpy" or "ddtrace"
