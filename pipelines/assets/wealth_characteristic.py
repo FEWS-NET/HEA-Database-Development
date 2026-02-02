@@ -515,6 +515,13 @@ def wealth_characteristic_instances(
     wealth_group_df["kcals_consumed"] = (
         wealth_group_df["percentage_kcals"] * 2100 * 365 * wealth_group_df["average_household_size"]
     )
+
+    # Some fields will contain pd.NA, e.g. percentage_of_households for Community Wealth Groups, so replace with None
+    wealth_group_df = wealth_group_df.astype(object).replace(pd.NA, None)
+
+    # Add the bss_sheet so that we can get better references in error messages
+    wealth_group_df["bss_sheet"] = "WB"
+
     result = {
         "WealthGroup": wealth_group_df.to_dict(orient="records"),
         "WealthGroupCharacteristicValue": wealth_group_characteristic_values,
