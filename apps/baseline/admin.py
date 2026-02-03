@@ -50,9 +50,9 @@ from .models import (
     WildFoodGathering,
 )
 
-admin.site.site_header = "HEA Baseline Database Administration"
-admin.site.index_title = "HEA Baseline"
-admin.site.site_title = "Administration"
+admin.site.site_header = "Livelihoods Database Administration"
+admin.site.index_title = "Livelihoods Database"
+admin.site.site_title = "Livelihoods Database Administration"
 
 
 class SourceOrganizationAdmin(admin.ModelAdmin):
@@ -204,7 +204,6 @@ class LivelihoodZoneBaselineAdmin(GISModelAdminReadOnly):
             return ""
 
     def get_fieldsets(self, request, obj=None):
-
         fieldsets = super().get_fieldsets(request, obj=obj)
         if obj and obj.geography:
             # Check if 'geography' field has a value
@@ -1015,7 +1014,6 @@ class EventAdmin(admin.ModelAdmin):
 
 
 class ExpandabilityFactorAdmin(admin.ModelAdmin):
-
     fields = (
         "livelihood_strategy",
         "wealth_group",
@@ -1048,7 +1046,6 @@ class ExpandabilityFactorAdmin(admin.ModelAdmin):
 
 
 class CopingStrategyAdmin(admin.ModelAdmin):
-
     fields = (
         "community",
         "leaders",
