@@ -135,33 +135,33 @@ class FoodPurchaseTestCase(TestCase):
             unit_multiple=None,
             times_per_month=None,
             months_per_year=None,
-            quantity_produced=None,
+            quantity_purchased=None,
         )
         cls.foodpurchase2 = FoodPurchase(
             unit_multiple=2,
             times_per_month=5,
             months_per_year=12,
-            quantity_produced=120,
+            quantity_purchased=120,
         )
         # Incorrect: 2 * 5 * 12 = 120
         cls.foodpurchase3 = FoodPurchase(
             unit_multiple=2,
             times_per_month=5,
             months_per_year=12,
-            quantity_produced=100,
+            quantity_purchased=100,
         )
 
-    def test_validate_quantity_produced(self):
+    def test_validate_quantity_purchased(self):
         """
-        Test validate_quantity_produced method
+        Test validate_quantity_purchased method
         """
         # Missing data should not raise ValidationError
-        self.foodpurchase1.validate_quantity_produced()
+        self.foodpurchase1.validate_quantity_purchased()
         # Expected consistant values, should not raise
-        self.foodpurchase2.validate_quantity_produced()
+        self.foodpurchase2.validate_quantity_purchased()
         # Incorrect: 2 * 5 * 12 = 120
         with conditional_logging():
-            self.assertRaises(ValidationError, self.foodpurchase3.validate_quantity_produced)
+            self.assertRaises(ValidationError, self.foodpurchase3.validate_quantity_purchased)
 
 
 class PaymentInKindTestCase(TestCase):
