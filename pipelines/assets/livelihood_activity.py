@@ -892,6 +892,78 @@ def get_instances_from_dataframe(
                             # that is embedded in the ButterProduction calculations in current BSSs
                             livelihood_activity["type_of_milk_consumed"] = MilkProduction.MilkType.WHOLE
 
+                    # Move the kcals_consumed and percentage_kcals from ButterProduction
+                    # to the associated MilkProduction livelihood activities.
+                    # The current BSSs only record the percentage_kcals for milk and butter consumption combined,
+                    # and don't contain sufficient information to split the kcals_consumed between milk and butter
+                    # (or cheese). However, we want to consider this consumption as part of the MilkProduction
+                    # livelihood strategy, rather than ButterProduction, even though the percentage_kcals
+                    # immediately follow the ButterProduction rows in the BSS.
+                    if (
+                        livelihood_strategy["strategy_type"] == "ButterProduction"
+                        and "percentage_kcals" in livelihood_strategy["attribute_rows"]
+                    ):
+                        # Find the MilkProduction livelihood strategy
+                        milk_strategy = None
+                        for strategy in reversed(livelihood_strategies):
+                            if (
+                                strategy["strategy_type"] == "MilkProduction"
+                                # Season for the current LivelihoodStrategy hasn't been converted to a natural key yet,
+                                # so coerce it to a list for comparison
+                                and strategy["season"] == [livelihood_strategy["season"]]
+                                and strategy["additional_identifier"] == livelihood_strategy["additional_identifier"]
+                            ):
+                                milk_strategy = strategy
+                                break
+                        if not milk_strategy:
+                            raise ValueError(
+                                f"Could not find the MilkProduction Livelihood Strategy associated with "
+                                f"the ButterProduction strategy at row {row}."
+                            )
+                        milk_activities = {
+                            activity["wealth_group"]: activity
+                            for activity in livelihood_activities
+                            if activity["livelihood_strategy"]
+                            == milk_strategy["livelihood_zone_baseline"]
+                            + [
+                                milk_strategy["strategy_type"],
+                                milk_strategy["season"][0],
+                                milk_strategy["product_id"],
+                                milk_strategy["additional_identifier"],
+                            ]
+                        }
+                        moved_any = False
+                        for butter_activity in livelihood_activities_for_strategy:
+                            if butter_activity["percentage_kcals"] or butter_activity["percentage_kcals"] == 0:
+                                milk_activity = milk_activities.get(butter_activity["wealth_group"])
+                                if not milk_activity or "percentage_kcals" in milk_activity:
+                                    continue
+                                # We found a matching MilkProduction activity that doesn't already have
+                                # percentage_kcals set, so move the values across
+                                moved_any = True
+                                for field in ["percentage_kcals", "kcals_consumed"]:
+                                    milk_activity[field] = butter_activity.pop(field)
+                        if moved_any:
+                            # Add the fields to the MilkProduction strategy's attribute_rows
+                            for field in ["percentage_kcals", "kcals_consumed"]:
+                                if (
+                                    field not in milk_strategy["attribute_rows"]
+                                    and field in livelihood_strategy["attribute_rows"]
+                                ):
+                                    milk_strategy["attribute_rows"][field] = livelihood_strategy["attribute_rows"][
+                                        field
+                                    ]
+                            # If we have moved all of the percentage_kcals and kcals_consumed from the ButterProduction
+                            # livelihood activities, then remove these attributes from the ButterProduction strategy.
+                            for field in ["percentage_kcals", "kcals_consumed"]:
+                                if not any(
+                                    field in livelihood_activity
+                                    and (livelihood_activity[field] or livelihood_activity[field] == 0)
+                                    for livelihood_activity in livelihood_activities_for_strategy
+                                ):
+                                    for field in ["percentage_kcals", "kcals_consumed"]:
+                                        del livelihood_strategy["attribute_rows"][field]
+
                     # Add the `times_per_year` to FoodPurchase, PaymentInKind and OtherCashIncome,
                     # because it is not in the current BSSs
                     if (
