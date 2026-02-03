@@ -961,8 +961,7 @@ def get_instances_from_dataframe(
                                     and (livelihood_activity[field] or livelihood_activity[field] == 0)
                                     for livelihood_activity in livelihood_activities_for_strategy
                                 ):
-                                    for field in ["percentage_kcals", "kcals_consumed"]:
-                                        del livelihood_strategy["attribute_rows"][field]
+                                    del livelihood_strategy["attribute_rows"][field]
 
                     # Add the `times_per_year` to FoodPurchase, PaymentInKind and OtherCashIncome,
                     # because it is not in the current BSSs
