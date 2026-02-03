@@ -8,6 +8,7 @@ from io import StringIO
 import django
 import pandas as pd
 from dagster import AssetExecutionContext, MetadataValue, Output, asset
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files import File
 from django.core.management import call_command
 from django.db import models
@@ -22,7 +23,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hea.settings.production")
 # Configure Django with our custom settings before importing any Django classes
 django.setup()
 
-from baseline.models import LivelihoodZoneBaseline  # NOQA: E402
+from baseline.models import LivelihoodActivity, LivelihoodZoneBaseline  # NOQA: E402
 from common.management.commands import verbose_load_data  # NOQA: E402
 from common.models import ClassifiedProduct  # NOQA: E402
 from metadata.models import LivelihoodStrategyType  # NOQA: E402
@@ -55,7 +56,7 @@ def validate_instances(
         instances = {**instances, **subclass_livelihood_activities}
 
     valid_instances = {model_name: [] for model_name in instances}
-    valid_keys = {model_name: [] for model_name in instances}
+    valid_keys = {model_name: {} for model_name in instances}
     errors = []
     current_timestamp = datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
     for model_name, model_instances in instances.items():
@@ -154,64 +155,40 @@ def validate_instances(
                     if column not in instance:
                         error = f"Missing mandatory field {field.name} for {record_reference}"
                         model_errors.append(error)
-                    elif not instance[column] and not instance[column] == 0:
-                        error = f"Missing value for mandatory field {column} for {record_reference}"
-                        model_errors.append(error)
                 # Ensure the instances contain valid parent references for foreign keys
                 if isinstance(field, models.ForeignKey):
                     if column not in instance:
                         error = f"Missing mandatory foreign key {column} for {record_reference}"
                         model_errors.append(error)
-                    elif not field.null:
-                        if not instance[column]:
+                    else:
+                        # Validate foreign key values
+                        # If related model is part of the fixture, then it should have already been validated
+                        if field.related_model.__name__ in instances and not valid_keys[field.related_model.__name__]:
+                            raise RuntimeError(
+                                "Related model %s not validated yet but needed for %s"
+                                % (field.related_model.__name__, model_name)
+                            )
+                        elif field.related_model.__name__ not in valid_keys:
+                            # The model is not in the fixture, and hasn't been checked already, so use the primary and
+                            # natural keys for already saved instances. Save the keys as a dict mapping to the
+                            # instance, so that we can resolve natural keys later when validating model.clean()
+                            remote_keys = {}
+                            for related_instance in field.related_model.objects.all():
+                                remote_keys[related_instance.pk] = related_instance
+                                if hasattr(field.related_model, "natural_key"):
+                                    remote_keys[related_instance.natural_key()] = related_instance
+                            valid_keys[field.related_model.__name__] = remote_keys
+
+                        if not field.null and not instance[column]:
                             error = f"Missing mandatory foreign key {column} for {record_reference}"
                             model_errors.append(error)
-                        else:
-                            # Validate foreign key values
-                            if field.related_model.__name__ in instances:
-                                # The related model is part of the fixture, so check that we already validated it
-                                if field.related_model.__name__ not in valid_keys:
-                                    raise RuntimeError(
-                                        "Related model %s not validated yet but needed for %s"
-                                        % (field.related_model.__name__, model_name)
-                                    )
-                            elif field.related_model.__name__ not in valid_keys:
-                                # The model is not in the fixture, and hasn't been checked already, so use the primary and
-                                # natural keys for already saved instances
-                                remote_keys = [instance.pk for instance in field.related_model.objects.all()]
-                                if "natural_key" in dir(field.related_model):
-                                    remote_keys += [
-                                        list(instance.natural_key()) for instance in field.related_model.objects.all()
-                                    ]
-                                valid_keys[field.related_model.__name__] = remote_keys
+                        elif instance[column]:
                             # Check the non-null foreign key values are in the remote keys
-                            if instance[column] not in valid_keys[field.related_model.__name__]:
-                                error = (
-                                    f"Unrecognized '{column}' foreign key {instance[column]} for {record_reference}."
-                                )
+                            # Convert natural keys from lists to tuples for lookup (because lists can't be dict keys)
+                            value = tuple(instance[column]) if isinstance(instance[column], list) else instance[column]
+                            if value not in valid_keys[field.related_model.__name__]:
+                                error = f"Unrecognized '{column}' foreign key {value} for {record_reference}."
                                 model_errors.append(error)
-
-            # Use the Django model to validate the fields, so we can apply already defined model validations and
-            # return informative error messages.
-            fields = [
-                field
-                for field in model._meta.concrete_fields
-                if not isinstance(field, models.ForeignKey) and field.name in instance
-            ]
-            model_instance = model()
-            for field in fields:
-                value = instance[field.name]
-                if not value and field.null:
-                    # Replace empty strings with None for optional fields
-                    value = None
-                try:
-                    field.clean(value, model_instance)
-                except Exception as e:
-                    error = (
-                        f'Invalid {field.name} value {value}:  "{", ".join(e.error_list[0].messages)}"\n'
-                        f"for {record_reference}."
-                    )
-                    model_errors.append(error)
 
             # Check that the kcals/kg matches the values in the ClassifiedProduct model, if it's present in the BSS
             if model_name == "LivelihoodActivity" and "product__kcals_per_unit" in instance:
@@ -219,17 +196,87 @@ def validate_instances(
                 if instance["product__kcals_per_unit"] != product.kcals_per_unit:
                     error = (
                         f"Non-standard value {instance['product__kcals_per_unit']}; "
-                        f"expected {product.kcals_per_unit}/{product.unit_of_measure} for {product}\n"
+                        f"expected {product.kcals_per_unit}/{product.unit_of_measure} for {product} "
                         f"for {record_reference}."
                     )
                     model_errors.append(error)
+
+            # Attempt to run the model's `clean()` to validate model-level logic where possible.
+            model_instance = model()
+            try:
+                for field in model._meta.concrete_fields:
+                    column = field.name if field.name in instance else field.get_attname()
+                    if column in instance:
+                        value = instance[column]
+                        # Replace empty strings with None for optional and numeric fields
+                        if value == "" and (field.null or field.get_internal_type() not in ["CharField", "TextField"]):
+                            value = None
+                        # Handle foreign key fields
+                        if isinstance(field, models.ForeignKey):
+                            # Natural keys need to be converted to tuples for looking up in valid_keys
+                            lookup_value = tuple(value) if isinstance(value, list) else value
+                            related_instance = valid_keys[field.related_model.__name__].get(lookup_value)
+                            if related_instance:
+                                # Assign the resolved model instance to the relationship attribute (e.g. `product`),
+                                setattr(model_instance, field.name, related_instance)
+                                # Also set the attname (e.g. `product_id`) to the primary key
+                                if related_instance.pk:
+                                    setattr(model_instance, field.get_attname(), related_instance.pk)
+                        else:
+                            # Use the Django model to validate the fields, so we can apply already defined model
+                            # validations and return informative error messages.
+                            try:
+                                value = field.clean(value, model_instance)
+                                setattr(model_instance, column, value)
+                            except ValidationError as e:
+                                # Record validation error messages in a similar format to field.clean handling
+                                msgs = []
+                                if hasattr(e, "message_dict"):
+                                    for v in e.message_dict.values():
+                                        msgs.extend(v if isinstance(v, list) else [v])
+                                elif hasattr(e, "messages"):
+                                    msgs = e.messages
+                                else:
+                                    msgs = [str(e)]
+                                for msg in msgs:
+                                    error = f"Invalid {field.name} value {value}: {msg} for {record_reference}."
+                                    model_errors.append(error)
+                            except Exception as e:
+                                # Record unexpected errors from clean() so the author can investigate
+                                model_errors.append(f"Invalid {field.name} value {value}: {e} for {record_reference}.")
+                # We don't need to validate LivelihoodActivity, because we will validate the subclass instances anyway.
+                if model != LivelihoodActivity:
+                    try:
+                        model_instance.clean()
+                    except ObjectDoesNotExist:
+                        # Ignore missing related object errors since the related object may be
+                        # loaded by the same fixture.
+                        pass
+                    except ValidationError as e:
+                        # Record validation error messages in a similar format to field.clean handling
+                        msgs = []
+                        if hasattr(e, "message_dict"):
+                            for v in e.message_dict.values():
+                                msgs.extend(v if isinstance(v, list) else [v])
+                        elif hasattr(e, "messages"):
+                            msgs = e.messages
+                        else:
+                            msgs = [str(e)]
+                        for msg in msgs:
+                            error = f"{msg} for {record_reference}."
+                            model_errors.append(error)
+                    except Exception as e:
+                        # Record unexpected errors from clean() so the author can investigate
+                        model_errors.append(f"Error during clean(): {e} for {record_reference}.")
+            except Exception as e:
+                model_errors.append(f"Error creating {model_name} instance: {e} for {record_reference}.")
 
             if model_errors:
                 errors += model_errors
             else:
                 # Instance is valid, so add it to the list of valid instances
                 valid_instances[model_name].append(instance)
-                valid_keys[model_name].append(instance["natural_key"])
+                valid_keys[model_name][tuple(instance["natural_key"])] = model_instance
 
     metadata = {}
     for model_name in instances.keys():
