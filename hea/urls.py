@@ -160,10 +160,10 @@ urlpatterns += [
         name="asset_download_partitioned",
     ),
     # Baseline Explorer React GUI using Django rev proxy to serve a cloudfront distro
-    path("baseline-explorer/<path:path>", BaselineExplorerProxyView.as_view(), name="baseline_explorer"),
+    path("<path:path>", BaselineExplorerProxyView.as_view(), name="baseline_explorer"),
     # The URL pattern below does not capture any path parameter from the URL. But django-revproxy views
     # require a path argument. We manually pass a default: {"path": ""}.
-    path("baseline-explorer/", BaselineExplorerProxyView.as_view(), {"path": ""}, name="baseline_explorer"),
+    path("", BaselineExplorerProxyView.as_view(), {"path": ""}, name="baseline_explorer"),
 ]
 
 
