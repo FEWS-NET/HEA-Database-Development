@@ -173,12 +173,10 @@ def validate_instances(
                                 # The model is not in the fixture, and hasn't been checked already, so use the primary and
                                 # natural keys for already saved instances. Save the keys as a dict mapping to the
                                 # instance, so that we can resolve natural keys later when validating model.clean()
-                                remote_keys = {
-                                    related_instance.pk: related_instance
-                                    for related_instance in field.related_model.objects.all()
-                                }
-                                if hasattr(field.related_model, "natural_key"):
-                                    for related_instance in field.related_model.objects.all():
+                                remote_keys = {}
+                                for related_instance in field.related_model.objects.all():
+                                    remote_keys[related_instance.pk] = related_instance
+                                    if hasattr(field.related_model, "natural_key"):
                                         remote_keys[related_instance.natural_key()] = related_instance
                                 valid_keys[field.related_model.__name__] = remote_keys
 
@@ -214,47 +212,63 @@ def validate_instances(
                         # Replace empty strings with None for optional and numeric fields
                         if value == "" and (field.null or field.get_internal_type() not in ["CharField", "TextField"]):
                             value = None
-                        # Handle foreign key fields, resolving natural keys to model instances
+                        # Handle foreign key fields
                         if isinstance(field, models.ForeignKey):
-                            if isinstance(value, list):
-                                value = tuple(value)
-                            value = valid_keys[field.related_model.__name__].get(value)
+                            # Natural keys need to be converted to tuples for looking up in valid_keys
+                            lookup_value = tuple(value) if isinstance(value, list) else value
+                            related_instance = valid_keys[field.related_model.__name__].get(lookup_value)
+                            if related_instance:
+                                # Assign the resolved model instance to the relationship attribute (e.g. `product`),
+                                setattr(model_instance, field.name, related_instance)
+                                # Also set the attname (e.g. `product_id`) to the primary key
+                                if related_instance.pk:
+                                    setattr(model_instance, field.get_attname(), related_instance.pk)
                         else:
                             # Use the Django model to validate the fields, so we can apply already defined model
                             # validations and return informative error messages.
                             try:
-                                field.clean(value, model_instance)
+                                value = field.clean(value, model_instance)
+                                setattr(model_instance, column, value)
+                            except ValidationError as e:
+                                # Record validation error messages in a similar format to field.clean handling
+                                msgs = []
+                                if hasattr(e, "message_dict"):
+                                    for v in e.message_dict.values():
+                                        msgs.extend(v if isinstance(v, list) else [v])
+                                elif hasattr(e, "messages"):
+                                    msgs = e.messages
+                                else:
+                                    msgs = [str(e)]
+                                for msg in msgs:
+                                    error = f"Invalid {field.name} value {value}: {msg} for {record_reference}."
+                                    model_errors.append(error)
                             except Exception as e:
-                                error = (
-                                    f'Invalid {field.name} value {value}:  "{", ".join(e.error_list[0].messages)}" '
-                                    f"for {record_reference}."
-                                )
-                                model_errors.append(error)
-                        setattr(model_instance, column, value)
+                                # Record unexpected errors from clean() so the author can investigate
+                                model_errors.append(f"Invalid {field.name} value {value}: {e} for {record_reference}.")
                 # We don't need to validate LivelihoodActivity, because we will validate the subclass instances anyway.
                 if model != LivelihoodActivity:
                     try:
                         model_instance.clean()
-                    except Exception as e:
+                    except ObjectDoesNotExist:
                         # Ignore missing related object errors since the related object may be
-                        # loaded by the same fixture. We check class name to handle a possible
-                        # custom RelatedObjectNotFound exception defined elsewhere.
-                        if isinstance(e, ObjectDoesNotExist) or e.__class__.__name__ == "RelatedObjectNotFound":
-                            pass
-                        elif isinstance(e, ValidationError):
-                            # Record validation error messages in a similar format to field.clean handling
-                            msgs = []
-                            if hasattr(e, "message_dict"):
-                                for k, v in e.message_dict.items():
-                                    msgs.extend(v if isinstance(v, list) else [v])
-                            else:
-                                msgs = e.messages if hasattr(e, "messages") else [str(e)]
-                            for msg in msgs:
-                                error = f"{msg} for {record_reference}."
-                                model_errors.append(error)
+                        # loaded by the same fixture.
+                        pass
+                    except ValidationError as e:
+                        # Record validation error messages in a similar format to field.clean handling
+                        msgs = []
+                        if hasattr(e, "message_dict"):
+                            for v in e.message_dict.values():
+                                msgs.extend(v if isinstance(v, list) else [v])
+                        elif hasattr(e, "messages"):
+                            msgs = e.messages
                         else:
-                            # Record unexpected errors from clean() so the author can investigate
-                            model_errors.append(f"Error during clean(): {e} for {record_reference}.")
+                            msgs = [str(e)]
+                        for msg in msgs:
+                            error = f"{msg} for {record_reference}."
+                            model_errors.append(error)
+                    except Exception as e:
+                        # Record unexpected errors from clean() so the author can investigate
+                        model_errors.append(f"Error during clean(): {e} for {record_reference}.")
             except Exception as e:
                 model_errors.append(f"Error creating {model_name} instance: {e} for {record_reference}.")
                 # Ignore errors creating the instance for clean()
