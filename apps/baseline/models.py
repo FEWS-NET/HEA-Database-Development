@@ -1247,7 +1247,8 @@ class LivelihoodActivity(common_models.Model):
         """
         Validate the quantity_purchased.
 
-        In for most LivelihoodActivity subclasses the quantity_purchased is not used.
+        In most LivelihoodActivity subclasses the quantity_purchased is not used
+        and this validation passes.
 
         However, FoodPurchase has additional fields that allow the quantity_purchased
         to be validated. This method is overwritten in that subclass.
