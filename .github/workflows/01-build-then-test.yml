@@ -17,6 +17,10 @@ env:
   PIP_INDEX_URL: "https://pypi.python.org/simple/"
   SECRET_KEY: ${{ secrets.SECRET_KEY }}
 
+  # dagster variables to avoid clash with frontend proxy
+  DAGSTER_WEBSERVER_URL: http://dagster_webserver:3000
+  DAGSTER_WEBSERVER_PREFIX: pipelines
+
   # Avoid "variable is not set. Defaulting to a blank string." warnings
   GOOGLE_ADMIN_EMAIL: ""
   GOOGLE_APPLICATION_CREDENTIALS: ""
@@ -29,7 +33,7 @@ env:
 
 jobs:
   lint:
-    runs-on: [ fewsnet ]
+    runs-on: [fewsnet]
     container: "python:3.11"
 
     steps:
@@ -51,7 +55,7 @@ jobs:
   start-runner-test_branch:
     if: ${{ !(startsWith(github.ref, 'refs/tags/')) && !(github.ref == 'refs/heads/main') }}
     needs: lint
-    runs-on: [ fewsnet ]
+    runs-on: [fewsnet]
     outputs:
       label: ${{ steps.start-ec2-runner.outputs.label }}
       ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
@@ -69,7 +73,7 @@ jobs:
 
   start-runner-test_keepdb:
     needs: lint
-    runs-on: [ fewsnet ]
+    runs-on: [fewsnet]
     outputs:
       label: ${{ steps.start-ec2-runner.outputs.label }}
       ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
@@ -88,7 +92,7 @@ jobs:
   start-runner-test_main:
     if: github.ref == 'refs/heads/main'
     needs: lint
-    runs-on: [ fewsnet ]
+    runs-on: [fewsnet]
     outputs:
       label: ${{ steps.start-ec2-runner.outputs.label }}
       ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
@@ -107,7 +111,7 @@ jobs:
   start-runner-test_tag:
     if: startsWith(github.ref, 'refs/tags/')
     needs: lint
-    runs-on: [ fewsnet ]
+    runs-on: [fewsnet]
     outputs:
       label: ${{ steps.start-ec2-runner.outputs.label }}
       ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
@@ -160,7 +164,7 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
         with:
-          mask-password: 'true'
+          mask-password: "true"
       # Docker hub is rate-limiting unauthenticated users, so we have to
       # authenticate: https://www.docker.com/increase-rate-limits
       - name: Login to the DockerHub Container Registry
@@ -303,7 +307,7 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
         with:
-          mask-password: 'true'
+          mask-password: "true"
       # Docker hub is rate-limiting unauthenticated users, so we have to
       # authenticate: https://www.docker.com/increase-rate-limits
       - name: Login to the DockerHub Container Registry
@@ -428,7 +432,7 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
         with:
-          mask-password: 'true'
+          mask-password: "true"
       # Docker hub is rate-limiting unauthenticated users, so we have to
       # authenticate: https://www.docker.com/increase-rate-limits
       - name: Login to the DockerHub Container Registry
@@ -556,7 +560,7 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
         with:
-          mask-password: 'true'
+          mask-password: "true"
       # Docker hub is rate-limiting unauthenticated users, so we have to
       # authenticate: https://www.docker.com/increase-rate-limits
       - name: Login to the DockerHub Container Registry
@@ -654,7 +658,7 @@ jobs:
     needs:
       - start-runner-test_branch # required to get output from the start-runner-test_branch job
       - test_branch # required to wait until the main jobs are done
-    runs-on: [ fewsnet ]
+    runs-on: [fewsnet]
 
     steps:
       - name: Configure AWS credentials
@@ -674,7 +678,7 @@ jobs:
     needs:
       - start-runner-test_keepdb # required to get output from the start-runner-test_keepdb job
       - test_keepdb
-    runs-on: [ fewsnet ]
+    runs-on: [fewsnet]
 
     steps:
       - name: Configure AWS credentials
@@ -694,7 +698,7 @@ jobs:
     needs:
       - start-runner-test_main # required to get output from the start-runner-test_main job
       - test_main
-    runs-on: [ fewsnet ]
+    runs-on: [fewsnet]
 
     steps:
       - name: Configure AWS credentials
@@ -714,7 +718,7 @@ jobs:
     needs:
       - start-runner-test_tag # required to get output from the start-runner-test_tag job
       - test_tag
-    runs-on: [ fewsnet ]
+    runs-on: [fewsnet]
 
     steps:
       - name: Configure AWS credentials
