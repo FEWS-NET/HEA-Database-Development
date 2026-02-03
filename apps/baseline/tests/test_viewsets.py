@@ -595,6 +595,63 @@ class LivelihoodZoneBaselineViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), 1)
 
+    def test_as_of_date_filter_returns_valid_baselines(self):
+        # Test that the as_of_date filter returns valid baselines as of the specified date.
+        today = datetime.date.today()
+        expired_baseline = LivelihoodZoneBaselineFactory(
+            valid_from_date=today - datetime.timedelta(days=365),
+            valid_to_date=today - datetime.timedelta(days=30),
+        )
+        current_baseline = LivelihoodZoneBaselineFactory(
+            valid_from_date=today - datetime.timedelta(days=30),
+            valid_to_date=today + datetime.timedelta(days=365),
+        )
+        # Test default behavior (as of today) - should exclude expired_baseline
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        baseline_ids = [b["id"] for b in response.json()]
+        self.assertIn(current_baseline.id, baseline_ids)
+        self.assertNotIn(expired_baseline.id, baseline_ids)
+
+        # Test with a past date before the expired_baseline's valid_to_date
+        past_date = today - datetime.timedelta(days=180)
+        response = self.client.get(self.url, {"as_of_date": past_date.isoformat()})
+        self.assertEqual(response.status_code, 200)
+        baseline_ids = [b["id"] for b in response.json()]
+        self.assertIn(expired_baseline.id, baseline_ids)
+        self.assertIn(current_baseline.id, baseline_ids)
+
+        # Test with a future date - expired_baseline should still be excluded
+        future_date = today + datetime.timedelta(days=60)
+        response = self.client.get(self.url, {"as_of_date": future_date.isoformat()})
+        self.assertEqual(response.status_code, 200)
+        baseline_ids = [b["id"] for b in response.json()]
+        self.assertNotIn(expired_baseline.id, baseline_ids)
+        self.assertIn(current_baseline.id, baseline_ids)
+
+        # test as of date filter handles null dates
+        baseline_no_from = LivelihoodZoneBaselineFactory(
+            valid_from_date=None,
+            valid_to_date=today + datetime.timedelta(days=365),
+        )
+        # Create a baseline with null valid_to_date (valid indefinitely)
+        baseline_no_to = LivelihoodZoneBaselineFactory(
+            valid_from_date=today - datetime.timedelta(days=365),
+            valid_to_date=None,
+        )
+        # Create a baseline with both dates null (always valid)
+        baseline_no_dates = LivelihoodZoneBaselineFactory(
+            valid_from_date=None,
+            valid_to_date=None,
+        )
+        # Test default behavior - all three should be returned
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        baseline_ids = [b["id"] for b in response.json()]
+        self.assertIn(baseline_no_from.id, baseline_ids)
+        self.assertIn(baseline_no_to.id, baseline_ids)
+        self.assertIn(baseline_no_dates.id, baseline_ids)
+
 
 class LivelihoodZoneBaselineFacetedSearchViewTestCase(APITestCase):
     def setUp(self):
@@ -641,7 +698,8 @@ class LivelihoodZoneBaselineFacetedSearchViewTestCase(APITestCase):
         # Apply the filters to the baseline
         baseline_url = reverse("livelihoodzonebaseline-list")
         response = self.client.get(
-            baseline_url, {search_data["products"][0]["filter"]: search_data["products"][0]["value"]}
+            baseline_url,
+            {search_data["products"][0]["filter"]: search_data["products"][0]["value"]},
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(json.loads(response.content)), 2)
@@ -650,7 +708,10 @@ class LivelihoodZoneBaselineFacetedSearchViewTestCase(APITestCase):
         self.assertTrue(any(d["name"] == self.baseline3.name for d in data))
         self.assertFalse(any(d["name"] == self.baseline2.name for d in data))
 
-        response = self.client.get(baseline_url, {search_data["items"][0]["filter"]: search_data["items"][0]["value"]})
+        response = self.client.get(
+            baseline_url,
+            {search_data["items"][0]["filter"]: search_data["items"][0]["value"]},
+        )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(json.loads(response.content)), 1)
         data = json.loads(response.content)

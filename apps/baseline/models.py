@@ -2,6 +2,7 @@
 Models for managing HEA Baseline Surveys
 """
 
+import datetime
 import numbers
 
 from django.conf import settings
@@ -131,7 +132,22 @@ class LivelihoodZone(common_models.Model):
         identifier = ["code"]
 
 
-class LivelihoodZoneBaselineManager(common_models.IdentifierManager):
+class LivelihoodZoneBaselineQuerySet(models.QuerySet):
+    """
+    QuerySet for LivelihoodZoneBaseline that provides temporal filtering methods.
+    """
+
+    def filter_current(self, as_of_date=None):
+        if not as_of_date:
+            as_of_date = datetime.date.today()
+        return self.filter(models.Q(valid_to_date__isnull=True) | models.Q(valid_to_date__gte=as_of_date))
+
+    def current_all(self, as_of_date=None):
+        # Return all the baselines that are valid as of the date specified.
+        return self.filter_current(as_of_date).all()
+
+
+class LivelihoodZoneBaselineManager(common_models.IdentifierManager.from_queryset(LivelihoodZoneBaselineQuerySet)):
     def get_by_natural_key(self, code: str, reference_year_end_date: str):
         return self.get(livelihood_zone__code=code, reference_year_end_date=reference_year_end_date)
 
