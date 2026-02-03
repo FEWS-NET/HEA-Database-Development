@@ -162,23 +162,22 @@ def validate_instances(
                         model_errors.append(error)
                     else:
                         # Validate foreign key values
-                        if field.related_model.__name__ not in valid_keys:
-                            # If related model is part of the fixture, then it should have already been validated
-                            if field.related_model.__name__ in instances:
-                                raise RuntimeError(
-                                    "Related model %s not validated yet but needed for %s"
-                                    % (field.related_model.__name__, model_name)
-                                )
-                            else:
-                                # The model is not in the fixture, and hasn't been checked already, so use the primary and
-                                # natural keys for already saved instances. Save the keys as a dict mapping to the
-                                # instance, so that we can resolve natural keys later when validating model.clean()
-                                remote_keys = {}
-                                for related_instance in field.related_model.objects.all():
-                                    remote_keys[related_instance.pk] = related_instance
-                                    if hasattr(field.related_model, "natural_key"):
-                                        remote_keys[related_instance.natural_key()] = related_instance
-                                valid_keys[field.related_model.__name__] = remote_keys
+                        # If related model is part of the fixture, then it should have already been validated
+                        if field.related_model.__name__ in instances and not valid_keys[field.related_model.__name__]:
+                            raise RuntimeError(
+                                "Related model %s not validated yet but needed for %s"
+                                % (field.related_model.__name__, model_name)
+                            )
+                        elif field.related_model.__name__ not in valid_keys:
+                            # The model is not in the fixture, and hasn't been checked already, so use the primary and
+                            # natural keys for already saved instances. Save the keys as a dict mapping to the
+                            # instance, so that we can resolve natural keys later when validating model.clean()
+                            remote_keys = {}
+                            for related_instance in field.related_model.objects.all():
+                                remote_keys[related_instance.pk] = related_instance
+                                if hasattr(field.related_model, "natural_key"):
+                                    remote_keys[related_instance.natural_key()] = related_instance
+                            valid_keys[field.related_model.__name__] = remote_keys
 
                         if not field.null and not instance[column]:
                             error = f"Missing mandatory foreign key {column} for {record_reference}"
@@ -271,8 +270,6 @@ def validate_instances(
                         model_errors.append(f"Error during clean(): {e} for {record_reference}.")
             except Exception as e:
                 model_errors.append(f"Error creating {model_name} instance: {e} for {record_reference}.")
-                # Ignore errors creating the instance for clean()
-                pass
 
             if model_errors:
                 errors += model_errors
