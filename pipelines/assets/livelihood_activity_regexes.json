@@ -350,6 +350,18 @@
         "milking_animals"
     ],
     [
+        "(?P<season>season 1): (?:no\\.|no|number) milking animals",
+        "MilkProduction",
+        false,
+        "milking_animals"
+    ],
+    [
+        "(?P<season>season 2): (?:no\\.|no|number) milking animals",
+        "MilkProduction",
+        true,
+        "milking_animals"
+    ],
+    [
         "daily milk production per animal \\({unit_of_measure_pattern}\\)",
         null,
         false,
