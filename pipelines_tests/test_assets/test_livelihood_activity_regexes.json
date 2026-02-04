@@ -468,17 +468,23 @@
         "season": "1ère saison",
         "attribute": "percentage_kcals"
     },
-    "lait+beurre/beurre clarifié kcals(%)-1ème saison": {
-        "strategy_type": "ButterProduction",
-        "season": "1ème saison",
-        "attribute": "percentage_kcals"
-    },
     "lait+beurre/beurre clarifié kcals(%)-2ème saison": {
         "strategy_type": "ButterProduction",
         "is_start": true,
         "season": "2ème saison",
         "attribute": "percentage_kcals"
     },
+    "lait+beurre/clarifié kcals (%)-1ère saison": {
+        "strategy_type": "ButterProduction",
+        "season": "1ère saison",
+        "attribute": "percentage_kcals"
+    },
+    "lait+beurre/clarifié kcals (%)-1ème saison": {
+        "strategy_type": "ButterProduction",
+        "is_start": true,
+        "season": "1ème saison",
+        "attribute": "percentage_kcals"
+    },        
     "poids de la carcasse (kg)": {
         "unit_of_measure_id": "kg",
         "attribute": "carcass_weight"

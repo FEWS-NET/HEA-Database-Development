@@ -662,13 +662,19 @@
         "income"
     ],
     [
-        "lait\\+beurre/beurre clarifié kcals ?\\(%\\) ?- ?(?P<season>1è[m|r]e saison)",
+        "lait\\+beurre/(?:beurre )?clarifié kcals ?\\(%\\) ?- ?(?P<season>1ère saison)",
         "ButterProduction",
         false,
         "percentage_kcals"
     ],
     [
-        "lait\\+beurre/beurre clarifié kcals ?\\(%\\) ?- ?(?P<season>2è[m|r]e saison)",
+        "lait\\+beurre/(?:beurre )?clarifié kcals ?\\(%\\) ?- ?(?P<season>2è[m|r]e saison)",
+        "ButterProduction",
+        true,
+        "percentage_kcals"
+    ],
+    [
+        "lait\\+beurre/(?:beurre )?clarifié kcals ?\\(%\\) ?- ?(?P<season>1ème saison)",
         "ButterProduction",
         true,
         "percentage_kcals"
