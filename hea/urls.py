@@ -1,14 +1,5 @@
 import os
 
-from django.conf import settings
-from django.conf.urls.i18n import i18n_patterns
-from django.contrib import admin
-from django.urls import include, path, re_path
-from django.views.decorators.cache import cache_page
-from django.views.decorators.http import etag
-from django.views.i18n import JavaScriptCatalog
-from rest_framework import routers
-
 from baseline.viewsets import (
     BaselineLivelihoodActivityViewSet,
     BaselineWealthGroupCharacteristicValueViewSet,
@@ -60,6 +51,13 @@ from common.viewsets import (
     UserProfileViewSet,
     UserViewSet,
 )
+from django.conf import settings
+from django.conf.urls.i18n import i18n_patterns
+from django.contrib import admin
+from django.urls import include, path, re_path
+from django.views.decorators.cache import cache_page
+from django.views.decorators.http import etag
+from django.views.i18n import JavaScriptCatalog
 from metadata.viewsets import (
     HazardCategoryViewSet,
     LivelihoodCategoryViewSet,
@@ -68,6 +66,7 @@ from metadata.viewsets import (
     WealthCharacteristicViewSet,
     WealthGroupCategoryViewSet,
 )
+from rest_framework import routers
 
 router = routers.DefaultRouter()
 
@@ -184,6 +183,11 @@ urlpatterns += i18n_patterns(
     path("admin/doc/", include("django.contrib.admindocs.urls")),
     path("admin/", admin.site.urls),
 )
+# duplicate admin patterns so both /admin and /en/admin work
+urlpatterns += [
+    path("admin/doc/", include("django.contrib.admindocs.urls")),
+    path("admin/", admin.site.urls),
+]
 
 urlpatterns += [
     # Baseline Explorer React GUI using Django rev proxy to serve a cloudfront distro
