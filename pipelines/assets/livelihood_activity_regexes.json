@@ -296,7 +296,7 @@
         "expenditure"
     ],
     [
-        "(?:dépense annuelle|unité)",
+        "{product_pattern}{separator_pattern} (?:dépense annuelle|quantité annuelle)",
         null,
         true,
         "expenditure"
