@@ -159,11 +159,6 @@ urlpatterns += [
         AssetDownloadView.as_view(),
         name="asset_download_partitioned",
     ),
-    # Baseline Explorer React GUI using Django rev proxy to serve a cloudfront distro
-    path("<path:path>", BaselineExplorerProxyView.as_view(), name="baseline_explorer"),
-    # The URL pattern below does not capture any path parameter from the URL. But django-revproxy views
-    # require a path argument. We manually pass a default: {"path": ""}.
-    path("", BaselineExplorerProxyView.as_view(), {"path": ""}, name="baseline_explorer"),
 ]
 
 
@@ -189,3 +184,11 @@ urlpatterns += i18n_patterns(
     path("admin/doc/", include("django.contrib.admindocs.urls")),
     path("admin/", admin.site.urls),
 )
+
+urlpatterns += [
+    # Baseline Explorer React GUI using Django rev proxy to serve a cloudfront distro
+    path("<path:path>", BaselineExplorerProxyView.as_view(), name="baseline_explorer"),
+    # The URL pattern below does not capture any path parameter from the URL. But django-revproxy views
+    # require a path argument. We manually pass a default: {"path": ""}.
+    path("", BaselineExplorerProxyView.as_view(), {"path": ""}, name="baseline_explorer"),
+]
