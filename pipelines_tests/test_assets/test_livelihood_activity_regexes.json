@@ -1068,5 +1068,13 @@
     "is_start": true,
     "product_id": "farine de ble",
     "attribute": "name_of_local_measure"
+  },
+  "nom de la mesure local": {
+    "attribute": "name_of_local_measure"
+  },
+  "eau pour le bétail: nom mesure": {
+    "is_start": true,
+    "product_id": "eau pour le bétail",
+    "attribute": "name_of_local_measure"
   }
 }
