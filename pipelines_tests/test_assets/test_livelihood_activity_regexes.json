@@ -865,13 +865,35 @@
     "dépense": {
         "attribute": "expenditure"
     },
-    "dépense annuelle": {
+    "ustensils de cuisine: dépense annuelle": {
+        "activity_label": "ustensils de cuisine: dépense annuelle",
         "is_start": true,
-        "attribute": "expenditure"
+        "attribute": "expenditure",
+        "product_id": "ustensils de cuisine"
     },
-    "unité": {
+    "electricité: dépense annuelle": {
+        "activity_label": "electricité: dépense annuelle",
         "is_start": true,
-        "attribute": "expenditure"
+        "attribute": "expenditure",
+        "product_id": "electricité"
+    },
+    "investissements en actifs: dépense annuelle": {
+        "activity_label": "investissements en actifs: dépense annuelle",
+        "is_start": true,
+        "attribute": "expenditure",
+        "product_id": "investissements en actifs"
+    },
+    "savon: quantité annuelle": {
+        "activity_label": "savon: quantité annuelle",
+        "is_start": true,
+        "attribute": "expenditure",
+        "product_id": "savon"
+    },
+    "sel: quantité annuelle": {
+        "activity_label": "sel: quantité annuelle",
+        "is_start": true,
+        "attribute": "expenditure",
+        "product_id": "sel"
     },
     "quantité (kg)": {
         "attribute": "quantity_produced_or_purchased",
