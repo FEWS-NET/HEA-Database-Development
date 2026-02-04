@@ -902,6 +902,10 @@ def get_instances_from_dataframe(
                     if (
                         livelihood_strategy["strategy_type"] == "ButterProduction"
                         and "percentage_kcals" in livelihood_strategy["attribute_rows"]
+                        and any(
+                            livelihood_activity.get("percentage_kcals")
+                            for livelihood_activity in livelihood_activities_for_strategy
+                        )
                     ):
                         # Find the MilkProduction livelihood strategy
                         milk_strategy = None
