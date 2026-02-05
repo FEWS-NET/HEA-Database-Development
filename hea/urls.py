@@ -11,11 +11,13 @@ from rest_framework import routers
 
 from baseline.viewsets import (
     BaselineLivelihoodActivityViewSet,
+    BaselineWealthGroupCharacteristicValueViewSet,
     BaselineWealthGroupViewSet,
     ButterProductionViewSet,
     CommunityCropProductionViewSet,
     CommunityLivestockViewSet,
     CommunityViewSet,
+    CommunityWealthGroupCharacteristicValueViewSet,
     CommunityWealthGroupViewSet,
     CopingStrategyViewSet,
     CropProductionViewSet,
@@ -25,11 +27,11 @@ from baseline.viewsets import (
     FoodPurchaseViewSet,
     HazardViewSet,
     HuntingViewSet,
+    LivelihoodActivitySummaryViewSet,
     LivelihoodActivityViewSet,
     LivelihoodProductCategoryViewSet,
     LivelihoodStrategyViewSet,
     LivelihoodZoneBaselineFacetedSearchView,
-    LivelihoodZoneBaselineReportViewSet,
     LivelihoodZoneBaselineViewSet,
     LivelihoodZoneViewSet,
     LivestockSaleViewSet,
@@ -49,7 +51,7 @@ from baseline.viewsets import (
     WealthGroupViewSet,
     WildFoodGatheringViewSet,
 )
-from common.views import AssetDownloadView, DagsterProxyView
+from common.views import AssetDownloadView, BaselineExplorerProxyView, DagsterProxyView
 from common.viewsets import (
     ClassifiedProductViewSet,
     CountryViewSet,
@@ -89,13 +91,23 @@ router.register(r"season", SeasonViewSet)
 router.register(r"sourceorganization", SourceOrganizationViewSet)
 router.register(r"livelihoodzone", LivelihoodZoneViewSet)
 router.register(r"livelihoodzonebaseline", LivelihoodZoneBaselineViewSet)
-router.register(r"livelihoodzonebaselinereport", LivelihoodZoneBaselineReportViewSet, "livelihoodzonebaselinereport")
+router.register(r"livelihoodactivitysummary", LivelihoodActivitySummaryViewSet, "livelihoodactivitysummary")
 router.register(r"livelihoodproductcategory", LivelihoodProductCategoryViewSet)
 router.register(r"community", CommunityViewSet)
 router.register(r"wealthgroup", WealthGroupViewSet)
 router.register(r"baselinewealthgroup", BaselineWealthGroupViewSet)
 router.register(r"communitywealthgroup", CommunityWealthGroupViewSet)
 router.register(r"wealthgroupcharacteristicvalue", WealthGroupCharacteristicValueViewSet)
+router.register(
+    r"baselinewealthgroupcharacteristicvalue",
+    BaselineWealthGroupCharacteristicValueViewSet,
+    "baselinewealthgroupcharacteristicvalue",
+)
+router.register(
+    r"communitywealthgroupcharacteristicvalue",
+    CommunityWealthGroupCharacteristicValueViewSet,
+    "communitywealthgroupcharacteristicvalue",
+)
 router.register(r"livelihoodstrategy", LivelihoodStrategyViewSet)
 router.register(r"livelihoodactivity", LivelihoodActivityViewSet)
 router.register(r"baselinelivelihoodactivity", BaselineLivelihoodActivityViewSet)
@@ -147,6 +159,11 @@ urlpatterns += [
         AssetDownloadView.as_view(),
         name="asset_download_partitioned",
     ),
+    # Baseline Explorer React GUI using Django rev proxy to serve a cloudfront distro
+    path("explorer/<path:path>", BaselineExplorerProxyView.as_view(), name="baseline_explorer"),
+    # The URL pattern below does not capture any path parameter from the URL. But django-revproxy views
+    # require a path argument. We manually pass a default: {"path": ""}.
+    path("explorer/", BaselineExplorerProxyView.as_view(), {"path": ""}, name="baseline_explorer"),
 ]
 
 

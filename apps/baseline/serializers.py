@@ -1,5 +1,4 @@
 from django.db.models import F, FloatField, Sum
-from django.utils import translation
 from rest_framework import serializers
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
 
@@ -9,11 +8,13 @@ from common.serializers import AggregatingSerializer
 from .models import (
     BaselineLivelihoodActivity,
     BaselineWealthGroup,
+    BaselineWealthGroupCharacteristicValue,
     ButterProduction,
     Community,
     CommunityCropProduction,
     CommunityLivestock,
     CommunityWealthGroup,
+    CommunityWealthGroupCharacteristicValue,
     CopingStrategy,
     CropProduction,
     Event,
@@ -269,6 +270,7 @@ class WealthGroupSerializer(serializers.ModelSerializer):
             "livelihood_zone_country_name",
             "community",
             "community_name",
+            "community_full_name",
             "wealth_group_category",
             "wealth_group_category_name",
             "percentage_of_households",
@@ -291,6 +293,7 @@ class WealthGroupSerializer(serializers.ModelSerializer):
         source="livelihood_zone_baseline.livelihood_zone.country.name", read_only=True
     )
     community_name = serializers.CharField(source="community.name", read_only=True)
+    community_full_name = serializers.CharField(source="community.full_name", read_only=True)
     source_organization = serializers.IntegerField(
         source="livelihood_zone_baseline.source_organization.pk", read_only=True
     )
@@ -351,12 +354,21 @@ class WealthGroupCharacteristicValueSerializer(serializers.ModelSerializer):
             "livelihood_zone_country_name",
             "community",
             "community_name",
+            "community_full_name",
             "wealth_group_category",
             "wealth_group_category_name",
             "wealth_group_category_description",
+            "wealth_group_category_ordering",
             "wealth_characteristic",
             "wealth_characteristic_name",
             "wealth_characteristic_description",
+            "wealth_characteristic_ordering",
+            "variable_type",
+            "characteristic_group",
+            "product",
+            "product_common_name",
+            "unit_of_measure",
+            "unit_of_measure_description",
             "value",
             "min_value",
             "max_value",
@@ -383,10 +395,15 @@ class WealthGroupCharacteristicValueSerializer(serializers.ModelSerializer):
     wealth_group_category_description = serializers.CharField(
         source="wealth_group.wealth_group_category.description", read_only=True
     )
+    wealth_group_category_ordering = serializers.IntegerField(
+        source="wealth_group.wealth_group_category.ordering", read_only=True
+    )
     wealth_characteristic_name = serializers.CharField(source="wealth_characteristic.name", read_only=True)
     wealth_characteristic_description = serializers.CharField(
         source="wealth_characteristic.description", read_only=True
     )
+    wealth_characteristic_ordering = serializers.IntegerField(source="wealth_characteristic.ordering", read_only=True)
+    variable_type = serializers.CharField(source="wealth_characteristic.variable_type", read_only=True)
     livelihood_zone_baseline = serializers.IntegerField(
         source="wealth_group.community.livelihood_zone_baseline.pk", read_only=True
     )
@@ -404,12 +421,139 @@ class WealthGroupCharacteristicValueSerializer(serializers.ModelSerializer):
     )
     community = serializers.IntegerField(source="wealth_group.community.pk", read_only=True)
     community_name = serializers.CharField(source="wealth_group.community.name", read_only=True)
+    community_full_name = serializers.CharField(source="wealth_group.community.full_name", read_only=True)
     source_organization = serializers.IntegerField(
         source="wealth_group.community.livelihood_zone_baseline.source_organization.pk", read_only=True
     )
     source_organization_name = serializers.CharField(
         source="wealth_group.community.livelihood_zone_baseline.source_organization.name", read_only=True
     )
+    characteristic_group = serializers.SerializerMethodField()
+
+    def get_characteristic_group(self, obj):
+        """
+        Override the default characteristic_group for Livestock.
+
+        Allows use of the same label, e.g. 'Number owned' for both Livestock and other wealth characteristics.
+        """
+        if obj.product and obj.product.cpc.startswith("L02"):
+            return "Livestock"
+        return obj.wealth_characteristic.characteristic_group
+
+    product_common_name = serializers.CharField(source="product.common_name", read_only=True, allow_null=True)
+    unit_of_measure_description = serializers.CharField(
+        source="unit_of_measure.description", read_only=True, allow_null=True
+    )
+
+
+class BaselineWealthGroupCharacteristicValueSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = BaselineWealthGroupCharacteristicValue
+        fields = [
+            "id",
+            "wealth_group",
+            "wealth_group_label",
+            "source_organization",
+            "source_organization_name",
+            "livelihood_zone_baseline",
+            "livelihood_zone_baseline_label",
+            "livelihood_zone",
+            "livelihood_zone_name",
+            "livelihood_zone_country_code",
+            "livelihood_zone_country_name",
+            "wealth_group_category",
+            "wealth_group_category_name",
+            "wealth_group_category_description",
+            "wealth_group_category_ordering",
+            "wealth_characteristic",
+            "wealth_characteristic_name",
+            "wealth_characteristic_description",
+            "wealth_characteristic_ordering",
+            "variable_type",
+            "characteristic_group",
+            "product",
+            "product_common_name",
+            "unit_of_measure",
+            "unit_of_measure_description",
+            "value",
+            "min_value",
+            "max_value",
+        ]
+
+    livelihood_zone_baseline_label = serializers.SerializerMethodField()
+
+    def get_livelihood_zone_baseline_label(self, obj):
+        return (
+            str(obj.wealth_group.livelihood_zone_baseline)
+            if obj.wealth_group.community
+            else str(obj.wealth_group.livelihood_zone_baseline)
+        )
+
+    wealth_group_label = serializers.SerializerMethodField()
+
+    def get_wealth_group_label(self, obj):
+        return str(obj.wealth_group)
+
+    wealth_group_category = serializers.CharField(source="wealth_group.wealth_group_category.pk", read_only=True)
+    wealth_group_category_name = serializers.CharField(
+        source="wealth_group.wealth_group_category.name", read_only=True
+    )
+    wealth_group_category_description = serializers.CharField(
+        source="wealth_group.wealth_group_category.description", read_only=True
+    )
+    wealth_group_category_ordering = serializers.IntegerField(
+        source="wealth_group.wealth_group_category.ordering", read_only=True
+    )
+    wealth_characteristic_name = serializers.CharField(source="wealth_characteristic.name", read_only=True)
+    wealth_characteristic_description = serializers.CharField(
+        source="wealth_characteristic.description", read_only=True
+    )
+    wealth_characteristic_ordering = serializers.IntegerField(source="wealth_characteristic.ordering", read_only=True)
+    variable_type = serializers.CharField(source="wealth_characteristic.variable_type", read_only=True)
+    livelihood_zone_baseline = serializers.IntegerField(
+        source="wealth_group.livelihood_zone_baseline.pk", read_only=True
+    )
+    livelihood_zone_name = serializers.CharField(
+        source="wealth_group.livelihood_zone_baseline.livelihood_zone.name", read_only=True
+    )
+    livelihood_zone = serializers.CharField(
+        source="wealth_group.livelihood_zone_baseline.livelihood_zone.pk", read_only=True
+    )
+    livelihood_zone_country_code = serializers.CharField(
+        source="wealth_group.livelihood_zone_baseline.livelihood_zone.country.pk", read_only=True
+    )
+    livelihood_zone_country_name = serializers.CharField(
+        source="wealth_group.livelihood_zone_baseline.livelihood_zone.country.name", read_only=True
+    )
+    source_organization = serializers.IntegerField(
+        source="wealth_group.livelihood_zone_baseline.source_organization.pk", read_only=True
+    )
+    source_organization_name = serializers.CharField(
+        source="wealth_group.livelihood_zone_baseline.source_organization.name", read_only=True
+    )
+    characteristic_group = serializers.SerializerMethodField()
+
+    def get_characteristic_group(self, obj):
+        """
+        Override the default characteristic_group for Livestock.
+
+        Allows use of the same label, e.g. 'Number owned' for both Livestock and other wealth characteristics.
+        """
+        if obj.product and obj.product.cpc.startswith("L02"):
+            return "Livestock"
+        return obj.wealth_characteristic.characteristic_group
+
+    product_common_name = serializers.CharField(source="product.common_name", read_only=True, allow_null=True)
+    unit_of_measure_description = serializers.CharField(
+        source="unit_of_measure.description", read_only=True, allow_null=True
+    )
+
+
+class CommunityWealthGroupCharacteristicValueSerializer(WealthGroupCharacteristicValueSerializer):
+    class Meta:
+        model = CommunityWealthGroupCharacteristicValue
+        fields = WealthGroupCharacteristicValueSerializer.Meta.fields
 
 
 class LivelihoodStrategySerializer(serializers.ModelSerializer):
@@ -436,7 +580,6 @@ class LivelihoodStrategySerializer(serializers.ModelSerializer):
             "product_common_name",
             "product_description",
             "unit_of_measure",
-            "unit_of_measure_name",
             "unit_of_measure_description",
             "currency",
             "additional_identifier",
@@ -458,7 +601,6 @@ class LivelihoodStrategySerializer(serializers.ModelSerializer):
     source_organization_name = serializers.CharField(
         source="livelihood_zone_baseline.source_organization.name", read_only=True
     )
-    unit_of_measure_name = serializers.CharField(source="unit_of_measure.name", read_only=True)
     unit_of_measure_description = serializers.CharField(source="unit_of_measure.description", read_only=True)
     product_common_name = serializers.CharField(source="product.common_name", read_only=True)
     product_description = serializers.CharField(source="product.description", read_only=True)
@@ -507,7 +649,6 @@ class LivelihoodActivitySerializer(serializers.ModelSerializer):
             "product_common_name",
             "product_description",
             "unit_of_measure",
-            "unit_of_measure_name",
             "unit_of_measure_description",
             "currency",
             "additional_identifier",
@@ -522,6 +663,7 @@ class LivelihoodActivitySerializer(serializers.ModelSerializer):
             "wealth_group_label",
             "community",
             "community_name",
+            "community_full_name",
             "wealth_group_category",
             "wealth_group_category_name",
             "wealth_group_category_description",
@@ -540,34 +682,32 @@ class LivelihoodActivitySerializer(serializers.ModelSerializer):
         ]
 
     livelihood_zone_name = serializers.CharField(
-        source="wealth_group.community.livelihood_zone_baseline.livelihood_zone.name", read_only=True
+        source="livelihood_zone_baseline.livelihood_zone.name", read_only=True
     )
-    livelihood_zone = serializers.CharField(
-        source="wealth_group.community.livelihood_zone_baseline.livelihood_zone.pk", read_only=True
-    )
+    livelihood_zone = serializers.CharField(source="livelihood_zone_baseline.livelihood_zone.pk", read_only=True)
     livelihood_zone_country = serializers.CharField(
-        source="wealth_group.community.livelihood_zone_baseline.livelihood_zone.country.pk", read_only=True
+        source="livelihood_zone_baseline.livelihood_zone.country.pk", read_only=True
     )
     livelihood_zone_country_name = serializers.CharField(
-        source="wealth_group.community.livelihood_zone_baseline.livelihood_zone.country.name", read_only=True
+        source="livelihood_zone_baseline.livelihood_zone.country.name", read_only=True
     )
     source_organization = serializers.IntegerField(
-        source="wealth_group.community.livelihood_zone_baseline.source_organization.pk", read_only=True
+        source="livelihood_zone_baseline.source_organization.pk", read_only=True
     )
     source_organization_name = serializers.CharField(
-        source="wealth_group.community.livelihood_zone_baseline.source_organization.name", read_only=True
+        source="livelihood_zone_baseline.source_organization.name", read_only=True
     )
     livelihood_zone_baseline_label = serializers.SerializerMethodField()
 
     def get_livelihood_zone_baseline_label(self, obj):
-        return str(obj.livelihood_strategy.livelihood_zone_baseline)
+        return str(obj.livelihood_zone_baseline)
 
     additional_identifier = serializers.CharField(source="livelihood_strategy.additional_identifier", read_only=True)
     currency = serializers.CharField(source="livelihood_strategy.currency.pk", read_only=True)
     community = serializers.IntegerField(source="wealth_group.community.pk", read_only=True)
     community_name = serializers.CharField(source="wealth_group.community.name", read_only=True)
+    community_full_name = serializers.CharField(source="wealth_group.community.full_name", read_only=True)
     unit_of_measure = serializers.CharField(source="livelihood_strategy.unit_of_measure.pk", read_only=True)
-    unit_of_measure_name = serializers.CharField(source="livelihood_strategy.unit_of_measure.name", read_only=True)
     unit_of_measure_description = serializers.CharField(
         source="livelihood_strategy.unit_of_measure.description", read_only=True
     )
@@ -582,7 +722,7 @@ class LivelihoodActivitySerializer(serializers.ModelSerializer):
     wealth_group_percentage_of_households = serializers.IntegerField(
         source="wealth_group.percentage_of_households", read_only=True
     )
-    wealth_group_average_household_size = serializers.IntegerField(
+    wealth_group_average_household_size = serializers.FloatField(
         source="wealth_group.average_household_size", read_only=True
     )
     wealth_group_category = serializers.CharField(source="wealth_group.wealth_group_category.pk", read_only=True)
@@ -620,13 +760,17 @@ class LivelihoodActivitySerializer(serializers.ModelSerializer):
 class BaselineLivelihoodActivitySerializer(LivelihoodActivitySerializer):
     class Meta:
         model = BaselineLivelihoodActivity
-        fields = LivelihoodActivitySerializer.Meta.fields
+        fields = [
+            f
+            for f in LivelihoodActivitySerializer.Meta.fields
+            if f not in ["community", "community_name", "community_full_name"]
+        ]
 
 
 class ResponseLivelihoodActivitySerializer(LivelihoodActivitySerializer):
     class Meta:
         model = ResponseLivelihoodActivity
-        fields = LivelihoodActivitySerializer.Meta.fields
+        fields = BaselineLivelihoodActivitySerializer.Meta.fields
 
 
 class MilkProductionSerializer(LivelihoodActivitySerializer):
@@ -903,19 +1047,15 @@ class CommunityCropProductionSerializer(serializers.ModelSerializer):
             "yield_without_inputs",
             "seed_requirement",
             "crop_unit_of_measure",
-            "crop_unit_of_measure_name",
             "crop_unit_of_measure_description",
             "land_unit_of_measure",
-            "land_unit_of_measure_name",
             "land_unit_of_measure_description",
         ]
 
     crop_common_name = serializers.CharField(source="crop.common_name", read_only=True)
     crop_description = serializers.CharField(source="crop.description", read_only=True)
     community_name = serializers.CharField(source="community.name", read_only=True)
-    crop_unit_of_measure_name = serializers.CharField(source="crop_unit_of_measure.name", read_only=True)
     crop_unit_of_measure_description = serializers.CharField(source="crop_unit_of_measure.description", read_only=True)
-    land_unit_of_measure_name = serializers.CharField(source="land_unit_of_measure.name", read_only=True)
     land_unit_of_measure_description = serializers.CharField(source="land_unit_of_measure.description", read_only=True)
     season_name = serializers.CharField(source="season.name", read_only=True)
     season_description = serializers.CharField(source="season.description", read_only=True)
@@ -1033,7 +1173,6 @@ class MarketPriceSerializer(serializers.ModelSerializer):
             "product_common_name",
             "product_description",
             "unit_of_measure",
-            "unit_of_measure_name",
             "unit_of_measure_description",
             "currency",
             "description",
@@ -1050,7 +1189,6 @@ class MarketPriceSerializer(serializers.ModelSerializer):
     product = serializers.CharField(source="product.pk", read_only=True)
     product_common_name = serializers.CharField(source="product.common_name", read_only=True)
     product_description = serializers.CharField(source="product.description", read_only=True)
-    unit_of_measure_name = serializers.CharField(source="unit_of_measure.name", read_only=True)
     unit_of_measure_description = serializers.CharField(source="unit_of_measure.description", read_only=True)
     livelihood_zone_baseline = serializers.IntegerField(source="community.livelihood_zone_baseline.pk", read_only=True)
     livelihood_zone_name = serializers.CharField(
@@ -1267,7 +1405,6 @@ class ExpandabilityFactorSerializer(serializers.ModelSerializer):
             "product_common_name",
             "product_description",
             "unit_of_measure",
-            "unit_of_measure_name",
             "unit_of_measure_description",
             "currency",
             "additional_identifier",
@@ -1322,7 +1459,6 @@ class ExpandabilityFactorSerializer(serializers.ModelSerializer):
     community = serializers.IntegerField(source="wealth_group.community.pk", read_only=True)
     community_name = serializers.CharField(source="wealth_group.community.name", read_only=True)
     unit_of_measure = serializers.CharField(source="livelihood_strategy.unit_of_measure.pk", read_only=True)
-    unit_of_measure_name = serializers.CharField(source="livelihood_strategy.unit_of_measure.name", read_only=True)
     unit_of_measure_description = serializers.CharField(
         source="livelihood_strategy.unit_of_measure.description", read_only=True
     )
@@ -1337,7 +1473,7 @@ class ExpandabilityFactorSerializer(serializers.ModelSerializer):
     wealth_group_percentage_of_households = serializers.IntegerField(
         source="wealth_group.percentage_of_households", read_only=True
     )
-    wealth_group_average_household_size = serializers.IntegerField(
+    wealth_group_average_household_size = serializers.FloatField(
         source="wealth_group.average_household_size", read_only=True
     )
     wealth_group_category = serializers.CharField(source="wealth_group.wealth_group_category.pk", read_only=True)
@@ -1401,7 +1537,6 @@ class CopingStrategySerializer(serializers.ModelSerializer):
             "product_common_name",
             "product_description",
             "unit_of_measure",
-            "unit_of_measure_name",
             "unit_of_measure_description",
             "currency",
             "additional_identifier",
@@ -1438,7 +1573,6 @@ class CopingStrategySerializer(serializers.ModelSerializer):
     additional_identifier = serializers.CharField(source="livelihood_strategy.additional_identifier", read_only=True)
     currency = serializers.CharField(source="livelihood_strategy.currency.pk", read_only=True)
     unit_of_measure = serializers.CharField(source="livelihood_strategy.unit_of_measure.pk", read_only=True)
-    unit_of_measure_name = serializers.CharField(source="livelihood_strategy.unit_of_measure.name", read_only=True)
     unit_of_measure_description = serializers.CharField(
         source="livelihood_strategy.unit_of_measure.description", read_only=True
     )
@@ -1453,7 +1587,7 @@ class CopingStrategySerializer(serializers.ModelSerializer):
     wealth_group_percentage_of_households = serializers.IntegerField(
         source="wealth_group.percentage_of_households", read_only=True
     )
-    wealth_group_average_household_size = serializers.IntegerField(
+    wealth_group_average_household_size = serializers.FloatField(
         source="wealth_group.average_household_size", read_only=True
     )
     wealth_group_category = serializers.CharField(source="wealth_group.wealth_group_category.pk", read_only=True)
@@ -1485,93 +1619,42 @@ class CopingStrategySerializer(serializers.ModelSerializer):
         return str(obj.wealth_group)
 
 
-class LivelihoodZoneBaselineReportSerializer(AggregatingSerializer):
+class LivelihoodActivitySummarySerializer(AggregatingSerializer):
     """
-    There are two ‘levels’ of filter needed on this endpoint. The standard ones which are already on the LZB endpoint
-    filter the LZBs that are returned (eg, population range and wealth group). Let’s call them ‘global’ filters.
-    Everything needs filtering by wealth group or population, if those filters are active.
-
-    The data ‘slice’ strategy type and product filters do not remove LZBs from the results by themselves; they
-    only exclude values from the calculated slice statistics.
-
-    If a user selects Sorghum, that filters the kcals income for our slice. The kcals income for the slice is then
-    divided by the kcals income on the global set for the kcals income percent.
-
-    The global filters are identical to those already on the LZB endpoint (and will always be - it is sharing the
-    code). These are applied to the LZB, row and slice totals.
-
-    The slice filters are:
-
-      - slice_by_product (for multiple, repeat the parameter, eg, slice_by_product=R0&slice_by_product=B01). These
-        match any CPC code that starts with the value. (The client needs to convert the selected product to CPC.)
-
-      - slice_by_strategy_type - you can specify multiple, and you need to pass the code not the label (which could be
-        translated). (These are case-insensitive but otherwise must be an exact match.)
-
-    The slice is defined by matching any of the products, AND any of the strategy types (as opposed to OR).
-
-    Translated fields, eg, name, description, are rendered in the currently selected locale if possible. (Except
-    Country, which has different translations following ISO.) This can be selected in the UI or set using eg,
-    &language=pt which overrides the UI selection.
-
-    You select the fields you want using the &fields= parameter in the usual way. If you omit the fields parameter all
-    fields are returned. These are currently the same field list as the normal LZB endpoint, plus the aggregations,
-    called slice_sum_kcals_consumed, sum_kcals_consumed, kcals_consumed_percent, plus product CPC and product common
-    name translated. If you omit a field, the statistics for that field will be aggregated together.
-
-    The ordering code is also shared with the normal LZB endpoint, which uses the standard
-    &ordering= parameter. If none are specified, the results are sorted by the aggregations descending, ie,
-    biggest percentage first.
-
-    The strategy type codes are:
-        MilkProduction
-        ButterProduction
-        MeatProduction
-        LivestockSale
-        CropProduction
-        FoodPurchase
-        PaymentInKind
-        ReliefGiftOther
-        Hunting
-        Fishing
-        WildFoodGathering
-        OtherCashIncome
-        OtherPurchase
-
-    The product hierarchy can be retrieved from the classified product endpoint /api/classifiedproduct/.
-
-    You can then filter by any of the calculated fields. To do so, prefix the field name with min_ or max_.
+    Aggregated summary of LivelihoodActivity data for Baseline Wealth Groups.
     """
 
     class Meta:
-        model = LivelihoodZoneBaseline
+        model = LivelihoodActivity
         fields = (
-            "source_organization",
+            "country",  # Country name
             "source_organization_name",
-            "country_pk",
-            "country_iso_en_name",
-            "livelihoodzone_pk",
-            "livelihood_zone",
-            "livelihood_zone_name",
-            "id",
-            "name",
-            "description",
-            "wealth_group_category",
-            "wealth_group_category_name",
-            "main_livelihood_category",
-            "bss",
-            "currency",
+            "livelihood_zone",  # E.g. ML01, etc.
+            "livelihood_zone_baseline_name",
             "reference_year_start_date",
             "reference_year_end_date",
             "valid_from_date",
             "valid_to_date",  # to display "is latest" / "is historic" in the UI for each ref yr
+            "main_livelihood_category",
+            "livelihood_zone_baseline_description",
+            "wealth_group_category",  # E.g. VP, P, M, B/O
+            "wealth_group_category_name",
+            "wealth_group_category_ordering",
+            "percentage_of_households",
+            "average_household_size",
+            "currency",
             "population_source",
             "population_estimate",
-            "strategy_type",
-            "livelihood_strategy_pk",
-            "livelihood_activity_pk",
-            "product_cpc",
+            "product",  # cpc code for the Product
             "product_common_name",
+            "strategy_type",  # CropProduction, etc.
+            "scenario",  # baseline or response
+            "id",  # Primary key of the LivelihoodActivity
+            "livelihood_strategy",  # Primary key of the LivelihoodStrategy
+            "wealth_group",  # Primary key of the WealthGroup
+            "livelihood_zone_baseline",  # Primary key of the LivelihoodZoneBaseline
+            "source_organization",  # Primary key of the SourceOrganization
+            "iso3166a2",  # Primary key of the Country, e.g. KE
         )
 
     aggregates = {
@@ -1580,42 +1663,12 @@ class LivelihoodZoneBaselineReportSerializer(AggregatingSerializer):
         "expenditure": Sum,
         "percentage_kcals": Sum,
         "kcal_income_sum": Sum(
-            (
-                F("livelihood_strategies__livelihoodactivity__quantity_purchased")
-                + F("livelihood_strategies__livelihoodactivity__quantity_produced")
-            )
-            * F("livelihood_strategies__product__kcals_per_unit"),
+            (F("quantity_purchased") + F("quantity_produced")) * F("livelihood_strategy__product__kcals_per_unit"),
             output_field=FloatField(),
         ),
     }
 
     slice_fields = {
-        "product": "livelihood_strategies__product__cpc__istartswith",
-        "strategy_type": "livelihood_strategies__strategy_type__iexact",
+        "product": "livelihood_strategy__product__cpc__istartswith",
+        "strategy_type": "strategy_type__iexact",
     }
-
-    @staticmethod
-    def field_to_database_path(field_name):
-        language_code = translation.get_language()
-        return {
-            "livelihoodzone_pk": "pk",
-            "name": f"name_{language_code}",
-            "description": f"description_{language_code}",
-            "valid_to_date": "valid_to_date",
-            "livelihood_strategy_pk": "livelihood_strategies__pk",
-            "livelihood_activity_pk": "livelihood_strategies__livelihoodactivity__pk",
-            "wealth_group_category": "livelihood_strategies__livelihoodactivity__wealth_group__wealth_group_category__code",  # NOQA: E501
-            "wealth_group_category_name": f"livelihood_strategies__livelihoodactivity__wealth_group__wealth_group_category__name_{language_code}",  # NOQA: E501
-            "kcals_consumed": "livelihood_strategies__livelihoodactivity__kcals_consumed",
-            "income": "livelihood_strategies__livelihoodactivity__income",
-            "expenditure": "livelihood_strategies__livelihoodactivity__expenditure",
-            "percentage_kcals": "livelihood_strategies__livelihoodactivity__percentage_kcals",
-            "livelihood_zone_name": f"livelihood_zone__name_{language_code}",
-            "source_organization_pk": "source_organization__pk",
-            "source_organization_name": "source_organization__name",
-            "country_pk": "livelihood_zone__country__pk",
-            "country_iso_en_name": "livelihood_zone__country__iso_en_name",
-            "product_cpc": "livelihood_strategies__product__cpc",
-            "strategy_type": "livelihood_strategies__strategy_type",
-            "product_common_name": f"livelihood_strategies__product__common_name_{language_code}",
-        }.get(field_name, field_name)

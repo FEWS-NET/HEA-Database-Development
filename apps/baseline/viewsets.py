@@ -1,7 +1,9 @@
 from django.apps import apps
 from django.conf import settings
 from django.db import models
-from django.db.models import Q, Subquery
+from django.db.models import Expression, F, Q, Subquery, TextField, Value
+from django.db.models.functions import Coalesce, NullIf
+from django.utils import translation
 from django.utils.translation import override
 from django_filters import rest_framework as filters
 from django_filters.filters import CharFilter
@@ -13,15 +15,18 @@ from rest_framework.views import APIView
 from common.fields import translation_fields
 from common.filters import MultiFieldFilter, UpperCaseFilter
 from common.viewsets import AggregatingViewSet, BaseModelViewSet
+from metadata.models import WealthGroupCategory
 
 from .models import (
     BaselineLivelihoodActivity,
     BaselineWealthGroup,
+    BaselineWealthGroupCharacteristicValue,
     ButterProduction,
     Community,
     CommunityCropProduction,
     CommunityLivestock,
     CommunityWealthGroup,
+    CommunityWealthGroupCharacteristicValue,
     CopingStrategy,
     CropProduction,
     Event,
@@ -54,11 +59,13 @@ from .models import (
 )
 from .serializers import (
     BaselineLivelihoodActivitySerializer,
+    BaselineWealthGroupCharacteristicValueSerializer,
     BaselineWealthGroupSerializer,
     ButterProductionSerializer,
     CommunityCropProductionSerializer,
     CommunityLivestockSerializer,
     CommunitySerializer,
+    CommunityWealthGroupCharacteristicValueSerializer,
     CommunityWealthGroupSerializer,
     CopingStrategySerializer,
     CropProductionSerializer,
@@ -69,10 +76,10 @@ from .serializers import (
     HazardSerializer,
     HuntingSerializer,
     LivelihoodActivitySerializer,
+    LivelihoodActivitySummarySerializer,
     LivelihoodProductCategorySerializer,
     LivelihoodStrategySerializer,
     LivelihoodZoneBaselineGeoSerializer,
-    LivelihoodZoneBaselineReportSerializer,
     LivelihoodZoneBaselineSerializer,
     LivelihoodZoneSerializer,
     LivestockSaleSerializer,
@@ -461,16 +468,26 @@ class WealthGroupCharacteristicValueFilterSet(filters.FilterSet):
             "wealth_group",
         ]
 
+    livelihood_zone_baseline = filters.ModelMultipleChoiceFilter(
+        field_name="wealth_group__community__livelihood_zone_baseline",
+        queryset=LivelihoodZoneBaseline.objects.all(),
+        label="Livelihood zone baseline",
+    )
+    wealth_group_category = filters.ModelMultipleChoiceFilter(
+        field_name="wealth_group__community__wealth_group_category",
+        queryset=WealthGroupCategory.objects.all(),
+        label="Wealth group category",
+    )
     country = MultiFieldFilter(
         [
-            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso3166a2",
-            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name",
-            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_en_name",
-            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_proper",
-            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_en_proper",
-            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_fr_name",
-            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_fr_proper",
-            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_es_name",
+            "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country__iso3166a2",
+            "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name",
+            "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country__iso_en_name",
+            "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_proper",
+            "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country__iso_en_proper",
+            "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country__iso_fr_name",
+            "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country__iso_fr_proper",
+            "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country__iso_es_name",
         ],
         lookup_expr="iexact",
         label="Country",
@@ -510,6 +527,206 @@ class WealthGroupCharacteristicValueViewSet(BaseModelViewSet):
     )
     serializer_class = WealthGroupCharacteristicValueSerializer
     filterset_class = WealthGroupCharacteristicValueFilterSet
+    ordering = [
+        "wealth_group__community__livelihood_zone_baseline__livelihood_zone__code",
+        "wealth_group__community__livelihood_zone_baseline__reference_year_end_date",
+        "wealth_group__wealth_group_category__ordering",
+        "wealth_group__community__name",
+        "wealth_characteristic__ordering",
+        "product",
+        "wealth_characteristic__code",
+    ]
+
+
+class BaselineWealthGroupCharacteristicValueFilterSet(filters.FilterSet):
+    class Meta:
+        model = BaselineWealthGroupCharacteristicValue
+        fields = [
+            "wealth_characteristic",
+            "wealth_group",
+        ]
+
+    livelihood_zone_baseline = filters.ModelMultipleChoiceFilter(
+        field_name="wealth_group__livelihood_zone_baseline",
+        queryset=LivelihoodZoneBaseline.objects.all(),
+        label="Livelihood zone baseline",
+    )
+    wealth_group_category = filters.ModelMultipleChoiceFilter(
+        field_name="wealth_group__wealth_group_category",
+        queryset=WealthGroupCategory.objects.all(),
+        label="Wealth group category",
+    )
+    country = MultiFieldFilter(
+        [
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso3166a2",
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name",
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_en_name",
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_proper",
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_en_proper",
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_fr_name",
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_fr_proper",
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_es_name",
+        ],
+        lookup_expr="iexact",
+        label="Country",
+    )
+    product = MultiFieldFilter(
+        [
+            *[(field, "icontains") for field in translation_fields("product__common_name")],
+            ("product__cpc", "istartswith"),
+            *[(field, "icontains") for field in translation_fields("product__description")],
+            ("product__aliases", "icontains"),
+        ],
+        label="Product",
+    )
+
+    has_value = filters.BooleanFilter(
+        method="filter_has_value",
+        label="Has Value",
+    )
+
+    def filter_has_value(self, queryset, name, value):
+        """
+        Filter records based on whether they have meaningful values.
+        """
+        if value is False:
+            return queryset.filter(
+                Q(value__isnull=True)
+                | Q(value__exact="")
+                | Q(value__exact=0)
+                | Q(value__exact=[])
+                | Q(value__exact={})
+            )
+        else:
+            # This ensures that specifying the filter without a value still returns only records with meaningful values
+            return queryset.exclude(
+                Q(value__isnull=True)
+                | Q(value__exact="")
+                | Q(value__exact=0)
+                | Q(value__exact=[])
+                | Q(value__exact={})
+            )
+
+
+class BaselineWealthGroupCharacteristicValueViewSet(BaseModelViewSet):
+    """
+    API endpoint that allows wealth characteristic values for baseline wealth groups to be viewed or edited.
+    """
+
+    queryset = BaselineWealthGroupCharacteristicValue.objects.select_related(
+        "wealth_characteristic",
+        "wealth_group__livelihood_zone_baseline__livelihood_zone__country",
+        "wealth_group__livelihood_zone_baseline__source_organization",
+        "wealth_group__wealth_group_category",
+    )
+    serializer_class = BaselineWealthGroupCharacteristicValueSerializer
+    filterset_class = BaselineWealthGroupCharacteristicValueFilterSet
+    ordering = [
+        "wealth_group__livelihood_zone_baseline__livelihood_zone__code",
+        "wealth_group__livelihood_zone_baseline__reference_year_end_date",
+        "wealth_group__wealth_group_category__ordering",
+        "wealth_characteristic__ordering",
+        "product",
+        "wealth_characteristic__code",
+    ]
+
+
+class CommunityWealthGroupCharacteristicValueFilterSet(filters.FilterSet):
+    class Meta:
+        model = CommunityWealthGroupCharacteristicValue
+        fields = [
+            "wealth_characteristic",
+            "wealth_group",
+        ]
+
+    livelihood_zone_baseline = filters.ModelMultipleChoiceFilter(
+        field_name="wealth_group__community__livelihood_zone_baseline",
+        queryset=LivelihoodZoneBaseline.objects.all(),
+        label="Livelihood zone baseline",
+    )
+    country = MultiFieldFilter(
+        [
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso3166a2",
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name",
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_en_name",
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_proper",
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_en_proper",
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_fr_name",
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_fr_proper",
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_es_name",
+        ],
+        lookup_expr="iexact",
+        label="Country",
+    )
+    product = MultiFieldFilter(
+        [
+            *[(field, "icontains") for field in translation_fields("product__common_name")],
+            ("product__cpc", "istartswith"),
+            *[(field, "icontains") for field in translation_fields("product__description")],
+            ("product__aliases", "icontains"),
+        ],
+        label="Product",
+    )
+    has_value = filters.BooleanFilter(
+        method="filter_has_value",
+        label="Has Value",
+    )
+
+    def filter_has_value(self, queryset, name, value):
+        """
+        Filter records based on whether they have meaningful values.
+        """
+        if value is False:
+            return queryset.filter(
+                Q(value__isnull=True)
+                | Q(value__exact="")
+                | Q(value__exact=0)
+                | Q(value__exact=[])
+                | Q(value__exact={})
+            )
+        else:
+            return queryset.exclude(
+                Q(value__isnull=True)
+                | Q(value__exact="")
+                | Q(value__exact=0)
+                | Q(value__exact=[])
+                | Q(value__exact={})
+            )
+
+
+class CommunityWealthGroupCharacteristicValueViewSet(BaseModelViewSet):
+    """
+    API endpoint that allows wealth characteristic values for community wealth groups to be viewed or edited.
+    """
+
+    queryset = CommunityWealthGroupCharacteristicValue.objects.select_related(
+        # Rule of thumb: When there is a choice of routes, eg, here we could use
+        # "wealth_group__community__livelihood_zone_baseline" or
+        # "wealth_group__livelihood_zone_baseline" (ie, not going via community),
+        # favour the option with the lowest cardinality.
+        # Here for example, if I use wealth_group__livelihood_zone_baseline, the
+        # Django ORM will have to populate a LivelihoodZoneBaseline instance for
+        # every WealthGroup instance. By going via the community join, the Django
+        # ORM only has to populate a LivelihoodZoneBaseline per Community, which
+        # will be 4 or 5 times fewer instances. We also remove the need for a third
+        # select_related parameter "wealth_group__community". Performance is not
+        # critical, but we need a rule of thumb so everything matches up.
+        "wealth_characteristic",
+        "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
+        "wealth_group__community__livelihood_zone_baseline__source_organization",
+        "wealth_group__wealth_group_category",
+    )
+    serializer_class = CommunityWealthGroupCharacteristicValueSerializer
+    filterset_class = CommunityWealthGroupCharacteristicValueFilterSet
+    ordering = [
+        "wealth_group__community__livelihood_zone_baseline__livelihood_zone__code",
+        "wealth_group__community__livelihood_zone_baseline__reference_year_end_date",
+        "wealth_group__wealth_group_category__ordering",
+        "wealth_group__community__name",
+        "wealth_characteristic__ordering",
+        "product",
+        "wealth_characteristic__code",
+    ]
 
 
 class LivelihoodStrategyFilterSet(filters.FilterSet):
@@ -1641,57 +1858,84 @@ class CopingStrategyViewSet(BaseModelViewSet):
     ]
 
 
-class LivelihoodZoneBaselineReportViewSet(AggregatingViewSet):
+class LivelihoodActivitySummaryViewSet(AggregatingViewSet):
     """
-    There are two ‘levels’ of filter needed on this endpoint. The standard ones which are already on the LZB endpoint
-    filter the LZBs that are returned (eg, population range and wealth group). Let’s call them ‘global’ filters.
-    Everything needs filtering by wealth group or population, if those filters are active.
+    Aggregated summary of LivelihoodActivity data for Baseline Wealth Groups.
 
-    The strategy type and product filters do not remove LZBs from the results by themselves; they only filter the
-    statistics. I suggest we call them data ‘slice’ filters.
+    The viewset accepts additional `slice` parameters in addition to the regular filter parameters.  The regular
+    filter parameters determine Livelihood Activities that are included in the data to be aggregated. The `slice`
+    parameters are used to calculate the amount of overall income, expenditure, kcals_consumed and percentage_kcals
+    that are derived from the slice.
 
-    If a user selects Sorghum, that filters the kcals income for our slice. The kcals income for the slice is then
-    divided by the kcals income on the global set for the kcals income percent.
+    Each row in the results contains the total amount for each indicator (income, expenditure, kcals_consumed,
+    percentage_kcals), the amount contributed by the slice, and the percentage of the total contributed by the slice.
 
-    The global filters are identical to those already on the LZB endpoint (and will always be - it is sharing the
-    code).
+    Each row contains the aggregated indicator values for a group based on a distinct set of metadata. The groups
+    are defined using the `&fields` parameter. If you omit the fields parameter all fields are returned.
 
-    The slice filters are:
+    Note that because the viewset aggregates across the requested fields, it is very easy to over count the values.
+    It is important to understand exactly what data is being aggregated and ensure that appropriate filters have been
+    applied. For example, if a Baseline contains data for both the Baseline and the Response scenario, and you don't
+    specify a scenario filter, then the resulting indicator values will be the sum of the values for both scenarios.
 
-      - slice_product (for multiple, repeat the parameter, eg, slice_product=R0&slice_product=B01). These
+    The slice parameters are:
+
+      - slice_by_product (for multiple, repeat the parameter, eg, slice_by_product=R0&slice_by_product=B01). These
         match any CPC code that starts with the value. (The client needs to convert the selected product to CPC.)
 
-      - slice_strategy_type - you can specify multiple, and you need to pass the code not the label (which could be
+      - slice_by_strategy_type - you can specify multiple, and you need to pass the code not the label (which could be
         translated). (These are case-insensitive but otherwise must be an exact match.)
 
-    The slice is defined by matching any of the products, AND any of the strategy types (as opposed to OR).
+    The slice selects Livelihood Activities that match both the Products and the Strategy Types. I.e. if you pass
+    a slice_by_product for a Product that isn't relevant for the selected `slice_by_strategy_type` then no activities
+    will be selected and the slice values will be zero.
+
+    The aggregates produced are:
+
+        income_sum_row
+        expenditure_sum_row
+        kcals_consumed_sum_row
+        percentage_kcals_sum_row
+
+    If a slice is specified, the following additional aggregates are produced:
+
+        income_sum_slice
+        income_sum_slice_percentage_of_row
+        expenditure_sum_slice
+        expenditure_sum_slice_percentage_of_row
+        kcals_consumed_sum_slice
+        kcals_consumed_sum_slice_percentage_of_row
+        percentage_kcals_sum_slice
+        percentage_kcals_sum_slice_percentage_of_row
+
+    You can filter by any calculated slice or row aggregate by prefixing its name with `min_` or `max_`. For example:
+
+        &min_income_sum_slice_percentage_of_row=52
+
+    The viewset currently only supports a single slice at a time. For combining slices, run multiple searches, and
+    compare them externally.
 
     Translated fields, eg, name, description, are rendered in the currently selected locale if possible. (Except
-    Country, which has different translations following ISO.) This can be selected in the UI or set using eg,
-    &language=pt which overrides the UI selection.
+    Country, which has different translations following ISO.) This can be selected in the UI or set using
+    `&language=pt`, for example, which overrides the UI selection.
 
-    You select the fields you want using the &fields= parameter in the usual way. If you omit the fields parameter all
-    fields are returned. These are currently the same field list as the normal LZB endpoint, plus the aggregations,
-    called slice_sum_kcals_consumed, sum_kcals_consumed, kcals_consumed_percent, plus product CPC and product common
-    name translated. If you omit a field, the statistics for that field will be aggregated together.
+    The product hierarchy can be retrieved from the classified product endpoint /api/classifiedproduct/.
 
     The ordering code is also shared with the normal LZB endpoint, which uses the standard &ordering= parameter. If
     none are specified, the results are sorted by the aggregations descending, ie, biggest percentage first.
 
     Example URL:
 
-    http://localhost:8000/api/livelihoodzonebaselinereport/
+    http://localhost:8000/api/livelihoodactivitysummary/
         ?language=pt
-        &slice_product=R09
-        &slice_strategy_type=MilkProduction
-        &fields=id,name,description,source_organization,source_organization_name,livelihood_zone,livelihood_zone_name,
-            country_pk,country_iso_en_name,main_livelihood_category,bss,currency,reference_year_start_date,
+        &country=KE
+        &scenario=baseline
+        &slice_by_product=R011
+        &slice_by_strategy_type=CropProduction
+        &fields=country,livelihood_zone_baseline_name,main_livelihood_category,currency,reference_year_start_date,
             reference_year_end_date,valid_from_date,valid_to_date,population_source,population_estimate,
-            livelihoodzone_pk,livelihood_strategy_pk,strategy_type,livelihood_activity_pk,wealth_group_category_code,
-            product_cpc,product_common_name
-        &source_organization=1
-        &min_kcals_consumed_percent=52
-        &max_kcals_consumed_percent=99
+            wealth_group_category,product,product_common_name
+        &min_income_sum_slice_percentage_of_row=52
 
     The strategy type codes are:
         MilkProduction
@@ -1708,18 +1952,83 @@ class LivelihoodZoneBaselineReportViewSet(AggregatingViewSet):
         OtherCashIncome
         OtherPurchase
 
-    The product hierarchy can be retrieved from the classified product endpoint /api/classifiedproduct/.
-
-    You can then filter by the percentage of your slice. The only value we have data for so far is kcals_consumed,
-    filtered using, eg, &min_kcals_consumed_percent=52&max_kcals_consumed_percent=99.
-
-    The API currently only supports a single slice at a time. For combining please run multiple searches, and add
-    the desired results to the Compare tab.
     """
 
-    queryset = LivelihoodZoneBaseline.objects.all()
-    serializer_class = LivelihoodZoneBaselineReportSerializer
-    filterset_class = LivelihoodZoneBaselineFilterSet
+    queryset = LivelihoodActivity.objects.filter(wealth_group__community__isnull=True).select_related(
+        "livelihood_zone_baseline__livelihood_zone__country",
+        "livelihood_zone_baseline__source_organization",
+        "livelihood_zone_baseline__main_livelihood_category",
+        "wealth_group__wealth_group_category",
+        "livelihood_strategy__product",
+        "livelihood_strategy__season",
+    )
+    serializer_class = LivelihoodActivitySummarySerializer
+    filterset_class = LivelihoodActivityFilterSet
+
+    def get_queryset_annotations(self) -> dict[str, F | Expression]:
+        """
+        AggregatingViewSet requires an annotation for every field in the Serializer that isn't a direct model field.
+        """
+        language_code = translation.get_language()
+
+        def translated_field(path):
+            """Return a Coalesce expression for a translated field so that we return the English value
+            if the translation for the current language is empty."""
+            return Coalesce(
+                NullIf(
+                    F(f"{path}_{language_code}"),
+                    Value(""),
+                ),
+                F(f"{path}_en"),
+                output_field=TextField(),
+            )
+
+        def country_field():
+            """Return an expression for the country name based on ISO name fields, using the
+            localized ISO name (e.g. French or Portuguese) when available and falling back to
+            the English ISO romanized name if the localized value is empty or not defined."""
+            path = {
+                "fr": "livelihood_zone_baseline__livelihood_zone__country__iso_fr_name",
+                "pt": "livelihood_zone_baseline__livelihood_zone__country__iso_pt_name",
+            }.get(language_code)
+            if path:
+                return Coalesce(
+                    NullIf(
+                        F(path),
+                        Value(""),
+                    ),
+                    F("livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name"),
+                )
+            return F("livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name")
+
+        return {
+            "country": country_field(),
+            "source_organization_name": F("livelihood_zone_baseline__source_organization__name"),
+            "livelihood_zone": F("livelihood_zone_baseline__livelihood_zone__code"),
+            "livelihood_zone_baseline_name": translated_field("livelihood_zone_baseline__name"),
+            "reference_year_start_date": F("livelihood_zone_baseline__reference_year_start_date"),
+            "reference_year_end_date": F("livelihood_zone_baseline__reference_year_end_date"),
+            "valid_from_date": F("livelihood_zone_baseline__valid_from_date"),
+            "valid_to_date": F("livelihood_zone_baseline__valid_to_date"),
+            "main_livelihood_category": F("livelihood_zone_baseline__main_livelihood_category__code"),
+            "livelihood_zone_baseline_description": translated_field("livelihood_zone_baseline__description"),
+            "wealth_group_category": F("wealth_group__wealth_group_category__code"),
+            "wealth_group_category_name": translated_field(
+                "wealth_group__wealth_group_category__name",
+            ),
+            "wealth_group_category_ordering": F("wealth_group__wealth_group_category__ordering"),
+            "percentage_of_households": F("wealth_group__percentage_of_households"),
+            "average_household_size": F("wealth_group__average_household_size"),
+            "currency": F("livelihood_zone_baseline__currency__pk"),
+            "population_source": F("livelihood_zone_baseline__population_source"),
+            "population_estimate": F("livelihood_zone_baseline__population_estimate"),
+            "product": F("livelihood_strategy__product__cpc"),
+            "product_common_name": translated_field(
+                "livelihood_strategy__product__common_name",
+            ),
+            "source_organization": F("livelihood_zone_baseline__source_organization__pk"),
+            "iso3166a2": F("livelihood_zone_baseline__livelihood_zone__country__iso3166a2"),
+        }
 
 
 MODELS_TO_SEARCH = [

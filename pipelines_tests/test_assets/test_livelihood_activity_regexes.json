@@ -24,6 +24,17 @@
     "number milking animals": {
         "attribute": "milking_animals"
     },
+    "season 1: no. milking animals": {
+        "strategy_type": "MilkProduction",
+        "season": "season 1",
+        "attribute": "milking_animals"
+    },
+    "season 2: no. milking animals": {
+        "strategy_type": "MilkProduction",
+        "is_start": true,
+        "season": "season 2",
+        "attribute": "milking_animals"
+    },
     "season 1: lactation period (days)": {
         "strategy_type": "MilkProduction",
         "season": "season 1",
@@ -153,6 +164,30 @@
         "is_start": true,
         "product_id": "eggs",
         "attribute": "quantity_sold"
+    },
+    "Vente de bois de chauffage": {
+        "is_start": true,
+        "product_id": "bois de chauffage"
+    },
+    "Vente prods de cueillette": {
+        "is_start": true,
+        "product_id": "prods de cueillette"
+    },
+    "vente de mangue": {
+        "is_start": true,
+        "product_id": "mangue"
+    },
+    "vente artisanat": {
+        "is_start": true,
+        "product_id": "artisanat"
+    },
+    "vente d'orange": {
+        "is_start": true,
+        "product_id": "orange"
+    },
+    "sand sales": {
+        "is_start": true,
+        "product_id": "sand"
     },
     "CROP PRODUCTION: ": {
         "strategy_type": "CropProduction",
@@ -433,17 +468,23 @@
         "season": "1ère saison",
         "attribute": "percentage_kcals"
     },
-    "lait+beurre/beurre clarifié kcals(%)-1ème saison": {
-        "strategy_type": "ButterProduction",
-        "season": "1ème saison",
-        "attribute": "percentage_kcals"
-    },
     "lait+beurre/beurre clarifié kcals(%)-2ème saison": {
         "strategy_type": "ButterProduction",
         "is_start": true,
         "season": "2ème saison",
         "attribute": "percentage_kcals"
     },
+    "lait+beurre/clarifié kcals (%)-1ère saison": {
+        "strategy_type": "ButterProduction",
+        "season": "1ère saison",
+        "attribute": "percentage_kcals"
+    },
+    "lait+beurre/clarifié kcals (%)-1ème saison": {
+        "strategy_type": "ButterProduction",
+        "is_start": true,
+        "season": "1ème saison",
+        "attribute": "percentage_kcals"
+    },        
     "poids de la carcasse (kg)": {
         "unit_of_measure_id": "kg",
         "attribute": "carcass_weight"
@@ -569,6 +610,15 @@
     "Manioc: nbr. unités loc.": {
         "is_start": true,
         "product_id": "manioc",
+        "attribute": "number_of_local_measures"
+    },
+    "nbr d'unités locales": {
+        "attribute": "number_of_local_measures"
+    },
+    "nbr unités": {
+        "attribute": "number_of_local_measures"
+    },
+    "nbr unités locales": {
         "attribute": "number_of_local_measures"
     },
     "nom de la mesure": {
@@ -832,6 +882,36 @@
     "dépense": {
         "attribute": "expenditure"
     },
+    "ustensils de cuisine: dépense annuelle": {
+        "activity_label": "ustensils de cuisine: dépense annuelle",
+        "is_start": true,
+        "attribute": "expenditure",
+        "product_id": "ustensils de cuisine"
+    },
+    "electricité: dépense annuelle": {
+        "activity_label": "electricité: dépense annuelle",
+        "is_start": true,
+        "attribute": "expenditure",
+        "product_id": "electricité"
+    },
+    "investissements en actifs: dépense annuelle": {
+        "activity_label": "investissements en actifs: dépense annuelle",
+        "is_start": true,
+        "attribute": "expenditure",
+        "product_id": "investissements en actifs"
+    },
+    "savon: quantité annuelle": {
+        "activity_label": "savon: quantité annuelle",
+        "is_start": true,
+        "attribute": "expenditure",
+        "product_id": "savon"
+    },
+    "sel: quantité annuelle": {
+        "activity_label": "sel: quantité annuelle",
+        "is_start": true,
+        "attribute": "expenditure",
+        "product_id": "sel"
+    },
     "quantité (kg)": {
         "attribute": "quantity_produced_or_purchased",
         "unit_of_measure_id": "kg"
@@ -880,6 +960,12 @@
     },
     "nb  personnes par ménage": {
         "attribute": "people_per_household"
+    },
+    "Aide alimentaire - céréales: quantité (kg)": {
+        "is_start": true,
+        "product_id": "céréales",
+        "unit_of_measure_id": "kg",
+        "attribute": "unit_multiple"
     },
     "Aide - céréale: quantité (kg)": {
         "is_start": true,
@@ -1131,6 +1217,14 @@
   "farine de ble - nom de la mesure locale": {
     "is_start": true,
     "product_id": "farine de ble",
+    "attribute": "name_of_local_measure"
+  },
+  "nom de la mesure local": {
+    "attribute": "name_of_local_measure"
+  },
+  "eau pour le bétail: nom mesure": {
+    "is_start": true,
+    "product_id": "eau pour le bétail",
     "attribute": "name_of_local_measure"
   }
 }
