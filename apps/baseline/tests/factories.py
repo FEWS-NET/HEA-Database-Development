@@ -119,8 +119,9 @@ class LivelihoodZoneBaselineFactory(factory.django.DjangoModelFactory):
     bss_language = factory.Iterator(["en", "pt", "es", "ar", "fr"])
     reference_year_start_date = factory.LazyAttribute(lambda o: o.reference_year_end_date - relativedelta(years=1))
     reference_year_end_date = factory.Sequence(lambda n: datetime.date(1900, 1, 1) + datetime.timedelta(days=n + 10))
-    valid_from_date = factory.Sequence(lambda n: datetime.date(1900, 1, 1) + datetime.timedelta(days=n))
-    valid_to_date = factory.Sequence(lambda n: datetime.date(1900, 1, 1) + datetime.timedelta(days=n + 10))
+    # Default to None so factory-created baselines are always valid regardless of as_of_date filter
+    valid_from_date = None
+    valid_to_date = None
     population_source = factory.Sequence(lambda n: f"population_source {n}")
     population_estimate = fuzzy.FuzzyInteger(500, 1000000)
     currency = factory.SubFactory(CurrencyFactory)

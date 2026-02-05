@@ -13,7 +13,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from common.fields import translation_fields
-from common.filters import MultiFieldFilter, UpperCaseFilter
+from common.filters import DefaultingDateFilter, MultiFieldFilter, UpperCaseFilter
 from common.viewsets import AggregatingViewSet, BaseModelViewSet
 from metadata.models import WealthGroupCategory
 
@@ -204,6 +204,10 @@ class LivelihoodZoneBaselineFilterSet(filters.FilterSet):
     product = CharFilter(method="filter_by_product", label="Filter by Product")
     wealth_characteristic = CharFilter(
         method="filter_by_wealth_characteristic", label="Filter by Wealth Characteristic"
+    )
+    as_of_date = DefaultingDateFilter(
+        label="As of Date",
+        help_text="Filter baselines valid as of this date (YYYY-MM-DD format or special values like 'today').",
     )
 
     def filter_by_product(self, queryset, name, value):
