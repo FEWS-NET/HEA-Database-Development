@@ -517,8 +517,12 @@ class WealthGroup(common_models.Model):
         verbose_name=_("Percentage of households"),
         help_text=_("Percentage of households in the Community or Livelihood Zone that are in this Wealth Group"),
     )
-    average_household_size = models.PositiveSmallIntegerField(
-        blank=True, null=True, verbose_name=_("Average household size")
+    average_household_size = models.FloatField(
+        blank=True,
+        null=True,
+        validators=[common_models.validate_positive],
+        verbose_name=_("Average household size"),
+        help_text=_("Average number of people per household in this Wealth Group"),
     )
 
     objects = WealthGroupManager()
@@ -839,6 +843,56 @@ class WealthGroupCharacteristicValue(common_models.Model):
         ]
 
 
+class BaselineWealthGroupCharacteristicValueManager(InheritanceManager):
+    def get_queryset(self):
+        return super().get_queryset().filter(wealth_group__community__isnull=True).select_subclasses()
+
+
+class BaselineWealthGroupCharacteristicValue(WealthGroupCharacteristicValue):
+    """
+    An attribute of a Baseline Wealth Group such as the number of school-age children.
+    """
+
+    objects = BaselineWealthGroupCharacteristicValueManager()
+
+    def clean(self):
+        if self.wealth_group.community:
+            raise ValidationError(
+                _("A Baseline Wealth Group Characteristic Value cannot be for a Community Wealth Group")
+            )
+        super().clean()
+
+    class Meta:
+        verbose_name = _("Baseline Wealth Group Characteristic Value")
+        verbose_name_plural = _("Baseline Wealth Group Characteristic Values")
+        proxy = True
+
+
+class CommunityWealthGroupCharacteristicValueManager(InheritanceManager):
+    def get_queryset(self):
+        return super().get_queryset().exclude(wealth_group__community__isnull=True).select_subclasses()
+
+
+class CommunityWealthGroupCharacteristicValue(WealthGroupCharacteristicValue):
+    """
+    An attribute of a Community Wealth Group such as the number of school-age children.
+    """
+
+    objects = CommunityWealthGroupCharacteristicValueManager()
+
+    def clean(self):
+        if not self.wealth_group.community:
+            raise ValidationError(
+                _("A Community Wealth Group Characteristic Value must be for a Community Wealth Group")
+            )
+        super().clean()
+
+    class Meta:
+        verbose_name = _("Community Wealth Group Characteristic Value")
+        verbose_name_plural = _("Community Wealth Group Characteristic Values")
+        proxy = True
+
+
 class LivelihoodStrategyManager(common_models.IdentifierManager):
     def get_by_natural_key(
         self,
@@ -958,8 +1012,12 @@ class LivelihoodStrategy(common_models.Model):
         """
         if self.strategy_type in self.REQUIRES_PRODUCT and not self.product:
             raise ValidationError(_("A %s Livelihood Strategy must have a Product" % self.strategy_type))
-        if self.strategy_type in ["MilkProduction", "ButterProduction"] and not self.season:
+        if self.strategy_type in self.REQUIRES_SEASON and not self.season:
             raise ValidationError(_("A %s Livelihood Strategy must have a Season" % self.strategy_type))
+        # All strategies require either a product or an additional identifier to distinguish them
+        if not self.product and not self.additional_identifier:
+            raise ValidationError(_("A Livelihood Strategy must have either a Product or an Additional Identifier"))
+
         super().clean()
 
     def save(self, *args, **kwargs):
@@ -1185,23 +1243,42 @@ class LivelihoodActivity(common_models.Model):
         """
         pass
 
+    def validate_quantity_purchased(self):
+        """
+        Validate the quantity_purchased.
+
+        In most LivelihoodActivity subclasses the quantity_purchased is not used
+        and this validation passes.
+
+        However, FoodPurchase has additional fields that allow the quantity_purchased
+        to be validated. This method is overwritten in that subclass.
+        """
+        pass
+
     def validate_quantity_consumed(self):
         # Default to 0 if any of the quantities are None
         quantity_produced = self.quantity_produced or 0
+        quantity_purchased = self.quantity_purchased or 0
         quantity_sold = self.quantity_sold or 0
         quantity_other_uses = self.quantity_other_uses or 0
+        try:
+            quantity_butter_production = self.quantity_butter_production or 0
+        except AttributeError:
+            # Only MilkProduction has quantity_butter_production
+            quantity_butter_production = 0
 
         # Calculate the expected quantity_consumed with default values considered
-        expected_quantity_consumed = quantity_produced - quantity_sold - quantity_other_uses
-        quantity_consumed = self.quantity_consumed or 0
+        expected_quantity_consumed = (
+            quantity_produced + quantity_purchased - quantity_sold - quantity_other_uses - quantity_butter_production
+        )
 
         # Check if the actual quantity_consumed matches the expected quantity_consumed
-        if self.quantity_consumed and quantity_consumed != expected_quantity_consumed:
-            raise ValidationError(
-                _(
-                    "Quantity consumed for a Livelihood Activity must be quantity produced - quantity sold - quantity used for other things"  # NOQA: E501
-                )
-            )
+        if self.quantity_consumed and self.quantity_consumed != expected_quantity_consumed:
+            if quantity_butter_production:
+                message = "Quantity consumed for Milk Production must be quantity produced + quantity purchased - quantity sold - quantity used for butter production - quantity used for other things"  # NOQA: E501
+            else:
+                message = "Quantity consumed for a Livelihood Activity must be quantity produced + quantity purchased - quantity sold - quantity used for other things"  # NOQA: E501
+            raise ValidationError(_(message))
 
     def validate_income(self):
         income = self.income or 0
@@ -1232,17 +1309,32 @@ class LivelihoodActivity(common_models.Model):
             )
 
     def validate_kcals_consumed(self):
-        conversion_factor = UnitOfMeasureConversion.objects.get_conversion_factor(
-            from_unit=self.livelihood_strategy.unit_of_measure,
-            to_unit=self.livelihood_strategy.product.unit_of_measure,
-        )
-        kcals_per_unit = self.livelihood_strategy.product.kcals_per_unit or 0
-        quantity_consumed = self.quantity_consumed or 0
-        kcals_consumed = self.kcals_consumed or 0
-        if self.kcals_consumed and kcals_consumed != quantity_consumed * conversion_factor * kcals_per_unit:
-            raise ValidationError(
-                _("Kcals consumed for a Livelihood Activity must be quantity consumed multiplied by kcals per unit")
-            )
+        if self.kcals_consumed and self.quantity_consumed and self.livelihood_strategy.product.kcals_per_unit:
+            try:
+                conversion_factor = UnitOfMeasureConversion.objects.get_conversion_factor(
+                    from_unit=self.livelihood_strategy.unit_of_measure,
+                    to_unit=self.livelihood_strategy.product.unit_of_measure,
+                )
+            except UnitOfMeasureConversion.DoesNotExist:
+                raise ValidationError(
+                    _(
+                        "No conversion factor found from unit %(from_unit)s for Livelihood Activity to unit %(to_unit)s for Product %(product)s for calculating kcals consumed."  # NOQA: E501
+                    )
+                    % {
+                        "from_unit": self.livelihood_strategy.unit_of_measure,
+                        "to_unit": self.livelihood_strategy.product.unit_of_measure,
+                        "product": self.livelihood_strategy.product,
+                    }
+                )
+            if (
+                self.kcals_consumed
+                != self.quantity_consumed * conversion_factor * self.livelihood_strategy.product.kcals_per_unit
+            ):
+                raise ValidationError(
+                    _(
+                        "Kcals consumed for a Livelihood Activity must be quantity consumed multiplied by kcals per unit"
+                    )
+                )
 
     def validate_strategy_type(self):
         if (
@@ -1271,6 +1363,7 @@ class LivelihoodActivity(common_models.Model):
         self.validate_livelihood_zone_baseline()
         self.validate_strategy_type()
         self.validate_quantity_produced()
+        self.validate_quantity_purchased()
         self.validate_quantity_consumed()
         self.validate_income()
         self.validate_expenditure()
@@ -1312,7 +1405,12 @@ class LivelihoodActivity(common_models.Model):
 
 class BaselineLivelihoodActivityManager(InheritanceManager):
     def get_queryset(self):
-        return super().get_queryset().filter(scenario=LivelihoodActivityScenario.BASELINE).select_subclasses()
+        return (
+            super()
+            .get_queryset()
+            .filter(wealth_group__community__isnull=True, scenario=LivelihoodActivityScenario.BASELINE)
+            .select_subclasses()
+        )
 
 
 class BaselineLivelihoodActivity(LivelihoodActivity):
@@ -1320,8 +1418,8 @@ class BaselineLivelihoodActivity(LivelihoodActivity):
     An activity undertaken by households in a Wealth Group that produces food or income or requires expenditure.
 
     A Baseline Livelihood Activity contains the outputs of a Livelihood Strategy
-    employed by a Wealth Group in a Community or a Wealth Group representing
-    the Baseline as a whole in the reference year.
+    employed by a Wealth Group representing the Baseline as a whole during the
+    reference year.
 
     Stored on the BSS 'Data' worksheet.
     """
@@ -1341,7 +1439,12 @@ class BaselineLivelihoodActivity(LivelihoodActivity):
 
 class ResponseLivelihoodActivityManager(InheritanceManager):
     def get_queryset(self):
-        return super().get_queryset().filter(scenario=LivelihoodActivityScenario.RESPONSE).select_subclasses()
+        return (
+            super()
+            .get_queryset()
+            .filter(wealth_group__community__isnull=True, scenario=LivelihoodActivityScenario.RESPONSE)
+            .select_subclasses()
+        )
 
 
 class ResponseLivelihoodActivity(LivelihoodActivity):
@@ -1419,7 +1522,12 @@ class MilkProduction(LivelihoodActivity):
         WHOLE = "whole", _("whole")
 
     # Production calculation /validation is `lactation days * daily_production`
-    milking_animals = models.PositiveSmallIntegerField(verbose_name=_("Number of milking animals"))
+    # Although logically we can't have a MilkProduction without milking animals,
+    # the BSS may contain records with 0 production and a blank milking_animals
+    # field, particularly in Season 2 in a Baseline, or in a Response scenario
+    milking_animals = models.PositiveSmallIntegerField(
+        blank=True, null=True, verbose_name=_("Number of milking animals")
+    )
     lactation_days = models.PositiveSmallIntegerField(
         blank=True, null=True, verbose_name=_("Average number of days of lactation")
     )
@@ -1465,9 +1573,13 @@ class MilkProduction(LivelihoodActivity):
 
     def clean(self):
         super().clean()
-        if self.milking_animals and not self.lactation_days:
+        # Note that we check that lactation_days and daily_production are not None
+        # because 0 is a valid value for both fields.  It is possible to have a
+        # non-zero milking_animals but zero lactation_days or daily_production,
+        # particularly in Season 2 in a Baseline, or in a Response scenario.
+        if self.milking_animals and self.lactation_days is None:
             raise ValidationError(_("Lactation days must be provided if there are milking animals"))
-        if self.milking_animals and not self.daily_production:
+        if self.milking_animals and self.daily_production is None:
             raise ValidationError(_("Daily production must be provided if there are milking animals"))
 
     class Meta:
@@ -1532,7 +1644,7 @@ class MeatProduction(LivelihoodActivity):
     carcass_weight = models.FloatField(verbose_name=_("Carcass weight per animal"))
 
     def validate_quantity_produced(self):
-        if self.quantity_produced != self.animals_slaughtered * self.carcass_weight:
+        if self.quantity_produced and self.quantity_produced != self.animals_slaughtered * self.carcass_weight:
             raise ValidationError(
                 _("Quantity Produced for a Meat Production must be animals slaughtered multiplied by carcass weight")
             )
@@ -1605,19 +1717,27 @@ class FoodPurchase(LivelihoodActivity):
         help_text=_("Number of times in a year that the purchase is made"),
     )
 
-    def validate_quantity_produced(self):
+    def validate_quantity_purchased(self):
         if (
-            self.quantity_produced is not None
+            self.quantity_purchased is not None
             and self.unit_multiple is not None
             and self.times_per_month is not None
             and self.months_per_year is not None
         ):
-            if self.quantity_produced != self.unit_multiple * self.times_per_month * self.months_per_year:
+            if self.quantity_purchased != self.unit_multiple * self.times_per_month * self.months_per_year:
                 raise ValidationError(
                     _(
-                        "Quantity produced for a Food Purchase must be purchase amount * purchases per month * months per year"  # NOQA: E501
+                        "Quantity purchased for a Food Purchase must be purchase amount * purchases per month * months per year"  # NOQA: E501
                     )
                 )
+
+    def validate_expenditure(self):
+        quantity_purchased = self.quantity_purchased or 0
+        price = self.price or 0
+        expenditure = self.expenditure or 0
+
+        if self.expenditure and expenditure != quantity_purchased * price:
+            raise ValidationError(_("Expenditure for a Food Purchase must be quantity purchased multiplied by price"))
 
     class Meta:
         verbose_name = LivelihoodStrategyType.FOOD_PURCHASE.label

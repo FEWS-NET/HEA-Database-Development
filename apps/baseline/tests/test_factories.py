@@ -41,11 +41,13 @@ from baseline.models import (
 
 from .factories import (
     BaselineLivelihoodActivityFactory,
+    BaselineWealthGroupCharacteristicValueFactory,
     BaselineWealthGroupFactory,
     ButterProductionFactory,
     CommunityCropProductionFactory,
     CommunityFactory,
     CommunityLivestockFactory,
+    CommunityWealthGroupCharacteristicValueFactory,
     CommunityWealthGroupFactory,
     CopingStrategyFactory,
     CropProductionFactory,
@@ -275,6 +277,8 @@ class FactoryTestCase(TestCase):
             BaselineWealthGroupFactory()
             CommunityWealthGroupFactory()
             WealthGroupCharacteristicValueFactory()
+            BaselineWealthGroupCharacteristicValueFactory()
+            CommunityWealthGroupCharacteristicValueFactory()
             LivelihoodStrategyFactory()
             LivelihoodActivityFactory()
             BaselineLivelihoodActivityFactory()

@@ -8,13 +8,13 @@ import os
 from io import BytesIO
 
 import django
-import numpy as np
 import pandas as pd
 import requests
 from dagster import OpExecutionContext, job, op
 from django.contrib.gis.geos import GEOSGeometry, MultiPolygon, Polygon
 from django.db import models, transaction
 from gdrivefs.core import GoogleDriveFile
+from numpy import nan
 from upath import UPath
 
 from ..configs import ReferenceDataConfig
@@ -47,29 +47,29 @@ def load_metadata_for_model(context: OpExecutionContext, sheet_name: str, model:
         field.get_attname() for field in model._meta.concrete_fields if field.get_attname() not in valid_field_names
     ]
     if "aliases" in df:
-        df["aliases"] = df["aliases"].apply(lambda x: sorted(x.lower().split("~")) if x else None)
+        df["aliases"] = df["aliases"].astype(object).apply(lambda x: sorted(x.lower().split("~")) if x else None)
     if "cpcv2" in df:
-        df["cpcv2"] = df["cpcv2"].apply(lambda x: sorted(x.split("~")) if x else None)
+        df["cpcv2"] = df["cpcv2"].astype(object).apply(lambda x: sorted(x.split("~")) if x else None)
     if "hs2012" in df:
-        df["hs2012"] = df["hs2012"].apply(lambda x: sorted(x.split("~")) if x else None)
+        df["hs2012"] = df["hs2012"].astype(object).apply(lambda x: sorted(x.split("~")) if x else None)
     if "kcals_per_unit" in df:
-        df["kcals_per_unit"] = df["kcals_per_unit"].replace("", None)
+        df["kcals_per_unit"] = df["kcals_per_unit"].astype(object).replace("", None)
     if "is_start" in df:
         df["is_start"] = df["is_start"].replace("", False)
     if "product_name" in df:
         df = ClassifiedProductLookup(require_match=False).do_lookup(df, "product_name", "product_id")
     if "country_id" in df:
-        df["country_id"] = df["country_id"].replace(pd.NA, None)
+        df["country_id"] = df["country_id"].astype(object).replace(pd.NA, None)
     if "product_id" in df:
-        df["product_id"] = df["product_id"].replace(pd.NA, None)
+        df["product_id"] = df["product_id"].astype(object).replace(pd.NA, None)
     if "unit_of_measure_id" in df:
-        df["unit_of_measure_id"] = df["unit_of_measure_id"].replace("", None)
+        df["unit_of_measure_id"] = df["unit_of_measure_id"].astype(object).replace("", None)
     if "currency_id" in df:
-        df["currency_id"] = df["currency_id"].replace("", None)
+        df["currency_id"] = df["currency_id"].astype(object).replace("", None)
     if "wealth_characteristic_id" in df:
-        df["wealth_characteristic_id"] = df["wealth_characteristic_id"].replace("", None)
+        df["wealth_characteristic_id"] = df["wealth_characteristic_id"].astype(object).replace("", None)
     if "ordering" in df:
-        df["ordering"] = df["ordering"].replace("", None)
+        df["ordering"] = df["ordering"].astype(object).replace("", None)
     if "activity_type" in df:
         df["activity_type"] = df["activity_type"].replace("", ActivityLabel.LivelihoodActivityType.LIVELIHOOD_ACTIVITY)
 
@@ -85,7 +85,9 @@ def load_metadata_for_model(context: OpExecutionContext, sheet_name: str, model:
                         current = getattr(instance, k)
                         if isinstance(current, list):
                             current = sorted(current)
-                        if v != current:
+                        # Note that we only allow changes to the fields. If a field is blank in the worksheet,
+                        # we leave any value that may have been set manually in the database.
+                        if v and v != current:
                             if cpc[-2] != "H" and k not in [
                                 "aliases",
                                 "common_name_en",
@@ -156,7 +158,7 @@ def load_metadata_for_model(context: OpExecutionContext, sheet_name: str, model:
                 how="left",
                 on=id_fields,
             )
-            df[model._meta.pk.name] = df[model._meta.pk.name].replace(np.nan, None)
+            df[model._meta.pk.name] = df[model._meta.pk.name].replace(nan, None)
         # Turn the dataframe into a set of unsaved model instances
         instances = []
         fields = [k for k in df.columns if k in valid_field_names]

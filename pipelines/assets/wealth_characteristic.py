@@ -195,6 +195,7 @@ def wealth_characteristic_instances(
             "wealth_characteristic_id",
             "product_id",
             "unit_of_measure_id",
+            "wealth_characteristic__has_product",
         )
     }
     context.log.info("Loaded %d Wealth Characteristic Labels", len(label_map))
@@ -239,6 +240,7 @@ def wealth_characteristic_instances(
 
     # Iterate over the rows
     wealth_group_characteristic_values = []
+    last_product_id = None
     for row in df.iloc[num_header_rows:].index:  # Ignore the Wealth Group header rows
         label = prepared_labels[row]
         if not label:
@@ -249,6 +251,21 @@ def wealth_characteristic_instances(
         if not any(attributes.values()):
             # Ignore rows that don't contain any relevant data (or which aren't in the label_map)
             continue
+        # Apply product inheritance
+        if attributes.get("product_id"):
+            last_product_id = attributes.get("product_id")
+        elif attributes.get("wealth_characteristic__has_product"):
+            if not last_product_id:
+                raise ValueError(
+                    "Wealth Characteristic Label '%s' in row %s requires a product, but there is no previous product to inherit"
+                    % (label, row)
+                )
+            attributes["product_id"] = last_product_id
+        else:
+            # The current label doesn't need a product (and doesn't have one), so clear the last_product_id
+            # so that it isn't inherited by subsequent labels.
+            last_product_id = None
+
         # Lookup the Wealth Group Category from Column B
         wealth_group_category = wealthgroupcategorylookup.get(df.loc[row, "B"])
         if not wealth_group_category:
@@ -490,9 +507,20 @@ def wealth_characteristic_instances(
     # Calculate the kcals_consumed
     # Derive it by multiplying percentage_kcals by:
     #   2100 (kcals per person per day) * 365 (days per year) * average_household_size
+    # Convert columns to numeric to handle string values from the dataframe
+    wealth_group_df["percentage_kcals"] = pd.to_numeric(wealth_group_df["percentage_kcals"], errors="coerce")
+    wealth_group_df["average_household_size"] = pd.to_numeric(
+        wealth_group_df["average_household_size"], errors="coerce"
+    )
     wealth_group_df["kcals_consumed"] = (
         wealth_group_df["percentage_kcals"] * 2100 * 365 * wealth_group_df["average_household_size"]
     )
+
+    # Some fields will contain pd.NA, e.g. percentage_of_households for Community Wealth Groups, so replace with None
+    wealth_group_df = wealth_group_df.astype(object).replace(pd.NA, None)
+
+    # Add the bss_sheet so that we can get better references in error messages
+    wealth_group_df["bss_sheet"] = "WB"
 
     result = {
         "WealthGroup": wealth_group_df.to_dict(orient="records"),

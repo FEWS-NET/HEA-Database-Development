@@ -56,6 +56,18 @@
         null
     ],
     [
+        "vente (?:de |d')?{product_pattern}",
+        null,
+        true,
+        null
+    ],
+    [
+        "{product_pattern} sales",
+        null,
+        true,
+        null
+    ],
+    [
         "(?:other purchases?|autres? achats?|achats?):?",
         "OtherPurchase",
         true,
@@ -284,6 +296,12 @@
         "expenditure"
     ],
     [
+        "{product_pattern}{separator_pattern} (?:dépense annuelle|quantité annuelle)",
+        null,
+        true,
+        "expenditure"
+    ],
+    [
         "{nbr_pattern} (?:de )?fois / an(?:née)?",
         null,
         false,
@@ -296,7 +314,7 @@
         "times_per_year"
     ],
     [
-        "{nbr_pattern} (?:people per hh|personnes par ménage|personnes par mènage|pers par mènage)",
+        "{nbr_pattern} (?:de )?(?:pers|personnes|people)(?: ?/ ?| par | per )(?:ménage|mènage|hh)",
         null,
         false,
         "people_per_household"
@@ -329,6 +347,18 @@
         "(?:no\\.|no|number) milking animals",
         null,
         false,
+        "milking_animals"
+    ],
+    [
+        "(?P<season>season 1): (?:no\\.|no|number) milking animals",
+        "MilkProduction",
+        false,
+        "milking_animals"
+    ],
+    [
+        "(?P<season>season 2): (?:no\\.|no|number) milking animals",
+        "MilkProduction",
+        true,
         "milking_animals"
     ],
     [
@@ -632,13 +662,19 @@
         "income"
     ],
     [
-        "lait\\+beurre/beurre clarifié kcals ?\\(%\\) ?- ?(?P<season>1è[m|r]e saison)",
+        "lait\\+beurre/(?:beurre )?clarifié kcals ?\\(%\\) ?- ?(?P<season>1ère saison)",
         "ButterProduction",
         false,
         "percentage_kcals"
     ],
     [
-        "lait\\+beurre/beurre clarifié kcals ?\\(%\\) ?- ?(?P<season>2è[m|r]e saison)",
+        "lait\\+beurre/(?:beurre )?clarifié kcals ?\\(%\\) ?- ?(?P<season>2è[m|r]e saison)",
+        "ButterProduction",
+        true,
+        "percentage_kcals"
+    ],
+    [
+        "lait\\+beurre/(?:beurre )?clarifié kcals ?\\(%\\) ?- ?(?P<season>1ème saison)",
         "ButterProduction",
         true,
         "percentage_kcals"
@@ -752,13 +788,13 @@
         "percentage_monthly_kcals"
     ],
     [
-        "(?:autre culture)?{separator_pattern} ?{product_pattern}{separator_pattern} {nbr_pattern} (?:de mesures locales|d'unités locales|unités loc.)",
+        "(?:autre culture)?{separator_pattern} ?{product_pattern}{separator_pattern} {nbr_pattern} (?:de mesures|mesures|d'unités|unités)(?: locales| loc\\.?)?",
         null,
         true,
         "number_of_local_measures"
     ],
     [
-        "{nbr_pattern} de mesures locales",
+        "{nbr_pattern} (?:de mesures|mesures|d'unités|unités)(?: locales| loc\\.?)?",
         null,
         false,
         "number_of_local_measures"
@@ -854,7 +890,7 @@
         "unit_multiple"
     ],
     [
-        "aide{separator_pattern} {product_pattern}{separator_pattern} quantité ?\\(?{unit_of_measure_pattern}\\)?",
+        "aide(?: alimentaire)?{separator_pattern} {product_pattern}{separator_pattern} quantité ?\\(?{unit_of_measure_pattern}\\)?",
         null,
         true,
         "unit_multiple"

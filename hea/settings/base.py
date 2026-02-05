@@ -361,6 +361,14 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
 PRIVACY_URL = "https://help.fews.net/fdp/privacy-policy"
 DISCLAIMER_URL = "https://help.fews.net/fdp/data-and-information-use-and-attribution-policy"
 
+
+########## DATA EXPLORER CONFIGURATION
+# setting a default, so app startup doesn't fail when this variable isn't set
+# in services that don't use it.
+# It only needs an actually working upstream when the ProxyView view is invoked.
+EXPLORER_CLOUDFRONT_URL = env.str("EXPLORER_CLOUDFRONT_URL", default="http://localhost:3000")
+########## End DATA EXPLORER CONFIGURATION
+
 # Allow GDAL/GEOS library path overrides to be set in the environment, for MacOS.
 GDAL_LIBRARY_PATH = env("GDAL_LIBRARY_PATH", default=None)  # For example, /opt/homebrew/lib/libgdal.dylib
 GEOS_LIBRARY_PATH = env("GEOS_LIBRARY_PATH", default=None)  # For example, /opt/homebrew/lib/libgeos_c.dylib

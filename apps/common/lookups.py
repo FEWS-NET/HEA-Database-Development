@@ -75,13 +75,14 @@ class Lookup(ABC):
     # where an Excel date or other epoch-based date format might accidentally match a primary key
     match_pk: bool = True
 
-    # Queryset Filters
+    # Queryset Filters and Excludes
     filters: dict
+    excludes: dict
 
     # Related models to also instantiate
     related_models = []
 
-    def __init__(self, filters: dict = None, require_match=None):
+    def __init__(self, filters: dict = None, excludes: dict = None, require_match=None):
         # Make sure we don't have any fields in multiple categories
         assert len(set((*self.id_fields, *self.parent_fields, *self.lookup_fields))) == len(self.id_fields) + len(
             self.parent_fields
@@ -90,10 +91,16 @@ class Lookup(ABC):
         self.composite_key = len(self.id_fields) > 1
 
         self.filters = filters or dict()
+        self.excludes = excludes or dict()
 
         # Override the require_match if necessary
         if require_match is not None:
             self.require_match = require_match
+
+        # Create instance level caches for key methods
+        self.get_lookup_df = functools.cache(self.get_lookup_df)
+        self.get = functools.cache(self.get)
+        self.get_instance = functools.cache(self.get_instance)
 
     def get_queryset_columns(self):
         return [*self.lookup_fields, *self.parent_fields, *self.id_fields]
@@ -108,10 +115,13 @@ class Lookup(ABC):
         It uses values_list to avoid hydrating a Django model, given that the result will be used
         to instantiate a DataFrame.
         """
-        queryset = self.model.objects.filter(**self.filters).values_list(*self.get_queryset_columns())
+        queryset = (
+            self.model.objects.filter(**self.filters)
+            .exclude(**self.excludes)
+            .values_list(*self.get_queryset_columns())
+        )
         return queryset
 
-    @functools.cache
     def get_lookup_df(self):
         """
         Build a dataframe for a model that can be used to lookup the primary key.
@@ -119,7 +129,7 @@ class Lookup(ABC):
         Create a dataframe that contains the primary key, and all the columns that
         can be used to lookup the primary key, e.g. the name, description, aliases, etc.
 
-        Use the queryset.iterator() to prevent Django from caching the queryset, and instead use functools.cache to
+        Use the queryset.iterator() to prevent Django from caching the queryset, because functools.cache is used to
         cache the dataframe returned from this function.
         """
         df = pd.DataFrame(list(self.get_queryset().iterator()), columns=self.get_queryset_columns())
@@ -322,14 +332,13 @@ class Lookup(ABC):
         df[column] = df[column].map(model_map)
         return df
 
-    @functools.cache
     def get(self, value: str, **parent_values) -> str | None:
         """
         Return the lookup value for a single string, or None if there is no match.
 
         Used to do a lookup for a single value instead of a dataframe.
 
-        Unlike `do_lookup()` this is a cached property to avoid repeated database queries.
+        Unlike `do_lookup()` this is a cached method to avoid repeated database queries.
         Note that this cache is per-instance of the Lookup class, so the class should be instantiated outside a loop
         performing repeated lookups:
 
@@ -347,14 +356,13 @@ class Lookup(ABC):
         except ValueError:
             return None
 
-    @functools.cache
     def get_instance(self, value: str, **parent_values) -> Model | None:
         """
         Return the Django model instance for a single string, or None if there is no match.
 
         Used to do a lookup for a single value instead of a dataframe.
 
-        Unlike `do_lookup()` this is a cached property to avoid repeated database queries.
+        Unlike `do_lookup()` this is a cached method to avoid repeated database queries.
         Note that this cache is per-instance of the Lookup class, so the class should be instantiated outside a loop
         performing repeated lookups:
 
@@ -443,6 +451,14 @@ class ClassifiedProductLookup(Lookup):
         "aliases",
         "hs2012",
     )
+
+    def get_queryset(self):
+        """
+        Exclude specific products that are unwanted duplicates.
+        """
+        # P23162 is Husked Rice, but we use "rice" as an alias for it. This
+        # conflicts with R0113: Rice, which we never use, so ignore it.
+        return super().get_queryset().exclude(cpc="R0113")
 
     def get_lookup_df(self):
         """

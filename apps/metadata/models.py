@@ -154,6 +154,16 @@ class WealthCharacteristic(ReferenceData):
         default=VariableType.STR,
         help_text=_("Whether the field is numeric, character, boolean, etc."),
     )
+    characteristic_group = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        verbose_name=_("Characteristic Group"),
+        help_text=_(
+            "Optional grouping for characteristics, such as 'Population', 'Income', "
+            "'Land', 'Livestock', 'Poultry', 'Other assets'"
+        ),
+    )
     objects = IdentifierManager.from_queryset(ReferenceDataQuerySet)()
 
     class Meta:

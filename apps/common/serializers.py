@@ -121,15 +121,12 @@ class AggregatingSerializer(serializers.ModelSerializer):
 
      * Meta.model: As standard, the base model of the endpoint
      * Meta.fields: The maximum list of field names the endpoint can return. These are user-friendly field names,
-        converted to Django field paths by the field_to_database_path method if necessary. These can span model
-        joins in the usual way using double underscore. Do not include the auto-generated calculated fields, and
-        do not add Field class attributes on the serializer class.
-     * aggregates: A dictionary of {field name: expression or aggregate} pairs. These field names are also converted
-     to Django field paths by the field_to_database_path method if necessary. These can span model joins using __.
+        which must also be available on the queryset (either as model fields or annotations). Do not include the
+        auto-generated calculated fields, and do not add Field class attributes on the serializer class.
+     * aggregates: A dictionary of {field name: expression or aggregate} pairs. These field names must exist on the
+        queryset (model fields or annotations) and will be aggregated.
      * slice_fields: A dict of {field name: database filter expression} pairs, eg,
         {"kcals_consumed": "path__product__cpc__istartswith"}. This implements the parameter slice_by_product.
-     * field_to_database_path: A method that converts a user-friendly field name used in the results and parameter
-        names into a Django field path, eg, product_cpc into path__product__cpc.
 
     Field class attributes are not necessary. The values are rendered as returned by the database query, and this
     endpoint is read-only.
@@ -153,14 +150,6 @@ class AggregatingSerializer(serializers.ModelSerializer):
     # For example: (product=R0 OR product=L0) AND (strategy_type=MilkProd OR strategy_type=CropProd)
     slice_fields = {}
 
-    @staticmethod
-    def field_to_database_path(field_name):
-        """
-        Convert user-friendly field name specified in Meta.fields, eg, strategy_name to database field path, eg,
-        join_path__strategies__name.
-        """
-        return field_name
-
     def get_fields(self):
         """
         User can specify a ?fields= URL parameter to specify a field list, comma-delimited. This also
@@ -181,10 +170,10 @@ class AggregatingSerializer(serializers.ModelSerializer):
         # User-provided list of fields
         field_names = field_list.split(",")
 
-        # Add the ordering field if specified
+        # Add the ordering fields if specified
         ordering = self.context["request"].query_params.get(api_settings.ORDERING_PARAM)
         if ordering:
-            field_names.append(ordering)
+            field_names += [o.lstrip("-") for o in ordering.split(",")]
 
         # Remove any that don't match one of self.Meta.fields
         # Return Field() to save sub-classes having to specify Field class attributes for model and aggregate fields.
@@ -222,8 +211,7 @@ class AggregatingSerializer(serializers.ModelSerializer):
         """
         ret = OrderedDict()
         for field_name in self.get_fields():
-            field_path = self.field_to_database_path(field_name)
-            ret[field_name] = instance[field_path]
+            ret[field_name] = instance[field_name]
         for field_name in self.get_aggregate_field_names():
             if field_name in instance:
                 ret[field_name] = instance[field_name]
