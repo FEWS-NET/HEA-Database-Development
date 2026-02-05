@@ -138,12 +138,20 @@ class LivelihoodZoneBaselineQuerySet(models.QuerySet):
     """
 
     def filter_current(self, as_of_date=None):
+        """
+        Return a queryset filtered to the baselines that are valid as of the date specified.
+        """
         if not as_of_date:
             as_of_date = datetime.date.today()
-        return self.filter(models.Q(valid_to_date__isnull=True) | models.Q(valid_to_date__gte=as_of_date))
+        return self.filter(
+            (models.Q(valid_from_date__lte=as_of_date) | models.Q(valid_from_date__isnull=True))
+            & (models.Q(valid_to_date__gte=as_of_date) | models.Q(valid_to_date__isnull=True))
+        )
 
     def current_all(self, as_of_date=None):
-        # Return all the baselines that are valid as of the date specified.
+        """
+        Return all the baselines that are valid as of the date specified.
+        """
         return self.filter_current(as_of_date).all()
 
 

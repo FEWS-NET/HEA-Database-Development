@@ -254,14 +254,6 @@ class LivelihoodZoneBaselineFilterSet(filters.FilterSet):
 class LivelihoodZoneBaselineViewSet(BaseModelViewSet):
     """
     API endpoint that allows livelihood zone baselines to be viewed or edited.
-
-    By default, this endpoint returns only baselines that are currently valid (as of today's date).
-    This behavior can be controlled using the `as_of_date` query parameter:
-
-    - No `as_of_date` parameter: Returns baselines valid as of today
-    - `as_of_date=YYYY-MM-DD`: Returns baselines valid as of the specified date
-    - `as_of_date=today`: Returns baselines valid as of today (explicit)
-    - `as_of_date=<special_value>`: Supports special values like 'last_month', 'one_year_ago', etc.
     """
 
     queryset = LivelihoodZoneBaseline.objects.select_related(
@@ -277,22 +269,6 @@ class LivelihoodZoneBaselineViewSet(BaseModelViewSet):
     )
     ordering_fields = ["livelihood_zone__code", "reference_year_end_date"]
     ordering = ["livelihood_zone__code", "reference_year_end_date"]
-
-    def get_queryset(self):
-        """
-        Override get_queryset to apply default as_of_date filter for list actions.
-        """
-        queryset = super().get_queryset()
-
-        if self.action != "list":
-            return queryset
-
-        as_of_date_param = self.request.query_params.get("as_of_date", None)
-
-        if as_of_date_param is None:
-            queryset = queryset.filter_current()
-
-        return queryset
 
     def get_serializer_class(self):
         if self.request.accepted_renderer.format == "geojson":

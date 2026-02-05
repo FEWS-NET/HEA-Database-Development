@@ -596,50 +596,75 @@ class LivelihoodZoneBaselineViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 1)
 
     def test_as_of_date_filter_returns_valid_baselines(self):
-        # Test that the as_of_date filter returns valid baselines as of the specified date.
+        """
+        Test that the as_of_date filter returns only baselines valid as of the specified date.
+        """
         today = datetime.date.today()
+
+        # Baseline that expired in the past
         expired_baseline = LivelihoodZoneBaselineFactory(
             valid_from_date=today - datetime.timedelta(days=365),
             valid_to_date=today - datetime.timedelta(days=30),
         )
+
+        # Baseline currently valid
         current_baseline = LivelihoodZoneBaselineFactory(
             valid_from_date=today - datetime.timedelta(days=30),
             valid_to_date=today + datetime.timedelta(days=365),
         )
-        # Test default behavior (as of today) - should exclude expired_baseline
+
+        # Baseline that starts in the future (not yet valid)
+        future_baseline = LivelihoodZoneBaselineFactory(
+            valid_from_date=today + datetime.timedelta(days=30),
+            valid_to_date=today + datetime.timedelta(days=365),
+        )
+
+        # Test default behavior (no as_of_date param) - should return all baselines
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         baseline_ids = [b["id"] for b in response.json()]
         self.assertIn(current_baseline.id, baseline_ids)
-        self.assertNotIn(expired_baseline.id, baseline_ids)
+        self.assertIn(expired_baseline.id, baseline_ids)
+        self.assertIn(future_baseline.id, baseline_ids)
 
-        # Test with a past date before the expired_baseline's valid_to_date
+        # Test with explicit as_of_date=today - should filter to current baselines
+        response = self.client.get(self.url, {"as_of_date": today.isoformat()})
+        self.assertEqual(response.status_code, 200)
+        baseline_ids = [b["id"] for b in response.json()]
+        self.assertIn(current_baseline.id, baseline_ids)
+        self.assertNotIn(expired_baseline.id, baseline_ids)
+        self.assertNotIn(future_baseline.id, baseline_ids)
+
+        # Test with a past date when expired_baseline was still valid
+        # current_baseline hadn't started yet, so it should be excluded
         past_date = today - datetime.timedelta(days=180)
         response = self.client.get(self.url, {"as_of_date": past_date.isoformat()})
         self.assertEqual(response.status_code, 200)
         baseline_ids = [b["id"] for b in response.json()]
         self.assertIn(expired_baseline.id, baseline_ids)
-        self.assertIn(current_baseline.id, baseline_ids)
+        self.assertNotIn(current_baseline.id, baseline_ids)  # hadn't started yet
+        self.assertNotIn(future_baseline.id, baseline_ids)
 
-        # Test with a future date - expired_baseline should still be excluded
+        # Test with a future date when future_baseline will be valid
         future_date = today + datetime.timedelta(days=60)
         response = self.client.get(self.url, {"as_of_date": future_date.isoformat()})
         self.assertEqual(response.status_code, 200)
         baseline_ids = [b["id"] for b in response.json()]
         self.assertNotIn(expired_baseline.id, baseline_ids)
         self.assertIn(current_baseline.id, baseline_ids)
+        self.assertIn(future_baseline.id, baseline_ids)
 
-        # test as of date filter handles null dates
+        # Baseline with null valid_from_date (valid from the beginning of time)
         baseline_no_from = LivelihoodZoneBaselineFactory(
             valid_from_date=None,
             valid_to_date=today + datetime.timedelta(days=365),
         )
-        # Create a baseline with null valid_to_date (valid indefinitely)
+        # Baseline with null valid_to_date (valid indefinitely)
         baseline_no_to = LivelihoodZoneBaselineFactory(
             valid_from_date=today - datetime.timedelta(days=365),
             valid_to_date=None,
         )
-        # Create a baseline with both dates null (always valid)
+        # Baseline with both dates null (always valid)
         baseline_no_dates = LivelihoodZoneBaselineFactory(
             valid_from_date=None,
             valid_to_date=None,
