@@ -278,8 +278,8 @@ class LivelihoodZoneBaselineViewSet(BaseModelViewSet):
             return LivelihoodZoneBaselineGeoSerializer  # Use GeoFeatureModelSerializer for GeoJSON
         return LivelihoodZoneBaselineSerializer
 
+    @method_decorator(cache_page(60 * 60 * 24))  # Cache on server for 24 hours - must be above condition per RFC 9110
     @method_decorator(condition(etag_func=get_baseline_etag, last_modified_func=get_baseline_last_modified))
-    @method_decorator(cache_page(60 * 60 * 24))  # Cache on server for 24 hours
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
 
