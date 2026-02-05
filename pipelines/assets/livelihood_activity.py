@@ -241,7 +241,7 @@ def get_livelihood_activity_regexes() -> list:
     age_gender_pattern = r"(?P<household_labor_provider>" + "|".join(age_gender_labels_escaped) + ")"
 
     placeholder_patterns = {
-        "label_pattern": r"[a-zà-ÿ][a-zà-ÿ',/ \.\>\-\(\)]+?",
+        "label_pattern": r"[a-zà-ÿ][a-zà-ÿ1-9',/ \.\>\-\(\)]+?",
         "product_pattern": r"(?P<product_id>[a-zà-ÿ][a-zà-ÿ1-9',/ \.\>\-\(\)]+?)",
         "season_pattern": r"(?P<season>season [12]|saison [12]|[12][a-z] season||[12][a-zà-ÿ] saison|r[eé]colte principale|principale r[eé]colte|gu|deyr+?)",  # NOQA: E501
         "additional_identifier_pattern": r"\(?(?P<additional_identifier>rainfed|irrigated|pluviale?|irriguée|submersion libre|submersion contrôlée|flottant)\)?",
@@ -249,7 +249,7 @@ def get_livelihood_activity_regexes() -> list:
         "unit_of_measure_pattern": r"(?P<unit_of_measure_id>[a-z]+)",
         "nbr_pattern": r"(?:n[bo]?r?e?|no)\.?",
         "vendu_pattern": r"(?:quantité )?vendu(?:e|s|ss|es|ses)?",
-        "separator_pattern": r" ?[:-]?",
+        "separator_pattern": r" *[:-]? *",
         "name_of_local_measure_pattern": r"(?:name of (?:meas(?:ure)?\.?)|nom(?: (?:de la mesure(?: locale?)?|de mesure locale?|du mesure|d'unité|mesure(?: locale?)?|unité de mesure))?)",
     }
     # Compile the regexes

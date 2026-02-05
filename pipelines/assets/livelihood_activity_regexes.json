@@ -92,7 +92,7 @@
         "people_per_household"
     ],
     [
-        "(?P<product_id>[a-zà-ÿ ][a-zà-ÿ1-9',/ \\.\\>\\-\\(\\)]+? *: *[a-zà-ÿ ][a-zà-ÿ1-9',/ \\.\\>\\-\\(\\)]+?) {age_gender_pattern} *\\({unit_of_measure_pattern}(?: collectés?|gathered)?\\)",
+        "(?P<product_id>{label_pattern}{separator_pattern}{label_pattern}) {age_gender_pattern}{separator_pattern}\\({unit_of_measure_pattern}(?: collectés?|gathered)?\\)",
         null,
         true,
         "quantity_produced"
