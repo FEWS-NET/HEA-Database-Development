@@ -8,14 +8,12 @@ from copy import deepcopy
 from datetime import datetime, timedelta
 from io import BytesIO, StringIO
 from pathlib import Path
-from urllib.parse import parse_qs, urlencode, urlparse
 
 import pandas as pd
 from django.apps import apps
 from django.db.migrations.operations.base import Operation
+from django.db.models import Max
 from django.forms.models import modelform_factory
-from django.utils.cache import set_response_etag
-from django.utils.timezone import now
 from openpyxl.utils import get_column_letter
 from treebeard.mp_tree import MP_Node
 
@@ -355,75 +353,27 @@ normal_map = {'À': 'A', 'Á': 'A', 'Â': 'A', 'Ã': 'A', 'Ä': 'A',
 normalize = str.maketrans(normal_map)
 
 
-class Timer:
+def make_condition_funcs(model):
     """
-    See http://www.machinalis.com/blog/how-to-unit-test-python/
+    Create etag and last_modfied functions for use with Django's condition decorator.
+    All models inheriting from common.Model have a 'modified' timestamp field from TimeStampedModel.
     """
 
-    def start(self):
-        self._start = now()
+    def get_last_modified(request, *args, **kwargs):
+        # Return the most recent modification timestamp for the model.
+        result = model.objects.aggregate(last_modified=Max("modified"))
+        return result["last_modified"]
 
-    def stop(self):
-        self._stop = now()
+    def get_etag(request, *args, **kwargs):
+        """
+        Return a weak ETag based on the most recent modification timestamp.
 
-    def elapsed(self):
-        try:
-            return self._stop - self._start
-        except AttributeError:
-            return now() - self._start
+        Uses weak ETag (W/ prefix) because we're comparing semantic equivalence of the data,
+        not byte-for-byte equality. See https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/ETag
+        """
+        last_modified = get_last_modified(request, *args, **kwargs)
+        if last_modified is None:
+            return None
+        return f'W/"{hashlib.md5(last_modified.isoformat().encode()).hexdigest()}"'
 
-    def assertHasDate(self, date):
-        assert self._start <= date <= self._stop, "%s was not during the timer" % date
-
-    def assertNotHasDate(self, date):
-        assert not (self._start <= date <= self._stop), "%s was during the timer" % date
-
-
-@contextlib.contextmanager
-def timekeeper():
-    t = Timer()
-    t.start()
-    try:
-        yield t
-    finally:
-        t.stop()
-
-
-def get_etag_for_cachedrequest(request, *args, **kwargs):
-    """
-    Generate an ETag for the request based on path and query parameters.
-    If the request includes a _refresh parameter, returns None to force a cache miss.
-    """
-    u = urlparse(request.get_full_path())
-    query = parse_qs(u.query, keep_blank_values=True)
-    query.pop("_store_result", None)
-
-    # Check for refresh parameter - if present, return None to force cache miss
-    _refresh = query.pop("_refresh", None)
-    if _refresh:
-        return None
-
-    u = u._replace(query=urlencode(sorted(query.items()), True))
-    path = u.geturl()
-
-    if "format" in kwargs:
-        path += f"|format={kwargs['format']}"
-
-    etag_hash = hashlib.md5(path.encode()).hexdigest()
-
-    return f'"{etag_hash}"'
-
-
-def set_etag_for_response(response):
-    """
-    Add the etag header to a response.
-
-    This is a thin wrapper around `django.utils.cache.set_response_etag`, to report
-    the time taken to calculate the header.
-    """
-    with timekeeper() as t:
-        response = set_response_etag(response)
-    if response.has_header("ETag"):
-        logger.info("Created etag header in %s seconds" % round(t.elapsed().total_seconds(), 2))
-
-    return response
+    return get_etag, get_last_modified

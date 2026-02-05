@@ -5,7 +5,7 @@ from django.db.models import Q, Subquery
 from django.utils.decorators import method_decorator
 from django.utils.translation import override
 from django.views.decorators.cache import cache_page
-from django.views.decorators.http import etag
+from django.views.decorators.http import condition
 from django_filters import rest_framework as filters
 from django_filters.filters import CharFilter
 from rest_framework.permissions import AllowAny
@@ -15,7 +15,7 @@ from rest_framework.views import APIView
 
 from common.fields import translation_fields
 from common.filters import MultiFieldFilter, UpperCaseFilter
-from common.utils import get_etag_for_cachedrequest
+from common.utils import make_condition_funcs
 from common.viewsets import AggregatingViewSet, BaseModelViewSet
 
 from .models import (
@@ -96,6 +96,9 @@ from .serializers import (
     WealthGroupSerializer,
     WildFoodGatheringSerializer,
 )
+
+# Create condition functions for LivelihoodZoneBaseline endpoint caching
+get_baseline_etag, get_baseline_last_modified = make_condition_funcs(LivelihoodZoneBaseline)
 
 
 class SourceOrganizationFilterSet(filters.FilterSet):
@@ -268,8 +271,8 @@ class LivelihoodZoneBaselineViewSet(BaseModelViewSet):
             return LivelihoodZoneBaselineGeoSerializer  # Use GeoFeatureModelSerializer for GeoJSON
         return LivelihoodZoneBaselineSerializer
 
+    @method_decorator(condition(etag_func=get_baseline_etag, last_modified_func=get_baseline_last_modified))
     @method_decorator(cache_page(60 * 60 * 24))  # Cache on server for 24 hours
-    @method_decorator(etag(get_etag_for_cachedrequest))
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
 
