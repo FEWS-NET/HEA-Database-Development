@@ -771,7 +771,13 @@ def get_instances_from_dataframe(
                             field in livelihood_activity
                             and (livelihood_activity[field] or livelihood_activity[field] == 0)
                         )
-                        for field in ["income", "expenditure", "kcals_consumed", "percentage_kcals"]
+                        for field in [
+                            "quantity_produced",  # MilkProduction may have quantity_produced but not any of the others.
+                            "income",
+                            "expenditure",
+                            "kcals_consumed",
+                            "percentage_kcals",
+                        ]
                     )
                 ]
 
