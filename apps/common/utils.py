@@ -10,6 +10,7 @@ from io import BytesIO, StringIO
 from pathlib import Path
 
 import pandas as pd
+from dateutil.relativedelta import relativedelta
 from django.apps import apps
 from django.db.migrations.operations.base import Operation
 from django.db.models import Max
@@ -18,6 +19,24 @@ from openpyxl.utils import get_column_letter
 from treebeard.mp_tree import MP_Node
 
 logger = logging.getLogger(__name__)
+
+
+DEFAULT_DATES = {
+    "ten_years_ago": lambda: datetime.date.today() + relativedelta(years=-10, day=1),
+    "five_years_ago": lambda: datetime.date.today() + relativedelta(years=-5, day=1),
+    "three_years_ago": lambda: datetime.date.today() + relativedelta(years=-3, day=1),
+    "two_years_ago": lambda: datetime.date.today() + relativedelta(years=-2, day=1),
+    "one_year_ago": lambda: datetime.date.today() + relativedelta(years=-1, day=1),
+    "last_month_start": lambda: datetime.date.today() + relativedelta(months=-1, day=1),
+    "last_month": lambda: datetime.date.today().replace(day=1) - datetime.timedelta(days=1),
+    "second_last_month_start": lambda: datetime.date.today() + relativedelta(months=-2, day=1),
+    "second_last_month": lambda: datetime.date.today() + relativedelta(months=-2, day=31),
+    "third_last_month": lambda: datetime.date.today() + relativedelta(months=-3, day=31),
+    "fourth_last_month": lambda: datetime.date.today() + relativedelta(months=-4, day=31),
+    "sixth_last_month": lambda: datetime.date.today() + relativedelta(months=-6, day=31),
+    "today": lambda: datetime.date.today(),
+    "tomorrow": lambda: datetime.date.today() + relativedelta(days=1),
+}
 
 
 class UnicodeCsvReader(object):
