@@ -23,6 +23,7 @@ from common.fields import translation_fields
 from common.tests.factories import ClassifiedProductFactory, CountryFactory
 from metadata.models import LivelihoodActivityScenario
 from metadata.tests.factories import (
+    CharacteristicGroupFactory,
     LivelihoodCategoryFactory,
     WealthCharacteristicFactory,
     WealthGroupCategoryFactory,
@@ -1626,11 +1627,13 @@ class BaselineWealthGroupCharacteristicValueViewSetTestCase(APITestCase):
             wealth_group_category=cls.very_poor_wg,
             community=cls.community,
         )
+        # Create characteristic group
+        cls.population_group = CharacteristicGroupFactory(code="Population", name_en="Population")
         # Create wealth characteristics
         cls.char_with_group = WealthCharacteristicFactory(
             code="household size",
             name_en="Household size",
-            characteristic_group="Population",
+            characteristic_group=cls.population_group,
         )
         cls.char_without_group = WealthCharacteristicFactory(
             code="other",
