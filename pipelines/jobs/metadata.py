@@ -72,6 +72,8 @@ def load_metadata_for_model(context: OpExecutionContext, sheet_name: str, model:
         df["ordering"] = df["ordering"].astype(object).replace("", None)
     if "activity_type" in df:
         df["activity_type"] = df["activity_type"].replace("", ActivityLabel.LivelihoodActivityType.LIVELIHOOD_ACTIVITY)
+    if "characteristic_group_id" in df:
+        df["characteristic_group_id"] = df["characteristic_group_id"].replace("", None)
 
     if model_name == "ClassifiedProduct":
         existing_instances = {instance.pk: instance for instance in model.objects.filter(pk__in=df["cpc"])}
