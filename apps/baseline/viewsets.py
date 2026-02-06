@@ -16,9 +16,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from common.fields import translation_fields
-from common.filters import MultiFieldFilter, UpperCaseFilter
-from common.utils import make_condition_funcs
 from common.filters import DefaultingDateFilter, MultiFieldFilter, UpperCaseFilter
+from common.utils import make_condition_funcs
 from common.viewsets import AggregatingViewSet, BaseModelViewSet
 from metadata.models import WealthGroupCategory
 
