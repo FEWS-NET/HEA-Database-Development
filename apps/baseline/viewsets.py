@@ -4,7 +4,10 @@ from django.db import models
 from django.db.models import Expression, F, Q, Subquery, TextField, Value
 from django.db.models.functions import Coalesce, NullIf
 from django.utils import translation
+from django.utils.decorators import method_decorator
 from django.utils.translation import override
+from django.views.decorators.cache import cache_page
+from django.views.decorators.http import condition
 from django_filters import rest_framework as filters
 from django_filters.filters import CharFilter
 from rest_framework.permissions import AllowAny
@@ -14,6 +17,7 @@ from rest_framework.views import APIView
 
 from common.fields import translation_fields
 from common.filters import DefaultingDateFilter, MultiFieldFilter, UpperCaseFilter
+from common.utils import make_condition_funcs
 from common.viewsets import AggregatingViewSet, BaseModelViewSet
 from metadata.models import WealthGroupCategory
 
@@ -99,6 +103,9 @@ from .serializers import (
     WealthGroupSerializer,
     WildFoodGatheringSerializer,
 )
+
+# Create condition functions for LivelihoodZoneBaseline endpoint caching
+get_baseline_etag, get_baseline_last_modified = make_condition_funcs(LivelihoodZoneBaseline)
 
 
 class SourceOrganizationFilterSet(filters.FilterSet):
@@ -274,6 +281,11 @@ class LivelihoodZoneBaselineViewSet(BaseModelViewSet):
         if self.request.accepted_renderer.format == "geojson":
             return LivelihoodZoneBaselineGeoSerializer  # Use GeoFeatureModelSerializer for GeoJSON
         return LivelihoodZoneBaselineSerializer
+
+    @method_decorator(cache_page(60 * 60 * 24))  # Cache on server for 24 hours - must be above condition per RFC 9110
+    @method_decorator(condition(etag_func=get_baseline_etag, last_modified_func=get_baseline_last_modified))
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
 
 class LivelihoodProductCategoryFilterSet(filters.FilterSet):

@@ -2,13 +2,17 @@ import datetime
 import json
 import logging
 import warnings
+from datetime import timedelta
 from io import StringIO
 
 import pandas as pd
 from bs4 import BeautifulSoup
 from django.contrib.auth.models import User
+from django.core.cache import cache
 from django.db.models import F
 from django.urls import reverse
+from django.utils.http import http_date
+from django.utils.timezone import now
 from rest_framework.test import APITestCase
 
 from baseline.models import (
@@ -676,6 +680,43 @@ class LivelihoodZoneBaselineViewSetTestCase(APITestCase):
         self.assertIn(baseline_no_from.id, baseline_ids)
         self.assertIn(baseline_no_to.id, baseline_ids)
         self.assertIn(baseline_no_dates.id, baseline_ids)
+
+    def test_conditional_request_headers(self):
+        cache.clear()  # Clear cache to ensure clean state
+
+        # Test that 200 response includes ETag, Last-Modified, Cache-Control, and Expires headers
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("ETag", response.headers)
+        self.assertIn("Last-Modified", response.headers)
+        self.assertIn("Cache-Control", response.headers)
+        self.assertIn("Expires", response.headers)
+        self.assertTrue(response.headers["ETag"].startswith('W/"'))  # Weak ETag format
+
+        # Test If-None-Match returns 304 when not modified
+        etag = response.headers["ETag"]
+        cache.clear()
+        response = self.client.get(self.url, HTTP_IF_NONE_MATCH=etag)
+        self.assertEqual(response.status_code, 304)
+        self.assertIn("Cache-Control", response.headers)
+        self.assertIn("Expires", response.headers)
+
+        # Test If-None-Match returns 200 when data is modified
+        cache.clear()  # Clear cache before testing modified data
+        baseline = self.data[0]
+        baseline.population_source = "Updated source"
+        baseline.save()
+        response = self.client.get(self.url, HTTP_IF_NONE_MATCH=etag)
+        self.assertEqual(response.status_code, 200)
+        self.assertNotEqual(response.headers["ETag"], etag)
+
+        # Test If-Modified-Since with future date returns 304
+        cache.clear()
+        future_date = http_date((now() + timedelta(days=1)).timestamp())
+        response = self.client.get(self.url, HTTP_IF_MODIFIED_SINCE=future_date)
+        self.assertEqual(response.status_code, 304)
+        self.assertIn("Cache-Control", response.headers)
+        self.assertIn("Expires", response.headers)
 
 
 class LivelihoodZoneBaselineFacetedSearchViewTestCase(APITestCase):
