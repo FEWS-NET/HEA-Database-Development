@@ -1,5 +1,6 @@
 import contextlib
 import csv
+import hashlib
 import importlib
 import logging
 import re
@@ -9,13 +10,33 @@ from io import BytesIO, StringIO
 from pathlib import Path
 
 import pandas as pd
+from dateutil.relativedelta import relativedelta
 from django.apps import apps
 from django.db.migrations.operations.base import Operation
+from django.db.models import Max
 from django.forms.models import modelform_factory
 from openpyxl.utils import get_column_letter
 from treebeard.mp_tree import MP_Node
 
 logger = logging.getLogger(__name__)
+
+
+DEFAULT_DATES = {
+    "ten_years_ago": lambda: datetime.date.today() + relativedelta(years=-10, day=1),
+    "five_years_ago": lambda: datetime.date.today() + relativedelta(years=-5, day=1),
+    "three_years_ago": lambda: datetime.date.today() + relativedelta(years=-3, day=1),
+    "two_years_ago": lambda: datetime.date.today() + relativedelta(years=-2, day=1),
+    "one_year_ago": lambda: datetime.date.today() + relativedelta(years=-1, day=1),
+    "last_month_start": lambda: datetime.date.today() + relativedelta(months=-1, day=1),
+    "last_month": lambda: datetime.date.today().replace(day=1) - datetime.timedelta(days=1),
+    "second_last_month_start": lambda: datetime.date.today() + relativedelta(months=-2, day=1),
+    "second_last_month": lambda: datetime.date.today() + relativedelta(months=-2, day=31),
+    "third_last_month": lambda: datetime.date.today() + relativedelta(months=-3, day=31),
+    "fourth_last_month": lambda: datetime.date.today() + relativedelta(months=-4, day=31),
+    "sixth_last_month": lambda: datetime.date.today() + relativedelta(months=-6, day=31),
+    "today": lambda: datetime.date.today(),
+    "tomorrow": lambda: datetime.date.today() + relativedelta(days=1),
+}
 
 
 class UnicodeCsvReader(object):
@@ -349,3 +370,29 @@ normal_map = {'À': 'A', 'Á': 'A', 'Â': 'A', 'Ã': 'A', 'Ä': 'A',
 # Minimal normalization, doesn't attempt to coerce characters such as æ, which are locale-dependent.
 # Example usage: "café".translate(normalize)
 normalize = str.maketrans(normal_map)
+
+
+def make_condition_funcs(model):
+    """
+    Create etag and last_modfied functions for use with Django's condition decorator.
+    All models inheriting from common.Model have a 'modified' timestamp field from TimeStampedModel.
+    """
+
+    def get_last_modified(request, *args, **kwargs):
+        # Return the most recent modification timestamp for the model.
+        result = model.objects.aggregate(last_modified=Max("modified"))
+        return result["last_modified"]
+
+    def get_etag(request, *args, **kwargs):
+        """
+        Return a weak ETag based on the most recent modification timestamp.
+
+        Uses weak ETag (W/ prefix) because we're comparing semantic equivalence of the data,
+        not byte-for-byte equality. See https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/ETag
+        """
+        last_modified = get_last_modified(request, *args, **kwargs)
+        if last_modified is None:
+            return None
+        return f'W/"{hashlib.md5(last_modified.isoformat().encode()).hexdigest()}"'
+
+    return get_etag, get_last_modified

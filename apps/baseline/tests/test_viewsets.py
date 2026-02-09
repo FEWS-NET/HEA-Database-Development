@@ -2,13 +2,17 @@ import datetime
 import json
 import logging
 import warnings
+from datetime import timedelta
 from io import StringIO
 
 import pandas as pd
 from bs4 import BeautifulSoup
 from django.contrib.auth.models import User
+from django.core.cache import cache
 from django.db.models import F
 from django.urls import reverse
+from django.utils.http import http_date
+from django.utils.timezone import now
 from rest_framework.test import APITestCase
 
 from baseline.models import (
@@ -19,6 +23,7 @@ from common.fields import translation_fields
 from common.tests.factories import ClassifiedProductFactory, CountryFactory
 from metadata.models import LivelihoodActivityScenario
 from metadata.tests.factories import (
+    CharacteristicGroupFactory,
     LivelihoodCategoryFactory,
     WealthCharacteristicFactory,
     WealthGroupCategoryFactory,
@@ -595,6 +600,125 @@ class LivelihoodZoneBaselineViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), 1)
 
+    def test_as_of_date_filter_returns_valid_baselines(self):
+        """
+        Test that the as_of_date filter returns only baselines valid as of the specified date.
+        """
+        today = datetime.date.today()
+
+        # Baseline that expired in the past
+        expired_baseline = LivelihoodZoneBaselineFactory(
+            valid_from_date=today - datetime.timedelta(days=365),
+            valid_to_date=today - datetime.timedelta(days=30),
+        )
+
+        # Baseline currently valid
+        current_baseline = LivelihoodZoneBaselineFactory(
+            valid_from_date=today - datetime.timedelta(days=30),
+            valid_to_date=today + datetime.timedelta(days=365),
+        )
+
+        # Baseline that starts in the future (not yet valid)
+        future_baseline = LivelihoodZoneBaselineFactory(
+            valid_from_date=today + datetime.timedelta(days=30),
+            valid_to_date=today + datetime.timedelta(days=365),
+        )
+
+        # Test default behavior (no as_of_date param) - should return all baselines
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        baseline_ids = [b["id"] for b in response.json()]
+        self.assertIn(current_baseline.id, baseline_ids)
+        self.assertIn(expired_baseline.id, baseline_ids)
+        self.assertIn(future_baseline.id, baseline_ids)
+
+        # Test with explicit as_of_date=today - should filter to current baselines
+        response = self.client.get(self.url, {"as_of_date": today.isoformat()})
+        self.assertEqual(response.status_code, 200)
+        baseline_ids = [b["id"] for b in response.json()]
+        self.assertIn(current_baseline.id, baseline_ids)
+        self.assertNotIn(expired_baseline.id, baseline_ids)
+        self.assertNotIn(future_baseline.id, baseline_ids)
+
+        # Test with a past date when expired_baseline was still valid
+        # current_baseline hadn't started yet, so it should be excluded
+        past_date = today - datetime.timedelta(days=180)
+        response = self.client.get(self.url, {"as_of_date": past_date.isoformat()})
+        self.assertEqual(response.status_code, 200)
+        baseline_ids = [b["id"] for b in response.json()]
+        self.assertIn(expired_baseline.id, baseline_ids)
+        self.assertNotIn(current_baseline.id, baseline_ids)  # hadn't started yet
+        self.assertNotIn(future_baseline.id, baseline_ids)
+
+        # Test with a future date when future_baseline will be valid
+        future_date = today + datetime.timedelta(days=60)
+        response = self.client.get(self.url, {"as_of_date": future_date.isoformat()})
+        self.assertEqual(response.status_code, 200)
+        baseline_ids = [b["id"] for b in response.json()]
+        self.assertNotIn(expired_baseline.id, baseline_ids)
+        self.assertIn(current_baseline.id, baseline_ids)
+        self.assertIn(future_baseline.id, baseline_ids)
+
+        # Baseline with null valid_from_date (valid from the beginning of time)
+        baseline_no_from = LivelihoodZoneBaselineFactory(
+            valid_from_date=None,
+            valid_to_date=today + datetime.timedelta(days=365),
+        )
+        # Baseline with null valid_to_date (valid indefinitely)
+        baseline_no_to = LivelihoodZoneBaselineFactory(
+            valid_from_date=today - datetime.timedelta(days=365),
+            valid_to_date=None,
+        )
+        # Baseline with both dates null (always valid)
+        baseline_no_dates = LivelihoodZoneBaselineFactory(
+            valid_from_date=None,
+            valid_to_date=None,
+        )
+        # Test default behavior - all three should be returned
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        baseline_ids = [b["id"] for b in response.json()]
+        self.assertIn(baseline_no_from.id, baseline_ids)
+        self.assertIn(baseline_no_to.id, baseline_ids)
+        self.assertIn(baseline_no_dates.id, baseline_ids)
+
+    def test_conditional_request_headers(self):
+        cache.clear()  # Clear cache to ensure clean state
+
+        # Test that 200 response includes ETag, Last-Modified, Cache-Control, and Expires headers
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("ETag", response.headers)
+        self.assertIn("Last-Modified", response.headers)
+        self.assertIn("Cache-Control", response.headers)
+        self.assertIn("Expires", response.headers)
+        self.assertTrue(response.headers["ETag"].startswith('W/"'))  # Weak ETag format
+
+        # Test If-None-Match returns 304 when not modified
+        etag = response.headers["ETag"]
+        cache.clear()
+        response = self.client.get(self.url, HTTP_IF_NONE_MATCH=etag)
+        self.assertEqual(response.status_code, 304)
+        self.assertIn("Cache-Control", response.headers)
+        self.assertIn("Expires", response.headers)
+
+        # Test If-None-Match returns 200 when data is modified
+        cache.clear()  # Clear cache before testing modified data
+        baseline = self.data[0]
+        baseline.population_source = "Updated source"
+        baseline.save()
+        response = self.client.get(self.url, HTTP_IF_NONE_MATCH=etag)
+        self.assertEqual(response.status_code, 200)
+        self.assertNotEqual(response.headers["ETag"], etag)
+
+        # Test If-Modified-Since with future date returns 304
+        cache.clear()
+        future_date = http_date((now() + timedelta(days=1)).timestamp())
+        response = self.client.get(self.url, HTTP_IF_MODIFIED_SINCE=future_date)
+        self.assertEqual(response.status_code, 304)
+        self.assertIn("Cache-Control", response.headers)
+        self.assertIn("Expires", response.headers)
+
 
 class LivelihoodZoneBaselineFacetedSearchViewTestCase(APITestCase):
     def setUp(self):
@@ -641,7 +765,8 @@ class LivelihoodZoneBaselineFacetedSearchViewTestCase(APITestCase):
         # Apply the filters to the baseline
         baseline_url = reverse("livelihoodzonebaseline-list")
         response = self.client.get(
-            baseline_url, {search_data["products"][0]["filter"]: search_data["products"][0]["value"]}
+            baseline_url,
+            {search_data["products"][0]["filter"]: search_data["products"][0]["value"]},
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(json.loads(response.content)), 2)
@@ -650,7 +775,10 @@ class LivelihoodZoneBaselineFacetedSearchViewTestCase(APITestCase):
         self.assertTrue(any(d["name"] == self.baseline3.name for d in data))
         self.assertFalse(any(d["name"] == self.baseline2.name for d in data))
 
-        response = self.client.get(baseline_url, {search_data["items"][0]["filter"]: search_data["items"][0]["value"]})
+        response = self.client.get(
+            baseline_url,
+            {search_data["items"][0]["filter"]: search_data["items"][0]["value"]},
+        )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(json.loads(response.content)), 1)
         data = json.loads(response.content)
@@ -1499,11 +1627,13 @@ class BaselineWealthGroupCharacteristicValueViewSetTestCase(APITestCase):
             wealth_group_category=cls.very_poor_wg,
             community=cls.community,
         )
+        # Create characteristic group
+        cls.population_group = CharacteristicGroupFactory(code="Population", name_en="Population")
         # Create wealth characteristics
         cls.char_with_group = WealthCharacteristicFactory(
             code="household size",
             name_en="Household size",
-            characteristic_group="Population",
+            characteristic_group=cls.population_group,
         )
         cls.char_without_group = WealthCharacteristicFactory(
             code="other",

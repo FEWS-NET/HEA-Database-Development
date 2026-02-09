@@ -438,7 +438,11 @@ class WealthGroupCharacteristicValueSerializer(serializers.ModelSerializer):
         """
         if obj.product and obj.product.cpc.startswith("L02"):
             return "Livestock"
-        return obj.wealth_characteristic.characteristic_group
+        return (
+            obj.wealth_characteristic.characteristic_group.code
+            if obj.wealth_characteristic.characteristic_group
+            else None
+        )
 
     product_common_name = serializers.CharField(source="product.common_name", read_only=True, allow_null=True)
     unit_of_measure_description = serializers.CharField(
@@ -542,7 +546,11 @@ class BaselineWealthGroupCharacteristicValueSerializer(serializers.ModelSerializ
         """
         if obj.product and obj.product.cpc.startswith("L02"):
             return "Livestock"
-        return obj.wealth_characteristic.characteristic_group
+        return (
+            obj.wealth_characteristic.characteristic_group.code
+            if obj.wealth_characteristic.characteristic_group
+            else None
+        )
 
     product_common_name = serializers.CharField(source="product.common_name", read_only=True, allow_null=True)
     unit_of_measure_description = serializers.CharField(
