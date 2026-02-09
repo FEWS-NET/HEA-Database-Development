@@ -116,19 +116,19 @@
         "people_per_household"
     ],
     [
-        "(?P<product_id>[a-zà-ÿ ][a-zà-ÿ1-9',/ \\.\\>\\-\\(\\)]+?) *: *{age_gender_pattern}",
+        "{product_pattern} *: *{age_gender_pattern}",
         null,
         true,
         null
     ],
     [
-        "(?P<product_id>[a-zà-ÿ ][a-zà-ÿ1-9',/ \\.\\>\\-\\(\\)]+?) +{age_gender_pattern}",
+        "{product_pattern} +{age_gender_pattern}",
         null,
         true,
         null
     ],
     [
-        "{age_gender_pattern} (?P<product_id>[a-zà-ÿ][a-zà-ÿ1-9',/ \\.\\>\\-\\(\\)]+?)",
+        "{age_gender_pattern} {product_pattern}",
         null,
         true,
         null
