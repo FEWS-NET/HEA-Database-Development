@@ -128,6 +128,7 @@ class SeasonFactory(factory.django.DjangoModelFactory):
     description_ar = factory.LazyAttribute(lambda o: f"Description {o.name_ar} {o.season_type}")
     country = factory.SubFactory(CountryFactory)
     season_type = factory.Iterator([Season.SeasonType.WET, Season.SeasonType.DRY, Season.SeasonType.MILD])
+    purpose = None
     order = factory.Iterator([1, 2, 3])
     start = factory.Iterator((25, 95, 200))
     end = factory.Iterator((95, 199, 360))

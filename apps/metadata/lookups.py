@@ -59,6 +59,7 @@ class SeasonLookup(Lookup):
         # so duplicate any rows with a null purpose for all possible purposes for that country.
         all_purposes = [choice[0] for choice in self.model._meta.get_field("purpose").choices]
         all_countries = df["country_id"].unique().tolist()
+        extra_dfs = []
         for country in all_countries:
             country_df = df[df["country_id"] == country]
             null_purpose_rows = country_df[country_df["purpose"].isnull()]
@@ -67,7 +68,9 @@ class SeasonLookup(Lookup):
                 if purpose not in country_df["purpose"].unique():
                     purpose_df = null_purpose_rows.copy()
                     purpose_df["purpose"] = purpose
-                    df = pd.concat([df, purpose_df], ignore_index=True)
+                    extra_dfs.append(purpose_df)
+        if extra_dfs:
+            df = pd.concat([df] + extra_dfs, ignore_index=True)
         return df
 
     def do_lookup(
