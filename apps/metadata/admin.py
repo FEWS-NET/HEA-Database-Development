@@ -118,6 +118,7 @@ class SeasonAdmin(admin.ModelAdmin):
         "aliases",
         *translation_fields("description"),
         "season_type",
+        "purpose",
         "start",
         "end",
         "alignment",
@@ -128,6 +129,7 @@ class SeasonAdmin(admin.ModelAdmin):
         "name",
         "aliases",
         "season_type",
+        "purpose",
         "start",
         "end",
     )
@@ -135,10 +137,12 @@ class SeasonAdmin(admin.ModelAdmin):
         "country__iso_en_ro_name",
         *translation_fields("name"),
         "season_type",
+        "purpose",
     )
     list_filter = (
         ("country", admin.RelatedOnlyFieldListFilter),
         "season_type",
+        "purpose",
     )
     ordering = ("order",)
 

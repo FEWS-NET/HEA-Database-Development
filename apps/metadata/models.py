@@ -349,6 +349,14 @@ class Season(common_models.Model):
             "Refers to the classification of a specific time of year based on weather patterns, temperature, and other factors"  # NOQA: E501
         ),
     )
+    purpose = models.CharField(
+        max_length=30,
+        choices=LivelihoodStrategyType.choices,
+        blank=True,
+        null=True,
+        verbose_name=_("Purpose"),
+        help_text=_("The Livelihood Strategy Type that this Season is relevant for."),
+    )
     # We use day in the year instead of month to allow greater granularity,
     # and compatibility with the potential FDW Enhanced Crop Calendar output.
     # Note that if the season goes over the year end, then the start day

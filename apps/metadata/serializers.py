@@ -95,4 +95,14 @@ class SeasonSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Season
-        fields = ["country", "name", "description", "season_type", "start_month", "end_month", "alignment", "order"]
+        fields = [
+            "country",
+            "name",
+            "description",
+            "season_type",
+            "purpose",
+            "start_month",
+            "end_month",
+            "alignment",
+            "order",
+        ]
