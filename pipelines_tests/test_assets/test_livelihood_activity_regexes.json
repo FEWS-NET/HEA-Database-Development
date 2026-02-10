@@ -1032,6 +1032,18 @@
         "unit_of_measure_id": "kg",
         "attribute": "quantity_produced"
     },
+    "poisson : poisson 4 (kg collectés)" : {
+        "is_start": true,
+        "product_id": "poisson 4",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
+    },
+    "fish : fish 4 (kg gathered)": {
+        "is_start": true,
+        "product_id": "fish 4",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
+    },
     "petit commerce: nbre de personnes par mènage": {
         "is_start": true,
         "product_id": "petit commerce",
@@ -1087,9 +1099,9 @@
         "product_id": "threshing, harvesting",
         "household_labor_provider": "women"
     },
-    "poisson/peche homme (kg collectés)": {
+    "poisson : peche homme (kg collectés)": {
         "is_start": true,
-        "product_id": "poisson/peche",
+        "product_id": "peche",
         "household_labor_provider": "men",
         "unit_of_measure_id": "kg",
         "attribute": "quantity_produced"

@@ -92,7 +92,7 @@
         "people_per_household"
     ],
     [
-        "{product_pattern}{separator_pattern} {age_gender_pattern} ?\\(?{unit_of_measure_pattern}(?: collectés?|gathered)?\\)?",
+        "(?:fish|poisson)?{separator_pattern}{product_pattern}{separator_pattern} {age_gender_pattern} ?\\(?{unit_of_measure_pattern}(?: collectés?|gathered)?\\)?",
         null,
         true,
         "quantity_produced"
@@ -806,7 +806,7 @@
         "quantity_produced"
     ],
     [
-        "(?:fish|fish \\(?dry\\)?|fish \\(?fresh\\)?){separator_pattern} {product_pattern}{separator_pattern} \\(?{unit_of_measure_pattern} gathered\\)?",
+        "(?:fish|fish \\(?dry\\)?|fish \\(?fresh\\)?|poisson){separator_pattern} {product_pattern}{separator_pattern} \\(?{unit_of_measure_pattern} (?:gathered|collectés)\\)?",
         null,
         true,
         "quantity_produced"
