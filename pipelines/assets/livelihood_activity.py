@@ -234,15 +234,22 @@ def get_livelihood_activity_regexes() -> list:
         livelihood_activity_regexes = json.load(f)
 
     # Create regex patterns for metadata attributes to replace the placeholders in the regexes
+
+    # Dynamically build age_gender_pattern from HouseholdLaborProvider
+    age_gender_labels = LivelihoodActivity.HouseholdLaborProvider.get_all_labels()
+    age_gender_labels_escaped = [re.escape(label) for label in age_gender_labels]
+    age_gender_pattern = r"(?P<household_labor_provider>" + "|".join(age_gender_labels_escaped) + ")"
+
     placeholder_patterns = {
-        "label_pattern": r"[a-zà-ÿ][a-zà-ÿ',/ \.\>\-\(\)]+?",
+        "label_pattern": r"[a-zà-ÿ][a-zà-ÿ1-9',/ \.\>\-\(\)]+?",
         "product_pattern": r"(?P<product_id>[a-zà-ÿ][a-zà-ÿ1-9',/ \.\>\-\(\)]+?)",
         "season_pattern": r"(?P<season>season [12]|saison [12]|[12][a-z] season||[12][a-zà-ÿ] saison|r[eé]colte principale|principale r[eé]colte|gu|deyr+?)",  # NOQA: E501
         "additional_identifier_pattern": r"\(?(?P<additional_identifier>rainfed|irrigated|pluviale?|irriguée|submersion libre|submersion contrôlée|flottant)\)?",
+        "age_gender_pattern": age_gender_pattern,
         "unit_of_measure_pattern": r"(?P<unit_of_measure_id>[a-z]+)",
         "nbr_pattern": r"(?:n[bo]?r?e?|no)\.?",
         "vendu_pattern": r"(?:quantité )?vendu(?:e|s|ss|es|ses)?",
-        "separator_pattern": r" ?[:-]?",
+        "separator_pattern": r" *[:-]? *",
         "name_of_local_measure_pattern": r"(?:name of (?:meas(?:ure)?\.?)|nom(?: (?:de la mesure(?: locale?)?|de mesure locale?|du mesure|d'unité|mesure(?: locale?)?|unité de mesure))?)",
     }
     # Compile the regexes
@@ -271,6 +278,7 @@ def get_livelihood_activity_regular_expression_attributes(label: str) -> dict:
         "unit_of_measure_id": None,
         "season": None,
         "additional_identifier": None,
+        "household_labor_provider": None,
         "attribute": None,
         "notes": None,
     }
@@ -278,6 +286,20 @@ def get_livelihood_activity_regular_expression_attributes(label: str) -> dict:
         match = pattern.fullmatch(label)
         if match:
             attributes.update(match.groupdict())
+
+            # Map household_labor_provider to canonical values using TextChoices
+            if "household_labor_provider" in attributes and attributes["household_labor_provider"]:
+                try:
+                    hlp = LivelihoodActivity.HouseholdLaborProvider(attributes["household_labor_provider"].lower())
+                    attributes["household_labor_provider"] = hlp.value
+                except ValueError:
+                    # Check if it's a display label
+                    hlp_label = attributes["household_labor_provider"].lower()
+                    for choice_value, choice_label in LivelihoodActivity.HouseholdLaborProvider.choices:
+                        if str(choice_label).lower() == hlp_label:
+                            attributes["household_labor_provider"] = choice_value
+                            break
+
             attributes["activity_label"] = label
             attributes["strategy_type"] = strategy_type
             attributes["is_start"] = is_start

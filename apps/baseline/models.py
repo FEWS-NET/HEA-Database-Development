@@ -1231,7 +1231,66 @@ class LivelihoodActivity(common_models.Model):
         MEN = "men", _("Mainly Men")
         WOMEN = "women", _("Mainly Women")
         CHILDREN = "children", _("Mainly Children")
+        BOYS = "boys", _("Mainly Boys")
+        GIRLS = "girls", _("Mainly Girls")
+        ADULTS = "adults", _("Mainly Adults")
         ALL = "all", _("All Together")
+
+        @classmethod
+        def _missing_(cls, value):
+            """
+            Called when the value is missing from the enum
+            """
+            value_lower = str(value).lower()
+            if hasattr(cls, "_aliases") and value_lower in cls._aliases:
+                return cls(cls._aliases[value_lower])
+            return None
+
+        @classmethod
+        def get_all_labels(cls):
+            """
+            Return all possible labels (canonical values + display labels + aliases) for pattern matching.
+            """
+            canonical_values = [value for value, _label in cls.choices]
+            display_labels = [str(label) for _value, label in cls.choices]
+            alias_labels = list(cls._aliases.keys()) if hasattr(cls, "_aliases") else []
+            all_labels = canonical_values + display_labels + alias_labels
+            return sorted(all_labels, key=len, reverse=True)
+
+    HouseholdLaborProvider._aliases = {
+        # French singular/plural for men
+        "hommes": "men",
+        "homme": "men",
+        # French singular/plural for women
+        "femmes": "women",
+        "femme": "women",
+        # French singular/plural for boys
+        "garçons": "boys",
+        "garçon": "boys",
+        "garcons": "boys",  # without accent
+        "garcon": "boys",  # without accent
+        # French singular/plural for girls
+        "filles": "girls",
+        "fille": "girls",
+        # French for adults
+        "adultes": "adults",
+        # Children combinations (boys/girls in any order)
+        "boys/girls": "children",
+        "girls/boys": "children",
+        "garçons/filles": "children",
+        "filles/garçons": "children",
+        "garcons/filles": "children",  # without accent
+        "filles/garcons": "children",  # without accent
+        # Adults combinations (men/women in any order)
+        "men/women": "adults",
+        "women/men": "adults",
+        "men & women": "adults",
+        "women & men": "adults",
+        "hommes/femmes": "adults",
+        "femmes/hommes": "adults",
+        "hommes & femmes": "adults",
+        "femmes & hommes": "adults",
+    }
 
     household_labor_provider = models.CharField(
         max_length=10, choices=HouseholdLaborProvider.choices, blank=True, verbose_name=_("Activity done by")

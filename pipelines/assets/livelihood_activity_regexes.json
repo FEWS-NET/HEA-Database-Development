@@ -68,6 +68,60 @@
         null
     ],
     [
+        "(?:autre auto-emploi|other self-employment){separator_pattern} {age_gender_pattern}{separator_pattern} {product_pattern}",
+        "OtherCashIncome",
+        true,
+        null
+    ],
+    [
+        "(?:autre auto-emploi|other self-employment){separator_pattern} {product_pattern}{separator_pattern} {age_gender_pattern}",
+        "OtherCashIncome",
+        true,
+        null
+    ],
+    [
+        "{age_gender_pattern}{separator_pattern} {product_pattern}{separator_pattern} (?:quantity|quantité) ?\\({unit_of_measure_pattern}\\)",
+        null,
+        true,
+        "quantity_produced_or_purchased"
+    ],
+    [
+        "{age_gender_pattern}{separator_pattern} {product_pattern}{separator_pattern} {nbr_pattern} (?:de )?(?:pers|personnes|people)(?: ?/ ?| par | per )(?:ménage|mènage|hh)",
+        null,
+        true,
+        "people_per_household"
+    ],
+    [
+        "{product_pattern}{separator_pattern} {age_gender_pattern} ?\\(?{unit_of_measure_pattern}(?: collectés?|gathered)?\\)?",
+        null,
+        true,
+        "quantity_produced"
+    ],
+    [
+        "{product_pattern}{separator_pattern} {age_gender_pattern}{separator_pattern} {nbr_pattern} (?:de )?(?:pers|personnes|people)(?: ?/ ?| par | per )(?:ménage|mènage|hh)",
+        null,
+        true,
+        "people_per_household"
+    ],
+    [
+        "{product_pattern}{separator_pattern} {age_gender_pattern}",
+        null,
+        true,
+        null
+    ],
+    [
+        "{age_gender_pattern}{separator_pattern} {product_pattern}",
+        null,
+        true,
+        null
+    ],
+    [
+        "{age_gender_pattern}",
+        null,
+        false,
+        null
+    ],
+    [
         "(?:other purchases?|autres? achats?|achats?):?",
         "OtherPurchase",
         true,
