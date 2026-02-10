@@ -11,6 +11,7 @@ from common.viewsets import BaseModelViewSet
 from metadata.models import (
     HazardCategory,
     LivelihoodCategory,
+    LivelihoodStrategyType,
     ReferenceData,
     Season,
     SeasonalActivityType,
@@ -194,6 +195,9 @@ class SeasonFilterSet(filters.FilterSet):
     season_type = filters.ChoiceFilter(
         choices=Season.SeasonType.choices,
     )
+    purpose = filters.ChoiceFilter(
+        choices=LivelihoodStrategyType.choices,
+    )
     name_en = filters.CharFilter(lookup_expr="icontains", label=format_lazy("{} ({})", _("Name"), _("English")))
     name_fr = filters.CharFilter(lookup_expr="icontains", label=format_lazy("{} ({})", _("Name"), _("French")))
     name_es = filters.CharFilter(lookup_expr="icontains", label=format_lazy("{} ({})", _("Name"), _("Spanish")))
@@ -232,4 +236,5 @@ class SeasonViewSet(BaseModelViewSet):
         *translation_fields("name"),
         *translation_fields("description"),
         "season_type",
+        "purpose",
     )

@@ -139,7 +139,7 @@ class SeasonalActivityTypeFactory(factory.django.DjangoModelFactory):
 class SeasonFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Season
-        django_get_or_create = ("country", "name_en")
+        django_get_or_create = ("country", "name_en", "purpose")
 
     name_en = factory.LazyAttributeSequence(lambda o, n: f"{o.country.iso_en_ro_name}, Season {n}")
     name_es = factory.LazyAttributeSequence(lambda o, n: f"{o.country.iso_en_ro_name}, Season {n} es")
@@ -153,6 +153,7 @@ class SeasonFactory(factory.django.DjangoModelFactory):
     description_ar = factory.LazyAttribute(lambda o: f"Description {o.name_ar} {o.season_type}")
     country = factory.SubFactory(CountryFactory)
     season_type = factory.Iterator([Season.SeasonType.WET, Season.SeasonType.DRY, Season.SeasonType.MILD])
+    purpose = None
     order = factory.Iterator([1, 2, 3])
     start = factory.Iterator((25, 95, 200))
     end = factory.Iterator((95, 199, 360))
