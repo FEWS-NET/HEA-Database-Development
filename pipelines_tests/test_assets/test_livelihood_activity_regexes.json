@@ -165,6 +165,18 @@
         "product_id": "eggs",
         "attribute": "quantity_sold"
     },
+    "vente de légume: kg vendus": {
+        "is_start": true,
+        "product_id": "légume",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_sold"
+    },
+    "vente cultures maraichères: kg vendus": {
+        "is_start": true,
+        "product_id": "cultures maraichères",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_sold"
+    },
     "Vente de bois de chauffage": {
         "is_start": true,
         "product_id": "bois de chauffage"
@@ -184,6 +196,10 @@
     "vente d'orange": {
         "is_start": true,
         "product_id": "orange"
+    },
+    "autre: vente néré": {
+        "is_start": true,
+        "product_id": "néré"
     },
     "sand sales": {
         "is_start": true,
@@ -530,6 +546,18 @@
         "product_id": "volaille",
         "attribute": "quantity_sold"
     },
+    "vente de porcs - nb vendus": {
+        "strategy_type": "LivestockSale",
+        "is_start": true,
+        "product_id": "porcs",
+        "attribute": "quantity_sold"
+    },
+    "pig sales: no sold": {
+        "strategy_type": "LivestockSale",
+        "is_start": true,
+        "product_id": "pig",
+        "attribute": "quantity_sold"
+    },
     "Peaux: nb vendues": {
         "strategy_type": "LivestockSale",
         "is_start": true,
@@ -874,10 +902,19 @@
         "attribute": "price"
     },
     "prix d'achat (espèces)": {
-        "attribute": "purchase_price"
+        "attribute": "price"
     },
     "prix de vente (espèces)": {
-        "attribute": "sales_price"
+        "attribute": "price"
+    },
+    "prix du vente (cash prix d'achat)": {
+        "attribute": "price"
+    },
+    "prix du vente (cash)": {
+        "attribute": "price"
+    },
+    "prix de vente (cash)": {
+        "attribute": "price"
     },
     "dépense": {
         "attribute": "expenditure"
@@ -1088,7 +1125,15 @@
         "is_start": true,
         "product_id": "petty trade",
         "attribute": "people_per_household"
-},
+    },
+    "autre auto-emploi vente de foin": {
+        "is_start": true,
+        "product_id": "foin"
+    },
+    "autre auto-emploi: vente prods de cueillette": {
+        "is_start": true,
+        "product_id": "prods de cueillette"
+    },
     "hommes - preparation terre/labour": {
         "is_start": true,
         "product_id": "preparation terre/labour",

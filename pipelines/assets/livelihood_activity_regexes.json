@@ -56,18 +56,6 @@
         null
     ],
     [
-        "vente (?:de |d')?{product_pattern}",
-        null,
-        true,
-        null
-    ],
-    [
-        "{product_pattern} sales",
-        null,
-        true,
-        null
-    ],
-    [
         "(?:autre auto-emploi|other self-employment){separator_pattern} {age_gender_pattern}{separator_pattern} {product_pattern}",
         "OtherCashIncome",
         true,
@@ -314,16 +302,10 @@
         "price"
     ],
     [
-        "prix d'achat \\(espèces\\)",
+        "prix (?:d'|du|de) ?(?:vente|achat) ?\\(?(?:cash|espèces|cash prix d'achat)\\)?",
         null,
         false,
-        "purchase_price"
-    ],
-    [
-        "prix de vente \\(espèces\\)",
-        null,
-        false,
-        "sales_price"
+        "price"
     ],
     [
         "paiement en {unit_of_measure_pattern} par fois \\({product_pattern}\\)",
@@ -500,7 +482,25 @@
         "percentage_sold_slaughtered"
     ],
     [
-        "{product_pattern} sales: no. sold",
+        "{product_pattern} sales{separator_pattern} {nbr_pattern} sold",
+        "LivestockSale",
+        true,
+        "quantity_sold"
+    ],
+    [
+        "vente (?:des? |d')?{product_pattern}{separator_pattern} {nbr_pattern} {vendu_pattern}",
+        "LivestockSale",
+        true,
+        "quantity_sold"
+    ],
+    [
+        "{product_pattern} vente: {nbr_pattern} {vendu_pattern}",
+        "LivestockSale",
+        true,
+        "quantity_sold"
+    ],
+    [
+        "{product_pattern}: {nbr_pattern} {vendu_pattern}",
         "LivestockSale",
         true,
         "quantity_sold"
@@ -746,24 +746,6 @@
         "carcass_weight"
     ],
     [
-        "vente (?:des? |d')?{product_pattern}: {nbr_pattern} {vendu_pattern}",
-        "LivestockSale",
-        true,
-        "quantity_sold"
-    ],
-    [
-        "{product_pattern} vente: {nbr_pattern} {vendu_pattern}",
-        "LivestockSale",
-        true,
-        "quantity_sold"
-    ],
-    [
-        "{product_pattern}: {nbr_pattern} {vendu_pattern}",
-        "LivestockSale",
-        true,
-        "quantity_sold"
-    ],
-    [
         "autre (?:culture de rente|culture|cereale|céréale/légumineuse|céréale? principal|légumineuse)?{separator_pattern} \\(?{product_pattern}\\)?{separator_pattern} {unit_of_measure_pattern} produits?",
         null,
         true,
@@ -902,7 +884,7 @@
         "quantity_sold"
     ],
     [
-        "{product_pattern}: (?P<unit_of_measure_id>kg|l)? {vendu_pattern}",
+        "(?:vente de |vente )?{product_pattern}{separator_pattern} (?P<unit_of_measure_id>kg|l)? {vendu_pattern}",
         null,
         true,
         "quantity_sold"
@@ -920,13 +902,25 @@
         "quantity_sold"
     ],
     [
+        "(?:autre)?{separator_pattern}vente (?:de |d')?{product_pattern}",
+        null,
+        true,
+        null
+    ],
+    [
+        "{product_pattern} sales",
+        null,
+        true,
+        null
+    ],
+    [
         "autre achat{separator_pattern} ?{product_pattern}",
         null,
         true,
         null
     ],
     [
-        "autre auto-emploi{separator_pattern} ?{product_pattern}",
+        "autre auto-emploi{separator_pattern} (?:vente de |vente )?{product_pattern}",
         null,
         true,
         null
