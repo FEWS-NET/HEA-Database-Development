@@ -762,6 +762,15 @@ class LivelihoodZoneBaselineFacetedSearchViewTestCase(APITestCase):
         self.assertEqual(search_data["products"][0]["count"], 2)  # 2 zones have this product
         # confirm the product value is correct
         self.assertEqual(search_data["products"][0]["value"], self.product1.cpc)
+        # confirm livelihood_zone_baselines are present with correct data
+        baselines = search_data["products"][0]["livelihood_zone_baselines"]
+        self.assertEqual(len(baselines), 2)
+        baseline_ids = {b["id"] for b in baselines}
+        self.assertEqual(baseline_ids, {self.baseline1.id, self.baseline3.id})
+        for b in baselines:
+            self.assertIn("name", b)
+            self.assertIn("livelihood_zone__code", b)
+            self.assertIn("reference_year_end_date", b)
         # Apply the filters to the baseline
         baseline_url = reverse("livelihoodzonebaseline-list")
         response = self.client.get(
@@ -806,6 +815,14 @@ class LivelihoodZoneBaselineFacetedSearchViewTestCase(APITestCase):
         self.assertEqual(len(data["items"]), 2)
         self.assertEqual(data["items"][0]["count"], 1)  # 1 zone for this characteristic
         self.assertEqual(data["items"][1]["count"], 1)  # 1 zone for this characteristic
+        # confirm livelihood_zone_baselines are present on each item
+        for item in data["items"]:
+            self.assertIn("livelihood_zone_baselines", item)
+            self.assertEqual(len(item["livelihood_zone_baselines"]), 1)
+            self.assertIn("id", item["livelihood_zone_baselines"][0])
+            self.assertIn("name", item["livelihood_zone_baselines"][0])
+            self.assertIn("livelihood_zone__code", item["livelihood_zone_baselines"][0])
+            self.assertIn("reference_year_end_date", item["livelihood_zone_baselines"][0])
         # Search by the second characteristic
         response = self.client.get(
             self.url,
@@ -872,6 +889,13 @@ class LivelihoodZoneBaselineFacetedSearchViewTestCase(APITestCase):
         self.assertEqual(milk_results[0]["filter"], "strategy_type")
         self.assertEqual(milk_results[0]["value_label"], "Milk Production")
         self.assertEqual(milk_results[0]["count"], 1)
+        # confirm livelihood_zone_baselines on strategy type result
+        baselines = milk_results[0]["livelihood_zone_baselines"]
+        self.assertEqual(len(baselines), 1)
+        self.assertEqual(baselines[0]["id"], self.baseline1.id)
+        self.assertIn("name", baselines[0])
+        self.assertIn("livelihood_zone__code", baselines[0])
+        self.assertIn("reference_year_end_date", baselines[0])
 
         # Test that search "lait" with language=fr returns MilkProduction via French translation
         response = self.client.get(self.url, {"search": "lait", "language": "fr"})

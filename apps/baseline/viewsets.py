@@ -2097,6 +2097,18 @@ class LivelihoodZoneBaselineFacetedSearchView(APIView):
     renderer_classes = [JSONRenderer]
     permission_classes = [AllowAny]
 
+    def _get_baselines(self, baselines_qs):
+        # returs a list of baseline dicts with id, name, livelihood_zone__code, reference_year_end_date.
+        return [
+            {
+                "id": baseline.id,
+                "name": baseline.name,
+                "livelihood_zone__code": baseline.livelihood_zone.code,
+                "reference_year_end_date": baseline.reference_year_end_date,
+            }
+            for baseline in baselines_qs.select_related("livelihood_zone")
+        ]
+
     def _search_products(self, search_term):
         # Search products using icontains for broader matching than the default iexact search.
         q_object = Q()
@@ -2132,44 +2144,42 @@ class LivelihoodZoneBaselineFacetedSearchView(APIView):
                 with override(language):
                     for search_result in search_per_model:
                         if model_name == "ClassifiedProduct":
-                            unique_zones = (
-                                LivelihoodStrategy.objects.filter(product=search_result)
-                                .values("livelihood_zone_baseline")
-                                .distinct()
-                                .count()
-                            )
+                            baselines_qs = LivelihoodZoneBaseline.objects.filter(
+                                id__in=LivelihoodStrategy.objects.filter(product=search_result).values(
+                                    "livelihood_zone_baseline"
+                                )
+                            ).distinct()
                             value_label, value = search_result.description, search_result.pk
                         elif model_name == "LivelihoodCategory":
-                            unique_zones = LivelihoodZoneBaseline.objects.filter(
+                            baselines_qs = LivelihoodZoneBaseline.objects.filter(
                                 main_livelihood_category=search_result
-                            ).count()
+                            )
                             value_label, value = search_result.description, search_result.pk
                         elif model_name == "LivelihoodZone":
-                            unique_zones = LivelihoodZoneBaseline.objects.filter(livelihood_zone=search_result).count()
+                            baselines_qs = LivelihoodZoneBaseline.objects.filter(livelihood_zone=search_result)
                             value_label, value = search_result.name, search_result.pk
                         elif model_name == "WealthCharacteristic":
-                            unique_zones = (
-                                WealthGroupCharacteristicValue.objects.filter(wealth_characteristic=search_result)
-                                .values("wealth_group__livelihood_zone_baseline")
-                                .distinct()
-                                .count()
-                            )
+                            baselines_qs = LivelihoodZoneBaseline.objects.filter(
+                                id__in=WealthGroupCharacteristicValue.objects.filter(
+                                    wealth_characteristic=search_result
+                                ).values("wealth_group__livelihood_zone_baseline")
+                            ).distinct()
                             value_label, value = search_result.description, search_result.pk
                         elif model_name == "Country":
-                            unique_zones = (
-                                LivelihoodZoneBaseline.objects.filter(livelihood_zone__country=search_result)
-                                .distinct()
-                                .count()
-                            )
+                            baselines_qs = LivelihoodZoneBaseline.objects.filter(
+                                livelihood_zone__country=search_result
+                            ).distinct()
                             value_label, value = search_result.iso_en_name, search_result.pk
-                        if unique_zones > 0:
+                        baselines = self._get_baselines(baselines_qs)
+                        if baselines:
                             results[filter_category].append(
                                 {
                                     "filter": filter_key,
                                     "filter_label": filter_label,
                                     "value_label": value_label,
                                     "value": value,
-                                    "count": unique_zones,
+                                    "count": len(baselines),
+                                    "livelihood_zone_baselines": baselines,
                                 }
                             )
 
@@ -2189,20 +2199,21 @@ class LivelihoodZoneBaselineFacetedSearchView(APIView):
                         or search_lower in english_labels[strategy_type.value]
                         or search_lower in translated_label.lower()
                     ):
-                        unique_zones = (
-                            LivelihoodStrategy.objects.filter(strategy_type=strategy_type.value)
-                            .values("livelihood_zone_baseline")
-                            .distinct()
-                            .count()
-                        )
-                        if unique_zones > 0:
+                        baselines_qs = LivelihoodZoneBaseline.objects.filter(
+                            id__in=LivelihoodStrategy.objects.filter(strategy_type=strategy_type.value).values(
+                                "livelihood_zone_baseline"
+                            )
+                        ).distinct()
+                        baselines = self._get_baselines(baselines_qs)
+                        if baselines:
                             results["livelihood_strategy_types"].append(
                                 {
                                     "filter": "strategy_type",
                                     "filter_label": "Livelihood Strategy Type",
                                     "value_label": translated_label,
                                     "value": strategy_type.value,
-                                    "count": unique_zones,
+                                    "count": len(baselines),
+                                    "livelihood_zone_baselines": baselines,
                                 }
                             )
 
