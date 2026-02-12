@@ -21,7 +21,7 @@ from baseline.models import (
 )
 from common.fields import translation_fields
 from common.tests.factories import ClassifiedProductFactory, CountryFactory
-from metadata.models import LivelihoodActivityScenario
+from metadata.models import LivelihoodActivityScenario, LivelihoodStrategyType
 from metadata.tests.factories import (
     CharacteristicGroupFactory,
     LivelihoodCategoryFactory,
@@ -775,9 +775,11 @@ class LivelihoodZoneBaselineFacetedSearchViewTestCase(APITestCase):
         self.assertTrue(any(d["name"] == self.baseline3.name for d in data))
         self.assertFalse(any(d["name"] == self.baseline2.name for d in data))
 
+        # Find the item matching characteristic1 (not relying on order)
+        characteristic1_item = next(item for item in search_data["items"] if item["value"] == self.characteristic1.pk)
         response = self.client.get(
             baseline_url,
-            {search_data["items"][0]["filter"]: search_data["items"][0]["value"]},
+            {characteristic1_item["filter"]: characteristic1_item["value"]},
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(json.loads(response.content)), 1)
@@ -825,6 +827,79 @@ class LivelihoodZoneBaselineFacetedSearchViewTestCase(APITestCase):
         data = response.data
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(data["items"]), 0)
+
+    def test_search_with_livelihood_strategy_type(self):
+        # Create products with "goat" in the name for partial match testing
+        goat_product = ClassifiedProductFactory(
+            cpc="L09901AA",
+            description_en="Goats",
+            common_name_en="Goat",
+        )
+        goat_meat_product = ClassifiedProductFactory(
+            cpc="L09902AA",
+            description_en="Goat Meat",
+            common_name_en="Goat Meat",
+        )
+        goat_milk_product = ClassifiedProductFactory(
+            cpc="L09903AA",
+            description_en="Goat's Milk",
+            common_name_en="Goat Milk",
+        )
+        # Create strategies linking products to baselines with specific strategy types
+        LivelihoodStrategyFactory(
+            product=goat_milk_product,
+            livelihood_zone_baseline=self.baseline1,
+            strategy_type=LivelihoodStrategyType.MILK_PRODUCTION,
+        )
+        LivelihoodStrategyFactory(
+            product=goat_meat_product,
+            livelihood_zone_baseline=self.baseline2,
+            strategy_type=LivelihoodStrategyType.MEAT_PRODUCTION,
+        )
+        LivelihoodStrategyFactory(
+            product=goat_product,
+            livelihood_zone_baseline=self.baseline3,
+            strategy_type=LivelihoodStrategyType.LIVESTOCK_SALE,
+        )
+        # Test that search "Milk" returns MilkProduction in livelihood_strategy_types facet
+        response = self.client.get(self.url, {"search": "Milk"})
+        self.assertEqual(response.status_code, 200)
+        data = response.data
+        self.assertIn("livelihood_strategy_types", data)
+        strategy_type_results = data["livelihood_strategy_types"]
+        milk_results = [r for r in strategy_type_results if r["value"] == "MilkProduction"]
+        self.assertEqual(len(milk_results), 1)
+        self.assertEqual(milk_results[0]["filter"], "strategy_type")
+        self.assertEqual(milk_results[0]["value_label"], "Milk Production")
+        self.assertEqual(milk_results[0]["count"], 1)
+
+        # Test that search "lait" with language=fr returns MilkProduction via French translation
+        response = self.client.get(self.url, {"search": "lait", "language": "fr"})
+        self.assertEqual(response.status_code, 200)
+        data = response.data
+        strategy_type_results = data["livelihood_strategy_types"]
+        milk_results = [r for r in strategy_type_results if r["value"] == "MilkProduction"]
+        self.assertEqual(len(milk_results), 1)
+        self.assertEqual(milk_results[0]["value_label"], "Production du lait")
+
+        # Test that search "goat" returns multiple goat-related products
+        response = self.client.get(self.url, {"search": "goat", "language": "en"})
+        self.assertEqual(response.status_code, 200)
+        data = response.data
+        product_results = data["products"]
+        product_cpcs = {r["value"] for r in product_results}
+        self.assertIn(goat_product.cpc, product_cpcs)
+        self.assertIn(goat_meat_product.cpc, product_cpcs)
+        self.assertIn(goat_milk_product.cpc, product_cpcs)
+        self.assertEqual(len(product_results), 3)
+
+        # test taht strategy_type filter to baseline list endpoint
+        baseline_url = reverse("livelihoodzonebaseline-list")
+        response = self.client.get(baseline_url, {"strategy_type": "MilkProduction"})
+        self.assertEqual(response.status_code, 200)
+        baseline_data = json.loads(response.content)
+        self.assertEqual(len(baseline_data), 1)
+        self.assertEqual(baseline_data[0]["name"], self.baseline1.name)
 
 
 class LivelihoodProductCategoryViewSetTestCase(APITestCase):
