@@ -17,9 +17,10 @@ from rest_framework.views import APIView
 
 from common.fields import translation_fields
 from common.filters import DefaultingDateFilter, MultiFieldFilter, UpperCaseFilter
+from common.models import ClassifiedProduct
 from common.utils import make_condition_funcs
 from common.viewsets import AggregatingViewSet, BaseModelViewSet
-from metadata.models import WealthGroupCategory
+from metadata.models import LivelihoodStrategyType, WealthGroupCategory
 
 from .models import (
     BaselineLivelihoodActivity,
@@ -212,6 +213,7 @@ class LivelihoodZoneBaselineFilterSet(filters.FilterSet):
     wealth_characteristic = CharFilter(
         method="filter_by_wealth_characteristic", label="Filter by Wealth Characteristic"
     )
+    strategy_type = CharFilter(method="filter_by_strategy_type", label="Filter by Strategy Type")
     as_of_date = DefaultingDateFilter(
         label="As of Date",
         help_text="Filter baselines valid as of this date (YYYY-MM-DD format or special values like 'today').",
@@ -255,6 +257,13 @@ class LivelihoodZoneBaselineFilterSet(filters.FilterSet):
             "wealth_group__livelihood_zone_baseline"
         )
 
+        return queryset.filter(id__in=Subquery(matching_baselines))
+
+    def filter_by_strategy_type(self, queryset, name, value):
+        """
+        Filter the baseline by matching livelihood strategy type
+        """
+        matching_baselines = LivelihoodStrategy.objects.filter(strategy_type=value).values("livelihood_zone_baseline")
         return queryset.filter(id__in=Subquery(matching_baselines))
 
 
@@ -2088,6 +2097,16 @@ class LivelihoodZoneBaselineFacetedSearchView(APIView):
     renderer_classes = [JSONRenderer]
     permission_classes = [AllowAny]
 
+    def _search_products(self, search_term):
+        # Search products using icontains for broader matching than the default iexact search.
+        q_object = Q()
+        for field in [*translation_fields("description"), *translation_fields("common_name")]:
+            q_object |= Q(**{f"{field}__icontains": search_term})
+        q_object |= Q(cpc__iexact=search_term)
+        q_object |= Q(aliases__contains=[search_term.lower()])
+        q_object |= Q(scientific_name__icontains=search_term)
+        return ClassifiedProduct.objects.filter(q_object).distinct()
+
     def get(self, request, format=None):
         """
         Return a faceted set of matching filters
@@ -2100,13 +2119,14 @@ class LivelihoodZoneBaselineFacetedSearchView(APIView):
             for model_entry in MODELS_TO_SEARCH:
                 app_name = model_entry["app_name"]
                 model_name = model_entry["model_name"]
-                filter, filter_label, filter_category = (
-                    model_entry["filter"]["key"],
-                    model_entry["filter"]["label"],
-                    model_entry["filter"]["category"],
-                )
+                filter_key = model_entry["filter"]["key"]
+                filter_label = model_entry["filter"]["label"]
+                filter_category = model_entry["filter"]["category"]
                 ModelClass = apps.get_model(app_name, model_name)
-                search_per_model = ModelClass.objects.search(search_term)
+                if model_name == "ClassifiedProduct":
+                    search_per_model = self._search_products(search_term)
+                else:
+                    search_per_model = ModelClass.objects.search(search_term)
                 results[filter_category] = []
                 # for activating language
                 with override(language):
@@ -2145,10 +2165,43 @@ class LivelihoodZoneBaselineFacetedSearchView(APIView):
                         if unique_zones > 0:
                             results[filter_category].append(
                                 {
-                                    "filter": filter,
+                                    "filter": filter_key,
                                     "filter_label": filter_label,
                                     "value_label": value_label,
                                     "value": value,
+                                    "count": unique_zones,
+                                }
+                            )
+
+            # Search livelihood strategy types (not a model query)
+            results["livelihood_strategy_types"] = []
+            search_lower = search_term.lower()
+            # Get English labels outside language override for matching
+            english_labels = {}
+            with override("en"):
+                for strategy_type in LivelihoodStrategyType:
+                    english_labels[strategy_type.value] = str(strategy_type.label).lower()
+            with override(language):
+                for strategy_type in LivelihoodStrategyType:
+                    translated_label = str(strategy_type.label)
+                    if (
+                        search_lower in strategy_type.value.lower()
+                        or search_lower in english_labels[strategy_type.value]
+                        or search_lower in translated_label.lower()
+                    ):
+                        unique_zones = (
+                            LivelihoodStrategy.objects.filter(strategy_type=strategy_type.value)
+                            .values("livelihood_zone_baseline")
+                            .distinct()
+                            .count()
+                        )
+                        if unique_zones > 0:
+                            results["livelihood_strategy_types"].append(
+                                {
+                                    "filter": "strategy_type",
+                                    "filter_label": "Livelihood Strategy Type",
+                                    "value_label": translated_label,
+                                    "value": strategy_type.value,
                                     "count": unique_zones,
                                 }
                             )
