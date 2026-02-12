@@ -264,7 +264,7 @@ class LivelihoodZoneBaselineFilterSet(filters.FilterSet):
         Filter the baseline by matching livelihood strategy type
         """
         matching_baselines = LivelihoodStrategy.objects.filter(strategy_type=value).values("livelihood_zone_baseline")
-        return queryset.filter(id__in=Subquery(matching_baselines))
+        return queryset.filter(id__in=matching_baselines)
 
 
 class LivelihoodZoneBaselineViewSet(BaseModelViewSet):
