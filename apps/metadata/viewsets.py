@@ -238,3 +238,4 @@ class SeasonViewSet(BaseModelViewSet):
         "season_type",
         "purpose",
     )
+    ordering = ("country", "order")

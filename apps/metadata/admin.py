@@ -151,7 +151,7 @@ class SeasonAdmin(admin.ModelAdmin):
         "season_type",
         "purpose",
     )
-    ordering = ("order",)
+    ordering = ("country", "order")
 
 
 class MarketAdmin(ReferenceDataAdmin):

@@ -414,6 +414,8 @@ def get_all_label_attributes(labels: pd.Series, activity_type: str, country_code
     # Add the country_id because it is required for the Season lookup
     if country_code:
         all_label_attributes["country_id"] = country_code
+        # The all_label_attributes dataframe should also contain a 'strategy_type' column, which will be used by the
+        # lookup to restrict the possible matches to Seasons with a matching `purpose` (or those with a null purpose).
         all_label_attributes = seasonnamelookup.do_lookup(all_label_attributes, "season", "season")
         all_label_attributes["season"] = all_label_attributes["season"].replace(pd.NA, None)
 
@@ -659,8 +661,16 @@ def get_instances_from_dataframe(
         livelihood_zone_baseline.reference_year_end_date.isoformat(),
     ]
 
-    # Save the identifier for Season 2 because we need it when creating MilkProduction instances
-    season2_name = SeasonNameLookup().get("Season 2", country_id=livelihood_zone_baseline.livelihood_zone.country_id)
+    # Save the identifier for Season 2 because we need it when creating MilkProduction and ButterProduction instances
+    seasonnamelookup = SeasonNameLookup()
+    dairy_season2_names = [
+        seasonnamelookup.get(
+            "Season 2", country_id=livelihood_zone_baseline.livelihood_zone.country_id, purpose="MilkProduction"
+        ),
+        seasonnamelookup.get(
+            "Season 2", country_id=livelihood_zone_baseline.livelihood_zone.country_id, purpose="ButterProduction"
+        ),
+    ]
 
     # Prepare a lookup for ClassifiedProduct, so it caches and reuses the results of .get() lookups
     classifiedproductlookup = ClassifiedProductLookup()
@@ -834,7 +844,7 @@ def get_instances_from_dataframe(
                         if (
                             livelihood_strategy["strategy_type"] in ["MilkProduction", "ButterProduction"]
                             and ("product_id" not in livelihood_strategy or not livelihood_strategy["product_id"])
-                            and livelihood_strategy["season"] == season2_name
+                            and livelihood_strategy["season"] in dairy_season2_names
                             and previous_livelihood_strategy
                             and "product_id" in previous_livelihood_strategy
                             and previous_livelihood_strategy["product_id"]
@@ -846,7 +856,7 @@ def get_instances_from_dataframe(
                         # if necessary.
                         if (
                             livelihood_strategy["strategy_type"] == "MilkProduction"
-                            and livelihood_strategy["season"] == season2_name
+                            and livelihood_strategy["season"] in dairy_season2_names
                             and previous_livelihood_activities_for_strategy
                         ):
                             # Assertion to prevent linting from complaining about possible None values
@@ -947,7 +957,14 @@ def get_instances_from_dataframe(
                                     strategy["strategy_type"] == "MilkProduction"
                                     # Season for the current LivelihoodStrategy hasn't been converted to a natural key yet,
                                     # so coerce it to a list for comparison
-                                    and strategy["season"] == [livelihood_strategy["season"]]
+                                    and strategy["season"]
+                                    == [
+                                        seasonnamelookup.get(
+                                            livelihood_strategy["season_original"],
+                                            country_id=livelihood_zone_baseline.livelihood_zone.country_id,
+                                            purpose="MilkProduction",
+                                        )
+                                    ]
                                     and strategy["additional_identifier"]
                                     == livelihood_strategy["additional_identifier"]
                                 ):
