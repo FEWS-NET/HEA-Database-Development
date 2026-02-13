@@ -410,12 +410,6 @@
         "quantity_produced"
     ],
     [
-        "type of milk sold/other use \\(skim=0, whole=1\\)",
-        null,
-        false,
-        "type_of_milk_sold_or_other_uses"
-    ],
-    [
         "ghee/butter production \\((?P<unit_of_measure_id>kg|l)\\)",
         "ButterProduction",
         false,
@@ -674,7 +668,13 @@
         "quantity_produced"
     ],
     [
-        "type de lait vendus/autre \\(ecremé=0, entier=1\\)",
+        "type of milk sold/other use \\(skim=0, whole=1\\)",
+        null,
+        false,
+        "type_of_milk_sold_or_other_uses"
+    ],
+    [
+        "type de lait vendus?/autre \\(ecremé=0, entier=1\\)",
         null,
         false,
         "type_of_milk_sold_or_other_uses"
