@@ -1,0 +1,26 @@
+.kpi-card-container {
+  display: flex;
+  justify-content: space-around;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.summary-card {
+  background-color: #f8f9fa;
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+  flex-grow: 1;
+  border: 1px solid #e9ecef;
+}
+
+.summary-card h3 {
+  margin: 0;
+  font-size: 2em;
+}
+
+.summary-card p {
+  margin: 5px 0 0 0;
+  color: #6c757d;
+  font-weight: bold;
+}

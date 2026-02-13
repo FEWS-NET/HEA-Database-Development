@@ -188,4 +188,7 @@ urlpatterns += i18n_patterns(
     ),
     path("admin/doc/", include("django.contrib.admindocs.urls")),
     path("admin/", admin.site.urls),
+    # dashboard
+    path("dashboard/", include("viz.urls")),
+    path("django_plotly_dash/", include("django_plotly_dash.urls")),
 )

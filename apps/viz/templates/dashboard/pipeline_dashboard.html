@@ -1,0 +1,7 @@
+{%extends "dashboard/internal_dashboard.html"%}
+{% load static%}
+
+{% block styles %}
+{{ block.super }}
+<link href="{% static 'viz/css/dashboards/pipline_dashboard.css' %}" rel="stylesheet" />
+{% endblock %}

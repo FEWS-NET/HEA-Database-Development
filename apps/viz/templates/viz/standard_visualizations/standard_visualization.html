@@ -1,0 +1,58 @@
+{% load i18n static jsonify cache %}
+{% get_current_language as LANGUAGE_CODE %}
+
+<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE }}">
+
+<head>
+    <meta charset="utf-8" />
+    <link rel="shortcut icon" href="/data-explorer/favicon.ico">
+    <title>{{ parameters.visualization_title }}</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <meta name="description" content="{{ parameters.visualization_title }}" />
+    
+    {% cache 2592000 sources_preconnect sources_preconnect %}
+        {% for source_prec in sources_preconnect %}
+            <link href="{{ source_prec }}" rel="preconnect"/>
+        {% endfor %}
+    {% endcache %}
+
+    {% cache 2592000 sources_js sources_js %}
+        {% for source_js in sources_js %}
+            <script defer src="{{ source_js }}"></script>
+        {% endfor %}
+    {% endcache %}
+
+    {% cache 2592000 sources_stylesheet sources_stylesheet %}
+        {% for source_css in sources_stylesheet %}
+            {% include "snippets/css_deferred.html" with href=source_css only %}
+        {% endfor %}
+    {% endcache %}
+
+</head>
+
+<body style="margin: 0px; padding: 0px;">
+
+<script type="text/javascript">
+    document.onreadystatechange = () => {
+        if (document.readyState === 'complete') {
+            // Prevent viz container re creation in case when it was built already. For example during static snapshot process.
+            const containerExists = document.getElementById(`viz_div_${"{{ parameters.unique_id }}"}`);
+            if (!containerExists) {
+                {{ visualization_class }} (
+                    parentDivId=null,
+                    {
+                        {% for parameter, value in parameters.items %}
+                            {{ parameter }}: {{ value|jsonify }} {% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    },
+                    {{ LANGUAGE_CODE|jsonify }}
+                );
+            }
+        };
+    }
+</script>
+    
+</body>
+
+</html>
