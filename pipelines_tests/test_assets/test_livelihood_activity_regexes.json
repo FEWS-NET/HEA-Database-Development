@@ -450,6 +450,9 @@
     "revenus": {
         "attribute": "income"
     },
+    "type de lait vendu/autre (ecremé=0, entier=1)": {
+        "attribute": "type_of_milk_sold_or_other_uses"
+    },
     "type de lait vendus/autre (ecremé=0, entier=1)": {
         "attribute": "type_of_milk_sold_or_other_uses"
     },

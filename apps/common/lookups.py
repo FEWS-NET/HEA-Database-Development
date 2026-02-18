@@ -348,7 +348,8 @@ class Lookup(ABC):
         """
         df = pd.DataFrame({"value": [value]})
         for parent_field in self.parent_fields:
-            df[parent_field] = [parent_values[parent_field]]
+            if parent_field in parent_values:
+                df[parent_field] = [parent_values[parent_field]]
         try:
             df = self.do_lookup(df, "value", "result")
             result = df.iloc[0, -1]
@@ -372,7 +373,8 @@ class Lookup(ABC):
         """
         df = pd.DataFrame({"value": [value]})
         for parent_field in self.parent_fields:
-            df[parent_field] = [parent_values[parent_field]]
+            if parent_field in parent_values:
+                df[parent_field] = [parent_values[parent_field]]
         try:
             df = self.do_lookup(df, "value", "result")
             df = self.get_instances(df, "result")
