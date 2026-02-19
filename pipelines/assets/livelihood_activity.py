@@ -378,15 +378,18 @@ def get_label_attributes(label: str, activity_type: str) -> pd.Series:
         return pd.Series(attributes)
 
 
-def get_all_label_attributes(labels: pd.Series, activity_type: str, country_code: str | None) -> pd.DataFrame:
+def get_all_label_attributes(
+    labels: pd.Series, activity_type: str, country_code: str | None, livelihood_zone_id: str | None
+) -> pd.DataFrame:
     """
     Return a DataFrame of the attributes for all of the labels in the supplied Series.
 
     The Product, Unit of Measure and Season attributes are processed using the relevant Lookup classes so that the
     resulting DataFrame contains the correct identifiers for these attributes.
 
-    The country_code parameter is optional so that this function can be used to test individual labels,
-    but it should be provided when processing a BSS because the Season lookup is country-specific.
+    The country_code and livelihood_zone_id parameters are optional so that this function can be used to test
+    individual labels, but they should be provided when processing a BSS because the Season lookup is country-specific,
+    and may rely on sub-national seasons using zone-specific aliases in some countries.
     """
     # Clear caches for the functions, so that we use the lastest data from the database
     get_label_attributes.cache_clear()
@@ -411,12 +414,38 @@ def get_all_label_attributes(labels: pd.Series, activity_type: str, country_code
         all_label_attributes, "unit_of_measure_id", "unit_of_measure_id"
     )
     all_label_attributes["unit_of_measure_id"] = all_label_attributes["unit_of_measure_id"].replace(pd.NA, None)
-    # Add the country_id because it is required for the Season lookup
+    # Convert the season alias to an actual Season.name, which is the natural key for a Season.
+    # We only do this if the country_id is in the dataframe, so that we can use this function to test labels
+    # outside the context of a BSS, e.g. in unit tests, without needing to define country-specific seasons.
+    # The country_id is needed for an actual Season lookup because all the BSSs use Season 1 and Season 2 names for
+    # the seasons and we need to know the Country (and maybe the Strategy Type) to limit the lookup to a small enough
+    # set of rows that Season 1 and Season 2 can uniquely identify a specific Season.
+    # The all_label_attributes dataframe should also contain a 'strategy_type' column, which will be used by the
+    # lookup to restrict the possible matches to Seasons with a matching `purpose` (or those with a null purpose).
     if country_code:
         all_label_attributes["country_id"] = country_code
-        # The all_label_attributes dataframe should also contain a 'strategy_type' column, which will be used by the
-        # lookup to restrict the possible matches to Seasons with a matching `purpose` (or those with a null purpose).
         all_label_attributes = seasonnamelookup.do_lookup(all_label_attributes, "season", "season")
+        # Some countries have sub-national seasons, but still use 'Season 1' and 'Season 2' labels in their BSSs,
+        # so we need to be able to match these labels to a specific set of sub-national seasons for each BSS. We do
+        # this by overwriting the national-level season we just identified with a zone-specific season, if available.
+        # Zone-specific seasons include the livelihood zone code in the alias, e.g. `Season 1 (NG04)`.
+        if livelihood_zone_id:
+            all_label_attributes["livelihood_zone_id"] = livelihood_zone_id
+            all_label_attributes["zone_season"] = all_label_attributes[
+                ["season_original", "livelihood_zone_id"]
+            ].apply(
+                lambda x: (
+                    f"{x['season_original']} ({x['livelihood_zone_id']})"
+                    if x["season_original"]
+                    else x["season_original"]
+                ),
+                axis=1,
+            )
+            all_label_attributes = seasonnamelookup.do_lookup(all_label_attributes, "zone_season", "zone_season")
+            # Make a final season column that uses the zone-specific season if available and the national-level season, if not.
+            all_label_attributes["season"] = all_label_attributes["zone_season"].fillna(all_label_attributes["season"])
+            # Drop the intermediate columns used for the lookup
+            all_label_attributes = all_label_attributes.drop(columns=["zone_season", "zone_season_original"])
         all_label_attributes["season"] = all_label_attributes["season"].replace(pd.NA, None)
 
     # Make sure we keep the same index so we can match by row number
@@ -685,7 +714,10 @@ def get_instances_from_dataframe(
 
     # Get a dataframe of the attributes for each label in column A
     all_label_attributes = get_all_label_attributes(
-        df["A"], activity_type, livelihood_zone_baseline.livelihood_zone.country_id
+        df["A"],
+        activity_type,
+        livelihood_zone_baseline.livelihood_zone.country_id,
+        livelihood_zone_baseline.livelihood_zone_id,
     )
 
     # Check that we recognize all of the activity labels
