@@ -9,11 +9,15 @@ from common.fields import translation_fields
 from metadata.models import LivelihoodStrategyType
 
 from .forms import (
+    CommunityForm,
     FoodPurchaseForm,
     LivelihoodActivityForm,
+    LivelihoodStrategyForm,
     MilkProductionForm,
     OtherPurchaseForm,
     ReliefGiftOtherForm,
+    WealthGroupCharacteristicValueForm,
+    WealthGroupForm,
 )
 from .models import (
     ButterProduction,
@@ -218,6 +222,7 @@ class LivelihoodZoneBaselineAdmin(GISModelAdminReadOnly):
 
 
 class CommunityAdmin(GISModelAdminReadOnly):
+    form = CommunityForm
     fields = (
         "name",
         "full_name",
@@ -275,6 +280,7 @@ class CommunityAdmin(GISModelAdminReadOnly):
 
 
 class LivelihoodStrategyAdmin(admin.ModelAdmin):
+    form = LivelihoodStrategyForm
     fields = (
         "livelihood_zone_baseline",
         "strategy_type",
@@ -430,6 +436,7 @@ class LivelihoodActivityAdmin(admin.ModelAdmin):
 
 
 class WealthGroupCharacteristicValueAdmin(admin.ModelAdmin):
+    form = WealthGroupCharacteristicValueForm
     list_display = [
         "wealth_group",
         "get_wealth_characteristic_common_name",
@@ -760,6 +767,7 @@ class OtherPurchaseInlineAdmin(LivelihoodActivityInlineAdmin):
 
 
 class WealthGroupAdmin(admin.ModelAdmin):
+    form = WealthGroupForm
     list_display = (
         "community",
         "wealth_group_category",

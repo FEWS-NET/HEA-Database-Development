@@ -10,6 +10,7 @@ django-binary-database-files==1.0.18
 django-cors-headers==4.9.0
 django-environ==0.11.2
 django-extensions==3.2.3
+django-autocomplete-light==3.11.0
 django-filter==23.5
 django-guardian==2.4.0
 django_model_utils==4.4.0
