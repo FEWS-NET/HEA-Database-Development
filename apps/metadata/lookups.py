@@ -62,7 +62,7 @@ class SeasonLookup(Lookup):
         extra_dfs = []
         for country in all_countries:
             country_df = df[df["country_id"] == country]
-            null_purpose_rows = country_df[country_df["purpose"].isnull()]
+            null_purpose_rows = country_df[country_df["purpose"] == ""]
             for purpose in all_purposes:
                 # Only add duplicate rows for purposes that aren't already defined for this country
                 if purpose not in country_df["purpose"].unique():
