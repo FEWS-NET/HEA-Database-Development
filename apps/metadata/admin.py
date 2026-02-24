@@ -145,6 +145,7 @@ class SeasonAdmin(admin.ModelAdmin):
         *translation_fields("name"),
         "season_type",
         "purpose",
+        "aliases",
     )
     list_filter = (
         ("country", admin.RelatedOnlyFieldListFilter),
