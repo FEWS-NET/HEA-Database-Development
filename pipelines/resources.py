@@ -125,7 +125,7 @@ class DataFrameCSVFilesystemIOManager(DownloadAssetMixin, UPathIOManager):
             context.log.warning(f"Removing existing file: {path}")
             self.unlink(path)
 
-        obj.to_csv(path, index=False)
+        obj.to_csv(path, index=False, encoding="utf-8-sig")  # Use UTF-8 with BOM for improved Excel compatibility
 
     def load_from_path(self, context: InputContext, path: UPath) -> pd.DataFrame:
         return pd.read_csv(path)
