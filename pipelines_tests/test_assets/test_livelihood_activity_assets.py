@@ -4,11 +4,14 @@ from pathlib import Path
 import pandas as pd
 from django.test import TestCase
 from pipelines.assets.livelihood_activity import (
+    get_all_label_attributes,
     get_label_attributes,
     get_livelihood_activity_label_map,
 )
 
+from common.tests.factories import CountryFactory
 from metadata.models import ActivityLabel
+from metadata.tests.factories import SeasonFactory
 
 LIVELIHOOD_ACTIVITY = ActivityLabel.LivelihoodActivityType.LIVELIHOOD_ACTIVITY
 
@@ -40,7 +43,7 @@ class GetActivityLabelAttributesTestCase(TestCase):
                 unwanted_attributes = {
                     k: v
                     for k, v in attributes.items()
-                    if k not in expected_attributes and k not in ["activity_label", "notes"]
+                    if k not in expected_attributes and k not in ["activity_label", "status", "notes"]
                 }
 
                 self.assertFalse(
@@ -101,3 +104,39 @@ class GetActivityLabelAttributesTestCase(TestCase):
         )
         # Test that additional attributes set in the ActivityLabel instance are ignored when using the regex
         self.assertEqual("", regex_attributes["season"])
+
+    def test_zone_specific_season_alias(self):
+        country = CountryFactory()
+        livelihood_zone_id = f"{country.iso3166a2}04"
+
+        general_season = SeasonFactory(
+            country=country,
+            name_en=f"{country.iso_en_ro_name}, Harvest",
+            aliases=["season 1"],
+            purpose=None,
+        )
+        zone_specific_season = SeasonFactory(
+            country=country,
+            name_en=f"{country.iso_en_ro_name}, Southern Unimodal, Harvest",
+            aliases=[f"season 1 ({livelihood_zone_id.lower()})"],
+            purpose=None,
+        )
+
+        # Test that the zone-specific season alias is matched when looking up attributes for that Zone.
+        attributes_df = get_all_label_attributes(
+            labels=pd.Series(["season 1: lactation period (days)"]),
+            activity_type=LIVELIHOOD_ACTIVITY,
+            country_code=country.iso3166a2,
+            livelihood_zone_id=livelihood_zone_id,
+        )
+        self.assertEqual(attributes_df.loc[0, "season"], zone_specific_season.name_en)
+
+        # Test that the general season alias is matched when looking up attributes for a different Zone.
+        livelihood_zone_id = f"{country.iso3166a2}05"
+        attributes_df = get_all_label_attributes(
+            labels=pd.Series(["season 1: lactation period (days)"]),
+            activity_type=LIVELIHOOD_ACTIVITY,
+            country_code=country.iso3166a2,
+            livelihood_zone_id=livelihood_zone_id,
+        )
+        self.assertEqual(attributes_df.loc[0, "season"], general_season.name_en)
