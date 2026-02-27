@@ -85,6 +85,7 @@ from baseline.models import (  # NOQA: E402
     MilkProduction,
 )
 from common.lookups import ClassifiedProductLookup, UnitOfMeasureLookup  # NOQA: E402
+from common.models import ClassifiedProduct  # NOQA: E402
 from metadata.lookups import SeasonNameLookup  # NOQA: E402
 from metadata.models import (  # NOQA: E402
     ActivityLabel,
@@ -272,10 +273,12 @@ def get_livelihood_activity_regular_expression_attributes(label: str) -> dict:
     label = prepare_lookup(label)
     attributes = {
         "activity_label": None,
+        "status": None,
         "strategy_type": None,
         "is_start": None,
         "product_id": None,
         "unit_of_measure_id": None,
+        "currency_id": None,
         "season": None,
         "additional_identifier": None,
         "household_labor_provider": None,
@@ -301,6 +304,7 @@ def get_livelihood_activity_regular_expression_attributes(label: str) -> dict:
                             break
 
             attributes["activity_label"] = label
+            attributes["status"] = ActivityLabel.LabelStatus.REGULAR_EXPRESSION
             attributes["strategy_type"] = strategy_type
             attributes["is_start"] = is_start
             if isinstance(attribute, dict):
@@ -333,10 +337,12 @@ def get_livelihood_activity_label_map(activity_type: str) -> dict[str, dict]:
             status=ActivityLabel.LabelStatus.OVERRIDE, activity_type=activity_type
         ).values(
             "activity_label",
+            "status",
             "strategy_type",
             "is_start",
             "product_id",
             "unit_of_measure_id",
+            "currency_id",
             "season",
             "additional_identifier",
             "attribute",
@@ -378,15 +384,18 @@ def get_label_attributes(label: str, activity_type: str) -> pd.Series:
         return pd.Series(attributes)
 
 
-def get_all_label_attributes(labels: pd.Series, activity_type: str, country_code: str | None) -> pd.DataFrame:
+def get_all_label_attributes(
+    labels: pd.Series, activity_type: str, country_code: str | None, livelihood_zone_id: str | None
+) -> pd.DataFrame:
     """
     Return a DataFrame of the attributes for all of the labels in the supplied Series.
 
     The Product, Unit of Measure and Season attributes are processed using the relevant Lookup classes so that the
     resulting DataFrame contains the correct identifiers for these attributes.
 
-    The country_code parameter is optional so that this function can be used to test individual labels,
-    but it should be provided when processing a BSS because the Season lookup is country-specific.
+    The country_code and livelihood_zone_id parameters are optional so that this function can be used to test
+    individual labels, but they should be provided when processing a BSS because the Season lookup is country-specific,
+    and may rely on sub-national seasons using zone-specific aliases in some countries.
     """
     # Clear caches for the functions, so that we use the lastest data from the database
     get_label_attributes.cache_clear()
@@ -411,13 +420,50 @@ def get_all_label_attributes(labels: pd.Series, activity_type: str, country_code
         all_label_attributes, "unit_of_measure_id", "unit_of_measure_id"
     )
     all_label_attributes["unit_of_measure_id"] = all_label_attributes["unit_of_measure_id"].replace(pd.NA, None)
-    # Add the country_id because it is required for the Season lookup
+    # Convert the season alias to an actual Season.name, which is the natural key for a Season.
+    # We only do this if the country_id is in the dataframe, so that we can use this function to test labels
+    # outside the context of a BSS, e.g. in unit tests, without needing to define country-specific seasons.
+    # The country_id is needed for an actual Season lookup because all the BSSs use Season 1 and Season 2 aliases for
+    # the seasons and we need to know the Country (and maybe the Strategy Type) to limit the lookup to a small enough
+    # set of rows that Season 1 and Season 2 can uniquely identify a specific Season.
+    # The all_label_attributes dataframe should also contain a 'strategy_type' column, which will be used by the
+    # lookup to restrict the possible matches to Seasons with a matching `purpose` (or those with a null purpose).
     if country_code:
         all_label_attributes["country_id"] = country_code
-        # The all_label_attributes dataframe should also contain a 'strategy_type' column, which will be used by the
-        # lookup to restrict the possible matches to Seasons with a matching `purpose` (or those with a null purpose).
         all_label_attributes = seasonnamelookup.do_lookup(all_label_attributes, "season", "season")
-        all_label_attributes["season"] = all_label_attributes["season"].replace(pd.NA, None)
+        # Some countries have sub-national seasons, but still use 'Season 1' and 'Season 2' labels in their BSSs,
+        # so we need to be able to match these labels to a specific set of sub-national seasons for each BSS. We do
+        # this by overwriting the national-level season we just identified with a zone-specific season, if available.
+        # Zone-specific seasons include the livelihood zone code in the alias, e.g. `Season 1 (NG04)`.
+        if livelihood_zone_id:
+            all_label_attributes["livelihood_zone_id"] = livelihood_zone_id
+            all_label_attributes["zone_season"] = all_label_attributes[
+                ["season_original", "livelihood_zone_id"]
+            ].apply(
+                lambda x: (
+                    f"{x['season_original'].strip()} ({x['livelihood_zone_id']})"
+                    if x["season_original"].strip()
+                    else x["season_original"]
+                ),
+                axis=1,
+            )
+            all_label_attributes = seasonnamelookup.do_lookup(all_label_attributes, "zone_season", "zone_season")
+            # Make a final season column that uses the zone-specific season if available and the national-level season, if not.
+            all_label_attributes["season"] = all_label_attributes["zone_season"].fillna(all_label_attributes["season"])
+            # Drop the intermediate columns used for the lookup
+            all_label_attributes = all_label_attributes.drop(columns=["zone_season", "zone_season_original"])
+        all_label_attributes["season"] = all_label_attributes["season"].astype(object).replace(pd.NA, None)
+        # Check that we found an actual Season for any labels that contained a season alias
+        unrecognized_seasons_df = all_label_attributes[
+            (all_label_attributes["season_original"] != "") & (all_label_attributes["season"].isna())
+        ]
+        if not unrecognized_seasons_df.empty:
+            raise ValueError(
+                "Unrecognized seasons in labels:\n"
+                + unrecognized_seasons_df[
+                    ["activity_label", "status", "strategy_type", "product_id", "season_original"]
+                ].to_markdown()
+            )
 
     # Make sure we keep the same index so we can match by row number
     all_label_attributes.index = labels.index
@@ -429,22 +475,23 @@ def get_all_label_attributes(labels: pd.Series, activity_type: str, country_code
     # `additional_identifier` so that we can differentiate between aggregate Livelihood Strategies under a high-level
     # Classified Product, e.g. Skilled Labor, without losing the specific text that was provided in the BSS.
     product_labels = labels[all_label_attributes["activity_label"] == ""].to_frame(name="label")
-    product_labels = classifiedproductlookup.do_lookup(product_labels, "label", "product_id")
-    # Set the activity_label so that get_instances_from_dataframe() doesn't treat these as unrecognized labels
-    product_labels.loc[product_labels["product_id"].notna(), "activity_label"] = product_labels.loc[
-        product_labels["product_id"].notna(), "label"
-    ]
-    # Set the additional_identifier so that we can differentiate between different labels that map to the same product
-    product_labels.loc[product_labels["product_id"].notna(), "additional_identifier"] = product_labels.loc[
-        product_labels["product_id"].notna(), "label"
-    ]
-    # Labels that contain just a product name or alias and weren't recognized by an Activity Label or regular
-    # expression always indicate a new Livelihood Strategy with the values in the row containing income or expenditure,
-    # depending on the Livelihood Strategy.
-    product_labels.loc[product_labels["product_id"].notna(), "is_start"] = True
-    product_labels.loc[product_labels["product_id"].notna(), "attribute"] = "income_or_expenditure"
-    # Copy the product labels back into the main dataframe
-    all_label_attributes.update(product_labels.drop(columns=["label"]))
+    if not product_labels.empty:
+        product_labels = classifiedproductlookup.do_lookup(product_labels, "label", "product_id")
+        # Set the activity_label so that get_instances_from_dataframe() doesn't treat these as unrecognized labels
+        product_labels.loc[product_labels["product_id"].notna(), "activity_label"] = product_labels.loc[
+            product_labels["product_id"].notna(), "label"
+        ]
+        # Set the additional_identifier so that we can differentiate between different labels that map to the same product
+        product_labels.loc[product_labels["product_id"].notna(), "additional_identifier"] = product_labels.loc[
+            product_labels["product_id"].notna(), "label"
+        ]
+        # Labels that contain just a product name or alias and weren't recognized by an Activity Label or regular
+        # expression always indicate a new Livelihood Strategy with the values in the row containing income or expenditure,
+        # depending on the Livelihood Strategy.
+        product_labels.loc[product_labels["product_id"].notna(), "is_start"] = True
+        product_labels.loc[product_labels["product_id"].notna(), "attribute"] = "income_or_expenditure"
+        # Copy the product labels back into the main dataframe
+        all_label_attributes.update(product_labels.drop(columns=["label"]))
 
     return all_label_attributes
 
@@ -453,46 +500,66 @@ def get_all_label_attributes(labels: pd.Series, activity_type: str, country_code
 def livelihood_activity_label_recognition_dataframe(
     context: AssetExecutionContext,
     config: BSSMetadataConfig,
-    all_livelihood_activity_labels_dataframe: pd.DataFrame,
-    all_other_cash_income_labels_dataframe: pd.DataFrame,
-    all_wild_foods_labels_dataframe: pd.DataFrame,
-    all_livelihood_summary_labels_dataframe: pd.DataFrame,
+    livelihood_activity_label_dataframe: dict[str, pd.DataFrame],
+    other_cash_income_label_dataframe: dict[str, pd.DataFrame],
+    wild_foods_label_dataframe: dict[str, pd.DataFrame],
+    livelihood_summary_label_dataframe: dict[str, pd.DataFrame],
 ) -> Output[dict[str, pd.DataFrame]]:
     """
     A saved spreadsheet showing how each BSS label is recognized, either from the ActivityLabel model or a regex.
     """
-    all_livelihood_activity_labels_dataframe["activity_type"] = (
-        ActivityLabel.LivelihoodActivityType.LIVELIHOOD_ACTIVITY
-    )
-    all_other_cash_income_labels_dataframe["activity_type"] = ActivityLabel.LivelihoodActivityType.OTHER_CASH_INCOME
-    all_wild_foods_labels_dataframe["activity_type"] = ActivityLabel.LivelihoodActivityType.WILD_FOODS
-    all_livelihood_summary_labels_dataframe["activity_type"] = ActivityLabel.LivelihoodActivityType.LIVELIHOOD_SUMMARY
-
     # Build a dataframe of all the Activity Labels from all BSSs, including the attributes recognized from the labels,
     # including any labels that are matched directly as Products.
+    product_name_map = dict(ClassifiedProduct.objects.values_list("cpc", "common_name_en").order_by("cpc"))
     all_labels_df = pd.DataFrame()
-    for summary_label_df in [
-        all_livelihood_activity_labels_dataframe,
-        all_other_cash_income_labels_dataframe,
-        all_wild_foods_labels_dataframe,
-        all_livelihood_summary_labels_dataframe,
+    for activity_type, bss_label_dataframes in [
+        (
+            ActivityLabel.LivelihoodActivityType.LIVELIHOOD_ACTIVITY,
+            livelihood_activity_label_dataframe,
+        ),
+        (
+            ActivityLabel.LivelihoodActivityType.OTHER_CASH_INCOME,
+            other_cash_income_label_dataframe,
+        ),
+        (
+            ActivityLabel.LivelihoodActivityType.WILD_FOODS,
+            wild_foods_label_dataframe,
+        ),
+        (
+            ActivityLabel.LivelihoodActivityType.LIVELIHOOD_SUMMARY,
+            livelihood_summary_label_dataframe,
+        ),
     ]:
-        recognized_attributes_df = get_all_label_attributes(
-            summary_label_df["label"],
-            summary_label_df["activity_type"].iloc[0],
-            country_code=None,  # We don't need the Season lookup for this asset
-        )
-        # Join the recognized attributes to the label dataframe
-        summary_label_df = summary_label_df.join(
-            recognized_attributes_df,
-            how="left",
-        )
-        all_labels_df = pd.concat([all_labels_df, summary_label_df], ignore_index=True)
+        for bss, label_df in bss_label_dataframes.items():
+            if label_df.empty:
+                continue
+            livelihood_zone_baseline = LivelihoodZoneBaseline.objects.get_by_natural_key(*bss.split("~")[1:])
+            recognized_attributes_df = get_all_label_attributes(
+                label_df["label"],
+                activity_type,
+                country_code=livelihood_zone_baseline.livelihood_zone.country_id,
+                livelihood_zone_id=livelihood_zone_baseline.livelihood_zone_id,
+            )
+            recognized_attributes_df["product_name"] = (
+                recognized_attributes_df["product_id"].map(product_name_map).fillna("")
+            )
+
+            # Join the recognized attributes to the label dataframe
+            label_df["activity_type"] = activity_type
+            label_df = label_df.join(
+                recognized_attributes_df,
+                how="left",
+            )
+            all_labels_df = pd.concat([all_labels_df, label_df], ignore_index=True)
 
     # Add the regular expressions
     regex_attributes_df = pd.DataFrame.from_records(
         all_labels_df["label"].astype(str).map(get_livelihood_activity_regular_expression_attributes)
     )
+    regex_attributes_df = ClassifiedProductLookup(require_match=False).do_lookup(
+        regex_attributes_df, "product_id", "product_id"
+    )
+    regex_attributes_df["product_name"] = regex_attributes_df["product_id"].map(product_name_map).fillna("")
     all_labels_df = all_labels_df.join(
         regex_attributes_df,
         how="left",
@@ -517,6 +584,7 @@ def livelihood_activity_label_recognition_dataframe(
             "notes",
         )
     )
+    db_labels_df["product_name"] = db_labels_df["product_id"].map(product_name_map).fillna("")
     all_labels_df = all_labels_df.join(
         db_labels_df.set_index(["label_lower", "activity_type"]),
         on=("label_lower", "activity_type"),
@@ -526,11 +594,9 @@ def livelihood_activity_label_recognition_dataframe(
     )
 
     # Create a deduplicated dataframe of all of the labels
-    summary_label_df = all_labels_df.sort_values(by=["label_lower", "row_number", "bss"])
+    summary_label_df = all_labels_df.sort_values(by=["label_lower", "activity_type", "row_number", "bss"])
     summary_label_df = (
-        summary_label_df.groupby(
-            "label_lower",
-        )
+        summary_label_df.groupby(["label_lower", "activity_type"])
         .agg(
             langs=(
                 "lang",
@@ -547,42 +613,81 @@ def livelihood_activity_label_recognition_dataframe(
         .reset_index()
     )
     summary_label_df = summary_label_df.sort_values(
-        by=["min_row_number", "label_lower", "bss_for_min_row", "bss_for_max_row"]
+        by=["min_row_number", "activity_type", "label_lower", "bss_for_min_row", "bss_for_max_row"]
     )
     summary_label_df = summary_label_df.rename(
         columns={"label_lower": "label", "datapoint_count_sum": "datapoint_count", "in_summary_sum": "summary_count"}
     )
+    # Add an empty translation column, to match the structure of the ReferenceData label worksheets
+    summary_label_df["translation"] = ""
+    # For the summary labels repeat the attribute lookup, but without the country-specific season lookup
+    summary_label_dfs = []
+    for activity_type in summary_label_df["activity_type"].unique():
+        activity_type_label_df = summary_label_df[summary_label_df["activity_type"] == activity_type]
+        recognized_attributes_df = get_all_label_attributes(
+            activity_type_label_df["label"],
+            activity_type,
+            country_code=None,
+            livelihood_zone_id=None,
+        )
+        activity_type_label_df = activity_type_label_df.join(
+            recognized_attributes_df,
+            how="left",
+        )
+        activity_type_label_df["product_name"] = activity_type_label_df["product_id"].map(product_name_map).fillna("")
+        summary_label_dfs.append(activity_type_label_df)
+
+    # Concatenate all the activity type dataframes back into a single dataframe and put
+    # the columns in the correct order to match the ReferenceData activity label worksheets
+    summary_label_df = pd.concat(summary_label_dfs, ignore_index=True)[
+        [
+            "label",
+            "langs",
+            "datapoint_count",
+            "summary_count",
+            "unique_bss_count",
+            "min_row_number",
+            "max_row_number",
+            "bss_for_min_row",
+            "bss_for_max_row",
+            "translation",
+            "activity_type",
+            "status",
+            "is_start",
+            "strategy_type",
+            "attribute",
+            "product_name",
+            "unit_of_measure_id_original",
+            "currency_id",
+            "season",
+            "additional_identifier",
+            "notes",
+            "household_labor_provider",
+            "product_id",
+            "activity_label",
+        ]
+    ]
+
+    # Join the summary_label_df to the all_labels_df to add the attributes for the recognized labels.
     summary_label_df = summary_label_df.join(
         all_labels_df[
             [
                 "label_lower",
-                "activity_type",
-                "activity_label",
-                "strategy_type",
-                "is_start",
-                "product_id_original",
-                "unit_of_measure_id_original",
-                "season",
-                "additional_identifier",
-                "attribute",
-                "notes",
-                "product_id",
-                "unit_of_measure_id",
                 "activity_label_regex",
                 "strategy_type_regex",
                 "is_start_regex",
                 "product_id_regex",
+                "product_name_regex",
                 "unit_of_measure_id_regex",
                 "season_regex",
                 "additional_identifier_regex",
                 "attribute_regex",
                 "notes_regex",
-                "status",
                 "strategy_type_db",
                 "is_start_db",
                 "product_id_db",
+                "product_name_db",
                 "unit_of_measure_id_db",
-                "currency_id",
                 "season_db",
                 "additional_identifier_db",
                 "attribute_db",
@@ -662,15 +767,30 @@ def get_instances_from_dataframe(
     ]
 
     # Save the identifier for Season 2 because we need it when creating MilkProduction and ButterProduction instances
+    # Try to find zone-specific seasons first, and fall back to national-level seasons if necessary.
     seasonnamelookup = SeasonNameLookup()
-    dairy_season2_names = [
-        seasonnamelookup.get(
-            "Season 2", country_id=livelihood_zone_baseline.livelihood_zone.country_id, purpose="MilkProduction"
-        ),
-        seasonnamelookup.get(
-            "Season 2", country_id=livelihood_zone_baseline.livelihood_zone.country_id, purpose="ButterProduction"
-        ),
-    ]
+    dairy_season2_names = []
+    for purpose in ["MilkProduction", "ButterProduction"]:
+        for alias in ["season 2", "saison 2", "2ème saison"]:
+            # Try to find a zone-specific season first
+            season_2 = seasonnamelookup.get(
+                f"{alias} ({livelihood_zone_baseline.livelihood_zone_id})",
+                country_id=livelihood_zone_baseline.livelihood_zone.country_id,
+                purpose=purpose,
+            )
+            # Fall back to a general season if a zone-specific one isn't found
+            if not season_2:
+                season_2 = seasonnamelookup.get(
+                    alias, country_id=livelihood_zone_baseline.livelihood_zone.country_id, purpose=purpose
+                )
+            # If we found a season, then there is no need to continue looking for other aliases
+            if season_2:
+                break
+        if not season_2:
+            raise ValueError(
+                "Could not find a Season matching 'Season 2' for purpose '%s' in BSS %s" % (purpose, partition_key)
+            )
+        dairy_season2_names.append(season_2)
 
     # Prepare a lookup for ClassifiedProduct, so it caches and reuses the results of .get() lookups
     classifiedproductlookup = ClassifiedProductLookup()
@@ -685,7 +805,10 @@ def get_instances_from_dataframe(
 
     # Get a dataframe of the attributes for each label in column A
     all_label_attributes = get_all_label_attributes(
-        df["A"], activity_type, livelihood_zone_baseline.livelihood_zone.country_id
+        df["A"],
+        activity_type,
+        livelihood_zone_baseline.livelihood_zone.country_id,
+        livelihood_zone_baseline.livelihood_zone_id,
     )
 
     # Check that we recognize all of the activity labels
@@ -950,30 +1073,65 @@ def get_instances_from_dataframe(
                                 for livelihood_activity in livelihood_activities_for_strategy
                             )
                         ):
-                            # Find the MilkProduction livelihood strategy
+                            # Find the corresponding MilkProduction livelihood strategy
+                            # First, find the equivalent MilkProduction season for the current ButterProduction strategy.
+                            # Try to find a Zone-specific season first, and fall back to a general season if necessary.
+                            milk_season = seasonnamelookup.get(
+                                f'{livelihood_strategy["season_original"]} ({livelihood_zone_baseline.livelihood_zone_id})',
+                                country_id=livelihood_zone_baseline.livelihood_zone.country_id,
+                                purpose="MilkProduction",
+                            )
+                            if not milk_season:
+                                milk_season = seasonnamelookup.get(
+                                    livelihood_strategy["season_original"],
+                                    country_id=livelihood_zone_baseline.livelihood_zone.country_id,
+                                    purpose="MilkProduction",
+                                )
+                            if not milk_season:
+                                raise ValueError(
+                                    f"Could not find a MilkProduction Season matching '{livelihood_strategy['season_original']}' "
+                                    f"from ButterProduction strategy for season '{livelihood_strategy['season_original']}' "
+                                    f"({livelihood_strategy['season']}) at row {livelihood_strategy['bss_row']} from:\n"
+                                )
+                            # Next, find the candidate MilkProduction strategies
                             milk_strategy = None
-                            for strategy in reversed(livelihood_strategies):
+                            milk_strategies = [
+                                strategy
+                                for strategy in reversed(livelihood_strategies)
+                                if strategy["strategy_type"] == "MilkProduction"
+                            ]
+                            # Test each strategy in turn
+                            for strategy in milk_strategies:
                                 if (
-                                    strategy["strategy_type"] == "MilkProduction"
                                     # Season for the current LivelihoodStrategy hasn't been converted to a natural key yet,
                                     # so coerce it to a list for comparison
-                                    and strategy["season"]
-                                    == [
-                                        seasonnamelookup.get(
-                                            livelihood_strategy["season_original"],
-                                            country_id=livelihood_zone_baseline.livelihood_zone.country_id,
-                                            purpose="MilkProduction",
-                                        )
-                                    ]
+                                    strategy["season"] == [milk_season]
                                     and strategy["additional_identifier"]
                                     == livelihood_strategy["additional_identifier"]
                                 ):
                                     milk_strategy = strategy
                                     break
                             if not milk_strategy:
+                                # Keep only the required attributes so that the error message is clearer
+                                milk_strategies = [
+                                    {
+                                        k: strategy[k]
+                                        for k in [
+                                            "bss_row",
+                                            "strategy_type",
+                                            "season_original",
+                                            "season",
+                                            "product_id",
+                                            "additional_identifier",
+                                        ]
+                                    }
+                                    for strategy in milk_strategies
+                                ]
                                 raise ValueError(
                                     f"Could not find the MilkProduction Livelihood Strategy associated with "
-                                    f"the ButterProduction strategy at row {row}."
+                                    f"the ButterProduction strategy for season '{livelihood_strategy['season_original']}' "
+                                    f"({livelihood_strategy['season']}) at row {livelihood_strategy['bss_row']} from:\n"
+                                    f"{'\n'.join([str(strategy) for strategy in milk_strategies])}"
                                 )
                             milk_activities = {
                                 activity["wealth_group"]: activity
@@ -1620,6 +1778,28 @@ def get_instances_from_dataframe(
     }
     if not unrecognized_labels.empty:
         metadata["unrecognized_labels"] = MetadataValue.md(unrecognized_labels.to_markdown(index=False))
+    if livelihood_strategies and activity_type != ActivityLabel.LivelihoodActivityType.LIVELIHOOD_SUMMARY:
+        seasons_df = pd.DataFrame(
+            [
+                (
+                    livelihood_strategy["strategy_type"],
+                    livelihood_strategy["season_original"],
+                    livelihood_strategy["season"][0] if livelihood_strategy["season"] else None,
+                )
+                for livelihood_strategy in livelihood_strategies
+                if livelihood_strategy.get("season") or livelihood_strategy.get("season_original")
+            ],
+            columns=("strategy_type", "season_original", "season"),
+        ).drop_duplicates()
+        if seasons_df["season"].isna().any():
+            metadata["unrecognized_seasons"] = MetadataValue.md(
+                seasons_df[seasons_df["season"].isna()].to_markdown(index=False)
+            )
+
+        if seasons_df["season"].notna().any():
+            metadata["recognized_seasons"] = MetadataValue.md(
+                seasons_df[seasons_df["season"].notna()].to_markdown(index=False)
+            )
     metadata["pct_rows_recognized"] = round(
         (
             1
