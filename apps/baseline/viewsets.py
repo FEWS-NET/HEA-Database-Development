@@ -2114,7 +2114,7 @@ class LivelihoodZoneBaselineFacetedSearchView(APIView):
         q_object = Q()
         for field in [*translation_fields("description"), *translation_fields("common_name")]:
             q_object |= Q(**{f"{field}__icontains": search_term})
-        q_object |= Q(cpc__iexact=search_term)
+        q_object |= Q(cpc__startswith=search_term)
         q_object |= Q(aliases__contains=[search_term.lower()])
         q_object |= Q(scientific_name__icontains=search_term)
         return ClassifiedProduct.objects.filter(q_object).distinct()
