@@ -47,7 +47,11 @@ def load_metadata_for_model(context: OpExecutionContext, sheet_name: str, model:
         field.get_attname() for field in model._meta.concrete_fields if field.get_attname() not in valid_field_names
     ]
     if "aliases" in df:
-        df["aliases"] = df["aliases"].astype(object).apply(lambda x: sorted(x.lower().split("~")) if x else None)
+        df["aliases"] = (
+            df["aliases"]
+            .astype(object)
+            .apply(lambda x: sorted(alias.strip() for alias in x.lower().split("~")) if x else None)
+        )
     if "cpcv2" in df:
         df["cpcv2"] = df["cpcv2"].astype(object).apply(lambda x: sorted(x.split("~")) if x else None)
     if "hs2012" in df:

@@ -423,7 +423,7 @@ def get_all_label_attributes(
     # Convert the season alias to an actual Season.name, which is the natural key for a Season.
     # We only do this if the country_id is in the dataframe, so that we can use this function to test labels
     # outside the context of a BSS, e.g. in unit tests, without needing to define country-specific seasons.
-    # The country_id is needed for an actual Season lookup because all the BSSs use Season 1 and Season 2 names for
+    # The country_id is needed for an actual Season lookup because all the BSSs use Season 1 and Season 2 aliases for
     # the seasons and we need to know the Country (and maybe the Strategy Type) to limit the lookup to a small enough
     # set of rows that Season 1 and Season 2 can uniquely identify a specific Season.
     # The all_label_attributes dataframe should also contain a 'strategy_type' column, which will be used by the
@@ -453,6 +453,17 @@ def get_all_label_attributes(
             # Drop the intermediate columns used for the lookup
             all_label_attributes = all_label_attributes.drop(columns=["zone_season", "zone_season_original"])
         all_label_attributes["season"] = all_label_attributes["season"].astype(object).replace(pd.NA, None)
+        # Check that we found an actual Season for any labels that contained a season alias
+        unrecognized_seasons_df = all_label_attributes[
+            (all_label_attributes["season_original"] != "") & (all_label_attributes["season"].isna())
+        ]
+        if not unrecognized_seasons_df.empty:
+            raise ValueError(
+                "Unrecognized seasons in labels:\n"
+                + unrecognized_seasons_df[
+                    ["activity_label", "status", "strategy_type", "product_id", "season_original"]
+                ].to_markdown()
+            )
 
     # Make sure we keep the same index so we can match by row number
     all_label_attributes.index = labels.index
@@ -756,15 +767,30 @@ def get_instances_from_dataframe(
     ]
 
     # Save the identifier for Season 2 because we need it when creating MilkProduction and ButterProduction instances
+    # Try to find zone-specific seasons first, and fall back to national-level seasons if necessary.
     seasonnamelookup = SeasonNameLookup()
-    dairy_season2_names = [
-        seasonnamelookup.get(
-            "Season 2", country_id=livelihood_zone_baseline.livelihood_zone.country_id, purpose="MilkProduction"
-        ),
-        seasonnamelookup.get(
-            "Season 2", country_id=livelihood_zone_baseline.livelihood_zone.country_id, purpose="ButterProduction"
-        ),
-    ]
+    dairy_season2_names = []
+    for purpose in ["MilkProduction", "ButterProduction"]:
+        for alias in ["season 2", "saison 2", "2ème saison"]:
+            # Try to find a zone-specific season first
+            season_2 = seasonnamelookup.get(
+                f"{alias} ({livelihood_zone_baseline.livelihood_zone_id})",
+                country_id=livelihood_zone_baseline.livelihood_zone.country_id,
+                purpose=purpose,
+            )
+            # Fall back to a general season if a zone-specific one isn't found
+            if not season_2:
+                season_2 = seasonnamelookup.get(
+                    alias, country_id=livelihood_zone_baseline.livelihood_zone.country_id, purpose=purpose
+                )
+            # If we found a season, then there is no need to continue looking for other aliases
+            if season_2:
+                break
+        if not season_2:
+            raise ValueError(
+                "Could not find a Season matching 'Season 2' for purpose '%s' in BSS %s" % (purpose, partition_key)
+            )
+        dairy_season2_names.append(season_2)
 
     # Prepare a lookup for ClassifiedProduct, so it caches and reuses the results of .get() lookups
     classifiedproductlookup = ClassifiedProductLookup()
@@ -1047,30 +1073,65 @@ def get_instances_from_dataframe(
                                 for livelihood_activity in livelihood_activities_for_strategy
                             )
                         ):
-                            # Find the MilkProduction livelihood strategy
+                            # Find the corresponding MilkProduction livelihood strategy
+                            # First, find the equivalent MilkProduction season for the current ButterProduction strategy.
+                            # Try to find a Zone-specific season first, and fall back to a general season if necessary.
+                            milk_season = seasonnamelookup.get(
+                                f'{livelihood_strategy["season_original"]} ({livelihood_zone_baseline.livelihood_zone_id})',
+                                country_id=livelihood_zone_baseline.livelihood_zone.country_id,
+                                purpose="MilkProduction",
+                            )
+                            if not milk_season:
+                                milk_season = seasonnamelookup.get(
+                                    livelihood_strategy["season_original"],
+                                    country_id=livelihood_zone_baseline.livelihood_zone.country_id,
+                                    purpose="MilkProduction",
+                                )
+                            if not milk_season:
+                                raise ValueError(
+                                    f"Could not find a MilkProduction Season matching '{livelihood_strategy['season_original']}' "
+                                    f"from ButterProduction strategy for season '{livelihood_strategy['season_original']}' "
+                                    f"({livelihood_strategy['season']}) at row {livelihood_strategy['bss_row']} from:\n"
+                                )
+                            # Next, find the candidate MilkProduction strategies
                             milk_strategy = None
-                            for strategy in reversed(livelihood_strategies):
+                            milk_strategies = [
+                                strategy
+                                for strategy in reversed(livelihood_strategies)
+                                if strategy["strategy_type"] == "MilkProduction"
+                            ]
+                            # Test each strategy in turn
+                            for strategy in milk_strategies:
                                 if (
-                                    strategy["strategy_type"] == "MilkProduction"
                                     # Season for the current LivelihoodStrategy hasn't been converted to a natural key yet,
                                     # so coerce it to a list for comparison
-                                    and strategy["season"]
-                                    == [
-                                        seasonnamelookup.get(
-                                            livelihood_strategy["season_original"],
-                                            country_id=livelihood_zone_baseline.livelihood_zone.country_id,
-                                            purpose="MilkProduction",
-                                        )
-                                    ]
+                                    strategy["season"] == [milk_season]
                                     and strategy["additional_identifier"]
                                     == livelihood_strategy["additional_identifier"]
                                 ):
                                     milk_strategy = strategy
                                     break
                             if not milk_strategy:
+                                # Keep only the required attributes so that the error message is clearer
+                                milk_strategies = [
+                                    {
+                                        k: strategy[k]
+                                        for k in [
+                                            "bss_row",
+                                            "strategy_type",
+                                            "season_original",
+                                            "season",
+                                            "product_id",
+                                            "additional_identifier",
+                                        ]
+                                    }
+                                    for strategy in milk_strategies
+                                ]
                                 raise ValueError(
                                     f"Could not find the MilkProduction Livelihood Strategy associated with "
-                                    f"the ButterProduction strategy at row {row}."
+                                    f"the ButterProduction strategy for season '{livelihood_strategy['season_original']}' "
+                                    f"({livelihood_strategy['season']}) at row {livelihood_strategy['bss_row']} from:\n"
+                                    f"{'\n'.join([str(strategy) for strategy in milk_strategies])}"
                                 )
                             milk_activities = {
                                 activity["wealth_group"]: activity
@@ -1717,6 +1778,28 @@ def get_instances_from_dataframe(
     }
     if not unrecognized_labels.empty:
         metadata["unrecognized_labels"] = MetadataValue.md(unrecognized_labels.to_markdown(index=False))
+    if livelihood_strategies and activity_type != ActivityLabel.LivelihoodActivityType.LIVELIHOOD_SUMMARY:
+        seasons_df = pd.DataFrame(
+            [
+                (
+                    livelihood_strategy["strategy_type"],
+                    livelihood_strategy["season_original"],
+                    livelihood_strategy["season"][0] if livelihood_strategy["season"] else None,
+                )
+                for livelihood_strategy in livelihood_strategies
+                if livelihood_strategy.get("season") or livelihood_strategy.get("season_original")
+            ],
+            columns=("strategy_type", "season_original", "season"),
+        ).drop_duplicates()
+        if seasons_df["season"].isna().any():
+            metadata["unrecognized_seasons"] = MetadataValue.md(
+                seasons_df[seasons_df["season"].isna()].to_markdown(index=False)
+            )
+
+        if seasons_df["season"].notna().any():
+            metadata["recognized_seasons"] = MetadataValue.md(
+                seasons_df[seasons_df["season"].notna()].to_markdown(index=False)
+            )
     metadata["pct_rows_recognized"] = round(
         (
             1
