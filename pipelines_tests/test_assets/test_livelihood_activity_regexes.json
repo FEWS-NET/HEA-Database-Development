@@ -809,6 +809,11 @@
         "product_id": "mil",
         "attribute": "name_of_local_measure"
     },
+    "water for humans: name of local meas.": {
+        "is_start": true,
+        "product_id": "water for humans",
+        "attribute": "name_of_local_measure"
+    },
     "oignon: nom": {
         "is_start": true,
         "product_id": "oignon",
