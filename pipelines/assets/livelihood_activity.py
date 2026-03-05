@@ -332,7 +332,7 @@ def get_livelihood_activity_label_map(activity_type: str) -> dict[str, dict]:
     Return a dict of the attributes for the Livelihood Activities, stored in the ActivityLabel Django model.
     """
     label_map = {
-        instance["activity_label"].lower(): instance
+        re.sub(r"\s+", " ", instance["activity_label"].strip().lower()): instance
         for instance in ActivityLabel.objects.filter(
             status=ActivityLabel.LabelStatus.OVERRIDE, activity_type=activity_type
         ).values(
