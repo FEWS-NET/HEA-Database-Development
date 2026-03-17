@@ -296,7 +296,7 @@
         "months_per_year"
     ],
     [
-        "(?:coût par mesure|(?:prix|price) \\(par {unit_of_measure_pattern}\\))",
+        "(?:co[uû]t par mesure|cost per measure|(?:prix|price) \\(par {unit_of_measure_pattern}\\))",
         null,
         false,
         "price"
