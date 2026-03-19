@@ -7,7 +7,8 @@
 {% if theme == 'hea_default' %}
     <link rel="stylesheet" type="text/css" href="{% static 'admin/css/hea_default.css' %}">
 {% endif %}
- {% endblock %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+{% endblock %}
 {% block branding %}
 <h1 id="site-name"><a href="{% url 'admin:index' %}">{{ site_header|default:_('Django administration') }}</a></h1>
 {% if user.is_anonymous %}
