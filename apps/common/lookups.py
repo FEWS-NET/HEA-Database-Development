@@ -505,29 +505,23 @@ class ClassifiedProductLookup(Lookup):
         """
         df = super().prepare_lookup_df()
 
-        # Create a DataFrame that just contains the single digits 0 through 9.
-        df_digit = pd.DataFrame(range(10), columns=["digit"])
-
-        # Create a Cartesian product of df and df_digit
-        df_all = pd.merge(df.assign(key=1), df_digit.assign(key=1), on="key").drop("key", axis=1)
-
-        # Create the "child_candidate" column that adds the 0-9 to the end of the lookup_value
-        df_all["child_candidate"] = df_all["lookup_value"] + df_all["digit"].astype(str)
-
-        # Merge with the original DataFrame on the child_candidate column and lookup_key to find only the rows
-        # that contain valid child codes where the lookup_key in the child is the same as the lookup_key in the parent.
-        unwanted_parents = df_all.merge(
-            df,
-            left_on=["child_candidate", "lookup_key"],
-            right_on=["lookup_value", "lookup_key"],
-            suffixes=[None, "_child"],
-        )
-
-        # Drop the extra columns so the shape matches the original dataframe.
-        unwanted_parents = unwanted_parents[["lookup_value", "lookup_key"]]
-
-        # Drop the unwanted parents from the original DataFrame
-        df = pd.concat([df, unwanted_parents]).drop_duplicates(keep=False)
+        # Drop duplicate lookup_key entries where the lookup value is a leading substring of another lookup value for
+        # the same lookup_key.
+        # First, sort the rows by lookup_key and lookup_value, so that any parent rows will be immediately
+        # followed by their child rows (because longer strings will come after shorter strings).
+        df = df.sort_values(by=["lookup_key", "lookup_value"]).reset_index(drop=True)
+        # Create a shifted version of the dataframe so that we can compare each row to the values in the next row
+        # using the same index.
+        next_row_df = df.shift(-1, fill_value="")
+        # Create a boolean mask that identifies parent rows - i.e. rows where the lookup_value in the next row starts
+        # with the lookup_value in the current row.
+        parent_value_mask = [
+            next_value.startswith(lookup_value)
+            for lookup_value, next_value in zip(df["lookup_value"], next_row_df["lookup_value"])
+        ]
+        # Drop any parent rows with an identical lookup_key to their child row.
+        rows_to_drop = (df["lookup_key"] == next_row_df["lookup_key"]) & pd.Series(parent_value_mask)
+        df = df[~rows_to_drop]
         return df
 
 

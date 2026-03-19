@@ -2145,10 +2145,10 @@ class SeasonalActivity(common_models.Model):
     # livelihood strategies for Sheep Milk Production, Sheep Butter Production,
     # Sheep Livestock Production, and Sheep Sales would all be related. The BSS
     # doesn't currently makes these links explicit, and so we haven't added the
-    # necessary ManyToManyFieldas yet.
+    # necessary ManyToManyField as yet.
     livelihood_zone_baseline = models.ForeignKey(
         LivelihoodZoneBaseline,
-        on_delete=models.RESTRICT,
+        on_delete=models.CASCADE,
         related_name="baseline_seasonal_activities",
         verbose_name=_("Livelihood Zone Baseline"),
     )
