@@ -188,6 +188,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "common.context_processors.theme_context",
                 "common.context_processors.selected_settings",
+                "common.context_processors.admin_menu_context",
             ],
         },
     },
