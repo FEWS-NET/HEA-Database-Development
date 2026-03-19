@@ -95,6 +95,8 @@ class CountryFilterSet(filters.FilterSet):
         self.filters["country_code"].extra["choices"] = [
             (c.pk, c.iso_en_name) for c in Country.objects.all().order_by("iso_en_name")
         ]
+        LivelihoodStrategy = apps.get_model("baseline", "LivelihoodStrategy")
+        self.filters["strategy_type"].extra["choices"] = LivelihoodStrategy._meta.get_field("strategy_type").choices
 
     country_code = filters.MultipleChoiceFilter(
         field_name="iso3166a2",
@@ -119,6 +121,16 @@ class CountryFilterSet(filters.FilterSet):
     )
 
     has_wealthgroups = filters.BooleanFilter(method="filter_has_wealthgroups")
+    livelihood_category = filters.ModelMultipleChoiceFilter(
+        queryset=lambda request: apps.get_model("metadata", "LivelihoodCategory").objects.all(),
+        method="filter_by_livelihood_category",
+        label="Livelihood Category",
+    )
+    strategy_type = filters.MultipleChoiceFilter(
+        choices=[],
+        method="filter_by_strategy_type",
+        label="Strategy Type",
+    )
 
     def filter_has_wealthgroups(self, queryset, name, value):
         if value is None:
@@ -131,6 +143,18 @@ class CountryFilterSet(filters.FilterSet):
             return queryset.filter(Exists(wealth_group_exists))
         else:
             return queryset.exclude(Exists(wealth_group_exists))
+
+    def filter_by_livelihood_category(self, queryset, name, value):
+        if not value:
+            return queryset
+        return queryset.filter(livelihoodzone__livelihoodzonebaseline__main_livelihood_category__in=value).distinct()
+
+    def filter_by_strategy_type(self, queryset, name, value):
+        if not value:
+            return queryset
+        return queryset.filter(
+            livelihoodzone__livelihoodzonebaseline__livelihood_strategies__strategy_type__in=value
+        ).distinct()
 
 
 class CountryViewSet(BaseModelViewSet):
@@ -289,6 +313,11 @@ class ClassifiedProductFilterSet(filters.FilterSet):
                          The filter will display choices based on the available UnitOfMeasure objects.
     """
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        LivelihoodStrategy = apps.get_model("baseline", "LivelihoodStrategy")
+        self.filters["strategy_type"].extra["choices"] = LivelihoodStrategy._meta.get_field("strategy_type").choices
+
     cpc = filters.CharFilter(lookup_expr="icontains", label="CPC v2.1")
     description_en = filters.CharFilter(
         lookup_expr="icontains", label=format_lazy("{} ({})", _("Description"), _("English"))
@@ -323,6 +352,16 @@ class ClassifiedProductFilterSet(filters.FilterSet):
     unit_of_measure = filters.ModelChoiceFilter(queryset=UnitOfMeasure.objects.all(), field_name="unit_of_measure")
     has_wealthgroups = filters.BooleanFilter(method="filter_has_wealthgroups")
     country = CaseInsensitiveModelMultipleChoiceFilter(queryset=Country.objects.all(), method="filter_by_country")
+    livelihood_category = filters.ModelMultipleChoiceFilter(
+        queryset=lambda request: apps.get_model("metadata", "LivelihoodCategory").objects.all(),
+        method="filter_by_livelihood_category",
+        label="Livelihood Category",
+    )
+    strategy_type = filters.MultipleChoiceFilter(
+        choices=[],
+        method="filter_by_strategy_type",
+        label="Strategy Type",
+    )
 
     def filter_has_wealthgroups(self, queryset, name, value):
         if value is None:
@@ -350,6 +389,18 @@ class ClassifiedProductFilterSet(filters.FilterSet):
             )
 
         return queryset.filter(country_queries).distinct()
+
+    def filter_by_livelihood_category(self, queryset, name, value):
+        if not value:
+            return queryset
+        return queryset.filter(
+            livelihood_strategies__livelihood_zone_baseline__main_livelihood_category__in=value
+        ).distinct()
+
+    def filter_by_strategy_type(self, queryset, name, value):
+        if not value:
+            return queryset
+        return queryset.filter(livelihood_strategies__strategy_type__in=value).distinct()
 
     class Meta:
         """
