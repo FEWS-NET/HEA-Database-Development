@@ -458,12 +458,10 @@ def get_all_label_attributes(
             (all_label_attributes["season_original"] != "") & (all_label_attributes["season"].isna())
         ]
         if not unrecognized_seasons_df.empty:
-            raise ValueError(
-                "Unrecognized seasons in labels:\n"
-                + unrecognized_seasons_df[
-                    ["activity_label", "status", "strategy_type", "product_id", "season_original"]
-                ].to_markdown()
-            )
+            columns = ["activity_label", "status", "strategy_type", "product_id", "season_original", "country_id"]
+            if livelihood_zone_id:
+                columns.append("livelihood_zone_id")
+            raise ValueError("Unrecognized seasons in labels:\n" + unrecognized_seasons_df[columns].to_markdown())
 
     # Make sure we keep the same index so we can match by row number
     all_label_attributes.index = labels.index
