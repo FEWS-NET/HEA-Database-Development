@@ -1723,14 +1723,25 @@ class MeatProduction(LivelihoodActivity):
     """
 
     # Production calculation /validation is `input_quantity` * `item_yield`
-    animals_slaughtered = models.PositiveSmallIntegerField(verbose_name=_("Number of animals slaughtered"))
-    carcass_weight = models.FloatField(verbose_name=_("Carcass weight per animal"))
+    animals_slaughtered = models.PositiveSmallIntegerField(
+        verbose_name=_("Number of animals slaughtered"), null=True, blank=True
+    )
+    carcass_weight = models.FloatField(verbose_name=_("Carcass weight per animal"), null=True, blank=True)
+
+    def clean(self):
+        super().clean()
+        # If animals were slaughtered, carcass weight must be recorded
+        if self.animals_slaughtered and self.animals_slaughtered > 0 and self.carcass_weight is None:
+            raise ValidationError(_("Carcass weight is required when animals slaughtered"))
 
     def validate_quantity_produced(self):
-        if self.quantity_produced and self.quantity_produced != self.animals_slaughtered * self.carcass_weight:
-            raise ValidationError(
-                _("Quantity Produced for a Meat Production must be animals slaughtered multiplied by carcass weight")
-            )
+        if self.quantity_produced is not None and self.animals_slaughtered and self.carcass_weight is not None:
+            if self.quantity_produced != self.animals_slaughtered * self.carcass_weight:
+                raise ValidationError(
+                    _(
+                        "Quantity Produced for a Meat Production must be animals slaughtered multiplied by carcass weight"
+                    )
+                )
 
     class Meta:
         verbose_name = LivelihoodStrategyType.MEAT_PRODUCTION.label
