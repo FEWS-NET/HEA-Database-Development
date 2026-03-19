@@ -448,6 +448,7 @@ class WealthGroupCharacteristicValueAdmin(admin.ModelAdmin):
     model = WealthGroupCharacteristicValue
 
     list_filter = (
+        ("wealth_group__livelihood_zone_baseline", admin.RelatedOnlyFieldListFilter),
         "wealth_group__wealth_group_category",
         ("wealth_group__livelihood_zone_baseline__livelihood_zone__country", admin.RelatedOnlyFieldListFilter),
         "wealth_characteristic__has_product",
@@ -779,6 +780,7 @@ class WealthGroupAdmin(admin.ModelAdmin):
         *translation_fields("wealth_group_category__name"),
     )
     list_filter = (
+        ("livelihood_zone_baseline", admin.RelatedOnlyFieldListFilter),
         "livelihood_zone_baseline__source_organization",
         ("livelihood_zone_baseline__livelihood_zone__country", admin.RelatedOnlyFieldListFilter),
         *translation_fields("livelihood_zone_baseline__livelihood_zone__name"),
