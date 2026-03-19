@@ -575,10 +575,12 @@ class WealthGroupCharacteristicValueViewSet(BaseModelViewSet):
         # will be 4 or 5 times fewer instances. We also remove the need for a third
         # select_related parameter "wealth_group__community". Performance is not
         # critical, but we need a rule of thumb so everything matches up.
-        "wealth_characteristic",
+        "wealth_characteristic__characteristic_group",
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
         "wealth_group__wealth_group_category",
+        "product",
+        "unit_of_measure",
     )
     serializer_class = WealthGroupCharacteristicValueSerializer
     filterset_class = WealthGroupCharacteristicValueFilterSet
@@ -594,11 +596,20 @@ class WealthGroupCharacteristicValueViewSet(BaseModelViewSet):
 
 
 class BaselineWealthGroupCharacteristicValueFilterSet(filters.FilterSet):
+    wealth_group = django_filters.ModelChoiceFilter(
+        queryset=WealthGroup.objects.select_related(
+            "community__livelihood_zone_baseline__livelihood_zone",
+            "livelihood_zone_baseline__livelihood_zone",
+            "wealth_group_category",
+        ),
+        widget=autocomplete.ModelSelect2(url="wealthgroup-autocomplete"),
+        label="Wealth Group",
+    )
+
     class Meta:
         model = BaselineWealthGroupCharacteristicValue
         fields = [
             "wealth_characteristic",
-            "wealth_group",
         ]
 
     livelihood_zone_baseline = filters.ModelMultipleChoiceFilter(
@@ -669,10 +680,12 @@ class BaselineWealthGroupCharacteristicValueViewSet(BaseModelViewSet):
     """
 
     queryset = BaselineWealthGroupCharacteristicValue.objects.select_related(
-        "wealth_characteristic",
+        "wealth_characteristic__characteristic_group",
         "wealth_group__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__livelihood_zone_baseline__source_organization",
         "wealth_group__wealth_group_category",
+        "product",
+        "unit_of_measure",
     )
     serializer_class = BaselineWealthGroupCharacteristicValueSerializer
     filterset_class = BaselineWealthGroupCharacteristicValueFilterSet
@@ -687,11 +700,20 @@ class BaselineWealthGroupCharacteristicValueViewSet(BaseModelViewSet):
 
 
 class CommunityWealthGroupCharacteristicValueFilterSet(filters.FilterSet):
+    wealth_group = django_filters.ModelChoiceFilter(
+        queryset=WealthGroup.objects.select_related(
+            "community__livelihood_zone_baseline__livelihood_zone",
+            "livelihood_zone_baseline__livelihood_zone",
+            "wealth_group_category",
+        ),
+        widget=autocomplete.ModelSelect2(url="wealthgroup-autocomplete"),
+        label="Wealth Group",
+    )
+
     class Meta:
         model = CommunityWealthGroupCharacteristicValue
         fields = [
             "wealth_characteristic",
-            "wealth_group",
         ]
 
     livelihood_zone_baseline = filters.ModelMultipleChoiceFilter(
@@ -766,10 +788,12 @@ class CommunityWealthGroupCharacteristicValueViewSet(BaseModelViewSet):
         # will be 4 or 5 times fewer instances. We also remove the need for a third
         # select_related parameter "wealth_group__community". Performance is not
         # critical, but we need a rule of thumb so everything matches up.
-        "wealth_characteristic",
+        "wealth_characteristic__characteristic_group",
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
         "wealth_group__wealth_group_category",
+        "product",
+        "unit_of_measure",
     )
     serializer_class = CommunityWealthGroupCharacteristicValueSerializer
     filterset_class = CommunityWealthGroupCharacteristicValueFilterSet
