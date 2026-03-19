@@ -597,7 +597,7 @@ class WealthGroupCharacteristicValueViewSet(BaseModelViewSet):
 
 class BaselineWealthGroupCharacteristicValueFilterSet(filters.FilterSet):
     wealth_group = django_filters.ModelChoiceFilter(
-        queryset=WealthGroup.objects.select_related(
+        queryset=WealthGroup.objects.filter(community__isnull=True).select_related(
             "community__livelihood_zone_baseline__livelihood_zone",
             "livelihood_zone_baseline__livelihood_zone",
             "wealth_group_category",
@@ -701,7 +701,7 @@ class BaselineWealthGroupCharacteristicValueViewSet(BaseModelViewSet):
 
 class CommunityWealthGroupCharacteristicValueFilterSet(filters.FilterSet):
     wealth_group = django_filters.ModelChoiceFilter(
-        queryset=WealthGroup.objects.select_related(
+        queryset=WealthGroup.objects.exclude(community__isnull=True).select_related(
             "community__livelihood_zone_baseline__livelihood_zone",
             "livelihood_zone_baseline__livelihood_zone",
             "wealth_group_category",
