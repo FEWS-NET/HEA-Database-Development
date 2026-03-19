@@ -28,8 +28,29 @@ class CountryViewSetTestCase(APITestCase):
         # import baseline factory to avoid circular depdnecies
         module = importlib.import_module("baseline.tests.factories")
         WealthGroupFactory = getattr(module, "WealthGroupFactory")
+        LivelihoodZoneBaselineFactory = getattr(module, "LivelihoodZoneBaselineFactory")
+        LivelihoodStrategyFactory = getattr(module, "LivelihoodStrategyFactory")
 
         cls.wealth_group1 = WealthGroupFactory(livelihood_zone_baseline__livelihood_zone__country=cls.country1)
+
+        # Set up livelihood category cascade filter test data
+        metadata_module = importlib.import_module("metadata.tests.factories")
+        LivelihoodCategoryFactory = getattr(metadata_module, "LivelihoodCategoryFactory")
+        cls.category_a = LivelihoodCategoryFactory()
+        cls.category_b = LivelihoodCategoryFactory()
+        LivelihoodZoneBaselineFactory(
+            livelihood_zone__country=cls.country2,
+            main_livelihood_category=cls.category_a,
+        )
+
+        # Set up strategy_type cascade filter test data
+        cls.strategy_type = "CropProduction"
+        baseline_with_strategy = LivelihoodZoneBaselineFactory(livelihood_zone__country=cls.country3)
+        LivelihoodStrategyFactory(
+            livelihood_zone_baseline=baseline_with_strategy,
+            strategy_type=cls.strategy_type,
+            season__country=cls.country3,
+        )
 
     def setUp(self):
         self.url = reverse("country-list")
@@ -104,6 +125,37 @@ class CountryViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         result = json.loads(response.content.decode("utf-8"))
         self.assertNotIn(self.country1.iso3166a2, result)
+
+    def test_filter_by_livelihood_category(self):
+        # country2 has a baseline with category_a
+        response = self.client.get(self.url, {"livelihood_category": self.category_a.code})
+        self.assertEqual(response.status_code, 200)
+        result = json.loads(response.content.decode("utf-8"))
+        country_codes = [r["iso3166a2"] for r in result]
+        self.assertIn(self.country2.iso3166a2, country_codes)
+        self.assertNotIn(self.country4.iso3166a2, country_codes)
+
+        # category_b has no baselines
+        response = self.client.get(self.url, {"livelihood_category": self.category_b.code})
+        self.assertEqual(response.status_code, 200)
+        result = json.loads(response.content.decode("utf-8"))
+        self.assertEqual(len(result), 0)
+
+    def test_filter_by_strategy_type(self):
+        # country3 has a baseline with CropProduction strategy
+        response = self.client.get(self.url, {"strategy_type": self.strategy_type})
+        self.assertEqual(response.status_code, 200)
+        result = json.loads(response.content.decode("utf-8"))
+        country_codes = [r["iso3166a2"] for r in result]
+        self.assertIn(self.country3.iso3166a2, country_codes)
+        self.assertNotIn(self.country4.iso3166a2, country_codes)
+
+        # country4 has no strategies
+        response = self.client.get(self.url, {"strategy_type": "FoodPurchase"})
+        self.assertEqual(response.status_code, 200)
+        result = json.loads(response.content.decode("utf-8"))
+        country_codes = [r["iso3166a2"] for r in result]
+        self.assertNotIn(self.country4.iso3166a2, country_codes)
 
 
 class CurrencyViewSetTestCase(APITestCase):
@@ -202,7 +254,28 @@ class ClassifiedProductViewSetTestCase(APITestCase):
         livelihood_zone_baseline = LivelihoodZoneBaselineFactory(livelihood_zone__country=cls.country_a)
         WealthGroupFactory(livelihood_zone_baseline=livelihood_zone_baseline)
         cls.livelihood_strategy1 = LivelihoodStrategyFactory(
-            livelihood_zone_baseline=livelihood_zone_baseline, product=cls.product1
+            livelihood_zone_baseline=livelihood_zone_baseline, product=cls.product1, season__country=cls.country_a
+        )
+
+        # Set up livelihood category cascade filter test data
+        metadata_module = importlib.import_module("metadata.tests.factories")
+        LivelihoodCategoryFactory = getattr(metadata_module, "LivelihoodCategoryFactory")
+        cls.category_a = LivelihoodCategoryFactory()
+        cls.category_b = LivelihoodCategoryFactory()
+        baseline_category_a = LivelihoodZoneBaselineFactory(
+            livelihood_zone__country=cls.country_a, main_livelihood_category=cls.category_a
+        )
+        LivelihoodStrategyFactory(
+            livelihood_zone_baseline=baseline_category_a, product=cls.product1, season__country=cls.country_a
+        )
+
+        # Set up strategy_type cascade filter test data
+        cls.strategy_type_used = "CropProduction"
+        LivelihoodStrategyFactory(
+            livelihood_zone_baseline=livelihood_zone_baseline,
+            product=cls.product1,
+            strategy_type=cls.strategy_type_used,
+            season__country=cls.country_a,
         )
 
     def setUp(self):
@@ -284,6 +357,33 @@ class ClassifiedProductViewSetTestCase(APITestCase):
         result = json.loads(response.content.decode("utf-8"))
         self.assertEqual(len(result), 1)
         self.assertEqual(self.product1.cpc, result[0]["cpc"])
+
+    def test_filter_by_livelihood_category(self):
+        # product1 is in a baseline with category_a
+        response = self.client.get(self.url, {"livelihood_category": self.category_a.code})
+        self.assertEqual(response.status_code, 200)
+        result = json.loads(response.content.decode("utf-8"))
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["cpc"], self.product1.cpc)
+
+        # category_b has no strategies
+        response = self.client.get(self.url, {"livelihood_category": self.category_b.code})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 0)
+
+    def test_filter_by_strategy_type(self):
+        # product1 has a CropProduction strategy
+        response = self.client.get(self.url, {"strategy_type": self.strategy_type_used})
+        self.assertEqual(response.status_code, 200)
+        result = json.loads(response.content.decode("utf-8"))
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["cpc"], self.product1.cpc)
+
+        # product2 has no strategies
+        response = self.client.get(self.url, {"strategy_type": "FoodPurchase"})
+        self.assertEqual(response.status_code, 200)
+        cpcs = [r["cpc"] for r in json.loads(response.content.decode("utf-8"))]
+        self.assertNotIn(self.product2.cpc, cpcs)
 
 
 class UserViewSetTestCase(APITestCase):
