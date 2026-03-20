@@ -1172,13 +1172,13 @@ class LivelihoodActivity(common_models.Model):
     wealth_group = models.ForeignKey(WealthGroup, on_delete=models.CASCADE, help_text=_("Wealth Group"))
 
     # Also used for the quantity received for the PaymentInKind and ReliefGiftsOther Livelihood Strategies
-    quantity_produced = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Produced"))
-    quantity_purchased = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Purchased"))
-    quantity_sold = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Sold/Exchanged"))
-    quantity_other_uses = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Other Uses"))
+    quantity_produced = models.FloatField(blank=True, null=True, verbose_name=_("Quantity Produced"))
+    quantity_purchased = models.FloatField(blank=True, null=True, verbose_name=_("Quantity Purchased"))
+    quantity_sold = models.FloatField(blank=True, null=True, verbose_name=_("Quantity Sold/Exchanged"))
+    quantity_other_uses = models.FloatField(blank=True, null=True, verbose_name=_("Quantity Other Uses"))
     # Can normally be calculated / validated as `quantity_produced + quantity_purchased - quantity_sold - quantity_other_uses`  # NOQA: E501
     # but there are exceptions, such as MilkProduction which also stores MilkProduction.quantity_butter_production
-    quantity_consumed = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Consumed"))
+    quantity_consumed = models.FloatField(blank=True, null=True, verbose_name=_("Quantity Consumed"))
 
     price = models.FloatField(
         blank=True,
@@ -1356,7 +1356,7 @@ class LivelihoodActivity(common_models.Model):
         )
 
         # Check if the actual quantity_consumed matches the expected quantity_consumed
-        if self.quantity_consumed and self.quantity_consumed != expected_quantity_consumed:
+        if self.quantity_consumed and round(self.quantity_consumed, 6) != round(expected_quantity_consumed, 6):
             if quantity_butter_production:
                 message = "Quantity consumed for Milk Production must be quantity produced + quantity purchased - quantity sold - quantity used for butter production - quantity used for other things"  # NOQA: E501
             else:
@@ -1364,11 +1364,9 @@ class LivelihoodActivity(common_models.Model):
             raise ValidationError(_(message))
 
     def validate_income(self):
-        income = self.income or 0
-        quantity_sold = self.quantity_sold or 0
-        price = self.price or 0
-        if self.income and income != quantity_sold * price:
-            raise ValidationError(_("Income for a Livelihood Activity must be quantity sold multiplied by price"))
+        if self.income and self.quantity_sold is not None and self.price is not None:
+            if self.income != self.quantity_sold * self.price:
+                raise ValidationError(_("Income for a Livelihood Activity must be quantity sold multiplied by price"))
 
     def validate_expenditure(self):
         """
@@ -2049,7 +2047,7 @@ class OtherCashIncome(LivelihoodActivity):
                         "Quantity produced for Other Cash Income must be payment per time * number of people * labor per month * months per year"  # NOQA: E501
                     )
                 )
-        if self.income is not None and self.payment_per_time is not None and self.times_per_year is not None:
+        elif self.income is not None and self.payment_per_time is not None and self.times_per_year is not None:
             if self.income != self.payment_per_time * self.times_per_year:
                 raise ValidationError(_("Income for 'Other Cash Income' must be payment per time * times per year"))
 
