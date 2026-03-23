@@ -93,6 +93,8 @@ CACHES = {
 }
 
 EXTERNAL_APPS = [
+    "dal",
+    "dal_select2",
     "treebeard",
     "rest_framework",
     "django_filters",
