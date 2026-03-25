@@ -9,11 +9,15 @@ from common.fields import translation_fields
 from metadata.models import LivelihoodStrategyType
 
 from .forms import (
+    CommunityForm,
     FoodPurchaseForm,
     LivelihoodActivityForm,
+    LivelihoodStrategyForm,
     MilkProductionForm,
     OtherPurchaseForm,
     ReliefGiftOtherForm,
+    WealthGroupCharacteristicValueForm,
+    WealthGroupForm,
 )
 from .models import (
     ButterProduction,
@@ -218,6 +222,7 @@ class LivelihoodZoneBaselineAdmin(GISModelAdminReadOnly):
 
 
 class CommunityAdmin(GISModelAdminReadOnly):
+    form = CommunityForm
     fields = (
         "name",
         "full_name",
@@ -275,6 +280,7 @@ class CommunityAdmin(GISModelAdminReadOnly):
 
 
 class LivelihoodStrategyAdmin(admin.ModelAdmin):
+    form = LivelihoodStrategyForm
     fields = (
         "livelihood_zone_baseline",
         "strategy_type",
@@ -430,6 +436,7 @@ class LivelihoodActivityAdmin(admin.ModelAdmin):
 
 
 class WealthGroupCharacteristicValueAdmin(admin.ModelAdmin):
+    form = WealthGroupCharacteristicValueForm
     list_display = [
         "wealth_group",
         "get_wealth_characteristic_common_name",
@@ -441,6 +448,7 @@ class WealthGroupCharacteristicValueAdmin(admin.ModelAdmin):
     model = WealthGroupCharacteristicValue
 
     list_filter = (
+        ("wealth_group__livelihood_zone_baseline", admin.RelatedOnlyFieldListFilter),
         "wealth_group__wealth_group_category",
         ("wealth_group__livelihood_zone_baseline__livelihood_zone__country", admin.RelatedOnlyFieldListFilter),
         "wealth_characteristic__has_product",
@@ -760,6 +768,7 @@ class OtherPurchaseInlineAdmin(LivelihoodActivityInlineAdmin):
 
 
 class WealthGroupAdmin(admin.ModelAdmin):
+    form = WealthGroupForm
     list_display = (
         "community",
         "wealth_group_category",
@@ -771,6 +780,7 @@ class WealthGroupAdmin(admin.ModelAdmin):
         *translation_fields("wealth_group_category__name"),
     )
     list_filter = (
+        ("livelihood_zone_baseline", admin.RelatedOnlyFieldListFilter),
         "livelihood_zone_baseline__source_organization",
         ("livelihood_zone_baseline__livelihood_zone__country", admin.RelatedOnlyFieldListFilter),
         *translation_fields("livelihood_zone_baseline__livelihood_zone__name"),
