@@ -655,6 +655,7 @@ class PaymentInKindInlineAdmin(LivelihoodActivityInlineAdmin):
                 "Payment",
                 {
                     "fields": [
+                        "payment_product",
                         "people_per_household",
                         "times_per_month",
                         "months_per_year",

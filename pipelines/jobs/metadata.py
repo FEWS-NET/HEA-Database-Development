@@ -60,12 +60,16 @@ def load_metadata_for_model(context: OpExecutionContext, sheet_name: str, model:
         df["kcals_per_unit"] = df["kcals_per_unit"].astype(object).replace("", None)
     if "is_start" in df:
         df["is_start"] = df["is_start"].replace("", False)
-    if "product_name" in df:
-        df = ClassifiedProductLookup(require_match=False).do_lookup(df, "product_name", "product_id")
+    if "product_name" in df or "payment_product_name" in df:
+        classifiedproductlookup = ClassifiedProductLookup(require_match=False)
+        if "product_name" in df:
+            df = classifiedproductlookup.do_lookup(df, "product_name", "product_id")
+            df["product_id"] = df["product_id"].astype(object).replace(pd.NA, None)
+        if "payment_product_name" in df:
+            df = classifiedproductlookup.do_lookup(df, "payment_product_name", "payment_product_id")
+            df["payment_product_id"] = df["payment_product_id"].astype(object).replace(pd.NA, None)
     if "country_id" in df:
         df["country_id"] = df["country_id"].astype(object).replace(pd.NA, None)
-    if "product_id" in df:
-        df["product_id"] = df["product_id"].astype(object).replace(pd.NA, None)
     if "unit_of_measure_id" in df:
         df["unit_of_measure_id"] = df["unit_of_measure_id"].astype(object).replace("", None)
     if "currency_id" in df:

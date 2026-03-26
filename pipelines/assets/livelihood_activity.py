@@ -244,7 +244,9 @@ def get_livelihood_activity_regexes() -> list:
     placeholder_patterns = {
         "label_pattern": r"[a-zà-ÿ][a-zà-ÿ1-9',/ \.\>\-\(\)]+?",
         "product_pattern": r"(?P<product_id>[a-zà-ÿ][a-zà-ÿ1-9',/ \.\>\-\(\)]+?)",
-        "season_pattern": r"(?P<season>season [12]|saison [12]|[12][a-z] season||[12][a-zà-ÿ] saison|r[eé]colte principale|principale r[eé]colte|gu|deyr+?)",  # NOQA: E501
+        "payment_product_pattern": r"(?P<payment_product_id>[a-zà-ÿ][a-zà-ÿ1-9',/ \.\>\-\(\)]+?)",
+        "labor_pattern": r"(?P<product_id>(?:labou?r|travail|main-d'œuvre|pre-harvest labou?r|labour:? pre-harvest|harvest labou?r|labour:? harvest|post-harvest labou?r|labour:? post-harvest|travail:? pre-r[eéè]colte) *[:-]? *[a-zà-ÿ][a-zà-ÿ1-9',/ \.\>\-\(\)]+?)",
+        "season_pattern": r"(?P<season>season [12]|saison [12]|[12][a-z] season||[12][a-zà-ÿ] saison|r[eé]colte principale|principale r[eé]colte|gu|deyr+?)",
         "additional_identifier_pattern": r"\(?(?P<additional_identifier>rainfed|irrigated|pluviale?|irriguée|submersion libre|submersion contrôlée|flottant)\)?",
         "age_gender_pattern": age_gender_pattern,
         "unit_of_measure_pattern": r"(?P<unit_of_measure_id>[a-z]+)",
@@ -277,6 +279,7 @@ def get_livelihood_activity_regular_expression_attributes(label: str) -> dict:
         "strategy_type": None,
         "is_start": None,
         "product_id": None,
+        "payment_product_id": None,
         "unit_of_measure_id": None,
         "currency_id": None,
         "season": None,
@@ -341,6 +344,7 @@ def get_livelihood_activity_label_map(activity_type: str) -> dict[str, dict]:
             "strategy_type",
             "is_start",
             "product_id",
+            "payment_product_id",
             "unit_of_measure_id",
             "currency_id",
             "season",
@@ -416,6 +420,10 @@ def get_all_label_attributes(
     all_label_attributes = labels.apply(lambda x: get_label_attributes(x, activity_type)).fillna("")
     all_label_attributes = classifiedproductlookup.do_lookup(all_label_attributes, "product_id", "product_id")
     all_label_attributes["product_id"] = all_label_attributes["product_id"].replace(pd.NA, None)
+    all_label_attributes = classifiedproductlookup.do_lookup(
+        all_label_attributes, "payment_product_id", "payment_product_id"
+    )
+    all_label_attributes["payment_product_id"] = all_label_attributes["payment_product_id"].replace(pd.NA, None)
     all_label_attributes = unitofmeasurelookup.do_lookup(
         all_label_attributes, "unit_of_measure_id", "unit_of_measure_id"
     )
@@ -461,7 +469,9 @@ def get_all_label_attributes(
             columns = ["activity_label", "status", "strategy_type", "product_id", "season_original", "country_id"]
             if livelihood_zone_id:
                 columns.append("livelihood_zone_id")
-            raise ValueError("Unrecognized seasons in labels:\n" + unrecognized_seasons_df[columns].to_markdown())
+            raise ValueError(
+                f"Unrecognized seasons in {activity_type} labels:\n" + unrecognized_seasons_df[columns].to_markdown()
+            )
 
     # Make sure we keep the same index so we can match by row number
     all_label_attributes.index = labels.index
@@ -541,6 +551,9 @@ def livelihood_activity_label_recognition_dataframe(
             recognized_attributes_df["product_name"] = (
                 recognized_attributes_df["product_id"].map(product_name_map).fillna("")
             )
+            recognized_attributes_df["payment_product_name"] = (
+                recognized_attributes_df["payment_product_id"].map(product_name_map).fillna("")
+            )
 
             # Join the recognized attributes to the label dataframe
             label_df["activity_type"] = activity_type
@@ -554,10 +567,15 @@ def livelihood_activity_label_recognition_dataframe(
     regex_attributes_df = pd.DataFrame.from_records(
         all_labels_df["label"].astype(str).map(get_livelihood_activity_regular_expression_attributes)
     )
-    regex_attributes_df = ClassifiedProductLookup(require_match=False).do_lookup(
-        regex_attributes_df, "product_id", "product_id"
+    classifiedproductlookup = ClassifiedProductLookup(require_match=False)
+    regex_attributes_df = classifiedproductlookup.do_lookup(regex_attributes_df, "product_id", "product_id")
+    regex_attributes_df = classifiedproductlookup.do_lookup(
+        regex_attributes_df, "payment_product_id", "payment_product_id"
     )
     regex_attributes_df["product_name"] = regex_attributes_df["product_id"].map(product_name_map).fillna("")
+    regex_attributes_df["payment_product_name"] = (
+        regex_attributes_df["payment_product_id"].map(product_name_map).fillna("")
+    )
     all_labels_df = all_labels_df.join(
         regex_attributes_df,
         how="left",
@@ -574,6 +592,7 @@ def livelihood_activity_label_recognition_dataframe(
             "strategy_type",
             "is_start",
             "product_id",
+            "payment_product_id",
             "unit_of_measure_id",
             "currency_id",
             "season",
@@ -583,6 +602,7 @@ def livelihood_activity_label_recognition_dataframe(
         )
     )
     db_labels_df["product_name"] = db_labels_df["product_id"].map(product_name_map).fillna("")
+    db_labels_df["payment_product_name"] = db_labels_df["payment_product_id"].map(product_name_map).fillna("")
     all_labels_df = all_labels_df.join(
         db_labels_df.set_index(["label_lower", "activity_type"]),
         on=("label_lower", "activity_type"),
@@ -633,6 +653,9 @@ def livelihood_activity_label_recognition_dataframe(
             how="left",
         )
         activity_type_label_df["product_name"] = activity_type_label_df["product_id"].map(product_name_map).fillna("")
+        activity_type_label_df["payment_product_name"] = (
+            activity_type_label_df["payment_product_id"].map(product_name_map).fillna("")
+        )
         summary_label_dfs.append(activity_type_label_df)
 
     # Concatenate all the activity type dataframes back into a single dataframe and put
@@ -655,6 +678,7 @@ def livelihood_activity_label_recognition_dataframe(
             "strategy_type",
             "attribute",
             "product_name",
+            "payment_product_name",
             "unit_of_measure_id_original",
             "currency_id",
             "season",
@@ -662,6 +686,7 @@ def livelihood_activity_label_recognition_dataframe(
             "notes",
             "household_labor_provider",
             "product_id",
+            "payment_product_id",
             "activity_label",
         ]
     ]
@@ -677,6 +702,8 @@ def livelihood_activity_label_recognition_dataframe(
                 "is_start_regex",
                 "product_id_regex",
                 "product_name_regex",
+                "payment_product_id_regex",
+                "payment_product_name_regex",
                 "unit_of_measure_id_regex",
                 "season_regex",
                 "additional_identifier_regex",
@@ -686,6 +713,8 @@ def livelihood_activity_label_recognition_dataframe(
                 "is_start_db",
                 "product_id_db",
                 "product_name_db",
+                "payment_product_id_db",
+                "payment_product_name_db",
                 "unit_of_measure_id_db",
                 "season_db",
                 "additional_identifier_db",
@@ -1571,6 +1600,33 @@ def get_instances_from_dataframe(
                                     livelihood_strategy["attribute_rows"][attribute],
                                 )
                             )
+                    elif attribute in activity_field_names and value:
+                        # This is an attribute for the LivelihoodActivity rather than the LivelihoodStrategy,
+                        # so add it to the livelihood activities for this strategy.
+                        if attribute not in livelihood_strategy["attribute_rows"]:
+                            livelihood_strategy["attribute_rows"][attribute] = row
+                            for livelihood_activity in livelihood_activities_for_strategy:
+                                livelihood_activity[attribute] = value
+                        elif livelihood_activities_for_strategy[0][attribute] != value:
+                            errors.append(
+                                "Found different value '%s' from row %s for existing attribute '%s' with value '%s' from row %s for activity with label '%s'"
+                                % (
+                                    value,
+                                    row,
+                                    attribute,
+                                    livelihood_activities_for_strategy[0][attribute],
+                                    livelihood_strategy["attribute_rows"][attribute],
+                                    label,
+                                )
+                            )
+                    elif (
+                        attribute.endswith("_original")
+                        and attribute.removesuffix("_original") in activity_field_names
+                        and value
+                    ):
+                        # Keep the original value of the attribute to aid trouble-shooting.
+                        for livelihood_activity in livelihood_activities_for_strategy:
+                            livelihood_activity[attribute] = value
 
             # Update the LivelihoodActivity records
             if any(value for value in df.loc[row, "B":].astype(str).str.strip()):
