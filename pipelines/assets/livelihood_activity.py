@@ -671,6 +671,7 @@ def livelihood_activity_label_recognition_dataframe(
         all_labels_df[
             [
                 "label_lower",
+                "activity_type",
                 "activity_label_regex",
                 "strategy_type_regex",
                 "is_start_regex",
@@ -693,8 +694,8 @@ def livelihood_activity_label_recognition_dataframe(
             ]
         ]
         .drop_duplicates()
-        .set_index("label_lower"),
-        on="label",
+        .set_index(["label_lower", "activity_type"]),
+        on=["label", "activity_type"],
         how="inner",
     )
 
