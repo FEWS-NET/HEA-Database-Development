@@ -149,14 +149,18 @@ def load_metadata_for_model(context: OpExecutionContext, sheet_name: str, model:
             id_fields = "wealth_characteristic_label"
         else:
             id_fields = "code"
+        # Ensure we don't have any duplicate entries
+        duplicates_df = df[df.duplicated(subset=id_fields, keep=False)]
+        if not duplicates_df.empty:
+            raise ValueError(
+                f"Found duplicate entries in worksheet '{sheet_name}' for {model_name}:\n{duplicates_df.to_markdown()}"
+            )
         # Add primary keys if they are not already in the id_fields,
         # so that we can save individual instances if required
         if isinstance(id_fields, str):
             id_fields = [id_fields]
         if model._meta.pk.name not in id_fields:
-            keys_df = pd.DataFrame.from_records(
-                model.objects.all().values(model._meta.pk.name, *id_fields)
-            )  # NOQA: E501
+            keys_df = pd.DataFrame.from_records(model.objects.all().values(model._meta.pk.name, *id_fields))
             if keys_df.empty:
                 keys_df = pd.DataFrame(columns=[model._meta.pk.name] + id_fields)
             df = df.merge(
@@ -178,7 +182,6 @@ def load_metadata_for_model(context: OpExecutionContext, sheet_name: str, model:
                 update_fields=[k for k in fields if k not in id_fields and k != model._meta.pk.name],
                 unique_fields=id_fields,
             )
-            context.log.info(f"Created or updated {len(instances)} {sheet_name} instances")
         except Exception:
             # Bulk create failed, so try creating/updating the instances one at a time to see which one failed
             for i, instance in enumerate(instances):
@@ -192,6 +195,7 @@ def load_metadata_for_model(context: OpExecutionContext, sheet_name: str, model:
                     raise RuntimeError(
                         f"Failed to create/update {model_name} instance {i} {key} from:\n{json.dumps(instance, indent=4, ensure_ascii=False)}"
                     ) from e
+        context.log.info(f"Created or updated {len(instances)} {sheet_name} instances")
 
 
 @op
