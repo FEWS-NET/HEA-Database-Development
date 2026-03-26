@@ -2038,9 +2038,8 @@ class OtherCashIncome(LivelihoodActivity):
             and self.times_per_month is not None
             and self.months_per_year is not None
         ):
-            if (
-                self.income
-                != self.payment_per_time * self.people_per_household * self.times_per_month * self.months_per_year
+            if round(self.income, 6) != round(
+                self.payment_per_time * self.people_per_household * self.times_per_month * self.months_per_year, 6
             ):
                 raise ValidationError(
                     _(
@@ -2048,7 +2047,7 @@ class OtherCashIncome(LivelihoodActivity):
                     )
                 )
         elif self.income is not None and self.payment_per_time is not None and self.times_per_year is not None:
-            if self.income != self.payment_per_time * self.times_per_year:
+            if round(self.income, 6) != round(self.payment_per_time * self.times_per_year, 6):
                 raise ValidationError(_("Income for 'Other Cash Income' must be payment per time * times per year"))
 
     def calculate_fields(self):
