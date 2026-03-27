@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("baseline", "0027_alter_seasonalactivity_livelihood_zone_baseline"),
+        ("baseline", "0028_paymentinkind_payment_product"),
     ]
 
     operations = [
