@@ -473,6 +473,15 @@ class ActivityLabel(common_models.Model):
         related_name="activity_labels",
         verbose_name=_("Product"),
     )
+    payment_product = models.ForeignKey(
+        ClassifiedProduct,
+        db_column="payment_product_code",
+        null=True,
+        blank=True,
+        on_delete=models.RESTRICT,
+        related_name="payment_activity_labels",
+        verbose_name=_("Payment Product"),
+    )
     unit_of_measure = models.ForeignKey(
         UnitOfMeasure,
         db_column="unit_code",

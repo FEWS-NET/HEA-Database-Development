@@ -1830,9 +1830,30 @@ class PaymentInKind(LivelihoodActivity):
     Food items that contribute to nutrition by households in a Wealth Group received in exchange for labor.
 
     Stored on the BSS 'Data' worksheet in the 'Payment In Kind' section, typically starting around Row 514.
+
+    Payments in kind contain two Product references: the `product` is the actual labor or service performed,
+    and the `payment_product` is the food item received as payment. The `quantity_produced` is the amount of the
+    `payment_product` received  annually, and the `kcals_consumed` should be the `quantity_produced` multiplied
+    by the `payment_product.kcals_per_unit`.
     """
 
-    # Production calculation/validation is `people_per_household * times_per_month * months_per_year`
+    # Note that payment_product is unusual because it is normally set using a label in Column A in the BSS,
+    # and so will have the same value for every Livelihood Activity. It could be considered part of the
+    # Livelihood Strategy rather than the individual Livelihood Activity, but it is the only example of an
+    # attribute that is logically part of the Livelihood Strategy but only for applies to a specific
+    # strategy type. We have included it in the PaymentInKind LivelihoodActivity for now, because many
+    # Livelihood Activity subclasses have additional attributes.
+    payment_product = models.ForeignKey(
+        ClassifiedProduct,
+        db_column="payment_product_code",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        verbose_name=_("Payment Product"),
+        help_text=_("Product provided as payment, typically a staple food item in exchange for labor"),
+        related_name="payments_in_kind",
+    )
+    # Production calculation/validation is `payment_per_time * people_per_household * times_per_month * months_per_year`
     payment_per_time = models.FloatField(
         blank=True,
         null=True,  # Not required if people_per_household or times_per_month is null

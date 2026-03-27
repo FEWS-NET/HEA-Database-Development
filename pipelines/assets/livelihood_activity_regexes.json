@@ -308,13 +308,13 @@
         "price"
     ],
     [
-        "paiement en {unit_of_measure_pattern} par fois \\({product_pattern}\\)",
+        "paiement en {unit_of_measure_pattern} par fois \\({payment_product_pattern}\\)",
         null,
         false,
         "payment_per_time"
     ],
     [
-        "payment in {unit_of_measure_pattern} per time \\({product_pattern}\\)",
+        "payment in {unit_of_measure_pattern} per time \\({payment_product_pattern}\\)",
         null,
         false,
         "payment_per_time"
@@ -498,12 +498,6 @@
         "LivestockSale",
         true,
         "quantity_sold"
-    ],
-    [
-        "{product_pattern}{separator_pattern} {additional_identifier_pattern}: {unit_of_measure_pattern} produced",
-        null,
-        true,
-        "quantity_produced"
     ],
     [
         "{product_pattern}{separator_pattern} {additional_identifier_pattern}: {unit_of_measure_pattern} produced",
@@ -954,6 +948,12 @@
         null,
         true,
         "quantity_produced_or_purchased"
+    ],
+    [
+        "{labor_pattern}",
+        null,
+        true,
+        "activity_notes"
     ],
     [
         "autre{separator_pattern} {product_pattern}",
