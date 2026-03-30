@@ -739,7 +739,11 @@ class LivelihoodZoneBaselineFacetedSearchViewTestCase(APITestCase):
             common_name_en="common mukera",
             kcals_per_unit=550,
         )
-        LivelihoodStrategyFactory(product=self.product1, livelihood_zone_baseline=self.baseline1)
+        LivelihoodStrategyFactory(
+            product=self.product1,
+            livelihood_zone_baseline=self.baseline1,
+            strategy_type=LivelihoodStrategyType.FOOD_PURCHASE,
+        )
         self.characteristic1 = WealthCharacteristicFactory(description_en="my test")
         self.characteristic2 = WealthCharacteristicFactory(description_en="my mukera", description_fr="my test")
         WealthGroupCharacteristicValueFactory(
@@ -749,7 +753,11 @@ class LivelihoodZoneBaselineFacetedSearchViewTestCase(APITestCase):
             wealth_group__livelihood_zone_baseline=self.baseline2, wealth_characteristic=self.characteristic2
         )
         self.characteristic3 = WealthCharacteristicFactory()
-        self.strategy = LivelihoodStrategyFactory(product=self.product1, livelihood_zone_baseline=self.baseline3)
+        self.strategy = LivelihoodStrategyFactory(
+            product=self.product1,
+            livelihood_zone_baseline=self.baseline3,
+            strategy_type=LivelihoodStrategyType.FOOD_PURCHASE,
+        )
         self.baseline = LivelihoodZoneBaselineFactory(main_livelihood_category=self.category1)
         self.url = reverse("livelihood-zone-baseline-faceted-search")
 
