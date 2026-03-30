@@ -897,15 +897,6 @@ class LivelihoodZoneBaselineFacetedSearchViewTestCase(APITestCase):
         self.assertIn("livelihood_zone__code", baselines[0])
         self.assertIn("reference_year_end_date", baselines[0])
 
-        # Test that search "lait" with language=fr returns MilkProduction via French translation
-        response = self.client.get(self.url, {"search": "lait", "language": "fr"})
-        self.assertEqual(response.status_code, 200)
-        data = response.data
-        strategy_type_results = data["livelihood_strategy_types"]
-        milk_results = [r for r in strategy_type_results if r["value"] == "MilkProduction"]
-        self.assertEqual(len(milk_results), 1)
-        self.assertEqual(milk_results[0]["value_label"], "Production du lait")
-
         # Test that search "goat" returns multiple goat-related products
         response = self.client.get(self.url, {"search": "goat", "language": "en"})
         self.assertEqual(response.status_code, 200)
@@ -916,6 +907,19 @@ class LivelihoodZoneBaselineFacetedSearchViewTestCase(APITestCase):
         self.assertIn(goat_meat_product.cpc, product_cpcs)
         self.assertIn(goat_milk_product.cpc, product_cpcs)
         self.assertEqual(len(product_results), 3)
+
+        # Test that searching the French strategy type label "viande" matches MeatProduction
+        response = self.client.get(self.url, {"search": "viande", "language": "fr"})
+        self.assertEqual(response.status_code, 200)
+        data = response.data
+        strategy_type_results = data["livelihood_strategy_types"]
+        meat_results = [r for r in strategy_type_results if r["value"] == "MeatProduction"]
+        self.assertEqual(len(meat_results), 1)
+        self.assertEqual(meat_results[0]["value_label"], "Production de viande")
+        self.assertEqual(meat_results[0]["count"], 1)
+        baselines = meat_results[0]["livelihood_zone_baselines"]
+        self.assertEqual(len(baselines), 1)
+        self.assertEqual(baselines[0]["id"], self.baseline2.id)
 
         # test taht strategy_type filter to baseline list endpoint
         baseline_url = reverse("livelihoodzonebaseline-list")
