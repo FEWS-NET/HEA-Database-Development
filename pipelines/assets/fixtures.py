@@ -91,9 +91,11 @@ def validate_instances(
             elif model_name == "Community":
                 instance["natural_key"] = instance["livelihood_zone_baseline"] + [instance["full_name"]]
             elif model_name == "WealthGroup":
+                community = instance.get("community")
                 instance["natural_key"] = instance["livelihood_zone_baseline"] + [
                     instance["wealth_group_category"],
-                    instance["full_name"],
+                    # use the actual community full_name rather than the BSS drived one
+                    community[2] if community else "",
                 ]
             elif model_name == "LivelihoodStrategy":
                 instance["natural_key"] = instance["livelihood_zone_baseline"] + [
