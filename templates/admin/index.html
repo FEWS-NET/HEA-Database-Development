@@ -7,6 +7,8 @@
 
 {% block nav-breadcrumbs %}{% endblock %}
 
+{% block content_title %}{% endblock %}
+
 {% block nav-sidebar %}{% endblock %}
 
 {% block content %}
@@ -26,20 +28,20 @@
     {% if stats %}
     <div class="dashboard-stats mb-4">
         <div class="stat-card">
-            <span class="stat-number">{{ stats.baselines }}</span>
+            <span class="stat-number">{{ stats.baselines}}</span>
             <span class="stat-label">{% translate 'Baselines' %}</span>
         </div>
         <div class="stat-card">
-            <span class="stat-number">{{ stats.livelihood_zones }}</span>
-            <span class="stat-label">{% translate 'Livelihood Zones' %}</span>
+            <span class="stat-number">{{ stats.wealth_characteristic_values}}</span>
+            <span class="stat-label">{% translate 'Wealth Characteristic Values' %}</span>
         </div>
         <div class="stat-card">
-            <span class="stat-number">{{ stats.communities }}</span>
-            <span class="stat-label">{% translate 'Communities' %}</span>
+            <span class="stat-number">{{ stats.community_activities}}</span>
+            <span class="stat-label">{% translate 'Community Activities' %}</span>
         </div>
         <div class="stat-card">
-            <span class="stat-number">{{ stats.countries }}</span>
-            <span class="stat-label">{% translate 'Countries' %}</span>
+            <span class="stat-number">{{ stats.baseline_activities}}</span>
+            <span class="stat-label">{% translate 'Baseline Activities' %}</span>
         </div>
     </div>
     {% endif %}
@@ -84,7 +86,7 @@
                         {% translate 'Open' %}
                     </p>
                     <div class="dashboard-external-links">
-                        <a class="home_page_button d-block mb-2" href="{{ docsroot }}" target="_blank" rel="noreferrer">
+                        <a class="home_page_button d-block mb-2" href="https://help.fews.net/hea" target="_blank" rel="noreferrer">
                             <i class="bi bi-book" aria-hidden="true"></i>
                             {% trans 'Documentation' %}
                         </a>
