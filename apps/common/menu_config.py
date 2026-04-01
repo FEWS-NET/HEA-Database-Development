@@ -9,6 +9,249 @@ permission-filtered menu for each user, passed to templates as
 
 from django.utils.translation import gettext_lazy as _
 
+# App-index ordering & icons
+# Models not listed here fall back to Django's alphabetical app_list.
+
+APP_INDEX_CONFIG = {
+    "baseline": [
+        # Group 1 – Core baseline hierarchy
+        [
+            {
+                "label": _("Source Organizations"),
+                "url_name": "admin:baseline_sourceorganization_changelist",
+                "perm": "baseline.view_sourceorganization",
+                "icon": "bi-building",
+            },
+            {
+                "label": _("Livelihood Zones"),
+                "url_name": "admin:baseline_livelihoodzone_changelist",
+                "perm": "baseline.view_livelihoodzone",
+                "icon": "bi-map",
+            },
+            {
+                "label": _("Communities"),
+                "url_name": "admin:baseline_community_changelist",
+                "perm": "baseline.view_community",
+                "icon": "bi-people-fill",
+            },
+            {
+                "label": _("Livelihood Zone Baselines"),
+                "url_name": "admin:baseline_livelihoodzonebaseline_changelist",
+                "perm": "baseline.view_livelihoodzonebaseline",
+                "icon": "bi-clipboard-data",
+            },
+            {
+                "label": _("Wealth Groups"),
+                "url_name": "admin:baseline_wealthgroup_changelist",
+                "perm": "baseline.view_wealthgroup",
+                "icon": "bi-diagram-3",
+            },
+            {
+                "label": _("Wealth Group Characteristic Values"),
+                "url_name": "admin:baseline_wealthgroupcharacteristicvalue_changelist",
+                "perm": "baseline.view_wealthgroupcharacteristicvalue",
+                "icon": "bi-bar-chart",
+            },
+            {
+                "label": _("Livelihood Activities"),
+                "url_name": "admin:baseline_livelihoodactivity_changelist",
+                "perm": "baseline.view_livelihoodactivity",
+                "icon": "bi-activity",
+            },
+            {
+                "label": _("Livelihood Strategies"),
+                "url_name": "admin:baseline_livelihoodstrategy_changelist",
+                "perm": "baseline.view_livelihoodstrategy",
+                "icon": "bi-lightbulb",
+            },
+        ],
+        # Group 2 – Baseline Correction
+        [
+            {
+                "label": _("Livelihood Zone Baseline Corrections"),
+                "url_name": "admin:baseline_livelihoodzonebaselinecorrection_changelist",
+                "perm": "baseline.view_livelihoodzonebaselinecorrection",
+                "icon": "bi-pencil-square",
+            },
+        ],
+        # Group 3 – Supporting / supplementary
+        [
+            {
+                "label": _("Community Crop Productions"),
+                "url_name": "admin:baseline_communitycropproduction_changelist",
+                "perm": "baseline.view_communitycropproduction",
+                "icon": "bi-flower2",
+            },
+            {
+                "label": _("Community Livestock"),
+                "url_name": "admin:baseline_communitylivestock_changelist",
+                "perm": "baseline.view_communitylivestock",
+                "icon": "bi-collection",
+            },
+            {
+                "label": _("Coping Strategies"),
+                "url_name": "admin:baseline_copingstrategy_changelist",
+                "perm": "baseline.view_copingstrategy",
+                "icon": "bi-shield-check",
+            },
+            {
+                "label": _("Events"),
+                "url_name": "admin:baseline_event_changelist",
+                "perm": "baseline.view_event",
+                "icon": "bi-calendar-event",
+            },
+            {
+                "label": _("Expandability Factors"),
+                "url_name": "admin:baseline_expandabilityfactor_changelist",
+                "perm": "baseline.view_expandabilityfactor",
+                "icon": "bi-arrows-expand",
+            },
+            {
+                "label": _("Hazards"),
+                "url_name": "admin:baseline_hazard_changelist",
+                "perm": "baseline.view_hazard",
+                "icon": "bi-exclamation-triangle",
+            },
+            {
+                "label": _("Market Prices"),
+                "url_name": "admin:baseline_marketprice_changelist",
+                "perm": "baseline.view_marketprice",
+                "icon": "bi-cart3",
+            },
+            {
+                "label": _("Seasonal Activities"),
+                "url_name": "admin:baseline_seasonalactivity_changelist",
+                "perm": "baseline.view_seasonalactivity",
+                "icon": "bi-calendar3",
+            },
+            {
+                "label": _("Seasonal Activity Occurrences"),
+                "url_name": "admin:baseline_seasonalactivityoccurrence_changelist",
+                "perm": "baseline.view_seasonalactivityoccurrence",
+                "icon": "bi-calendar-week",
+            },
+            {
+                "label": _("Seasonal Production Performance"),
+                "url_name": "admin:baseline_seasonalproductionperformance_changelist",
+                "perm": "baseline.view_seasonalproductionperformance",
+                "icon": "bi-graph-up",
+            },
+        ],
+    ],
+    "common": [
+        [
+            {
+                "label": _("Countries"),
+                "url_name": "admin:common_country_changelist",
+                "perm": "common.view_country",
+                "icon": "bi-globe",
+            },
+            {
+                "label": _("Currencies"),
+                "url_name": "admin:common_currency_changelist",
+                "perm": "common.view_currency",
+                "icon": "bi-currency-exchange",
+            },
+            {
+                "label": _("Products"),
+                "url_name": "admin:common_classifiedproduct_changelist",
+                "perm": "common.view_classifiedproduct",
+                "icon": "bi-box-seam",
+            },
+            {
+                "label": _("Units of Measure"),
+                "url_name": "admin:common_unitofmeasure_changelist",
+                "perm": "common.view_unitofmeasure",
+                "icon": "bi-rulers",
+            },
+        ],
+    ],
+    "metadata": [
+        # Group 1 – Reference lookup types
+        [
+            {
+                "label": _("Livelihood Categories"),
+                "url_name": "admin:metadata_livelihoodcategory_changelist",
+                "perm": "metadata.view_livelihoodcategory",
+                "icon": "bi-layers",
+            },
+            {
+                "label": _("Wealth Group Categories"),
+                "url_name": "admin:metadata_wealthgroupcategory_changelist",
+                "perm": "metadata.view_wealthgroupcategory",
+                "icon": "bi-people",
+            },
+            {
+                "label": _("Characteristic Groups"),
+                "url_name": "admin:metadata_characteristicgroup_changelist",
+                "perm": "metadata.view_characteristicgroup",
+                "icon": "bi-collection",
+            },
+            {
+                "label": _("Wealth Characteristics"),
+                "url_name": "admin:metadata_wealthcharacteristic_changelist",
+                "perm": "metadata.view_wealthcharacteristic",
+                "icon": "bi-list-check",
+            },
+            {
+                "label": _("Hazard Categories"),
+                "url_name": "admin:metadata_hazardcategory_changelist",
+                "perm": "metadata.view_hazardcategory",
+                "icon": "bi-exclamation-triangle",
+            },
+            {
+                "label": _("Seasons"),
+                "url_name": "admin:metadata_season_changelist",
+                "perm": "metadata.view_season",
+                "icon": "bi-sun",
+            },
+            {
+                "label": _("Seasonal Activity Types"),
+                "url_name": "admin:metadata_seasonalactivitytype_changelist",
+                "perm": "metadata.view_seasonalactivitytype",
+                "icon": "bi-calendar-check",
+            },
+            {
+                "label": _("Markets"),
+                "url_name": "admin:metadata_market_changelist",
+                "perm": "metadata.view_market",
+                "icon": "bi-shop",
+            },
+        ],
+        # Group 2 – Labels
+        [
+            {
+                "label": _("Activity Labels"),
+                "url_name": "admin:metadata_activitylabel_changelist",
+                "perm": "metadata.view_activitylabel",
+                "icon": "bi-tag",
+            },
+            {
+                "label": _("Wealth Characteristic Labels"),
+                "url_name": "admin:metadata_wealthcharacteristiclabel_changelist",
+                "perm": "metadata.view_wealthcharacteristiclabel",
+                "icon": "bi-tags",
+            },
+        ],
+    ],
+    "auth": [
+        [
+            {
+                "label": _("Users"),
+                "url_name": "admin:auth_user_changelist",
+                "perm": "auth.view_user",
+                "icon": "bi-person-fill",
+            },
+            {
+                "label": _("Groups"),
+                "url_name": "admin:auth_group_changelist",
+                "perm": "auth.view_group",
+                "icon": "bi-people-fill",
+            },
+        ],
+    ],
+}
+
 ADMIN_MENU_CONFIG = [
     {
         "id": "core",

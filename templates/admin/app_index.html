@@ -1,5 +1,7 @@
 {% extends "admin/base_site.html" %}
-{% load i18n %}
+{% load i18n admin_extras %}
+
+{% block content_title %}{% endblock %}
 
 {% block bodyclass %}{{ block.super }} app-{{ app_label }}{% endblock %}
 
@@ -19,9 +21,43 @@
     {% if app_list %}
         {% for app in app_list %}
 
-            <h2 class="home_page_header_text mb-3">{{ app.name }}</h2>
+            <h2 class="home_page_header_text mb-3">{{ app.name|title }} Administration</h2>
 
-            {% if app.models %}
+            {% with ordered_groups=app_index_config|get_item:app_label %}
+            {% if ordered_groups %}
+
+                {# Render groups in configured order with separators between them #}
+                {% for group in ordered_groups %}
+                    {% if not forloop.first %}<hr class="app-index-group-sep">{% endif %}
+                    <div class="grid mb-2">
+                        {% for item in group %}
+                        <div class="card">
+                            <div class="card-body">
+                                <a href="{{ item.url }}">
+                                    <i class="bi {{ item.icon }}" aria-hidden="true"></i> {{ item.label }}
+                                </a>
+                                <div class="app-index-model-actions mt-2">
+                                    {% if item.add_url %}
+                                        <a class="app-index-action-link" href="{{ item.add_url }}"
+                                           title="{% blocktranslate with name=item.label %}Add {{ name }}{% endblocktranslate %}">
+                                            <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+                                        </a>
+                                    {% endif %}
+                                    <a class="app-index-action-link" href="{{ item.url }}"
+                                       title="{% blocktranslate with name=item.label %}View {{ name }}{% endblocktranslate %}">
+                                        <span class="glyphicon glyphicon-list" aria-hidden="true"></span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+
+            {% else %}
+
+                {# Fallback: Django's alphabetical app_list #}
+                {% if app.models %}
                 <div class="grid mb-4">
                     {% for model in app.models %}
                         <div class="card">
@@ -49,7 +85,10 @@
                         </div>
                     {% endfor %}
                 </div>
+                {% endif %}
+
             {% endif %}
+            {% endwith %}
 
         {% endfor %}
     {% else %}

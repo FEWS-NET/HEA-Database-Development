@@ -429,6 +429,7 @@ ul > li {
     text-transform: uppercase;
     letter-spacing: 0.07em;
     margin-top: 3px;
+    text-align: center;
 }
 
 /* Two-column layout: nav cards | right panel */
@@ -592,6 +593,12 @@ ul > li {
 
 .app-index-action-link:hover {
     color: #065030;
+}
+
+.app-index-group-sep {
+    border: none;
+    border-top: 1px dashed #c6e8da;
+    margin: 12px 0 16px;
 }
 
 /* 
