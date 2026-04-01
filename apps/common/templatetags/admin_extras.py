@@ -11,7 +11,7 @@ def get_item(dictionary, key):
 
 @register.simple_tag
 def get_dashboard_stats():
-    # Return key record counts for the admin dashboard stats 
+    # Return key record counts for the admin dashboard stats
     try:
         LivelihoodZoneBaseline = apps.get_model("baseline", "LivelihoodZoneBaseline")
         WealthGroupCharacteristicValue = apps.get_model("baseline", "WealthGroupCharacteristicValue")
