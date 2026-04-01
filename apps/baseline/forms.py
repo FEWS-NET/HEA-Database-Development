@@ -1,12 +1,17 @@
+from dal import autocomplete
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
 from baseline.models import (
+    Community,
     FoodPurchase,
     LivelihoodActivity,
+    LivelihoodStrategy,
     MilkProduction,
     OtherPurchase,
     ReliefGiftOther,
+    WealthGroup,
+    WealthGroupCharacteristicValue,
 )
 
 
@@ -18,6 +23,10 @@ class LivelihoodActivityForm(forms.ModelForm):
             "livelihood_zone_baseline",
             "strategy_type",
         ]
+        widgets = {
+            "livelihood_strategy": autocomplete.ModelSelect2(url="livelihoodstrategy-autocomplete"),
+            "wealth_group": autocomplete.ModelSelect2(url="wealthgroup-autocomplete"),
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -43,6 +52,10 @@ class MilkProductionForm(LivelihoodActivityForm):
             "livelihood_zone_baseline",
             "strategy_type",
         ]
+        widgets = {
+            "livelihood_strategy": autocomplete.ModelSelect2(url="livelihoodstrategy-autocomplete"),
+            "wealth_group": autocomplete.ModelSelect2(url="wealthgroup-autocomplete"),
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -57,6 +70,10 @@ class FoodPurchaseForm(LivelihoodActivityForm):
             "livelihood_zone_baseline",
             "strategy_type",
         ]
+        widgets = {
+            "livelihood_strategy": autocomplete.ModelSelect2(url="livelihoodstrategy-autocomplete"),
+            "wealth_group": autocomplete.ModelSelect2(url="wealthgroup-autocomplete"),
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -71,6 +88,10 @@ class ReliefGiftOtherForm(LivelihoodActivityForm):
             "livelihood_zone_baseline",
             "strategy_type",
         ]
+        widgets = {
+            "livelihood_strategy": autocomplete.ModelSelect2(url="livelihoodstrategy-autocomplete"),
+            "wealth_group": autocomplete.ModelSelect2(url="wealthgroup-autocomplete"),
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -85,7 +106,48 @@ class OtherPurchaseForm(LivelihoodActivityForm):
             "livelihood_zone_baseline",
             "strategy_type",
         ]
+        widgets = {
+            "livelihood_strategy": autocomplete.ModelSelect2(url="livelihoodstrategy-autocomplete"),
+            "wealth_group": autocomplete.ModelSelect2(url="wealthgroup-autocomplete"),
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["unit_multiple"].label = _("Purchase size")
+
+
+class WealthGroupCharacteristicValueForm(forms.ModelForm):
+    class Meta:
+        model = WealthGroupCharacteristicValue
+        fields = "__all__"
+        widgets = {
+            "wealth_group": autocomplete.ModelSelect2(url="wealthgroup-autocomplete"),
+        }
+
+
+class WealthGroupForm(forms.ModelForm):
+    class Meta:
+        model = WealthGroup
+        fields = "__all__"
+        widgets = {
+            "livelihood_zone_baseline": autocomplete.ModelSelect2(url="livelihoodzonebaseline-autocomplete"),
+            "community": autocomplete.ModelSelect2(url="community-autocomplete"),
+        }
+
+
+class LivelihoodStrategyForm(forms.ModelForm):
+    class Meta:
+        model = LivelihoodStrategy
+        fields = "__all__"
+        widgets = {
+            "livelihood_zone_baseline": autocomplete.ModelSelect2(url="livelihoodzonebaseline-autocomplete"),
+        }
+
+
+class CommunityForm(forms.ModelForm):
+    class Meta:
+        model = Community
+        fields = "__all__"
+        widgets = {
+            "livelihood_zone_baseline": autocomplete.ModelSelect2(url="livelihoodzonebaseline-autocomplete"),
+        }

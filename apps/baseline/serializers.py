@@ -834,11 +834,23 @@ class PaymentInKindSerializer(LivelihoodActivitySerializer):
     class Meta:
         model = PaymentInKind
         fields = LivelihoodActivitySerializer.Meta.fields + [
+            "payment_product",
+            "payment_product_common_name",
+            "payment_product_description",
             "payment_per_time",
             "people_per_household",
             "times_per_month",
             "months_per_year",
         ]
+
+    payment_product_common_name = serializers.SerializerMethodField()
+    payment_product_description = serializers.SerializerMethodField()
+
+    def get_payment_product_common_name(self, obj):
+        return obj.payment_product.common_name if obj.payment_product else None
+
+    def get_payment_product_description(self, obj):
+        return obj.payment_product.description_en if obj.payment_product else None
 
 
 class ReliefGiftOtherSerializer(LivelihoodActivitySerializer):

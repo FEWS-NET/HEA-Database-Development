@@ -9,6 +9,12 @@ from django.views.decorators.http import etag
 from django.views.i18n import JavaScriptCatalog
 from rest_framework import routers
 
+from baseline.autocomplete import (
+    CommunityAutocomplete,
+    LivelihoodStrategyAutocomplete,
+    LivelihoodZoneBaselineAutocomplete,
+    WealthGroupAutocomplete,
+)
 from baseline.viewsets import (
     BaselineLivelihoodActivityViewSet,
     BaselineWealthGroupCharacteristicValueViewSet,
@@ -138,6 +144,18 @@ router.register(r"copingstrategy", CopingStrategyViewSet)
 
 urlpatterns = [
     ########## LOCALE INDEPENDENT PATHS go here. ##########
+    path("autocomplete/wealthgroup/", WealthGroupAutocomplete.as_view(), name="wealthgroup-autocomplete"),
+    path("autocomplete/community/", CommunityAutocomplete.as_view(), name="community-autocomplete"),
+    path(
+        "autocomplete/livelihoodzonebaseline/",
+        LivelihoodZoneBaselineAutocomplete.as_view(),
+        name="livelihoodzonebaseline-autocomplete",
+    ),
+    path(
+        "autocomplete/livelihoodstrategy/",
+        LivelihoodStrategyAutocomplete.as_view(),
+        name="livelihoodstrategy-autocomplete",
+    ),
     # Database Files
     path("", include("binary_database_files.urls")),
     # API

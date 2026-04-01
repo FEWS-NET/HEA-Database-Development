@@ -503,7 +503,7 @@
         "is_start": true,
         "season": "1ème saison",
         "attribute": "percentage_kcals"
-    },        
+    },
     "poids de la carcasse (kg)": {
         "unit_of_measure_id": "kg",
         "attribute": "carcass_weight"
@@ -863,6 +863,10 @@
         "unit_of_measure_id": "kg",
         "attribute": "unit_multiple"
     },
+    "AUTRE ACHAT": {
+        "strategy_type": "OtherPurchase",
+        "is_start": true
+    },
     "Autre achat: beurre de Karité": {
         "is_start": true,
         "product_id": "beurre de karité",
@@ -964,6 +968,31 @@
     "quantité": {
         "attribute": "quantity_produced_or_purchased"
     },
+    "travail: labour": {
+        "is_start": true,
+        "product_id": "travail: labour",
+        "attribute": "activity_notes"
+    },
+    "Travail: Pre-Récolte: sarclage": {
+        "is_start": true,
+        "product_id": "travail: pre-récolte: sarclage",
+        "attribute": "activity_notes"
+    },
+    "main-d'œuvre :labour": {
+        "is_start": true,
+        "product_id": "main-d'œuvre :labour",
+        "attribute": "activity_notes"
+    },
+    "labour: harvest": {
+        "is_start": true,
+        "product_id": "labour: harvest",
+        "attribute": "activity_notes"
+    },
+    "pre-harvest labour: weeding": {
+        "is_start": true,
+        "product_id": "pre-harvest labour: weeding",
+        "attribute": "activity_notes"
+    },
     "no. people per HH": {
         "attribute": "people_per_household"
     },
@@ -1037,14 +1066,19 @@
     "Ag.lab (harvest) -- see Data2": {
         "is_start": true
     },
-    "paiement en kg par fois (céréale)": {
+    "paiement en kg par fois (huile)": {
         "attribute": "payment_per_time",
-        "product_id": "céréale",
+        "payment_product_id": "huile",
         "unit_of_measure_id": "kg"
     },
-    "payment in kg per time (grain)": {
+    "paiement en litre par fois (lait de vache)": {
         "attribute": "payment_per_time",
-        "product_id": "grain",
+        "payment_product_id": "lait de vache",
+        "unit_of_measure_id": "litre"
+    },
+    "payment in kg per time (cassava flour)": {
+        "attribute": "payment_per_time",
+        "payment_product_id": "cassava flour",
         "unit_of_measure_id": "kg"
     },
     "wild food: avocado (kg gathered)": {
@@ -1077,7 +1111,7 @@
         "unit_of_measure_id": "kg",
         "attribute": "quantity_produced"
     },
-    "poisson : poisson 4 (kg collectés)" : {
+    "poisson : poisson 4 (kg collectés)": {
         "is_start": true,
         "product_id": "poisson 4",
         "unit_of_measure_id": "kg",
@@ -1252,44 +1286,43 @@
         "is_start": true,
         "product_id": "vente de légumes",
         "household_labor_provider": "girls"
+    },
+    "huile: nom du mesure": {
+        "is_start": true,
+        "product_id": "huile",
+        "attribute": "name_of_local_measure"
+    },
+    "sel - nom de la mesure locale": {
+        "is_start": true,
+        "product_id": "sel",
+        "attribute": "name_of_local_measure"
+    },
+    "sucre: nom mesure locale": {
+        "is_start": true,
+        "product_id": "sucre",
+        "attribute": "name_of_local_measure"
+    },
+    "eau pour humains: nom de mesure locale:.": {
+        "is_start": true,
+        "product_id": "eau pour humains",
+        "attribute": "name_of_local_measure"
+    },
+    "eau pour betail: nom de la mesure locale": {
+        "is_start": true,
+        "product_id": "eau pour betail",
+        "attribute": "name_of_local_measure"
+    },
+    "farine de ble - nom de la mesure locale": {
+        "is_start": true,
+        "product_id": "farine de ble",
+        "attribute": "name_of_local_measure"
+    },
+    "nom de la mesure local": {
+        "attribute": "name_of_local_measure"
+    },
+    "eau pour le bétail: nom mesure": {
+        "is_start": true,
+        "product_id": "eau pour le bétail",
+        "attribute": "name_of_local_measure"
     }
-,
-  "huile: nom du mesure": {
-    "is_start": true,
-    "product_id": "huile",
-    "attribute": "name_of_local_measure"
-  },
-  "sel - nom de la mesure locale": {
-    "is_start": true,
-    "product_id": "sel",
-    "attribute": "name_of_local_measure"
-  },
-  "sucre: nom mesure locale": {
-    "is_start": true,
-    "product_id": "sucre",
-    "attribute": "name_of_local_measure"
-  },
-  "eau pour humains: nom de mesure locale:.": {
-    "is_start": true,
-    "product_id": "eau pour humains",
-    "attribute": "name_of_local_measure"
-  },
-  "eau pour betail: nom de la mesure locale": {
-    "is_start": true,
-    "product_id": "eau pour betail",
-    "attribute": "name_of_local_measure"
-  },
-  "farine de ble - nom de la mesure locale": {
-    "is_start": true,
-    "product_id": "farine de ble",
-    "attribute": "name_of_local_measure"
-  },
-  "nom de la mesure local": {
-    "attribute": "name_of_local_measure"
-  },
-  "eau pour le bétail: nom mesure": {
-    "is_start": true,
-    "product_id": "eau pour le bétail",
-    "attribute": "name_of_local_measure"
-  }
 }
