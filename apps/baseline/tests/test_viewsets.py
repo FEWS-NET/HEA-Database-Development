@@ -3851,6 +3851,34 @@ class PaymentInKindViewSetTestCase(APITestCase):
         df = pd.read_html(content)[0].fillna("")
         self.assertEqual(len(df), self.num_records + 1)
 
+    def test_filter_by_country(self):
+        country = CountryFactory(
+            iso3166a2="AA",
+            iso3166a3="AAA",
+            iso3166n3=911,
+            iso_en_ro_name="A Country",
+            iso_en_name="AA Country",
+            name="AA Country",
+        )
+        PaymentInKindFactory(livelihood_zone_baseline__livelihood_zone__country=country)
+        response = self.client.get(self.url, {"country": country.iso3166a2})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 1)
+        response = self.client.get(self.url, {"country": country.iso_en_ro_name})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 1)
+
+    def test_filter_by_livelihood_zone(self):
+        livelihood_zone = LivelihoodZoneFactory(code="MW01")
+        PaymentInKindFactory(livelihood_zone_baseline__livelihood_zone=livelihood_zone)
+        response = self.client.get(self.url, {"livelihood_zone": "MW01"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 1)
+        # Case-insensitive match
+        response = self.client.get(self.url, {"livelihood_zone": "mw01"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 1)
+
 
 class ReliefGiftsOtherViewSetTestCase(APITestCase):
     @classmethod
