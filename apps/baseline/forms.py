@@ -7,8 +7,11 @@ from baseline.models import (
     FoodPurchase,
     LivelihoodActivity,
     LivelihoodStrategy,
+    MeatProduction,
     MilkProduction,
+    OtherCashIncome,
     OtherPurchase,
+    PaymentInKind,
     ReliefGiftOther,
     WealthGroup,
     WealthGroupCharacteristicValue,
@@ -114,6 +117,45 @@ class OtherPurchaseForm(LivelihoodActivityForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["unit_multiple"].label = _("Purchase size")
+
+
+class MeatProductionForm(LivelihoodActivityForm):
+    class Meta:
+        model = MeatProduction
+        exclude = [
+            "livelihood_zone_baseline",
+            "strategy_type",
+        ]
+        widgets = {
+            "livelihood_strategy": autocomplete.ModelSelect2(url="livelihoodstrategy-autocomplete"),
+            "wealth_group": autocomplete.ModelSelect2(url="wealthgroup-autocomplete"),
+        }
+
+
+class PaymentInKindForm(LivelihoodActivityForm):
+    class Meta:
+        model = PaymentInKind
+        exclude = [
+            "livelihood_zone_baseline",
+            "strategy_type",
+        ]
+        widgets = {
+            "livelihood_strategy": autocomplete.ModelSelect2(url="livelihoodstrategy-autocomplete"),
+            "wealth_group": autocomplete.ModelSelect2(url="wealthgroup-autocomplete"),
+        }
+
+
+class OtherCashIncomeForm(LivelihoodActivityForm):
+    class Meta:
+        model = OtherCashIncome
+        exclude = [
+            "livelihood_zone_baseline",
+            "strategy_type",
+        ]
+        widgets = {
+            "livelihood_strategy": autocomplete.ModelSelect2(url="livelihoodstrategy-autocomplete"),
+            "wealth_group": autocomplete.ModelSelect2(url="wealthgroup-autocomplete"),
+        }
 
 
 class WealthGroupCharacteristicValueForm(forms.ModelForm):

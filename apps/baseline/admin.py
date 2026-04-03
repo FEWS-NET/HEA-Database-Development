@@ -13,8 +13,11 @@ from .forms import (
     FoodPurchaseForm,
     LivelihoodActivityForm,
     LivelihoodStrategyForm,
+    MeatProductionForm,
     MilkProductionForm,
+    OtherCashIncomeForm,
     OtherPurchaseForm,
+    PaymentInKindForm,
     ReliefGiftOtherForm,
     WealthGroupCharacteristicValueForm,
     WealthGroupForm,
@@ -333,6 +336,134 @@ class WealthGroupCharacteristicValueInlineAdmin(admin.TabularInline):
 
 class LivelihoodActivityAdmin(admin.ModelAdmin):
     form = LivelihoodActivityForm
+
+    # Maps strategy_type to the subclass accessor name, its form, extra fieldsets,
+    # and any extra fields to append to the base "Quantity" fieldset.
+    _SUBCLASS_CONFIG = {
+        LivelihoodStrategyType.MILK_PRODUCTION: {
+            "accessor": "milkproduction",
+            "form": MilkProductionForm,
+            "quantity_extra": ["quantity_butter_production"],
+            "extra_fieldsets": [
+                (
+                    "Milk source",
+                    {
+                        "fields": [
+                            "milking_animals",
+                            "lactation_days",
+                            "daily_production",
+                            "type_of_milk_consumed",
+                            "type_of_milk_sold_or_other_uses",
+                        ]
+                    },
+                ),
+            ],
+        },
+        LivelihoodStrategyType.MEAT_PRODUCTION: {
+            "accessor": "meatproduction",
+            "form": MeatProductionForm,
+            "extra_fieldsets": [
+                (
+                    "Meat source",
+                    {
+                        "fields": [
+                            "animals_slaughtered",
+                            "carcass_weight",
+                        ]
+                    },
+                ),
+            ],
+        },
+        LivelihoodStrategyType.FOOD_PURCHASE: {
+            "accessor": "foodpurchase",
+            "form": FoodPurchaseForm,
+            "extra_fieldsets": [
+                (
+                    "Purchases",
+                    {
+                        "fields": [
+                            "unit_multiple",
+                            "times_per_month",
+                            "months_per_year",
+                            "times_per_year",
+                        ]
+                    },
+                ),
+            ],
+        },
+        LivelihoodStrategyType.PAYMENT_IN_KIND: {
+            "accessor": "paymentinkind",
+            "form": PaymentInKindForm,
+            "extra_fieldsets": [
+                (
+                    "Payment",
+                    {
+                        "fields": [
+                            "payment_product",
+                            "payment_per_time",
+                            "people_per_household",
+                            "times_per_month",
+                            "months_per_year",
+                            "times_per_year",
+                        ]
+                    },
+                ),
+            ],
+        },
+        LivelihoodStrategyType.RELIEF_GIFT_OTHER: {
+            "accessor": "reliefgiftother",
+            "form": ReliefGiftOtherForm,
+            "extra_fieldsets": [
+                (
+                    "Relief",
+                    {
+                        "fields": [
+                            "unit_multiple",
+                            "times_per_month",
+                            "months_per_year",
+                            "times_per_year",
+                        ]
+                    },
+                ),
+            ],
+        },
+        LivelihoodStrategyType.OTHER_CASH_INCOME: {
+            "accessor": "othercashincome",
+            "form": OtherCashIncomeForm,
+            "extra_fieldsets": [
+                (
+                    "Income",
+                    {
+                        "fields": [
+                            "payment_per_time",
+                            "people_per_household",
+                            "times_per_month",
+                            "months_per_year",
+                            "times_per_year",
+                        ]
+                    },
+                ),
+            ],
+        },
+        LivelihoodStrategyType.OTHER_PURCHASE: {
+            "accessor": "otherpurchase",
+            "form": OtherPurchaseForm,
+            "extra_fieldsets": [
+                (
+                    "Purchases",
+                    {
+                        "fields": [
+                            "unit_multiple",
+                            "times_per_month",
+                            "months_per_year",
+                            "times_per_year",
+                        ]
+                    },
+                ),
+            ],
+        },
+    }
+
     list_display = (
         "wealth_group",
         "strategy_type",
@@ -364,6 +495,41 @@ class LivelihoodActivityAdmin(admin.ModelAdmin):
         *translation_fields("livelihood_strategy__product__description__icontains"),
         *translation_fields("livelihood_strategy__season__name__icontains"),
     )
+
+    def get_object(self, request, object_id, from_field=None):
+        obj = super().get_object(request, object_id, from_field)
+        if obj is None:
+            return None
+        config = self._SUBCLASS_CONFIG.get(obj.strategy_type)
+        if config:
+            try:
+                return getattr(obj, config["accessor"])
+            except AttributeError:
+                pass
+        return obj
+
+    def get_form(self, request, obj=None, change=False, **kwargs):
+        if obj is not None:
+            config = self._SUBCLASS_CONFIG.get(obj.strategy_type)
+            if config and config.get("form"):
+                return config["form"]
+        return super().get_form(request, obj, change, **kwargs)
+
+    def get_fieldsets(self, request, obj=None):
+        fieldsets = deepcopy(self.fieldsets)
+        if obj is None:
+            return fieldsets
+        config = self._SUBCLASS_CONFIG.get(obj.strategy_type)
+        if not config:
+            return fieldsets
+        for extra_field in config.get("quantity_extra", []):
+            for fs in fieldsets:
+                if fs[0] == "Quantity":
+                    fs[1]["fields"].append(extra_field)
+                    break
+        for i, extra_fs in enumerate(config.get("extra_fieldsets", []), start=1):
+            fieldsets.insert(i, extra_fs)
+        return fieldsets
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
