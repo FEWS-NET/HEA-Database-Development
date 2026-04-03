@@ -880,6 +880,19 @@ class LivelihoodStrategyViewSet(BaseModelViewSet):
     ]
 
 
+LIVELIHOOD_ACTIVITY_ORDER_BY = [
+    "livelihood_zone_baseline__livelihood_zone__code",
+    "livelihood_zone_baseline__reference_year_end_date",
+    "wealth_group__wealth_group_category__code",
+    "strategy_type",
+    "livelihood_strategy__season__name_en",
+    "livelihood_strategy__product_id",
+    "livelihood_strategy__additional_identifier",
+    "wealth_group__community__full_name",
+    "scenario",
+]
+
+
 class LivelihoodActivityFilterSet(filters.FilterSet):
     livelihood_strategy = django_filters.ModelChoiceFilter(
         queryset=LivelihoodStrategy.objects.select_related(
@@ -964,7 +977,7 @@ class LivelihoodActivityViewSet(BaseModelViewSet):
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
         "wealth_group__wealth_group_category",
-    )
+    ).order_by(*LIVELIHOOD_ACTIVITY_ORDER_BY)
     serializer_class = LivelihoodActivitySerializer
     filterset_class = LivelihoodActivityFilterSet
     search_fields = [
@@ -1047,7 +1060,7 @@ class BaselineLivelihoodActivityViewSet(BaseModelViewSet):
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
         "wealth_group__wealth_group_category",
-    )
+    ).order_by(*LIVELIHOOD_ACTIVITY_ORDER_BY)
     serializer_class = BaselineLivelihoodActivitySerializer
     filterset_class = BaselineLivelihoodActivityFilterSet
     search_fields = [
@@ -1130,7 +1143,7 @@ class ResponseLivelihoodActivityViewSet(BaseModelViewSet):
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
         "wealth_group__wealth_group_category",
-    )
+    ).order_by(*LIVELIHOOD_ACTIVITY_ORDER_BY)
     serializer_class = ResponseLivelihoodActivitySerializer
     filterset_class = ResponseLivelihoodActivityFilterSet
     search_fields = [
@@ -1216,7 +1229,7 @@ class MilkProductionViewSet(BaseModelViewSet):
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
         "wealth_group__wealth_group_category",
-    )
+    ).order_by(*LIVELIHOOD_ACTIVITY_ORDER_BY)
     serializer_class = MilkProductionSerializer
     filterset_class = MilkProductionFilterSet
     search_fields = [
@@ -1299,7 +1312,7 @@ class ButterProductionViewSet(BaseModelViewSet):
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
         "wealth_group__wealth_group_category",
-    )
+    ).order_by(*LIVELIHOOD_ACTIVITY_ORDER_BY)
     serializer_class = ButterProductionSerializer
     filterset_class = ButterProductionFilterSet
     search_fields = [
@@ -1383,7 +1396,7 @@ class MeatProductionViewSet(BaseModelViewSet):
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
         "wealth_group__wealth_group_category",
-    )
+    ).order_by(*LIVELIHOOD_ACTIVITY_ORDER_BY)
     serializer_class = MeatProductionSerializer
     filterset_class = MeatProductionFilterSet
     search_fields = [
@@ -1465,7 +1478,7 @@ class LivestockSaleViewSet(BaseModelViewSet):
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
         "wealth_group__wealth_group_category",
-    )
+    ).order_by(*LIVELIHOOD_ACTIVITY_ORDER_BY)
     serializer_class = LivestockSaleSerializer
     filterset_class = LivestockSaleFilterSet
     search_fields = [
@@ -1547,7 +1560,7 @@ class CropProductionViewSet(BaseModelViewSet):
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
         "wealth_group__wealth_group_category",
-    )
+    ).order_by(*LIVELIHOOD_ACTIVITY_ORDER_BY)
     serializer_class = CropProductionSerializer
     filterset_class = CropProductionFilterSet
     search_fields = [
@@ -1632,7 +1645,7 @@ class FoodPurchaseViewSet(BaseModelViewSet):
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
         "wealth_group__wealth_group_category",
-    )
+    ).order_by(*LIVELIHOOD_ACTIVITY_ORDER_BY)
     serializer_class = FoodPurchaseSerializer
     filterset_class = FoodPurchaseFilterSet
     search_fields = [
@@ -1718,7 +1731,7 @@ class PaymentInKindViewSet(BaseModelViewSet):
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
         "wealth_group__wealth_group_category",
-    )
+    ).order_by(*LIVELIHOOD_ACTIVITY_ORDER_BY)
     serializer_class = PaymentInKindSerializer
     filterset_class = PaymentInKindFilterSet
     search_fields = [
@@ -1802,7 +1815,7 @@ class ReliefGiftOtherViewSet(BaseModelViewSet):
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
         "wealth_group__wealth_group_category",
-    )
+    ).order_by(*LIVELIHOOD_ACTIVITY_ORDER_BY)
     serializer_class = ReliefGiftOtherSerializer
     filterset_class = ReliefGiftOtherFilterSet
     search_fields = [
@@ -1945,7 +1958,7 @@ class HuntingViewSet(BaseModelViewSet):
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
         "wealth_group__wealth_group_category",
-    )
+    ).order_by(*LIVELIHOOD_ACTIVITY_ORDER_BY)
     serializer_class = HuntingSerializer
     filterset_class = HuntingFilterSet
     search_fields = [
@@ -1966,7 +1979,7 @@ class FishingViewSet(BaseModelViewSet):
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
         "wealth_group__wealth_group_category",
-    )
+    ).order_by(*LIVELIHOOD_ACTIVITY_ORDER_BY)
     serializer_class = FishingSerializer
     filterset_class = FishingFilterSet
     search_fields = [
@@ -2048,7 +2061,7 @@ class WildFoodGatheringViewSet(BaseModelViewSet):
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
         "wealth_group__wealth_group_category",
-    )
+    ).order_by(*LIVELIHOOD_ACTIVITY_ORDER_BY)
     serializer_class = WildFoodGatheringSerializer
     filterset_class = WildFoodGatheringFilterSet
     search_fields = [
@@ -2136,7 +2149,7 @@ class OtherCashIncomeViewSet(BaseModelViewSet):
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
         "wealth_group__wealth_group_category",
-    )
+    ).order_by(*LIVELIHOOD_ACTIVITY_ORDER_BY)
     serializer_class = OtherCashIncomeSerializer
     filterset_class = OtherCashIncomeFilterSet
     search_fields = [
@@ -2222,7 +2235,7 @@ class OtherPurchaseViewSet(BaseModelViewSet):
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
         "wealth_group__wealth_group_category",
-    )
+    ).order_by(*LIVELIHOOD_ACTIVITY_ORDER_BY)
     serializer_class = OtherPurchaseSerializer
     filterset_class = OtherPurchaseFilterSet
     search_fields = [
@@ -2647,13 +2660,17 @@ class LivelihoodActivitySummaryViewSet(AggregatingViewSet):
 
     """
 
-    queryset = LivelihoodActivity.objects.filter(wealth_group__community__isnull=True).select_related(
-        "livelihood_zone_baseline__livelihood_zone__country",
-        "livelihood_zone_baseline__source_organization",
-        "livelihood_zone_baseline__main_livelihood_category",
-        "wealth_group__wealth_group_category",
-        "livelihood_strategy__product",
-        "livelihood_strategy__season",
+    queryset = (
+        LivelihoodActivity.objects.filter(wealth_group__community__isnull=True)
+        .select_related(
+            "livelihood_zone_baseline__livelihood_zone__country",
+            "livelihood_zone_baseline__source_organization",
+            "livelihood_zone_baseline__main_livelihood_category",
+            "wealth_group__wealth_group_category",
+            "livelihood_strategy__product",
+            "livelihood_strategy__season",
+        )
+        .order_by(*LIVELIHOOD_ACTIVITY_ORDER_BY)
     )
     serializer_class = LivelihoodActivitySummarySerializer
     filterset_class = LivelihoodActivityFilterSet
