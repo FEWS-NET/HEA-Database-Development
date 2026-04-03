@@ -945,6 +945,11 @@ class LivelihoodActivityFilterSet(filters.FilterSet):
         label="Product",
     )
     cpc = UpperCaseFilter("livelihood_strategy__product__cpc", lookup_expr="startswith", label="Product code (CPC)")
+    livelihood_zone = CharFilter(
+        field_name="livelihood_zone_baseline__livelihood_zone__code",
+        lookup_expr="iexact",
+        label="Livelihood Zone",
+    )
 
 
 class LivelihoodActivityViewSet(BaseModelViewSet):
@@ -1022,6 +1027,11 @@ class BaselineLivelihoodActivityFilterSet(filters.FilterSet):
         ],
         lookup_expr="iexact",
         label="Country",
+    )
+    livelihood_zone = CharFilter(
+        field_name="livelihood_zone_baseline__livelihood_zone__code",
+        lookup_expr="iexact",
+        label="Livelihood Zone",
     )
 
 
@@ -1101,6 +1111,11 @@ class ResponseLivelihoodActivityFilterSet(filters.FilterSet):
         lookup_expr="iexact",
         label="Country",
     )
+    livelihood_zone = CharFilter(
+        field_name="livelihood_zone_baseline__livelihood_zone__code",
+        lookup_expr="iexact",
+        label="Livelihood Zone",
+    )
 
 
 class ResponseLivelihoodActivityViewSet(BaseModelViewSet):
@@ -1147,6 +1162,25 @@ class MilkProductionFilterSet(filters.FilterSet):
         ),
         widget=autocomplete.ModelSelect2(url="wealthgroup-autocomplete"),
         label="Wealth Group",
+    )
+    country = MultiFieldFilter(
+        [
+            "livelihood_zone_baseline__livelihood_zone__country__iso3166a2",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_fr_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_fr_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_es_name",
+        ],
+        lookup_expr="iexact",
+        label="Country",
+    )
+    livelihood_zone = CharFilter(
+        field_name="livelihood_zone_baseline__livelihood_zone__code",
+        lookup_expr="iexact",
+        label="Livelihood Zone",
     )
 
     class Meta:
@@ -1216,6 +1250,25 @@ class ButterProductionFilterSet(filters.FilterSet):
         widget=autocomplete.ModelSelect2(url="wealthgroup-autocomplete"),
         label="Wealth Group",
     )
+    country = MultiFieldFilter(
+        [
+            "livelihood_zone_baseline__livelihood_zone__country__iso3166a2",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_fr_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_fr_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_es_name",
+        ],
+        lookup_expr="iexact",
+        label="Country",
+    )
+    livelihood_zone = CharFilter(
+        field_name="livelihood_zone_baseline__livelihood_zone__code",
+        lookup_expr="iexact",
+        label="Livelihood Zone",
+    )
 
     class Meta:
         model = ButterProduction
@@ -1278,6 +1331,25 @@ class MeatProductionFilterSet(filters.FilterSet):
         ),
         widget=autocomplete.ModelSelect2(url="wealthgroup-autocomplete"),
         label="Wealth Group",
+    )
+    country = MultiFieldFilter(
+        [
+            "livelihood_zone_baseline__livelihood_zone__country__iso3166a2",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_fr_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_fr_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_es_name",
+        ],
+        lookup_expr="iexact",
+        label="Country",
+    )
+    livelihood_zone = CharFilter(
+        field_name="livelihood_zone_baseline__livelihood_zone__code",
+        lookup_expr="iexact",
+        label="Livelihood Zone",
     )
 
     class Meta:
@@ -1344,6 +1416,25 @@ class LivestockSaleFilterSet(filters.FilterSet):
         widget=autocomplete.ModelSelect2(url="wealthgroup-autocomplete"),
         label="Wealth Group",
     )
+    country = MultiFieldFilter(
+        [
+            "livelihood_zone_baseline__livelihood_zone__country__iso3166a2",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_fr_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_fr_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_es_name",
+        ],
+        lookup_expr="iexact",
+        label="Country",
+    )
+    livelihood_zone = CharFilter(
+        field_name="livelihood_zone_baseline__livelihood_zone__code",
+        lookup_expr="iexact",
+        label="Livelihood Zone",
+    )
 
     class Meta:
         model = LivestockSale
@@ -1407,6 +1498,25 @@ class CropProductionFilterSet(filters.FilterSet):
         widget=autocomplete.ModelSelect2(url="wealthgroup-autocomplete"),
         label="Wealth Group",
     )
+    country = MultiFieldFilter(
+        [
+            "livelihood_zone_baseline__livelihood_zone__country__iso3166a2",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_fr_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_fr_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_es_name",
+        ],
+        lookup_expr="iexact",
+        label="Country",
+    )
+    livelihood_zone = CharFilter(
+        field_name="livelihood_zone_baseline__livelihood_zone__code",
+        lookup_expr="iexact",
+        label="Livelihood Zone",
+    )
 
     class Meta:
         model = CropProduction
@@ -1469,6 +1579,25 @@ class FoodPurchaseFilterSet(filters.FilterSet):
         ),
         widget=autocomplete.ModelSelect2(url="wealthgroup-autocomplete"),
         label="Wealth Group",
+    )
+    country = MultiFieldFilter(
+        [
+            "livelihood_zone_baseline__livelihood_zone__country__iso3166a2",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_fr_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_fr_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_es_name",
+        ],
+        lookup_expr="iexact",
+        label="Country",
+    )
+    livelihood_zone = CharFilter(
+        field_name="livelihood_zone_baseline__livelihood_zone__code",
+        lookup_expr="iexact",
+        label="Livelihood Zone",
     )
 
     class Meta:
@@ -1535,6 +1664,25 @@ class PaymentInKindFilterSet(filters.FilterSet):
         ),
         widget=autocomplete.ModelSelect2(url="wealthgroup-autocomplete"),
         label="Wealth Group",
+    )
+    country = MultiFieldFilter(
+        [
+            "livelihood_zone_baseline__livelihood_zone__country__iso3166a2",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_fr_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_fr_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_es_name",
+        ],
+        lookup_expr="iexact",
+        label="Country",
+    )
+    livelihood_zone = CharFilter(
+        field_name="livelihood_zone_baseline__livelihood_zone__code",
+        lookup_expr="iexact",
+        label="Livelihood Zone",
     )
 
     class Meta:
@@ -1603,6 +1751,25 @@ class ReliefGiftOtherFilterSet(filters.FilterSet):
         widget=autocomplete.ModelSelect2(url="wealthgroup-autocomplete"),
         label="Wealth Group",
     )
+    country = MultiFieldFilter(
+        [
+            "livelihood_zone_baseline__livelihood_zone__country__iso3166a2",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_fr_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_fr_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_es_name",
+        ],
+        lookup_expr="iexact",
+        label="Country",
+    )
+    livelihood_zone = CharFilter(
+        field_name="livelihood_zone_baseline__livelihood_zone__code",
+        lookup_expr="iexact",
+        label="Livelihood Zone",
+    )
 
     class Meta:
         model = ReliefGiftOther
@@ -1668,6 +1835,25 @@ class FishingFilterSet(filters.FilterSet):
         widget=autocomplete.ModelSelect2(url="wealthgroup-autocomplete"),
         label="Wealth Group",
     )
+    country = MultiFieldFilter(
+        [
+            "livelihood_zone_baseline__livelihood_zone__country__iso3166a2",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_fr_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_fr_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_es_name",
+        ],
+        lookup_expr="iexact",
+        label="Country",
+    )
+    livelihood_zone = CharFilter(
+        field_name="livelihood_zone_baseline__livelihood_zone__code",
+        lookup_expr="iexact",
+        label="Livelihood Zone",
+    )
 
     class Meta:
         model = Fishing
@@ -1709,6 +1895,25 @@ class HuntingFilterSet(filters.FilterSet):
         ),
         widget=autocomplete.ModelSelect2(url="wealthgroup-autocomplete"),
         label="Wealth Group",
+    )
+    country = MultiFieldFilter(
+        [
+            "livelihood_zone_baseline__livelihood_zone__country__iso3166a2",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_fr_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_fr_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_es_name",
+        ],
+        lookup_expr="iexact",
+        label="Country",
+    )
+    livelihood_zone = CharFilter(
+        field_name="livelihood_zone_baseline__livelihood_zone__code",
+        lookup_expr="iexact",
+        label="Livelihood Zone",
     )
 
     class Meta:
@@ -1794,6 +1999,25 @@ class WildFoodGatheringFilterSet(filters.FilterSet):
         widget=autocomplete.ModelSelect2(url="wealthgroup-autocomplete"),
         label="Wealth Group",
     )
+    country = MultiFieldFilter(
+        [
+            "livelihood_zone_baseline__livelihood_zone__country__iso3166a2",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_fr_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_fr_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_es_name",
+        ],
+        lookup_expr="iexact",
+        label="Country",
+    )
+    livelihood_zone = CharFilter(
+        field_name="livelihood_zone_baseline__livelihood_zone__code",
+        lookup_expr="iexact",
+        label="Livelihood Zone",
+    )
 
     class Meta:
         model = WildFoodGathering
@@ -1856,6 +2080,26 @@ class OtherCashIncomeFilterSet(filters.FilterSet):
         ),
         widget=autocomplete.ModelSelect2(url="wealthgroup-autocomplete"),
         label="Wealth Group",
+    )
+
+    country = MultiFieldFilter(
+        [
+            "livelihood_zone_baseline__livelihood_zone__country__iso3166a2",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_fr_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_fr_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_es_name",
+        ],
+        lookup_expr="iexact",
+        label="Country",
+    )
+    livelihood_zone = CharFilter(
+        field_name="livelihood_zone_baseline__livelihood_zone__code",
+        lookup_expr="iexact",
+        label="Livelihood Zone",
     )
 
     class Meta:
@@ -1924,6 +2168,26 @@ class OtherPurchaseFilterSet(filters.FilterSet):
         ),
         widget=autocomplete.ModelSelect2(url="wealthgroup-autocomplete"),
         label="Wealth Group",
+    )
+
+    country = MultiFieldFilter(
+        [
+            "livelihood_zone_baseline__livelihood_zone__country__iso3166a2",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_en_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_fr_name",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_fr_proper",
+            "livelihood_zone_baseline__livelihood_zone__country__iso_es_name",
+        ],
+        lookup_expr="iexact",
+        label="Country",
+    )
+    livelihood_zone = CharFilter(
+        field_name="livelihood_zone_baseline__livelihood_zone__code",
+        lookup_expr="iexact",
+        label="Livelihood Zone",
     )
 
     class Meta:
