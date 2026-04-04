@@ -86,6 +86,7 @@ class WealthGroupSummaryValueListFilter(SummaryValueListFilter):
     """
     Summary/community filter for models that reach community via wealth_group FK.
     """
+
     community_field = "wealth_group__community"
 
 
