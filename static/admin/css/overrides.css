@@ -50,9 +50,7 @@ ul > li {
    SIDEBAR
 */ 
 .sidebar-nav {
-    min-width: 250px;
-    max-width: 290px;
-    width: 20vw;
+    width: 100%;
     background: #f5fbf8;          /* very light green tint */
     border-right: 1px solid #c6e8da;
     height: 100%;
