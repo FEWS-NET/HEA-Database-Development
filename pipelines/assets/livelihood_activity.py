@@ -943,6 +943,18 @@ def get_instances_from_dataframe(
                     # to the list, provided that it has at least one Livelihood Activity where there is some income,
                     # expediture or consumption. This excludes empty activities that only contain attributes for,
                     # for example, 'type_of_milk_sold_or_other_uses'.
+                    # For MeatProduction, if animals_slaughtered is null/0 or carcass_weight is null/0, then a
+                    # percentage_kcals of 0 is not meaningful (it results from the BSS formula evaluating to 0
+                    # because there are no animals or no carcass weight). Set it to None so that the activity is
+                    # treated as empty and not saved to the database.
+                    if livelihood_strategy and livelihood_strategy["strategy_type"] == "MeatProduction":
+                        for livelihood_activity in livelihood_activities_for_strategy:
+                            if (
+                                not livelihood_activity.get("animals_slaughtered")
+                                or not livelihood_activity.get("carcass_weight")
+                            ) and livelihood_activity.get("percentage_kcals") == 0:
+                                livelihood_activity["percentage_kcals"] = None
+
                     # Also ignore any livelihood activities that don't have a Wealth Category component to the Wealth Group
                     # natural key. These are from blank columns between Wealth Category groups in the BSS, which sometimes
                     # contain data where values or formulae have been copied across all the columns in a row.
