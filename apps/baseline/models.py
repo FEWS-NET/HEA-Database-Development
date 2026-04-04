@@ -3,6 +3,7 @@ Models for managing HEA Baseline Surveys
 """
 
 import datetime
+import math
 import numbers
 
 from django.conf import settings
@@ -1356,7 +1357,7 @@ class LivelihoodActivity(common_models.Model):
         )
 
         # Check if the actual quantity_consumed matches the expected quantity_consumed
-        if self.quantity_consumed and round(self.quantity_consumed, 6) != round(expected_quantity_consumed, 6):
+        if self.quantity_consumed and not math.isclose(self.quantity_consumed, expected_quantity_consumed):
             if quantity_butter_production:
                 message = "Quantity consumed for Milk Production must be quantity produced + quantity purchased - quantity sold - quantity used for butter production - quantity used for other things"  # NOQA: E501
             else:
@@ -1365,7 +1366,7 @@ class LivelihoodActivity(common_models.Model):
 
     def validate_income(self):
         if self.income and self.quantity_sold is not None and self.price is not None:
-            if self.income != self.quantity_sold * self.price:
+            if not math.isclose(self.income, self.quantity_sold * self.price):
                 raise ValidationError(_("Income for a Livelihood Activity must be quantity sold multiplied by price"))
 
     def validate_expenditure(self):
@@ -1384,7 +1385,7 @@ class LivelihoodActivity(common_models.Model):
         price = self.price or 0
         expenditure = self.expenditure or 0
 
-        if self.expenditure and expenditure != quantity_produced * price:
+        if self.expenditure and not math.isclose(expenditure, quantity_produced * price):
             raise ValidationError(
                 _("Expenditure for a Livelihood Activity must be quantity produced multiplied by price")
             )
@@ -1407,9 +1408,9 @@ class LivelihoodActivity(common_models.Model):
                         "product": self.livelihood_strategy.product,
                     }
                 )
-            if (
-                self.kcals_consumed
-                != self.quantity_consumed * conversion_factor * self.livelihood_strategy.product.kcals_per_unit
+            if not math.isclose(
+                self.kcals_consumed,
+                self.quantity_consumed * conversion_factor * self.livelihood_strategy.product.kcals_per_unit,
             ):
                 raise ValidationError(
                     _(
@@ -1635,7 +1636,7 @@ class MilkProduction(LivelihoodActivity):
     # https://unstats.un.org/unsd/classifications/Econ/Detail/EN/1074/22110. That LivelihoodActivity would have a
     # `quantity_produced` equal to the amount of whole milk that was used for ButterProduction, and then the
     # quantity_sold and the quantity_consumed could be tracked separately.
-    quantity_butter_production = models.PositiveIntegerField(
+    quantity_butter_production = models.FloatField(
         blank=True, null=True, verbose_name=_("Quantity used for Butter Production")
     )  # NOQA: E501
     type_of_milk_consumed = models.CharField(
@@ -1734,7 +1735,7 @@ class MeatProduction(LivelihoodActivity):
 
     def validate_quantity_produced(self):
         if self.quantity_produced is not None and self.animals_slaughtered and self.carcass_weight is not None:
-            if self.quantity_produced != self.animals_slaughtered * self.carcass_weight:
+            if not math.isclose(self.quantity_produced, self.animals_slaughtered * self.carcass_weight):
                 raise ValidationError(
                     _(
                         "Quantity Produced for a Meat Production must be animals slaughtered multiplied by carcass weight"
@@ -1787,7 +1788,7 @@ class FoodPurchase(LivelihoodActivity):
     # NIO93 Row B422 tia = 2.5kg
 
     # unit_multiple has names like wt_of_measure in the BSS.
-    unit_multiple = models.PositiveSmallIntegerField(
+    unit_multiple = models.FloatField(
         blank=True,
         null=True,
         verbose_name=_("Unit Multiple"),
@@ -1816,7 +1817,9 @@ class FoodPurchase(LivelihoodActivity):
             and self.times_per_month is not None
             and self.months_per_year is not None
         ):
-            if self.quantity_purchased != self.unit_multiple * self.times_per_month * self.months_per_year:
+            if not math.isclose(
+                self.quantity_purchased, self.unit_multiple * self.times_per_month * self.months_per_year
+            ):
                 raise ValidationError(
                     _(
                         "Quantity purchased for a Food Purchase must be purchase amount * purchases per month * months per year"  # NOQA: E501
@@ -1828,7 +1831,7 @@ class FoodPurchase(LivelihoodActivity):
         price = self.price or 0
         expenditure = self.expenditure or 0
 
-        if self.expenditure and expenditure != quantity_purchased * price:
+        if self.expenditure and not math.isclose(expenditure, quantity_purchased * price):
             raise ValidationError(_("Expenditure for a Food Purchase must be quantity purchased multiplied by price"))
 
     class Meta:
@@ -1910,9 +1913,9 @@ class PaymentInKind(LivelihoodActivity):
             and self.times_per_month is not None
             and self.months_per_year is not None
         ):
-            if (
-                self.quantity_produced
-                != self.payment_per_time * self.people_per_household * self.times_per_month * self.months_per_year
+            if not math.isclose(
+                self.quantity_produced,
+                self.payment_per_time * self.people_per_household * self.times_per_month * self.months_per_year,
             ):
                 raise ValidationError(
                     _(
@@ -1935,7 +1938,7 @@ class ReliefGiftOther(LivelihoodActivity):
 
     # Production calculation /validation is `unit_of_measure * unit_multiple * times_per_year`
     # Also used for the number of children receiving school meals.
-    unit_multiple = models.PositiveSmallIntegerField(
+    unit_multiple = models.FloatField(
         blank=True,
         null=True,
         verbose_name=_("Unit Multiple"),
@@ -1961,7 +1964,7 @@ class ReliefGiftOther(LivelihoodActivity):
 
     def validate_quantity_produced(self):
         if self.quantity_produced is not None and self.unit_multiple is not None and self.times_per_year is not None:
-            if self.quantity_produced != self.unit_multiple * self.times_per_year:
+            if not math.isclose(self.quantity_produced, self.unit_multiple * self.times_per_year):
                 raise ValidationError(
                     _("Quantity produced for Relief, Gifts, Other must be amount received * times per year")
                 )
@@ -2070,8 +2073,9 @@ class OtherCashIncome(LivelihoodActivity):
             and self.times_per_month is not None
             and self.months_per_year is not None
         ):
-            if round(self.income, 6) != round(
-                self.payment_per_time * self.people_per_household * self.times_per_month * self.months_per_year, 6
+            if not math.isclose(
+                self.income,
+                self.payment_per_time * self.people_per_household * self.times_per_month * self.months_per_year,
             ):
                 raise ValidationError(
                     _(
@@ -2079,7 +2083,7 @@ class OtherCashIncome(LivelihoodActivity):
                     )
                 )
         elif self.income is not None and self.payment_per_time is not None and self.times_per_year is not None:
-            if round(self.income, 6) != round(self.payment_per_time * self.times_per_year, 6):
+            if not math.isclose(self.income, self.payment_per_time * self.times_per_year):
                 raise ValidationError(_("Income for 'Other Cash Income' must be payment per time * times per year"))
 
     def calculate_fields(self):
@@ -2103,7 +2107,7 @@ class OtherPurchase(LivelihoodActivity):
     # individual fields must be nullable
     # Do we need this, or can we use combined units of measure like FDW, e.g. 5kg
     # NIO93 Row B422 tia = 2.5kg
-    unit_multiple = models.PositiveSmallIntegerField(
+    unit_multiple = models.FloatField(
         blank=True,
         null=True,
         verbose_name=_("Unit Multiple"),
@@ -2129,7 +2133,7 @@ class OtherPurchase(LivelihoodActivity):
         errors = []
         if self.times_per_month is not None and self.months_per_year is not None:
             expected_times_per_year = self.times_per_month * self.months_per_year
-            if self.times_per_year is not None and self.times_per_year != expected_times_per_year:
+            if self.times_per_year is not None and not math.isclose(self.times_per_year, expected_times_per_year):
                 errors.append(
                     _(
                         "Times per year must be times per month * months per year. Expected: %(expected)s, Found: %(found)s"
@@ -2141,7 +2145,7 @@ class OtherPurchase(LivelihoodActivity):
                 )
         if self.price is not None and self.unit_multiple is not None and self.times_per_year is not None:
             expected_expenditure = self.price * self.unit_multiple * self.times_per_year
-            if self.expenditure is not None and self.expenditure != expected_expenditure:
+            if self.expenditure is not None and not math.isclose(self.expenditure, expected_expenditure):
                 errors.append(
                     _(
                         "Expenditure for Other Purchases must be price * unit multiple * purchases per year. Expected: %(expected)s, Found: %(found)s"
