@@ -883,13 +883,6 @@ class LivelihoodStrategyViewSet(BaseModelViewSet):
 LIVELIHOOD_ACTIVITY_ORDER_BY = [
     "livelihood_zone_baseline__livelihood_zone__code",
     "livelihood_zone_baseline__reference_year_end_date",
-    "wealth_group__wealth_group_category__code",
-    "strategy_type",
-    "livelihood_strategy__season__name_en",
-    "livelihood_strategy__product_id",
-    "livelihood_strategy__additional_identifier",
-    "wealth_group__community__full_name",
-    "scenario",
 ]
 
 
