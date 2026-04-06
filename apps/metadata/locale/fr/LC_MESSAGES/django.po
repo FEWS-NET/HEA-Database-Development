@@ -46,15 +46,11 @@ msgstr "Catégorie de moyens de subsistance"
 msgid "Livelihood Categories"
 msgstr "Catégories de moyens de subsistance"
 
-#, fuzzy
-#| msgid "Wealth Characteristic"
 msgid "Characteristic Group"
-msgstr "Caractéristique de la richesse"
+msgstr "Groupe de caractéristiques"
 
-#, fuzzy
-#| msgid "Wealth Characteristics"
 msgid "Characteristic Groups"
-msgstr "Caractéristiques de la richesse"
+msgstr "Groupes de caractéristiques"
 
 msgid "Numeric"
 msgstr "Numérique"
@@ -133,10 +129,10 @@ msgid "Fishing"
 msgstr "Pêche"
 
 msgid "Wild Food Gathering"
-msgstr "Rassemblement des aliments sauvages"
+msgstr "Cueillette des aliments sauvages"
 
 msgid "Other Cash Income"
-msgstr "Autres revenus en espèces"
+msgstr "Autre revenu en espèces"
 
 msgid "Other Purchase"
 msgstr "Autre achat"
@@ -311,30 +307,20 @@ msgstr ""
 msgid "Ignore this label and associated data in the row"
 msgstr ""
 
-#, fuzzy
-#| msgid "Livelihood Category"
 msgid "Livelihood Activity"
-msgstr "Catégorie de moyens de subsistance"
+msgstr "Activité de subsistance"
 
-#, fuzzy
-#| msgid "Wild Food Gathering"
 msgid "Wild Foods, Fishing or Hunting"
-msgstr "Rassemblement des aliments sauvages"
+msgstr "Aliments sauvages, pêche ou chasse"
 
-#, fuzzy
-#| msgid "Livelihood Category"
 msgid "Livelihood Summary"
-msgstr "Catégorie de moyens de subsistance"
+msgstr "Résumé des moyens de subsistance"
 
-#, fuzzy
-#| msgid "Activity Category"
 msgid "Activity Label"
-msgstr "Catégorie d'activité"
+msgstr "Étiquette d'activité"
 
-#, fuzzy
-#| msgid "Seasonal Activity Type"
 msgid "Activity Type"
-msgstr "Type d'activité saisonnière"
+msgstr "Type d'activité"
 
 msgid ""
 "The type of Livelihood Activity the label is for: either a general "
@@ -346,45 +332,33 @@ msgstr ""
 msgid "Status"
 msgstr ""
 
-#, fuzzy
-#| msgid "Start"
 msgid "Is Start?"
-msgstr "Commencer"
+msgstr "Marque le début ?"
 
 msgid ""
 "Indicates whether this Activity Label marks the start of a new Livelihood "
 "Strategy"
 msgstr ""
 
-#, fuzzy
-#| msgid "Milk Production"
 msgid "Livestock Production"
-msgstr "Production du lait"
+msgstr "Production animale"
 
-#, fuzzy
-#| msgid "Variable Type"
 msgid "Strategy Type"
-msgstr "Type variable"
+msgstr "Type de stratégie"
 
 msgid ""
 "The type of livelihood strategy, such as crop production, or wild food "
 "gathering."
 msgstr ""
 
-#, fuzzy
-#| msgid "Has Product?"
 msgid "Product"
-msgstr "Le produit est-il disponible ?"
+msgstr "Produit"
 
-#, fuzzy
-#| msgid "Meat Production"
 msgid "Payment Product"
-msgstr "Production de viande"
+msgstr "Produit de paiement"
 
-#, fuzzy
-#| msgid "Has Unit Of Measure?"
 msgid "Unit of Measure"
-msgstr "A une unité de mesure ?"
+msgstr "Unité de mesure"
 
 msgid "Currency"
 msgstr ""
@@ -398,23 +372,17 @@ msgstr ""
 msgid "Notes"
 msgstr ""
 
-#, fuzzy
-#| msgid "Activity Category"
 msgid "Activity Labels"
-msgstr "Catégorie d'activité"
+msgstr "Étiquettes d'activité"
 
 msgid "Complete"
 msgstr ""
 
-#, fuzzy
-#| msgid "Wealth Characteristic"
 msgid "Wealth Characteristic Label"
-msgstr "Caractéristique de la richesse"
+msgstr "Étiquette de caractéristique de richesse"
 
-#, fuzzy
-#| msgid "Wealth Characteristics"
 msgid "Wealth Characteristics Labels"
-msgstr "Caractéristiques de la richesse"
+msgstr "Étiquettes des caractéristiques de richesse"
 
 msgid "Filter"
 msgstr ""

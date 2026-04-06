@@ -929,6 +929,16 @@ class LivelihoodZoneBaselineFacetedSearchViewTestCase(APITestCase):
         self.assertEqual(len(baselines), 1)
         self.assertEqual(baselines[0]["id"], self.baseline2.id)
 
+        # Test that searching "lait" with language=fr matches MilkProduction via French translation
+        response = self.client.get(self.url, {"search": "lait", "language": "fr"})
+        self.assertEqual(response.status_code, 200)
+        data = response.data
+        strategy_type_results = data["livelihood_strategy_types"]
+        milk_results = [r for r in strategy_type_results if r["value"] == "MilkProduction"]
+        self.assertEqual(len(milk_results), 1)
+        self.assertEqual(milk_results[0]["value_label"], "Production de lait")
+        self.assertEqual(milk_results[0]["count"], 1)
+
         # test taht strategy_type filter to baseline list endpoint
         baseline_url = reverse("livelihoodzonebaseline-list")
         response = self.client.get(baseline_url, {"strategy_type": "MilkProduction"})
