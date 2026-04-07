@@ -419,10 +419,9 @@ class WealthGroupViewSet(BaseModelViewSet):
     serializer_class = WealthGroupSerializer
     filterset_class = WealthGroupFilterSet
     ordering = [
-        "livelihood_zone_baseline__livelihood_zone__code",
-        "livelihood_zone_baseline__reference_year_end_date",
+        "livelihood_zone_baseline",
         "wealth_group_category__ordering",
-        "community__name",
+        "community",
     ]
 
 
@@ -874,6 +873,13 @@ class LivelihoodStrategyViewSet(BaseModelViewSet):
     )
     serializer_class = LivelihoodStrategySerializer
     filterset_class = LivelihoodStrategyFilterSet
+    ordering = [
+        "livelihood_zone_baseline",
+        "strategy_type",
+        "season",
+        "product",
+        "additional_identifier",
+    ]
     search_fields = [
         "additional_identifier",
         "strategy_type",
@@ -881,14 +887,9 @@ class LivelihoodStrategyViewSet(BaseModelViewSet):
 
 
 LIVELIHOOD_ACTIVITY_ORDER_BY = [
-    "livelihood_zone_baseline__livelihood_zone__code",
-    "livelihood_zone_baseline__reference_year_end_date",
-    "wealth_group__wealth_group_category__code",
+    "livelihood_zone_baseline",
+    "wealth_group",
     "strategy_type",
-    "livelihood_strategy__season__name_en",
-    "livelihood_strategy__product_id",
-    "livelihood_strategy__additional_identifier",
-    "wealth_group__community__full_name",
     "scenario",
 ]
 
