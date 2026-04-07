@@ -419,9 +419,9 @@ class WealthGroupViewSet(BaseModelViewSet):
     serializer_class = WealthGroupSerializer
     filterset_class = WealthGroupFilterSet
     ordering = [
-        "livelihood_zone_baseline__livelihood_zone_id",
-        "livelihood_zone_baseline__reference_year_end_date",
+        "livelihood_zone_baseline",
         "wealth_group_category__ordering",
+        "community",
     ]
 
 
@@ -884,8 +884,10 @@ class LivelihoodStrategyViewSet(BaseModelViewSet):
 
 
 LIVELIHOOD_ACTIVITY_ORDER_BY = [
-    "livelihood_zone_baseline__livelihood_zone_id",
-    "livelihood_zone_baseline__reference_year_end_date",
+    "livelihood_zone_baseline",
+    "wealth_group",
+    "strategy_type",
+    "scenario",
 ]
 
 
