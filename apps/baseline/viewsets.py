@@ -874,8 +874,11 @@ class LivelihoodStrategyViewSet(BaseModelViewSet):
     serializer_class = LivelihoodStrategySerializer
     filterset_class = LivelihoodStrategyFilterSet
     ordering = [
-        "livelihood_zone_baseline_id",
+        "livelihood_zone_baseline",
         "strategy_type",
+        "season",
+        "product",
+        "additional_identifier",
     ]
     search_fields = [
         "additional_identifier",
