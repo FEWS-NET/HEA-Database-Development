@@ -2795,15 +2795,50 @@ class LivelihoodZoneBaselineFacetedSearchView(APIView):
             for baseline in baselines_qs.select_related("livelihood_zone")
         ]
 
+    def _search_model(self, ModelClass, search_term):
+        """
+        Multi-word AND search against a model that uses SearchQueryMixin.
+        """
+        terms = search_term.split() if search_term else [search_term]
+        qs = ModelClass.objects.search(terms[0])
+        for term in terms[1:]:
+            qs = qs.search(term)
+        return qs
+
     def _search_products(self, search_term):
         # Search products using icontains for broader matching than the default iexact search.
-        q_object = Q()
-        for field in [*translation_fields("description"), *translation_fields("common_name")]:
-            q_object |= Q(**{f"{field}__icontains": search_term})
-        q_object |= Q(cpc__startswith=search_term)
-        q_object |= Q(aliases__contains=[search_term.lower()])
-        q_object |= Q(scientific_name__icontains=search_term)
-        return ClassifiedProduct.objects.filter(q_object).distinct()
+        terms = search_term.split() if search_term else [search_term]
+        qs = ClassifiedProduct.objects.all()
+        for term in terms:
+            q_object = Q()
+            for field in [*translation_fields("description"), *translation_fields("common_name")]:
+                q_object |= Q(**{f"{field}__icontains": term})
+            q_object |= Q(cpc__startswith=term)
+            q_object |= Q(aliases__contains=[term.lower()])
+            q_object |= Q(scientific_name__icontains=term)
+            qs = qs.filter(q_object)
+        return qs.distinct()
+
+    def _search_zones(self, search_term):
+        # Multi-word AND search for LivelihoodZone, extended to include country name so that
+        # a term like "mali ml01" finds zones where "mali" matches the country and "ml01"
+        terms = search_term.split() if search_term else [search_term]
+        qs = LivelihoodZone.objects.all()
+        for term in terms:
+            q_object = (
+                Q(code__iexact=term)
+                | Q(alternate_code__iexact=term)
+                | Q(country__iso3166a2__iexact=term)
+                | Q(country__iso3166a3__iexact=term)
+                | Q(country__iso_en_name__icontains=term)
+                | Q(country__iso_fr_name__icontains=term)
+            )
+            for field in translation_fields("name"):
+                q_object |= Q(**{f"{field}__icontains": term})
+            for field in translation_fields("description"):
+                q_object |= Q(**{f"{field}__icontains": term})
+            qs = qs.filter(q_object)
+        return qs.distinct()
 
     def get(self, request, format=None):
         """
@@ -2823,8 +2858,10 @@ class LivelihoodZoneBaselineFacetedSearchView(APIView):
                 ModelClass = apps.get_model(app_name, model_name)
                 if model_name == "ClassifiedProduct":
                     search_per_model = self._search_products(search_term)
+                elif model_name == "LivelihoodZone":
+                    search_per_model = self._search_zones(search_term)
                 else:
-                    search_per_model = ModelClass.objects.search(search_term)
+                    search_per_model = self._search_model(ModelClass, search_term)
                 results[filter_category] = []
                 # for activating language
                 with override(language):
