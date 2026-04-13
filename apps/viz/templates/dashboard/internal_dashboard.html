@@ -1,0 +1,54 @@
+{% extends "../viz/base.html" %}
+{% load i18n static plotly_dash %}
+{% load static %}
+
+{% block extrahead %}
+    {% block app_header_css %}
+    {% endblock app_header_css %}
+    {% plotly_header %}
+
+    {% block styles %}
+        <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+        {% include "snippets/css_deferred.html" with href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&family=Tinos:ital,wght@0,400;0,700;1,400;1,700&display=swap" only %}
+
+        {% static 'viz/css/dashboards/dash_base.css' as dash_base_css_href %}
+        {% include "snippets/css_deferred.html" with href=dash_base_css_href only %}
+    {% endblock %}
+   <style>
+            .loading-container {
+                position: fixed;
+                top: 10px;
+                left: 50%;
+                transform: translateX(-50%);
+                z-index: 9999;
+                background: rgba(255, 255, 255, 0.9);
+                padding: 10px 20px;
+                border-radius: 5px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }
+            .loading-container .dash-spinner {
+                width: 30px !important;
+                height: 30px !important;
+            }
+        </style>
+{% endblock extrahead %}
+
+{% block content %}
+
+    {% block content_main %}
+        <div class="card border-dark">
+            <div class="card-body">
+                <div class="{% plotly_class name=dash_app template_type="div-direct" %}">
+                    {% plotly_direct name=dash_app %}
+                </div>
+            </div>
+        </div>
+    {% endblock content_main %}
+
+    {% block foot_script %}
+        {% plotly_footer %}
+    {% endblock foot_script %}
+
+{% endblock content %}
