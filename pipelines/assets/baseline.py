@@ -145,14 +145,14 @@ def get_wealth_group_dataframe(
         )
         # Add the natural key for the wealth group
         wealth_group_df["natural_key"] = wealth_group_df.fillna("").apply(
-            lambda row: (
+            lambda row: [
                 livelihood_zone_baseline.livelihood_zone_id,
                 livelihood_zone_baseline.reference_year_end_date.isoformat(),
                 row["wealth_group_category"],
                 # Note that we need to use the actual name from the instance, not the one calculated from
                 # the BSS, which might have been matched using an alias.
                 row["community"][2] if row["community"] else "",
-            ),
+            ],
             axis="columns",
         )
         wealth_group_df = wealth_group_df.replace(pd.NA, None)
@@ -231,6 +231,8 @@ def baseline_instances(
                 "description_fr": metadata["description_fr"],
                 "description_pt": metadata["description_pt"],
                 "description_ar": metadata["description_ar"],
+                # Include the natural key to support lookups and foreign key validation
+                "natural_key": [metadata["code"]],  # natural key is always a list
             }
         ],
         "LivelihoodZoneBaseline": [
@@ -259,6 +261,8 @@ def baseline_instances(
                 "publication_date": metadata["publication_date"],
                 "bss": metadata["bss_path"],
                 "currency_id": metadata["currency_id"],
+                # Include the natural key to support lookups and foreign key validation
+                "natural_key": [metadata["code"], metadata["reference_year_end_date"]],
             }
         ],
     }
@@ -351,6 +355,11 @@ def community_instances(context: AssetExecutionContext, config: BSSMetadataConfi
     # Add the natural key for the livelihood zone baseline
     community_df["livelihood_zone_baseline"] = community_df["full_name"].apply(
         lambda full_name: partition_key.split("~")[1:]
+    )
+    # Add the natural key to support lookups and foreign key validation
+    community_df["natural_key"] = community_df[["livelihood_zone_baseline", "full_name"]].apply(
+        lambda row: [row["livelihood_zone_baseline"][0], row["full_name"]],
+        axis=1,
     )
 
     # Replace NaN with "" ready for Django
