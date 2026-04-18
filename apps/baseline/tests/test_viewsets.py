@@ -4900,6 +4900,8 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
     PRODUCT_DEFINITIONS = (
         ("R01122", "Maize (corn), other", "Maize/corn grain"),
         ("R01142", "Sorghum, other", "Sorghum grain"),
+        ("R01520", "Cassava", "Cassava"),
+        ("L02111", "Cattle", "Cattle"),
         ("S86119", "Other support services to crop production", "Other cropping inputs"),
         ("S86121", "Farm animal husbandry services on inputs owned by others", "Livestock care"),
         ("S88537", "Stone cutting, shaping and finishing services", "Stone cutting"),
@@ -4971,8 +4973,15 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
             LivelihoodActivityScenario.values if not wealth_group.community else [LivelihoodActivityScenario.BASELINE]
         )
         for scenario in scenarios:
-            if product.cpc in ["R01122", "R01142"]:
+            if product.cpc in ["R01122", "R01142", "R01520"]:
                 CropProductionFactory(
+                    livelihood_zone_baseline=wealth_group.livelihood_zone_baseline,
+                    wealth_group=wealth_group,
+                    livelihood_strategy__product=product,
+                    scenario=scenario,
+                )
+            elif product.cpc in ["L02111"]:
+                LivestockSaleFactory(
                     livelihood_zone_baseline=wealth_group.livelihood_zone_baseline,
                     wealth_group=wealth_group,
                     livelihood_strategy__product=product,
@@ -5116,6 +5125,31 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
             with self.subTest(row=row):
                 self.check_row_against_expected_slices(row, fields, expected, expected_slice)
 
+    def test_summary_supports_multiple_product_slices(self):
+        fields = ["livelihood_zone_baseline", "scenario"]
+        expected = self.activity_df.groupby(fields).agg(
+            kcals_consumed=("kcals_consumed", "sum"),
+            income=("income", "sum"),
+            expenditure=("expenditure", "sum"),
+            percentage_kcals=("percentage_kcals", "sum"),
+        )
+        expected_slice = (
+            self.activity_df[self.activity_df["product"].isin(["R01122", "R01520"])]
+            .groupby(fields)
+            .agg(
+                kcals_consumed=("kcals_consumed", "sum"),
+                income=("income", "sum"),
+                expenditure=("expenditure", "sum"),
+                percentage_kcals=("percentage_kcals", "sum"),
+            )
+        )
+        response = self.client.get(self.url, {"fields": ",".join(fields), "slice_by_product": ["R01122", "R01520"]})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), len(expected))
+        for row in response.json():
+            with self.subTest(row=row):
+                self.check_row_against_expected_slices(row, fields, expected, expected_slice)
+
     def test_summary_supports_strategy_type_slices(self):
         fields = ["livelihood_zone_baseline", "scenario"]
         expected = self.activity_df.groupby(fields).agg(
@@ -5135,6 +5169,33 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
             )
         )
         response = self.client.get(self.url, {"fields": ",".join(fields), "slice_by_strategy_type": "CropProduction"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), len(expected))
+        for row in response.json():
+            with self.subTest(row=row):
+                self.check_row_against_expected_slices(row, fields, expected, expected_slice)
+
+    def test_summary_supports_multiple_strategy_type_slices(self):
+        fields = ["livelihood_zone_baseline", "scenario"]
+        expected = self.activity_df.groupby(fields).agg(
+            kcals_consumed=("kcals_consumed", "sum"),
+            income=("income", "sum"),
+            expenditure=("expenditure", "sum"),
+            percentage_kcals=("percentage_kcals", "sum"),
+        )
+        expected_slice = (
+            self.activity_df[self.activity_df["strategy_type"].isin(["CropProduction", "OtherCashIncome"])]
+            .groupby(fields)
+            .agg(
+                kcals_consumed=("kcals_consumed", "sum"),
+                income=("income", "sum"),
+                expenditure=("expenditure", "sum"),
+                percentage_kcals=("percentage_kcals", "sum"),
+            )
+        )
+        response = self.client.get(
+            self.url, {"fields": ",".join(fields), "slice_by_strategy_type": ["CropProduction", "OtherCashIncome"]}
+        )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), len(expected))
         for row in response.json():
@@ -5187,6 +5248,41 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
         response = self.client.get(
             self.url,
             {"fields": ",".join(fields), "slice_by_product": "R01122", "slice_by_strategy_type": "CropProduction"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), len(expected))
+        for row in response.json():
+            with self.subTest(row=row):
+                self.check_row_against_expected_slices(row, fields, expected, expected_slice)
+
+    def test_summary_supports_multiple_combined_product_and_strategy_type_slices(self):
+        fields = ["livelihood_zone_baseline", "scenario"]
+        expected = self.activity_df.groupby(fields).agg(
+            kcals_consumed=("kcals_consumed", "sum"),
+            income=("income", "sum"),
+            expenditure=("expenditure", "sum"),
+            percentage_kcals=("percentage_kcals", "sum"),
+        )
+        expected_slice = (
+            self.activity_df[
+                (self.activity_df["product"].isin(["R01122", "L02111"]))
+                & (self.activity_df["strategy_type"].isin(["CropProduction", "LivestockSale"]))
+            ]
+            .groupby(fields)
+            .agg(
+                kcals_consumed=("kcals_consumed", "sum"),
+                income=("income", "sum"),
+                expenditure=("expenditure", "sum"),
+                percentage_kcals=("percentage_kcals", "sum"),
+            )
+        )
+        response = self.client.get(
+            self.url,
+            {
+                "fields": ",".join(fields),
+                "slice_by_product": ["R01122", "L02111"],
+                "slice_by_strategy_type": ["CropProduction", "LivestockSale"],
+            },
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), len(expected))
