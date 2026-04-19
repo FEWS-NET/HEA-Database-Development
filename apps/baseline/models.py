@@ -1249,6 +1249,8 @@ class LivelihoodActivity(common_models.Model):
     # some analyses may choose to use alternate thresholds and would need to calcuate
     # this value separately. For example, for program development some organizations
     # use 1900 kcal per person per day.
+    # Stored as a decimal percentage, e.g. 0.25 for 25%. Note that there is no max value because
+    # a B/O household could hypothetically generate more than 100% of required kcals.
     percentage_kcals = models.FloatField(
         blank=True,
         null=True,
@@ -1681,9 +1683,9 @@ class LivelihoodProductCategory(common_models.Model):
         verbose_name=_("Baseline Livelihood Activity"),
     )
     basket = models.PositiveSmallIntegerField(choices=ProductBasket.choices, verbose_name=_("Product Basket"))
-    percentage_allocation_to_basket = models.PositiveIntegerField(
-        blank=True,
-        null=True,
+    # Stored as a decimal percentage, e.g. 0.25 for 25%.
+    percentage_allocation_to_basket = models.FloatField(
+        validators=[MinValueValidator(0)],
         verbose_name=_("Percentage allocation to basket"),
         help_text=_(
             "The percentage of expenditure or kcals from the Livelihood Activity that is allocated to this Basket. The remainder is implicitly part of the 'Other' basket"
@@ -2773,18 +2775,31 @@ class ExpandabilityFactor(models.Model):
     wealth_group = models.ForeignKey(WealthGroup, on_delete=models.RESTRICT, verbose_name=_("Wealth Group"))
 
     # @TODO after review of the representation of expandability in the LIAS, make these percentages if appropriate
-    percentage_produced = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Produced"))
-    percentage_sold = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Sold/Exchanged"))
-    percentage_other_uses = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Other Uses"))
+    # All percentages are stored as decimal percentages, e.g. 0.25 for 25%.
+    percentage_produced = models.FloatField(
+        blank=True, null=True, validators=[MinValueValidator(0)], verbose_name=_("Quantity Produced")
+    )
+    percentage_sold = models.FloatField(
+        blank=True, null=True, validators=[MinValueValidator(0)], verbose_name=_("Quantity Sold/Exchanged")
+    )
+    percentage_other_uses = models.FloatField(
+        blank=True, null=True, validators=[MinValueValidator(0)], verbose_name=_("Quantity Other Uses")
+    )
     # Can normally be calculated / validated as `quantity_received - quantity_sold - quantity_other_uses`
-    percentage_consumed = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Consumed"))
+    percentage_consumed = models.FloatField(
+        blank=True, null=True, validators=[MinValueValidator(0)], verbose_name=_("Quantity Consumed")
+    )
 
     # Can be calculated / validated as `quantity_sold * price` for livelihood strategies that involve the sale of
     # a proportion of the household's own production.
-    percentage_income = models.FloatField(blank=True, null=True, help_text=_("Income"))
+    percentage_income = models.FloatField(
+        blank=True, null=True, validators=[MinValueValidator(0)], verbose_name=_("Income")
+    )
     # Can be calculated / validated as `quantity_consumed * price` for livelihood strategies that involve the purchase
     # of external goods or services.
-    percentage_expenditure = models.FloatField(blank=True, null=True, help_text=_("Expenditure"))
+    percentage_expenditure = models.FloatField(
+        blank=True, null=True, validators=[MinValueValidator(0)], verbose_name=_("Expenditure")
+    )
 
     # Sheet G contains some texts that seems describing where data is coming from, mostly 'Summ' sheet
     remark = models.TextField(max_length=255, verbose_name=_("Remark"), null=True, blank=True)

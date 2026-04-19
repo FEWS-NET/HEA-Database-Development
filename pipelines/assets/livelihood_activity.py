@@ -907,7 +907,7 @@ def get_instances_from_dataframe(
         Finalize and save the current Livelihood Strategy if it has non-empty Livelihood Activities.
 
         I.e. provided that it has at least one Livelihood Activity where there is some income,
-        expediture or consumption. This excludes empty activities that only contain attributes for,
+        expenditure or consumption. This excludes empty activities that only contain attributes for,
         for example, 'type_of_milk_sold_or_other_uses'.
         """
         nonlocal livelihood_strategies

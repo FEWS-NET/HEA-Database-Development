@@ -148,7 +148,7 @@ def livelihood_product_category_instances(
     livelihood_activity_instances: dict,
 ) -> Output[dict]:
     """
-    LivelhoodProductCategory instances extracted from the BSS.
+    LivelihoodProductCategory instances extracted from the BSS.
     """
     if livelihood_product_category_dataframe.empty:
         return Output({}, metadata={"message": "No 'Exp factors' worksheet found in this BSS"})
@@ -239,7 +239,7 @@ def livelihood_product_category_instances(
             if label not in livelihood_strategy_map.values():
                 # There is no matching LivelihoodStrategy:
                 #   * There is no reconciled expenditure, and therefore no LivelihoodStrategy,
-                #     but the percentange_allocation_to_basket is set.
+                #     but the percentage_allocation_to_basket is set.
                 #   * Old BSS, without a Graphs worksheet, don't have a direct link between
                 #     the rows in the 'Exp factors' worksheet and the Livelihood Activities
                 #     in the Data worksheet (via the Summ worksheet), so it isn't possible
@@ -250,7 +250,7 @@ def livelihood_product_category_instances(
                 # Iterate over the Wealth Groups
                 for wealth_group_category in wealth_group_categories:
 
-                    # We only neet to create a Baseline Product Category if there is a percentage_allocation_to_basket
+                    # We only need to create a Baseline Product Category if there is a percentage_allocation_to_basket
                     if pd.notna(df.loc[i, wealth_group_category]):
 
                         try:
@@ -312,7 +312,7 @@ def livelihood_product_category_valid_instances(
     livelihood_activity_instances: dict,
 ) -> Output[dict]:
     """
-    Valid LivelhoodProductCategory instances from a BSS, ready to be loaded via a Django fixture.
+    Valid LivelihoodProductCategory instances from a BSS, ready to be loaded via a Django fixture.
     """
     partition_key = context.asset_partition_key_for_output()
     # Livelihood Product Categories depend on Baseline Livelihood Activities which depend on the Wealth Groups, making
