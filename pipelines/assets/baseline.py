@@ -358,7 +358,7 @@ def community_instances(context: AssetExecutionContext, config: BSSMetadataConfi
     )
     # Add the natural key to support lookups and foreign key validation
     community_df["natural_key"] = community_df[["livelihood_zone_baseline", "full_name"]].apply(
-        lambda row: [row["livelihood_zone_baseline"][0], row["full_name"]],
+        lambda row: row["livelihood_zone_baseline"] + [row["full_name"]],
         axis=1,
     )
 
