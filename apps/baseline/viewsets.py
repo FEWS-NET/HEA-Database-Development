@@ -1949,7 +1949,7 @@ class LivelihoodZoneBaselineFacetedSearchView(APIView):
                                     "livelihood_zone_baseline"
                                 )
                             ).distinct()
-                            value_label, value = search_result.description, search_result.pk
+                            value_label, value = search_result.common_name, search_result.pk
                         elif model_name == "LivelihoodCategory":
                             baselines_qs = LivelihoodZoneBaseline.objects.filter(
                                 main_livelihood_category=search_result
