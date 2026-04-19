@@ -340,7 +340,7 @@ def livelihood_product_category_valid_instances(
             for x in livelihood_activity_instances["LivelihoodActivity"]
             if x["natural_key"] in required_activities
         ]
-        instances = {
+        livelihood_product_category_instances = {
             "WealthGroup": [
                 x for x in wealth_characteristic_instances["WealthGroup"] if x["natural_key"] in required_wealth_groups
             ],
@@ -356,7 +356,7 @@ def livelihood_product_category_valid_instances(
             ],
             "LivelihoodProductCategory": livelihood_product_category_instances["LivelihoodProductCategory"],
         }
-    return validate_instances(context, config, instances, partition_key)
+    return validate_instances(context, config, livelihood_product_category_instances, partition_key)
 
 
 @asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
