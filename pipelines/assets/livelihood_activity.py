@@ -912,6 +912,7 @@ def get_instances_from_dataframe(
         """
         nonlocal livelihood_strategies
         nonlocal livelihood_activities
+        nonlocal column
         try:
             # For MeatProduction, if animals_slaughtered is null/0 or carcass_weight is null/0, then a
             # percentage_kcals of 0 is not meaningful (it results from the BSS formula evaluating to 0
@@ -1013,6 +1014,8 @@ def get_instances_from_dataframe(
                 ):
                     livelihood_strategy["attribute_rows"]["kcals_consumed"] = row
                     for i, livelihood_activity in enumerate(livelihood_activities_for_strategy):
+                        # Set the column for troubleshooting
+                        column = df.columns[i + 1]
                         # The household size will always be the 4th header row in the dataframe, even though the
                         # original row number (which is the index) will be different between the Data and Data3
                         # worksheets
@@ -1221,6 +1224,8 @@ def get_instances_from_dataframe(
                 ):
                     livelihood_strategy["attribute_rows"]["times_per_year"] = row
                     for i, livelihood_activity in enumerate(livelihood_activities_for_strategy):
+                        # Set the column for troubleshooting
+                        column = df.columns[i + 1]
                         kcals_per_unit = classifiedproductlookup.get_instance(
                             livelihood_strategy["product_id"]
                         ).kcals_per_unit
@@ -1243,6 +1248,8 @@ def get_instances_from_dataframe(
                 ):
                     livelihood_strategy["attribute_rows"]["quantity_purchased"] = row
                     for i, livelihood_activity in enumerate(livelihood_activities_for_strategy):
+                        # Set the column for troubleshooting
+                        column = df.columns[i + 1]
                         livelihood_activity["quantity_purchased"] = (
                             livelihood_activity["unit_multiple"] * livelihood_activity["times_per_year"]
                             if livelihood_activity.get("times_per_year") and livelihood_activity.get("unit_multiple")
