@@ -219,6 +219,11 @@ def livelihood_product_category_instances(
     # This section of Summ, headed OTHER FOOD PURCHASE copies the LivelihoodActivity values from Data for the rows to
     # be summarized.  We need to expand `Other purchase_2-5` to reference the actual LivelihoodStrategy labels.
     if "Other purchase_2-5" in df["label"].tolist():
+        if other_food_purchase_summ_dataframe.empty:
+            raise ValueError(
+                "'Exp factors' worksheet contains label 'Other purchase_2-5' "
+                "but no 'OTHER FOOD PURCHASE:' section found in the 'Summ' worksheet"
+            )
         other_purchase_basket_df = df[df["label"] == "Other purchase_2-5"].drop(columns=["label"])
         other_purchase_activity_df = other_food_purchase_summ_dataframe[
             other_food_purchase_summ_dataframe["A"].isin(livelihood_strategy_map.values())
