@@ -1143,8 +1143,8 @@ def get_instances_from_dataframe(
                         == milk_strategy["livelihood_zone_baseline"]
                         + [
                             milk_strategy["strategy_type"],
-                            milk_strategy["season"][0],
                             milk_strategy["product_id"],
+                            milk_strategy["season"][0],
                             milk_strategy["additional_identifier"],
                         ]
                     }

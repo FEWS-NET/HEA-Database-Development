@@ -384,7 +384,7 @@ def get_bss_dataframe(
             # There isn't a text label in the cell, or the label isn't LANGS
             pass
     if not lang:
-        raise ValueError(f"No language could be identified from the labels {df.loc[2:3, "A"].tolist()} in Column A")
+        raise ValueError(f'No language could be identified from the labels {df.loc[2:3, "A"].tolist()} in Column A')
 
     # Filter to just the header rows (typically the Wealth Groups) and the main data (e.g. Livelihood Activities)
     df = pd.concat(

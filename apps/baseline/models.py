@@ -1485,7 +1485,7 @@ class LivelihoodActivity(common_models.Model):
         identifier = ["livelihood_strategy", "wealth_group", "scenario"]
 
 
-class BaselineLivelihoodActivityManager(InheritanceManager):
+class BaselineLivelihoodActivityManager(InheritanceManager, LivelihoodActivityManager):
     def get_queryset(self):
         return (
             super()
@@ -1519,7 +1519,7 @@ class BaselineLivelihoodActivity(LivelihoodActivity):
         proxy = True
 
 
-class ResponseLivelihoodActivityManager(InheritanceManager):
+class ResponseLivelihoodActivityManager(InheritanceManager, LivelihoodActivityManager):
     def get_queryset(self):
         return (
             super()
@@ -1557,18 +1557,79 @@ class ResponseLivelihoodActivity(LivelihoodActivity):
         proxy = True
 
 
+class LivelihoodProductCategoryManager(common_models.IdentifierManager):
+    def get_by_natural_key(
+        self,
+        code: str,
+        reference_year_end_date: str,
+        wealth_group_category: str,
+        strategy_type: str,
+        basket: int,
+        product: str,
+        season: str = "",
+        additional_identifier: str = "",
+    ):
+        criteria = {
+            "baseline_livelihood_activity__livelihood_zone_baseline__livelihood_zone__code": code,
+            "baseline_livelihood_activity__livelihood_zone_baseline__reference_year_end_date": reference_year_end_date,
+            "baseline_livelihood_activity__wealth_group__wealth_group_category__code": wealth_group_category,
+            # We need the Baseline Livelihood Activity
+            "baseline_livelihood_activity__wealth_group__community__isnull": True,
+            "baseline_livelihood_activity__strategy_type": strategy_type,
+            "basket": basket,
+            "baseline_livelihood_activity__livelihood_strategy__product__cpc": product,
+            "baseline_livelihood_activity__livelihood_strategy__additional_identifier": additional_identifier,
+        }
+        if season:
+            criteria["baseline_livelihood_activity__livelihood_strategy__season__name_en"] = season
+            criteria["baseline_livelihood_activity__livelihood_strategy__season__country"] = F(
+                "baseline_livelihood_activity__livelihood_zone_baseline__livelihood_zone__country"
+            )
+        else:
+            criteria["baseline_livelihood_activity__livelihood_strategy__season__isnull"] = True
+        return self.get(**criteria)
+
+
 # @TODO Decide whether to change the name of this model when we review the
 # LIAS and finalize models for expandability and coping. Ideally we want to be
 # able to identify Livelihood Activities that are produce staple foods, and/or
 # are part of the different baskets.
 class LivelihoodProductCategory(common_models.Model):
     """
-    The usage category of the Product in the Livelihood Zone, such as staple food or livelihood protection.
+    The usage of the Product in the Livelihood Zone, such as staple food or livelihood protection.
+
+    Product usage is assigned to Baskets:
+        * Main Staple Crop
+        * Other Staple Crops and essential food purchases (e.g. Cooking Oil, Flour, Salt)
+        * Essential non-food purchases (Soap, Cooking Fuel, Lighting, Tea)
+        * Livelihoods Protection purchases (Seeds, Fertilizer, Animal Drugs)
+
+    The total usage of the Product may be split across multiple "baskets".
+    For example, OtherPurchase of Kerosene may be allocated as 75% in the
+    Essential Non-Food Purchase basket (which is part of the Survival Threshold).
+
+    This allocation can vary by Baseline Wealth Group. For example, cooking
+    needs may require 75%  of the total for VP Households, but only 50% for
+    M and B/O Households.
+
+    We only store a Livelihood Product Category for one Basket for each Product.
+    If there is a remainder then it is implicitly part of an Other Basket of
+    discretionary spending.
+
+    In practice this is linked via the FoodPurchase and OtherPurchase
+    Baseline Livelihood Activities for the Product, rather than by referencing the
+    Product directly.
+
+    The Survival Threshold is calculated using the Main Staple, Other Survival
+    Food and Survival Non-Food Items for the Poor Wealth Group.
+
+    The Livelihood Protection Threshold is calculated per Wealth Group and adds
+    the Livelihoods Protection items to the Survival Basket.
     """
 
     class ProductBasket(models.IntegerChoices):
         MAIN_STAPLE = 1, _("Main Staple")
-        OTHER_STAPLE = 2, _("Other Staple")
+        SURVIVAL_OTHER_FOOD = 2, _("Other food survival")
         SURVIVAL_NON_FOOD = 3, _("Non-food survival")
         LIVELIHOODS_PROTECTION = 4, _("Livelihoods Protection")
 
@@ -1586,6 +1647,24 @@ class LivelihoodProductCategory(common_models.Model):
             "The percentage of expenditure or kcals from the Livelihood Activity that is allocated to this Basket. The remainder is implicitly part of the 'Other' basket"
         ),
     )
+
+    objects = LivelihoodProductCategoryManager()
+
+    def natural_key(self):
+        return (
+            self.baseline_livelihood_activity.livelihood_zone_baseline.livelihood_zone_id,
+            self.baseline_livelihood_activity.livelihood_zone_baseline.reference_year_end_date.isoformat(),
+            self.baseline_livelihood_activity.wealth_group.wealth_group_category.code,
+            self.baseline_livelihood_activity.strategy_type,
+            self.basket,
+            self.baseline_livelihood_activity.livelihood_strategy.product_id,
+            (
+                self.baseline_livelihood_activity.livelihood_strategy.season.name_en
+                if self.baseline_livelihood_activity.livelihood_strategy.season
+                else ""
+            ),
+            self.baseline_livelihood_activity.livelihood_strategy.additional_identifier,
+        )
 
     class Meta:
         verbose_name = _("Livelihood Product Category")

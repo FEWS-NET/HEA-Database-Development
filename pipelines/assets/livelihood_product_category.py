@@ -123,7 +123,7 @@ def other_food_purchase_summ_dataframe(config: BSSMetadataConfig, corrected_file
             start_strings=[
                 "OTHER FOOD PURCHASE:",
             ],
-            header_rows=0,
+            header_rows=[],
             end_col="Q",
             num_summary_cols=0,
             fill_blank_rows=False,
@@ -318,13 +318,40 @@ def livelihood_product_category_valid_instances(
     # Livelihood Product Categories depend on Baseline Livelihood Activities which depend on the Wealth Groups, making
     # sure that the WealthGroup is the first entry in the dict, so that the lookup keys have been created before
     # validate_instances processes the child model and needs them.
-    if livelihood_product_category_instances["LivelihoodProductCategory"]:
-        livelihood_product_category_instances = {
-            **{"WealthGroup": wealth_characteristic_instances["WealthGroup"]},
-            **livelihood_activity_instances,
-            **livelihood_product_category_instances,
+    if "LivelihoodProductCategory" in livelihood_product_category_instances:
+        # We only need the livelihood activity, strategy and wealth group
+        # instances that match the baseline livelihood activities
+        required_activities = [
+            x["baseline_livelihood_activity"]
+            for x in livelihood_product_category_instances["LivelihoodProductCategory"]
+        ]
+        required_strategies = [
+            x["livelihood_strategy"]
+            for x in livelihood_activity_instances["LivelihoodActivity"]
+            if x["natural_key"] in required_activities
+        ]
+        required_wealth_groups = [
+            x["wealth_group"]
+            for x in livelihood_activity_instances["LivelihoodActivity"]
+            if x["natural_key"] in required_activities
+        ]
+        instances = {
+            "WealthGroup": [
+                x for x in wealth_characteristic_instances["WealthGroup"] if x["natural_key"] in required_wealth_groups
+            ],
+            "LivelihoodStrategy": [
+                x
+                for x in livelihood_activity_instances["LivelihoodStrategy"]
+                if x["natural_key"] in required_strategies
+            ],
+            "LivelihoodActivity": [
+                x
+                for x in livelihood_activity_instances["LivelihoodActivity"]
+                if x["natural_key"] in required_activities
+            ],
+            "LivelihoodProductCategory": livelihood_product_category_instances["LivelihoodProductCategory"],
         }
-    return validate_instances(context, config, livelihood_product_category_instances, partition_key)
+    return validate_instances(context, config, instances, partition_key)
 
 
 @asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
