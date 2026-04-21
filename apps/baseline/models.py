@@ -604,9 +604,10 @@ class WealthGroup(common_models.Model):
         verbose_name=_("Wealth Group Category"),
         help_text=_("Wealth Group Category, e.g. Poor or Better Off"),
     )
-    percentage_of_households = models.PositiveSmallIntegerField(
+    percentage_of_households = models.FloatField(
         blank=True,
         null=True,
+        validators=[MinValueValidator(0)],
         verbose_name=_("Percentage of households"),
         help_text=_("Percentage of households in the Community or Livelihood Zone that are in this Wealth Group"),
     )

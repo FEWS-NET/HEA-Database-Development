@@ -12,6 +12,17 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.AlterField(
+            model_name="wealthgroup",
+            name="percentage_of_households",
+            field=models.FloatField(
+                blank=True,
+                help_text="Percentage of households in the Community or Livelihood Zone that are in this Wealth Group",
+                null=True,
+                validators=[django.core.validators.MinValueValidator(0)],
+                verbose_name="Percentage of households",
+            ),
+        ),
+        migrations.AlterField(
             model_name="expandabilityfactor",
             name="percentage_consumed",
             field=models.FloatField(
