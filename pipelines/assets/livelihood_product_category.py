@@ -218,7 +218,7 @@ def livelihood_product_category_instances(
     # LivelihoodActivities from the Data worksheet.  For example Summ!C531 has formula `=SUM(C1031,C1038,C1045,C1052,C1059)`
     # This section of Summ, headed OTHER FOOD PURCHASE copies the LivelihoodActivity values from Data for the rows to
     # be summarized.  We need to expand `Other purchase_2-5` to reference the actual LivelihoodStrategy labels.
-    for label in ["Other purchase_2-5", "autres éléments non essentiels"]:
+    for label in ["Other purchase_2-5"]:
         if label in df["label"].tolist():
             if other_food_purchase_summ_dataframe.empty:
                 raise ValueError(
@@ -271,6 +271,9 @@ def livelihood_product_category_instances(
                                     + [int(df.loc[i, "basket"])]
                                     + livelihood_activity[4:7]  # product, season, additional_identifier
                                 ),
+                                # Add additional fields to aid troubleshooting
+                                "label": label,
+                                "bss_row": int(df.loc[i, "row"]),
                             }
                             livelihood_product_categories.append(livelihood_product_category)
 
