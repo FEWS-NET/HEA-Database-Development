@@ -84,4 +84,52 @@ class Migration(migrations.Migration):
                 name="baseline_livelihoodzone_name_pt_lower_uniq",
             ),
         ),
+        migrations.RemoveConstraint(
+            model_name="livelihoodzonebaseline",
+            name="baseline_livelihoodzonebaseline_name_en_reference_year_end_date_uniq",
+        ),
+        migrations.AddConstraint(
+            model_name="livelihoodzonebaseline",
+            constraint=models.UniqueConstraint(
+                django.db.models.functions.text.Lower("name_en"),
+                models.F("reference_year_end_date"),
+                name="baseline_livelihoodzonebaseline_name_en_lower_uniq",
+            ),
+        ),
+        migrations.AddConstraint(
+            model_name="livelihoodzonebaseline",
+            constraint=models.UniqueConstraint(
+                django.db.models.functions.text.Lower("name_ar"),
+                models.F("reference_year_end_date"),
+                condition=models.Q(("name_ar", ""), _negated=True),
+                name="baseline_livelihoodzonebaseline_name_ar_lower_uniq",
+            ),
+        ),
+        migrations.AddConstraint(
+            model_name="livelihoodzonebaseline",
+            constraint=models.UniqueConstraint(
+                django.db.models.functions.text.Lower("name_es"),
+                models.F("reference_year_end_date"),
+                condition=models.Q(("name_es", ""), _negated=True),
+                name="baseline_livelihoodzonebaseline_name_es_lower_uniq",
+            ),
+        ),
+        migrations.AddConstraint(
+            model_name="livelihoodzonebaseline",
+            constraint=models.UniqueConstraint(
+                django.db.models.functions.text.Lower("name_fr"),
+                models.F("reference_year_end_date"),
+                condition=models.Q(("name_fr", ""), _negated=True),
+                name="baseline_livelihoodzonebaseline_name_fr_lower_uniq",
+            ),
+        ),
+        migrations.AddConstraint(
+            model_name="livelihoodzonebaseline",
+            constraint=models.UniqueConstraint(
+                django.db.models.functions.text.Lower("name_pt"),
+                models.F("reference_year_end_date"),
+                condition=models.Q(("name_pt", ""), _negated=True),
+                name="baseline_livelihoodzonebaseline_name_pt_lower_uniq",
+            ),
+        ),
     ]

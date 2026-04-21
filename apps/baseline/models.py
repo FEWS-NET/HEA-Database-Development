@@ -340,9 +340,35 @@ class LivelihoodZoneBaseline(common_models.Model):
                 fields=("livelihood_zone", "reference_year_end_date"),
                 name="baseline_livelihoodzonebaseline_livelihood_zone_reference_year_end_date_uniq",
             ),
+            # Create a case-insensitive unique constraint on the name
             models.UniqueConstraint(
-                fields=("name_en", "reference_year_end_date"),
-                name="baseline_livelihoodzonebaseline_name_en_reference_year_end_date_uniq",
+                Lower("name_en"),
+                "reference_year_end_date",
+                name="baseline_livelihoodzonebaseline_name_en_lower_uniq",
+            ),
+            models.UniqueConstraint(
+                Lower("name_ar"),
+                "reference_year_end_date",
+                name="baseline_livelihoodzonebaseline_name_ar_lower_uniq",
+                condition=~Q(name_ar=""),
+            ),
+            models.UniqueConstraint(
+                Lower("name_es"),
+                "reference_year_end_date",
+                name="baseline_livelihoodzonebaseline_name_es_lower_uniq",
+                condition=~Q(name_es=""),
+            ),
+            models.UniqueConstraint(
+                Lower("name_fr"),
+                "reference_year_end_date",
+                name="baseline_livelihoodzonebaseline_name_fr_lower_uniq",
+                condition=~Q(name_fr=""),
+            ),
+            models.UniqueConstraint(
+                Lower("name_pt"),
+                "reference_year_end_date",
+                name="baseline_livelihoodzonebaseline_name_pt_lower_uniq",
+                condition=~Q(name_pt=""),
             ),
         ]
 
