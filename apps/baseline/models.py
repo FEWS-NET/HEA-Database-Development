@@ -11,6 +11,7 @@ from django.contrib.gis.db import models
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db.models import F, Q
+from django.db.models.functions import Lower
 from django.utils.translation import gettext_lazy as _
 from model_utils.managers import InheritanceManager
 
@@ -120,7 +121,7 @@ class LivelihoodZone(common_models.Model):
             "Alternate identifier for the Livelihood Zone, typically a meaningful code based on the name of the Zone."
         ),  # NOQA: E501
     )
-    name = TranslatedField(common_models.NameField(max_length=200, unique=True))
+    name = TranslatedField(common_models.NameField(max_length=200))
     description = TranslatedField(common_models.DescriptionField())
     country = models.ForeignKey(Country, verbose_name=_("Country"), db_column="country_code", on_delete=models.PROTECT)
     objects = common_models.IdentifierManager.from_queryset(LivelihoodZoneQuerySet)()
@@ -128,6 +129,45 @@ class LivelihoodZone(common_models.Model):
     class Meta:
         verbose_name = _("Livelihood Zone")
         verbose_name_plural = _("Livelihood Zones")
+        constraints = [
+            # Create a case-insensitive unique constraint on the code
+            models.UniqueConstraint(
+                Lower("code"),
+                name="baseline_livelihoodzone_code_lower_uniq",
+            ),
+            # Create a case-insensitive unique constraint on the country and the alternate code
+            models.UniqueConstraint(
+                "country",
+                Lower("alternate_code"),
+                condition=Q(alternate_code__isnull=False) & ~Q(alternate_code=""),
+                name="baseline_livelihoodzone_country_alternate_code_lower_uniq",
+            ),
+            # Create a case-insensitive unique constraint on the name
+            models.UniqueConstraint(
+                Lower("name_en"),
+                name="baseline_livelihoodzone_name_en_lower_uniq",
+            ),
+            models.UniqueConstraint(
+                Lower("name_ar"),
+                name="baseline_livelihoodzone_name_ar_lower_uniq",
+                condition=~Q(name_ar=""),
+            ),
+            models.UniqueConstraint(
+                Lower("name_es"),
+                name="baseline_livelihoodzone_name_es_lower_uniq",
+                condition=~Q(name_es=""),
+            ),
+            models.UniqueConstraint(
+                Lower("name_fr"),
+                name="baseline_livelihoodzone_name_fr_lower_uniq",
+                condition=~Q(name_fr=""),
+            ),
+            models.UniqueConstraint(
+                Lower("name_pt"),
+                name="baseline_livelihoodzone_name_pt_lower_uniq",
+                condition=~Q(name_pt=""),
+            ),
+        ]
 
     class ExtraMeta:
         identifier = ["code"]
@@ -300,9 +340,35 @@ class LivelihoodZoneBaseline(common_models.Model):
                 fields=("livelihood_zone", "reference_year_end_date"),
                 name="baseline_livelihoodzonebaseline_livelihood_zone_reference_year_end_date_uniq",
             ),
+            # Create a case-insensitive unique constraint on the name
             models.UniqueConstraint(
-                fields=("name_en", "reference_year_end_date"),
-                name="baseline_livelihoodzonebaseline_name_en_reference_year_end_date_uniq",
+                Lower("name_en"),
+                "reference_year_end_date",
+                name="baseline_livelihoodzonebaseline_name_en_lower_uniq",
+            ),
+            models.UniqueConstraint(
+                Lower("name_ar"),
+                "reference_year_end_date",
+                name="baseline_livelihoodzonebaseline_name_ar_lower_uniq",
+                condition=~Q(name_ar=""),
+            ),
+            models.UniqueConstraint(
+                Lower("name_es"),
+                "reference_year_end_date",
+                name="baseline_livelihoodzonebaseline_name_es_lower_uniq",
+                condition=~Q(name_es=""),
+            ),
+            models.UniqueConstraint(
+                Lower("name_fr"),
+                "reference_year_end_date",
+                name="baseline_livelihoodzonebaseline_name_fr_lower_uniq",
+                condition=~Q(name_fr=""),
+            ),
+            models.UniqueConstraint(
+                Lower("name_pt"),
+                "reference_year_end_date",
+                name="baseline_livelihoodzonebaseline_name_pt_lower_uniq",
+                condition=~Q(name_pt=""),
             ),
         ]
 
@@ -458,9 +524,11 @@ class Community(common_models.Model):
         verbose_name = _("Community")
         verbose_name_plural = _("Communities")
         constraints = [
+            # Create a case-insensitive unique constraint on the baseline and the full name.
             models.UniqueConstraint(
-                fields=("livelihood_zone_baseline", "full_name"),
-                name="baseline_community_livelihood_zone_baseline_full_name_uniq",
+                "livelihood_zone_baseline",
+                Lower("full_name"),
+                name="baseline_community_livelihood_zone_baseline_full_name_lower_uniq",
             ),
             # Create a unique constraint on id and livelihood_zone_baseline, so that we can use it as a target for a
             # composite foreign key from Seasonal Activity, which in turn allows us to ensure that the Community
