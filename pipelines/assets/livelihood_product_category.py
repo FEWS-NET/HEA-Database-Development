@@ -218,20 +218,21 @@ def livelihood_product_category_instances(
     # LivelihoodActivities from the Data worksheet.  For example Summ!C531 has formula `=SUM(C1031,C1038,C1045,C1052,C1059)`
     # This section of Summ, headed OTHER FOOD PURCHASE copies the LivelihoodActivity values from Data for the rows to
     # be summarized.  We need to expand `Other purchase_2-5` to reference the actual LivelihoodStrategy labels.
-    if "Other purchase_2-5" in df["label"].tolist():
-        if other_food_purchase_summ_dataframe.empty:
-            raise ValueError(
-                "'Exp factors' worksheet contains label 'Other purchase_2-5' "
-                "but no 'OTHER FOOD PURCHASE:' section found in the 'Summ' worksheet"
+    for label in ["Other purchase_2-5", "autres éléments non essentiels"]:
+        if label in df["label"].tolist():
+            if other_food_purchase_summ_dataframe.empty:
+                raise ValueError(
+                    f"'Exp factors' worksheet contains label '{label}' "
+                    "but no 'OTHER FOOD PURCHASE:' section found in the 'Summ' worksheet"
+                )
+            other_purchase_basket_df = df[df["label"] == label].drop(columns=["label"])
+            other_purchase_activity_df = other_food_purchase_summ_dataframe[
+                other_food_purchase_summ_dataframe["A"].isin(livelihood_strategy_map.values())
+            ]["A"].rename("label")
+            df = pd.concat(
+                [df, other_purchase_basket_df.merge(other_purchase_activity_df, how="cross")], ignore_index=True
             )
-        other_purchase_basket_df = df[df["label"] == "Other purchase_2-5"].drop(columns=["label"])
-        other_purchase_activity_df = other_food_purchase_summ_dataframe[
-            other_food_purchase_summ_dataframe["A"].isin(livelihood_strategy_map.values())
-        ]["A"].rename("label")
-        df = pd.concat(
-            [df, other_purchase_basket_df.merge(other_purchase_activity_df, how="cross")], ignore_index=True
-        )
-        df = df[df["label"] != "Other purchase_2-5"]
+            df = df[df["label"] != label]
 
     livelihood_product_categories = []
     errors = []
