@@ -778,7 +778,7 @@ class WealthGroup(common_models.Model):
         )
         if not poor_survival_non_food:
             return None
-        # There should only be one Poor Wealth Group for the Baseline with Livelihood Product Categories definedd.
+        # There should only be one Poor Wealth Group for the Baseline with Livelihood Product Categories defined.
         elif len(poor_survival_non_food) > 1:
             raise ValueError(
                 f"Found multiple Poor Wealth Groups with Livelihood Product Categories for {self.livelihood_zone_baseline}"
@@ -854,7 +854,7 @@ class WealthGroup(common_models.Model):
             baseline_livelihood_activity__wealth_group__livelihood_zone_baseline=self.livelihood_zone_baseline,
             baseline_livelihood_activity__wealth_group__wealth_group_category__code__in=[
                 WealthGroupCategory.POOR,
-                self.wealth_group_category,
+                self.wealth_group_category_id,
             ],
         ).values(
             "baseline_livelihood_activity_id",

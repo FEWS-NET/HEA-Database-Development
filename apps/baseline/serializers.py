@@ -1,4 +1,5 @@
 from django.db.models import F, FloatField, Sum, Value
+from django.db.models.functions import Coalesce
 from rest_framework import serializers
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
 
@@ -1714,28 +1715,30 @@ class LivelihoodActivitySummarySerializer(AggregatingSerializer):
             output_field=FloatField(),
         ),
         "total_income_as_percentage_kcals": Sum(
-            (
-                F("percentage_kcals")
+            Coalesce(
+                Coalesce(F("percentage_kcals"), 0)
                 + (
-                    F("income")
+                    Coalesce(F("income"), 0)
                     / (
                         F("wealth_group__average_household_size")
                         * AnnualKcalsCost(
                             F("wealth_group__livelihood_zone_baseline_id"), Value(WealthGroupCategory.POOR)
                         )
                     )
-                )
+                ),
+                0,
             ),
             output_field=FloatField(),
         ),
         "total_income_as_cash": Sum(
-            (
+            Coalesce(
                 (
-                    F("percentage_kcals")
+                    Coalesce(F("percentage_kcals"), 0)
                     * F("wealth_group__average_household_size")
                     * AnnualKcalsCost(F("wealth_group__livelihood_zone_baseline_id"), Value(WealthGroupCategory.POOR))
                 )
-                + F("income")
+                + Coalesce(F("income"), 0),
+                0,
             ),
             output_field=FloatField(),
         ),
