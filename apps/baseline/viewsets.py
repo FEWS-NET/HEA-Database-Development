@@ -300,6 +300,73 @@ class LivelihoodZoneBaselineViewSet(BaseModelViewSet):
 
 
 class LivelihoodProductCategoryFilterSet(filters.FilterSet):
+
+    baseline_livelihood_activity = django_filters.ModelChoiceFilter(
+        queryset=BaselineLivelihoodActivity.objects.select_related(
+            "livelihood_strategy__livelihood_zone_baseline__livelihood_zone",
+            "livelihood_strategy__product",
+            "wealth_group__wealth_group_category",
+            "wealth_group__community",
+        ),
+        label="Livelihood Zone Baseline",
+    )
+    livelihood_strategy = django_filters.ModelChoiceFilter(
+        field_name="baseline_livelihood_activity__livelihood_strategy",
+        queryset=LivelihoodStrategy.objects.select_related(
+            "livelihood_zone_baseline__livelihood_zone",
+            "season",
+            "product",
+        ),
+        widget=autocomplete.ModelSelect2(url="livelihoodstrategy-autocomplete"),
+        label="Livelihood Strategy",
+    )
+    livelihood_zone_baseline = django_filters.ModelChoiceFilter(
+        field_name="baseline_livelihood_activity__livelihood_zone_baseline",
+        queryset=LivelihoodZoneBaseline.objects.select_related("livelihood_zone"),
+        widget=autocomplete.ModelSelect2(url="livelihoodzonebaseline-autocomplete"),
+        label="Livelihood Zone Baseline",
+    )
+    livelihood_zone = django_filters.ModelChoiceFilter(
+        field_name="baseline_livelihood_activity__livelihood_zone_baseline__livelihood_zone",
+        queryset=LivelihoodZone.objects.select_related("livelihood_zone"),
+        widget=autocomplete.ModelSelect2(url="livelihoodzone-autocomplete"),
+        label="Livelihood Zone",
+    )
+    wealth_group = django_filters.ModelChoiceFilter(
+        field_name="baseline_livelihood_activity__wealth_group",
+        queryset=WealthGroup.objects.select_related(
+            "community__livelihood_zone_baseline__livelihood_zone",
+            "livelihood_zone_baseline__livelihood_zone",
+            "wealth_group_category",
+        ),
+        widget=autocomplete.ModelSelect2(url="wealthgroup-autocomplete"),
+        label="Wealth Group",
+    )
+    wealth_group_category = django_filters.ModelChoiceFilter(
+        field_name="baseline_livelihood_activity__wealth_group__wealth_group_category",
+        queryset=WealthGroupCategory.objects.all(),
+        label="Wealth Group Category",
+    )
+    product = MultiFieldFilter(
+        [
+            *[
+                (field, "icontains")
+                for field in translation_fields(
+                    "baseline_livelihood_activity__livelihood_strategy__product__common_name"
+                )
+            ],
+            ("baseline_livelihood_activity__livelihood_strategy__product__cpc", "istartswith"),
+            *[
+                (field, "icontains")
+                for field in translation_fields(
+                    "baseline_livelihood_activity__livelihood_strategy__product__description"
+                )
+            ],
+            ("baseline_livelihood_activity__livelihood_strategy__product__aliases", "icontains"),
+        ],
+        label="Product",
+    )
+
     class Meta:
         model = LivelihoodProductCategory
         fields = [
@@ -320,6 +387,8 @@ class LivelihoodProductCategoryViewSet(BaseModelViewSet):
     )
     serializer_class = LivelihoodProductCategorySerializer
     filterset_class = LivelihoodProductCategoryFilterSet
+    ordering_fields = ["baseline_livelihood_activity"]
+    ordering = ["baseline_livelihood_activity", "basket"]
 
 
 class CommunityFilterSet(filters.FilterSet):
@@ -375,6 +444,12 @@ class WealthGroupFilterSet(filters.FilterSet):
         queryset=LivelihoodZoneBaseline.objects.select_related("livelihood_zone"),
         widget=autocomplete.ModelSelect2(url="livelihoodzonebaseline-autocomplete"),
         label="Livelihood Zone Baseline",
+    )
+    livelihood_zone = django_filters.ModelChoiceFilter(
+        field_name="livelihood_zone_baseline__livelihood_zone",
+        queryset=LivelihoodZone.objects.select_related("livelihood_zone"),
+        widget=autocomplete.ModelSelect2(url="livelihoodzone-autocomplete"),
+        label="Livelihood Zone",
     )
     community = django_filters.ModelChoiceFilter(
         queryset=Community.objects.select_related("livelihood_zone_baseline__livelihood_zone"),
@@ -822,6 +897,12 @@ class LivelihoodStrategyFilterSet(filters.FilterSet):
         widget=autocomplete.ModelSelect2(url="livelihoodzonebaseline-autocomplete"),
         label="Livelihood Zone Baseline",
     )
+    livelihood_zone = django_filters.ModelChoiceFilter(
+        field_name="livelihood_zone_baseline__livelihood_zone",
+        queryset=LivelihoodZone.objects.select_related("livelihood_zone"),
+        widget=autocomplete.ModelSelect2(url="livelihoodzone-autocomplete"),
+        label="Livelihood Zone",
+    )
 
     class Meta:
         model = LivelihoodStrategy
@@ -908,6 +989,12 @@ class LivelihoodActivityFilterSet(filters.FilterSet):
         queryset=LivelihoodZoneBaseline.objects.select_related("livelihood_zone"),
         widget=autocomplete.ModelSelect2(url="livelihoodzonebaseline-autocomplete"),
         label="Livelihood Zone Baseline",
+    )
+    livelihood_zone = django_filters.ModelChoiceFilter(
+        field_name="livelihood_zone_baseline__livelihood_zone",
+        queryset=LivelihoodZone.objects.select_related("livelihood_zone"),
+        widget=autocomplete.ModelSelect2(url="livelihoodzone-autocomplete"),
+        label="Livelihood Zone",
     )
     wealth_group = django_filters.ModelChoiceFilter(
         queryset=WealthGroup.objects.select_related(
