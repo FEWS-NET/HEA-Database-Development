@@ -313,7 +313,7 @@ class WealthGroupAdminTest(TestCase):
                 "livelihood_zone_baseline": LivelihoodZoneBaselineFactory(),
                 "community": community,
                 "wealth_group_category": WealthGroupCategoryFactory(),
-                "percentage_of_households": 30,
+                "percentage_of_households": 0.30,
                 "average_household_size": 7,
             }
         )

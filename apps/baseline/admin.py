@@ -1042,7 +1042,6 @@ class LivelihoodProductCategoryAdmin(admin.ModelAdmin):
         "baseline_livelihood_activity__livelihood_zone_baseline__livelihood_zone__alternate_code",
         "baseline_livelihood_activity__wealth_group__wealth_group_category__code",
         "baseline_livelihood_activity__livelihood_strategy__product__cpc",
-        "basket",
     )
     list_filter = (
         "baseline_livelihood_activity__wealth_group__wealth_group_category__code",

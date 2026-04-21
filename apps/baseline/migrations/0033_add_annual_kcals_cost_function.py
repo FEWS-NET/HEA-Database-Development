@@ -3,7 +3,10 @@ from pathlib import Path
 from django.db import migrations
 
 reverse_sql = """
-DROP FUNCTION IF EXISTS get_annual_kcals_cost;
+DROP FUNCTION IF EXISTS get_annual_kcals_cost (
+	p_baseline_id BIGINT,
+	p_wealth_group_category_code character varying(60)
+);
 """
 
 sql = Path(__file__).with_suffix(".sql").read_text()

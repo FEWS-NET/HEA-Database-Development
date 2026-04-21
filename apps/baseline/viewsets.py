@@ -308,7 +308,7 @@ class LivelihoodProductCategoryFilterSet(filters.FilterSet):
             "wealth_group__wealth_group_category",
             "wealth_group__community",
         ),
-        label="Baseline Livelihood Activty",
+        label="Baseline Livelihood Activity",
     )
     livelihood_strategy = django_filters.ModelChoiceFilter(
         field_name="baseline_livelihood_activity__livelihood_strategy",

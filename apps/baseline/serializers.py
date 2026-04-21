@@ -1715,7 +1715,7 @@ class LivelihoodActivitySummarySerializer(AggregatingSerializer):
             output_field=FloatField(),
         ),
         "total_income_as_percentage_kcals": Sum(
-            Coalesce(
+            (
                 Coalesce(F("percentage_kcals"), 0)
                 + (
                     Coalesce(F("income"), 0)
@@ -1726,19 +1726,17 @@ class LivelihoodActivitySummarySerializer(AggregatingSerializer):
                         )
                     )
                 ),
-                0,
             ),
             output_field=FloatField(),
         ),
         "total_income_as_cash": Sum(
-            Coalesce(
+            (
                 (
                     Coalesce(F("percentage_kcals"), 0)
                     * F("wealth_group__average_household_size")
                     * AnnualKcalsCost(F("wealth_group__livelihood_zone_baseline_id"), Value(WealthGroupCategory.POOR))
                 )
                 + Coalesce(F("income"), 0),
-                0,
             ),
             output_field=FloatField(),
         ),
