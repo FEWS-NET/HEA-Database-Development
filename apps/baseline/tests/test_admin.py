@@ -301,7 +301,7 @@ class WealthGroupAdminTest(TestCase):
         )
 
         self.assertEqual(
-            int(soup.find("input", {"id": "id_percentage_of_households"})["value"]),
+            float(soup.find("input", {"id": "id_percentage_of_households"})["value"]),
             self.wealth_group1.percentage_of_households,
         )
 
