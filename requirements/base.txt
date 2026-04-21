@@ -1,11 +1,11 @@
 # Do not pip freeze into this file. Add only the packages you need so pip can align dependencies.
 channels==4.3.1
-dagster==1.12.17
+dagster==1.13.1
 dagster_aws==0.28.17
-dagster-pipes==1.12.17
+dagster-pipes==1.13.1
 dagster-postgres==0.28.17
-dagster-webserver==1.12.17
-Django==5.2.12
+dagster-webserver==1.13.1
+Django==5.2.13
 django-binary-database-files==1.0.18
 django-cors-headers==4.9.0
 django-environ==0.11.2
