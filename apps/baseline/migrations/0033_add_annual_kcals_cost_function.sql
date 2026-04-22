@@ -31,7 +31,7 @@ BEGIN
         ON lpc.baseline_livelihood_activity_id = lay.id
       JOIN baseline_wealthgroup wgp
         ON lay.wealth_group_id = wgp.id
-     WHERE lpc.basket = 1
+     WHERE lpc.basket = 1  -- MAIN_STAPLE
        AND wgp.livelihood_zone_baseline_id = p_baseline_id
        AND wgp.wealth_group_category_code = p_wealth_group_category_code;
 
@@ -64,7 +64,7 @@ BEGIN
         ON lay.livelihood_strategy_id = lsy.id
       JOIN common_classifiedproduct cpt
         ON lsy.product_code = cpt.cpc
-     WHERE lpc.basket = 1
+     WHERE lpc.basket = 1  -- MAIN_STAPLE
        AND wgp.livelihood_zone_baseline_id = p_baseline_id
        AND wgp.wealth_group_category_code = p_wealth_group_category_code
      LIMIT 1;
@@ -81,16 +81,16 @@ BEGIN
         ON lpc.baseline_livelihood_activity_id = lay.id
       JOIN baseline_wealthgroup wgp
         ON lay.wealth_group_id = wgp.id
-     WHERE lpc.basket = 2
+     WHERE lpc.basket = 2  -- SURVIVAL_OTHER_FOOD
        AND wgp.livelihood_zone_baseline_id = p_baseline_id
        AND wgp.wealth_group_category_code = p_wealth_group_category_code;
 
     RETURN (
         (
-            2100::numeric
-            * 365
+            2100::numeric  -- kcals per person per day
+            * 365  -- days per year
             * v_household_size
-            * (1 - v_total_percentage_kcals)
+            * (1 - v_total_percentage_kcals)  -- percentage kcals required from main staple
             / v_kcals_per_unit
             * v_price
         )
