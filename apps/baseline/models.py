@@ -1704,7 +1704,18 @@ class LivelihoodProductCategory(common_models.Model):
         SURVIVAL_NON_FOOD = 3, _("Non-food survival")
         LIVELIHOODS_PROTECTION = 4, _("Livelihoods Protection")
 
-    baseline_livelihood_activity = models.ForeignKey(
+    # Logically, a Product can only be in a single Basket for a given Baseline -
+    # a product can't be both essential for survival and only required for
+    # Livelihoods Protection; similarly, it can't be both Food and Non-Food.
+    # A Product Category can be defined for each Baseline Wealth Group. I.e. the
+    # Product Category is the intersection of a Livelihood Strategy and a
+    # Wealth Group, which matches the definition of a Livelihood Activity.
+    # Therefore, we use a OneToOneField to ensure we don't create a duplicate
+    # Product Category for a given Strategy and Wealth Group. Note that although
+    # in practice the Product Category is uniquely identified by the
+    # `baseline_livelihood_activity`, logically the `basket` is a key part of the
+    # definition and so `basket` is still part of the natural key.
+    baseline_livelihood_activity = models.OneToOneField(
         BaselineLivelihoodActivity,
         on_delete=models.RESTRICT,
         verbose_name=_("Baseline Livelihood Activity"),
