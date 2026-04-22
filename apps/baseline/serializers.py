@@ -1725,7 +1725,7 @@ class LivelihoodActivitySummarySerializer(AggregatingSerializer):
                             F("wealth_group__livelihood_zone_baseline_id"), Value(WealthGroupCategory.POOR)
                         )
                     )
-                ),
+                )
             ),
             output_field=FloatField(),
         ),
@@ -1736,7 +1736,7 @@ class LivelihoodActivitySummarySerializer(AggregatingSerializer):
                     * F("wealth_group__average_household_size")
                     * AnnualKcalsCost(F("wealth_group__livelihood_zone_baseline_id"), Value(WealthGroupCategory.POOR))
                 )
-                + Coalesce(F("income"), 0),
+                + Coalesce(F("income"), 0)
             ),
             output_field=FloatField(),
         ),

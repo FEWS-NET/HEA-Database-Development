@@ -973,11 +973,16 @@ class LivelihoodProductCategoryViewSetTestCase(APITestCase):
             "livelihood_zone_name",
             "livelihood_zone_country",
             "livelihood_zone_country_name",
+            "wealth_group_category",
+            "strategy_type",
+            "basket",
+            "basket_name",
             "product",
             "product_common_name",
             "product_description",
-            "basket",
-            "basket_name",
+            "season",
+            "season_name",
+            "additional_identifier",
             "percentage_allocation_to_basket",
         )
         self.assertCountEqual(
@@ -1212,6 +1217,11 @@ class WealthGroupViewSetTestCase(APITestCase):
             "wealth_group_category_name",
             "percentage_of_households",
             "average_household_size",
+            "household_annual_kcals_cost",
+            "survival_threshold_as_percentage_kcals",
+            "survival_threshold_as_cash",
+            "livelihoods_protection_threshold_as_percentage_kcals",
+            "livelihoods_protection_threshold_as_cash",
         )
         self.assertCountEqual(
             response.json().keys(),
@@ -1317,6 +1327,11 @@ class BaselineWealthGroupViewSetTestCase(APITestCase):
             "wealth_group_category_name",
             "percentage_of_households",
             "average_household_size",
+            "household_annual_kcals_cost",
+            "survival_threshold_as_percentage_kcals",
+            "survival_threshold_as_cash",
+            "livelihoods_protection_threshold_as_percentage_kcals",
+            "livelihoods_protection_threshold_as_cash",
         )
         self.assertCountEqual(
             response.json().keys(),
@@ -1441,6 +1456,11 @@ class CommunityWealthGroupViewSetTestCase(APITestCase):
             "wealth_group_category_name",
             "percentage_of_households",
             "average_household_size",
+            "household_annual_kcals_cost",
+            "survival_threshold_as_percentage_kcals",
+            "survival_threshold_as_cash",
+            "livelihoods_protection_threshold_as_percentage_kcals",
+            "livelihoods_protection_threshold_as_cash",
         )
         self.assertCountEqual(
             response.json().keys(),
@@ -2154,6 +2174,8 @@ class LivelihoodActivityViewSetTestCase(APITestCase):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "total_income_as_percentage_kcals",
+            "total_income_as_cash",
             "household_labor_provider",
             "household_labor_provider_label",
             "extra",
@@ -2400,6 +2422,8 @@ class BaselineLivelihoodActivityViewSetTestCase(APITestCase):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "total_income_as_percentage_kcals",
+            "total_income_as_cash",
             "extra",
         )
         self.assertCountEqual(
@@ -2581,6 +2605,8 @@ class ResponseLivelihoodActivityViewSetTestCase(APITestCase):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "total_income_as_percentage_kcals",
+            "total_income_as_cash",
             "extra",
         )
         self.assertCountEqual(
@@ -2766,6 +2792,8 @@ class MilkProductionViewSetTestCase(APITestCase):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "total_income_as_percentage_kcals",
+            "total_income_as_cash",
             "milking_animals",
             "lactation_days",
             "daily_production",
@@ -2937,6 +2965,8 @@ class ButterProductionViewSetTestCase(APITestCase):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "total_income_as_percentage_kcals",
+            "total_income_as_cash",
             "extra",
         )
         self.assertCountEqual(
@@ -3101,6 +3131,8 @@ class MeatProductionViewSetTestCase(APITestCase):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "total_income_as_percentage_kcals",
+            "total_income_as_cash",
             "animals_slaughtered",
             "carcass_weight",
             "extra",
@@ -3268,6 +3300,8 @@ class LivestockSalesViewSetTestCase(APITestCase):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "total_income_as_percentage_kcals",
+            "total_income_as_cash",
             "extra",
         )
         self.assertCountEqual(
@@ -3428,6 +3462,8 @@ class CropProductionViewSetTestCase(APITestCase):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "total_income_as_percentage_kcals",
+            "total_income_as_cash",
             "extra",
         )
         self.assertCountEqual(
@@ -3592,6 +3628,8 @@ class FoodPurchaseViewSetTestCase(APITestCase):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "total_income_as_percentage_kcals",
+            "total_income_as_cash",
             "unit_multiple",
             "months_per_year",
             "times_per_month",
@@ -3762,6 +3800,8 @@ class PaymentInKindViewSetTestCase(APITestCase):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "total_income_as_percentage_kcals",
+            "total_income_as_cash",
             "payment_product",
             "payment_product_common_name",
             "payment_product_description",
@@ -3965,6 +4005,8 @@ class ReliefGiftsOtherViewSetTestCase(APITestCase):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "total_income_as_percentage_kcals",
+            "total_income_as_cash",
             "unit_multiple",
             "months_per_year",
             "times_per_month",
@@ -4133,6 +4175,8 @@ class FishingViewSetTestCase(APITestCase):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "total_income_as_percentage_kcals",
+            "total_income_as_cash",
             "extra",
         )
         self.assertCountEqual(
@@ -4297,6 +4341,8 @@ class HuntingViewSetTestCase(APITestCase):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "total_income_as_percentage_kcals",
+            "total_income_as_cash",
             "extra",
         )
         self.assertCountEqual(
@@ -4461,6 +4507,8 @@ class WildFoodGatheringViewSetTestCase(APITestCase):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "total_income_as_percentage_kcals",
+            "total_income_as_cash",
             "extra",
         )
         self.assertCountEqual(
@@ -4625,6 +4673,8 @@ class OtherCashIncomeViewSetTestCase(APITestCase):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "total_income_as_percentage_kcals",
+            "total_income_as_cash",
             "payment_per_time",
             "people_per_household",
             "times_per_month",
@@ -4794,6 +4844,8 @@ class OtherPurchasesViewSetTestCase(APITestCase):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "total_income_as_percentage_kcals",
+            "total_income_as_cash",
             "unit_multiple",
             "times_per_month",
             "months_per_year",
