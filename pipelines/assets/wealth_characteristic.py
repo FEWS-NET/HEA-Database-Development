@@ -320,7 +320,7 @@ def wealth_characteristic_instances(
 
                         # The natural key for the Wealth Group is made up of the Livelihood Zone Baseline, the
                         # Wealth Group Category from column B and the Community Full Name from Rows 4 and 5.
-                        wealth_group_characteristic_value["wealth_group"] = (
+                        wealth_group_characteristic_value["wealth_group"] = [
                             livelihood_zone_baseline.livelihood_zone_id,
                             livelihood_zone_baseline.reference_year_end_date.isoformat(),
                             wealth_group_category,
@@ -331,21 +331,20 @@ def wealth_characteristic_instances(
                                 if wealth_group_df.loc[column, "community"]
                                 else ""
                             ),
-                        )
+                        ]
 
                         wealth_group_characteristic_value["reference_type"] = reference_type
 
-                        # The percentage of households should be stored as a number between 1 and 100,
-                        # but may be stored in the BSS (particularly in the summary column) as a
-                        # decimal fraction between 0 and 1, so correct those values
+                        # The percentage of households should be stored as a  decimal fraction between 0 and 1,
+                        # but some BSS store it as an integer between 1 and 100, so correct those values
                         try:
                             if (
                                 wealth_group_characteristic_value["wealth_characteristic_id"]
                                 == "percentage of households"
                                 and str(value).strip()
-                                and float(value) < 1
+                                and float(value) > 1
                             ):
-                                value = float(value) * 100
+                                value = float(value) / 100
                         except Exception as e:
                             raise ValueError(
                                 "Error in %s converting percentage of households value '%s' to float from 'WB'!%s%s"
@@ -358,22 +357,22 @@ def wealth_characteristic_instances(
                         if reference_type == WealthGroupCharacteristicValue.CharacteristicReference.SUMMARY:
                             min_value = df.loc[row, df.columns[-2]]
                             max_value = df.loc[row, df.columns[-1]]
-                            # Convert min/max percentage of households values from decimal fractions to percentages
+                            # Convert min/max percentage of households values from integers to decimal fractions
                             if (
                                 wealth_group_characteristic_value["wealth_characteristic_id"]
                                 == "percentage of households"
                             ):
                                 try:
-                                    if str(min_value).strip() and float(min_value) < 1:
-                                        min_value = float(min_value) * 100
+                                    if str(min_value).strip() and float(min_value) > 1:
+                                        min_value = float(min_value) / 100
                                 except Exception as e:
                                     raise ValueError(
                                         "Error in %s converting percentage of households value '%s' to float from 'WB'!%s%s"
                                         % (partition_key, min_value, df.columns[-2], row)
                                     ) from e
                                 try:
-                                    if str(max_value).strip() and float(max_value) < 1:
-                                        max_value = float(max_value) * 100
+                                    if str(max_value).strip() and float(max_value) > 1:
+                                        max_value = float(max_value) / 100
                                 except Exception as e:
                                     raise ValueError(
                                         "Error in %s converting percentage of households value '%s' to float from 'WB'!%s%s"
@@ -386,7 +385,22 @@ def wealth_characteristic_instances(
                         wealth_group_characteristic_value["bss_sheet"] = "WB"
                         wealth_group_characteristic_value["bss_column"] = column
                         wealth_group_characteristic_value["bss_row"] = row
+
+                        # Add the natural key to support lookups and foreign key validation
+                        wealth_group_characteristic_value["natural_key"] = wealth_group_characteristic_value[
+                            "wealth_group"
+                        ][
+                            :3  # livelihood_zone, reference_year_end_date, wealth_group_category
+                        ] + [
+                            wealth_group_characteristic_value["wealth_characteristic_id"],
+                            wealth_group_characteristic_value["reference_type"],
+                            wealth_group_characteristic_value["product_id"]
+                            or "",  # Natural key components must be "" rather than None
+                            wealth_group_characteristic_value["wealth_group"][3],  # full_name
+                        ]
+
                         wealth_group_characteristic_values.append(wealth_group_characteristic_value)
+
                 except Exception as e:
                     raise RuntimeError(
                         "Unhandled error in %s processing cell 'WB'!%s%s" % (partition_key, column, row)

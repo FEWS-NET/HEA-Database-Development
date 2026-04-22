@@ -30,6 +30,14 @@ from .assets.livelihood_activity import (
     summary_livelihood_activity_labels_dataframe,
     summary_livelihood_summary_labels_dataframe,
 )
+from .assets.livelihood_product_category import (
+    imported_livelihood_product_categories,
+    livelihood_product_category_dataframe,
+    livelihood_product_category_fixture,
+    livelihood_product_category_instances,
+    livelihood_product_category_valid_instances,
+    other_food_purchase_summ_dataframe,
+)
 from .assets.other_cash_income import (
     all_other_cash_income_labels_dataframe,
     imported_other_cash_income_activities,
@@ -115,6 +123,12 @@ defs = Definitions(
         wild_foods_valid_instances,
         wild_foods_fixture,
         imported_wild_foods_activities,
+        livelihood_product_category_dataframe,
+        other_food_purchase_summ_dataframe,
+        livelihood_product_category_instances,
+        livelihood_product_category_valid_instances,
+        livelihood_product_category_fixture,
+        imported_livelihood_product_categories,
         wealth_characteristic_dataframe,
         wealth_characteristic_label_dataframe,
         all_wealth_characteristic_labels_dataframe,

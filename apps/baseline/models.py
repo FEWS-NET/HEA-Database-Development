@@ -604,9 +604,10 @@ class WealthGroup(common_models.Model):
         verbose_name=_("Wealth Group Category"),
         help_text=_("Wealth Group Category, e.g. Poor or Better Off"),
     )
-    percentage_of_households = models.PositiveSmallIntegerField(
+    percentage_of_households = models.FloatField(
         blank=True,
         null=True,
+        validators=[MinValueValidator(0)],
         verbose_name=_("Percentage of households"),
         help_text=_("Percentage of households in the Community or Livelihood Zone that are in this Wealth Group"),
     )
@@ -992,8 +993,8 @@ class LivelihoodStrategyManager(common_models.IdentifierManager):
         code: str,
         reference_year_end_date: str,
         strategy_type: str,
-        season: str,
         product: str = "",
+        season: str = "",
         additional_identifier: str = "",
     ):
         criteria = {
@@ -1002,15 +1003,15 @@ class LivelihoodStrategyManager(common_models.IdentifierManager):
             "strategy_type": strategy_type,
             "additional_identifier": additional_identifier,
         }
+        if product:
+            criteria["product__cpc"] = product
+        else:
+            criteria["product__isnull"] = True
         if season:
             criteria["season__name_en"] = season
             criteria["season__country"] = F("livelihood_zone_baseline__livelihood_zone__country")
         else:
             criteria["season__isnull"] = True
-        if product:
-            criteria["product__cpc"] = product
-        else:
-            criteria["product__isnull"] = True
 
         return self.get(**criteria)
 
@@ -1126,8 +1127,8 @@ class LivelihoodStrategy(common_models.Model):
             self.livelihood_zone_baseline.livelihood_zone_id,
             self.livelihood_zone_baseline.reference_year_end_date.isoformat(),
             self.strategy_type,
-            self.season.name_en if self.season else "",
             self.product_id if self.product_id else "",
+            self.season.name_en if self.season else "",
             self.additional_identifier,
         )
 
@@ -1163,8 +1164,8 @@ class LivelihoodActivityManager(common_models.IdentifierManager):
         reference_year_end_date: str,
         wealth_group_category: str,
         strategy_type: str,
-        season: str = "",
         product: str = "",
+        season: str = "",
         additional_identifier: str = "",
         full_name: str = "",
     ):
@@ -1175,15 +1176,15 @@ class LivelihoodActivityManager(common_models.IdentifierManager):
             "strategy_type": strategy_type,
             "livelihood_strategy__additional_identifier": additional_identifier,
         }
+        if product:
+            criteria["livelihood_strategy__product__cpc"] = product
+        else:
+            criteria["livelihood_strategy__product__isnull"] = True
         if season:
             criteria["livelihood_strategy__season__name_en"] = season
             criteria["livelihood_strategy__season__country"] = F("livelihood_zone_baseline__livelihood_zone__country")
         else:
             criteria["livelihood_strategy__season__isnull"] = True
-        if product:
-            criteria["livelihood_strategy__product__cpc"] = product
-        else:
-            criteria["livelihood_strategy__product__isnull"] = True
 
         if not full_name:
             criteria["wealth_group__community__isnull"] = True
@@ -1275,6 +1276,8 @@ class LivelihoodActivity(common_models.Model):
     # some analyses may choose to use alternate thresholds and would need to calcuate
     # this value separately. For example, for program development some organizations
     # use 1900 kcal per person per day.
+    # Stored as a decimal percentage, e.g. 0.25 for 25%. Note that there is no max value because
+    # a B/O household could hypothetically generate more than 100% of required kcals.
     percentage_kcals = models.FloatField(
         blank=True,
         null=True,
@@ -1535,8 +1538,8 @@ class LivelihoodActivity(common_models.Model):
             self.livelihood_zone_baseline.reference_year_end_date.isoformat(),
             self.wealth_group.wealth_group_category.code,
             self.strategy_type,
-            self.livelihood_strategy.season.name_en if self.livelihood_strategy.season else "",
             self.livelihood_strategy.product_id if self.livelihood_strategy.product_id else "",
+            self.livelihood_strategy.season.name_en if self.livelihood_strategy.season else "",
             self.livelihood_strategy.additional_identifier,
             self.wealth_group.community.full_name if self.wealth_group.community else "",
         )
@@ -1553,7 +1556,7 @@ class LivelihoodActivity(common_models.Model):
         identifier = ["livelihood_strategy", "wealth_group", "scenario"]
 
 
-class BaselineLivelihoodActivityManager(InheritanceManager):
+class BaselineLivelihoodActivityManager(InheritanceManager, LivelihoodActivityManager):
     def get_queryset(self):
         return (
             super()
@@ -1587,7 +1590,7 @@ class BaselineLivelihoodActivity(LivelihoodActivity):
         proxy = True
 
 
-class ResponseLivelihoodActivityManager(InheritanceManager):
+class ResponseLivelihoodActivityManager(InheritanceManager, LivelihoodActivityManager):
     def get_queryset(self):
         return (
             super()
@@ -1625,35 +1628,125 @@ class ResponseLivelihoodActivity(LivelihoodActivity):
         proxy = True
 
 
+class LivelihoodProductCategoryManager(common_models.IdentifierManager):
+    def get_by_natural_key(
+        self,
+        code: str,
+        reference_year_end_date: str,
+        wealth_group_category: str,
+        strategy_type: str,
+        basket: int,
+        product: str,
+        season: str = "",
+        additional_identifier: str = "",
+    ):
+        criteria = {
+            "baseline_livelihood_activity__livelihood_zone_baseline__livelihood_zone__code": code,
+            "baseline_livelihood_activity__livelihood_zone_baseline__reference_year_end_date": reference_year_end_date,
+            "baseline_livelihood_activity__wealth_group__wealth_group_category__code": wealth_group_category,
+            # We need the Baseline Livelihood Activity
+            "baseline_livelihood_activity__wealth_group__community__isnull": True,
+            "baseline_livelihood_activity__strategy_type": strategy_type,
+            "basket": basket,
+            "baseline_livelihood_activity__livelihood_strategy__product__cpc": product,
+            "baseline_livelihood_activity__livelihood_strategy__additional_identifier": additional_identifier,
+        }
+        if season:
+            criteria["baseline_livelihood_activity__livelihood_strategy__season__name_en"] = season
+            criteria["baseline_livelihood_activity__livelihood_strategy__season__country"] = F(
+                "baseline_livelihood_activity__livelihood_zone_baseline__livelihood_zone__country"
+            )
+        else:
+            criteria["baseline_livelihood_activity__livelihood_strategy__season__isnull"] = True
+        return self.get(**criteria)
+
+
 # @TODO Decide whether to change the name of this model when we review the
 # LIAS and finalize models for expandability and coping. Ideally we want to be
 # able to identify Livelihood Activities that are produce staple foods, and/or
 # are part of the different baskets.
 class LivelihoodProductCategory(common_models.Model):
     """
-    The usage category of the Product in the Livelihood Zone, such as staple food or livelihood protection.
+    The usage of the Product in the Livelihood Zone, such as staple food or livelihood protection.
+
+    Product usage is assigned to Baskets:
+        * Main Staple Crop
+        * Other Staple Crops and essential food purchases (e.g. Cooking Oil, Flour, Salt)
+        * Essential non-food purchases (Soap, Cooking Fuel, Lighting, Tea)
+        * Livelihoods Protection purchases (Seeds, Fertilizer, Animal Drugs)
+
+    The total usage of the Product may be split across multiple "baskets".
+    For example, OtherPurchase of Kerosene may be allocated as 75% in the
+    Essential Non-Food Purchase basket (which is part of the Survival Threshold).
+
+    This allocation can vary by Baseline Wealth Group. For example, cooking
+    needs may require 75%  of the total for VP Households, but only 50% for
+    M and B/O Households.
+
+    We only store a Livelihood Product Category for one Basket for each Product.
+    If there is a remainder then it is implicitly part of an Other Basket of
+    discretionary spending.
+
+    In practice this is linked via the FoodPurchase and OtherPurchase
+    Baseline Livelihood Activities for the Product, rather than by referencing the
+    Product directly.
+
+    The Survival Threshold is calculated using the Main Staple, Other Survival
+    Food and Survival Non-Food Items for the Poor Wealth Group.
+
+    The Livelihood Protection Threshold is calculated per Wealth Group and adds
+    the Livelihoods Protection items to the Survival Basket.
     """
 
     class ProductBasket(models.IntegerChoices):
         MAIN_STAPLE = 1, _("Main Staple")
-        OTHER_STAPLE = 2, _("Other Staple")
+        SURVIVAL_OTHER_FOOD = 2, _("Other food survival")
         SURVIVAL_NON_FOOD = 3, _("Non-food survival")
         LIVELIHOODS_PROTECTION = 4, _("Livelihoods Protection")
 
-    baseline_livelihood_activity = models.ForeignKey(
+    # Logically, a Product can only be in a single Basket for a given Baseline -
+    # a product can't be both essential for survival and only required for
+    # Livelihoods Protection; similarly, it can't be both Food and Non-Food.
+    # A Product Category can be defined for each Baseline Wealth Group. I.e. the
+    # Product Category is the intersection of a Livelihood Strategy and a
+    # Wealth Group, which matches the definition of a Livelihood Activity.
+    # Therefore, we use a OneToOneField to ensure we don't create a duplicate
+    # Product Category for a given Strategy and Wealth Group. Note that although
+    # in practice the Product Category is uniquely identified by the
+    # `baseline_livelihood_activity`, logically the `basket` is a key part of the
+    # definition and so `basket` is still part of the natural key.
+    baseline_livelihood_activity = models.OneToOneField(
         BaselineLivelihoodActivity,
         on_delete=models.RESTRICT,
         verbose_name=_("Baseline Livelihood Activity"),
     )
     basket = models.PositiveSmallIntegerField(choices=ProductBasket.choices, verbose_name=_("Product Basket"))
-    percentage_allocation_to_basket = models.PositiveIntegerField(
-        blank=True,
-        null=True,
+    # Stored as a decimal percentage, e.g. 0.25 for 25%.
+    percentage_allocation_to_basket = models.FloatField(
+        validators=[MinValueValidator(0)],
         verbose_name=_("Percentage allocation to basket"),
         help_text=_(
             "The percentage of expenditure or kcals from the Livelihood Activity that is allocated to this Basket. The remainder is implicitly part of the 'Other' basket"
         ),
     )
+
+    objects = LivelihoodProductCategoryManager()
+
+    def natural_key(self):
+        return (
+            self.baseline_livelihood_activity.livelihood_zone_baseline.livelihood_zone_id,
+            self.baseline_livelihood_activity.livelihood_zone_baseline.reference_year_end_date.isoformat(),
+            self.baseline_livelihood_activity.wealth_group.wealth_group_category.code,
+            self.baseline_livelihood_activity.strategy_type,
+            self.basket,
+            self.baseline_livelihood_activity.livelihood_strategy.product_id,
+            (
+                self.baseline_livelihood_activity.livelihood_strategy.season.name_en
+                if self.baseline_livelihood_activity.livelihood_strategy.season
+                else ""
+            ),
+            self.baseline_livelihood_activity.livelihood_strategy.additional_identifier,
+        )
 
     class Meta:
         verbose_name = _("Livelihood Product Category")
@@ -2720,18 +2813,31 @@ class ExpandabilityFactor(models.Model):
     wealth_group = models.ForeignKey(WealthGroup, on_delete=models.RESTRICT, verbose_name=_("Wealth Group"))
 
     # @TODO after review of the representation of expandability in the LIAS, make these percentages if appropriate
-    percentage_produced = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Produced"))
-    percentage_sold = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Sold/Exchanged"))
-    percentage_other_uses = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Other Uses"))
+    # All percentages are stored as decimal percentages, e.g. 0.25 for 25%.
+    percentage_produced = models.FloatField(
+        blank=True, null=True, validators=[MinValueValidator(0)], verbose_name=_("Quantity Produced")
+    )
+    percentage_sold = models.FloatField(
+        blank=True, null=True, validators=[MinValueValidator(0)], verbose_name=_("Quantity Sold/Exchanged")
+    )
+    percentage_other_uses = models.FloatField(
+        blank=True, null=True, validators=[MinValueValidator(0)], verbose_name=_("Quantity Other Uses")
+    )
     # Can normally be calculated / validated as `quantity_received - quantity_sold - quantity_other_uses`
-    percentage_consumed = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Consumed"))
+    percentage_consumed = models.FloatField(
+        blank=True, null=True, validators=[MinValueValidator(0)], verbose_name=_("Quantity Consumed")
+    )
 
     # Can be calculated / validated as `quantity_sold * price` for livelihood strategies that involve the sale of
     # a proportion of the household's own production.
-    percentage_income = models.FloatField(blank=True, null=True, help_text=_("Income"))
+    percentage_income = models.FloatField(
+        blank=True, null=True, validators=[MinValueValidator(0)], verbose_name=_("Income")
+    )
     # Can be calculated / validated as `quantity_consumed * price` for livelihood strategies that involve the purchase
     # of external goods or services.
-    percentage_expenditure = models.FloatField(blank=True, null=True, help_text=_("Expenditure"))
+    percentage_expenditure = models.FloatField(
+        blank=True, null=True, validators=[MinValueValidator(0)], verbose_name=_("Expenditure")
+    )
 
     # Sheet G contains some texts that seems describing where data is coming from, mostly 'Summ' sheet
     remark = models.TextField(max_length=255, verbose_name=_("Remark"), null=True, blank=True)

@@ -893,13 +893,637 @@ def get_instances_from_dataframe(
     # OtherCashIncome - the labor description is the same but the compensation is different.
     # Therefore, we iterate over the rows rather than attempting to use vector operations.
 
-    # Iterate over the rows
+    # Initialize variables
     strategy_type = None
     activity_field_names = None
     livelihood_strategy = previous_livelihood_strategy = None
     livelihood_strategies = []
     livelihood_activities = []
     livelihood_activities_for_strategy = previous_livelihood_activities_for_strategy = []
+
+    # Define inline functions
+    def finalize_strategy():
+        """
+        Finalize and save the current Livelihood Strategy if it has non-empty Livelihood Activities.
+
+        I.e. provided that it has at least one Livelihood Activity where there is some income,
+        expenditure or consumption. This excludes empty activities that only contain attributes for,
+        for example, 'type_of_milk_sold_or_other_uses'.
+        """
+        nonlocal livelihood_strategies
+        nonlocal livelihood_activities
+        nonlocal column
+        try:
+            # For MeatProduction, if animals_slaughtered is null/0 or carcass_weight is null/0, then a
+            # percentage_kcals of 0 is not meaningful (it results from the BSS formula evaluating to 0
+            # because there are no animals or no carcass weight). Set it to None so that the activity is
+            # treated as empty and not saved to the database.
+            if livelihood_strategy and livelihood_strategy["strategy_type"] == "MeatProduction":
+                for livelihood_activity in livelihood_activities_for_strategy:
+                    if (
+                        not livelihood_activity.get("animals_slaughtered")
+                        or not livelihood_activity.get("carcass_weight")
+                    ) and livelihood_activity.get("percentage_kcals") == 0:
+                        livelihood_activity["percentage_kcals"] = None
+
+            # Also ignore any livelihood activities that don't have a Wealth Category component to the Wealth Group
+            # natural key. These are from blank columns between Wealth Category groups in the BSS, which sometimes
+            # contain data where values or formulae have been copied across all the columns in a row.
+            non_empty_livelihood_activities = [
+                livelihood_activity
+                for livelihood_activity in livelihood_activities_for_strategy
+                if livelihood_activity["wealth_group"][2]  # Make sure there is a Wealth Category
+                and any(
+                    (field in livelihood_activity and (livelihood_activity[field] or livelihood_activity[field] == 0))
+                    for field in [
+                        "quantity_produced",  # MilkProduction may have quantity_produced but not any of the others.
+                        "income",
+                        "expenditure",
+                        "kcals_consumed",
+                        "percentage_kcals",
+                    ]
+                )
+            ]
+
+            # Don't save Livelihood Strategies from the Data worksheet that are captured in more detail on the
+            # Data2 or Data3 worksheets. These strategies have entries in the Data sheet like
+            # 'Construction cash income -- see Data2'
+            if non_empty_livelihood_activities:
+                # Assertion to prevent linting from complaining about possible None values
+                assert livelihood_strategy is not None, (
+                    "Found Livelihood Activities from row %s, but there is no Livelihood Strategy defined." % row
+                )
+                if re.match(
+                    r"^.*(?:data ?[23]|prochaine feuille)$",
+                    livelihood_strategy["activity_label"],
+                    re.IGNORECASE,
+                ):
+                    non_empty_livelihood_activities = []
+
+            if non_empty_livelihood_activities:
+                # Finalize the livelihood strategy and activities, making various adjustments for quirks in the BSS
+
+                # Assertion to prevent linting from complaining about possible None values
+                assert livelihood_strategy is not None, (
+                    "Found Livelihood Activities from row %s, but there is no Livelihood Strategy defined." % row
+                )
+
+                # Copy the product_id for MilkProduction and ButterProduction from the previous livelihood strategy
+                # if necessary.
+                if (
+                    livelihood_strategy["strategy_type"] in ["MilkProduction", "ButterProduction"]
+                    and ("product_id" not in livelihood_strategy or not livelihood_strategy["product_id"])
+                    and livelihood_strategy["season"] in dairy_season2_names
+                    and previous_livelihood_strategy
+                    and "product_id" in previous_livelihood_strategy
+                    and previous_livelihood_strategy["product_id"]
+                ):
+                    livelihood_strategy["attribute_rows"]["product_id"] = row
+                    livelihood_strategy["product_id"] = previous_livelihood_strategy["product_id"]
+
+                # Copy the milking_animals for camels and cattle from the previous livelihood activities
+                # if necessary.
+                if (
+                    livelihood_strategy["strategy_type"] == "MilkProduction"
+                    and livelihood_strategy["season"] in dairy_season2_names
+                    and previous_livelihood_activities_for_strategy
+                ):
+                    # Assertion to prevent linting from complaining about possible None values
+                    assert previous_livelihood_strategy is not None, (
+                        "Found Previous Livelihood Activities from row %s, but there is no Previous Livelihood Strategy defined."
+                        % row
+                    )
+                    if (
+                        "milking_animals" in previous_livelihood_strategy["attribute_rows"]
+                        and "milking_animals" not in livelihood_strategy["attribute_rows"]
+                    ):
+                        livelihood_strategy["attribute_rows"]["milking_animals"] = row
+                        for i in range(len(previous_livelihood_activities_for_strategy)):
+                            if "milking_animals" in previous_livelihood_activities_for_strategy[i]:
+                                livelihood_activities_for_strategy[i]["milking_animals"] = (
+                                    previous_livelihood_activities_for_strategy[i]["milking_animals"]
+                                )
+
+                # Calculate kcals_consumed if the livelihood activity only contains the percentage_kcals.
+                # This is typical for ButterProduction and consumption of green crops.
+                # Derive it by multiplying percentage_kcals by:
+                #   2100 (kcals per person per day) * 365 (days per year) * average_household_size (from Row 40)
+                if (
+                    "percentage_kcals" in livelihood_strategy["attribute_rows"]
+                    and "kcals_consumed" not in livelihood_strategy["attribute_rows"]
+                ):
+                    livelihood_strategy["attribute_rows"]["kcals_consumed"] = row
+                    for i, livelihood_activity in enumerate(livelihood_activities_for_strategy):
+                        # Set the column for troubleshooting
+                        column = df.columns[i + 1]
+                        # The household size will always be the 4th header row in the dataframe, even though the
+                        # original row number (which is the index) will be different between the Data and Data3
+                        # worksheets
+                        household_size = df.iloc[3, i + 1]
+
+                        # Convert to numeric to handle string values (e.g., "6" instead of 6)
+                        try:
+                            percentage_kcals = (
+                                float(livelihood_activity["percentage_kcals"])
+                                if livelihood_activity.get("percentage_kcals")
+                                else None
+                            )
+                        except (ValueError, TypeError):
+                            percentage_kcals = None
+
+                        try:
+                            household_size_numeric = (
+                                float(household_size) if household_size not in ("", None) else None
+                            )
+                        except (ValueError, TypeError):
+                            household_size_numeric = None
+
+                        livelihood_activity["kcals_consumed"] = (
+                            percentage_kcals * 2100 * 365 * household_size_numeric
+                            if percentage_kcals and household_size_numeric
+                            else None
+                        )
+
+                # Normalize the `type_of_milk_sold_or_other_uses`, e.g. from `type of milk sold/other use (skim=0, whole=1)`  # NOQA: E501
+                if "type_of_milk_sold_or_other_uses" in livelihood_strategy["attribute_rows"]:
+                    livelihood_strategy["attribute_rows"]["type_of_milk_sold_or_other_uses"] = row
+                    for livelihood_activity in livelihood_activities_for_strategy:
+                        livelihood_activity["type_of_milk_sold_or_other_uses"] = (
+                            MilkProduction.MilkType.WHOLE
+                            if livelihood_activity["type_of_milk_sold_or_other_uses"]
+                            else MilkProduction.MilkType.SKIM
+                        )
+
+                # Add the `type_of_milk_consumed`, because it is not present in any current BSS
+                if (
+                    livelihood_strategy["strategy_type"] == "MilkProduction"
+                    and "type_of_milk_consumed" not in livelihood_strategy["attribute_rows"]
+                ):
+                    livelihood_strategy["attribute_rows"]["type_of_milk_consumed"] = row
+                    for livelihood_activity in livelihood_activities_for_strategy:
+                        # We assume that people drink whole milk. This is not always true, but is the assumption
+                        # that is embedded in the ButterProduction calculations in current BSSs
+                        livelihood_activity["type_of_milk_consumed"] = MilkProduction.MilkType.WHOLE
+
+                # Move the kcals_consumed and percentage_kcals from ButterProduction
+                # to the associated MilkProduction livelihood activities.
+                # The current BSSs only record the percentage_kcals for milk and butter consumption combined,
+                # and don't contain sufficient information to split the kcals_consumed between milk and butter
+                # (or cheese). However, we want to consider this consumption as part of the MilkProduction
+                # livelihood strategy, rather than ButterProduction, even though the percentage_kcals
+                # immediately follow the ButterProduction rows in the BSS.
+                if (
+                    livelihood_strategy["strategy_type"] == "ButterProduction"
+                    and "percentage_kcals" in livelihood_strategy["attribute_rows"]
+                    and any(
+                        livelihood_activity.get("percentage_kcals")
+                        for livelihood_activity in livelihood_activities_for_strategy
+                    )
+                ):
+                    # Find the corresponding MilkProduction livelihood strategy
+                    # First, find the equivalent MilkProduction season for the current ButterProduction strategy.
+                    # Try to find a Zone-specific season first, and fall back to a general season if necessary.
+                    milk_season = seasonnamelookup.get(
+                        f'{livelihood_strategy["season_original"]} ({livelihood_zone_baseline.livelihood_zone_id})',
+                        country_id=livelihood_zone_baseline.livelihood_zone.country_id,
+                        purpose="MilkProduction",
+                    )
+                    if not milk_season:
+                        milk_season = seasonnamelookup.get(
+                            livelihood_strategy["season_original"],
+                            country_id=livelihood_zone_baseline.livelihood_zone.country_id,
+                            purpose="MilkProduction",
+                        )
+                    if not milk_season:
+                        raise ValueError(
+                            f"Could not find a MilkProduction Season matching '{livelihood_strategy['season_original']}' "
+                            f"from ButterProduction strategy for season '{livelihood_strategy['season_original']}' "
+                            f"({livelihood_strategy['season']}) at row {livelihood_strategy['bss_row']} from:\n"
+                        )
+                    # Next, find the candidate MilkProduction strategies
+                    milk_strategy = None
+                    milk_strategies = [
+                        strategy
+                        for strategy in reversed(livelihood_strategies)
+                        if strategy["strategy_type"] == "MilkProduction"
+                    ]
+                    # Test each strategy in turn
+                    for strategy in milk_strategies:
+                        if (
+                            # Season for the current LivelihoodStrategy hasn't been converted to a natural key yet,
+                            # so coerce it to a list for comparison
+                            strategy["season"] == [milk_season]
+                            and strategy["additional_identifier"] == livelihood_strategy["additional_identifier"]
+                        ):
+                            milk_strategy = strategy
+                            break
+                    if not milk_strategy:
+                        # Keep only the required attributes so that the error message is clearer
+                        milk_strategies = [
+                            {
+                                k: strategy[k]
+                                for k in [
+                                    "bss_row",
+                                    "strategy_type",
+                                    "season_original",
+                                    "season",
+                                    "product_id",
+                                    "additional_identifier",
+                                ]
+                            }
+                            for strategy in milk_strategies
+                        ]
+                        raise ValueError(
+                            f"Could not find the MilkProduction Livelihood Strategy associated with "
+                            f"the ButterProduction strategy for season '{livelihood_strategy['season_original']}' "
+                            f"({livelihood_strategy['season']}) at row {livelihood_strategy['bss_row']} from:\n"
+                            f"{'\n'.join([str(strategy) for strategy in milk_strategies])}"
+                        )
+                    milk_activities = {
+                        tuple(activity["wealth_group"]): activity  # Convert list to tuple to make it hashable
+                        for activity in livelihood_activities
+                        if activity["livelihood_strategy"]
+                        == milk_strategy["livelihood_zone_baseline"]
+                        + [
+                            milk_strategy["strategy_type"],
+                            milk_strategy["product_id"],
+                            milk_strategy["season"][0],
+                            milk_strategy["additional_identifier"],
+                        ]
+                    }
+                    moved_any = False
+                    for butter_activity in livelihood_activities_for_strategy:
+                        if butter_activity["percentage_kcals"] or butter_activity["percentage_kcals"] == 0:
+                            milk_activity = milk_activities.get(tuple(butter_activity["wealth_group"]))
+                            if not milk_activity or "percentage_kcals" in milk_activity:
+                                continue
+                            # We found a matching MilkProduction activity that doesn't already have
+                            # percentage_kcals set, so move the values across
+                            moved_any = True
+                            for field in ["percentage_kcals", "kcals_consumed"]:
+                                milk_activity[field] = butter_activity.pop(field)
+                    if moved_any:
+                        # Add the fields to the MilkProduction strategy's attribute_rows
+                        for field in ["percentage_kcals", "kcals_consumed"]:
+                            if (
+                                field not in milk_strategy["attribute_rows"]
+                                and field in livelihood_strategy["attribute_rows"]
+                            ):
+                                milk_strategy["attribute_rows"][field] = livelihood_strategy["attribute_rows"][field]
+                        # If we have moved all of the percentage_kcals and kcals_consumed from the ButterProduction
+                        # livelihood activities, then remove these attributes from the ButterProduction strategy.
+                        for field in ["percentage_kcals", "kcals_consumed"]:
+                            if not any(
+                                field in livelihood_activity
+                                and (livelihood_activity[field] or livelihood_activity[field] == 0)
+                                for livelihood_activity in livelihood_activities_for_strategy
+                            ):
+                                del livelihood_strategy["attribute_rows"][field]
+
+                # Add the `times_per_year` to FoodPurchase, PaymentInKind and OtherCashIncome,
+                # because it is not in the current BSSs
+                if (
+                    "times_per_month" in livelihood_strategy["attribute_rows"]
+                    and "months_per_year" in livelihood_strategy["attribute_rows"]
+                    and "times_per_year" not in livelihood_strategy["attribute_rows"]
+                    and "times_per_year" in activity_field_names
+                ):
+                    livelihood_strategy["attribute_rows"]["times_per_year"] = row
+                    for livelihood_activity in livelihood_activities_for_strategy:
+                        livelihood_activity["times_per_year"] = (
+                            livelihood_activity["times_per_month"] * livelihood_activity["months_per_year"]
+                            if livelihood_activity["times_per_month"] and livelihood_activity["months_per_year"]
+                            else 0
+                        )
+
+                # Calculate the times per year if the livelihood activity only contains the unit_multiple or
+                # people_per_household and the kcals_consumed. For some livelihood strategies, this is implicit in
+                # the formula used to calculate percentage_kcals in the BSS. For example:
+                # School Feeding: `=IF(B534="","",B534/B$40*5/12*5/7*0.33)`.
+                # I.e. percentage_kcals = number_of_children / average_household_size * 5/12 * 5/7 * 0.33,
+                # which implies that children receive school meals 5 days a week, 5 months a year, and those meals
+                # contain 1/3 of the required daily kcals, i.e. 2100 / 3 = 700 kcals.
+                # We can calculate the times_per_year by dividing the kcals_consumed by the kcals_per_unit and the
+                # unit_multiple (i.e. the number of children receiving school meals). This will give the correct
+                # answer even if the number of months per year or days per week is different. However, it will not
+                # return the correct answer if the formula in the BSS is using a different value for the percentage
+                # of daily calories per person provided by the school meals, typically 0.33.
+                # Similarly, for Labor Migration: `=IF(B553="","",B553/B$40*B554/12)`
+                # I.e. percentage_kcals = number_of_people / average_household_size * number_of_months / 12.
+                # which implies that household members who migrate temporarily do not consume the household's food
+                # during those months and instead obtain their full kcals (2100) from other sources.
+                if (
+                    "percentage_kcals" in livelihood_strategy["attribute_rows"]
+                    and (
+                        "unit_multiple" in livelihood_strategy["attribute_rows"]
+                        or "people_per_household" in livelihood_strategy["attribute_rows"]
+                    )
+                    and "product_id" in livelihood_strategy["attribute_rows"]
+                    and "times_per_year" not in livelihood_strategy["attribute_rows"]
+                    and "times_per_year" in activity_field_names
+                ):
+                    livelihood_strategy["attribute_rows"]["times_per_year"] = row
+                    for i, livelihood_activity in enumerate(livelihood_activities_for_strategy):
+                        # Set the column for troubleshooting
+                        column = df.columns[i + 1]
+                        kcals_per_unit = classifiedproductlookup.get_instance(
+                            livelihood_strategy["product_id"]
+                        ).kcals_per_unit
+                        number_of_units = livelihood_activity.get("unit_multiple", None) or livelihood_activity.get(
+                            "people_per_household", None
+                        )
+                        livelihood_activity["times_per_year"] = (
+                            round(livelihood_activity["kcals_consumed"] / kcals_per_unit / number_of_units)
+                            if number_of_units and kcals_per_unit and livelihood_activity["kcals_consumed"] is not None
+                            else 0
+                        )
+
+                # Add the `quantity_purchased` to FoodPurchase and OtherPurchase, if it is missing.
+                if (
+                    livelihood_strategy["strategy_type"] in ["FoodPurchase", "OtherPurchase"]
+                    and "quantity_purchased" in activity_field_names
+                    and "quantity_purchased" not in livelihood_strategy["attribute_rows"]
+                    and "times_per_year" in livelihood_strategy["attribute_rows"]
+                    and "unit_multiple" in livelihood_strategy["attribute_rows"]
+                ):
+                    livelihood_strategy["attribute_rows"]["quantity_purchased"] = row
+                    for i, livelihood_activity in enumerate(livelihood_activities_for_strategy):
+                        # Set the column for troubleshooting
+                        column = df.columns[i + 1]
+                        livelihood_activity["quantity_purchased"] = (
+                            livelihood_activity["unit_multiple"] * livelihood_activity["times_per_year"]
+                            if livelihood_activity.get("times_per_year") and livelihood_activity.get("unit_multiple")
+                            else 0
+                        )
+
+                # Add the `payment_per_time` and `unit_of_measure` to PaymentInKind, if they are missing.
+                # For example, labor migration is recorded in the BSS as the number of household members who
+                # migrate, and the number of months that they are absent for. This is coded as a product (S9HD)
+                # with a kcals_per_unit of 2100, so the payment_per_time is 1 and the unit_of_measure is 'ea'.
+                if (
+                    "payment_per_time" in activity_field_names
+                    and "payment_per_time" not in livelihood_strategy["attribute_rows"]
+                    and "product_id" in livelihood_strategy["attribute_rows"]
+                ):
+                    kcals_per_unit = classifiedproductlookup.get_instance(
+                        livelihood_strategy["product_id"]
+                    ).kcals_per_unit
+                    if kcals_per_unit == 2100:
+                        livelihood_strategy["attribute_rows"]["payment_per_time"] = row
+                        if "unit_of_measure_id" not in livelihood_strategy["attribute_rows"]:
+                            livelihood_strategy["attribute_rows"]["unit_of_measure_id"] = row
+                            livelihood_strategy["unit_of_measure_id"] = "ea"
+                        for livelihood_activity in livelihood_activities_for_strategy:
+                            livelihood_activity["payment_per_time"] = 1
+
+                # Add the natural keys for the livelihood strategy to the activities.
+                # This is the last step so that we are sure that the attributes in the livelihood_strategy are
+                # final. For example, the Season 1, etc. alias has been replaced with the real natural key.
+                for i, livelihood_activity in enumerate(livelihood_activities_for_strategy):
+                    livelihood_activity["livelihood_strategy"] = livelihood_zone_baseline_key + [
+                        livelihood_strategy["strategy_type"],
+                        livelihood_strategy["product_id"] or "",  # Natural key components must be "" rather than None
+                        livelihood_strategy["season"] or "",  # Natural key components must be "" rather than None
+                        livelihood_strategy["additional_identifier"],
+                    ]
+
+                # Natural keys are always a list, so convert the season name if it is set
+                if livelihood_strategy["season"]:
+                    livelihood_strategy["season"] = [livelihood_strategy["season"]]
+
+                # Some Livelihood Activities are only partially defined and have data for the Wealth Groups,
+                # but not for the Summary. In these cases, we can ignore the Wealth Group-level Livelihood Activity
+                # data. Note that if there is Summary data, then we need to include the Livelihood Strategy and
+                # Activities in the fixture, or raise an exception.
+                strategy_is_valid = True
+
+                # Find the non-empty summary activities, so we can use them to decide whether to raise errors.
+                # Note that we save non-empty livelihood activities that include 0 values for income, expenditure,
+                # or kcals_consumed, but we don't count summary activities that have 0 values for these fields.
+                non_empty_summary_activities = [
+                    livelihood_activity
+                    for livelihood_activity in livelihood_activities_for_strategy
+                    if livelihood_activity["wealth_group"][3] == ""
+                    and any(
+                        (field in livelihood_activity and livelihood_activity[field])
+                        for field in ["income", "expenditure", "kcals_consumed", "percentage_kcals"]
+                    )
+                ]
+
+                # Check the Livelihood Strategy has a Season if one is required.
+                # (e.g. for MilkProduction and ButterProduction).
+                if (
+                    livelihood_strategy["strategy_type"] in LivelihoodStrategy.REQUIRES_SEASON
+                    and activity_type != ActivityLabel.LivelihoodActivityType.LIVELIHOOD_SUMMARY
+                    and ("season" not in livelihood_strategy or not livelihood_strategy["season"])
+                ):
+                    strategy_is_valid = False
+                    # Include the header rows so that we can see which Wealth Groups are affected
+                    rows = df.index[:num_header_rows].tolist() + [livelihood_strategy["bss_row"]]
+                    error_message = "Cannot determine season from '%s' for %s %s on row %s for label '%s':\n%s" % (
+                        livelihood_strategy["season_original"],
+                        "summary" if non_empty_summary_activities else "non-summary",
+                        livelihood_strategy["strategy_type"],
+                        livelihood_strategy["bss_row"],
+                        livelihood_strategy["activity_label"],
+                        get_sample_data(df, rows).to_markdown(),
+                    )
+                    if not non_empty_summary_activities:
+                        # No summary activities so we don't need to log an error, a warning is sufficient
+                        context.log.warning(error_message)
+                    else:
+                        # Summary activities exist, so we need to raise an error
+                        errors.append(error_message)
+
+                # Check the Livelihood Strategy has a product_id if one is required.
+                if (
+                    livelihood_strategy["strategy_type"] in LivelihoodStrategy.REQUIRES_PRODUCT
+                    and activity_type != ActivityLabel.LivelihoodActivityType.LIVELIHOOD_SUMMARY
+                    and ("product_id" not in livelihood_strategy or not livelihood_strategy["product_id"])
+                ):
+                    strategy_is_valid = False
+                    # Include the header rows so that we can see which Wealth Groups are affected
+                    rows = df.index[:num_header_rows].tolist() + [livelihood_strategy["bss_row"]]
+                    error_message = "Cannot determine product_id from '%s' for %s %s on row %s for label '%s':\n%s" % (
+                        livelihood_strategy["product_id_original"],
+                        "summary" if non_empty_summary_activities else "non-summary",
+                        livelihood_strategy["strategy_type"],
+                        livelihood_strategy["bss_row"],
+                        livelihood_strategy["activity_label"],
+                        get_sample_data(df, rows).to_markdown(),
+                    )
+                    if not non_empty_summary_activities:
+                        # No summary activities so we don't need to log an error, a warning is sufficient
+                        context.log.warning(error_message)
+                    else:
+                        # Summary activities exist, so we need to raise an error
+                        errors.append(error_message)
+
+                # For invalid strategies, we have appended an error, and can raise them all at the end.
+                if strategy_is_valid:
+
+                    # Add the natural keys to support lookups and foreign key validation
+                    livelihood_strategy["natural_key"] = livelihood_strategy["livelihood_zone_baseline"] + [
+                        livelihood_strategy["strategy_type"],
+                        livelihood_strategy["product_id"] or "",  # Natural key components must be "" rather than None
+                        # livelihood_strategy['season'] is a natural key itself, so it is stored as a list even though it only
+                        # has a single component - the season name - so take the first element of the list.
+                        # Natural key components must be "" rather than None
+                        livelihood_strategy["season"][0] if livelihood_strategy["season"] else "",
+                        livelihood_strategy["additional_identifier"],
+                    ]
+                    for livelihood_activity in non_empty_livelihood_activities:
+                        livelihood_activity["natural_key"] = (
+                            livelihood_activity["wealth_group"][
+                                :3
+                            ]  # code, reference_year_end_date, wealth_group_category
+                            + livelihood_activity["livelihood_strategy"][
+                                2:
+                            ]  # strategy_type, product_id, season, additional_identifier
+                            + [livelihood_activity["wealth_group"][3]]  # full_name
+                        )
+
+                    # Append the stategies and activities to the lists of instances to create.
+                    livelihood_strategies.append(livelihood_strategy)
+                    livelihood_activities += non_empty_livelihood_activities
+
+        except Exception as e:
+            raise RuntimeError(
+                "Unhandled error in BSS %s saving Livelihood Strategy from '%s'!%s with label '%s'"
+                % (
+                    partition_key,
+                    worksheet_name,
+                    livelihood_strategy["bss_row"],
+                    livelihood_strategy["activity_label"],
+                )
+            ) from e
+
+    def initialize_strategy():
+        """
+        Initialize a new Livelihood Strategy for the current row.
+        """
+        nonlocal strategy_type
+        nonlocal previous_livelihood_strategy
+        nonlocal previous_livelihood_activities_for_strategy
+        nonlocal livelihood_strategy
+        nonlocal livelihood_activities_for_strategy
+        nonlocal activity_attribute
+        nonlocal activity_field_names
+
+        # There are cases where attributes get copied to the new Livelihood Strategy or Livelihood Activities,
+        # notably for MilkProduction and ButterProduction for camels and cattle.
+        # Therefore, take a copy of the previous livelihood_strategy in case we need it.
+        previous_livelihood_strategy = livelihood_strategy.copy() if livelihood_strategy else None
+        previous_livelihood_activities_for_strategy = [
+            livelihood_activity.copy() for livelihood_activity in livelihood_activities_for_strategy
+        ]
+
+        # Headings like CROP PRODUCTION: set the strategy type for subsequent rows.
+        # Some other labels imply specific strategy types, such as MilkProduction, MeatProduction or LivestockSales
+        # For Livelihood Summary activities, the strategy_type is always set from the label_attributes.
+        if (
+            label_attributes["strategy_type"]
+            or activity_type == ActivityLabel.LivelihoodActivityType.LIVELIHOOD_SUMMARY
+        ):
+            strategy_type = label_attributes["strategy_type"]
+
+            # In the Summary section at the top of the Data worksheet, many of the labels are ambiguous but the
+            # rows are organized into percentage_kcals, income and expenditure sections. Therefore, we can set the
+            # Strategy Type based on the activity_attribute.
+            if strategy_type == "ReliefGift_or_Purchase":
+                if activity_attribute in ("percentage_kcals", "income"):
+                    strategy_type = LivelihoodStrategyType.RELIEF_GIFT_OTHER
+                elif activity_attribute == "expenditure":
+                    strategy_type = LivelihoodStrategyType.OTHER_PURCHASE
+                else:
+                    errors.append(
+                        "Invalid strategy_type %s for attribute %s from label '%s'"
+                        % (strategy_type, activity_attribute, label)
+                    )
+                    activity_attribute = None
+            elif strategy_type == "CashIncome_or_Purchase":
+                if activity_attribute == "income":
+                    strategy_type = LivelihoodStrategyType.OTHER_CASH_INCOME
+                elif activity_attribute == "expenditure":
+                    strategy_type = LivelihoodStrategyType.OTHER_PURCHASE
+                else:
+                    errors.append(
+                        "Invalid strategy_type %s for attribute %s from label '%s'"
+                        % (strategy_type, activity_attribute, label)
+                    )
+                    activity_attribute = None
+
+            # Get the valid fields names so we can determine if the attribute is stored in LivelihoodActivity.extra
+            # Livelihood Summary activities only contain kcals, income and expenditure, and aren't stored in
+            # the database, so can use the base LivelihoodActivity model.
+            model = (
+                LivelihoodActivity
+                if activity_type == ActivityLabel.LivelihoodActivityType.LIVELIHOOD_SUMMARY
+                else class_from_name(f"baseline.models.{strategy_type}")
+            )
+            activity_field_names = [field.name for field in model._meta.concrete_fields]
+            # Also include values that point directly to the primary key of related objects
+            activity_field_names += [
+                field.get_attname()
+                for field in model._meta.concrete_fields
+                if field.get_attname() not in activity_field_names
+            ]
+
+        # Raise an error if we find attributes without a strategy_type being set, unless we are processing
+        # the Livelihood Summary section, where we set the attribute from the section heading without wanting
+        # to save the actual data.
+        if not strategy_type and activity_type != ActivityLabel.LivelihoodActivityType.LIVELIHOOD_SUMMARY:
+            raise ValueError("Found attributes %s from row %s without a strategy_type set" % (label_attributes, row))
+
+        # Initialize the new livelihood strategy
+        livelihood_strategy = {
+            "livelihood_zone_baseline": livelihood_zone_baseline_key,
+            "strategy_type": strategy_type,
+            "season": label_attributes.get("season", None),
+            "product_id": label_attributes.get("product_id", None),
+            "unit_of_measure_id": label_attributes.get("unit_of_measure_id", None),
+            "currency_id": livelihood_zone_baseline.currency_id,
+            "additional_identifier": label_attributes.get("additional_identifier", None),
+            # Save the sheet, row, label and attribute/row map, to aid trouble-shooting
+            "bss_sheet": worksheet_name,
+            "bss_row": row,
+            "activity_label": label,
+            # Similarly, save the original values (i.e. aliases) for season, product and unit of measure.
+            "season_original": label_attributes.get("season_original", None),
+            "product_id_original": label_attributes.get("product_id_original", None),
+            "unit_of_measure_original": label_attributes.get("unit_of_measure_id_original", None),
+        }
+        # Keep track of which row each attribute came from, to aid trouble-shooting
+        livelihood_strategy["attribute_rows"] = {
+            attribute: row
+            for attribute in [
+                "strategy_type",
+                "season",
+                "product_id",
+                "unit_of_measure_id",
+                "currency_id",
+                "additional_identifier",
+            ]
+            if livelihood_strategy[attribute]
+        }
+
+        # Initialize the list of livelihood activities for the new livelihood strategy
+        livelihood_activities_for_strategy = [
+            {
+                "livelihood_zone_baseline": livelihood_zone_baseline_key,
+                "strategy_type": livelihood_strategy["strategy_type"],
+                "scenario": LivelihoodActivityScenario.BASELINE,
+                "wealth_group": wealth_group_df.iloc[i]["natural_key"],
+                # Include the column and row to aid trouble-shooting
+                "bss_sheet": worksheet_name,
+                "bss_column": df.columns[i + 1],
+                "bss_row": row,
+                "activity_label": label,
+            }
+            for i in range(len(df.loc[row, "B":]))
+        ]
+
+    # Iterate over the rows
     for row in df.iloc[num_header_rows:].index:  # Ignore the Wealth Group header rows
         column = None
         try:
@@ -938,609 +1562,9 @@ def get_instances_from_dataframe(
                 activity_attribute = label_attributes["attribute"]
 
             if label_attributes["is_start"]:
-                try:
-                    # We are starting a new livelihood activity, so append the previous livelihood strategy
-                    # to the list, provided that it has at least one Livelihood Activity where there is some income,
-                    # expediture or consumption. This excludes empty activities that only contain attributes for,
-                    # for example, 'type_of_milk_sold_or_other_uses'.
-                    # For MeatProduction, if animals_slaughtered is null/0 or carcass_weight is null/0, then a
-                    # percentage_kcals of 0 is not meaningful (it results from the BSS formula evaluating to 0
-                    # because there are no animals or no carcass weight). Set it to None so that the activity is
-                    # treated as empty and not saved to the database.
-                    if livelihood_strategy and livelihood_strategy["strategy_type"] == "MeatProduction":
-                        for livelihood_activity in livelihood_activities_for_strategy:
-                            if (
-                                not livelihood_activity.get("animals_slaughtered")
-                                or not livelihood_activity.get("carcass_weight")
-                            ) and livelihood_activity.get("percentage_kcals") == 0:
-                                livelihood_activity["percentage_kcals"] = None
 
-                    # Also ignore any livelihood activities that don't have a Wealth Category component to the Wealth Group
-                    # natural key. These are from blank columns between Wealth Category groups in the BSS, which sometimes
-                    # contain data where values or formulae have been copied across all the columns in a row.
-                    non_empty_livelihood_activities = [
-                        livelihood_activity
-                        for livelihood_activity in livelihood_activities_for_strategy
-                        if livelihood_activity["wealth_group"][2]  # Make sure there is a Wealth Category
-                        and any(
-                            (
-                                field in livelihood_activity
-                                and (livelihood_activity[field] or livelihood_activity[field] == 0)
-                            )
-                            for field in [
-                                "quantity_produced",  # MilkProduction may have quantity_produced but not any of the others.
-                                "income",
-                                "expenditure",
-                                "kcals_consumed",
-                                "percentage_kcals",
-                            ]
-                        )
-                    ]
-
-                    # Don't save Livelihood Strategies from the Data worksheet that are captured in more detail on the
-                    # Data2 or Data3 worksheets. These strategies have entries in the Data sheet like
-                    # 'Construction cash income -- see Data2'
-                    if non_empty_livelihood_activities:
-                        # Assertion to prevent linting from complaining about possible None values
-                        assert livelihood_strategy is not None, (
-                            "Found Livelihood Activities from row %s, but there is no Livelihood Strategy defined."
-                            % row
-                        )
-                        if re.match(
-                            r"^.*(?:data ?[23]|prochaine feuille)$",
-                            livelihood_strategy["activity_label"],
-                            re.IGNORECASE,
-                        ):
-                            non_empty_livelihood_activities = []
-
-                    if non_empty_livelihood_activities:
-                        # Finalize the livelihood strategy and activities, making various adjustments for quirks in the BSS
-
-                        # Assertion to prevent linting from complaining about possible None values
-                        assert livelihood_strategy is not None, (
-                            "Found Livelihood Activities from row %s, but there is no Livelihood Strategy defined."
-                            % row
-                        )
-
-                        # Copy the product_id for MilkProduction and ButterProduction from the previous livelihood strategy
-                        # if necessary.
-                        if (
-                            livelihood_strategy["strategy_type"] in ["MilkProduction", "ButterProduction"]
-                            and ("product_id" not in livelihood_strategy or not livelihood_strategy["product_id"])
-                            and livelihood_strategy["season"] in dairy_season2_names
-                            and previous_livelihood_strategy
-                            and "product_id" in previous_livelihood_strategy
-                            and previous_livelihood_strategy["product_id"]
-                        ):
-                            livelihood_strategy["attribute_rows"]["product_id"] = row
-                            livelihood_strategy["product_id"] = previous_livelihood_strategy["product_id"]
-
-                        # Copy the milking_animals for camels and cattle from the previous livelihood activities
-                        # if necessary.
-                        if (
-                            livelihood_strategy["strategy_type"] == "MilkProduction"
-                            and livelihood_strategy["season"] in dairy_season2_names
-                            and previous_livelihood_activities_for_strategy
-                        ):
-                            # Assertion to prevent linting from complaining about possible None values
-                            assert previous_livelihood_strategy is not None, (
-                                "Found Previous Livelihood Activities from row %s, but there is no Previous Livelihood Strategy defined."
-                                % row
-                            )
-                            if (
-                                "milking_animals" in previous_livelihood_strategy["attribute_rows"]
-                                and "milking_animals" not in livelihood_strategy["attribute_rows"]
-                            ):
-                                livelihood_strategy["attribute_rows"]["milking_animals"] = row
-                                for i in range(len(previous_livelihood_activities_for_strategy)):
-                                    if "milking_animals" in previous_livelihood_activities_for_strategy[i]:
-                                        livelihood_activities_for_strategy[i]["milking_animals"] = (
-                                            previous_livelihood_activities_for_strategy[i]["milking_animals"]
-                                        )
-
-                        # Calculate kcals_consumed if the livelihood activity only contains the percentage_kcals.
-                        # This is typical for ButterProduction and consumption of green crops.
-                        # Derive it by multiplying percentage_kcals by:
-                        #   2100 (kcals per person per day) * 365 (days per year) * average_household_size (from Row 40)
-                        if (
-                            "percentage_kcals" in livelihood_strategy["attribute_rows"]
-                            and "kcals_consumed" not in livelihood_strategy["attribute_rows"]
-                        ):
-                            livelihood_strategy["attribute_rows"]["kcals_consumed"] = row
-                            for i, livelihood_activity in enumerate(livelihood_activities_for_strategy):
-                                # The household size will always be the 4th header row in the dataframe, even though the
-                                # original row number (which is the index) will be different between the Data and Data3
-                                # worksheets
-                                column = df.columns[i + 1]
-                                household_size = df.iloc[3, i + 1]
-
-                                # Convert to numeric to handle string values (e.g., "6" instead of 6)
-                                try:
-                                    percentage_kcals = (
-                                        float(livelihood_activity["percentage_kcals"])
-                                        if livelihood_activity.get("percentage_kcals")
-                                        else None
-                                    )
-                                except (ValueError, TypeError):
-                                    percentage_kcals = None
-
-                                try:
-                                    household_size_numeric = (
-                                        float(household_size) if household_size not in ("", None) else None
-                                    )
-                                except (ValueError, TypeError):
-                                    household_size_numeric = None
-
-                                livelihood_activity["kcals_consumed"] = (
-                                    percentage_kcals * 2100 * 365 * household_size_numeric
-                                    if percentage_kcals and household_size_numeric
-                                    else None
-                                )
-
-                        # Normalize the `type_of_milk_sold_or_other_uses`, e.g. from `type of milk sold/other use (skim=0, whole=1)`  # NOQA: E501
-                        if "type_of_milk_sold_or_other_uses" in livelihood_strategy["attribute_rows"]:
-                            livelihood_strategy["attribute_rows"]["type_of_milk_sold_or_other_uses"] = row
-                            for livelihood_activity in livelihood_activities_for_strategy:
-                                livelihood_activity["type_of_milk_sold_or_other_uses"] = (
-                                    MilkProduction.MilkType.WHOLE
-                                    if livelihood_activity["type_of_milk_sold_or_other_uses"]
-                                    else MilkProduction.MilkType.SKIM
-                                )
-
-                        # Add the `type_of_milk_consumed`, because it is not present in any current BSS
-                        if (
-                            livelihood_strategy["strategy_type"] == "MilkProduction"
-                            and "type_of_milk_consumed" not in livelihood_strategy["attribute_rows"]
-                        ):
-                            livelihood_strategy["attribute_rows"]["type_of_milk_consumed"] = row
-                            for livelihood_activity in livelihood_activities_for_strategy:
-                                # We assume that people drink whole milk. This is not always true, but is the assumption
-                                # that is embedded in the ButterProduction calculations in current BSSs
-                                livelihood_activity["type_of_milk_consumed"] = MilkProduction.MilkType.WHOLE
-
-                        # Move the kcals_consumed and percentage_kcals from ButterProduction
-                        # to the associated MilkProduction livelihood activities.
-                        # The current BSSs only record the percentage_kcals for milk and butter consumption combined,
-                        # and don't contain sufficient information to split the kcals_consumed between milk and butter
-                        # (or cheese). However, we want to consider this consumption as part of the MilkProduction
-                        # livelihood strategy, rather than ButterProduction, even though the percentage_kcals
-                        # immediately follow the ButterProduction rows in the BSS.
-                        if (
-                            livelihood_strategy["strategy_type"] == "ButterProduction"
-                            and "percentage_kcals" in livelihood_strategy["attribute_rows"]
-                            and any(
-                                livelihood_activity.get("percentage_kcals")
-                                for livelihood_activity in livelihood_activities_for_strategy
-                            )
-                        ):
-                            # Find the corresponding MilkProduction livelihood strategy
-                            # First, find the equivalent MilkProduction season for the current ButterProduction strategy.
-                            # Try to find a Zone-specific season first, and fall back to a general season if necessary.
-                            milk_season = seasonnamelookup.get(
-                                f'{livelihood_strategy["season_original"]} ({livelihood_zone_baseline.livelihood_zone_id})',
-                                country_id=livelihood_zone_baseline.livelihood_zone.country_id,
-                                purpose="MilkProduction",
-                            )
-                            if not milk_season:
-                                milk_season = seasonnamelookup.get(
-                                    livelihood_strategy["season_original"],
-                                    country_id=livelihood_zone_baseline.livelihood_zone.country_id,
-                                    purpose="MilkProduction",
-                                )
-                            if not milk_season:
-                                raise ValueError(
-                                    f"Could not find a MilkProduction Season matching '{livelihood_strategy['season_original']}' "
-                                    f"from ButterProduction strategy for season '{livelihood_strategy['season_original']}' "
-                                    f"({livelihood_strategy['season']}) at row {livelihood_strategy['bss_row']} from:\n"
-                                )
-                            # Next, find the candidate MilkProduction strategies
-                            milk_strategy = None
-                            milk_strategies = [
-                                strategy
-                                for strategy in reversed(livelihood_strategies)
-                                if strategy["strategy_type"] == "MilkProduction"
-                            ]
-                            # Test each strategy in turn
-                            for strategy in milk_strategies:
-                                if (
-                                    # Season for the current LivelihoodStrategy hasn't been converted to a natural key yet,
-                                    # so coerce it to a list for comparison
-                                    strategy["season"] == [milk_season]
-                                    and strategy["additional_identifier"]
-                                    == livelihood_strategy["additional_identifier"]
-                                ):
-                                    milk_strategy = strategy
-                                    break
-                            if not milk_strategy:
-                                # Keep only the required attributes so that the error message is clearer
-                                milk_strategies = [
-                                    {
-                                        k: strategy[k]
-                                        for k in [
-                                            "bss_row",
-                                            "strategy_type",
-                                            "season_original",
-                                            "season",
-                                            "product_id",
-                                            "additional_identifier",
-                                        ]
-                                    }
-                                    for strategy in milk_strategies
-                                ]
-                                raise ValueError(
-                                    f"Could not find the MilkProduction Livelihood Strategy associated with "
-                                    f"the ButterProduction strategy for season '{livelihood_strategy['season_original']}' "
-                                    f"({livelihood_strategy['season']}) at row {livelihood_strategy['bss_row']} from:\n"
-                                    f"{'\n'.join([str(strategy) for strategy in milk_strategies])}"
-                                )
-                            milk_activities = {
-                                activity["wealth_group"]: activity
-                                for activity in livelihood_activities
-                                if activity["livelihood_strategy"]
-                                == milk_strategy["livelihood_zone_baseline"]
-                                + [
-                                    milk_strategy["strategy_type"],
-                                    milk_strategy["season"][0],
-                                    milk_strategy["product_id"],
-                                    milk_strategy["additional_identifier"],
-                                ]
-                            }
-                            moved_any = False
-                            for butter_activity in livelihood_activities_for_strategy:
-                                if butter_activity["percentage_kcals"] or butter_activity["percentage_kcals"] == 0:
-                                    milk_activity = milk_activities.get(butter_activity["wealth_group"])
-                                    if not milk_activity or "percentage_kcals" in milk_activity:
-                                        continue
-                                    # We found a matching MilkProduction activity that doesn't already have
-                                    # percentage_kcals set, so move the values across
-                                    moved_any = True
-                                    for field in ["percentage_kcals", "kcals_consumed"]:
-                                        milk_activity[field] = butter_activity.pop(field)
-                            if moved_any:
-                                # Add the fields to the MilkProduction strategy's attribute_rows
-                                for field in ["percentage_kcals", "kcals_consumed"]:
-                                    if (
-                                        field not in milk_strategy["attribute_rows"]
-                                        and field in livelihood_strategy["attribute_rows"]
-                                    ):
-                                        milk_strategy["attribute_rows"][field] = livelihood_strategy["attribute_rows"][
-                                            field
-                                        ]
-                                # If we have moved all of the percentage_kcals and kcals_consumed from the ButterProduction
-                                # livelihood activities, then remove these attributes from the ButterProduction strategy.
-                                for field in ["percentage_kcals", "kcals_consumed"]:
-                                    if not any(
-                                        field in livelihood_activity
-                                        and (livelihood_activity[field] or livelihood_activity[field] == 0)
-                                        for livelihood_activity in livelihood_activities_for_strategy
-                                    ):
-                                        del livelihood_strategy["attribute_rows"][field]
-
-                        # Add the `times_per_year` to FoodPurchase, PaymentInKind and OtherCashIncome,
-                        # because it is not in the current BSSs
-                        if (
-                            "times_per_month" in livelihood_strategy["attribute_rows"]
-                            and "months_per_year" in livelihood_strategy["attribute_rows"]
-                            and "times_per_year" not in livelihood_strategy["attribute_rows"]
-                            and "times_per_year" in activity_field_names
-                        ):
-                            livelihood_strategy["attribute_rows"]["times_per_year"] = row
-                            for livelihood_activity in livelihood_activities_for_strategy:
-                                livelihood_activity["times_per_year"] = (
-                                    livelihood_activity["times_per_month"] * livelihood_activity["months_per_year"]
-                                    if livelihood_activity["times_per_month"]
-                                    and livelihood_activity["months_per_year"]
-                                    else 0
-                                )
-
-                        # Calculate the times per year if the livelihood activity only contains the unit_multiple or
-                        # people_per_household and the kcals_consumed. For some livelihood strategies, this is implicit in
-                        # the formula used to calculate percentage_kcals in the BSS. For example:
-                        # School Feeding: `=IF(B534="","",B534/B$40*5/12*5/7*0.33)`.
-                        # I.e. percentage_kcals = number_of_children / average_household_size * 5/12 * 5/7 * 0.33,
-                        # which implies that children receive school meals 5 days a week, 5 months a year, and those meals
-                        # contain 1/3 of the required daily kcals, i.e. 2100 / 3 = 700 kcals.
-                        # We can calculate the times_per_year by dividing the kcals_consumed by the kcals_per_unit and the
-                        # unit_multiple (i.e. the number of children receiving school meals). This will give the correct
-                        # answer even if the number of months per year or days per week is different. However, it will not
-                        # return the correct answer if the formula in the BSS is using a different value for the percentage
-                        # of daily calories per person provided by the school meals, typically 0.33.
-                        # Similarly, for Labor Migration: `=IF(B553="","",B553/B$40*B554/12)`
-                        # I.e. percentage_kcals = number_of_people / average_household_size * number_of_months / 12.
-                        # which implies that household members who migrate temporarily do not consume the household's food
-                        # during those months and instead obtain their full kcals (2100) from other sources.
-                        if (
-                            "percentage_kcals" in livelihood_strategy["attribute_rows"]
-                            and (
-                                "unit_multiple" in livelihood_strategy["attribute_rows"]
-                                or "people_per_household" in livelihood_strategy["attribute_rows"]
-                            )
-                            and "product_id" in livelihood_strategy["attribute_rows"]
-                            and "times_per_year" not in livelihood_strategy["attribute_rows"]
-                            and "times_per_year" in activity_field_names
-                        ):
-                            livelihood_strategy["attribute_rows"]["times_per_year"] = row
-                            for i, livelihood_activity in enumerate(livelihood_activities_for_strategy):
-                                # The household size will always be the 4th header row in the dataframe, even though the
-                                # original row number (which is the index) will be different between the Data and Data3
-                                # worksheets
-                                column = df.columns[i + 1]
-                                kcals_per_unit = classifiedproductlookup.get_instance(
-                                    livelihood_strategy["product_id"]
-                                ).kcals_per_unit
-                                number_of_units = livelihood_activity.get(
-                                    "unit_multiple", None
-                                ) or livelihood_activity.get("people_per_household", None)
-                                livelihood_activity["times_per_year"] = (
-                                    round(livelihood_activity["kcals_consumed"] / kcals_per_unit / number_of_units)
-                                    if number_of_units
-                                    and kcals_per_unit
-                                    and livelihood_activity["kcals_consumed"] is not None
-                                    else 0
-                                )
-
-                        # Add the `quantity_purchased` to FoodPurchase and OtherPurchase, if it is missing.
-                        if (
-                            livelihood_strategy["strategy_type"] in ["FoodPurchase", "OtherPurchase"]
-                            and "quantity_purchased" in activity_field_names
-                            and "quantity_purchased" not in livelihood_strategy["attribute_rows"]
-                            and "times_per_year" in livelihood_strategy["attribute_rows"]
-                            and "unit_multiple" in livelihood_strategy["attribute_rows"]
-                        ):
-                            livelihood_strategy["attribute_rows"]["quantity_purchased"] = row
-                            for i, livelihood_activity in enumerate(livelihood_activities_for_strategy):
-                                livelihood_activity["quantity_purchased"] = (
-                                    livelihood_activity["unit_multiple"] * livelihood_activity["times_per_year"]
-                                    if livelihood_activity.get("times_per_year")
-                                    and livelihood_activity.get("unit_multiple")
-                                    else 0
-                                )
-
-                        # Add the `payment_per_time` and `unit_of_measure` to PaymentInKind, if they are missing.
-                        # For example, labor migration is recorded in the BSS as the number of household members who
-                        # migrate, and the number of months that they are absent for. This is coded as a product (S9HD)
-                        # with a kcals_per_unit of 2100, so the payment_per_time is 1 and the unit_of_measure is 'ea'.
-                        if (
-                            "payment_per_time" in activity_field_names
-                            and "payment_per_time" not in livelihood_strategy["attribute_rows"]
-                            and "product_id" in livelihood_strategy["attribute_rows"]
-                        ):
-                            kcals_per_unit = classifiedproductlookup.get_instance(
-                                livelihood_strategy["product_id"]
-                            ).kcals_per_unit
-                            if kcals_per_unit == 2100:
-                                livelihood_strategy["attribute_rows"]["payment_per_time"] = row
-                                if "unit_of_measure_id" not in livelihood_strategy["attribute_rows"]:
-                                    livelihood_strategy["attribute_rows"]["unit_of_measure_id"] = row
-                                    livelihood_strategy["unit_of_measure_id"] = "ea"
-                                for livelihood_activity in livelihood_activities_for_strategy:
-                                    livelihood_activity["payment_per_time"] = 1
-
-                        # Add the natural keys for the livelihood strategy to the activities.
-                        # This is the last step so that we are sure that the attributes in the livelihood_strategy are
-                        # final. For example, the Season 1, etc. alias has been replaced with the real natural key.
-                        for i, livelihood_activity in enumerate(livelihood_activities_for_strategy):
-                            livelihood_activity["livelihood_strategy"] = livelihood_zone_baseline_key + [
-                                livelihood_strategy["strategy_type"],
-                                livelihood_strategy["season"]
-                                or "",  # Natural key components must be "" rather than None
-                                livelihood_strategy["product_id"]
-                                or "",  # Natural key components must be "" rather than None
-                                livelihood_strategy["additional_identifier"],
-                            ]
-
-                        # Natural keys are always a list, so convert the season name if it is set
-                        if livelihood_strategy["season"]:
-                            livelihood_strategy["season"] = [livelihood_strategy["season"]]
-
-                        # Some Livelihood Activities are only partially defined and have data for the Wealth Groups,
-                        # but not for the Summary. In these cases, we can ignore the Wealth Group-level Livelihood Activity
-                        # data. Note that if there is Summary data, then we need to include the Livelihood Strategy and
-                        # Activities in the fixture, or raise an exception.
-                        strategy_is_valid = True
-
-                        # Find the non-empty summary activities, so we can use them to decide whether to raise errors.
-                        # Note that we save non-empty livelihood activities that include 0 values for income, expenditure,
-                        # or kcals_consumed, but we don't count summary activities that have 0 values for these fields.
-                        non_empty_summary_activities = [
-                            livelihood_activity
-                            for livelihood_activity in livelihood_activities_for_strategy
-                            if livelihood_activity["wealth_group"][3] == ""
-                            and any(
-                                (field in livelihood_activity and livelihood_activity[field])
-                                for field in ["income", "expenditure", "kcals_consumed", "percentage_kcals"]
-                            )
-                        ]
-
-                        # Check the Livelihood Strategy has a Season if one is required.
-                        # (e.g. for MilkProduction and ButterProduction).
-                        if (
-                            livelihood_strategy["strategy_type"] in LivelihoodStrategy.REQUIRES_SEASON
-                            and activity_type != ActivityLabel.LivelihoodActivityType.LIVELIHOOD_SUMMARY
-                            and ("season" not in livelihood_strategy or not livelihood_strategy["season"])
-                        ):
-                            strategy_is_valid = False
-                            # Include the header rows so that we can see which Wealth Groups are affected
-                            rows = df.index[:num_header_rows].tolist() + [livelihood_strategy["bss_row"]]
-                            error_message = (
-                                "Cannot determine season from '%s' for %s %s on row %s for label '%s':\n%s"
-                                % (
-                                    livelihood_strategy["season_original"],
-                                    "summary" if non_empty_summary_activities else "non-summary",
-                                    livelihood_strategy["strategy_type"],
-                                    livelihood_strategy["bss_row"],
-                                    livelihood_strategy["activity_label"],
-                                    get_sample_data(df, rows).to_markdown(),
-                                )
-                            )
-                            if not non_empty_summary_activities:
-                                # No summary activities so we don't need to log an error, a warning is sufficient
-                                context.log.warning(error_message)
-                            else:
-                                # Summary activities exist, so we need to raise an error
-                                errors.append(error_message)
-
-                        # Check the Livelihood Strategy has a product_id if one is required.
-                        if (
-                            livelihood_strategy["strategy_type"] in LivelihoodStrategy.REQUIRES_PRODUCT
-                            and activity_type != ActivityLabel.LivelihoodActivityType.LIVELIHOOD_SUMMARY
-                            and ("product_id" not in livelihood_strategy or not livelihood_strategy["product_id"])
-                        ):
-                            strategy_is_valid = False
-                            # Include the header rows so that we can see which Wealth Groups are affected
-                            rows = df.index[:num_header_rows].tolist() + [livelihood_strategy["bss_row"]]
-                            error_message = (
-                                "Cannot determine product_id from '%s' for %s %s on row %s for label '%s':\n%s"
-                                % (
-                                    livelihood_strategy["product_id_original"],
-                                    "summary" if non_empty_summary_activities else "non-summary",
-                                    livelihood_strategy["strategy_type"],
-                                    livelihood_strategy["bss_row"],
-                                    livelihood_strategy["activity_label"],
-                                    get_sample_data(df, rows).to_markdown(),
-                                )
-                            )
-                            if not non_empty_summary_activities:
-                                # No summary activities so we don't need to log an error, a warning is sufficient
-                                context.log.warning(error_message)
-                            else:
-                                # Summary activities exist, so we need to raise an error
-                                errors.append(error_message)
-
-                        # For invalid strategies, we have appended an error, and can raise them all at the end.
-                        if strategy_is_valid:
-
-                            # Append the stategies and activities to the lists of instances to create.
-                            livelihood_strategies.append(livelihood_strategy)
-                            livelihood_activities += non_empty_livelihood_activities
-
-                except Exception as e:
-                    raise RuntimeError(
-                        "Unhandled error in BSS %s saving Livelihood Strategy from '%s'!%s with label '%s'"
-                        % (
-                            partition_key,
-                            worksheet_name,
-                            livelihood_strategy["bss_row"],
-                            livelihood_strategy["activity_label"],
-                        )
-                    ) from e
-
-                # Now that we have saved the previous livelihood strategy and activities, we can start a new one.
-
-                # There are cases where attributes get copied to the new Livelihood Strategy or Livelihood Activities,
-                # notably for MilkProduction and ButterProduction for camels and cattle.
-                # Therefore, take a copy of the previous livelihood_strategy in case we need it.
-                previous_livelihood_strategy = livelihood_strategy.copy() if livelihood_strategy else None
-                previous_livelihood_activities_for_strategy = [
-                    livelihood_activity.copy() for livelihood_activity in livelihood_activities_for_strategy
-                ]
-
-                # Headings like CROP PRODUCTION: set the strategy type for subsequent rows.
-                # Some other labels imply specific strategy types, such as MilkProduction, MeatProduction or LivestockSales
-                # For Livelihood Summary activities, the strategy_type is always set from the label_attributes.
-                if (
-                    label_attributes["strategy_type"]
-                    or activity_type == ActivityLabel.LivelihoodActivityType.LIVELIHOOD_SUMMARY
-                ):
-                    strategy_type = label_attributes["strategy_type"]
-
-                    # In the Summary section at the top of the Data worksheet, many of the labels are ambiguous but the
-                    # rows are organized into percentage_kcals, income and expenditure sections. Therefore, we can set the
-                    # Strategy Type based on the activity_attribute.
-                    if strategy_type == "ReliefGift_or_Purchase":
-                        if activity_attribute in ("percentage_kcals", "income"):
-                            strategy_type = LivelihoodStrategyType.RELIEF_GIFT_OTHER
-                        elif activity_attribute == "expenditure":
-                            strategy_type = LivelihoodStrategyType.OTHER_PURCHASE
-                        else:
-                            errors.append(
-                                "Invalid strategy_type %s for attribute %s from label '%s'"
-                                % (strategy_type, activity_attribute, label)
-                            )
-                            activity_attribute = None
-                    elif strategy_type == "CashIncome_or_Purchase":
-                        if activity_attribute == "income":
-                            strategy_type = LivelihoodStrategyType.OTHER_CASH_INCOME
-                        elif activity_attribute == "expenditure":
-                            strategy_type = LivelihoodStrategyType.OTHER_PURCHASE
-                        else:
-                            errors.append(
-                                "Invalid strategy_type %s for attribute %s from label '%s'"
-                                % (strategy_type, activity_attribute, label)
-                            )
-                            activity_attribute = None
-
-                    # Get the valid fields names so we can determine if the attribute is stored in LivelihoodActivity.extra
-                    # Livelihood Summary activities only contain kcals, income and expenditure, and aren't stored in
-                    # the database, so can use the base LivelihoodActivity model.
-                    model = (
-                        LivelihoodActivity
-                        if activity_type == ActivityLabel.LivelihoodActivityType.LIVELIHOOD_SUMMARY
-                        else class_from_name(f"baseline.models.{strategy_type}")
-                    )
-                    activity_field_names = [field.name for field in model._meta.concrete_fields]
-                    # Also include values that point directly to the primary key of related objects
-                    activity_field_names += [
-                        field.get_attname()
-                        for field in model._meta.concrete_fields
-                        if field.get_attname() not in activity_field_names
-                    ]
-
-                # Raise an error if we find attributes without a strategy_type being set, unless we are processing
-                # the Livelihood Summary section, where we set the attribute from the section heading without wanting
-                # to save the actual data.
-                if not strategy_type and activity_type != ActivityLabel.LivelihoodActivityType.LIVELIHOOD_SUMMARY:
-                    raise ValueError(
-                        "Found attributes %s from row %s without a strategy_type set" % (label_attributes, row)
-                    )
-
-                # Initialize the new livelihood strategy
-                livelihood_strategy = {
-                    "livelihood_zone_baseline": livelihood_zone_baseline_key,
-                    "strategy_type": strategy_type,
-                    "season": label_attributes.get("season", None),
-                    "product_id": label_attributes.get("product_id", None),
-                    "unit_of_measure_id": label_attributes.get("unit_of_measure_id", None),
-                    "currency_id": livelihood_zone_baseline.currency_id,
-                    "additional_identifier": label_attributes.get("additional_identifier", None),
-                    # Save the sheet, row, label and attribute/row map, to aid trouble-shooting
-                    "bss_sheet": worksheet_name,
-                    "bss_row": row,
-                    "activity_label": label,
-                    # Similarly, save the original values (i.e. aliases) for season, product and unit of measure.
-                    "season_original": label_attributes.get("season_original", None),
-                    "product_id_original": label_attributes.get("product_id_original", None),
-                    "unit_of_measure_original": label_attributes.get("unit_of_measure_id_original", None),
-                }
-                # Keep track of which row each attribute came from, to aid trouble-shooting
-                livelihood_strategy["attribute_rows"] = {
-                    attribute: row
-                    for attribute in [
-                        "strategy_type",
-                        "season",
-                        "product_id",
-                        "unit_of_measure_id",
-                        "currency_id",
-                        "additional_identifier",
-                    ]
-                    if livelihood_strategy[attribute]
-                }
-
-                # Initialize the list of livelihood activities for the new livelihood strategy
-                livelihood_activities_for_strategy = [
-                    {
-                        "livelihood_zone_baseline": livelihood_zone_baseline_key,
-                        "strategy_type": livelihood_strategy["strategy_type"],
-                        "scenario": LivelihoodActivityScenario.BASELINE,
-                        "wealth_group": wealth_group_df.iloc[i]["natural_key"],
-                        # Include the column and row to aid trouble-shooting
-                        "bss_sheet": worksheet_name,
-                        "bss_column": df.columns[i + 1],
-                        "bss_row": row,
-                        "activity_label": label,
-                    }
-                    for i in range(len(df.loc[row, "B":]))
-                ]
+                finalize_strategy()
+                initialize_strategy()
 
             else:
 
@@ -1833,6 +1857,9 @@ def get_instances_from_dataframe(
                     "Unhandled error in BSS %s processing row '%s'!%s with label '%s'"
                     % (partition_key, worksheet_name, row, label)
                 ) from e
+
+    # Finalize the last strategy
+    finalize_strategy()
 
     result = {
         "LivelihoodStrategy": livelihood_strategies,

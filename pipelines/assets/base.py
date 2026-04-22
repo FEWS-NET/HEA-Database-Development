@@ -5,7 +5,6 @@ Base functions for performing operations on BSS spreadsheets.
 import numbers
 import os
 from io import BytesIO
-from typing import Optional
 
 import django
 import msoffcrypto
@@ -51,6 +50,9 @@ LANGS = {
     "groupe de richesse": "fr",
     "groupe socio-economique": "fr",
     "group socio-economique": "fr",
+    "expandability parameters": "en",
+    "paramètres d'extensibilité (expandability factors)": "fr",
+    "parametres d'utilisation maximale (expandability)": "fr",
 }
 
 # List of labels that indicate the start of the summary columns from row 3 in the Data, Data, and Data3 worksheets
@@ -311,9 +313,11 @@ def get_bss_dataframe(
     filepath_or_buffer,
     bss_sheet: str,
     start_strings: list[str],
-    end_strings: Optional[list[str]] = None,
-    header_rows: list[int] = [3, 4, 5],  # List of row indexes that contain the Wealth Group and other headers
-    num_summary_cols: Optional[int] = None,
+    end_strings: list[str] | None = None,
+    header_rows: list[int] | None = [3, 4, 5],  # List of row indexes that contain the Wealth Group and other headers
+    end_col: str | None = None,
+    num_summary_cols: int | None = None,
+    fill_blank_rows: bool = True,
 ) -> Output[pd.DataFrame]:
     """
     Retrieve a worksheet from a BSS and return it as a DataFrame.
@@ -328,7 +332,8 @@ def get_bss_dataframe(
             pd.DataFrame(),
             metadata={
                 "worksheet": bss_sheet,
-                "row_count": "Worksheet not present in file",
+                "row_count": 0,
+                "message": "Worksheet not present in file",
             },
         )
 
@@ -337,12 +342,13 @@ def get_bss_dataframe(
     # Set the column names to match Excel
     df.columns = [get_column_letter(col + 1) for col in df.columns]
 
-    # Find the last column before the summary column, which is in row 3
-    end_col = get_index(SUMMARY_LABELS, df.loc[3], offset=-1)
+    if end_col is None:
+        # Find the last column before the summary column, which is in row 3
+        end_col = get_index(SUMMARY_LABELS, df.loc[3], offset=-1)
     if not end_col:
         raise ValueError(f'No cell containing any of the summary strings: {", ".join(SUMMARY_LABELS)}')
 
-    if not num_summary_cols:
+    if num_summary_cols is None:
         # If the number of summary columns wasn't specified, then assume that
         # there is one summary column for each wealth category, from row 3.
         num_summary_cols = df.loc[3, "B":end_col].dropna().nunique()
@@ -369,11 +375,21 @@ def get_bss_dataframe(
         # for rows that rely on copying down the label in column A from a previous row.
         end_row = df.index[-1]
 
-    # Find the language based on the value in cell A3
-    lang = LANGS[df.loc[3, "A"].strip().lower()]
+    # Find the language based on the value in cell A3 (or A2 for 'Exp factors')
+    lang = None
+    for row in [2, 3]:
+        try:
+            lang = LANGS[df.loc[row, "A"].strip().lower()]
+        except (AttributeError, KeyError):
+            # There isn't a text label in the cell, or the label isn't LANGS
+            pass
+    if not lang:
+        raise ValueError(f'No language could be identified from the labels {df.loc[2:3, "A"].tolist()} in Column A')
 
-    # Filter to just the Wealth Group header rows and the Livelihood Activities
-    df = pd.concat([df.loc[header_rows, :end_col], df.loc[start_row:end_row, :end_col]])
+    # Filter to just the header rows (typically the Wealth Groups) and the main data (e.g. Livelihood Activities)
+    df = pd.concat(
+        [df.loc[header_rows, :end_col] if header_rows else pd.DataFrame(), df.loc[start_row:end_row, :end_col]]
+    )
 
     # Copy the label from the previous cell for rows that have data but have a blank label.
     # For example, sometimes the wealth characteristic label is only filled in for the first wealth category:
@@ -385,19 +401,19 @@ def get_bss_dataframe(
     #   |  20 |                                                | M                   | 1.4                |
     #   |  21 |                                                | B/O                 | 1.4                |
     #   |  22 | Camels: total owned at start of year           | VP                  | 0                  |
-
-    # We do this by setting the missing values to pd.NA and then using .ffill()
-    # Note that we need to replace the None with something else before the mask() and ffill() so that only
-    # the masked values are replaced.
-    df["A"] = (
-        df["A"]
-        .replace({None: ""})
-        .mask(
-            df["A"].isna() & df.loc[:, "B":].notnull().any(axis="columns"),
-            pd.NA,
+    if fill_blank_rows:
+        # We do this by setting the missing values to pd.NA and then using .ffill()
+        # Note that we need to replace the None with something else before the mask() and ffill() so that only
+        # the masked values are replaced.
+        df["A"] = (
+            df["A"]
+            .replace({None: ""})
+            .mask(
+                df["A"].isna() & df.loc[:, "B":].notnull().any(axis="columns"),
+                pd.NA,
+            )
+            .ffill()
         )
-        .ffill()
-    )
 
     # Replace NaN with "" ready for Django
     df = df.fillna("")

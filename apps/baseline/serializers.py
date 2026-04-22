@@ -727,7 +727,7 @@ class LivelihoodActivitySerializer(serializers.ModelSerializer):
     season_description = serializers.CharField(source="livelihood_strategy.season.description", read_only=True)
     season_type = serializers.CharField(source="livelihood_strategy.season.season_type", read_only=True)
     season_type_label = serializers.SerializerMethodField()
-    wealth_group_percentage_of_households = serializers.IntegerField(
+    wealth_group_percentage_of_households = serializers.FloatField(
         source="wealth_group.percentage_of_households", read_only=True
     )
     wealth_group_average_household_size = serializers.FloatField(
@@ -1490,7 +1490,7 @@ class ExpandabilityFactorSerializer(serializers.ModelSerializer):
     season_description = serializers.CharField(source="livelihood_strategy.season.description", read_only=True)
     season_type = serializers.CharField(source="livelihood_strategy.season.season_type", read_only=True)
     season_type_label = serializers.SerializerMethodField()
-    wealth_group_percentage_of_households = serializers.IntegerField(
+    wealth_group_percentage_of_households = serializers.FloatField(
         source="wealth_group.percentage_of_households", read_only=True
     )
     wealth_group_average_household_size = serializers.FloatField(
@@ -1604,7 +1604,7 @@ class CopingStrategySerializer(serializers.ModelSerializer):
     season_description = serializers.CharField(source="livelihood_strategy.season.description", read_only=True)
     season_type = serializers.CharField(source="livelihood_strategy.season.season_type", read_only=True)
     season_type_label = serializers.SerializerMethodField()
-    wealth_group_percentage_of_households = serializers.IntegerField(
+    wealth_group_percentage_of_households = serializers.FloatField(
         source="wealth_group.percentage_of_households", read_only=True
     )
     wealth_group_average_household_size = serializers.FloatField(
