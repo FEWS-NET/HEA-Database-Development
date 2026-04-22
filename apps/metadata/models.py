@@ -248,6 +248,8 @@ class WealthGroupCategory(ReferenceData):
     worksheet in Row 3, so that it can be shared across all BSS.
     """
 
+    POOR = "P"  # Category Code for the Poor Wealth Group, used for defining the Survival Threshold.
+
     class Meta:
         verbose_name = _("Wealth Group Category")
         verbose_name_plural = _("Wealth Group Categories")

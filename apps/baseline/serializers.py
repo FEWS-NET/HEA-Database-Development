@@ -1,11 +1,14 @@
-from django.db.models import F, FloatField, Sum
+from django.db.models import F, FloatField, Sum, Value
+from django.db.models.functions import Coalesce
 from rest_framework import serializers
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
 
 from common.fields import translation_fields
 from common.serializers import AggregatingSerializer
+from metadata.models import WealthGroupCategory
 
 from .models import (
+    AnnualKcalsCost,
     BaselineLivelihoodActivity,
     BaselineWealthGroup,
     BaselineWealthGroupCharacteristicValue,
@@ -161,11 +164,16 @@ class LivelihoodProductCategorySerializer(serializers.ModelSerializer):
             "livelihood_zone_name",
             "livelihood_zone_country",
             "livelihood_zone_country_name",
+            "wealth_group_category",
+            "strategy_type",
+            "basket",
+            "basket_name",
             "product",
             "product_common_name",
             "product_description",
-            "basket",
-            "basket_name",
+            "season",
+            "season_name",
+            "additional_identifier",
             "percentage_allocation_to_basket",
         ]
 
@@ -205,6 +213,19 @@ class LivelihoodProductCategorySerializer(serializers.ModelSerializer):
     )
     livelihood_zone_country_name = serializers.CharField(
         source="baseline_livelihood_activity.livelihood_zone_baseline.livelihood_zone.country.name", read_only=True
+    )
+    wealth_group_category = serializers.CharField(
+        source="baseline_livelihood_activity.wealth_group.wealth_group_category.pk", read_only=True
+    )
+    strategy_type = serializers.CharField(
+        source="baseline_livelihood_activity.livelihood_strategy.strategy_type", read_only=True
+    )
+    season = serializers.CharField(source="baseline_livelihood_activity.livelihood_strategy.season.pk", read_only=True)
+    season_name = serializers.CharField(
+        source="baseline_livelihood_activity.livelihood_strategy.season.name", read_only=True
+    )
+    additional_identifier = serializers.CharField(
+        source="baseline_livelihood_activity.livelihood_strategy.additional_identifier", read_only=True
     )
     basket_name = serializers.SerializerMethodField()
 
@@ -275,6 +296,11 @@ class WealthGroupSerializer(serializers.ModelSerializer):
             "wealth_group_category_name",
             "percentage_of_households",
             "average_household_size",
+            "household_annual_kcals_cost",
+            "survival_threshold_as_percentage_kcals",
+            "survival_threshold_as_cash",
+            "livelihoods_protection_threshold_as_percentage_kcals",
+            "livelihoods_protection_threshold_as_cash",
         ]
 
     livelihood_zone_baseline_label = serializers.SerializerMethodField()
@@ -687,6 +713,8 @@ class LivelihoodActivitySerializer(serializers.ModelSerializer):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "total_income_as_percentage_kcals",
+            "total_income_as_cash",
         ]
 
     livelihood_zone_name = serializers.CharField(
@@ -1684,6 +1712,32 @@ class LivelihoodActivitySummarySerializer(AggregatingSerializer):
         "percentage_kcals": Sum,
         "kcal_income_sum": Sum(
             (F("quantity_purchased") + F("quantity_produced")) * F("livelihood_strategy__product__kcals_per_unit"),
+            output_field=FloatField(),
+        ),
+        "total_income_as_percentage_kcals": Sum(
+            (
+                Coalesce(F("percentage_kcals"), 0)
+                + (
+                    Coalesce(F("income"), 0)
+                    / (
+                        F("wealth_group__average_household_size")
+                        * AnnualKcalsCost(
+                            F("wealth_group__livelihood_zone_baseline_id"), Value(WealthGroupCategory.POOR)
+                        )
+                    )
+                )
+            ),
+            output_field=FloatField(),
+        ),
+        "total_income_as_cash": Sum(
+            (
+                (
+                    Coalesce(F("percentage_kcals"), 0)
+                    * F("wealth_group__average_household_size")
+                    * AnnualKcalsCost(F("wealth_group__livelihood_zone_baseline_id"), Value(WealthGroupCategory.POOR))
+                )
+                + Coalesce(F("income"), 0)
+            ),
             output_field=FloatField(),
         ),
     }

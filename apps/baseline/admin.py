@@ -36,6 +36,7 @@ from .models import (
     Hazard,
     Hunting,
     LivelihoodActivity,
+    LivelihoodProductCategory,
     LivelihoodStrategy,
     LivelihoodZone,
     LivelihoodZoneBaseline,
@@ -1025,6 +1026,29 @@ class WealthGroupAdmin(admin.ModelAdmin):
         )
 
 
+class LivelihoodProductCategoryAdmin(admin.ModelAdmin):
+    fields = (
+        "baseline_livelihood_activity",
+        "basket",
+        "percentage_allocation_to_basket",
+    )
+    list_display = (
+        "baseline_livelihood_activity",
+        "basket",
+        "percentage_allocation_to_basket",
+    )
+    search_fields = (
+        "baseline_livelihood_activity__livelihood_zone_baseline__livelihood_zone__code",
+        "baseline_livelihood_activity__livelihood_zone_baseline__livelihood_zone__alternate_code",
+        "baseline_livelihood_activity__wealth_group__wealth_group_category__code",
+        "baseline_livelihood_activity__livelihood_strategy__product__cpc",
+    )
+    list_filter = (
+        "baseline_livelihood_activity__wealth_group__wealth_group_category__code",
+        "basket",
+    )
+
+
 class SeasonalActivityAdmin(admin.ModelAdmin):
     fields = (
         "livelihood_zone_baseline",
@@ -1330,6 +1354,7 @@ admin.site.register(Event, EventAdmin)
 admin.site.register(ExpandabilityFactor, ExpandabilityFactorAdmin)
 admin.site.register(CopingStrategy, CopingStrategyAdmin)
 
+admin.site.register(LivelihoodProductCategory, LivelihoodProductCategoryAdmin)
 admin.site.register(SeasonalActivity, SeasonalActivityAdmin)
 admin.site.register(SeasonalActivityOccurrence, SeasonalActivityOccurrenceAdmin)
 admin.site.register(SeasonalProductionPerformance, SeasonalProductionPerformanceAdmin)

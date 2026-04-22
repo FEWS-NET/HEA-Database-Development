@@ -2,6 +2,19 @@
 
 import django.core.validators
 from django.db import migrations, models
+from django.db.models import F
+
+
+def forwards(apps, schema_editor):
+    # Use apps.get_model to reference the model, not an import
+    WealthGroup = apps.get_model("baseline", "WealthGroup")
+    WealthGroup.objects.update(percentage_of_households=F("percentage_of_households") / 100)
+
+
+def backwards(apps, schema_editor):
+    # Use apps.get_model to reference the model, not an import
+    WealthGroup = apps.get_model("baseline", "WealthGroup")
+    WealthGroup.objects.update(percentage_of_households=F("percentage_of_households") * 100)
 
 
 class Migration(migrations.Migration):
@@ -22,6 +35,7 @@ class Migration(migrations.Migration):
                 verbose_name="Percentage of households",
             ),
         ),
+        migrations.RunPython(forwards, backwards),
         migrations.AlterField(
             model_name="expandabilityfactor",
             name="percentage_consumed",
