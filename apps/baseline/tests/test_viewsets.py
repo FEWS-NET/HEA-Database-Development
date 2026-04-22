@@ -1039,11 +1039,16 @@ class LivelihoodProductCategoryViewSetTestCase(APITestCase):
             "livelihood_zone_name",
             "livelihood_zone_country",
             "livelihood_zone_country_name",
+            "wealth_group_category",
+            "strategy_type",
+            "basket",
+            "basket_name",
             "product",
             "product_common_name",
             "product_description",
-            "basket",
-            "basket_name",
+            "season",
+            "season_name",
+            "additional_identifier",
             "percentage_allocation_to_basket",
         )
         self.assertCountEqual(
@@ -1278,6 +1283,11 @@ class WealthGroupViewSetTestCase(APITestCase):
             "wealth_group_category_name",
             "percentage_of_households",
             "average_household_size",
+            "household_annual_kcals_cost",
+            "survival_threshold_as_percentage_kcals",
+            "survival_threshold_as_cash",
+            "livelihoods_protection_threshold_as_percentage_kcals",
+            "livelihoods_protection_threshold_as_cash",
         )
         self.assertCountEqual(
             response.json().keys(),
@@ -1383,6 +1393,11 @@ class BaselineWealthGroupViewSetTestCase(APITestCase):
             "wealth_group_category_name",
             "percentage_of_households",
             "average_household_size",
+            "household_annual_kcals_cost",
+            "survival_threshold_as_percentage_kcals",
+            "survival_threshold_as_cash",
+            "livelihoods_protection_threshold_as_percentage_kcals",
+            "livelihoods_protection_threshold_as_cash",
         )
         self.assertCountEqual(
             response.json().keys(),
@@ -1507,6 +1522,11 @@ class CommunityWealthGroupViewSetTestCase(APITestCase):
             "wealth_group_category_name",
             "percentage_of_households",
             "average_household_size",
+            "household_annual_kcals_cost",
+            "survival_threshold_as_percentage_kcals",
+            "survival_threshold_as_cash",
+            "livelihoods_protection_threshold_as_percentage_kcals",
+            "livelihoods_protection_threshold_as_cash",
         )
         self.assertCountEqual(
             response.json().keys(),
@@ -2220,6 +2240,8 @@ class LivelihoodActivityViewSetTestCase(APITestCase):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "total_income_as_percentage_kcals",
+            "total_income_as_cash",
             "household_labor_provider",
             "household_labor_provider_label",
             "extra",
@@ -2466,6 +2488,8 @@ class BaselineLivelihoodActivityViewSetTestCase(APITestCase):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "total_income_as_percentage_kcals",
+            "total_income_as_cash",
             "extra",
         )
         self.assertCountEqual(
@@ -2647,6 +2671,8 @@ class ResponseLivelihoodActivityViewSetTestCase(APITestCase):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "total_income_as_percentage_kcals",
+            "total_income_as_cash",
             "extra",
         )
         self.assertCountEqual(
@@ -2832,6 +2858,8 @@ class MilkProductionViewSetTestCase(APITestCase):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "total_income_as_percentage_kcals",
+            "total_income_as_cash",
             "milking_animals",
             "lactation_days",
             "daily_production",
@@ -3003,6 +3031,8 @@ class ButterProductionViewSetTestCase(APITestCase):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "total_income_as_percentage_kcals",
+            "total_income_as_cash",
             "extra",
         )
         self.assertCountEqual(
@@ -3167,6 +3197,8 @@ class MeatProductionViewSetTestCase(APITestCase):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "total_income_as_percentage_kcals",
+            "total_income_as_cash",
             "animals_slaughtered",
             "carcass_weight",
             "extra",
@@ -3334,6 +3366,8 @@ class LivestockSalesViewSetTestCase(APITestCase):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "total_income_as_percentage_kcals",
+            "total_income_as_cash",
             "extra",
         )
         self.assertCountEqual(
@@ -3494,6 +3528,8 @@ class CropProductionViewSetTestCase(APITestCase):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "total_income_as_percentage_kcals",
+            "total_income_as_cash",
             "extra",
         )
         self.assertCountEqual(
@@ -3658,6 +3694,8 @@ class FoodPurchaseViewSetTestCase(APITestCase):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "total_income_as_percentage_kcals",
+            "total_income_as_cash",
             "unit_multiple",
             "months_per_year",
             "times_per_month",
@@ -3828,6 +3866,8 @@ class PaymentInKindViewSetTestCase(APITestCase):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "total_income_as_percentage_kcals",
+            "total_income_as_cash",
             "payment_product",
             "payment_product_common_name",
             "payment_product_description",
@@ -4031,6 +4071,8 @@ class ReliefGiftsOtherViewSetTestCase(APITestCase):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "total_income_as_percentage_kcals",
+            "total_income_as_cash",
             "unit_multiple",
             "months_per_year",
             "times_per_month",
@@ -4199,6 +4241,8 @@ class FishingViewSetTestCase(APITestCase):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "total_income_as_percentage_kcals",
+            "total_income_as_cash",
             "extra",
         )
         self.assertCountEqual(
@@ -4363,6 +4407,8 @@ class HuntingViewSetTestCase(APITestCase):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "total_income_as_percentage_kcals",
+            "total_income_as_cash",
             "extra",
         )
         self.assertCountEqual(
@@ -4527,6 +4573,8 @@ class WildFoodGatheringViewSetTestCase(APITestCase):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "total_income_as_percentage_kcals",
+            "total_income_as_cash",
             "extra",
         )
         self.assertCountEqual(
@@ -4691,6 +4739,8 @@ class OtherCashIncomeViewSetTestCase(APITestCase):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "total_income_as_percentage_kcals",
+            "total_income_as_cash",
             "payment_per_time",
             "people_per_household",
             "times_per_month",
@@ -4860,6 +4910,8 @@ class OtherPurchasesViewSetTestCase(APITestCase):
             "expenditure",
             "kcals_consumed",
             "percentage_kcals",
+            "total_income_as_percentage_kcals",
+            "total_income_as_cash",
             "unit_multiple",
             "times_per_month",
             "months_per_year",
@@ -4966,6 +5018,8 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
     PRODUCT_DEFINITIONS = (
         ("R01122", "Maize (corn), other", "Maize/corn grain"),
         ("R01142", "Sorghum, other", "Sorghum grain"),
+        ("R01520", "Cassava", "Cassava"),
+        ("L02111", "Cattle", "Cattle"),
         ("S86119", "Other support services to crop production", "Other cropping inputs"),
         ("S86121", "Farm animal husbandry services on inputs owned by others", "Livestock care"),
         ("S88537", "Stone cutting, shaping and finishing services", "Stone cutting"),
@@ -5037,8 +5091,15 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
             LivelihoodActivityScenario.values if not wealth_group.community else [LivelihoodActivityScenario.BASELINE]
         )
         for scenario in scenarios:
-            if product.cpc in ["R01122", "R01142"]:
+            if product.cpc in ["R01122", "R01142", "R01520"]:
                 CropProductionFactory(
+                    livelihood_zone_baseline=wealth_group.livelihood_zone_baseline,
+                    wealth_group=wealth_group,
+                    livelihood_strategy__product=product,
+                    scenario=scenario,
+                )
+            elif product.cpc in ["L02111"]:
+                LivestockSaleFactory(
                     livelihood_zone_baseline=wealth_group.livelihood_zone_baseline,
                     wealth_group=wealth_group,
                     livelihood_strategy__product=product,
@@ -5182,6 +5243,31 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
             with self.subTest(row=row):
                 self.check_row_against_expected_slices(row, fields, expected, expected_slice)
 
+    def test_summary_supports_multiple_product_slices(self):
+        fields = ["livelihood_zone_baseline", "scenario"]
+        expected = self.activity_df.groupby(fields).agg(
+            kcals_consumed=("kcals_consumed", "sum"),
+            income=("income", "sum"),
+            expenditure=("expenditure", "sum"),
+            percentage_kcals=("percentage_kcals", "sum"),
+        )
+        expected_slice = (
+            self.activity_df[self.activity_df["product"].isin(["R01122", "R01520"])]
+            .groupby(fields)
+            .agg(
+                kcals_consumed=("kcals_consumed", "sum"),
+                income=("income", "sum"),
+                expenditure=("expenditure", "sum"),
+                percentage_kcals=("percentage_kcals", "sum"),
+            )
+        )
+        response = self.client.get(self.url, {"fields": ",".join(fields), "slice_by_product": ["R01122", "R01520"]})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), len(expected))
+        for row in response.json():
+            with self.subTest(row=row):
+                self.check_row_against_expected_slices(row, fields, expected, expected_slice)
+
     def test_summary_supports_strategy_type_slices(self):
         fields = ["livelihood_zone_baseline", "scenario"]
         expected = self.activity_df.groupby(fields).agg(
@@ -5201,6 +5287,33 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
             )
         )
         response = self.client.get(self.url, {"fields": ",".join(fields), "slice_by_strategy_type": "CropProduction"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), len(expected))
+        for row in response.json():
+            with self.subTest(row=row):
+                self.check_row_against_expected_slices(row, fields, expected, expected_slice)
+
+    def test_summary_supports_multiple_strategy_type_slices(self):
+        fields = ["livelihood_zone_baseline", "scenario"]
+        expected = self.activity_df.groupby(fields).agg(
+            kcals_consumed=("kcals_consumed", "sum"),
+            income=("income", "sum"),
+            expenditure=("expenditure", "sum"),
+            percentage_kcals=("percentage_kcals", "sum"),
+        )
+        expected_slice = (
+            self.activity_df[self.activity_df["strategy_type"].isin(["CropProduction", "OtherCashIncome"])]
+            .groupby(fields)
+            .agg(
+                kcals_consumed=("kcals_consumed", "sum"),
+                income=("income", "sum"),
+                expenditure=("expenditure", "sum"),
+                percentage_kcals=("percentage_kcals", "sum"),
+            )
+        )
+        response = self.client.get(
+            self.url, {"fields": ",".join(fields), "slice_by_strategy_type": ["CropProduction", "OtherCashIncome"]}
+        )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), len(expected))
         for row in response.json():
@@ -5253,6 +5366,41 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
         response = self.client.get(
             self.url,
             {"fields": ",".join(fields), "slice_by_product": "R01122", "slice_by_strategy_type": "CropProduction"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), len(expected))
+        for row in response.json():
+            with self.subTest(row=row):
+                self.check_row_against_expected_slices(row, fields, expected, expected_slice)
+
+    def test_summary_supports_multiple_combined_product_and_strategy_type_slices(self):
+        fields = ["livelihood_zone_baseline", "scenario"]
+        expected = self.activity_df.groupby(fields).agg(
+            kcals_consumed=("kcals_consumed", "sum"),
+            income=("income", "sum"),
+            expenditure=("expenditure", "sum"),
+            percentage_kcals=("percentage_kcals", "sum"),
+        )
+        expected_slice = (
+            self.activity_df[
+                (self.activity_df["product"].isin(["R01122", "L02111"]))
+                & (self.activity_df["strategy_type"].isin(["CropProduction", "LivestockSale"]))
+            ]
+            .groupby(fields)
+            .agg(
+                kcals_consumed=("kcals_consumed", "sum"),
+                income=("income", "sum"),
+                expenditure=("expenditure", "sum"),
+                percentage_kcals=("percentage_kcals", "sum"),
+            )
+        )
+        response = self.client.get(
+            self.url,
+            {
+                "fields": ",".join(fields),
+                "slice_by_product": ["R01122", "L02111"],
+                "slice_by_strategy_type": ["CropProduction", "LivestockSale"],
+            },
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), len(expected))

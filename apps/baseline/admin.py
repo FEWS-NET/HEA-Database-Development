@@ -36,6 +36,7 @@ from .models import (
     Hazard,
     Hunting,
     LivelihoodActivity,
+    LivelihoodProductCategory,
     LivelihoodStrategy,
     LivelihoodZone,
     LivelihoodZoneBaseline,
@@ -89,6 +90,9 @@ class LivelihoodZoneAdmin(admin.ModelAdmin):
         "country__iso_en_ro_name",
     ]
     list_filter = (("country", admin.RelatedOnlyFieldListFilter),)
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("country")
 
 
 class LivelihoodZoneBaselineCorrectionAdmin(admin.ModelAdmin):
@@ -186,6 +190,17 @@ class LivelihoodZoneBaselineAdmin(GISModelAdminReadOnly):
         LivelihoodZoneBaselineCorrectionInlineAdmin,
     ]
 
+    def get_queryset(self, request):
+        return (
+            super()
+            .get_queryset(request)
+            .select_related(
+                "livelihood_zone__country",
+                "main_livelihood_category",
+                "source_organization",
+            )
+        )
+
     @admin.display(description=_("Livelihood Zone Alternate Code"))
     def livelihood_zone_alternate_code(self, instance):
         """
@@ -269,6 +284,9 @@ class CommunityAdmin(GISModelAdminReadOnly):
         """
         return instance.livelihood_zone_baseline.livelihood_zone.country
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("livelihood_zone_baseline__livelihood_zone__country")
+
     def get_fields(self, request, obj=None):
         fields = super().get_fields(request, obj=obj)
         if obj and obj.geography:
@@ -319,6 +337,18 @@ class LivelihoodStrategyAdmin(admin.ModelAdmin):
         "livelihood_zone_baseline__livelihood_zone",
         ("livelihood_zone_baseline__livelihood_zone__country", admin.RelatedOnlyFieldListFilter),
     )
+
+    def get_queryset(self, request):
+        return (
+            super()
+            .get_queryset(request)
+            .select_related(
+                "livelihood_zone_baseline__livelihood_zone",
+                "season",
+                "product",
+                "unit_of_measure",
+            )
+        )
 
 
 class WealthGroupCharacteristicValueInlineAdmin(admin.TabularInline):
@@ -534,6 +564,9 @@ class LivelihoodActivityAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         return qs.select_related(
+            "wealth_group__community__livelihood_zone_baseline__livelihood_zone",
+            "wealth_group__wealth_group_category",
+            "wealth_group__livelihood_zone_baseline",
             "livelihood_strategy__product",
             "livelihood_strategy__season",
             "livelihood_zone_baseline__livelihood_zone__country",
@@ -655,7 +688,12 @@ class WealthGroupCharacteristicValueAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         return qs.select_related(
-            "wealth_group__livelihood_zone_baseline__livelihood_zone__country", "product", "unit_of_measure"
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country",
+            "wealth_group__community__livelihood_zone_baseline__livelihood_zone",
+            "wealth_group__wealth_group_category",
+            "wealth_characteristic",
+            "product",
+            "unit_of_measure",
         )
 
     def get_wealth_characteristic_common_name(self, obj):
@@ -934,6 +972,23 @@ class OtherPurchaseInlineAdmin(LivelihoodActivityInlineAdmin):
         return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyType.OTHER_PURCHASE)
 
 
+class CommunityRelatedOnlyFieldListFilter(admin.RelatedOnlyFieldListFilter):
+    """
+    RelatedOnlyFieldListFilter for Community that prefetches livelihood_zone_baseline__livelihood_zone.
+    To avoid the current excess repeated queries executed due to str(community)
+    """
+
+    def field_choices(self, field, request, model_admin):
+        pk_qs = model_admin.get_queryset(request).distinct().values_list("%s__pk" % self.field_path, flat=True)
+        ordering = self.field_admin_ordering(field, request, model_admin)
+        return [
+            (community.pk, str(community))
+            for community in Community.objects.filter(pk__in=pk_qs)
+            .select_related("livelihood_zone_baseline__livelihood_zone")
+            .order_by(*ordering)
+        ]
+
+
 class WealthGroupAdmin(admin.ModelAdmin):
     form = WealthGroupForm
     list_display = (
@@ -951,7 +1006,7 @@ class WealthGroupAdmin(admin.ModelAdmin):
         "livelihood_zone_baseline__source_organization",
         ("livelihood_zone_baseline__livelihood_zone__country", admin.RelatedOnlyFieldListFilter),
         *translation_fields("livelihood_zone_baseline__livelihood_zone__name"),
-        ("community", admin.RelatedOnlyFieldListFilter),
+        ("community", CommunityRelatedOnlyFieldListFilter),
         "wealth_group_category",
     )
     inlines = [
@@ -959,8 +1014,39 @@ class WealthGroupAdmin(admin.ModelAdmin):
     ] + [child for child in LivelihoodActivityInlineAdmin.__subclasses__()]
 
     def get_queryset(self, request):
-        queryset = super().get_queryset(request).prefetch_related("livelihoodactivity_set")
-        return queryset
+        return (
+            super()
+            .get_queryset(request)
+            .select_related(
+                "community__livelihood_zone_baseline__livelihood_zone",
+                "wealth_group_category",
+                "livelihood_zone_baseline",
+            )
+            .prefetch_related("livelihoodactivity_set")
+        )
+
+
+class LivelihoodProductCategoryAdmin(admin.ModelAdmin):
+    fields = (
+        "baseline_livelihood_activity",
+        "basket",
+        "percentage_allocation_to_basket",
+    )
+    list_display = (
+        "baseline_livelihood_activity",
+        "basket",
+        "percentage_allocation_to_basket",
+    )
+    search_fields = (
+        "baseline_livelihood_activity__livelihood_zone_baseline__livelihood_zone__code",
+        "baseline_livelihood_activity__livelihood_zone_baseline__livelihood_zone__alternate_code",
+        "baseline_livelihood_activity__wealth_group__wealth_group_category__code",
+        "baseline_livelihood_activity__livelihood_strategy__product__cpc",
+    )
+    list_filter = (
+        "baseline_livelihood_activity__wealth_group__wealth_group_category__code",
+        "basket",
+    )
 
 
 class SeasonalActivityAdmin(admin.ModelAdmin):
@@ -1268,6 +1354,7 @@ admin.site.register(Event, EventAdmin)
 admin.site.register(ExpandabilityFactor, ExpandabilityFactorAdmin)
 admin.site.register(CopingStrategy, CopingStrategyAdmin)
 
+admin.site.register(LivelihoodProductCategory, LivelihoodProductCategoryAdmin)
 admin.site.register(SeasonalActivity, SeasonalActivityAdmin)
 admin.site.register(SeasonalActivityOccurrence, SeasonalActivityOccurrenceAdmin)
 admin.site.register(SeasonalProductionPerformance, SeasonalProductionPerformanceAdmin)
