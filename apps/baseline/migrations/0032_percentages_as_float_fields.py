@@ -117,4 +117,13 @@ class Migration(migrations.Migration):
             ),
             preserve_default=False,
         ),
+        migrations.AlterField(
+            model_name="livelihoodproductcategory",
+            name="baseline_livelihood_activity",
+            field=models.OneToOneField(
+                on_delete=django.db.models.deletion.RESTRICT,
+                to="baseline.baselinelivelihoodactivity",
+                verbose_name="Baseline Livelihood Activity",
+            ),
+        ),
     ]
