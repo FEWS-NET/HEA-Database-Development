@@ -589,6 +589,12 @@ class WealthGroup(common_models.Model):
             "wealth_group_category__ordering",
             "community__name",
         ]
+        indexes = [
+            models.Index(
+                fields=["livelihood_zone_baseline", "wealth_group_category"],
+                name="wg_wealth_category_idx",
+            ),
+        ]
         constraints = [
             models.UniqueConstraint(
                 fields=("livelihood_zone_baseline", "wealth_group_category", "community"),
@@ -1303,12 +1309,35 @@ class LivelihoodActivity(common_models.Model):
         verbose_name=_("Extra attributes"),
         help_text=_("Additional attributes from the BSS for this Livelihood Activity"),
     )
+    sort_key = models.CharField(
+        max_length=400,
+        blank=True,
+        default="",
+        editable=False,
+        verbose_name=_("Sort Key"),
+    )
 
     objects = LivelihoodActivityManager()
 
     def calculate_fields(self):
         self.livelihood_zone_baseline = self.livelihood_strategy.livelihood_zone_baseline
         self.strategy_type = self.livelihood_strategy.strategy_type
+        baseline = self.livelihood_zone_baseline
+        strategy = self.livelihood_strategy
+        wealthgroup = self.wealth_group
+        self.sort_key = "~".join(
+            [
+                baseline.livelihood_zone_id,
+                baseline.reference_year_end_date.isoformat(),
+                str(wealthgroup.wealth_group_category.ordering or 0).zfill(5),
+                self.strategy_type,
+                strategy.season.name_en if strategy.season else "",
+                strategy.product_id if strategy.product_id else "",
+                strategy.additional_identifier[:50],
+                (wealthgroup.community.full_name if wealthgroup.community else "")[:50],
+                self.scenario,
+            ]
+        )
 
     # These formulae are copied directly from the BSS cells:
 
@@ -1476,6 +1505,9 @@ class LivelihoodActivity(common_models.Model):
     class Meta:
         verbose_name = _("Livelihood Activity")
         verbose_name_plural = _("Livelihood Activities")
+        indexes = [
+            models.Index(fields=["sort_key"], name="activity_sort_key_idx"),
+        ]
         constraints = [
             # @TODO Add constraints either declared here or in a custom migration that target the composite foreign
             # keys for Wealth Group and Livelihood Strategy that include the livelihood_zone_baseline.
