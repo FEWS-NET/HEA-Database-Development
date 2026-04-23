@@ -158,7 +158,7 @@ class WealthGroupFactory(factory.django.DjangoModelFactory):
         livelihood_zone_baseline=factory.SelfAttribute("..livelihood_zone_baseline"),
     )
     wealth_group_category = factory.SubFactory(WealthGroupCategoryFactory)
-    percentage_of_households = fuzzy.FuzzyInteger(10, 91)
+    percentage_of_households = fuzzy.FuzzyDecimal(0.10, 0.90, precision=2)
     average_household_size = fuzzy.FuzzyDecimal(2.0, 31.0, precision=2)
 
 
@@ -331,7 +331,7 @@ class LivelihoodActivityFactory(factory.django.DjangoModelFactory):
     kcals_consumed = factory.LazyAttribute(
         lambda o: (o.quantity_consumed or 0) * o.livelihood_strategy.product.kcals_per_unit
     )
-    percentage_kcals = fuzzy.FuzzyInteger(1, 200)
+    percentage_kcals = fuzzy.FuzzyFloat(0.02, 0.45)
     wealth_group = factory.SubFactory(
         WealthGroupFactory, livelihood_zone_baseline=factory.SelfAttribute("..livelihood_zone_baseline")
     )

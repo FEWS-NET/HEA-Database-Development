@@ -15,7 +15,7 @@ class Command(loaddata.Command):
         # Create an string representation of the object before attempting to save it.
         # If there is an error during the save, we won't be able to execute any additional queries after the fact.
         try:
-            obj_repr = f'({", ".join(obj.object.natural_key())}) '
+            obj_repr = f'({", ".join([str(x) for x in obj.object.natural_key()])}) '
         except AttributeError:
             obj_repr = obj.object.pk if obj.object.pk else ""
         # We can't use json.dumps because attributes such as datetime fields and the ModelState are not
