@@ -35,7 +35,7 @@ UPDATE baseline_livelihoodactivity SET sort_key = ''
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("baseline", "0030_alter_foodpurchase_unit_multiple_and_more"),
+        ("baseline", "0033_add_annual_kcals_cost_function"),
         ("metadata", "0016_activitylabel_payment_product"),
     ]
 
