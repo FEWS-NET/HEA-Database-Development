@@ -2359,13 +2359,15 @@ class FoodPurchase(LivelihoodActivity):
     # This is a float field because data may be captured as "once per week",
     # which equates to "52 per year", which is "4.33 per month".
     times_per_month = models.FloatField(blank=True, null=True, verbose_name=_("Purchases per month"))
-    months_per_year = models.PositiveSmallIntegerField(
+    # This is a float field because BSS data may have fractional months (e.g. 6.4 months).
+    months_per_year = models.FloatField(
         blank=True,
         null=True,
         verbose_name=_("Months per year"),
         help_text=_("Number of months in a year that the product is purchased"),
     )
-    times_per_year = models.PositiveSmallIntegerField(
+    # This is a float field because BSS data may have fractional times (e.g. 103.2 purchases/year).
+    times_per_year = models.FloatField(
         blank=True,
         null=True,
         verbose_name=_("Times per year"),
@@ -2393,8 +2395,19 @@ class FoodPurchase(LivelihoodActivity):
         price = self.price or 0
         expenditure = self.expenditure or 0
 
-        if self.expenditure and not math.isclose(expenditure, quantity_purchased * price):
-            raise ValidationError(_("Expenditure for a Food Purchase must be quantity purchased multiplied by price"))
+        if self.expenditure:
+            if self.unit_multiple is not None:
+                # quantity_purchased is already the annual total
+                expected = quantity_purchased * price
+            elif self.times_per_year is not None:
+                # quantity_purchased is per-purchase; multiply by times_per_year for annual total
+                expected = quantity_purchased * self.times_per_year * price
+            else:
+                expected = quantity_purchased * price
+            if not math.isclose(expenditure, expected):
+                raise ValidationError(
+                    _("Expenditure for a Food Purchase must be quantity purchased multiplied by price")
+                )
 
     class Meta:
         verbose_name = LivelihoodStrategyType.FOOD_PURCHASE.label
@@ -2597,7 +2610,8 @@ class OtherCashIncome(LivelihoodActivity):
         verbose_name=_("Payment per time"),
         help_text=_("Amount of money received each time the labor is performed"),
     )
-    people_per_household = models.PositiveSmallIntegerField(
+    # This is a float field because BSS data may have fractional people per household (e.g. 0.5).
+    people_per_household = models.FloatField(
         verbose_name=_("People per household"),
         blank=True,
         null=True,
@@ -2678,13 +2692,15 @@ class OtherPurchase(LivelihoodActivity):
     # This is a float field because data may be captured as "once per week",
     # which equates to "52 per year", which is "4.33 per month".
     times_per_month = models.FloatField(blank=True, null=True, verbose_name=_("Purchases per month"))
-    months_per_year = models.PositiveSmallIntegerField(
+    # This is a float field because BSS data may have fractional months (e.g. 6.4 months).
+    months_per_year = models.FloatField(
         blank=True,
         null=True,
         verbose_name=_("Months per year"),
         help_text=_("Number of months in a year that the product is purchased"),
     )
-    times_per_year = models.PositiveSmallIntegerField(
+    # This is a float field because times_per_month * months_per_year may be fractional (e.g. 51.6 * 4 = 206.4).
+    times_per_year = models.FloatField(
         blank=True,
         null=True,
         verbose_name=_("Times per year"),
