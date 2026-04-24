@@ -70,7 +70,8 @@ from .base import (
     get_bss_label_dataframe,
     get_summary_bss_label_dataframe,
 )
-from .livelihood_activity import get_instances_from_dataframe
+from .fixtures import get_fixture_from_instances, import_fixture, validate_instances
+from .livelihood_activity import get_annotated_instances_from_dataframe
 
 # set the default Django settings module
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hea.settings.production")
@@ -78,7 +79,6 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hea.settings.production")
 # Configure Django with our custom settings before importing any Django classes
 django.setup()
 
-from baseline.models import LivelihoodZoneBaseline  # NOQA: E402
 from metadata.models import ActivityLabel  # NOQA: E402
 
 # Indexes of header rows in the Data3 dataframe (wealth_group_category, district, village)
@@ -136,23 +136,66 @@ def summary_wild_foods_labels_dataframe(
 @asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
 def wild_foods_instances(
     context: AssetExecutionContext,
-    wild_foods_dataframe,
+    config: BSSMetadataConfig,
+    wild_foods_dataframe: pd.DataFrame,
+    livelihood_summary_dataframe: pd.DataFrame,
 ) -> Output[dict]:
     """
     LivelhoodStrategy and LivelihoodActivity instances extracted from the BSS.
     """
-    partition_key = context.asset_partition_key_for_output()
-    livelihood_zone_baseline = LivelihoodZoneBaseline.objects.get_by_natural_key(*partition_key.split("~")[1:])
-
     if wild_foods_dataframe.empty:
-        output = {}
+        return Output({}, metadata={"message": "No Data3 worksheet found in this BSS"})
 
-    output = get_instances_from_dataframe(
+    return get_annotated_instances_from_dataframe(
         context,
+        config,
         wild_foods_dataframe,
-        livelihood_zone_baseline,
+        livelihood_summary_dataframe,
         ActivityLabel.LivelihoodActivityType.WILD_FOODS,
         len(HEADER_ROWS),
-        partition_key,
     )
-    return output
+
+
+@asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
+def wild_foods_valid_instances(
+    context: AssetExecutionContext,
+    config: BSSMetadataConfig,
+    wild_foods_instances: dict,
+    wealth_characteristic_instances: dict,
+) -> Output[dict]:
+    """
+    Valid LivelhoodStrategy and LivelihoodActivity instances from a BSS, ready to be loaded via a Django fixture.
+    """
+    partition_key = context.asset_partition_key_for_output()
+    # Livelihood Activities depend on the Wealth Groups, so copy them from the wealth_characteristic_instances, making
+    # sure that the WealthGroup is the first entry in the dict, so that the lookup keys have been created before
+    # validate_instances processes the child model and needs them.
+    if any(instances for instances in wild_foods_instances.values()):
+        wild_foods_instances = {
+            **{"WealthGroup": wealth_characteristic_instances["WealthGroup"]},
+            **wild_foods_instances,
+        }
+    return validate_instances(context, config, wild_foods_instances, partition_key)
+
+
+@asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
+def wild_foods_fixture(
+    context: AssetExecutionContext,
+    config: BSSMetadataConfig,
+    wild_foods_valid_instances: dict,
+) -> Output[list[dict]]:
+    """
+    Django fixture for the Livelihood Activities from a BSS.
+    """
+    return get_fixture_from_instances(wild_foods_valid_instances)
+
+
+@asset(partitions_def=bss_instances_partitions_def)
+def imported_wild_foods_activities(
+    context: AssetExecutionContext,
+    wild_foods_fixture,
+) -> Output[None]:
+    """
+    Imported Django fixtures for a BSS, added to the Django database.
+    """
+    return import_fixture(wild_foods_fixture)

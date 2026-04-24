@@ -3,9 +3,15 @@ from pathlib import Path
 
 import pandas as pd
 from django.test import TestCase
-from pipelines.assets.livelihood_activity import get_label_attributes
+from pipelines.assets.livelihood_activity import (
+    get_all_label_attributes,
+    get_label_attributes,
+    get_livelihood_activity_label_map,
+)
 
+from common.tests.factories import CountryFactory
 from metadata.models import ActivityLabel
+from metadata.tests.factories import SeasonFactory
 
 LIVELIHOOD_ACTIVITY = ActivityLabel.LivelihoodActivityType.LIVELIHOOD_ACTIVITY
 
@@ -37,10 +43,100 @@ class GetActivityLabelAttributesTestCase(TestCase):
                 unwanted_attributes = {
                     k: v
                     for k, v in attributes.items()
-                    if k not in expected_attributes and k not in ["activity_label", "notes"]
+                    if k not in expected_attributes and k not in ["activity_label", "status", "notes"]
                 }
 
                 self.assertFalse(
                     any([bool(v) for k, v in unwanted_attributes.items()]),
                     msg=f"Extra attributes {({k: v for k, v in unwanted_attributes.items() if v})} found for '{label}'",
                 )
+
+    def test_activity_label_override(self):
+        label = "riz - kg produits"
+        expected_regex_attributes = {
+            "activity_label": label,
+            "is_start": True,
+            "product_id": "riz",
+            "unit_of_measure_id": "kg",
+            "attribute": "quantity_produced",
+        }
+        # Test that the regular expression matches the label and returns the expected attributes
+        regex_attributes = {k: v for k, v in get_label_attributes(label, LIVELIHOOD_ACTIVITY).items()}
+        self.assertDictEqual(
+            expected_regex_attributes,
+            {k: v for k, v in regex_attributes.items() if k in expected_regex_attributes},
+        )
+        # Now create an ActivityLabel instance with status=OVERRIDE for the same label but different attributes
+        expected_override_attributes = {
+            "activity_label": label,
+            "is_start": False,
+            "product_id": "R01132",
+            "season": "season 1",
+        }
+        ActivityLabel.objects.create(
+            status=ActivityLabel.LabelStatus.OVERRIDE,
+            activity_type=LIVELIHOOD_ACTIVITY,
+            **expected_override_attributes,
+        )
+        # Clear the cache of label attributes
+        get_label_attributes.cache_clear()
+        get_livelihood_activity_label_map.cache_clear()
+        # Test that the override attributes are returned instead of the regex attributes
+        override_attributes = {k: v for k, v in get_label_attributes(label, LIVELIHOOD_ACTIVITY).items()}
+        self.assertDictEqual(
+            expected_override_attributes,
+            {k: v for k, v in override_attributes.items() if k in expected_override_attributes},
+        )
+        # Test that additional attributes set in the regex instance are ignored when using the override
+        self.assertEqual(None, override_attributes["unit_of_measure_id"])
+        # Update the ActivityLabel instance to make it use the regex again
+        ActivityLabel.objects.filter(activity_label=label, activity_type=LIVELIHOOD_ACTIVITY).update(
+            status=ActivityLabel.LabelStatus.REGULAR_EXPRESSION
+        )
+        # Clear the cache of label attributes
+        get_label_attributes.cache_clear()
+        get_livelihood_activity_label_map.cache_clear()
+        # Test that the regex attributes are returned again
+        regex_attributes = {k: v for k, v in get_label_attributes(label, LIVELIHOOD_ACTIVITY).items()}
+        self.assertDictEqual(
+            expected_regex_attributes,
+            {k: v for k, v in regex_attributes.items() if k in expected_regex_attributes},
+        )
+        # Test that additional attributes set in the ActivityLabel instance are ignored when using the regex
+        self.assertEqual("", regex_attributes["season"])
+
+    def test_zone_specific_season_alias(self):
+        country = CountryFactory()
+        livelihood_zone_id = f"{country.iso3166a2}04"
+
+        general_season = SeasonFactory(
+            country=country,
+            name_en=f"{country.iso_en_ro_name}, Harvest",
+            aliases=["season 1"],
+            purpose=None,
+        )
+        zone_specific_season = SeasonFactory(
+            country=country,
+            name_en=f"{country.iso_en_ro_name}, Southern Unimodal, Harvest",
+            aliases=[f"season 1 ({livelihood_zone_id.lower()})"],
+            purpose=None,
+        )
+
+        # Test that the zone-specific season alias is matched when looking up attributes for that Zone.
+        attributes_df = get_all_label_attributes(
+            labels=pd.Series(["season 1: lactation period (days)"]),
+            activity_type=LIVELIHOOD_ACTIVITY,
+            country_code=country.iso3166a2,
+            livelihood_zone_id=livelihood_zone_id,
+        )
+        self.assertEqual(attributes_df.loc[0, "season"], zone_specific_season.name_en)
+
+        # Test that the general season alias is matched when looking up attributes for a different Zone.
+        livelihood_zone_id = f"{country.iso3166a2}05"
+        attributes_df = get_all_label_attributes(
+            labels=pd.Series(["season 1: lactation period (days)"]),
+            activity_type=LIVELIHOOD_ACTIVITY,
+            country_code=country.iso3166a2,
+            livelihood_zone_id=livelihood_zone_id,
+        )
+        self.assertEqual(attributes_df.loc[0, "season"], general_season.name_en)

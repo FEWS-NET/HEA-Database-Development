@@ -40,6 +40,42 @@ class ClassifiedProductLookupTestCase(TestCase):
         self.assertEqual(len(result_df), 1)
         self.assertEqual(result_df["cpc"][0], product.pk)
 
+    def test_ignore_unwanted_parents_using_suffix(self):
+        ClassifiedProductFactory(
+            cpc="P16200", description_en="Salt and pure sodium chloride; sea water	Salt", common_name_en="Salt"
+        )
+        # Create a child with a matching alias, but different cpc
+        product = ClassifiedProductFactory(
+            cpc="P16200HA",
+            description_en="Salt, salt and pepper, salt and condiments",
+            common_name_en="Salt and condiments",
+            aliases=[
+                "salt",
+                "salt and pepper",
+                "sel et piment",
+            ],
+        )
+        df = pd.DataFrame({"product": ["salt"]})
+        result_df = ClassifiedProductLookup().do_lookup(df, "product", "cpc")
+        self.assertTrue("cpc" in result_df.columns)
+        self.assertEqual(len(result_df), 1)
+        self.assertEqual(result_df["cpc"][0], product.pk)
+
+    def test_excludes_r0113(self):
+        # Create the unwanted product R0113 with a matching common name
+        ClassifiedProductFactory(cpc="R0113", common_name_en="Rice", description_en="Rice")
+        # Create the preferred product that we want the lookup to return, and include 'rice' as an alias
+        preferred = ClassifiedProductFactory(cpc="P23162", common_name_en="Husked Rice", description_en="Husked Rice")
+        preferred.aliases = ["arroz", "rice", "riz"]
+        preferred.save()
+
+        df = pd.DataFrame({"product": ["rice"]})
+        result_df = ClassifiedProductLookup().do_lookup(df, "product", "cpc")
+        self.assertTrue("cpc" in result_df.columns)
+        self.assertEqual(len(result_df), 1)
+        # The lookup should return the preferred product, not the unwanted R0113
+        self.assertEqual(result_df["cpc"][0], preferred.pk)
+
         # The child record doesn't could have the search term in a the common name instead of the description,
         # and the child doesn't need to be first child (with a 0 suffix). The child could have its own children,
         # that don't match the search term.

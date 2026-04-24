@@ -34,7 +34,7 @@ R01253;32;Vegetables;onions;480;kg
 R01235;33;Vegetables;pumpkin;360;kg
 R01234;34;Vegetables;tomato;200;kg
 P23511;35;Sugars;sugar;4000;kg
-P24490HA;36;Sugars;soft drinks, commercial;450;L
+P24490;36;Sugars;soft drinks, commercial;450;L
 P21111HA;37;Meat, poultry, eggs, fish;beef, mod fat;2350;kg
 P21111HB;38;Meat, poultry, eggs, fish;beef, lean;2020;kg
 P21116;39;Meat, poultry, eggs, fish;goat meat;1450;kg

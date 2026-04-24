@@ -5,7 +5,6 @@ Base functions for performing operations on BSS spreadsheets.
 import numbers
 import os
 from io import BytesIO
-from typing import Optional
 
 import django
 import msoffcrypto
@@ -51,6 +50,9 @@ LANGS = {
     "groupe de richesse": "fr",
     "groupe socio-economique": "fr",
     "group socio-economique": "fr",
+    "expandability parameters": "en",
+    "paramètres d'extensibilité (expandability factors)": "fr",
+    "parametres d'utilisation maximale (expandability)": "fr",
 }
 
 # List of labels that indicate the start of the summary columns from row 3 in the Data, Data, and Data3 worksheets
@@ -192,7 +194,7 @@ def corrected_files(context: AssetExecutionContext, config: BSSMetadataConfig) -
     partition_key = context.asset_partition_key_for_output()
     livelihood_zone_baseline = LivelihoodZoneBaseline.objects.get_by_natural_key(*partition_key.split("~")[1:])
 
-    def validate_previous_value(cell, expected_previous_value, previous_value):
+    def validate_previous_value(worksheet_name, cell_reference, expected_previous_value, previous_value):
         """
         Inline function to validate the existing value of a cell is the expected one, prior to correcting it.
         """
@@ -212,7 +214,7 @@ def corrected_files(context: AssetExecutionContext, config: BSSMetadataConfig) -
         if expected_previous_value != previous_value:
             raise ValueError(
                 "Unexpected prior value in source BSS. "
-                f"BSS `{partition_key}`, cell `{cell}`, "
+                f"BSS `{partition_key}`, cell `'{worksheet_name}'!{cell_reference}`, "
                 f"value found `{previous_value}`, expected `{expected_previous_value}`."
             )
 
@@ -282,12 +284,16 @@ def corrected_files(context: AssetExecutionContext, config: BSSMetadataConfig) -
                             previous_value = xlrd.error_text_from_code[
                                 xlrd_wb.sheet_by_name(correction.worksheet_name).cell_value(row - 1, col - 1)
                             ]
-                        validate_previous_value(cell, correction.previous_value, previous_value)
+                        validate_previous_value(
+                            correction.worksheet_name, cell, correction.previous_value, previous_value
+                        )
                         # xlwt uses 0-based indexes, but coordinate_to_tuple uses 1-based, so offset the values
                         wb.get_sheet(correction.worksheet_name).write(row - 1, col - 1, correction.value)
                     else:
                         cell = wb[correction.worksheet_name][cell]
-                        validate_previous_value(cell, correction.previous_value, cell.value)
+                        validate_previous_value(
+                            correction.worksheet_name, cell.coordinate, correction.previous_value, cell.value
+                        )
                         cell.value = correction.value
                         cell.comment = Comment(
                             f"{correction.author__username} on {correction.correction_date.date().isoformat()}: {correction.comment}",  # NOQA: E501
@@ -309,10 +315,12 @@ def get_bss_dataframe(
     filepath_or_buffer,
     bss_sheet: str,
     start_strings: list[str],
-    end_strings: Optional[list[str]] = None,
-    header_rows: list[int] = [3, 4, 5],  # List of row indexes that contain the Wealth Group and other headers
-    num_summary_cols: Optional[int] = None,
-) -> pd.DataFrame:
+    end_strings: list[str] | None = None,
+    header_rows: list[int] | None = [3, 4, 5],  # List of row indexes that contain the Wealth Group and other headers
+    end_col: str | None = None,
+    num_summary_cols: int | None = None,
+    fill_blank_rows: bool = True,
+) -> Output[pd.DataFrame]:
     """
     Retrieve a worksheet from a BSS and return it as a DataFrame.
 
@@ -326,7 +334,8 @@ def get_bss_dataframe(
             pd.DataFrame(),
             metadata={
                 "worksheet": bss_sheet,
-                "row_count": "Worksheet not present in file",
+                "row_count": 0,
+                "message": "Worksheet not present in file",
             },
         )
 
@@ -335,12 +344,13 @@ def get_bss_dataframe(
     # Set the column names to match Excel
     df.columns = [get_column_letter(col + 1) for col in df.columns]
 
-    # Find the last column before the summary column, which is in row 3
-    end_col = get_index(SUMMARY_LABELS, df.loc[3], offset=-1)
+    if end_col is None:
+        # Find the last column before the summary column, which is in row 3
+        end_col = get_index(SUMMARY_LABELS, df.loc[3], offset=-1)
     if not end_col:
         raise ValueError(f'No cell containing any of the summary strings: {", ".join(SUMMARY_LABELS)}')
 
-    if not num_summary_cols:
+    if num_summary_cols is None:
         # If the number of summary columns wasn't specified, then assume that
         # there is one summary column for each wealth category, from row 3.
         num_summary_cols = df.loc[3, "B":end_col].dropna().nunique()
@@ -367,13 +377,21 @@ def get_bss_dataframe(
         # for rows that rely on copying down the label in column A from a previous row.
         end_row = df.index[-1]
 
-    # Find the language based on the value in cell A3
-    if bss_sheet != "Seas Cal":
-        lang = LANGS[df.loc[3, "A"].strip().lower()]
-    else:
-        lang = ""
-    # Filter to just the Wealth Group header rows and the Livelihood Activities
-    df = pd.concat([df.loc[header_rows, :end_col], df.loc[start_row:end_row, :end_col]])
+    # Find the language based on the value in cell A3 (or A2 for 'Exp factors')
+    lang = None
+    for row in [2, 3]:
+        try:
+            lang = LANGS[df.loc[row, "A"].strip().lower()]
+        except (AttributeError, KeyError):
+            # There isn't a text label in the cell, or the label isn't LANGS
+            pass
+    if not lang:
+        raise ValueError(f'No language could be identified from the labels {df.loc[2:3, "A"].tolist()} in Column A')
+
+    # Filter to just the header rows (typically the Wealth Groups) and the main data (e.g. Livelihood Activities)
+    df = pd.concat(
+        [df.loc[header_rows, :end_col] if header_rows else pd.DataFrame(), df.loc[start_row:end_row, :end_col]]
+    )
 
     # Copy the label from the previous cell for rows that have data but have a blank label.
     # For example, sometimes the wealth characteristic label is only filled in for the first wealth category:
@@ -385,19 +403,19 @@ def get_bss_dataframe(
     #   |  20 |                                                | M                   | 1.4                |
     #   |  21 |                                                | B/O                 | 1.4                |
     #   |  22 | Camels: total owned at start of year           | VP                  | 0                  |
-
-    # We do this by setting the missing values to pd.NA and then using .ffill()
-    # Note that we need to replace the None with something else before the mask() and ffill() so that only
-    # the masked values are replaced.
-    df["A"] = (
-        df["A"]
-        .replace({None: ""})
-        .mask(
-            df["A"].isna() & df.loc[:, "B":].notnull().any(axis="columns"),
-            pd.NA,
+    if fill_blank_rows:
+        # We do this by setting the missing values to pd.NA and then using .ffill()
+        # Note that we need to replace the None with something else before the mask() and ffill() so that only
+        # the masked values are replaced.
+        df["A"] = (
+            df["A"]
+            .replace({None: ""})
+            .mask(
+                df["A"].isna() & df.loc[:, "B":].notnull().any(axis="columns"),
+                pd.NA,
+            )
+            .ffill()
         )
-        .ffill()
-    )
 
     # Replace NaN with "" ready for Django
     df = df.fillna("")
@@ -417,7 +435,7 @@ def get_bss_dataframe(
                 df.loc[:, "B":].apply(lambda row: sum((row != 0) & (row != "")), axis="columns").sum()
             ),
             "preview": MetadataValue.md(df.head(config.preview_rows).to_markdown()),
-            "sample": MetadataValue.md(sample_df.sample(sample_rows).to_markdown()),
+            "sample": MetadataValue.md(sample_df.sample(sample_rows).sort_index().to_markdown()),
         },
     )
 
@@ -477,7 +495,7 @@ def get_bss_label_dataframe(
             "num_summaries": int(label_df["in_summary"].sum()),
             # Escape the ~ in the partition_key, otherwise it is rendered as strikethrough
             "preview": MetadataValue.md(label_df.head(config.preview_rows).to_markdown().replace("~", "\\~")),
-            "sample": MetadataValue.md(sample_df.sample(sample_rows).to_markdown().replace("~", "\\~")),
+            "sample": MetadataValue.md(sample_df.sample(sample_rows).sort_index().to_markdown().replace("~", "\\~")),
         },
     )
 
@@ -498,7 +516,7 @@ def get_all_bss_labels_dataframe(
             # Escape the ~ in the partition_key, otherwise it is rendered as strikethrough
             "preview": MetadataValue.md(df.head(config.preview_rows).to_markdown().replace("~", "\\~")),
             "sample": MetadataValue.md(
-                df[df["in_summary"]].sample(config.preview_rows).to_markdown().replace("~", "\\~")
+                df[df["in_summary"]].sample(config.preview_rows).sort_index().to_markdown().replace("~", "\\~")
             ),
         },
     )
@@ -587,7 +605,8 @@ def get_summary_bss_label_dataframe(
     label_metadata_df = pd.DataFrame.from_records(queryset)
 
     # Merge the label metadata into the dataframe
-    df = df.merge(label_metadata_df, left_on="label", right_on="label", how="left")
+    if not label_metadata_df.empty:
+        df = df.merge(label_metadata_df, left_on="label", right_on="label", how="left")
 
     # Rename the columns to match what we need in the GSheet when we run jobs.metadata.load_all_metadata
     df = df.rename(

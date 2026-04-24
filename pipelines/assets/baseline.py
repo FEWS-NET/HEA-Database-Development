@@ -22,6 +22,7 @@ from dagster import AssetExecutionContext, MetadataValue, Output, asset
 
 from ..configs import BSSMetadataConfig
 from ..partitions import bss_files_partitions_def, bss_instances_partitions_def
+from .base import SUMMARY_LABELS
 
 # set the default Django settings module
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hea.settings.production")
@@ -77,15 +78,30 @@ def get_wealth_group_dataframe(
         # In the Summary columns in the Data, Data2, Data3 worksheets, the Wealth
         # Group Category is in Row 4 (District)rather than Row 3 (Wealth Group Category)
         # so do a second lookup to update the blank rows.
-        # If this doesn't find any new values, then it's because in a WB worksheet
-        # there are no extra Wealth Group Categories on Row 4
-        try:
+        # Note that in a WB worksheet there are no extra Wealth Group Categories on Row 4
+        if worksheet_name != "WB":
             wealth_group_df = wealthgroupcategorylookup.do_lookup(
                 wealth_group_df, "district", "wealth_group_category", update=True
             )
-        except ValueError:
-            pass
+            # Remove the duplicate wealth_group_category_original column created by the second do_lookup(),
+            # which otherwise causes problems when trying to merge dataframes, e.g. when building the wealth_group_df.
+            wealth_group_df = wealth_group_df.loc[:, ~wealth_group_df.columns.duplicated()]
 
+        # Check if there are unrecognized wealth group categories and report
+        wealth_group_missing_category_df = wealth_group_df[
+            wealth_group_df["wealth_group_category"].isnull()
+            & wealth_group_df["wealth_group_category_original"].notnull()
+            & ~wealth_group_df["wealth_group_category_original"]
+            .str.lower()
+            .isin([label.lower() for label in SUMMARY_LABELS])  # Exclude rows with summary labels (case-insensitive)
+            & (wealth_group_df["wealth_group_category_original"].str.strip() != "")  # Exclude rows with empty strings
+        ]
+        if not wealth_group_missing_category_df.empty:
+            unique_values = set(wealth_group_missing_category_df["wealth_group_category_original"].unique())
+            raise ValueError(
+                "%s has unrecognized wealth group category in %s:\n%s"
+                % (partition_key, worksheet_name, "\n".join(unique_values))
+            )
         # Lookup the Community instances
         community_lookup = CommunityLookup()
         wealth_group_df["livelihood_zone_baseline"] = livelihood_zone_baseline.id  # required parent for lookup
@@ -129,14 +145,14 @@ def get_wealth_group_dataframe(
         )
         # Add the natural key for the wealth group
         wealth_group_df["natural_key"] = wealth_group_df.fillna("").apply(
-            lambda row: (
+            lambda row: [
                 livelihood_zone_baseline.livelihood_zone_id,
                 livelihood_zone_baseline.reference_year_end_date.isoformat(),
                 row["wealth_group_category"],
                 # Note that we need to use the actual name from the instance, not the one calculated from
                 # the BSS, which might have been matched using an alias.
                 row["community"][2] if row["community"] else "",
-            ),
+            ],
             axis="columns",
         )
         wealth_group_df = wealth_group_df.replace(pd.NA, None)
@@ -215,6 +231,8 @@ def baseline_instances(
                 "description_fr": metadata["description_fr"],
                 "description_pt": metadata["description_pt"],
                 "description_ar": metadata["description_ar"],
+                # Include the natural key to support lookups and foreign key validation
+                "natural_key": [metadata["code"]],  # natural key is always a list
             }
         ],
         "LivelihoodZoneBaseline": [
@@ -243,12 +261,14 @@ def baseline_instances(
                 "publication_date": metadata["publication_date"],
                 "bss": metadata["bss_path"],
                 "currency_id": metadata["currency_id"],
+                # Include the natural key to support lookups and foreign key validation
+                "natural_key": [metadata["code"], metadata["reference_year_end_date"]],
             }
         ],
     }
 
     try:
-        preview = json.dumps(result, indent=4)
+        preview = json.dumps(result, indent=4, ensure_ascii=False)
     except TypeError as e:
         raise ValueError("Cannot serialize Community fixture to JSON. Failing dict is\n %s" % result) from e
 
@@ -284,6 +304,8 @@ def community_instances(context: AssetExecutionContext, config: BSSMetadataConfi
             "Sous-préfecture",
             "Région et cercle",  # 2023 Mali BSSs
             "LGA",  # Local Government Area, in the 2023 Nigeria BSSs
+            "Province et territoire",  # 2024 DRC BSSs
+            "District (Departamiento/Municipio)",  # 2019 GT06
         ],
         [
             "Village",
@@ -296,6 +318,7 @@ def community_instances(context: AssetExecutionContext, config: BSSMetadataConfi
             "Commune et village",  # 2023 Mali BSSs
             "Quartier",
             "Quartier/Secteur",
+            "Village ou Fokotony",  # 2017 MG BSSs
         ],
         ["Interview number:", "Numéro d'entretien", "Numero d'entretien"],
         ["Interviewers", "Enquetêur(s)", "Intervieweurs"],
@@ -333,6 +356,11 @@ def community_instances(context: AssetExecutionContext, config: BSSMetadataConfi
     community_df["livelihood_zone_baseline"] = community_df["full_name"].apply(
         lambda full_name: partition_key.split("~")[1:]
     )
+    # Add the natural key to support lookups and foreign key validation
+    community_df["natural_key"] = community_df[["livelihood_zone_baseline", "full_name"]].apply(
+        lambda row: row["livelihood_zone_baseline"] + [row["full_name"]],
+        axis=1,
+    )
 
     # Replace NaN with "" ready for Django
     community_df = community_df.fillna("")
@@ -340,7 +368,7 @@ def community_instances(context: AssetExecutionContext, config: BSSMetadataConfi
     result = {"Community": community_df.to_dict(orient="records")}
 
     try:
-        preview = json.dumps(result, indent=4)
+        preview = json.dumps(result, indent=4, ensure_ascii=False)
     except TypeError as e:
         raise ValueError("Cannot serialize Community fixture to JSON. Failing dict is\n %s" % result) from e
 

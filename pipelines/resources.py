@@ -1,7 +1,9 @@
 import json
+import os
 import pickle
 from abc import abstractmethod
 from typing import Any, Optional, Type
+from urllib.parse import urljoin
 
 import dagster._check as check
 import pandas as pd
@@ -10,15 +12,49 @@ from dagster import (
     DagsterInvariantViolationError,
     InitResourceContext,
     InputContext,
+    MetadataValue,
     OutputContext,
 )
 from dagster._core.storage.upath_io_manager import UPathIOManager
 from dagster._utils import PICKLE_PROTOCOL
+from django.urls import reverse
 from pydantic.fields import Field
 from upath import UPath
 
 
-class PickleFilesystemIOManager(UPathIOManager):
+class DownloadAssetMixin:
+    """
+    Mixin that adds download URL of the asset to the metadata.
+    """
+
+    def get_download_url(self, context: OutputContext) -> str:
+        if not context or not getattr(context, "has_asset_key", False) or not context.has_asset_key:
+            return ""
+
+        asset_name = context.asset_key.path[-1]
+        root_url = os.getenv("BASELINE_EXPLORER_API_ROOT_URL", "http://localhost:8000")
+
+        kwargs = {"asset_name": asset_name}
+        if context.has_partition_key:
+            kwargs["partition_name"] = context.partition_key
+            relative_url = reverse("asset_download_partitioned", kwargs=kwargs)
+        else:
+            relative_url = reverse("asset_download", kwargs=kwargs)
+
+        return urljoin(root_url, relative_url)
+
+    def handle_output(self, context: OutputContext, obj):
+        download_url = self.get_download_url(context)
+        if download_url:
+            context.add_output_metadata(
+                {
+                    "download": MetadataValue.url(download_url),
+                }
+            )
+        super().handle_output(context, obj)
+
+
+class PickleFilesystemIOManager(DownloadAssetMixin, UPathIOManager):
     """
     Dagster I/O Manager that serializes Python objects to files using Pickle.
 
@@ -57,7 +93,7 @@ class PickleFilesystemIOManager(UPathIOManager):
             return pickle.load(file)
 
 
-class JSONFilesystemIOManager(UPathIOManager):
+class JSONFilesystemIOManager(DownloadAssetMixin, UPathIOManager):
     """
     Dagster I/O Manager that serializes Python objects to JSON files.
     """
@@ -70,14 +106,14 @@ class JSONFilesystemIOManager(UPathIOManager):
             self.unlink(path)
 
         with path.open("w") as file:
-            file.write(json.dumps(obj, indent=4))
+            file.write(json.dumps(obj, indent=4, ensure_ascii=False))
 
     def load_from_path(self, context: InputContext, path: "UPath") -> Any:
         with path.open("r") as file:
             return json.loads(file.read())
 
 
-class DataFrameCSVFilesystemIOManager(UPathIOManager):
+class DataFrameCSVFilesystemIOManager(DownloadAssetMixin, UPathIOManager):
     """
     Dagster I/O Manager that serializes DataFrames to CSV files.
     """
@@ -89,13 +125,13 @@ class DataFrameCSVFilesystemIOManager(UPathIOManager):
             context.log.warning(f"Removing existing file: {path}")
             self.unlink(path)
 
-        obj.to_csv(path, index=False)
+        obj.to_csv(path, index=False, encoding="utf-8-sig")  # Use UTF-8 with BOM for improved Excel compatibility
 
     def load_from_path(self, context: InputContext, path: UPath) -> pd.DataFrame:
         return pd.read_csv(path)
 
 
-class DataFrameExcelFilesystemIOManager(UPathIOManager):
+class DataFrameExcelFilesystemIOManager(DownloadAssetMixin, UPathIOManager):
     """
     Dagster I/O Manager that serializes DataFrames to Excel .xlsx using the OpenPyXL engine.
 
@@ -127,24 +163,36 @@ class DataFrameExcelFilesystemIOManager(UPathIOManager):
             obj = {f"Sheet{i+1}": df for i, df in enumerate(obj)}
 
         # Set the ExcelWriter parameters
-        mode = "w"
+        mode = "wb"
         if self.path_exists(path):
-            mode = "a"
+            mode = "ab"
             if self.if_sheet_exists is None:
                 self.if_sheet_exists = "replace"
             if "keep_vba" not in self.engine_kwargs:
                 self.engine_kwargs["keep_vba"] = True
 
         # Write the DataFrames to the Excel file
-        with pd.ExcelWriter(
-            path,
-            engine="openpyxl",
-            mode=mode,
-            if_sheet_exists=self.if_sheet_exists,
-            engine_kwargs=self.engine_kwargs,
-        ) as writer:
-            for sheet_name, df in obj.items():
-                df.to_excel(writer, sheet_name=sheet_name, **self.to_excel_kwargs)
+        try:
+            with pd.ExcelWriter(
+                path,
+                engine="openpyxl",
+                mode=mode,
+                if_sheet_exists=self.if_sheet_exists,
+                engine_kwargs=self.engine_kwargs,
+            ) as writer:
+                for sheet_name, df in obj.items():
+                    df.to_excel(writer, sheet_name=sheet_name, **self.to_excel_kwargs)
+        except NotImplementedError:
+            context.log.warning(
+                f"Storage layer does not support appending to existing files. Overwriting file: {path}"
+            )
+            with pd.ExcelWriter(
+                path,
+                engine="openpyxl",
+                mode="w",
+            ) as writer:
+                for sheet_name, df in obj.items():
+                    df.to_excel(writer, sheet_name=sheet_name, **self.to_excel_kwargs)
 
     def load_from_path(self, context: InputContext, path: UPath) -> dict[str, pd.DataFrame]:
         with pd.ExcelFile(path, engine="openpyxl") as xls:

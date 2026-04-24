@@ -1,4 +1,4 @@
-{% load i18n static %}
+{% load i18n static settings_value %}
 
 <!DOCTYPE html>
 
@@ -131,12 +131,30 @@
             {{ content }}
           {% endblock %}
           {% block sidebar %}{% endblock %}
-          <br class="clear">
-        </div>
+          <br class="clear"> 
+         
+        </div>  
+      
         <!-- END Content -->
-        {% block footer %}<div id="footer"></div>{% endblock %}
+        
       </div>
-    </div>
+    
+    </div> 
+    {% block footer %}
+        <div id="footer" class="page-footer">
+            <p>
+                Livelihoods Database {{ APP_VERSION }}. All rights reserved.
+                {% settings_value "PRIVACY_URL" as privacy_url %}
+                {% if privacy_url %}
+                <a href="{{ privacy_url }}">Privacy Policy</a>.
+                {% endif %}
+                {% settings_value "DISCLAIMER_URL" as disclaimer_url %}
+                {% if disclaimer_url %}
+                <a href="{{ disclaimer_url }}"> Disclaimer </a>.
+                {% endif %}
+            </p>
+        </div>
+        {% endblock %}
 </div>
 <!-- END Container -->
 

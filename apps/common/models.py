@@ -8,6 +8,7 @@ import logging
 import operator
 from functools import reduce
 
+from django.contrib.auth.models import User
 from django.core import validators
 from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
@@ -29,6 +30,17 @@ from .fields import (  # noqa: F401
 )
 
 logger = logging.getLogger(__name__)
+
+
+def validate_positive(value):
+    """
+    Validator to ensure that a value is positive.
+
+    The normal models.validators.MinValueValidator(0) isn't suitable because it allows zero,
+    which isn't appropriate for some attributes, such as price.
+    """
+    if value < 0:
+        raise ValidationError(_("Value must be greater than 0."))
 
 
 class ShowQueryVariablesMixin(object):
@@ -193,7 +205,7 @@ class Model(TimeStampedModel):
                 components.append(component)
             return ": ".join([component for component in components if component])
         elif hasattr(self, "natural_key"):
-            return ": ".join([component for component in self.natural_key()])
+            return ": ".join([str(component) for component in self.natural_key()])
         else:
             return super().__str__()
 
@@ -478,6 +490,26 @@ class NonOverlappingDateFramedModel(NonOverlappingMixin, models.Model):
         return date_text
 
 
+class CountryQuerySet(SearchQueryMixin, models.QuerySet):
+    """
+    Makes country searchable
+    """
+
+    def get_search_filter(self, search_term):
+        return (
+            Q(iso3166a2__iexact=search_term)
+            | Q(iso3166a3__iexact=search_term)
+            | Q(name__icontains=search_term)
+            | Q(iso_en_name__icontains=search_term)
+            | Q(iso_en_proper__icontains=search_term)
+            | Q(iso_en_ro_name__icontains=search_term)
+            | Q(iso_en_ro_proper__icontains=search_term)
+            | Q(iso_fr_name__icontains=search_term)
+            | Q(iso_fr_proper__icontains=search_term)
+            | Q(iso_es_name__icontains=search_term)
+        )
+
+
 class Country(models.Model):
     """
     A Country (or dependent territory or special area of geographical interest) included in ISO 3166.
@@ -534,6 +566,7 @@ class Country(models.Model):
         verbose_name=_("ISO Spanish name"),
         help_text=_("The name in Spanish of the Country approved by the ISO 3166 Maintenance Agency"),
     )
+    objects = IdentifierManager.from_queryset(CountryQuerySet)()
 
     def __str__(self):
         return self.iso_en_ro_name if self.iso_en_ro_name else ""
@@ -541,6 +574,9 @@ class Country(models.Model):
     class Meta:
         verbose_name = _("Country")
         verbose_name_plural = _("Countries")
+
+    class ExtraMeta:
+        identifier = ["iso_en_ro_name"]
 
 
 class Currency(models.Model):
@@ -950,3 +986,30 @@ class CountryClassifiedProductAliases(Model):
                 fields=["country", "product"], name="common_countryclassified_country_code_product_code_uniq"
             )
         ]
+
+
+class UserProfile(Model):
+    """
+    A profile to store data associated with a user to enable a customized user experience
+    """
+
+    user = models.OneToOneField(User, on_delete=CASCADE, primary_key=True, unique=True)
+    profile_data = models.JSONField(default=dict, null=True, blank=True)
+
+    def __str__(self):
+        return f"user_profile: {str(self.user)}"
+
+    class Meta:
+        verbose_name = _("user profile")
+        verbose_name_plural = _("user profiles")
+
+
+class AdditionalPermissions(models.Model):
+    """
+    A generic model to capture custom permissions.
+    """
+
+    class Meta:
+        managed = False
+        default_permissions = ()
+        permissions = (("access_dagster_ui", "Can access Dagster user interface"),)

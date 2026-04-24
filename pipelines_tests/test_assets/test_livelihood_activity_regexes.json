@@ -5,7 +5,34 @@
         "is_start": true,
         "product_id": "cows' milk"
     },
+    "Lait de chamelle": {
+        "strategy_type": "MilkProduction",
+        "is_start": true,
+        "product_id": "lait de chamelle"
+    },
+    "Lait du Chamelle": {
+        "strategy_type": "MilkProduction",
+        "is_start": true,
+        "product_id": "lait du chamelle"
+    },
     "no. milking animals": {
+        "attribute": "milking_animals"
+    },
+    "no milking animals": {
+        "attribute": "milking_animals"
+    },
+    "number milking animals": {
+        "attribute": "milking_animals"
+    },
+    "season 1: no. milking animals": {
+        "strategy_type": "MilkProduction",
+        "season": "season 1",
+        "attribute": "milking_animals"
+    },
+    "season 2: no. milking animals": {
+        "strategy_type": "MilkProduction",
+        "is_start": true,
+        "season": "season 2",
         "attribute": "milking_animals"
     },
     "season 1: lactation period (days)": {
@@ -81,6 +108,24 @@
         "season": "2nd season",
         "attribute": "percentage_kcals"
     },
+    "viande de chameau: nbr d'animaux égorgés": {
+        "strategy_type": "MeatProduction",
+        "is_start": true,
+        "product_id": "viande de chameau",
+        "attribute": "animals_slaughtered"
+    },
+    "viande de boeuf: nbr d'animaux égorgés": {
+        "strategy_type": "MeatProduction",
+        "is_start": true,
+        "product_id": "viande de boeuf",
+        "attribute": "animals_slaughtered"
+    },
+    "viande de pts ruminants: nbr d'animaux égorgés": {
+        "strategy_type": "MeatProduction",
+        "is_start": true,
+        "product_id": "viande de pts ruminants",
+        "attribute": "animals_slaughtered"
+    },
     "Goat meat: no. animals slaughtered": {
         "strategy_type": "MeatProduction",
         "is_start": true,
@@ -100,8 +145,48 @@
         "product_id": "cattle",
         "attribute": "quantity_sold"
     },
+    "cattle sales - local: no. sold": {
+        "strategy_type": "LivestockSale",
+        "is_start": true,
+        "product_id": "cattle sales - local",
+        "attribute": "quantity_sold"
+    },
+    "cattle - local: no. sold": {
+        "strategy_type": "LivestockSale",
+        "is_start": true,
+        "product_id": "cattle - local",
+        "attribute": "quantity_sold"
+    },
+    "goat sales - local: no. sold": {
+        "strategy_type": "LivestockSale",
+        "is_start": true,
+        "product_id": "goat sales - local",
+        "attribute": "quantity_sold"
+    },
+    "goat - local: no. sold": {
+        "strategy_type": "LivestockSale",
+        "is_start": true,
+        "product_id": "goat - local",
+        "attribute": "quantity_sold"
+    },
+    "pig sales - local: no. sold": {
+        "strategy_type": "LivestockSale",
+        "is_start": true,
+        "product_id": "pig sales - local",
+        "attribute": "quantity_sold"
+    },
+    "pig - local: no. sold": {
+        "strategy_type": "LivestockSale",
+        "is_start": true,
+        "product_id": "pig - local",
+        "attribute": "quantity_sold"
+    },
     "cattle offtake (% sold/slaughtered)": {
         "product_id": "cattle",
+        "attribute": "percentage_sold_slaughtered"
+    },
+    "shoat offtake (% sold/slaughtered)": {
+        "product_id": "shoat",
         "attribute": "percentage_sold_slaughtered"
     },
     "Chicken  sales: no. sold": {
@@ -115,6 +200,46 @@
         "is_start": true,
         "product_id": "eggs",
         "attribute": "quantity_sold"
+    },
+    "vente de légume: kg vendus": {
+        "is_start": true,
+        "product_id": "légume",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_sold"
+    },
+    "vente cultures maraichères: kg vendus": {
+        "is_start": true,
+        "product_id": "cultures maraichères",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_sold"
+    },
+    "Vente de bois de chauffage": {
+        "is_start": true,
+        "product_id": "bois de chauffage"
+    },
+    "Vente prods de cueillette": {
+        "is_start": true,
+        "product_id": "prods de cueillette"
+    },
+    "vente de mangue": {
+        "is_start": true,
+        "product_id": "mangue"
+    },
+    "vente artisanat": {
+        "is_start": true,
+        "product_id": "artisanat"
+    },
+    "vente d'orange": {
+        "is_start": true,
+        "product_id": "orange"
+    },
+    "autre: vente néré": {
+        "is_start": true,
+        "product_id": "néré"
+    },
+    "sand sales": {
+        "is_start": true,
+        "product_id": "sand"
     },
     "CROP PRODUCTION: ": {
         "strategy_type": "CropProduction",
@@ -268,11 +393,20 @@
         "attribute": "quantity_produced",
         "unit_of_measure_id": "kg"
     },
-    "no. people per HH": {
-        "attribute": "people_per_household"
-    },
     "PRODUCTION ANIMALE:": {},
     "nb d'animaux laitiers": {
+        "attribute": "milking_animals"
+    },
+    "nbr d'animaux laitiers": {
+        "attribute": "milking_animals"
+    },
+    "nb animaux laitiers": {
+        "attribute": "milking_animals"
+    },
+    "nbr animaux lactants": {
+        "attribute": "milking_animals"
+    },
+    "nbr d'animaux lactants": {
         "attribute": "milking_animals"
     },
     "saison 1: nb animaux laitiers": {
@@ -280,10 +414,43 @@
         "season": "saison 1",
         "attribute": "milking_animals"
     },
+    "saison 1: nbr d'animaux lactants": {
+        "strategy_type": "MilkProduction",
+        "season": "saison 1",
+        "attribute": "milking_animals"
+    },
+    "saison pluvieuse: nb animaux laitiers": {
+        "strategy_type": "MilkProduction",
+        "season": "saison pluvieuse",
+        "attribute": "milking_animals"
+    },
+    "saison hivernage: nbr animaux lactants": {
+        "strategy_type": "MilkProduction",
+        "season": "saison hivernage",
+        "attribute": "milking_animals"
+    },
     "saison 2: nb animaux laitiers": {
         "strategy_type": "MilkProduction",
         "is_start": true,
         "season": "saison 2",
+        "attribute": "milking_animals"
+    },
+    "saison 2: nbr d'animaux lactants": {
+        "strategy_type": "MilkProduction",
+        "is_start": true,
+        "season": "saison 2",
+        "attribute": "milking_animals"
+    },
+    "saison seche: nb animaux laitiers": {
+        "strategy_type": "MilkProduction",
+        "is_start": true,
+        "season": "saison seche",
+        "attribute": "milking_animals"
+    },
+    "saison sèche: nbr animaux lactants": {
+        "strategy_type": "MilkProduction",
+        "is_start": true,
+        "season": "saison sèche",
         "attribute": "milking_animals"
     },
     "période de lactation (jours)": {
@@ -319,6 +486,9 @@
     "revenus": {
         "attribute": "income"
     },
+    "type de lait vendu/autre (ecremé=0, entier=1)": {
+        "attribute": "type_of_milk_sold_or_other_uses"
+    },
     "type de lait vendus/autre (ecremé=0, entier=1)": {
         "attribute": "type_of_milk_sold_or_other_uses"
     },
@@ -353,15 +523,21 @@
         "season": "1ère saison",
         "attribute": "percentage_kcals"
     },
-    "lait+beurre/beurre clarifié kcals(%)-1ème saison": {
-        "strategy_type": "ButterProduction",
-        "season": "1ème saison",
-        "attribute": "percentage_kcals"
-    },
     "lait+beurre/beurre clarifié kcals(%)-2ème saison": {
         "strategy_type": "ButterProduction",
         "is_start": true,
         "season": "2ème saison",
+        "attribute": "percentage_kcals"
+    },
+    "lait+beurre/clarifié kcals (%)-1ère saison": {
+        "strategy_type": "ButterProduction",
+        "season": "1ère saison",
+        "attribute": "percentage_kcals"
+    },
+    "lait+beurre/clarifié kcals (%)-1ème saison": {
+        "strategy_type": "ButterProduction",
+        "is_start": true,
+        "season": "1ème saison",
         "attribute": "percentage_kcals"
     },
     "poids de la carcasse (kg)": {
@@ -376,12 +552,19 @@
         "attribute": "price"
     },
     "diminution gros bétail (% vendus/abattu)": {
+        "product_id": "gros bétail",
         "attribute": "percentage_sold_slaughtered"
     },
     "diminution petits ruminants (% vendus/abattu)": {
+        "product_id": "petits ruminants",
         "attribute": "percentage_sold_slaughtered"
     },
     "prélèvement des pts ruminants (% vendus/egorgés)": {
+        "product_id": "pts ruminants",
+        "attribute": "percentage_sold_slaughtered"
+    },
+    "prélèvement bovins (% vendu/égorgé)": {
+        "product_id": "bovins",
         "attribute": "percentage_sold_slaughtered"
     },
     "Vente des oeufs: nb  venduss": {
@@ -400,6 +583,18 @@
         "strategy_type": "LivestockSale",
         "is_start": true,
         "product_id": "volaille",
+        "attribute": "quantity_sold"
+    },
+    "vente de porcs - nb vendus": {
+        "strategy_type": "LivestockSale",
+        "is_start": true,
+        "product_id": "porcs",
+        "attribute": "quantity_sold"
+    },
+    "pig sales: no sold": {
+        "strategy_type": "LivestockSale",
+        "is_start": true,
+        "product_id": "pig",
         "attribute": "quantity_sold"
     },
     "Peaux: nb vendues": {
@@ -484,6 +679,15 @@
         "product_id": "manioc",
         "attribute": "number_of_local_measures"
     },
+    "nbr d'unités locales": {
+        "attribute": "number_of_local_measures"
+    },
+    "nbr unités": {
+        "attribute": "number_of_local_measures"
+    },
+    "nbr unités locales": {
+        "attribute": "number_of_local_measures"
+    },
     "nom de la mesure": {
         "attribute": "name_of_local_measure"
     },
@@ -516,6 +720,10 @@
         "attribute": "activity_notes"
     },
     "Autre culture de rente: type": {
+        "is_start": true,
+        "attribute": "product__name"
+    },
+    "Autre culture: nom": {
         "is_start": true,
         "attribute": "product__name"
     },
@@ -622,6 +830,11 @@
         "product_id": "pâte alimentaire",
         "attribute": "name_of_local_measure"
     },
+    "Mais graine: nom mesure locale": {
+        "is_start": true,
+        "product_id": "mais graine",
+        "attribute": "name_of_local_measure"
+    },
     "Maïs : nom du mesure": {
         "is_start": true,
         "product_id": "maïs",
@@ -630,6 +843,11 @@
     "mil: nom unité de mesure": {
         "is_start": true,
         "product_id": "mil",
+        "attribute": "name_of_local_measure"
+    },
+    "water for humans: name of local meas.": {
+        "is_start": true,
+        "product_id": "water for humans",
         "attribute": "name_of_local_measure"
     },
     "oignon: nom": {
@@ -681,6 +899,10 @@
         "unit_of_measure_id": "kg",
         "attribute": "unit_multiple"
     },
+    "AUTRE ACHAT": {
+        "strategy_type": "OtherPurchase",
+        "is_start": true
+    },
     "Autre achat: beurre de Karité": {
         "is_start": true,
         "product_id": "beurre de karité",
@@ -728,13 +950,52 @@
         "attribute": "price"
     },
     "prix d'achat (espèces)": {
-        "attribute": "purchase_price"
+        "attribute": "price"
     },
     "prix de vente (espèces)": {
-        "attribute": "sales_price"
+        "attribute": "price"
+    },
+    "prix du vente (cash prix d'achat)": {
+        "attribute": "price"
+    },
+    "prix du vente (cash)": {
+        "attribute": "price"
+    },
+    "prix de vente (cash)": {
+        "attribute": "price"
     },
     "dépense": {
         "attribute": "expenditure"
+    },
+    "ustensils de cuisine: dépense annuelle": {
+        "activity_label": "ustensils de cuisine: dépense annuelle",
+        "is_start": true,
+        "attribute": "expenditure",
+        "product_id": "ustensils de cuisine"
+    },
+    "electricité: dépense annuelle": {
+        "activity_label": "electricité: dépense annuelle",
+        "is_start": true,
+        "attribute": "expenditure",
+        "product_id": "electricité"
+    },
+    "investissements en actifs: dépense annuelle": {
+        "activity_label": "investissements en actifs: dépense annuelle",
+        "is_start": true,
+        "attribute": "expenditure",
+        "product_id": "investissements en actifs"
+    },
+    "savon: quantité annuelle": {
+        "activity_label": "savon: quantité annuelle",
+        "is_start": true,
+        "attribute": "expenditure",
+        "product_id": "savon"
+    },
+    "sel: quantité annuelle": {
+        "activity_label": "sel: quantité annuelle",
+        "is_start": true,
+        "attribute": "expenditure",
+        "product_id": "sel"
     },
     "quantité (kg)": {
         "attribute": "quantity_produced_or_purchased",
@@ -742,6 +1003,40 @@
     },
     "quantité": {
         "attribute": "quantity_produced_or_purchased"
+    },
+    "travail: labour": {
+        "is_start": true,
+        "product_id": "travail: labour",
+        "attribute": "activity_notes"
+    },
+    "Travail: Pre-Récolte: sarclage": {
+        "is_start": true,
+        "product_id": "travail: pre-récolte: sarclage",
+        "attribute": "activity_notes"
+    },
+    "main-d'œuvre :labour": {
+        "is_start": true,
+        "product_id": "main-d'œuvre :labour",
+        "attribute": "activity_notes"
+    },
+    "labour: harvest": {
+        "is_start": true,
+        "product_id": "labour: harvest",
+        "attribute": "activity_notes"
+    },
+    "pre-harvest labour: weeding": {
+        "is_start": true,
+        "product_id": "pre-harvest labour: weeding",
+        "attribute": "activity_notes"
+    },
+    "no. people per HH": {
+        "attribute": "people_per_household"
+    },
+    "nbr. personnes par ménage": {
+        "attribute": "people_per_household"
+    },
+    "nbr. personnes par mènage": {
+        "attribute": "people_per_household"
     },
     "no. personnes par ménage": {
         "attribute": "people_per_household"
@@ -776,6 +1071,12 @@
     "nb  personnes par ménage": {
         "attribute": "people_per_household"
     },
+    "Aide alimentaire - céréales: quantité (kg)": {
+        "is_start": true,
+        "product_id": "céréales",
+        "unit_of_measure_id": "kg",
+        "attribute": "unit_multiple"
+    },
     "Aide - céréale: quantité (kg)": {
         "is_start": true,
         "product_id": "céréale",
@@ -801,14 +1102,263 @@
     "Ag.lab (harvest) -- see Data2": {
         "is_start": true
     },
-    "paiement en kg par fois (céréale)": {
+    "paiement en kg par fois (huile)": {
         "attribute": "payment_per_time",
-        "product_id": "céréale",
+        "payment_product_id": "huile",
         "unit_of_measure_id": "kg"
     },
-    "payment in kg per time (grain)": {
+    "paiement en litre par fois (lait de vache)": {
         "attribute": "payment_per_time",
-        "product_id": "grain",
+        "payment_product_id": "lait de vache",
+        "unit_of_measure_id": "litre"
+    },
+    "payment in kg per time (cassava flour)": {
+        "attribute": "payment_per_time",
+        "payment_product_id": "cassava flour",
         "unit_of_measure_id": "kg"
+    },
+    "wild food: avocado (kg gathered)": {
+        "is_start": true,
+        "product_id": "avocado",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
+    },
+    "mangoes (kg gathered)": {
+        "is_start": true,
+        "product_id": "mangoes",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
+    },
+    "okra - kg gathered": {
+        "is_start": true,
+        "product_id": "okra",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
+    },
+    "Fish (dry) : Tilapia (dry/smoked) (kg gathered)": {
+        "is_start": true,
+        "product_id": "tilapia (dry/smoked)",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
+    },
+    "Fish type 2 (dried) - kg gathered": {
+        "is_start": true,
+        "product_id": "fish type 2 (dried)",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
+    },
+    "poisson : poisson 4 (kg collectés)": {
+        "is_start": true,
+        "product_id": "poisson 4",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
+    },
+    "fish : fish 4 (kg gathered)": {
+        "is_start": true,
+        "product_id": "fish 4",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
+    },
+    "petit commerce: nbre de personnes par mènage": {
+        "is_start": true,
+        "product_id": "petit commerce",
+        "attribute": "people_per_household"
+    },
+    "petit commerce: nbr. pers par mènage": {
+        "is_start": true,
+        "product_id": "petit commerce",
+        "attribute": "people_per_household"
+    },
+    "petit commerce: nb de personnes par ménage": {
+        "is_start": true,
+        "product_id": "petit commerce",
+        "attribute": "people_per_household"
+    },
+    "petit commerce: nb de personnes/ménage": {
+        "is_start": true,
+        "product_id": "petit commerce",
+        "attribute": "people_per_household"
+    },
+    "petit commerce: nbr de personnes par ménage": {
+        "is_start": true,
+        "product_id": "petit commerce",
+        "attribute": "people_per_household"
+    },
+    "petit commerce: nbr. personnes par ménage": {
+        "is_start": true,
+        "product_id": "petit commerce",
+        "attribute": "people_per_household"
+    },
+    "petit commerce: nb. personnes par ménage": {
+        "is_start": true,
+        "product_id": "petit commerce",
+        "attribute": "people_per_household"
+    },
+    "petty trade: no. people per hh": {
+        "is_start": true,
+        "product_id": "petty trade",
+        "attribute": "people_per_household"
+    },
+    "petty trade: nbr. people per hh": {
+        "is_start": true,
+        "product_id": "petty trade",
+        "attribute": "people_per_household"
+    },
+    "autre auto-emploi vente de foin": {
+        "is_start": true,
+        "product_id": "foin"
+    },
+    "autre auto-emploi: vente prods de cueillette": {
+        "is_start": true,
+        "product_id": "prods de cueillette"
+    },
+    "hommes - preparation terre/labour": {
+        "is_start": true,
+        "product_id": "preparation terre/labour",
+        "household_labor_provider": "men"
+    },
+    "women- threshing, harvesting": {
+        "is_start": true,
+        "product_id": "threshing, harvesting",
+        "household_labor_provider": "women"
+    },
+    "poisson : peche homme (kg collectés)": {
+        "is_start": true,
+        "product_id": "peche",
+        "household_labor_provider": "men",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
+    },
+    "men - petty trade : nb. personnes par ménage": {
+        "is_start": true,
+        "product_id": "petty trade",
+        "household_labor_provider": "men",
+        "attribute": "people_per_household"
+    },
+    "pousse pousseur : garçon": {
+        "is_start": true,
+        "product_id": "pousse pousseur",
+        "household_labor_provider": "boys"
+    },
+    "femme vente de légumes": {
+        "is_start": true,
+        "product_id": "vente de légumes",
+        "household_labor_provider": "women"
+    },
+    "petty trade - men: no. people per hh": {
+        "is_start": true,
+        "product_id": "petty trade",
+        "household_labor_provider": "men",
+        "attribute": "people_per_household"
+    },
+    "petit commerce femme": {
+        "is_start": true,
+        "product_id": "petit commerce",
+        "household_labor_provider": "women"
+    },
+    "autre auto-emploi: women - petty trade": {
+        "strategy_type": "OtherCashIncome",
+        "is_start": true,
+        "product_id": "petty trade",
+        "household_labor_provider": "women"
+    },
+    "adults": {
+        "household_labor_provider": "adults"
+    },
+    "adultes": {
+        "household_labor_provider": "adults"
+    },
+    "men/women": {
+        "household_labor_provider": "adults"
+    },
+    "women/men": {
+        "household_labor_provider": "adults"
+    },
+    "men & women": {
+        "household_labor_provider": "adults"
+    },
+    "women & men": {
+        "household_labor_provider": "adults"
+    },
+    "hommes/femmes": {
+        "household_labor_provider": "adults"
+    },
+    "femmes/hommes": {
+        "household_labor_provider": "adults"
+    },
+    "hommes & femmes": {
+        "household_labor_provider": "adults"
+    },
+    "femmes & hommes": {
+        "household_labor_provider": "adults"
+    },
+    "other self-employment: petty trade - boys": {
+        "strategy_type": "OtherCashIncome",
+        "is_start": true,
+        "product_id": "petty trade",
+        "household_labor_provider": "boys"
+    },
+    "boys/girls - agriculture work": {
+        "is_start": true,
+        "product_id": "agriculture work",
+        "household_labor_provider": "children"
+    },
+    "garçons/filles collection d'eau": {
+        "is_start": true,
+        "product_id": "collection d'eau",
+        "household_labor_provider": "children"
+    },
+    "girls charcoal selling": {
+        "is_start": true,
+        "product_id": "charcoal selling",
+        "household_labor_provider": "girls"
+    },
+    "boys fishing": {
+        "is_start": true,
+        "product_id": "fishing",
+        "household_labor_provider": "boys"
+    },
+    "filles vente de légumes": {
+        "is_start": true,
+        "product_id": "vente de légumes",
+        "household_labor_provider": "girls"
+    },
+    "huile: nom du mesure": {
+        "is_start": true,
+        "product_id": "huile",
+        "attribute": "name_of_local_measure"
+    },
+    "sel - nom de la mesure locale": {
+        "is_start": true,
+        "product_id": "sel",
+        "attribute": "name_of_local_measure"
+    },
+    "sucre: nom mesure locale": {
+        "is_start": true,
+        "product_id": "sucre",
+        "attribute": "name_of_local_measure"
+    },
+    "eau pour humains: nom de mesure locale:.": {
+        "is_start": true,
+        "product_id": "eau pour humains",
+        "attribute": "name_of_local_measure"
+    },
+    "eau pour betail: nom de la mesure locale": {
+        "is_start": true,
+        "product_id": "eau pour betail",
+        "attribute": "name_of_local_measure"
+    },
+    "farine de ble - nom de la mesure locale": {
+        "is_start": true,
+        "product_id": "farine de ble",
+        "attribute": "name_of_local_measure"
+    },
+    "nom de la mesure local": {
+        "attribute": "name_of_local_measure"
+    },
+    "eau pour le bétail: nom mesure": {
+        "is_start": true,
+        "product_id": "eau pour le bétail",
+        "attribute": "name_of_local_measure"
     }
 }

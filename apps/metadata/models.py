@@ -2,15 +2,45 @@ import logging
 
 from django.contrib.gis.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db.models import Q
 from django.db.models.functions import Lower
 from django.utils.translation import gettext_lazy as _
 from django.utils.translation import pgettext_lazy
 
 import common.models as common_models
 from common.fields import TranslatedField
-from common.models import ClassifiedProduct, Country, Currency, UnitOfMeasure
+from common.models import (
+    ClassifiedProduct,
+    Country,
+    Currency,
+    IdentifierManager,
+    SearchQueryMixin,
+    UnitOfMeasure,
+)
 
 logger = logging.getLogger(__name__)
+
+
+class ReferenceDataQuerySet(SearchQueryMixin, models.QuerySet):
+    """
+    Extends ReferenceData QuerySet with custom search method
+    """
+
+    def get_search_filter(self, search_term):
+        return (
+            Q(code__iexact=search_term)
+            | Q(name_en__icontains=search_term)
+            | Q(name_pt__icontains=search_term)
+            | Q(name_es__icontains=search_term)
+            | Q(name_fr__icontains=search_term)
+            | Q(name_ar__icontains=search_term)
+            | Q(description_en__icontains=search_term)
+            | Q(description_pt__icontains=search_term)
+            | Q(description_es__icontains=search_term)
+            | Q(description_fr__icontains=search_term)
+            | Q(description_ar__icontains=search_term)
+            | Q(aliases__contains=[search_term.lower()])
+        )
 
 
 class ReferenceData(common_models.Model):
@@ -38,6 +68,7 @@ class ReferenceData(common_models.Model):
         verbose_name=_("aliases"),
         help_text=_("A list of alternate names for the object."),
     )
+    objects = IdentifierManager.from_queryset(ReferenceDataQuerySet)()
 
     def calculate_fields(self):
         # Ensure that aliases are lowercase and don't contain duplicates
@@ -58,6 +89,7 @@ class ReferenceData(common_models.Model):
 
     class Meta:
         abstract = True
+        ordering = ["ordering", "code"]
 
     class ExtraMeta:
         identifier = ["name_en"]
@@ -76,10 +108,23 @@ class LivelihoodCategory(ReferenceData):
         ),
         help_text=_("Color hex value code for the Livelihood Category."),
     )
+    objects = IdentifierManager.from_queryset(ReferenceDataQuerySet)()
 
     class Meta:
         verbose_name = _("Livelihood Category")
         verbose_name_plural = _("Livelihood Categories")
+
+
+class CharacteristicGroup(ReferenceData):
+    """
+    A grouping for Wealth Characteristics, such as 'Population', 'Income', 'Land', 'Livestock', 'Other assets'.
+    """
+
+    objects = IdentifierManager.from_queryset(ReferenceDataQuerySet)()
+
+    class Meta:
+        verbose_name = _("Characteristic Group")
+        verbose_name_plural = _("Characteristic Groups")
 
 
 class WealthCharacteristic(ReferenceData):
@@ -121,6 +166,19 @@ class WealthCharacteristic(ReferenceData):
         default=VariableType.STR,
         help_text=_("Whether the field is numeric, character, boolean, etc."),
     )
+    characteristic_group = models.ForeignKey(
+        CharacteristicGroup,
+        db_column="characteristic_group",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        verbose_name=_("Characteristic Group"),
+        help_text=_(
+            "Optional grouping for characteristics, such as 'Population', 'Income', "
+            "'Land', 'Livestock', 'Other assets'"
+        ),
+    )
+    objects = IdentifierManager.from_queryset(ReferenceDataQuerySet)()
 
     class Meta:
         verbose_name = _("Wealth Characteristic")
@@ -189,6 +247,8 @@ class WealthGroupCategory(ReferenceData):
     Standardized from the BSS 'WB' worksheet in Column B and the 'Data'
     worksheet in Row 3, so that it can be shared across all BSS.
     """
+
+    POOR = "P"  # Category Code for the Poor Wealth Group, used for defining the Survival Threshold.
 
     class Meta:
         verbose_name = _("Wealth Group Category")
@@ -305,6 +365,14 @@ class Season(common_models.Model):
             "Refers to the classification of a specific time of year based on weather patterns, temperature, and other factors"  # NOQA: E501
         ),
     )
+    purpose = models.CharField(
+        max_length=30,
+        choices=LivelihoodStrategyType.choices,
+        blank=True,
+        null=True,
+        verbose_name=_("Purpose"),
+        help_text=_("The Livelihood Strategy Type that this Season is relevant for."),
+    )
     # We use day in the year instead of month to allow greater granularity,
     # and compatibility with the potential FDW Enhanced Crop Calendar output.
     # Note that if the season goes over the year end, then the start day
@@ -347,13 +415,6 @@ class Season(common_models.Model):
         verbose_name_plural = _("Seasons")
 
 
-# Defined outside ActivityLabel to make it easy to share between ActivityLabel and WealthCharacteristicLabel
-class LabelStatus(models.TextChoices):
-    COMPLETE = "Complete", _("Complete")
-    DISCUSSION = "Discussion", _("Under Discussion")
-    CORRECT_BSS = "Correct BSS", _("Correct the BSS")
-
-
 class ActivityLabel(common_models.Model):
     """
     A label from Column A of the 'Data', 'Data2' or 'Data3' worksheet in a BSS and associated attributes.
@@ -362,10 +423,20 @@ class ActivityLabel(common_models.Model):
     the LivelihoodStrategy and/or LivelihoodActivity for a given row in a BSS.
     """
 
+    class LabelStatus(models.TextChoices):
+        REGULAR_EXPRESSION = "Regular Expression", _("Processed by Regular Expression")
+        OVERRIDE = "Override", _("Override automatically recognized metadata")
+        DISCUSSION = "Discussion", _("Under Discussion")
+        CORRECT_BSS = "Correct BSS", _("Correct the BSS")
+        IGNORE = "Ignore", _("Ignore this label and associated data in the row")
+
     class LivelihoodActivityType(models.TextChoices):
         LIVELIHOOD_ACTIVITY = "LivelihoodActivity", _("Livelihood Activity")  # Labels from the 'Data' worksheet
         OTHER_CASH_INCOME = "OtherCashIncome", _("Other Cash Income")  # Labels from the 'Data2' worksheet
-        WILD_FOODS = "WildFoods", _("Wild Foods")  # Labels from the 'Data3' worksheet
+        WILD_FOODS = "WildFoods", _("Wild Foods, Fishing or Hunting")  # Labels from the 'Data3' worksheet
+        LIVELIHOOD_SUMMARY = "LivelihoodSummary", _(
+            "Livelihood Summary"
+        )  # Labels from the 'Summary' section of the 'Data' worksheet
         SEAS_CAL = "Seas Cal", _("Seas Cal")  # Header labels from the 'SeasCal' worksheet
 
     activity_label = common_models.NameField(max_length=200, verbose_name=_("Activity Label"))
@@ -375,9 +446,9 @@ class ActivityLabel(common_models.Model):
         choices=LivelihoodActivityType.choices,
         default=LivelihoodActivityType.LIVELIHOOD_ACTIVITY,
         help_text=_(
-            "The type of Livelihood Activity, either a general Livelihood Activity, or an Other Cash Income "
-            "activity from the 'Data2' worksheet, or a Wild Foods, Fishing or Hunting activity from the "
-            "'Data3' worksheet."
+            "The type of Livelihood Activity the label is for: either a general Livelihood Activity, or an Other Cash "
+            "Income activity from the 'Data2' worksheet, or a Wild Foods, Fishing or Hunting activity from the "
+            "'Data3' worksheet, or a label from the 'Summary' section of the 'Data' worksheet."
         ),
     )
     status = models.CharField(blank=True, max_length=20, choices=LabelStatus.choices, verbose_name=_("Status"))
@@ -389,7 +460,10 @@ class ActivityLabel(common_models.Model):
     strategy_type = models.CharField(
         max_length=30,
         blank=True,
-        choices=LivelihoodStrategyType.choices,
+        # We add an additional choice for LivestockProduction here, which is only valid when
+        # activity_type is LivelihoodSummary. LivestockProduction is the total of MeatProduction,
+        # MilkProduction and ButterProduction, and is used in the Summary section of the Data worksheet only
+        choices=LivelihoodStrategyType.choices + [("LivestockProduction", _("Livestock Production"))],  # type: ignore
         verbose_name=_("Strategy Type"),
         help_text=_("The type of livelihood strategy, such as crop production, or wild food gathering."),
     )
@@ -401,6 +475,15 @@ class ActivityLabel(common_models.Model):
         on_delete=models.RESTRICT,
         related_name="activity_labels",
         verbose_name=_("Product"),
+    )
+    payment_product = models.ForeignKey(
+        ClassifiedProduct,
+        db_column="payment_product_code",
+        null=True,
+        blank=True,
+        on_delete=models.RESTRICT,
+        related_name="payment_activity_labels",
+        verbose_name=_("Payment Product"),
     )
     unit_of_measure = models.ForeignKey(
         UnitOfMeasure,
@@ -420,7 +503,7 @@ class ActivityLabel(common_models.Model):
         verbose_name=_("Currency"),
     )
     season = models.CharField(max_length=60, blank=True, verbose_name=_("Season"))
-    additional_identifier = models.CharField(max_length=200, blank=True, verbose_name=_("Season"))
+    additional_identifier = models.CharField(max_length=200, blank=True, verbose_name=_("Additional Identifier"))
     attribute = models.CharField(max_length=60, blank=True, verbose_name=_("Attribute"))
     notes = models.TextField(blank=True, verbose_name=_("Notes"))
 
@@ -443,6 +526,11 @@ class WealthCharacteristicLabel(common_models.Model):
 
     Used by the ingestion pipeline for WealthCharacteristicValue to determine the attributes for a given row in a BSS.
     """
+
+    class LabelStatus(models.TextChoices):
+        COMPLETE = "Complete", _("Complete")
+        DISCUSSION = "Discussion", _("Under Discussion")
+        CORRECT_BSS = "Correct BSS", _("Correct the BSS")
 
     wealth_characteristic_label = common_models.NameField(
         max_length=200, unique=True, verbose_name=_("Wealth Characteristic Label")

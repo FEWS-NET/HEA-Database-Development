@@ -1,18 +1,39 @@
+import django_filters
+from dal import autocomplete
+from django.apps import apps
+from django.conf import settings
 from django.db import models
+from django.db.models import Expression, F, Q, Subquery, TextField, Value
+from django.db.models.functions import Coalesce, NullIf
+from django.utils import translation
+from django.utils.decorators import method_decorator
+from django.utils.translation import override
+from django.views.decorators.cache import cache_page
+from django.views.decorators.http import condition
 from django_filters import rest_framework as filters
+from django_filters.filters import CharFilter
+from rest_framework.permissions import AllowAny
+from rest_framework.renderers import JSONRenderer
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from common.fields import translation_fields
-from common.filters import MultiFieldFilter, UpperCaseFilter
-from common.viewsets import BaseModelViewSet
+from common.filters import DefaultingDateFilter, MultiFieldFilter, UpperCaseFilter
+from common.models import ClassifiedProduct
+from common.utils import make_condition_funcs
+from common.viewsets import AggregatingViewSet, BaseModelViewSet
+from metadata.models import LivelihoodStrategyType, WealthGroupCategory
 
 from .models import (
     BaselineLivelihoodActivity,
     BaselineWealthGroup,
+    BaselineWealthGroupCharacteristicValue,
     ButterProduction,
     Community,
     CommunityCropProduction,
     CommunityLivestock,
     CommunityWealthGroup,
+    CommunityWealthGroupCharacteristicValue,
     CopingStrategy,
     CropProduction,
     Event,
@@ -45,11 +66,13 @@ from .models import (
 )
 from .serializers import (
     BaselineLivelihoodActivitySerializer,
+    BaselineWealthGroupCharacteristicValueSerializer,
     BaselineWealthGroupSerializer,
     ButterProductionSerializer,
     CommunityCropProductionSerializer,
     CommunityLivestockSerializer,
     CommunitySerializer,
+    CommunityWealthGroupCharacteristicValueSerializer,
     CommunityWealthGroupSerializer,
     CopingStrategySerializer,
     CropProductionSerializer,
@@ -60,6 +83,7 @@ from .serializers import (
     HazardSerializer,
     HuntingSerializer,
     LivelihoodActivitySerializer,
+    LivelihoodActivitySummarySerializer,
     LivelihoodProductCategorySerializer,
     LivelihoodStrategySerializer,
     LivelihoodZoneBaselineGeoSerializer,
@@ -82,6 +106,9 @@ from .serializers import (
     WealthGroupSerializer,
     WildFoodGatheringSerializer,
 )
+
+# Create condition functions for LivelihoodZoneBaseline endpoint caching
+get_baseline_etag, get_baseline_last_modified = make_condition_funcs(LivelihoodZoneBaseline)
 
 
 class SourceOrganizationFilterSet(filters.FilterSet):
@@ -184,6 +211,62 @@ class LivelihoodZoneBaselineFilterSet(filters.FilterSet):
         label="Country",
     )
     population_estimate = filters.RangeFilter(label="Population estimate range")
+    product = CharFilter(method="filter_by_product", label="Filter by Product")
+    wealth_characteristic = CharFilter(
+        method="filter_by_wealth_characteristic", label="Filter by Wealth Characteristic"
+    )
+    strategy_type = CharFilter(method="filter_by_strategy_type", label="Filter by Strategy Type")
+    as_of_date = DefaultingDateFilter(
+        label="As of Date",
+        help_text="Filter baselines valid as of this date (YYYY-MM-DD format or special values like 'today').",
+    )
+
+    def filter_by_product(self, queryset, name, value):
+        """
+        Filter the baseline by matching products
+        """
+        field_lookups = [
+            *[(field, "icontains") for field in translation_fields("product__common_name")],
+            ("product__cpc", "istartswith"),
+            *[(field, "icontains") for field in translation_fields("product__description")],
+            ("product__aliases", "icontains"),
+        ]
+
+        q_object = Q()
+        for field, lookup in field_lookups:
+            q_object |= Q(**{f"{field}__{lookup}": value})
+
+        matching_baselines = LivelihoodStrategy.objects.filter(q_object).values("livelihood_zone_baseline")
+
+        return queryset.filter(id__in=Subquery(matching_baselines))
+
+    def filter_by_wealth_characteristic(self, queryset, name, value):
+        """
+        Filter the baseline by matching wealth_characteristic
+        """
+        field_lookups = [
+            *[(field, "icontains") for field in translation_fields("wealth_characteristic__name")],
+            ("wealth_characteristic__code", "iexact"),
+            *[(field, "icontains") for field in translation_fields("wealth_characteristic__description")],
+            ("wealth_characteristic__aliases", "icontains"),
+        ]
+
+        q_object = Q()
+        for field, lookup in field_lookups:
+            q_object |= Q(**{f"{field}__{lookup}": value})
+
+        matching_baselines = WealthGroupCharacteristicValue.objects.filter(q_object).values(
+            "wealth_group__livelihood_zone_baseline"
+        )
+
+        return queryset.filter(id__in=Subquery(matching_baselines))
+
+    def filter_by_strategy_type(self, queryset, name, value):
+        """
+        Filter the baseline by matching livelihood strategy type
+        """
+        matching_baselines = LivelihoodStrategy.objects.filter(strategy_type=value).values("livelihood_zone_baseline")
+        return queryset.filter(id__in=matching_baselines)
 
 
 class LivelihoodZoneBaselineViewSet(BaseModelViewSet):
@@ -210,13 +293,84 @@ class LivelihoodZoneBaselineViewSet(BaseModelViewSet):
             return LivelihoodZoneBaselineGeoSerializer  # Use GeoFeatureModelSerializer for GeoJSON
         return LivelihoodZoneBaselineSerializer
 
+    @method_decorator(cache_page(60 * 60 * 24))  # Cache on server for 24 hours - must be above condition per RFC 9110
+    @method_decorator(condition(etag_func=get_baseline_etag, last_modified_func=get_baseline_last_modified))
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
 
 class LivelihoodProductCategoryFilterSet(filters.FilterSet):
+
+    baseline_livelihood_activity = django_filters.ModelChoiceFilter(
+        queryset=BaselineLivelihoodActivity.objects.select_related(
+            "livelihood_strategy__livelihood_zone_baseline__livelihood_zone",
+            "livelihood_strategy__product",
+            "wealth_group__wealth_group_category",
+            "wealth_group__community",
+        ),
+        label="Baseline Livelihood Activity",
+    )
+    livelihood_strategy = django_filters.ModelChoiceFilter(
+        field_name="baseline_livelihood_activity__livelihood_strategy",
+        queryset=LivelihoodStrategy.objects.select_related(
+            "livelihood_zone_baseline__livelihood_zone",
+            "season",
+            "product",
+        ),
+        widget=autocomplete.ModelSelect2(url="livelihoodstrategy-autocomplete"),
+        label="Livelihood Strategy",
+    )
+    livelihood_zone_baseline = django_filters.ModelChoiceFilter(
+        field_name="baseline_livelihood_activity__livelihood_zone_baseline",
+        queryset=LivelihoodZoneBaseline.objects.select_related("livelihood_zone"),
+        widget=autocomplete.ModelSelect2(url="livelihoodzonebaseline-autocomplete"),
+        label="Livelihood Zone Baseline",
+    )
+    livelihood_zone = django_filters.ModelChoiceFilter(
+        field_name="baseline_livelihood_activity__livelihood_zone_baseline__livelihood_zone",
+        queryset=LivelihoodZone.objects.select_related("livelihood_zone"),
+        widget=autocomplete.ModelSelect2(url="livelihoodzone-autocomplete"),
+        label="Livelihood Zone",
+    )
+    wealth_group = django_filters.ModelChoiceFilter(
+        field_name="baseline_livelihood_activity__wealth_group",
+        queryset=WealthGroup.objects.select_related(
+            "community__livelihood_zone_baseline__livelihood_zone",
+            "livelihood_zone_baseline__livelihood_zone",
+            "wealth_group_category",
+        ),
+        widget=autocomplete.ModelSelect2(url="wealthgroup-autocomplete"),
+        label="Wealth Group",
+    )
+    wealth_group_category = django_filters.ModelChoiceFilter(
+        field_name="baseline_livelihood_activity__wealth_group__wealth_group_category",
+        queryset=WealthGroupCategory.objects.all(),
+        label="Wealth Group Category",
+    )
+    product = MultiFieldFilter(
+        [
+            *[
+                (field, "icontains")
+                for field in translation_fields(
+                    "baseline_livelihood_activity__livelihood_strategy__product__common_name"
+                )
+            ],
+            ("baseline_livelihood_activity__livelihood_strategy__product__cpc", "istartswith"),
+            *[
+                (field, "icontains")
+                for field in translation_fields(
+                    "baseline_livelihood_activity__livelihood_strategy__product__description"
+                )
+            ],
+            ("baseline_livelihood_activity__livelihood_strategy__product__aliases", "icontains"),
+        ],
+        label="Product",
+    )
+
     class Meta:
         model = LivelihoodProductCategory
         fields = [
-            "livelihood_zone_baseline",
-            "product",
+            "baseline_livelihood_activity",
             "basket",
         ]
 
@@ -227,21 +381,29 @@ class LivelihoodProductCategoryViewSet(BaseModelViewSet):
     """
 
     queryset = LivelihoodProductCategory.objects.select_related(
-        "livelihood_zone_baseline__livelihood_zone__country",
-        "livelihood_zone_baseline__source_organization",
+        "baseline_livelihood_activity__livelihood_zone_baseline__livelihood_zone__country",
+        "baseline_livelihood_activity__livelihood_zone_baseline__source_organization",
+        "baseline_livelihood_activity__livelihood_strategy__product",
     )
     serializer_class = LivelihoodProductCategorySerializer
     filterset_class = LivelihoodProductCategoryFilterSet
+    ordering_fields = ["baseline_livelihood_activity"]
+    ordering = ["baseline_livelihood_activity", "basket"]
 
 
 class CommunityFilterSet(filters.FilterSet):
+    livelihood_zone_baseline = django_filters.ModelChoiceFilter(
+        queryset=LivelihoodZoneBaseline.objects.select_related("livelihood_zone"),
+        widget=autocomplete.ModelSelect2(url="livelihoodzonebaseline-autocomplete"),
+        label="Livelihood Zone Baseline",
+    )
+
     class Meta:
         model = Community
         fields = [
             "code",
             "name",
             "full_name",
-            "livelihood_zone_baseline",
         ]
 
     country = MultiFieldFilter(
@@ -278,11 +440,26 @@ class CommunityViewSet(BaseModelViewSet):
 
 
 class WealthGroupFilterSet(filters.FilterSet):
+    livelihood_zone_baseline = django_filters.ModelChoiceFilter(
+        queryset=LivelihoodZoneBaseline.objects.select_related("livelihood_zone"),
+        widget=autocomplete.ModelSelect2(url="livelihoodzonebaseline-autocomplete"),
+        label="Livelihood Zone Baseline",
+    )
+    livelihood_zone = django_filters.ModelChoiceFilter(
+        field_name="livelihood_zone_baseline__livelihood_zone",
+        queryset=LivelihoodZone.objects.select_related("livelihood_zone"),
+        widget=autocomplete.ModelSelect2(url="livelihoodzone-autocomplete"),
+        label="Livelihood Zone",
+    )
+    community = django_filters.ModelChoiceFilter(
+        queryset=Community.objects.select_related("livelihood_zone_baseline__livelihood_zone"),
+        widget=autocomplete.ModelSelect2(url="community-autocomplete"),
+        label="Community",
+    )
+
     class Meta:
         model = WealthGroup
         fields = [
-            "livelihood_zone_baseline",
-            "community",
             "wealth_group_category",
         ]
 
@@ -316,13 +493,23 @@ class WealthGroupViewSet(BaseModelViewSet):
     )
     serializer_class = WealthGroupSerializer
     filterset_class = WealthGroupFilterSet
+    ordering = [
+        "livelihood_zone_baseline",
+        "wealth_group_category__ordering",
+        "community",
+    ]
 
 
 class BaselineWealthGroupFilterSet(filters.FilterSet):
+    livelihood_zone_baseline = django_filters.ModelChoiceFilter(
+        queryset=LivelihoodZoneBaseline.objects.select_related("livelihood_zone"),
+        widget=autocomplete.ModelSelect2(url="livelihoodzonebaseline-autocomplete"),
+        label="Livelihood Zone Baseline",
+    )
+
     class Meta:
         model = BaselineWealthGroup
         fields = [
-            "livelihood_zone_baseline",
             "wealth_group_category",
         ]
 
@@ -356,11 +543,20 @@ class BaselineWealthGroupViewSet(BaseModelViewSet):
 
 
 class CommunityWealthGroupFilterSet(filters.FilterSet):
+    livelihood_zone_baseline = django_filters.ModelChoiceFilter(
+        queryset=LivelihoodZoneBaseline.objects.select_related("livelihood_zone"),
+        widget=autocomplete.ModelSelect2(url="livelihoodzonebaseline-autocomplete"),
+        label="Livelihood Zone Baseline",
+    )
+    community = django_filters.ModelChoiceFilter(
+        queryset=Community.objects.select_related("livelihood_zone_baseline__livelihood_zone"),
+        widget=autocomplete.ModelSelect2(url="community-autocomplete"),
+        label="Community",
+    )
+
     class Meta:
         model = CommunityWealthGroup
         fields = [
-            "livelihood_zone_baseline",
-            "community",
             "wealth_group_category",
         ]
 
@@ -394,26 +590,54 @@ class CommunityWealthGroupViewSet(BaseModelViewSet):
 
 
 class WealthGroupCharacteristicValueFilterSet(filters.FilterSet):
+    wealth_group = django_filters.ModelChoiceFilter(
+        queryset=WealthGroup.objects.select_related(
+            "community__livelihood_zone_baseline__livelihood_zone",
+            "livelihood_zone_baseline__livelihood_zone",
+            "wealth_group_category",
+        ),
+        widget=autocomplete.ModelSelect2(url="wealthgroup-autocomplete"),
+        label="Wealth Group",
+    )
+
     class Meta:
         model = WealthGroupCharacteristicValue
         fields = [
             "wealth_characteristic",
-            "wealth_group",
         ]
 
+    livelihood_zone_baseline = filters.ModelMultipleChoiceFilter(
+        field_name="wealth_group__community__livelihood_zone_baseline",
+        queryset=LivelihoodZoneBaseline.objects.all(),
+        label="Livelihood zone baseline",
+    )
+    wealth_group_category = filters.ModelMultipleChoiceFilter(
+        field_name="wealth_group__community__wealth_group_category",
+        queryset=WealthGroupCategory.objects.all(),
+        label="Wealth group category",
+    )
     country = MultiFieldFilter(
         [
-            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso3166a2",
-            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name",
-            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_en_name",
-            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_proper",
-            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_en_proper",
-            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_fr_name",
-            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_fr_proper",
-            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_es_name",
+            "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country__iso3166a2",
+            "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name",
+            "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country__iso_en_name",
+            "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_proper",
+            "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country__iso_en_proper",
+            "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country__iso_fr_name",
+            "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country__iso_fr_proper",
+            "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country__iso_es_name",
         ],
         lookup_expr="iexact",
         label="Country",
+    )
+    product = MultiFieldFilter(
+        [
+            *[(field, "icontains") for field in translation_fields("product__common_name")],
+            ("product__cpc", "istartswith"),
+            *[(field, "icontains") for field in translation_fields("product__description")],
+            ("product__aliases", "icontains"),
+        ],
+        label="Product",
     )
 
 
@@ -434,20 +658,255 @@ class WealthGroupCharacteristicValueViewSet(BaseModelViewSet):
         # will be 4 or 5 times fewer instances. We also remove the need for a third
         # select_related parameter "wealth_group__community". Performance is not
         # critical, but we need a rule of thumb so everything matches up.
-        "wealth_characteristic",
+        "wealth_characteristic__characteristic_group",
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
         "wealth_group__wealth_group_category",
+        "product",
+        "unit_of_measure",
     )
     serializer_class = WealthGroupCharacteristicValueSerializer
     filterset_class = WealthGroupCharacteristicValueFilterSet
+    ordering = [
+        "wealth_group__community__livelihood_zone_baseline__livelihood_zone__code",
+        "wealth_group__community__livelihood_zone_baseline__reference_year_end_date",
+        "wealth_group__wealth_group_category__ordering",
+        "wealth_group__community__name",
+        "wealth_characteristic__ordering",
+        "product",
+        "wealth_characteristic__code",
+    ]
+
+
+class BaselineWealthGroupCharacteristicValueFilterSet(filters.FilterSet):
+    wealth_group = django_filters.ModelChoiceFilter(
+        queryset=WealthGroup.objects.filter(community__isnull=True).select_related(
+            "community__livelihood_zone_baseline__livelihood_zone",
+            "livelihood_zone_baseline__livelihood_zone",
+            "wealth_group_category",
+        ),
+        widget=autocomplete.ModelSelect2(url="wealthgroup-autocomplete"),
+        label="Wealth Group",
+    )
+
+    class Meta:
+        model = BaselineWealthGroupCharacteristicValue
+        fields = [
+            "wealth_characteristic",
+        ]
+
+    livelihood_zone_baseline = filters.ModelMultipleChoiceFilter(
+        field_name="wealth_group__livelihood_zone_baseline",
+        queryset=LivelihoodZoneBaseline.objects.all(),
+        label="Livelihood zone baseline",
+    )
+    wealth_group_category = filters.ModelMultipleChoiceFilter(
+        field_name="wealth_group__wealth_group_category",
+        queryset=WealthGroupCategory.objects.all(),
+        label="Wealth group category",
+    )
+    country = MultiFieldFilter(
+        [
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso3166a2",
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name",
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_en_name",
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_proper",
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_en_proper",
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_fr_name",
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_fr_proper",
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_es_name",
+        ],
+        lookup_expr="iexact",
+        label="Country",
+    )
+    product = MultiFieldFilter(
+        [
+            *[(field, "icontains") for field in translation_fields("product__common_name")],
+            ("product__cpc", "istartswith"),
+            *[(field, "icontains") for field in translation_fields("product__description")],
+            ("product__aliases", "icontains"),
+        ],
+        label="Product",
+    )
+
+    has_value = filters.BooleanFilter(
+        method="filter_has_value",
+        label="Has Value",
+    )
+
+    def filter_has_value(self, queryset, name, value):
+        """
+        Filter records based on whether they have meaningful values.
+        """
+        if value is False:
+            return queryset.filter(
+                Q(value__isnull=True)
+                | Q(value__exact="")
+                | Q(value__exact=0)
+                | Q(value__exact=[])
+                | Q(value__exact={})
+            )
+        else:
+            # This ensures that specifying the filter without a value still returns only records with meaningful values
+            return queryset.exclude(
+                Q(value__isnull=True)
+                | Q(value__exact="")
+                | Q(value__exact=0)
+                | Q(value__exact=[])
+                | Q(value__exact={})
+            )
+
+
+class BaselineWealthGroupCharacteristicValueViewSet(BaseModelViewSet):
+    """
+    API endpoint that allows wealth characteristic values for baseline wealth groups to be viewed or edited.
+    """
+
+    queryset = BaselineWealthGroupCharacteristicValue.objects.select_related(
+        "wealth_characteristic__characteristic_group",
+        "wealth_group__livelihood_zone_baseline__livelihood_zone__country",
+        "wealth_group__livelihood_zone_baseline__source_organization",
+        "wealth_group__wealth_group_category",
+        "product",
+        "unit_of_measure",
+    )
+    serializer_class = BaselineWealthGroupCharacteristicValueSerializer
+    filterset_class = BaselineWealthGroupCharacteristicValueFilterSet
+    ordering = [
+        "wealth_group__livelihood_zone_baseline__livelihood_zone__code",
+        "wealth_group__livelihood_zone_baseline__reference_year_end_date",
+        "wealth_group__wealth_group_category__ordering",
+        "wealth_characteristic__ordering",
+        "product",
+        "wealth_characteristic__code",
+    ]
+
+
+class CommunityWealthGroupCharacteristicValueFilterSet(filters.FilterSet):
+    wealth_group = django_filters.ModelChoiceFilter(
+        queryset=WealthGroup.objects.exclude(community__isnull=True).select_related(
+            "community__livelihood_zone_baseline__livelihood_zone",
+            "livelihood_zone_baseline__livelihood_zone",
+            "wealth_group_category",
+        ),
+        widget=autocomplete.ModelSelect2(url="wealthgroup-autocomplete"),
+        label="Wealth Group",
+    )
+
+    class Meta:
+        model = CommunityWealthGroupCharacteristicValue
+        fields = [
+            "wealth_characteristic",
+        ]
+
+    livelihood_zone_baseline = filters.ModelMultipleChoiceFilter(
+        field_name="wealth_group__community__livelihood_zone_baseline",
+        queryset=LivelihoodZoneBaseline.objects.all(),
+        label="Livelihood zone baseline",
+    )
+    country = MultiFieldFilter(
+        [
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso3166a2",
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name",
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_en_name",
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_proper",
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_en_proper",
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_fr_name",
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_fr_proper",
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country__iso_es_name",
+        ],
+        lookup_expr="iexact",
+        label="Country",
+    )
+    product = MultiFieldFilter(
+        [
+            *[(field, "icontains") for field in translation_fields("product__common_name")],
+            ("product__cpc", "istartswith"),
+            *[(field, "icontains") for field in translation_fields("product__description")],
+            ("product__aliases", "icontains"),
+        ],
+        label="Product",
+    )
+    has_value = filters.BooleanFilter(
+        method="filter_has_value",
+        label="Has Value",
+    )
+
+    def filter_has_value(self, queryset, name, value):
+        """
+        Filter records based on whether they have meaningful values.
+        """
+        if value is False:
+            return queryset.filter(
+                Q(value__isnull=True)
+                | Q(value__exact="")
+                | Q(value__exact=0)
+                | Q(value__exact=[])
+                | Q(value__exact={})
+            )
+        else:
+            return queryset.exclude(
+                Q(value__isnull=True)
+                | Q(value__exact="")
+                | Q(value__exact=0)
+                | Q(value__exact=[])
+                | Q(value__exact={})
+            )
+
+
+class CommunityWealthGroupCharacteristicValueViewSet(BaseModelViewSet):
+    """
+    API endpoint that allows wealth characteristic values for community wealth groups to be viewed or edited.
+    """
+
+    queryset = CommunityWealthGroupCharacteristicValue.objects.select_related(
+        # Rule of thumb: When there is a choice of routes, eg, here we could use
+        # "wealth_group__community__livelihood_zone_baseline" or
+        # "wealth_group__livelihood_zone_baseline" (ie, not going via community),
+        # favour the option with the lowest cardinality.
+        # Here for example, if I use wealth_group__livelihood_zone_baseline, the
+        # Django ORM will have to populate a LivelihoodZoneBaseline instance for
+        # every WealthGroup instance. By going via the community join, the Django
+        # ORM only has to populate a LivelihoodZoneBaseline per Community, which
+        # will be 4 or 5 times fewer instances. We also remove the need for a third
+        # select_related parameter "wealth_group__community". Performance is not
+        # critical, but we need a rule of thumb so everything matches up.
+        "wealth_characteristic__characteristic_group",
+        "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
+        "wealth_group__community__livelihood_zone_baseline__source_organization",
+        "wealth_group__wealth_group_category",
+        "product",
+        "unit_of_measure",
+    )
+    serializer_class = CommunityWealthGroupCharacteristicValueSerializer
+    filterset_class = CommunityWealthGroupCharacteristicValueFilterSet
+    ordering = [
+        "wealth_group__community__livelihood_zone_baseline__livelihood_zone__code",
+        "wealth_group__community__livelihood_zone_baseline__reference_year_end_date",
+        "wealth_group__wealth_group_category__ordering",
+        "wealth_group__community__name",
+        "wealth_characteristic__ordering",
+        "product",
+        "wealth_characteristic__code",
+    ]
 
 
 class LivelihoodStrategyFilterSet(filters.FilterSet):
+    livelihood_zone_baseline = django_filters.ModelChoiceFilter(
+        queryset=LivelihoodZoneBaseline.objects.select_related("livelihood_zone"),
+        widget=autocomplete.ModelSelect2(url="livelihoodzonebaseline-autocomplete"),
+        label="Livelihood Zone Baseline",
+    )
+    livelihood_zone = django_filters.ModelChoiceFilter(
+        field_name="livelihood_zone_baseline__livelihood_zone",
+        queryset=LivelihoodZone.objects.all(),
+        widget=autocomplete.ModelSelect2(url="livelihoodzone-autocomplete"),
+        label="Livelihood Zone",
+    )
+
     class Meta:
         model = LivelihoodStrategy
         fields = [
-            "livelihood_zone_baseline",
             "strategy_type",
             "season",
             "product",
@@ -495,21 +954,63 @@ class LivelihoodStrategyViewSet(BaseModelViewSet):
     )
     serializer_class = LivelihoodStrategySerializer
     filterset_class = LivelihoodStrategyFilterSet
+    ordering = [
+        "livelihood_zone_baseline",
+        "strategy_type",
+        "season",
+        "product",
+        "additional_identifier",
+    ]
     search_fields = [
         "additional_identifier",
         "strategy_type",
     ]
 
 
+LIVELIHOOD_ACTIVITY_ORDER_BY = [
+    "livelihood_zone_baseline",
+    "wealth_group",
+    "strategy_type",
+    "scenario",
+]
+
+
 class LivelihoodActivityFilterSet(filters.FilterSet):
+    livelihood_strategy = django_filters.ModelChoiceFilter(
+        queryset=LivelihoodStrategy.objects.select_related(
+            "livelihood_zone_baseline__livelihood_zone",
+            "season",
+            "product",
+        ),
+        widget=autocomplete.ModelSelect2(url="livelihoodstrategy-autocomplete"),
+        label="Livelihood Strategy",
+    )
+    livelihood_zone_baseline = django_filters.ModelChoiceFilter(
+        queryset=LivelihoodZoneBaseline.objects.select_related("livelihood_zone"),
+        widget=autocomplete.ModelSelect2(url="livelihoodzonebaseline-autocomplete"),
+        label="Livelihood Zone Baseline",
+    )
+    livelihood_zone = django_filters.ModelChoiceFilter(
+        field_name="livelihood_zone_baseline__livelihood_zone",
+        queryset=LivelihoodZone.objects.all(),
+        widget=autocomplete.ModelSelect2(url="livelihoodzone-autocomplete"),
+        label="Livelihood Zone",
+    )
+    wealth_group = django_filters.ModelChoiceFilter(
+        queryset=WealthGroup.objects.select_related(
+            "community__livelihood_zone_baseline__livelihood_zone",
+            "livelihood_zone_baseline__livelihood_zone",
+            "wealth_group_category",
+        ),
+        widget=autocomplete.ModelSelect2(url="wealthgroup-autocomplete"),
+        label="Wealth Group",
+    )
+
     class Meta:
         model = LivelihoodActivity
         fields = [
-            "livelihood_strategy",
-            "livelihood_zone_baseline",
             "strategy_type",
             "scenario",
-            "wealth_group",
             "quantity_produced",
             "quantity_sold",
             "quantity_other_uses",
@@ -545,6 +1046,11 @@ class LivelihoodActivityFilterSet(filters.FilterSet):
         label="Product",
     )
     cpc = UpperCaseFilter("livelihood_strategy__product__cpc", lookup_expr="startswith", label="Product code (CPC)")
+    livelihood_zone = CharFilter(
+        field_name="livelihood_zone_baseline__livelihood_zone__code",
+        lookup_expr="iexact",
+        label="Livelihood Zone",
+    )
 
 
 class LivelihoodActivityViewSet(BaseModelViewSet):
@@ -559,7 +1065,7 @@ class LivelihoodActivityViewSet(BaseModelViewSet):
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
         "wealth_group__wealth_group_category",
-    )
+    ).order_by(*LIVELIHOOD_ACTIVITY_ORDER_BY)
     serializer_class = LivelihoodActivitySerializer
     filterset_class = LivelihoodActivityFilterSet
     search_fields = [
@@ -568,43 +1074,12 @@ class LivelihoodActivityViewSet(BaseModelViewSet):
     ]
 
 
-class BaselineLivelihoodActivityFilterSet(filters.FilterSet):
-    class Meta:
+class BaselineLivelihoodActivityFilterSet(LivelihoodActivityFilterSet):
+    class Meta(LivelihoodActivityFilterSet.Meta):
         model = BaselineLivelihoodActivity
-        fields = [
-            "livelihood_strategy",
-            "livelihood_zone_baseline",
-            "strategy_type",
-            "scenario",
-            "wealth_group",
-            "quantity_produced",
-            "quantity_sold",
-            "quantity_other_uses",
-            "quantity_consumed",
-            "price",
-            "income",
-            "expenditure",
-            "kcals_consumed",
-            "percentage_kcals",
-        ]
-
-    country = MultiFieldFilter(
-        [
-            "livelihood_zone_baseline__livelihood_zone__country__iso3166a2",
-            "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name",
-            "livelihood_zone_baseline__livelihood_zone__country__iso_en_name",
-            "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_proper",
-            "livelihood_zone_baseline__livelihood_zone__country__iso_en_proper",
-            "livelihood_zone_baseline__livelihood_zone__country__iso_fr_name",
-            "livelihood_zone_baseline__livelihood_zone__country__iso_fr_proper",
-            "livelihood_zone_baseline__livelihood_zone__country__iso_es_name",
-        ],
-        lookup_expr="iexact",
-        label="Country",
-    )
 
 
-class BaselineLivelihoodActivityViewSet(BaseModelViewSet):
+class BaselineLivelihoodActivityViewSet(LivelihoodActivityViewSet):
     """
     API endpoint that allows baseline livelihood activities to be viewed or edited.
     """
@@ -616,52 +1091,17 @@ class BaselineLivelihoodActivityViewSet(BaseModelViewSet):
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
         "wealth_group__wealth_group_category",
-    )
+    ).order_by(*LIVELIHOOD_ACTIVITY_ORDER_BY)
     serializer_class = BaselineLivelihoodActivitySerializer
     filterset_class = BaselineLivelihoodActivityFilterSet
-    search_fields = [
-        "scenario",
-        "strategy_type",
-    ]
 
 
-class ResponseLivelihoodActivityFilterSet(filters.FilterSet):
-    class Meta:
+class ResponseLivelihoodActivityFilterSet(LivelihoodActivityFilterSet):
+    class Meta(LivelihoodActivityFilterSet.Meta):
         model = ResponseLivelihoodActivity
-        fields = [
-            "livelihood_strategy",
-            "livelihood_zone_baseline",
-            "strategy_type",
-            "scenario",
-            "wealth_group",
-            "quantity_produced",
-            "quantity_sold",
-            "quantity_other_uses",
-            "quantity_consumed",
-            "price",
-            "income",
-            "expenditure",
-            "kcals_consumed",
-            "percentage_kcals",
-        ]
-
-    country = MultiFieldFilter(
-        [
-            "livelihood_zone_baseline__livelihood_zone__country__iso3166a2",
-            "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name",
-            "livelihood_zone_baseline__livelihood_zone__country__iso_en_name",
-            "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_proper",
-            "livelihood_zone_baseline__livelihood_zone__country__iso_en_proper",
-            "livelihood_zone_baseline__livelihood_zone__country__iso_fr_name",
-            "livelihood_zone_baseline__livelihood_zone__country__iso_fr_proper",
-            "livelihood_zone_baseline__livelihood_zone__country__iso_es_name",
-        ],
-        lookup_expr="iexact",
-        label="Country",
-    )
 
 
-class ResponseLivelihoodActivityViewSet(BaseModelViewSet):
+class ResponseLivelihoodActivityViewSet(LivelihoodActivityViewSet):
     """
     API endpoint that allows response livelihood activities to be viewed or edited.
     """
@@ -673,33 +1113,15 @@ class ResponseLivelihoodActivityViewSet(BaseModelViewSet):
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
         "wealth_group__wealth_group_category",
-    )
+    ).order_by(*LIVELIHOOD_ACTIVITY_ORDER_BY)
     serializer_class = ResponseLivelihoodActivitySerializer
     filterset_class = ResponseLivelihoodActivityFilterSet
-    search_fields = [
-        "scenario",
-        "strategy_type",
-    ]
 
 
-class MilkProductionFilterSet(filters.FilterSet):
-    class Meta:
+class MilkProductionFilterSet(LivelihoodActivityFilterSet):
+    class Meta(LivelihoodActivityFilterSet.Meta):
         model = MilkProduction
-        fields = [
-            "livelihood_strategy",
-            "livelihood_zone_baseline",
-            "strategy_type",
-            "scenario",
-            "wealth_group",
-            "quantity_produced",
-            "quantity_sold",
-            "quantity_other_uses",
-            "quantity_consumed",
-            "price",
-            "income",
-            "expenditure",
-            "kcals_consumed",
-            "percentage_kcals",
+        fields = LivelihoodActivityFilterSet.Meta.fields + [
             "milking_animals",
             "lactation_days",
             "daily_production",
@@ -707,7 +1129,7 @@ class MilkProductionFilterSet(filters.FilterSet):
         ]
 
 
-class MilkProductionViewSet(BaseModelViewSet):
+class MilkProductionViewSet(LivelihoodActivityViewSet):
     """
     API endpoint that allows milk production to be viewed or edited.
     """
@@ -719,7 +1141,7 @@ class MilkProductionViewSet(BaseModelViewSet):
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
         "wealth_group__wealth_group_category",
-    )
+    ).order_by(*LIVELIHOOD_ACTIVITY_ORDER_BY)
     serializer_class = MilkProductionSerializer
     filterset_class = MilkProductionFilterSet
     search_fields = [
@@ -729,28 +1151,12 @@ class MilkProductionViewSet(BaseModelViewSet):
     ]
 
 
-class ButterProductionFilterSet(filters.FilterSet):
-    class Meta:
+class ButterProductionFilterSet(LivelihoodActivityFilterSet):
+    class Meta(LivelihoodActivityFilterSet.Meta):
         model = ButterProduction
-        fields = [
-            "livelihood_strategy",
-            "livelihood_zone_baseline",
-            "strategy_type",
-            "scenario",
-            "wealth_group",
-            "quantity_produced",
-            "quantity_sold",
-            "quantity_other_uses",
-            "quantity_consumed",
-            "price",
-            "income",
-            "expenditure",
-            "kcals_consumed",
-            "percentage_kcals",
-        ]
 
 
-class ButterProductionViewSet(BaseModelViewSet):
+class ButterProductionViewSet(LivelihoodActivityViewSet):
     """
     API endpoint that allows butter production to be viewed or edited.
     """
@@ -762,39 +1168,21 @@ class ButterProductionViewSet(BaseModelViewSet):
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
         "wealth_group__wealth_group_category",
-    )
+    ).order_by(*LIVELIHOOD_ACTIVITY_ORDER_BY)
     serializer_class = ButterProductionSerializer
     filterset_class = ButterProductionFilterSet
-    search_fields = [
-        "scenario",
-        "strategy_type",
-    ]
 
 
-class MeatProductionFilterSet(filters.FilterSet):
-    class Meta:
+class MeatProductionFilterSet(LivelihoodActivityFilterSet):
+    class Meta(LivelihoodActivityFilterSet.Meta):
         model = MeatProduction
-        fields = [
-            "livelihood_strategy",
-            "livelihood_zone_baseline",
-            "strategy_type",
-            "scenario",
-            "wealth_group",
-            "quantity_produced",
-            "quantity_sold",
-            "quantity_other_uses",
-            "quantity_consumed",
-            "price",
-            "income",
-            "expenditure",
-            "kcals_consumed",
-            "percentage_kcals",
+        fields = LivelihoodActivityFilterSet.Meta.fields + [
             "animals_slaughtered",
             "carcass_weight",
         ]
 
 
-class MeatProductionViewSet(BaseModelViewSet):
+class MeatProductionViewSet(LivelihoodActivityViewSet):
     """
     API endpoint that allows meat production to be viewed or edited.
     """
@@ -806,37 +1194,17 @@ class MeatProductionViewSet(BaseModelViewSet):
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
         "wealth_group__wealth_group_category",
-    )
+    ).order_by(*LIVELIHOOD_ACTIVITY_ORDER_BY)
     serializer_class = MeatProductionSerializer
     filterset_class = MeatProductionFilterSet
-    search_fields = [
-        "scenario",
-        "strategy_type",
-    ]
 
 
-class LivestockSaleFilterSet(filters.FilterSet):
-    class Meta:
+class LivestockSaleFilterSet(LivelihoodActivityFilterSet):
+    class Meta(LivelihoodActivityFilterSet.Meta):
         model = LivestockSale
-        fields = [
-            "livelihood_strategy",
-            "livelihood_zone_baseline",
-            "strategy_type",
-            "scenario",
-            "wealth_group",
-            "quantity_produced",
-            "quantity_sold",
-            "quantity_other_uses",
-            "quantity_consumed",
-            "price",
-            "income",
-            "expenditure",
-            "kcals_consumed",
-            "percentage_kcals",
-        ]
 
 
-class LivestockSaleViewSet(BaseModelViewSet):
+class LivestockSaleViewSet(LivelihoodActivityViewSet):
     """
     API endpoint that allows livestock sales to be viewed or edited.
     """
@@ -848,37 +1216,17 @@ class LivestockSaleViewSet(BaseModelViewSet):
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
         "wealth_group__wealth_group_category",
-    )
+    ).order_by(*LIVELIHOOD_ACTIVITY_ORDER_BY)
     serializer_class = LivestockSaleSerializer
     filterset_class = LivestockSaleFilterSet
-    search_fields = [
-        "scenario",
-        "strategy_type",
-    ]
 
 
-class CropProductionFilterSet(filters.FilterSet):
-    class Meta:
+class CropProductionFilterSet(LivelihoodActivityFilterSet):
+    class Meta(LivelihoodActivityFilterSet.Meta):
         model = CropProduction
-        fields = [
-            "livelihood_strategy",
-            "livelihood_zone_baseline",
-            "strategy_type",
-            "scenario",
-            "wealth_group",
-            "quantity_produced",
-            "quantity_sold",
-            "quantity_other_uses",
-            "quantity_consumed",
-            "price",
-            "income",
-            "expenditure",
-            "kcals_consumed",
-            "percentage_kcals",
-        ]
 
 
-class CropProductionViewSet(BaseModelViewSet):
+class CropProductionViewSet(LivelihoodActivityViewSet):
     """
     API endpoint that allows crop production to be viewed or edited.
     """
@@ -890,40 +1238,22 @@ class CropProductionViewSet(BaseModelViewSet):
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
         "wealth_group__wealth_group_category",
-    )
+    ).order_by(*LIVELIHOOD_ACTIVITY_ORDER_BY)
     serializer_class = CropProductionSerializer
     filterset_class = CropProductionFilterSet
-    search_fields = [
-        "scenario",
-        "strategy_type",
-    ]
 
 
-class FoodPurchaseFilterSet(filters.FilterSet):
-    class Meta:
+class FoodPurchaseFilterSet(LivelihoodActivityFilterSet):
+    class Meta(LivelihoodActivityFilterSet.Meta):
         model = FoodPurchase
-        fields = [
-            "livelihood_strategy",
-            "livelihood_zone_baseline",
-            "strategy_type",
-            "scenario",
-            "wealth_group",
-            "quantity_produced",
-            "quantity_sold",
-            "quantity_other_uses",
-            "quantity_consumed",
-            "price",
-            "income",
-            "expenditure",
-            "kcals_consumed",
-            "percentage_kcals",
+        fields = LivelihoodActivityFilterSet.Meta.fields + [
             "unit_multiple",
             "times_per_month",
             "months_per_year",
         ]
 
 
-class FoodPurchaseViewSet(BaseModelViewSet):
+class FoodPurchaseViewSet(LivelihoodActivityViewSet):
     """
     API endpoint that allows food purchases to be viewed or edited.
     """
@@ -935,33 +1265,15 @@ class FoodPurchaseViewSet(BaseModelViewSet):
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
         "wealth_group__wealth_group_category",
-    )
+    ).order_by(*LIVELIHOOD_ACTIVITY_ORDER_BY)
     serializer_class = FoodPurchaseSerializer
     filterset_class = FoodPurchaseFilterSet
-    search_fields = [
-        "scenario",
-        "strategy_type",
-    ]
 
 
-class PaymentInKindFilterSet(filters.FilterSet):
-    class Meta:
+class PaymentInKindFilterSet(LivelihoodActivityFilterSet):
+    class Meta(LivelihoodActivityFilterSet.Meta):
         model = PaymentInKind
-        fields = [
-            "livelihood_strategy",
-            "livelihood_zone_baseline",
-            "strategy_type",
-            "scenario",
-            "wealth_group",
-            "quantity_produced",
-            "quantity_sold",
-            "quantity_other_uses",
-            "quantity_consumed",
-            "price",
-            "income",
-            "expenditure",
-            "kcals_consumed",
-            "percentage_kcals",
+        fields = LivelihoodActivityFilterSet.Meta.fields + [
             "payment_per_time",
             "people_per_household",
             "times_per_month",
@@ -969,7 +1281,7 @@ class PaymentInKindFilterSet(filters.FilterSet):
         ]
 
 
-class PaymentInKindViewSet(BaseModelViewSet):
+class PaymentInKindViewSet(LivelihoodActivityViewSet):
     """
     API endpoint that allows payments in kind to be viewed or edited.
     """
@@ -981,39 +1293,21 @@ class PaymentInKindViewSet(BaseModelViewSet):
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
         "wealth_group__wealth_group_category",
-    )
+    ).order_by(*LIVELIHOOD_ACTIVITY_ORDER_BY)
     serializer_class = PaymentInKindSerializer
     filterset_class = PaymentInKindFilterSet
-    search_fields = [
-        "scenario",
-        "strategy_type",
-    ]
 
 
-class ReliefGiftOtherFilterSet(filters.FilterSet):
-    class Meta:
+class ReliefGiftOtherFilterSet(LivelihoodActivityFilterSet):
+    class Meta(LivelihoodActivityFilterSet.Meta):
         model = ReliefGiftOther
-        fields = [
-            "livelihood_strategy",
-            "livelihood_zone_baseline",
-            "strategy_type",
-            "scenario",
-            "wealth_group",
-            "quantity_produced",
-            "quantity_sold",
-            "quantity_other_uses",
-            "quantity_consumed",
-            "price",
-            "income",
-            "expenditure",
-            "kcals_consumed",
-            "percentage_kcals",
+        fields = LivelihoodActivityFilterSet.Meta.fields + [
             "unit_multiple",
             "times_per_year",
         ]
 
 
-class ReliefGiftOtherViewSet(BaseModelViewSet):
+class ReliefGiftOtherViewSet(LivelihoodActivityViewSet):
     """
     API endpoint that allows relief, gifts and other food to be viewed or edited.
     """
@@ -1025,58 +1319,22 @@ class ReliefGiftOtherViewSet(BaseModelViewSet):
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
         "wealth_group__wealth_group_category",
-    )
+    ).order_by(*LIVELIHOOD_ACTIVITY_ORDER_BY)
     serializer_class = ReliefGiftOtherSerializer
     filterset_class = ReliefGiftOtherFilterSet
-    search_fields = [
-        "scenario",
-        "strategy_type",
-    ]
 
 
-class FishingFilterSet(filters.FilterSet):
-    class Meta:
+class FishingFilterSet(LivelihoodActivityFilterSet):
+    class Meta(LivelihoodActivityFilterSet.Meta):
         model = Fishing
-        fields = [
-            "livelihood_strategy",
-            "livelihood_zone_baseline",
-            "strategy_type",
-            "scenario",
-            "wealth_group",
-            "quantity_produced",
-            "quantity_sold",
-            "quantity_other_uses",
-            "quantity_consumed",
-            "price",
-            "income",
-            "expenditure",
-            "kcals_consumed",
-            "percentage_kcals",
-        ]
 
 
-class HuntingFilterSet(filters.FilterSet):
-    class Meta:
+class HuntingFilterSet(LivelihoodActivityFilterSet):
+    class Meta(LivelihoodActivityFilterSet.Meta):
         model = Hunting
-        fields = [
-            "livelihood_strategy",
-            "livelihood_zone_baseline",
-            "strategy_type",
-            "scenario",
-            "wealth_group",
-            "quantity_produced",
-            "quantity_sold",
-            "quantity_other_uses",
-            "quantity_consumed",
-            "price",
-            "income",
-            "expenditure",
-            "kcals_consumed",
-            "percentage_kcals",
-        ]
 
 
-class HuntingViewSet(BaseModelViewSet):
+class HuntingViewSet(LivelihoodActivityViewSet):
     """
     API endpoint that allows hunting to be viewed or edited when available
     """
@@ -1088,16 +1346,12 @@ class HuntingViewSet(BaseModelViewSet):
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
         "wealth_group__wealth_group_category",
-    )
+    ).order_by(*LIVELIHOOD_ACTIVITY_ORDER_BY)
     serializer_class = HuntingSerializer
     filterset_class = HuntingFilterSet
-    search_fields = [
-        "scenario",
-        "strategy_type",
-    ]
 
 
-class FishingViewSet(BaseModelViewSet):
+class FishingViewSet(LivelihoodActivityViewSet):
     """
     API endpoint that allows fishing to be viewed or edited.
     """
@@ -1109,37 +1363,17 @@ class FishingViewSet(BaseModelViewSet):
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
         "wealth_group__wealth_group_category",
-    )
+    ).order_by(*LIVELIHOOD_ACTIVITY_ORDER_BY)
     serializer_class = FishingSerializer
     filterset_class = FishingFilterSet
-    search_fields = [
-        "scenario",
-        "strategy_type",
-    ]
 
 
-class WildFoodGatheringFilterSet(filters.FilterSet):
-    class Meta:
+class WildFoodGatheringFilterSet(LivelihoodActivityFilterSet):
+    class Meta(LivelihoodActivityFilterSet.Meta):
         model = WildFoodGathering
-        fields = [
-            "livelihood_strategy",
-            "livelihood_zone_baseline",
-            "strategy_type",
-            "scenario",
-            "wealth_group",
-            "quantity_produced",
-            "quantity_sold",
-            "quantity_other_uses",
-            "quantity_consumed",
-            "price",
-            "income",
-            "expenditure",
-            "kcals_consumed",
-            "percentage_kcals",
-        ]
 
 
-class WildFoodGatheringViewSet(BaseModelViewSet):
+class WildFoodGatheringViewSet(LivelihoodActivityViewSet):
     """
     API endpoint that allows wild food gathering to be viewed or edited.
     """
@@ -1151,33 +1385,15 @@ class WildFoodGatheringViewSet(BaseModelViewSet):
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
         "wealth_group__wealth_group_category",
-    )
+    ).order_by(*LIVELIHOOD_ACTIVITY_ORDER_BY)
     serializer_class = WildFoodGatheringSerializer
     filterset_class = WildFoodGatheringFilterSet
-    search_fields = [
-        "scenario",
-        "strategy_type",
-    ]
 
 
-class OtherCashIncomeFilterSet(filters.FilterSet):
-    class Meta:
+class OtherCashIncomeFilterSet(LivelihoodActivityFilterSet):
+    class Meta(LivelihoodActivityFilterSet.Meta):
         model = OtherCashIncome
-        fields = [
-            "livelihood_strategy",
-            "livelihood_zone_baseline",
-            "strategy_type",
-            "scenario",
-            "wealth_group",
-            "quantity_produced",
-            "quantity_sold",
-            "quantity_other_uses",
-            "quantity_consumed",
-            "price",
-            "income",
-            "expenditure",
-            "kcals_consumed",
-            "percentage_kcals",
+        fields = LivelihoodActivityFilterSet.Meta.fields + [
             "payment_per_time",
             "people_per_household",
             "times_per_month",
@@ -1186,7 +1402,7 @@ class OtherCashIncomeFilterSet(filters.FilterSet):
         ]
 
 
-class OtherCashIncomeViewSet(BaseModelViewSet):
+class OtherCashIncomeViewSet(LivelihoodActivityViewSet):
     """
     API endpoint that allows other cash income to be viewed or edited.
     """
@@ -1198,40 +1414,22 @@ class OtherCashIncomeViewSet(BaseModelViewSet):
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
         "wealth_group__wealth_group_category",
-    )
+    ).order_by(*LIVELIHOOD_ACTIVITY_ORDER_BY)
     serializer_class = OtherCashIncomeSerializer
     filterset_class = OtherCashIncomeFilterSet
-    search_fields = [
-        "scenario",
-        "strategy_type",
-    ]
 
 
-class OtherPurchaseFilterSet(filters.FilterSet):
-    class Meta:
+class OtherPurchaseFilterSet(LivelihoodActivityFilterSet):
+    class Meta(LivelihoodActivityFilterSet.Meta):
         model = OtherPurchase
-        fields = [
-            "livelihood_strategy",
-            "livelihood_zone_baseline",
-            "strategy_type",
-            "scenario",
-            "wealth_group",
-            "quantity_produced",
-            "quantity_sold",
-            "quantity_other_uses",
-            "quantity_consumed",
-            "price",
-            "income",
-            "expenditure",
-            "kcals_consumed",
-            "percentage_kcals",
+        fields = LivelihoodActivityFilterSet.Meta.fields + [
             "unit_multiple",
             "times_per_month",
             "months_per_year",
         ]
 
 
-class OtherPurchaseViewSet(BaseModelViewSet):
+class OtherPurchaseViewSet(LivelihoodActivityViewSet):
     """
     API endpoint that allows other purchases to be viewed or edited.
     """
@@ -1243,13 +1441,9 @@ class OtherPurchaseViewSet(BaseModelViewSet):
         "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
         "wealth_group__community__livelihood_zone_baseline__source_organization",
         "wealth_group__wealth_group_category",
-    )
+    ).order_by(*LIVELIHOOD_ACTIVITY_ORDER_BY)
     serializer_class = OtherPurchaseSerializer
     filterset_class = OtherPurchaseFilterSet
-    search_fields = [
-        "scenario",
-        "strategy_type",
-    ]
 
 
 class SeasonalActivityFilterSet(filters.FilterSet):
@@ -1575,3 +1769,344 @@ class CopingStrategyViewSet(BaseModelViewSet):
         "leaders",
         "strategy",
     ]
+
+
+class LivelihoodActivitySummaryViewSet(AggregatingViewSet):
+    """
+    Aggregated summary of LivelihoodActivity data for Baseline Wealth Groups.
+
+    The viewset accepts additional `slice` parameters in addition to the regular filter parameters.  The regular
+    filter parameters determine Livelihood Activities that are included in the data to be aggregated. The `slice`
+    parameters are used to calculate the amount of overall income, expenditure, kcals_consumed and percentage_kcals
+    that are derived from the slice.
+
+    Each row in the results contains the total amount for each indicator (income, expenditure, kcals_consumed,
+    percentage_kcals), the amount contributed by the slice, and the percentage of the total contributed by the slice.
+
+    Each row contains the aggregated indicator values for a group based on a distinct set of metadata. The groups
+    are defined using the `&fields` parameter. If you omit the fields parameter all fields are returned.
+
+    Note that because the viewset aggregates across the requested fields, it is very easy to over count the values.
+    It is important to understand exactly what data is being aggregated and ensure that appropriate filters have been
+    applied. For example, if a Baseline contains data for both the Baseline and the Response scenario, and you don't
+    specify a scenario filter, then the resulting indicator values will be the sum of the values for both scenarios.
+
+    The slice parameters are:
+
+      - slice_by_product (for multiple, repeat the parameter, eg, slice_by_product=R0&slice_by_product=B01). These
+        match any CPC code that starts with the value. (The client needs to convert the selected product to CPC.)
+
+      - slice_by_strategy_type - you can specify multiple, and you need to pass the code not the label (which could be
+        translated). (These are case-insensitive but otherwise must be an exact match.)
+
+    The slice selects Livelihood Activities that match both the Products and the Strategy Types. I.e. if you pass
+    a slice_by_product for a Product that isn't relevant for the selected `slice_by_strategy_type` then no activities
+    will be selected and the slice values will be zero.
+
+    The aggregates produced are:
+
+        income_sum_row
+        expenditure_sum_row
+        kcals_consumed_sum_row
+        percentage_kcals_sum_row
+
+    If a slice is specified, the following additional aggregates are produced:
+
+        income_sum_slice
+        income_sum_slice_percentage_of_row
+        expenditure_sum_slice
+        expenditure_sum_slice_percentage_of_row
+        kcals_consumed_sum_slice
+        kcals_consumed_sum_slice_percentage_of_row
+        percentage_kcals_sum_slice
+        percentage_kcals_sum_slice_percentage_of_row
+
+    You can filter by any calculated slice or row aggregate by prefixing its name with `min_` or `max_`. For example:
+
+        &min_income_sum_slice_percentage_of_row=52
+
+    The viewset currently only supports a single slice at a time. For combining slices, run multiple searches, and
+    compare them externally.
+
+    Translated fields, eg, name, description, are rendered in the currently selected locale if possible. (Except
+    Country, which has different translations following ISO.) This can be selected in the UI or set using
+    `&language=pt`, for example, which overrides the UI selection.
+
+    The product hierarchy can be retrieved from the classified product endpoint /api/classifiedproduct/.
+
+    The ordering code is also shared with the normal LZB endpoint, which uses the standard &ordering= parameter. If
+    none are specified, the results are sorted by the aggregations descending, ie, biggest percentage first.
+
+    Example URL:
+
+    http://localhost:8000/api/livelihoodactivitysummary/
+        ?language=pt
+        &country=KE
+        &scenario=baseline
+        &slice_by_product=R011
+        &slice_by_strategy_type=CropProduction
+        &fields=country,livelihood_zone_baseline_name,main_livelihood_category,currency,reference_year_start_date,
+            reference_year_end_date,valid_from_date,valid_to_date,population_source,population_estimate,
+            wealth_group_category,product,product_common_name
+        &min_income_sum_slice_percentage_of_row=52
+
+    The strategy type codes are:
+        MilkProduction
+        ButterProduction
+        MeatProduction
+        LivestockSale
+        CropProduction
+        FoodPurchase
+        PaymentInKind
+        ReliefGiftOther
+        Hunting
+        Fishing
+        WildFoodGathering
+        OtherCashIncome
+        OtherPurchase
+
+    """
+
+    queryset = (
+        LivelihoodActivity.objects.filter(wealth_group__community__isnull=True)
+        .select_related(
+            "livelihood_zone_baseline__livelihood_zone__country",
+            "livelihood_zone_baseline__source_organization",
+            "livelihood_zone_baseline__main_livelihood_category",
+            "wealth_group__wealth_group_category",
+            "livelihood_strategy__product",
+            "livelihood_strategy__season",
+        )
+        .order_by(*LIVELIHOOD_ACTIVITY_ORDER_BY)
+    )
+    serializer_class = LivelihoodActivitySummarySerializer
+    filterset_class = LivelihoodActivityFilterSet
+
+    def get_queryset_annotations(self) -> dict[str, F | Expression]:
+        """
+        AggregatingViewSet requires an annotation for every field in the Serializer that isn't a direct model field.
+        """
+        language_code = translation.get_language()
+
+        def translated_field(path):
+            """Return a Coalesce expression for a translated field so that we return the English value
+            if the translation for the current language is empty."""
+            return Coalesce(
+                NullIf(
+                    F(f"{path}_{language_code}"),
+                    Value(""),
+                ),
+                F(f"{path}_en"),
+                output_field=TextField(),
+            )
+
+        def country_field():
+            """Return an expression for the country name based on ISO name fields, using the
+            localized ISO name (e.g. French or Portuguese) when available and falling back to
+            the English ISO romanized name if the localized value is empty or not defined."""
+            path = {
+                "fr": "livelihood_zone_baseline__livelihood_zone__country__iso_fr_name",
+                "pt": "livelihood_zone_baseline__livelihood_zone__country__iso_pt_name",
+            }.get(language_code)
+            if path:
+                return Coalesce(
+                    NullIf(
+                        F(path),
+                        Value(""),
+                    ),
+                    F("livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name"),
+                )
+            return F("livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name")
+
+        return {
+            "country": country_field(),
+            "source_organization_name": F("livelihood_zone_baseline__source_organization__name"),
+            "livelihood_zone": F("livelihood_zone_baseline__livelihood_zone__code"),
+            "livelihood_zone_baseline_name": translated_field("livelihood_zone_baseline__name"),
+            "reference_year_start_date": F("livelihood_zone_baseline__reference_year_start_date"),
+            "reference_year_end_date": F("livelihood_zone_baseline__reference_year_end_date"),
+            "valid_from_date": F("livelihood_zone_baseline__valid_from_date"),
+            "valid_to_date": F("livelihood_zone_baseline__valid_to_date"),
+            "main_livelihood_category": F("livelihood_zone_baseline__main_livelihood_category__code"),
+            "livelihood_zone_baseline_description": translated_field("livelihood_zone_baseline__description"),
+            "wealth_group_category": F("wealth_group__wealth_group_category__code"),
+            "wealth_group_category_name": translated_field(
+                "wealth_group__wealth_group_category__name",
+            ),
+            "wealth_group_category_ordering": F("wealth_group__wealth_group_category__ordering"),
+            "percentage_of_households": F("wealth_group__percentage_of_households"),
+            "average_household_size": F("wealth_group__average_household_size"),
+            "currency": F("livelihood_zone_baseline__currency__pk"),
+            "population_source": F("livelihood_zone_baseline__population_source"),
+            "population_estimate": F("livelihood_zone_baseline__population_estimate"),
+            "product": F("livelihood_strategy__product__cpc"),
+            "product_common_name": translated_field(
+                "livelihood_strategy__product__common_name",
+            ),
+            "source_organization": F("livelihood_zone_baseline__source_organization__pk"),
+            "iso3166a2": F("livelihood_zone_baseline__livelihood_zone__country__iso3166a2"),
+        }
+
+
+MODELS_TO_SEARCH = [
+    {
+        "app_name": "common",
+        "model_name": "ClassifiedProduct",
+        "filter": {"key": "product", "label": "Product", "category": "products"},
+    },
+    {
+        "app_name": "metadata",
+        "model_name": "LivelihoodCategory",
+        "filter": {"key": "main_livelihood_category", "label": "Main Livelihood Category", "category": "zone_types"},
+    },
+    {
+        "app_name": "baseline",
+        "model_name": "LivelihoodZone",
+        "filter": {"key": "livelihood_zone", "label": "Livelihood zone", "category": "zones"},
+    },
+    {
+        "app_name": "metadata",
+        "model_name": "WealthCharacteristic",
+        "filter": {"key": "wealth_characteristic", "label": "Items", "category": "items"},
+    },
+    {
+        "app_name": "common",
+        "model_name": "Country",
+        "filter": {"key": "country", "label": "Country", "category": "countries"},
+    },
+]
+
+
+class LivelihoodZoneBaselineFacetedSearchView(APIView):
+    """
+    Performs a faceted search to find Livelihood Zone Baselines using a specified search term.
+
+    The search applies to multiple related models, filtering results based on the configured
+    criteria for each model. For each matching result, it calculates the number of unique
+    livelihood zones associated with the filter and includes relevant metadata in the response.
+    """
+
+    renderer_classes = [JSONRenderer]
+    permission_classes = [AllowAny]
+
+    def _get_baselines(self, baselines_qs):
+        # returs a list of baseline dicts with id, name, livelihood_zone__code, reference_year_end_date.
+        return [
+            {
+                "id": baseline.id,
+                "name": baseline.name,
+                "livelihood_zone__code": baseline.livelihood_zone.code,
+                "reference_year_end_date": baseline.reference_year_end_date,
+            }
+            for baseline in baselines_qs.select_related("livelihood_zone")
+        ]
+
+    def _search_products(self, search_term):
+        # Search products using icontains for broader matching than the default iexact search.
+        q_object = Q()
+        for field in [*translation_fields("description"), *translation_fields("common_name")]:
+            q_object |= Q(**{f"{field}__icontains": search_term})
+        q_object |= Q(cpc__startswith=search_term)
+        q_object |= Q(aliases__contains=[search_term.lower()])
+        q_object |= Q(scientific_name__icontains=search_term)
+        return ClassifiedProduct.objects.filter(q_object).distinct()
+
+    def get(self, request, format=None):
+        """
+        Return a faceted set of matching filters
+        """
+        results = {}
+        search_term = request.query_params.get(settings.REST_FRAMEWORK["SEARCH_PARAM"], "")
+        language = request.query_params.get("language", "en")
+
+        if search_term:
+            for model_entry in MODELS_TO_SEARCH:
+                app_name = model_entry["app_name"]
+                model_name = model_entry["model_name"]
+                filter_key = model_entry["filter"]["key"]
+                filter_label = model_entry["filter"]["label"]
+                filter_category = model_entry["filter"]["category"]
+                ModelClass = apps.get_model(app_name, model_name)
+                if model_name == "ClassifiedProduct":
+                    search_per_model = self._search_products(search_term)
+                else:
+                    search_per_model = ModelClass.objects.search(search_term)
+                results[filter_category] = []
+                # for activating language
+                with override(language):
+                    for search_result in search_per_model:
+                        if model_name == "ClassifiedProduct":
+                            baselines_qs = LivelihoodZoneBaseline.objects.filter(
+                                id__in=LivelihoodStrategy.objects.filter(product=search_result).values(
+                                    "livelihood_zone_baseline"
+                                )
+                            ).distinct()
+                            value_label, value = search_result.common_name, search_result.pk
+                        elif model_name == "LivelihoodCategory":
+                            baselines_qs = LivelihoodZoneBaseline.objects.filter(
+                                main_livelihood_category=search_result
+                            )
+                            value_label, value = search_result.description, search_result.pk
+                        elif model_name == "LivelihoodZone":
+                            baselines_qs = LivelihoodZoneBaseline.objects.filter(livelihood_zone=search_result)
+                            value_label, value = search_result.name, search_result.pk
+                        elif model_name == "WealthCharacteristic":
+                            baselines_qs = LivelihoodZoneBaseline.objects.filter(
+                                id__in=WealthGroupCharacteristicValue.objects.filter(
+                                    wealth_characteristic=search_result
+                                ).values("wealth_group__livelihood_zone_baseline")
+                            ).distinct()
+                            value_label, value = search_result.description, search_result.pk
+                        elif model_name == "Country":
+                            baselines_qs = LivelihoodZoneBaseline.objects.filter(
+                                livelihood_zone__country=search_result
+                            ).distinct()
+                            value_label, value = search_result.iso_en_name, search_result.pk
+                        baselines = self._get_baselines(baselines_qs)
+                        if baselines:
+                            results[filter_category].append(
+                                {
+                                    "filter": filter_key,
+                                    "filter_label": filter_label,
+                                    "value_label": value_label,
+                                    "value": value,
+                                    "count": len(baselines),
+                                    "livelihood_zone_baselines": baselines,
+                                }
+                            )
+
+            # Search livelihood strategy types (not a model query)
+            results["livelihood_strategy_types"] = []
+            search_lower = search_term.lower()
+            # Get English labels outside language override for matching
+            english_labels = {}
+            with override("en"):
+                for strategy_type in LivelihoodStrategyType:
+                    english_labels[strategy_type.value] = str(strategy_type.label).lower()
+            with override(language):
+                for strategy_type in LivelihoodStrategyType:
+                    translated_label = str(strategy_type.label)
+                    if (
+                        search_lower in strategy_type.value.lower()
+                        or search_lower in english_labels[strategy_type.value]
+                        or search_lower in translated_label.lower()
+                    ):
+                        baselines_qs = LivelihoodZoneBaseline.objects.filter(
+                            id__in=LivelihoodStrategy.objects.filter(strategy_type=strategy_type.value).values(
+                                "livelihood_zone_baseline"
+                            )
+                        ).distinct()
+                        baselines = self._get_baselines(baselines_qs)
+                        if baselines:
+                            results["livelihood_strategy_types"].append(
+                                {
+                                    "filter": "strategy_type",
+                                    "filter_label": "Livelihood Strategy Type",
+                                    "value_label": translated_label,
+                                    "value": strategy_type.value,
+                                    "count": len(baselines),
+                                    "livelihood_zone_baselines": baselines,
+                                }
+                            )
+
+        return Response(results)

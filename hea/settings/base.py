@@ -93,6 +93,8 @@ CACHES = {
 }
 
 EXTERNAL_APPS = [
+    "dal",
+    "dal_select2",
     "treebeard",
     "rest_framework",
     "django_filters",
@@ -106,8 +108,10 @@ EXTERNAL_APPS = [
     "django.contrib.admindocs",
     "binary_database_files",
     "django_extensions",
-    "ddtrace.contrib.django",
     "rest_framework_gis",
+    "revproxy",
+    "corsheaders",
+    "channels",
 ]
 PROJECT_APPS = ["common", "metadata", "baseline"]
 INSTALLED_APPS = EXTERNAL_APPS + PROJECT_APPS
@@ -116,6 +120,7 @@ MIDDLEWARE = [
     "django.middleware.gzip.GZipMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "common.middleware.language.LanguageMiddleware",
@@ -150,7 +155,23 @@ REST_FRAMEWORK = {
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
     "EXCEPTION_HANDLER": "apps.common.exception_handlers.drf_exception_handler",
     "STRICT_JSON": True,
+    "SEARCH_PARAM": "search",
 }
+
+ASGI_APPLICATION = "hea.asgi.application"
+CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
+
+########## CORS CONFIGURATION
+# See: https://github.com/ottoyiu/django-cors-headers
+CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[])
+CORS_ALLOWED_ORIGIN_REGEXES = env.list("CORS_ALLOWED_ORIGIN_REGEXES", default=[])
+# when CORS_ALLOW_CREDENTIALS is True, it is not allowed to use
+# the wildcard / CORS_ALLOW_ALL_ORIGINS
+CORS_ALLOW_ALL_ORIGINS = False if (CORS_ALLOWED_ORIGINS or CORS_ALLOWED_ORIGIN_REGEXES) else True
+CORS_ALLOW_CREDENTIALS = True if (CORS_ALLOWED_ORIGINS or CORS_ALLOWED_ORIGIN_REGEXES) else False
+
+CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
+########## End CORS CONFIGURATION
 
 ROOT_URLCONF = "hea.urls"
 
@@ -168,6 +189,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "common.context_processors.theme_context",
+                "common.context_processors.selected_settings",
             ],
         },
     },
@@ -233,6 +255,12 @@ LOGGING = {
     },
     "filters": {
         "require_debug_false": {"()": "django.utils.log.RequireDebugFalse"},
+        "suppress_ws_pings": {
+            "()": "common.logging_filters.SuppressWebSocketPings",
+        },
+        "suppress_revproxy_noise": {
+            "()": "common.logging_filters.SuppressRevProxyNoise",
+        },
     },
     "handlers": {
         "logfile": {
@@ -249,6 +277,7 @@ LOGGING = {
             "stream": sys.stdout,
             "class": "logging.StreamHandler",
             "formatter": env.str("LOG_FORMATTER", "standard"),
+            "filters": ["suppress_ws_pings", "suppress_revproxy_noise"],
         },
         "mail_admins": {
             "level": "ERROR",
@@ -258,17 +287,48 @@ LOGGING = {
         },
     },
     "loggers": {
-        "ddtrace": {"handlers": ["logfile"], "level": "INFO"},
         "django.request": {"handlers": ["console", "logfile"], "level": "INFO", "propagate": False},
         "django.db.backends": {"handlers": ["console", "logfile"], "level": "INFO", "propagate": False},
         "django.security": {"handlers": ["console", "logfile"], "level": "ERROR", "propagate": False},
         "factory": {"handlers": ["console", "logfile"], "level": "INFO"},
         "faker": {"handlers": ["console", "logfile"], "level": "INFO"},
-        "luigi": {"level": "INFO"},
-        "luigi-interface": {"level": "INFO"},
         "urllib3": {"handlers": ["console", "logfile"], "level": "INFO", "propagate": False},
         "common.models": {"handlers": ["console", "logfile"], "level": "INFO", "propagate": False},
         "common.signals": {"handlers": ["console", "logfile"], "level": "INFO", "propagate": False},
+        "uvicorn": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "uvicorn.error": {
+            "handlers": ["console"],
+            "level": "DEBUG",
+            "propagate": False,
+            "filters": ["suppress_ws_pings"],
+        },
+        "uvicorn.access": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "revproxy": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+            "filters": ["suppress_revproxy_noise"],
+        },
+        "revproxy.view": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+            "filters": ["suppress_revproxy_noise"],
+        },
+        "revproxy.response": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+            "filters": ["suppress_revproxy_noise"],
+        },
     },
     # Keep root at DEBUG and use the `level` on the handler to control logging output,
     # so that additional handlers can be used to get additional detail, e.g. `common.resources.LoggingResourceMixin`
@@ -299,3 +359,18 @@ SILENCED_SYSTEM_CHECKS = [
 
 # Ensure we can delete large numbers or records through the admin, to facilitate reloading.
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
+
+PRIVACY_URL = "https://help.fews.net/fdp/privacy-policy"
+DISCLAIMER_URL = "https://help.fews.net/fdp/data-and-information-use-and-attribution-policy"
+
+
+########## DATA EXPLORER CONFIGURATION
+# setting a default, so app startup doesn't fail when this variable isn't set
+# in services that don't use it.
+# It only needs an actually working upstream when the ProxyView view is invoked.
+EXPLORER_CLOUDFRONT_URL = env.str("EXPLORER_CLOUDFRONT_URL", default="http://localhost:3000")
+########## End DATA EXPLORER CONFIGURATION
+
+# Allow GDAL/GEOS library path overrides to be set in the environment, for MacOS.
+GDAL_LIBRARY_PATH = env("GDAL_LIBRARY_PATH", default=None)  # For example, /opt/homebrew/lib/libgdal.dylib
+GEOS_LIBRARY_PATH = env("GEOS_LIBRARY_PATH", default=None)  # For example, /opt/homebrew/lib/libgeos_c.dylib

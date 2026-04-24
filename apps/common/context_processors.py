@@ -10,3 +10,7 @@ def theme_context(request):
     theme = getattr(settings, "THEME", "hea_default")
     # Return the theme as a dictionary to be included in the template context
     return {"theme": theme}
+
+
+def selected_settings(request):
+    return {"APP_VERSION": settings.APP_VERSION}

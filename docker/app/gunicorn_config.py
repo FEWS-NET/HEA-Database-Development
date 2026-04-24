@@ -6,7 +6,6 @@ import jsonlogging
 
 env = environ.Env(
     # set casting, default value
-    DD_TRACE_ENABLED=(bool, False),
     GUNICORN_PORT=(int, 8000),
     LOG_FORMATTER=(str, "standard"),
 )
@@ -24,9 +23,6 @@ bind = f"0.0.0.0:{env('GUNICORN_PORT')}"
 limit_request_line = 0
 # Set the access_log_format and handlers according to whether we are logging to DataDog
 access_handlers = ["logfile", "access_log"]
-if env("DD_TRACE_ENABLED"):
-    access_handlers += ["console"]
-    statsd_host = env("DD_DOGSTATSD_URL").split("//")[1]  # Gunicorn doesn't recognize the udp:// scheme
 # Set the access_log_format according to whether we are using a log processor like FluentD or DataDog
 if env("LOG_FORMATTER") == "json":
     access_log_format = '{ "time_local":"%(t)s", "remote_addr":"%(h)s", "request":"%(U)s", "query":"%(q)s", "request_method":"%(m)s", "status":%(s)s, "body_bytes_sent":%(B)d, "request_time":%(D)d, "http_user_agent":"%(a)s", "http_referrer":"%(f)s", "x_forwarded_for": "%({X-Forwarded-For}i)s"}'  # NOQA
@@ -87,7 +83,6 @@ logconfig_dict = {
             "level": "DEBUG",
             "propagate": False,
         },
-        "ddtrace": {"level": "INFO", "propagate": False},
         "environ": {"level": "INFO", "propagate": False},
         "fiona": {"level": "INFO", "propagate": False},
         "rasterio": {"level": "INFO", "propagate": False},

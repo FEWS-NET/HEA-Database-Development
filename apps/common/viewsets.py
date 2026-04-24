@@ -1,18 +1,44 @@
+from inspect import isclass
+
+from django.apps import apps
+from django.contrib.auth.models import User
+from django.db.models import (
+    Exists,
+    Expression,
+    ExpressionWrapper,
+    F,
+    FloatField,
+    OuterRef,
+    Q,
+    QuerySet,
+)
+from django.db.models.functions import Coalesce, NullIf
 from django.utils.text import format_lazy
 from django.utils.translation import gettext_lazy as _
 from django_filters import rest_framework as filters
 from rest_framework import viewsets
+from rest_framework.decorators import action
 from rest_framework.exceptions import NotAcceptable
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import BasePermission, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.settings import api_settings
+from rest_framework.viewsets import GenericViewSet
 
+from common.filters import CaseInsensitiveModelMultipleChoiceFilter
+
+from .enums import AggregationScope
 from .fields import translation_fields
 from .filters import MultiFieldFilter
-from .models import ClassifiedProduct, Country, Currency, UnitOfMeasure
+from .models import ClassifiedProduct, Country, Currency, UnitOfMeasure, UserProfile
 from .serializers import (
     ClassifiedProductSerializer,
     CountrySerializer,
     CurrencySerializer,
+    CurrentUserSerializer,
     UnitOfMeasureSerializer,
+    UserProfileSerializer,
+    UserSerializer,
 )
 
 
@@ -69,6 +95,8 @@ class CountryFilterSet(filters.FilterSet):
         self.filters["country_code"].extra["choices"] = [
             (c.pk, c.iso_en_name) for c in Country.objects.all().order_by("iso_en_name")
         ]
+        LivelihoodStrategy = apps.get_model("baseline", "LivelihoodStrategy")
+        self.filters["strategy_type"].extra["choices"] = LivelihoodStrategy._meta.get_field("strategy_type").choices
 
     country_code = filters.MultipleChoiceFilter(
         field_name="iso3166a2",
@@ -91,6 +119,42 @@ class CountryFilterSet(filters.FilterSet):
         lookup_expr="iexact",
         label="Country",
     )
+
+    has_wealthgroups = filters.BooleanFilter(method="filter_has_wealthgroups")
+    livelihood_category = filters.ModelMultipleChoiceFilter(
+        queryset=lambda request: apps.get_model("metadata", "LivelihoodCategory").objects.all(),
+        method="filter_by_livelihood_category",
+        label="Livelihood Category",
+    )
+    strategy_type = filters.MultipleChoiceFilter(
+        choices=[],
+        method="filter_by_strategy_type",
+        label="Strategy Type",
+    )
+
+    def filter_has_wealthgroups(self, queryset, name, value):
+        if value is None:
+            return queryset
+        WealthGroup = apps.get_model("baseline", "WealthGroup")
+        wealth_group_exists = WealthGroup.objects.filter(
+            livelihood_zone_baseline__livelihood_zone__country=OuterRef("pk")
+        )
+        if value:
+            return queryset.filter(Exists(wealth_group_exists))
+        else:
+            return queryset.exclude(Exists(wealth_group_exists))
+
+    def filter_by_livelihood_category(self, queryset, name, value):
+        if not value:
+            return queryset
+        return queryset.filter(livelihoodzone__livelihoodzonebaseline__main_livelihood_category__in=value).distinct()
+
+    def filter_by_strategy_type(self, queryset, name, value):
+        if not value:
+            return queryset
+        return queryset.filter(
+            livelihoodzone__livelihoodzonebaseline__livelihood_strategies__strategy_type__in=value
+        ).distinct()
 
 
 class CountryViewSet(BaseModelViewSet):
@@ -249,6 +313,11 @@ class ClassifiedProductFilterSet(filters.FilterSet):
                          The filter will display choices based on the available UnitOfMeasure objects.
     """
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        LivelihoodStrategy = apps.get_model("baseline", "LivelihoodStrategy")
+        self.filters["strategy_type"].extra["choices"] = LivelihoodStrategy._meta.get_field("strategy_type").choices
+
     cpc = filters.CharFilter(lookup_expr="icontains", label="CPC v2.1")
     description_en = filters.CharFilter(
         lookup_expr="icontains", label=format_lazy("{} ({})", _("Description"), _("English"))
@@ -281,6 +350,57 @@ class ClassifiedProductFilterSet(filters.FilterSet):
         lookup_expr="icontains", label=format_lazy("{} ({})", _("Common Name"), _("Portuguese"))
     )
     unit_of_measure = filters.ModelChoiceFilter(queryset=UnitOfMeasure.objects.all(), field_name="unit_of_measure")
+    has_wealthgroups = filters.BooleanFilter(method="filter_has_wealthgroups")
+    country = CaseInsensitiveModelMultipleChoiceFilter(queryset=Country.objects.all(), method="filter_by_country")
+    livelihood_category = filters.ModelMultipleChoiceFilter(
+        queryset=lambda request: apps.get_model("metadata", "LivelihoodCategory").objects.all(),
+        method="filter_by_livelihood_category",
+        label="Livelihood Category",
+    )
+    strategy_type = filters.MultipleChoiceFilter(
+        choices=[],
+        method="filter_by_strategy_type",
+        label="Strategy Type",
+    )
+
+    def filter_has_wealthgroups(self, queryset, name, value):
+        if value is None:
+            return queryset
+
+        WealthGroup = apps.get_model("baseline", "WealthGroup")
+
+        # Get baseline IDs that have wealth groups
+        baselines_with_wg = WealthGroup.objects.values_list("livelihood_zone_baseline_id", flat=True).distinct()
+
+        if value:
+            # Return products with strategies in those baselines
+            return queryset.filter(livelihood_strategies__livelihood_zone_baseline_id__in=baselines_with_wg).distinct()
+        else:
+            return queryset
+
+    def filter_by_country(self, queryset, name, value):
+        if not value:
+            return queryset
+
+        country_queries = Q()
+        for country in value:
+            country_queries |= Q(
+                livelihood_strategies__livelihood_zone_baseline__livelihood_zone__country__iso3166a2__iexact=country.iso3166a2
+            )
+
+        return queryset.filter(country_queries).distinct()
+
+    def filter_by_livelihood_category(self, queryset, name, value):
+        if not value:
+            return queryset
+        return queryset.filter(
+            livelihood_strategies__livelihood_zone_baseline__main_livelihood_category__in=value
+        ).distinct()
+
+    def filter_by_strategy_type(self, queryset, name, value):
+        if not value:
+            return queryset
+        return queryset.filter(livelihood_strategies__strategy_type__in=value).distinct()
 
     class Meta:
         """
@@ -323,3 +443,350 @@ class ClassifiedProductViewSet(BaseModelViewSet):
         *translation_fields("description"),
         *translation_fields("common_name"),
     )
+
+
+class CurrentUserOnly(BasePermission):
+    def has_permission(self, request, view):
+        if request.user.is_superuser:
+            return True
+        elif view.kwargs == {"pk": "current"}:
+            # Even anonymous users can see their current user record
+            return True
+        elif request.query_params.get("pk") == "current":
+            # List views seem to use query_params rather than kwargs
+            return True
+        return False
+
+
+class UserViewSet(BaseModelViewSet):
+    """
+    Allows users to be viewed or edited.
+    """
+
+    queryset = User.objects.all()
+    permission_classes = [CurrentUserOnly]
+    serializer_class = UserSerializer
+    search_fields = ["username", "first_name", "last_name"]
+
+    def get_object(self):
+        pk = self.kwargs.get("pk")
+
+        if pk == "current":
+            self.serializer_class = CurrentUserSerializer
+            return self.request.user if self.request.user.id else User.get_anonymous()
+
+        return super().get_object()
+
+    @action(detail=True, methods=["get"])
+    def current(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
+
+
+class UserProfileViewSet(BaseModelViewSet):
+    queryset = UserProfile.objects.all()
+    serializer_class = UserProfileSerializer
+    permission_classes = [CurrentUserOnly, IsAuthenticated]
+
+    def get_object(self):
+        pk = self.kwargs.get("pk")
+        if pk == "current":
+            return self.request.user.userprofile if self.request.user.id else None
+        return super().get_object()
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        pk = self.request.query_params.get("pk") or self.kwargs.get("pk")
+
+        if pk == "current":
+            return queryset.filter(user=self.request.user.id)
+        elif pk:
+            # Superusers can access profiles without using pk=current.
+            return queryset.filter(user=pk)
+        else:
+            return queryset
+
+
+class AggregatingViewSet(GenericViewSet):
+    """
+    A viewset parent class that adds aggregation functionality to a viewset.
+
+    Supports the following URL parameters:
+
+     * fields: Some or all of the model fields listed in the serializer Meta.fields property, comma delimited.
+        This field list controls the fields returned, and the level of aggregation / drill-down.
+
+     * slice_by_[field]: Produces aggregates of a slice of the data within each row. The serializer defines some
+        common slice_by properties for easy use, eg, slice_by_product=R0 slices by product__cpc__istartswith.
+
+     * slice_by_[field]__[Django lookup type]: Slices can be calculated on any model field, but the user
+        must specify a Django ORM lookup type that is suitable for the field type. This allows expert users to define
+        custom slices that the developer hasn't pre-configured on serializer.slice_fields.
+
+     * min_ and/or max_[field]: Removes any rows where the value is outside the specified min/max/range.
+        The specific nature of these range parameters are configured on the serializer.
+
+     * filters and ordering parameters provided by the FilterSet
+
+    To use, inherit from this class, and ensure the linked serializer inherits from AggregatingSerializer and includes
+    the Meta.model, Meta.fields, aggregates, and slice_fields properties. Field class attributes are not necessary.
+
+    The results will include all valid fields specified in the fields parameter, plus values aggregated to the model,
+    row and slice levels, plus the percentage the slice represents of the row and model.
+
+    The FilterSet filters are applied to all calculations, including at the model-level.
+
+    The fields parameter determines the drill-down of each row from the base model. For example if a child model field
+    is included, then rows will be disaggregated to show figures broken down by that child model field. Any fields not
+    included are aggregated together. The FilterSet filters are applied to the rows too.
+
+    The slice_by parameter defines a slice of data within each row. The FilterSet filters are applied to the slice
+    totals too.
+
+    Calculated field examples:
+      * expenditure_avg_row  # this is the average expenditure for all database records within the row.
+      * kcals_consumed_sum_slice  # this is the sum of kcals consumed for a slice within each row.
+      * kcals_consumed_sum_slice_percentage_of_row  # this is the percentage the slice represents of the row total.
+
+    Filters can be applied on any of these calculated fields, by passing a parameter that prefixes min_ or max_ to
+    the field name, eg, min_kcals_consumed_sum=1000 or max_kcals_consumed_sum_slice_percentage_of_row=99.
+
+    All configuration is set in the AggregatingSerializer sub-class. The AggregatingViewSet sub-class need only
+    implement, for example:
+
+        queryset = LivelihoodZoneBaseline.objects.all()
+        serializer_class = LivelihoodZoneBaselineReportSerializer  # must be a sub-class of AggregatingSerializer.
+        filterset_class = LivelihoodZoneBaselineFilterSet  # a standard FilterSet, supports filter and order options.
+    """
+
+    pagination_class = ApiOnlyPagination
+
+    def list(self, request, *args, **kwargs):
+        """
+        Aggregates the values specified in the serializer.aggregates property, grouping and aggregating by any
+        fields not requested by the user.
+        """
+
+        # These filters are applied to global, row and slice totals.
+        queryset = self.get_queryset()
+        queryset = self.filter_queryset(queryset)
+
+        # Get the field list to group/disaggregate the results by:
+        # TODO: Should get_fields be on the viewset? This is prematurely instantiating it before we've a queryset.
+        group_by_fields = list(self.get_serializer().get_fields().keys())
+
+        # Get them from the query. The ORM converts this qs.values() call into a SQL `GROUP BY *field_paths` clause.
+        queryset = queryset.values(*group_by_fields)
+
+        # Add the row aggregations, eg, total consumption filtered by wealth group and row but not prd/strtgy slice:
+        row_aggregates = self.get_aggregates(AggregationScope.ROW)
+        queryset = queryset.annotate(**row_aggregates)
+
+        # Add the slice aggregates, eg, slice_sum_kcals_consumed for product/strategy slice:
+        slice_aggregates = self.get_aggregates(AggregationScope.SLICE)
+        if slice_aggregates:
+            queryset = queryset.annotate(**slice_aggregates)
+
+            # Add the calculations on aggregates, eg,
+            #   kcals_consumed_sum_slice_percentage_of_row = slice_sum_kcals_consumed * 100 / sum_kcals_consumed
+            percentage_expressions = self.get_percentage_expressions()
+            queryset = queryset.annotate(**percentage_expressions)
+
+        # Add the filters on aggregates, eg, kcals_consumed_percent > 50%
+        queryset = queryset.filter(self.get_filters_by_calculated_fields(slice_aggregates))
+
+        # If no ordering has been specified by the FilterSet, order by value descending:
+        if not request.query_params.get(api_settings.ORDERING_PARAM):
+            if slice_aggregates:
+                # If a slice has been specified, order by slice_percentage_of_row desc
+                order_by_value_desc = [
+                    f"-{self.serializer_class.get_aggregate_field_name(field_name, aggregate, AggregationScope.SLICE, AggregationScope.ROW,)}"  # NOQA: E501
+                    for field_name, aggregate in self.serializer_class.aggregates.items()
+                ]
+            else:
+                # If no slice specified, order by row value desc
+                order_by_value_desc = [
+                    f"-{self.serializer_class.get_aggregate_field_name(field_name, aggregate, AggregationScope.ROW,)}"
+                    for field_name, aggregate in self.serializer_class.aggregates.items()
+                ]
+            queryset = queryset.order_by(*order_by_value_desc)
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def get_queryset(self) -> QuerySet:
+        """
+        Returns the queryset for this viewset, with any necessary annotations applied.
+
+        Annotations are required for fields in the serializer that are not direct model fields, so that they can
+        be used for filtering, ordering, and grouping.
+        """
+        queryset = super().get_queryset()
+        annotations = self.get_queryset_annotations()
+        return queryset.annotate(**annotations)
+
+    def get_queryset_annotations(self) -> dict[str, F | Expression]:
+        """
+        Additional annotations required to support Serializer fields that aren't a direct model field.
+        """
+        return {}
+
+    def get_aggregates(self, scope):
+        """
+        Produces aggregate expressions for scopes row or slice.
+        """
+        assert isinstance(scope, AggregationScope)
+
+        if scope == AggregationScope.SLICE:
+            slice_filters = self.get_slice_filters()
+            # Add slice and slice_percentage_of columns only if the user has specified a slice.
+            if not slice_filters:
+                return {}
+
+        aggregates = {}
+        for field_name, aggregate in self.serializer_class.aggregates.items():
+            aggregate_field_name = self.serializer_class.get_aggregate_field_name(
+                field_name,
+                aggregate,
+                scope,
+            )
+
+            if isclass(aggregate):
+                aggregate_args = {"default": 0, "output_field": FloatField()}
+                if scope == AggregationScope.SLICE:
+                    aggregate_args["filter"] = slice_filters
+                scoped_aggregate = aggregate(field_name, **aggregate_args)
+
+            else:
+                scoped_aggregate = aggregate.copy()
+                scoped_aggregate.default = 0
+                if scope == AggregationScope.SLICE:
+                    scoped_aggregate.filter = slice_filters
+
+            aggregates[aggregate_field_name] = scoped_aggregate
+        return aggregates
+
+    def get_slice_filters(self):
+        """
+        Filters to slice the aggregations, to obtain, eg, the kcals for the selected products/strategy types.
+        This is then divided by the total for the LZB and row for the slice percentages.
+        """
+        slice_filters = Q()
+        for slice_field, slice_expr in self.serializer_class.slice_fields.items():
+            slice_filter = Q()
+            for item in self.request.query_params.getlist(f"slice_by_{slice_field}"):
+                slice_filter |= Q(**{slice_expr: item})
+            # Slice must match any of the products AND any of the strategy types (if selected)
+            slice_filters &= slice_filter
+
+        # Also support slices on any field, but user must specify ORM lookup type in URL parameter name, and prefix
+        # the parameter with 'slice_by_', for example, ?slice_by_product_cpc__startswith=R011
+        # An error is returned if the user uses an inappropriate lookup type for a field. Note that string lookup
+        # types cannot be used on Foreign Key fields, even if they are string codes — queries must reach the
+        # corresponding primary key, eg, livelihood_strategies__product__cpc not livelihood_strategies__product.
+        for field_name in set(self.serializer_class.Meta.fields) - self.get_serializer().get_fields().keys():
+            # fmt: off
+            # Copied from https://docs.djangoproject.com/en/5.1/ref/models/querysets/#field-lookups
+            lookup_types = ("exact", "iexact", "contains", "icontains", "in", "gt", "gte", "lt", "lte", "startswith", "istartswith", "endswith", "iendswith", "range", "date", "year", "iso_year", "month", "day", "week", "week_day", "iso_week_day", "quarter", "time", "hour", "minute", "second", "isnull", "regex", "iregex", )  # NOQA: E501
+            # fmt: on
+            for lookup_type in lookup_types:
+                slice_filter = Q()
+                slice_expr = f"{field_name}__{lookup_type}"
+                for item in self.request.query_params.getlist(f"slice_by_{field_name}__{lookup_type}"):
+                    slice_filter |= Q(**{slice_expr: item})
+                # Slice must match ANY of the products AND any of the strategy types AND any of the custom slices
+                slice_filters &= slice_filter
+
+        return slice_filters
+
+    def get_percentage_expressions(self):
+        """
+        Aggregate slice percentages.
+        Nb. Cannot calculate in Python as need db-wide filtering and ordering on them.
+        Could add row percentage of model, eg, lzb.
+        """
+        # TODO: Add complex kcal income calculations from LIAS
+        percentage_expressions = {}
+        for field_name, aggregate in self.serializer_class.aggregates.items():
+            # Eg, kcals_consumed_sum_slice
+            slice_field_name = self.serializer_class.get_aggregate_field_name(
+                field_name,
+                aggregate,
+                AggregationScope.SLICE,
+            )
+            slice_total = F(slice_field_name)
+
+            # The denominator, eg, kcals_consumed_sum_row or kcals_consumed_sum_row:
+            denominator_field_name = self.serializer_class.get_aggregate_field_name(
+                field_name,
+                aggregate,
+                AggregationScope.ROW,
+            )
+            total = F(denominator_field_name)
+
+            # Multiply slice by 100 for percentage, divide by denominator. NullIf protects against divide by zero.
+            expr = ExpressionWrapper(
+                ExpressionWrapper(slice_total * 100.0, output_field=FloatField())
+                / NullIf(total, 0.0, output_field=FloatField()),
+                output_field=FloatField(),
+            )
+
+            # Zero if no there are no value records retrieved for the slice.
+            expr = Coalesce(expr, 0.0, output_field=FloatField())
+
+            # Output field, eg, kcals_consumed_slice_percentage_of_row or kcals_consumed_slice_percentage_of_row:
+            pct_field_name = self.serializer_class.get_aggregate_field_name(
+                field_name,
+                aggregate,
+                AggregationScope.SLICE,
+                AggregationScope.ROW,
+            )
+            percentage_expressions[pct_field_name] = ExpressionWrapper(expr, output_field=FloatField())
+        return percentage_expressions
+
+    def get_filters_by_calculated_fields(self, slice_aggregates=None):
+        """
+        Add min/max range filters. Filters are available for any aggregate or percentage field, by prefixing
+        min_ or max_ to the aggregate field name.
+        eg, .filter(
+            kcals_consumed_sum_slice_percentage_of_row__gte=
+                params.get("min_kcals_consumed_sum_slice_percentage_of_row"),
+            kcals_consumed_sum_slice__gte=
+                params.get("min_kcals_consumed_sum_slice"),
+        )
+        """
+        filters_on_aggregates = Q()
+        for field_name, aggregate in self.serializer_class.aggregates.items():
+            for url_param_prefix, orm_expr in (("min", "gte"), ("max", "lte")):
+                agg_field_names = [
+                    self.serializer_class.get_aggregate_field_name(
+                        field_name,
+                        aggregate,
+                        AggregationScope.ROW,
+                    )
+                ]
+                # Only include the slice filters if a slice has been defined.
+                if slice_aggregates:
+                    agg_field_names += [
+                        self.serializer_class.get_aggregate_field_name(
+                            field_name,
+                            aggregate,
+                            AggregationScope.SLICE,
+                        ),
+                        self.serializer_class.get_aggregate_field_name(
+                            field_name,
+                            aggregate,
+                            AggregationScope.SLICE,
+                            AggregationScope.ROW,
+                        ),
+                    ]
+                for agg_field_name in agg_field_names:
+                    url_param_name = f"{url_param_prefix}_{agg_field_name}"
+                    limit = self.request.query_params.get(url_param_name)
+                    if limit is not None:
+                        filters_on_aggregates &= Q(**{f"{agg_field_name}__{orm_expr}": float(limit)})
+        return filters_on_aggregates

@@ -9,6 +9,7 @@ from abc import ABC
 
 import pandas as pd
 from django.contrib.auth.models import User
+from django.db.models import Model
 
 from .fields import translation_fields
 from .models import (
@@ -31,7 +32,7 @@ class Lookup(ABC):
 
     # The primary key fields for the model being retrieved, typically
     # a single auto-incremented surrogate key named `id`
-    id_fields = None
+    id_fields = []
 
     # The fields passed from the dataframe that are used to constrain the lookup,
     # typically the fields that are foreign keys from the model being looked up to
@@ -74,13 +75,14 @@ class Lookup(ABC):
     # where an Excel date or other epoch-based date format might accidentally match a primary key
     match_pk: bool = True
 
-    # Queryset Filters
+    # Queryset Filters and Excludes
     filters: dict
+    excludes: dict
 
     # Related models to also instantiate
     related_models = []
 
-    def __init__(self, filters: dict = None, require_match=None):
+    def __init__(self, filters: dict = None, excludes: dict = None, require_match=None):
         # Make sure we don't have any fields in multiple categories
         assert len(set((*self.id_fields, *self.parent_fields, *self.lookup_fields))) == len(self.id_fields) + len(
             self.parent_fields
@@ -89,10 +91,16 @@ class Lookup(ABC):
         self.composite_key = len(self.id_fields) > 1
 
         self.filters = filters or dict()
+        self.excludes = excludes or dict()
 
         # Override the require_match if necessary
         if require_match is not None:
             self.require_match = require_match
+
+        # Create instance level caches for key methods
+        self.get_lookup_df = functools.cache(self.get_lookup_df)
+        self.get = functools.cache(self.get)
+        self.get_instance = functools.cache(self.get_instance)
 
     def get_queryset_columns(self):
         return [*self.lookup_fields, *self.parent_fields, *self.id_fields]
@@ -107,10 +115,13 @@ class Lookup(ABC):
         It uses values_list to avoid hydrating a Django model, given that the result will be used
         to instantiate a DataFrame.
         """
-        queryset = self.model.objects.filter(**self.filters).values_list(*self.get_queryset_columns())
+        queryset = (
+            self.model.objects.filter(**self.filters)
+            .exclude(**self.excludes)
+            .values_list(*self.get_queryset_columns())
+        )
         return queryset
 
-    @functools.cache
     def get_lookup_df(self):
         """
         Build a dataframe for a model that can be used to lookup the primary key.
@@ -118,7 +129,7 @@ class Lookup(ABC):
         Create a dataframe that contains the primary key, and all the columns that
         can be used to lookup the primary key, e.g. the name, description, aliases, etc.
 
-        Use the queryset.iterator() to prevent Django from caching the queryset, and instead use functools.cache to
+        Use the queryset.iterator() to prevent Django from caching the queryset, because functools.cache is used to
         cache the dataframe returned from this function.
         """
         df = pd.DataFrame(list(self.get_queryset().iterator()), columns=self.get_queryset_columns())
@@ -306,7 +317,8 @@ class Lookup(ABC):
         if lookup_column:
             merge_df = merge_df.drop(["lookup_candidate", "lookup_key"], axis="columns")
 
-        return merge_df
+        # Preserve the original index
+        return merge_df.set_index(df.index)
 
     def get_instances(self, df, column, related_models=None):
         """
@@ -320,14 +332,13 @@ class Lookup(ABC):
         df[column] = df[column].map(model_map)
         return df
 
-    @functools.cache
     def get(self, value: str, **parent_values) -> str | None:
         """
         Return the lookup value for a single string, or None if there is no match.
 
         Used to do a lookup for a single value instead of a dataframe.
 
-        Unlike `do_lookup()` this is a cached property to avoid repeated database queries.
+        Unlike `do_lookup()` this is a cached method to avoid repeated database queries.
         Note that this cache is per-instance of the Lookup class, so the class should be instantiated outside a loop
         performing repeated lookups:
 
@@ -337,7 +348,8 @@ class Lookup(ABC):
         """
         df = pd.DataFrame({"value": [value]})
         for parent_field in self.parent_fields:
-            df[parent_field] = [parent_values[parent_field]]
+            if parent_field in parent_values:
+                df[parent_field] = [parent_values[parent_field]]
         try:
             df = self.do_lookup(df, "value", "result")
             result = df.iloc[0, -1]
@@ -345,14 +357,13 @@ class Lookup(ABC):
         except ValueError:
             return None
 
-    @functools.cache
-    def get_instance(self, value: str, **parent_values) -> str | None:
+    def get_instance(self, value: str, **parent_values) -> Model | None:
         """
         Return the Django model instance for a single string, or None if there is no match.
 
         Used to do a lookup for a single value instead of a dataframe.
 
-        Unlike `do_lookup()` this is a cached property to avoid repeated database queries.
+        Unlike `do_lookup()` this is a cached method to avoid repeated database queries.
         Note that this cache is per-instance of the Lookup class, so the class should be instantiated outside a loop
         performing repeated lookups:
 
@@ -362,7 +373,8 @@ class Lookup(ABC):
         """
         df = pd.DataFrame({"value": [value]})
         for parent_field in self.parent_fields:
-            df[parent_field] = [parent_values[parent_field]]
+            if parent_field in parent_values:
+                df[parent_field] = [parent_values[parent_field]]
         try:
             df = self.do_lookup(df, "value", "result")
             df = self.get_instances(df, "result")
@@ -442,6 +454,14 @@ class ClassifiedProductLookup(Lookup):
         "hs2012",
     )
 
+    def get_queryset(self):
+        """
+        Exclude specific products that are unwanted duplicates.
+        """
+        # P23162 is Husked Rice, but we use "rice" as an alias for it. This
+        # conflicts with R0113: Rice, which we never use, so ignore it.
+        return super().get_queryset().exclude(cpc="R0113")
+
     def get_lookup_df(self):
         """
         Build a dataframe for a model that can be used to lookup the primary key.
@@ -485,29 +505,23 @@ class ClassifiedProductLookup(Lookup):
         """
         df = super().prepare_lookup_df()
 
-        # Create a DataFrame that just contains the single digits 0 through 9.
-        df_digit = pd.DataFrame(range(10), columns=["digit"])
-
-        # Create a Cartesian product of df and df_digit
-        df_all = pd.merge(df.assign(key=1), df_digit.assign(key=1), on="key").drop("key", axis=1)
-
-        # Create the "child_candidate" column that adds the 0-9 to the end of the lookup_value
-        df_all["child_candidate"] = df_all["lookup_value"] + df_all["digit"].astype(str)
-
-        # Merge with the original DataFrame on the child_candidate column and lookup_key to find only the rows
-        # that contain valid child codes where the lookup_key in the child is the same as the lookup_key in the parent.
-        unwanted_parents = df_all.merge(
-            df,
-            left_on=["child_candidate", "lookup_key"],
-            right_on=["lookup_value", "lookup_key"],
-            suffixes=[None, "_child"],
-        )
-
-        # Drop the extra columns so the shape matches the original dataframe.
-        unwanted_parents = unwanted_parents[["lookup_value", "lookup_key"]]
-
-        # Drop the unwanted parents from the original DataFrame
-        df = pd.concat([df, unwanted_parents]).drop_duplicates(keep=False)
+        # Drop duplicate lookup_key entries where the lookup value is a leading substring of another lookup value for
+        # the same lookup_key.
+        # First, sort the rows by lookup_key and lookup_value, so that any parent rows will be immediately
+        # followed by their child rows (because longer strings will come after shorter strings).
+        df = df.sort_values(by=["lookup_key", "lookup_value"]).reset_index(drop=True)
+        # Create a shifted version of the dataframe so that we can compare each row to the values in the next row
+        # using the same index.
+        next_row_df = df.shift(-1, fill_value="")
+        # Create a boolean mask that identifies parent rows - i.e. rows where the lookup_value in the next row starts
+        # with the lookup_value in the current row.
+        parent_value_mask = [
+            next_value.startswith(lookup_value)
+            for lookup_value, next_value in zip(df["lookup_value"], next_row_df["lookup_value"])
+        ]
+        # Drop any parent rows with an identical lookup_key to their child row.
+        rows_to_drop = (df["lookup_key"] == next_row_df["lookup_key"]) & pd.Series(parent_value_mask)
+        df = df[~rows_to_drop]
         return df
 
 

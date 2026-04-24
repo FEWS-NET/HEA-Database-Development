@@ -56,6 +56,60 @@
         null
     ],
     [
+        "(?:autre auto-emploi|other self-employment){separator_pattern} {age_gender_pattern}{separator_pattern} {product_pattern}",
+        "OtherCashIncome",
+        true,
+        null
+    ],
+    [
+        "(?:autre auto-emploi|other self-employment){separator_pattern} {product_pattern}{separator_pattern} {age_gender_pattern}",
+        "OtherCashIncome",
+        true,
+        null
+    ],
+    [
+        "{age_gender_pattern}{separator_pattern} {product_pattern}{separator_pattern} (?:quantity|quantité) ?\\({unit_of_measure_pattern}\\)",
+        null,
+        true,
+        "quantity_produced_or_purchased"
+    ],
+    [
+        "{age_gender_pattern}{separator_pattern} {product_pattern}{separator_pattern} {nbr_pattern} (?:de )?(?:pers|personnes|people)(?: ?/ ?| par | per )(?:ménage|mènage|hh)",
+        null,
+        true,
+        "people_per_household"
+    ],
+    [
+        "(?:fish|poisson)?{separator_pattern}{product_pattern}{separator_pattern} {age_gender_pattern} ?\\(?{unit_of_measure_pattern}(?: collectés?|gathered)?\\)?",
+        null,
+        true,
+        "quantity_produced"
+    ],
+    [
+        "{product_pattern}{separator_pattern} {age_gender_pattern}{separator_pattern} {nbr_pattern} (?:de )?(?:pers|personnes|people)(?: ?/ ?| par | per )(?:ménage|mènage|hh)",
+        null,
+        true,
+        "people_per_household"
+    ],
+    [
+        "{product_pattern}{separator_pattern} {age_gender_pattern}",
+        null,
+        true,
+        null
+    ],
+    [
+        "{age_gender_pattern}{separator_pattern} {product_pattern}",
+        null,
+        true,
+        null
+    ],
+    [
+        "{age_gender_pattern}",
+        null,
+        false,
+        null
+    ],
+    [
         "(?:other purchases?|autres? achats?|achats?):?",
         "OtherPurchase",
         true,
@@ -122,7 +176,7 @@
         "times_per_month"
     ],
     [
-        "name of measure",
+        "{name_of_local_measure_pattern}",
         null,
         false,
         "name_of_local_measure"
@@ -224,12 +278,6 @@
         "times_per_month"
     ],
     [
-        "(?:nom de la mesure|nom du mesure|nom d'unité)",
-        null,
-        false,
-        "name_of_local_measure"
-    ],
-    [
         "(?:poids? de la mesure|poids? du mesure|poids? d'unité)",
         null,
         false,
@@ -248,31 +296,25 @@
         "months_per_year"
     ],
     [
-        "(?:coût par mesure|(?:prix|price) \\(par {unit_of_measure_pattern}\\))",
+        "(?:co[uû]t par mesure|cost per measure|(?:prix|price) \\(par {unit_of_measure_pattern}\\))",
         null,
         false,
         "price"
     ],
     [
-        "prix d'achat \\(espèces\\)",
+        "prix (?:d'|du|de) ?(?:vente|achat) ?\\(?(?:cash|espèces|cash prix d'achat)\\)?",
         null,
         false,
-        "purchase_price"
+        "price"
     ],
     [
-        "prix de vente \\(espèces\\)",
-        null,
-        false,
-        "sales_price"
-    ],
-    [
-        "paiement en {unit_of_measure_pattern} par fois \\({product_pattern}\\)",
+        "paiement en {unit_of_measure_pattern} par fois \\({payment_product_pattern}\\)",
         null,
         false,
         "payment_per_time"
     ],
     [
-        "payment in {unit_of_measure_pattern} per time \\({product_pattern}\\)",
+        "payment in {unit_of_measure_pattern} per time \\({payment_product_pattern}\\)",
         null,
         false,
         "payment_per_time"
@@ -290,13 +332,25 @@
         "expenditure"
     ],
     [
+        "{product_pattern}{separator_pattern} (?:dépense annuelle|quantité annuelle)",
+        null,
+        true,
+        "expenditure"
+    ],
+    [
         "{nbr_pattern} (?:de )?fois / an(?:née)?",
         null,
         false,
         "times_per_year"
     ],
     [
-        "{nbr_pattern} (?:people per HH|personnes par ménage)",
+        "{product_pattern}{separator_pattern} {nbr_pattern} (?:de )?fois / an(?:née)?",
+        null,
+        false,
+        "times_per_year"
+    ],
+    [
+        "{nbr_pattern} (?:de )?(?:pers|personnes|people)(?: ?/ ?| par | per )(?:ménage|mènage|hh)",
         null,
         false,
         "people_per_household"
@@ -326,9 +380,21 @@
         "lactation_days"
     ],
     [
-        "no. milking animals",
+        "(?:no\\.|no|number) milking animals",
         null,
         false,
+        "milking_animals"
+    ],
+    [
+        "(?P<season>season 1): (?:no\\.|no|number) milking animals",
+        "MilkProduction",
+        false,
+        "milking_animals"
+    ],
+    [
+        "(?P<season>season 2): (?:no\\.|no|number) milking animals",
+        "MilkProduction",
+        true,
         "milking_animals"
     ],
     [
@@ -342,12 +408,6 @@
         null,
         false,
         "quantity_produced"
-    ],
-    [
-        "type of milk sold/other use \\(skim=0, whole=1\\)",
-        null,
-        false,
-        "type_of_milk_sold_or_other_uses"
     ],
     [
         "ghee/butter production \\((?P<unit_of_measure_id>kg|l)\\)",
@@ -410,22 +470,34 @@
         "carcass_weight"
     ],
     [
-        "{product_pattern} offtake \\(% sold/slaughtered\\)",
+        "(?:(?:prélèvement|diminution)(?: des?)?)? ?{product_pattern}(?: offtake)? \\(% (?:vendus?|sold)/(?:égorgés?|egorgés?|abattus?|slaughtered)\\)",
         null,
         false,
         "percentage_sold_slaughtered"
     ],
     [
-        "{product_pattern} sales: no. sold",
+        "{product_pattern}(?: sales)?{separator_pattern} {nbr_pattern} sold",
         "LivestockSale",
         true,
         "quantity_sold"
     ],
     [
-        "{product_pattern}{separator_pattern} {additional_identifier_pattern}: {unit_of_measure_pattern} produced",
-        null,
+        "vente (?:des? |d')?{product_pattern}{separator_pattern} {nbr_pattern} {vendu_pattern}",
+        "LivestockSale",
         true,
-        "quantity_produced"
+        "quantity_sold"
+    ],
+    [
+        "{product_pattern} vente: {nbr_pattern} {vendu_pattern}",
+        "LivestockSale",
+        true,
+        "quantity_sold"
+    ],
+    [
+        "{product_pattern}: {nbr_pattern} {vendu_pattern}",
+        "LivestockSale",
+        true,
+        "quantity_sold"
     ],
     [
         "{product_pattern}{separator_pattern} {additional_identifier_pattern}: {unit_of_measure_pattern} produced",
@@ -494,7 +566,19 @@
         "quantity_sold"
     ],
     [
-        "{product_pattern}: name of meas\\.",
+        "autre culture(?: de rente)?{separator_pattern} (?:type|nom)",
+        null,
+        true,
+        "product__name"
+    ],
+    [
+        "(?:autre nouriture de base|autre legumineuse|autre culture)?{separator_pattern} ?\\(?{product_pattern}\\)?{separator_pattern} ?{name_of_local_measure_pattern}",
+        null,
+        true,
+        "name_of_local_measure"
+    ],
+    [
+        "{product_pattern}{separator_pattern} {name_of_local_measure_pattern}:?\\.?",
         null,
         true,
         "name_of_local_measure"
@@ -524,25 +608,25 @@
         "quantity_purchased"
     ],
     [
-        "(?P<product_id>lait de {label_pattern})",
+        "(?P<product_id>lait (?:du|de) {label_pattern})",
         "MilkProduction",
         true,
         null
     ],
     [
-        "{nbr_pattern} (d')?animaux laitiers",
+        "{nbr_pattern} (?:d')?animaux (?:laitiers|lactants)",
         null,
         false,
         "milking_animals"
     ],
     [
-        "(?P<season>saison 1): {nbr_pattern} animaux (?:laitiers|lactants)",
+        "(?P<season>saison (?:1|pluvieuse|hivernage)): {nbr_pattern} (?:d')?animaux (?:laitiers|lactants)",
         "MilkProduction",
         false,
         "milking_animals"
     ],
     [
-        "(?P<season>saison 2): {nbr_pattern} animaux (?:laitiers|lactants)",
+        "(?P<season>saison (?:2|seche|sèche)): {nbr_pattern} (?:d')?animaux (?:laitiers|lactants)",
         "MilkProduction",
         true,
         "milking_animals"
@@ -578,7 +662,13 @@
         "quantity_produced"
     ],
     [
-        "type de lait vendus/autre \\(ecremé=0, entier=1\\)",
+        "type of milk sold/other use \\(skim=0, whole=1\\)",
+        null,
+        false,
+        "type_of_milk_sold_or_other_uses"
+    ],
+    [
+        "type de lait vendus?/autre \\(ecremé=0, entier=1\\)",
         null,
         false,
         "type_of_milk_sold_or_other_uses"
@@ -620,19 +710,25 @@
         "income"
     ],
     [
-        "lait\\+beurre/beurre clarifié kcals ?\\(%\\) ?- ?(?P<season>1è[m|r]e saison)",
+        "lait\\+beurre/(?:beurre )?clarifié kcals ?\\(%\\) ?- ?(?P<season>1ère saison)",
         "ButterProduction",
         false,
         "percentage_kcals"
     ],
     [
-        "lait\\+beurre/beurre clarifié kcals ?\\(%\\) ?- ?(?P<season>2è[m|r]e saison)",
+        "lait\\+beurre/(?:beurre )?clarifié kcals ?\\(%\\) ?- ?(?P<season>2è[m|r]e saison)",
         "ButterProduction",
         true,
         "percentage_kcals"
     ],
     [
-        "{product_pattern}: {nbr_pattern} d'animaux abattus",
+        "lait\\+beurre/(?:beurre )?clarifié kcals ?\\(%\\) ?- ?(?P<season>1ème saison)",
+        "ButterProduction",
+        true,
+        "percentage_kcals"
+    ],
+    [
+        "{product_pattern}: {nbr_pattern} d'animaux (?:abattus|égorgés)",
         "MeatProduction",
         true,
         "animals_slaughtered"
@@ -642,30 +738,6 @@
         null,
         false,
         "carcass_weight"
-    ],
-    [
-        "(?:prélèvement des .* \\(% vendus/egorgés\\)|diminution .* \\(% vendus/abattu\\))",
-        null,
-        false,
-        "percentage_sold_slaughtered"
-    ],
-    [
-        "vente (?:des? |d')?{product_pattern}: {nbr_pattern} {vendu_pattern}",
-        "LivestockSale",
-        true,
-        "quantity_sold"
-    ],
-    [
-        "{product_pattern} vente: {nbr_pattern} {vendu_pattern}",
-        "LivestockSale",
-        true,
-        "quantity_sold"
-    ],
-    [
-        "{product_pattern}: {nbr_pattern} {vendu_pattern}",
-        "LivestockSale",
-        true,
-        "quantity_sold"
     ],
     [
         "autre (?:culture de rente|culture|cereale|céréale/légumineuse|céréale? principal|légumineuse)?{separator_pattern} \\(?{product_pattern}\\)?{separator_pattern} {unit_of_measure_pattern} produits?",
@@ -704,6 +776,24 @@
         "quantity_produced"
     ],
     [
+        "(?:wild foods?{separator_pattern} )?{product_pattern}{separator_pattern} \\(?{unit_of_measure_pattern} gathered\\)?",
+        null,
+        true,
+        "quantity_produced"
+    ],
+    [
+        "(?:fish|fish \\(?dry\\)?|fish \\(?fresh\\)?|poisson){separator_pattern} {product_pattern}{separator_pattern} \\(?{unit_of_measure_pattern} (?:gathered|collectés)\\)?",
+        null,
+        true,
+        "quantity_produced"
+    ],
+    [
+        "{product_pattern}{separator_pattern}\\(?{unit_of_measure_pattern} gathered\\)?",
+        null,
+        true,
+        "quantity_produced"
+    ],
+    [
         "{product_pattern} (?P<season>[1|2]è[m|r]e récolte){separator_pattern} {nbr_pattern} mois",
         null,
         true,
@@ -728,13 +818,13 @@
         "percentage_monthly_kcals"
     ],
     [
-        "(?:autre culture)?{separator_pattern} ?{product_pattern}{separator_pattern} {nbr_pattern} (?:de mesures locales|d'unités locales|unités loc.)",
+        "(?:autre culture)?{separator_pattern} ?{product_pattern}{separator_pattern} {nbr_pattern} (?:de mesures|mesures|d'unités|unités)(?: locales| loc\\.?)?",
         null,
         true,
         "number_of_local_measures"
     ],
     [
-        "{nbr_pattern} de mesures locales",
+        "{nbr_pattern} (?:de mesures|mesures|d'unités|unités)(?: locales| loc\\.?)?",
         null,
         false,
         "number_of_local_measures"
@@ -770,12 +860,6 @@
         "quantity_sold"
     ],
     [
-        "autre culture de rente: type",
-        null,
-        true,
-        "product__name"
-    ],
-    [
         "autre culture de rente: \\(?{product_pattern}\\)?",
         null,
         true,
@@ -794,6 +878,12 @@
         "quantity_sold"
     ],
     [
+        "(?:vente de |vente )?{product_pattern}{separator_pattern} (?P<unit_of_measure_id>kg|l)? {vendu_pattern}",
+        null,
+        true,
+        "quantity_sold"
+    ],
+    [
         "{product_pattern}: (?P<unit_of_measure_id>kg|l)? sold",
         null,
         true,
@@ -806,7 +896,25 @@
         "quantity_sold"
     ],
     [
+        "(?:autre)?{separator_pattern}vente (?:de |d')?{product_pattern}",
+        null,
+        true,
+        null
+    ],
+    [
+        "{product_pattern} sales",
+        null,
+        true,
+        null
+    ],
+    [
         "autre achat{separator_pattern} ?{product_pattern}",
+        null,
+        true,
+        null
+    ],
+    [
+        "autre auto-emploi{separator_pattern} (?:vente de |vente )?{product_pattern}",
         null,
         true,
         null
@@ -818,25 +926,19 @@
         "expenditure"
     ],
     [
-        "(?:autre nouriture de base|autre legumineuse|autre culture)?{separator_pattern} ?\\(?{product_pattern}\\)?{separator_pattern} ?(?:nom de la mesure locale?|nom du mesure|nom unité de mesure|nom)",
-        null,
-        true,
-        "name_of_local_measure"
-    ],
-    [
         "{product_pattern} achetée?: quantité ?\\(?{unit_of_measure_pattern}\\)?",
         null,
         true,
         "unit_multiple"
     ],
     [
-        "aide{separator_pattern} {product_pattern}{separator_pattern} quantité ?\\(?{unit_of_measure_pattern}\\)?",
+        "aide(?: alimentaire)?{separator_pattern} {product_pattern}{separator_pattern} quantité ?\\(?{unit_of_measure_pattern}\\)?",
         null,
         true,
         "unit_multiple"
     ],
     [
-        "{product_pattern}{separator_pattern} (?:{nbr_pattern} people per hh|{nbr_pattern} pers par mènage|{nbr_pattern} personnes par mènage)",
+        "{product_pattern}{separator_pattern} {nbr_pattern} (?:de )?(?:pers|personnes|people)(?: ?/ ?| par | per )(?:ménage|mènage|hh)",
         null,
         true,
         "people_per_household"
@@ -846,6 +948,12 @@
         null,
         true,
         "quantity_produced_or_purchased"
+    ],
+    [
+        "{labor_pattern}",
+        null,
+        true,
+        "activity_notes"
     ],
     [
         "autre{separator_pattern} {product_pattern}",

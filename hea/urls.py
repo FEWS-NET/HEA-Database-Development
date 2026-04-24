@@ -1,19 +1,29 @@
+import os
+
 from django.conf import settings
 from django.conf.urls.i18n import i18n_patterns
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import include, path, re_path
 from django.views.decorators.cache import cache_page
 from django.views.decorators.http import etag
 from django.views.i18n import JavaScriptCatalog
 from rest_framework import routers
 
+from baseline.autocomplete import (
+    CommunityAutocomplete,
+    LivelihoodStrategyAutocomplete,
+    LivelihoodZoneBaselineAutocomplete,
+    WealthGroupAutocomplete,
+)
 from baseline.viewsets import (
     BaselineLivelihoodActivityViewSet,
+    BaselineWealthGroupCharacteristicValueViewSet,
     BaselineWealthGroupViewSet,
     ButterProductionViewSet,
     CommunityCropProductionViewSet,
     CommunityLivestockViewSet,
     CommunityViewSet,
+    CommunityWealthGroupCharacteristicValueViewSet,
     CommunityWealthGroupViewSet,
     CopingStrategyViewSet,
     CropProductionViewSet,
@@ -23,9 +33,11 @@ from baseline.viewsets import (
     FoodPurchaseViewSet,
     HazardViewSet,
     HuntingViewSet,
+    LivelihoodActivitySummaryViewSet,
     LivelihoodActivityViewSet,
     LivelihoodProductCategoryViewSet,
     LivelihoodStrategyViewSet,
+    LivelihoodZoneBaselineFacetedSearchView,
     LivelihoodZoneBaselineViewSet,
     LivelihoodZoneViewSet,
     LivestockSaleViewSet,
@@ -45,11 +57,14 @@ from baseline.viewsets import (
     WealthGroupViewSet,
     WildFoodGatheringViewSet,
 )
+from common.views import AssetDownloadView, BaselineExplorerProxyView, DagsterProxyView
 from common.viewsets import (
     ClassifiedProductViewSet,
     CountryViewSet,
     CurrencyViewSet,
     UnitOfMeasureViewSet,
+    UserProfileViewSet,
+    UserViewSet,
 )
 from metadata.viewsets import (
     HazardCategoryViewSet,
@@ -67,6 +82,8 @@ router.register(r"country", CountryViewSet)
 router.register(r"currency", CurrencyViewSet)
 router.register(r"unitofmeasure", UnitOfMeasureViewSet)
 router.register(r"classifiedproduct", ClassifiedProductViewSet)
+router.register(r"user", UserViewSet)
+router.register(r"userprofile", UserProfileViewSet)
 
 # Metadata
 router.register(r"livelihoodcategory", LivelihoodCategoryViewSet)
@@ -80,12 +97,23 @@ router.register(r"season", SeasonViewSet)
 router.register(r"sourceorganization", SourceOrganizationViewSet)
 router.register(r"livelihoodzone", LivelihoodZoneViewSet)
 router.register(r"livelihoodzonebaseline", LivelihoodZoneBaselineViewSet)
+router.register(r"livelihoodactivitysummary", LivelihoodActivitySummaryViewSet, "livelihoodactivitysummary")
 router.register(r"livelihoodproductcategory", LivelihoodProductCategoryViewSet)
 router.register(r"community", CommunityViewSet)
 router.register(r"wealthgroup", WealthGroupViewSet)
 router.register(r"baselinewealthgroup", BaselineWealthGroupViewSet)
 router.register(r"communitywealthgroup", CommunityWealthGroupViewSet)
 router.register(r"wealthgroupcharacteristicvalue", WealthGroupCharacteristicValueViewSet)
+router.register(
+    r"baselinewealthgroupcharacteristicvalue",
+    BaselineWealthGroupCharacteristicValueViewSet,
+    "baselinewealthgroupcharacteristicvalue",
+)
+router.register(
+    r"communitywealthgroupcharacteristicvalue",
+    CommunityWealthGroupCharacteristicValueViewSet,
+    "communitywealthgroupcharacteristicvalue",
+)
 router.register(r"livelihoodstrategy", LivelihoodStrategyViewSet)
 router.register(r"livelihoodactivity", LivelihoodActivityViewSet)
 router.register(r"baselinelivelihoodactivity", BaselineLivelihoodActivityViewSet)
@@ -116,6 +144,18 @@ router.register(r"copingstrategy", CopingStrategyViewSet)
 
 urlpatterns = [
     ########## LOCALE INDEPENDENT PATHS go here. ##########
+    path("autocomplete/wealthgroup/", WealthGroupAutocomplete.as_view(), name="wealthgroup-autocomplete"),
+    path("autocomplete/community/", CommunityAutocomplete.as_view(), name="community-autocomplete"),
+    path(
+        "autocomplete/livelihoodzonebaseline/",
+        LivelihoodZoneBaselineAutocomplete.as_view(),
+        name="livelihoodzonebaseline-autocomplete",
+    ),
+    path(
+        "autocomplete/livelihoodstrategy/",
+        LivelihoodStrategyAutocomplete.as_view(),
+        name="livelihoodstrategy-autocomplete",
+    ),
     # Database Files
     path("", include("binary_database_files.urls")),
     # API
@@ -124,6 +164,26 @@ urlpatterns = [
     # Provides il8n/set_language to change Django language:
     path("i18n/", include("django.conf.urls.i18n")),
 ]
+urlpatterns += [
+    path(
+        "api/livelihoodzonebaselinefacetedsearch/",
+        LivelihoodZoneBaselineFacetedSearchView.as_view(),
+        name="livelihood-zone-baseline-faceted-search",
+    ),
+    re_path(os.environ.get("DAGSTER_WEBSERVER_PREFIX", "pipelines") + r"/(?P<path>.*)", DagsterProxyView.as_view()),
+    path("assetdownload/<str:asset_name>/", AssetDownloadView.as_view(), name="asset_download"),
+    path(
+        "assetdownload/<str:asset_name>/<str:partition_name>/",
+        AssetDownloadView.as_view(),
+        name="asset_download_partitioned",
+    ),
+    # Baseline Explorer React GUI using Django rev proxy to serve a cloudfront distro
+    path("explorer/<path:path>", BaselineExplorerProxyView.as_view(), name="baseline_explorer"),
+    # The URL pattern below does not capture any path parameter from the URL. But django-revproxy views
+    # require a path argument. We manually pass a default: {"path": ""}.
+    path("explorer/", BaselineExplorerProxyView.as_view(), {"path": ""}, name="baseline_explorer"),
+]
+
 
 # Django's solution for translating JavaScript apps
 # Provides gettext translation functionality for Javascript clients (and ngettext, pgettext, iterpolate, etc.)

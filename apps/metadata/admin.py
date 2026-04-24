@@ -6,6 +6,7 @@ from common.fields import translation_fields
 
 from .models import (
     ActivityLabel,
+    CharacteristicGroup,
     HazardCategory,
     LivelihoodCategory,
     Market,
@@ -23,6 +24,7 @@ class ReferenceDataAdmin(admin.ModelAdmin):
         *translation_fields("name"),
         "aliases",
         *translation_fields("description"),
+        "ordering",
     )
     list_display = (
         "code",
@@ -84,6 +86,12 @@ class WealthGroupCategoryAdmin(ReferenceDataAdmin):
     """
 
 
+class CharacteristicGroupAdmin(ReferenceDataAdmin):
+    """
+    A concrete admin for CharacteristicGroup
+    """
+
+
 class WealthCharacteristicAdmin(ReferenceDataAdmin):
     """
     A concrete admin for WealthCharacteristic
@@ -95,8 +103,9 @@ class WealthCharacteristicAdmin(ReferenceDataAdmin):
         *translation_fields("name"),
         "aliases",
         *translation_fields("description"),
+        "characteristic_group",
     )
-    list_filter = ("variable_type",)
+    list_filter = ("variable_type", "characteristic_group")
 
 
 class HazardCategoryAdmin(ReferenceDataAdmin):
@@ -116,6 +125,7 @@ class SeasonAdmin(admin.ModelAdmin):
         "aliases",
         *translation_fields("description"),
         "season_type",
+        "purpose",
         "start",
         "end",
         "alignment",
@@ -126,6 +136,7 @@ class SeasonAdmin(admin.ModelAdmin):
         "name",
         "aliases",
         "season_type",
+        "purpose",
         "start",
         "end",
     )
@@ -133,12 +144,18 @@ class SeasonAdmin(admin.ModelAdmin):
         "country__iso_en_ro_name",
         *translation_fields("name"),
         "season_type",
+        "purpose",
+        "aliases",
     )
     list_filter = (
         ("country", admin.RelatedOnlyFieldListFilter),
         "season_type",
+        "purpose",
     )
-    ordering = ("order",)
+    ordering = ("country", "order")
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("country")
 
 
 class MarketAdmin(ReferenceDataAdmin):
@@ -192,6 +209,9 @@ class ActivityLabelAdmin(admin.ModelAdmin):
         "attribute",
     )
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("product", "unit_of_measure")
+
 
 class WealthCharacteristicLabelAdmin(admin.ModelAdmin):
     fields = (
@@ -221,9 +241,13 @@ class WealthCharacteristicLabelAdmin(admin.ModelAdmin):
         "wealth_characteristic",
     )
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("wealth_characteristic", "product", "unit_of_measure")
+
 
 admin.site.register(LivelihoodCategory, LivelihoodCategoryAdmin)
 admin.site.register(WealthGroupCategory, WealthGroupCategoryAdmin)
+admin.site.register(CharacteristicGroup, CharacteristicGroupAdmin)
 admin.site.register(SeasonalActivityType, SeasonalActivityTypeAdmin)
 
 admin.site.register(Market, MarketAdmin)

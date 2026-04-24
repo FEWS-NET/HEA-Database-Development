@@ -535,8 +535,6 @@ R01422AD,"Oilseed, Groundnut","Groundnuts (In Shell, Large)","Groundnuts (In She
 R01422AE,"Oilseed, Groundnut","Groundnuts (In Shell, Small)","Groundnuts (In Shell, Small)",,,,,['01422b'],,Arachis hypogaea,[]
 R01424,"Oilseed, groundnut",Groundnut (without shell),Groundnut (without shell),Cacahuetes (sin cáscara),Arachides (sans coque),Amendoim (sem casca),,[],[],Arachis hypogaea,[]
 R01424AA,Arachis hypogaea,Groundnut (without shell),Groundnut (without shell),,,,,"['mani descascarado', 'mani sin cascara', 'maní descascarado', 'peanut without hull', 'groundnut without hull', 'peanut without shell', 'maní sin cascara']",,Arachis hypogaea,"[OrderedDict([('country', 'SD'), ('product', 'R01424AA'), ('aliases', ['Shelled Groundnuts'])])]"
-R01423,Bambara Groundnuts,,Bambara Groundnuts,Cacahuetes de Bambara,Voandzou (Pois bambara),Amendoim Bambara,,[],,,[]
-R01423AA,"Oleaginous Fruit, Bambara",Bambara groundnut,Bambara groundnut,,,,,"['bambara bean', 'pois de terre', 'wouandzou', '01423', 'voandzou']",,Vigna subterranea,[]
 R0143,Cottonseed,,Cottonseed,,,,,[],,,[]
 R01431,"Oilseed, Cotton Seed for Planting",Cottonseed (Seed for Planting),Cottonseed (Seed for Planting),,,,,[],['1207.21'],,[]
 R01432,"Oilseed, Cotton",Cottonseed (Other),Cottonseed (Other),Semillas de algodón (otras),Graines de coton (autres),Semente de Algodão (Outro),,[],['1207.29'],,[]
@@ -866,8 +864,6 @@ R01706AA,Vigna unguiculata,Cowpea (unspecified),Cowpea (unspecified),,,,,"['red 
 R01706AB,Vigna unguiculata sesquipedalis,Yardlong bean,Yardlong bean,,,,,"['snake bean', 'pea bean', 'bodi', 'chinese long bean', 'long-podded cowpea']",,Vigna unguiculata sesquipedalis,[]
 R01707,Cajanus cajan,Pigeon Pea family,Pigeon Pea family,Familia de gandules,Famille du pois cajan,Família feijão-boer,,[],['0713.60'],Cajanus cajan,[]
 R01707AA,Cajanus cajan,Pigeon pea (Unspecified),Pigeon pea (Unspecified),,,,,"['quinchoncho', ""pois d'angole"", 'pois du cap', 'gandules', 'cajan pea', 'guandul', 'tur', 'toor', 'gandul', 'pois congo', 'arhar', 'congo bean']",,Cajanus cajan,"[OrderedDict([('country', 'MM'), ('product', 'R01707AA'), ('aliases', ['pesingon', 'pensingon', 'toor'])])]"
-R01708,Vigna radiata,Mung Bean family,Mung Bean family,Familia de frijol mungo,Famille du haricot mungo,Família feijão mungo,,[],['0713.34'],Vigna radiata,[]
-R01708AA,Vigna radiata,Mung bean (unspecified),Mung bean (unspecified),,,,,"['matpe', 'moong', 'frijol chino', 'green gram', 'frijol loctao', 'gram pulse', 'masho', 'krishna mung', 'black lentil']",,Vigna radiata,"[OrderedDict([('country', 'MM'), ('product', 'R01708AA'), ('aliases', ['green gram', 'golden gram', 'pedesein', 'gawya pea', 'pedeshwewar', 'penauk', 'penauk sein'])])]"
 R01709,"Pulses, not specified",Pulses,Pulses,Leguminosas,Légumineuses,Leguminosas,,[],['0713.90'],,[]
 R01709AA,"Pulses, n.e.c., cowpeas, brown",Cowpeas (Brown),Cowpeas (Brown),,,,,"['wake ja', 'brown cowpeas', '01709b', 'ewa pupa']",,,[]
 R01709AB,"Pulses, n.e.c., cowpeas, red",Cowpeas (Red),Cowpeas (Red),,,,,"['01709c', 'red cowpeas']",,,[]

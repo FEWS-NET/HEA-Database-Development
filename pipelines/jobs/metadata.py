@@ -14,6 +14,7 @@ from dagster import OpExecutionContext, job, op
 from django.contrib.gis.geos import GEOSGeometry, MultiPolygon, Polygon
 from django.db import models, transaction
 from gdrivefs.core import GoogleDriveFile
+from numpy import nan
 from upath import UPath
 
 from ..configs import ReferenceDataConfig
@@ -35,7 +36,7 @@ from common.lookups import ClassifiedProductLookup, UserLookup  # NOQA: E402
 from metadata.models import ActivityLabel  # NOQA: E402
 
 
-def load_metadata_for_model(context: OpExecutionContext, model: models.Model, df: pd.DataFrame):
+def load_metadata_for_model(context: OpExecutionContext, sheet_name: str, model: models.Model, df: pd.DataFrame):
     """
     Load the metadata from a single worksheet, passed as a DataFrame, into a Django model.
     """
@@ -46,42 +47,57 @@ def load_metadata_for_model(context: OpExecutionContext, model: models.Model, df
         field.get_attname() for field in model._meta.concrete_fields if field.get_attname() not in valid_field_names
     ]
     if "aliases" in df:
-        df["aliases"] = df["aliases"].apply(lambda x: sorted(x.lower().split("~")) if x else None)
+        df["aliases"] = (
+            df["aliases"]
+            .astype(object)
+            .apply(lambda x: sorted(alias.strip() for alias in x.lower().split("~")) if x else None)
+        )
     if "cpcv2" in df:
-        df["cpcv2"] = df["cpcv2"].apply(lambda x: sorted(x.split("~")) if x else None)
+        df["cpcv2"] = df["cpcv2"].astype(object).apply(lambda x: sorted(x.split("~")) if x else None)
     if "hs2012" in df:
-        df["hs2012"] = df["hs2012"].apply(lambda x: sorted(x.split("~")) if x else None)
+        df["hs2012"] = df["hs2012"].astype(object).apply(lambda x: sorted(x.split("~")) if x else None)
     if "kcals_per_unit" in df:
-        df["kcals_per_unit"] = df["kcals_per_unit"].replace("", None)
+        df["kcals_per_unit"] = df["kcals_per_unit"].astype(object).replace("", None)
     if "is_start" in df:
         df["is_start"] = df["is_start"].replace("", False)
-    if "product_name" in df:
-        df = ClassifiedProductLookup(require_match=False).do_lookup(df, "product_name", "product_id")
+    if "product_name" in df or "payment_product_name" in df:
+        classifiedproductlookup = ClassifiedProductLookup(require_match=False)
+        if "product_name" in df:
+            df = classifiedproductlookup.do_lookup(df, "product_name", "product_id")
+            df["product_id"] = df["product_id"].astype(object).replace(pd.NA, None)
+        if "payment_product_name" in df:
+            df = classifiedproductlookup.do_lookup(df, "payment_product_name", "payment_product_id")
+            df["payment_product_id"] = df["payment_product_id"].astype(object).replace(pd.NA, None)
     if "country_id" in df:
-        df["country_id"] = df["country_id"].replace(pd.NA, None)
-    if "product_id" in df:
-        df["product_id"] = df["product_id"].replace(pd.NA, None)
+        df["country_id"] = df["country_id"].astype(object).replace(pd.NA, None)
     if "unit_of_measure_id" in df:
-        df["unit_of_measure_id"] = df["unit_of_measure_id"].replace("", None)
+        df["unit_of_measure_id"] = df["unit_of_measure_id"].astype(object).replace("", None)
     if "currency_id" in df:
-        df["currency_id"] = df["currency_id"].replace("", None)
+        df["currency_id"] = df["currency_id"].astype(object).replace("", None)
     if "wealth_characteristic_id" in df:
-        df["wealth_characteristic_id"] = df["wealth_characteristic_id"].replace("", None)
+        df["wealth_characteristic_id"] = df["wealth_characteristic_id"].astype(object).replace("", None)
     if "ordering" in df:
-        df["ordering"] = df["ordering"].replace("", None)
+        df["ordering"] = df["ordering"].astype(object).replace("", None)
+    if "activity_type" in df:
+        df["activity_type"] = df["activity_type"].replace("", ActivityLabel.LivelihoodActivityType.LIVELIHOOD_ACTIVITY)
+    if "characteristic_group_id" in df:
+        df["characteristic_group_id"] = df["characteristic_group_id"].astype(object).replace("", None)
 
     if model_name == "ClassifiedProduct":
         existing_instances = {instance.pk: instance for instance in model.objects.filter(pk__in=df["cpc"])}
         for record in df.to_dict(orient="records"):
             cpc = record.pop("cpc")
             if cpc in existing_instances:
+                # For existing Classified Products, prevent updates to the core CPC fields such as cpc and description.
                 instance = existing_instances[cpc]
                 for k, v in record.items():
                     if k in valid_field_names:
                         current = getattr(instance, k)
                         if isinstance(current, list):
                             current = sorted(current)
-                        if v != current:
+                        # Note that we only allow changes to the fields. If a field is blank in the worksheet,
+                        # we leave any value that may have been set manually in the database.
+                        if v and v != current:
                             if cpc[-2] != "H" and k not in [
                                 "aliases",
                                 "common_name_en",
@@ -99,18 +115,30 @@ def load_metadata_for_model(context: OpExecutionContext, model: models.Model, df
                                     continue
                             setattr(instance, k, v)
             else:
+                # For new Classified Products, place them at the correct place in the CPC hierarchy.
                 if cpc[1:].isnumeric():
                     raise ValueError("Missing real CPC code %s" % cpc)
-                parent_instance = model.objects.get(pk=cpc[:-2])
+                try:
+                    parent_instance = model.objects.get(pk=cpc[:-2])
+                except model.DoesNotExist:
+                    raise ValueError(f"Parent instance with CPC code {cpc[:-2]} for {cpc} does not exist")
                 record = {k: v for k, v in record.items() if k in valid_field_names}
                 record["cpc"] = cpc
                 instance = parent_instance.add_child(**record)
                 context.log.info(f"Created {model_name} {str(instance)} as a child of {str(parent_instance)}")
+        # Do a bulk update to save any changes to editable attributes of existing instances
         num_instances = model.objects.bulk_update(
             existing_instances.values(),
-            fields=record.keys(),
+            fields=[k for k in df.columns if k in valid_field_names and k != model._meta.pk.name],
         )
-        context.log.info(f"Updated {num_instances} {model_name} instances")
+        # Report on redundant instances that are in the database but not in the worksheet
+        for instance in model.objects.exclude(pk__in=df["cpc"]):
+            # Only report redundant instances that are HEA products
+            if instance.cpc[-2] == "H":
+                context.log.warning(
+                    f"Redundant {model_name} instance {str(instance)} in database but not in worksheet '{sheet_name}'"
+                )
+        context.log.info(f"Updated {num_instances} {sheet_name} instances")
 
     else:
         if model_name == "SourceOrganization":
@@ -125,20 +153,53 @@ def load_metadata_for_model(context: OpExecutionContext, model: models.Model, df
             id_fields = "wealth_characteristic_label"
         else:
             id_fields = "code"
+        # Ensure we don't have any duplicate entries
+        duplicates_df = df[df.duplicated(subset=id_fields, keep=False)]
+        if not duplicates_df.empty:
+            raise ValueError(
+                f"Found duplicate entries in worksheet '{sheet_name}' for {model_name}:\n{duplicates_df.to_markdown()}"
+            )
+        # Add primary keys if they are not already in the id_fields,
+        # so that we can save individual instances if required
+        if isinstance(id_fields, str):
+            id_fields = [id_fields]
+        if model._meta.pk.name not in id_fields:
+            keys_df = pd.DataFrame.from_records(model.objects.all().values(model._meta.pk.name, *id_fields))
+            if keys_df.empty:
+                keys_df = pd.DataFrame(columns=[model._meta.pk.name] + id_fields)
+            df = df.merge(
+                keys_df,
+                how="left",
+                on=id_fields,
+            )
+            df[model._meta.pk.name] = df[model._meta.pk.name].replace(nan, None)
+        # Turn the dataframe into a set of unsaved model instances
         instances = []
+        fields = [k for k in df.columns if k in valid_field_names]
         for record in df.to_dict(orient="records"):
-            if isinstance(id_fields, str):
-                id_fields = [id_fields]
-
-            record = {k: v for k, v in record.items() if k in valid_field_names}
+            record = {k: v for k, v in record.items() if k in fields}
             instances.append(model(**record))
-        instances = model.objects.bulk_create(
-            instances,
-            update_conflicts=True,
-            update_fields=[k for k in record if k not in id_fields],
-            unique_fields=id_fields,
-        )
-        context.log.info(f"Created or updated {len(instances)} {model_name} instances")
+        try:
+            instances = model.objects.bulk_create(
+                instances,
+                update_conflicts=True,
+                update_fields=[k for k in fields if k not in id_fields and k != model._meta.pk.name],
+                unique_fields=id_fields,
+            )
+        except Exception:
+            # Bulk create failed, so try creating/updating the instances one at a time to see which one failed
+            for i, instance in enumerate(instances):
+                try:
+                    instance.save()
+                except Exception as e:
+                    key = [getattr(instance, id_field) for id_field in id_fields]
+                    instance = {
+                        k: v for k, v in instance.__dict__.items() if k not in ["_state", "created", "modified"]
+                    }
+                    raise RuntimeError(
+                        f"Failed to create/update {model_name} instance {i} {key} from:\n{json.dumps(instance, indent=4, ensure_ascii=False)}"
+                    ) from e
+        context.log.info(f"Created or updated {len(instances)} {sheet_name} instances")
 
 
 @op
@@ -162,7 +223,7 @@ def load_all_metadata(context: OpExecutionContext, config: ReferenceDataConfig):
             # Iterate over the sheets in the ReferenceData workbook, in reverse order (because the Label sheets that
             # need Subject Matter Expert input are at beginning, and depend on the sheets at the end).
             for sheet_name in reversed(sheet_names):
-                if sheet_name in ["ActivityLabel", "OtherCashIncomeLabel", "WildFoodsLabel"]:
+                if sheet_name in ["ActivityLabel", "OtherCashIncomeLabel", "WildFoodsLabel", "SummaryLabel"]:
                     model = ActivityLabel
                 else:
                     # Check whether the ReferenceData worksheet matches a Django model.
@@ -177,7 +238,7 @@ def load_all_metadata(context: OpExecutionContext, config: ReferenceDataConfig):
                     # If we found a model, then update the model from the contents of the Reference Data worksheet
                     df = pd.read_excel(f, sheet_name).fillna("")
                     try:
-                        load_metadata_for_model(context, model, df)
+                        load_metadata_for_model(context, sheet_name, model, df)
                     except Exception as e:
                         raise RuntimeError("Failed to create/update %s" % sheet_name) from e
 
@@ -468,58 +529,117 @@ def load_all_community_aliases(context: OpExecutionContext):
 def load_all_fewsnet_geographies(context: OpExecutionContext):
     """
     Load all Livelihood Zone Baseline geographies from the FEWS NET Data Warehouse via the API.
+    Reads the 'Metadata' sheet from BSS Metadata Google Sheet to get fnid for each baseline.
     """
-    baseline_countries = (
-        LivelihoodZoneBaseline.objects.all()
-        .values_list("livelihood_zone__country__iso3166a2", flat=True)
-        .order_by("livelihood_zone__country__iso3166a2")
-        .distinct()
-    )
-    all_geometries = {}
-    for iso3166a2 in baseline_countries:
-        response = requests.get(
-            f"https://fdw.fews.net/api/feature/?format=geojson&unit_type=livelihood_zone&ordering=fnid&country_code={iso3166a2}"
-        )
-        response.raise_for_status()
-        srid = int(response.json()["crs"]["properties"]["name"].split(":")[-1])
-        for feature in response.json()["features"]:
-            # Also save the geometry for the Livelihood Zone Baseline
-            all_geometries[
-                (
-                    feature["properties"]["attributes"]["EFF_YEAR"],
-                    feature["properties"]["attributes"]["LZCODE"],
-                )
-            ] = feature
+    # Read the Metadata sheet from BSS Metadata Google Sheet
+    storage_options = {"token": "service_account", "access": "read_only", "root_file_id": "0AOJ0gJ8sjnO7Uk9PVA"}
+    storage_options["creds"] = json.loads(os.environ["GOOGLE_APPLICATION_CREDENTIALS"])
+    p = UPath("gdrive://Database Design/BSS Metadata", **storage_options)
 
-        for livelihood_zone_baseline in LivelihoodZoneBaseline.objects.filter(
-            livelihood_zone__country_id=iso3166a2
-        ).order_by(
-            "livelihood_zone__country__iso3166a2",
-            "reference_year_end_date",
-            "livelihood_zone__code",
-        ):
-            for feature in all_geometries.values():
-                start_date = (
-                    datetime.date.fromisoformat(feature["properties"]["start_date"])
-                    if feature["properties"]["start_date"]
-                    else datetime.date.min
-                )
-                end_date = (
-                    datetime.date.fromisoformat(feature["properties"]["end_date"])
-                    if feature["properties"]["end_date"]
-                    else datetime.date.max
-                )
-                if (
-                    feature["properties"]["attributes"]["LZCODE"] == livelihood_zone_baseline.livelihood_zone.code
-                ) and (start_date <= livelihood_zone_baseline.valid_from_date <= end_date):
-                    geometry = GEOSGeometry(json.dumps(feature["geometry"]), srid=srid)
-                    if isinstance(geometry, Polygon):
-                        geometry = MultiPolygon(geometry)
-                    livelihood_zone_baseline.geography = geometry
-                    livelihood_zone_baseline.save()
-                    context.log.info(f"Updated geometry for {livelihood_zone_baseline}")
-                    continue
-            context.log.warning(f"Failed to find FEWS NET geometry for {livelihood_zone_baseline}")
+    with p.fs.open(p.path, mode="rb", cache_type="bytes") as f:
+        # Google Sheets have to be exported rather than read directly
+        if isinstance(f, GoogleDriveFile) and (f.details["mimeType"] == "application/vnd.google-apps.spreadsheet"):
+            f = BytesIO(p.fs.export(p.path, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+
+        # Read the Metadata sheet with columns: code, reference_year_end_date, fnid
+        metadata_df = pd.read_excel(f, sheet_name="Metadata", engine="openpyxl")
+
+        # Filter out rows without fnid
+        metadata_df = metadata_df[metadata_df["fnid"].notna()]
+
+        context.log.info(f"Found {len(metadata_df)} baseline zones with fnid in Metadata sheet")
+
+    # Process each baseline zone
+    for _, row in metadata_df.iterrows():
+        zone_code = row["code"]
+        reference_year_end_date = pd.to_datetime(row["reference_year_end_date"]).date()
+        fnid = row["fnid"]
+
+        try:
+            livelihood_zone_baseline = LivelihoodZoneBaseline.objects.get(
+                livelihood_zone__code=zone_code, reference_year_end_date=reference_year_end_date
+            )
+        except LivelihoodZoneBaseline.DoesNotExist:
+            context.log.warning(
+                f"Baseline not found for code={zone_code}, reference_year_end_date={reference_year_end_date}"
+            )
+            continue
+        except LivelihoodZoneBaseline.MultipleObjectsReturned:
+            context.log.error(
+                f"Multiple baselines found for code={zone_code}, reference_year_end_date={reference_year_end_date}"
+            )
+            continue
+
+        try:
+            response = requests.get(
+                f"https://fdw.fews.net/api/feature/?format=geojson&unit_type=livelihood_zone&fnid={fnid}&fields=with_population&demography_year={livelihood_zone_baseline.reference_year_end_date.year}"
+            )
+            response.raise_for_status()
+
+            geojson_data = response.json()
+
+            if not geojson_data.get("features"):
+                context.log.warning(f"No features found for fnid={fnid}, baseline={livelihood_zone_baseline}")
+                continue
+
+            srid = int(geojson_data["crs"]["properties"]["name"].split(":")[-1])
+
+            feature = geojson_data["features"][0]
+
+            # Convert to Django geometry
+            geometry = GEOSGeometry(json.dumps(feature["geometry"]), srid=srid)
+            if isinstance(geometry, Polygon):
+                geometry = MultiPolygon(geometry)
+
+            # Update the baseline with the geometry
+            livelihood_zone_baseline.geography = geometry
+
+            # Extract population estimate if available
+            population_estimate = feature["properties"].get("estimated_population")
+            if population_estimate is not None:
+                try:
+                    livelihood_zone_baseline.population_estimate = int(population_estimate)
+                    # Population sources are in the geographicunit metadata url
+                    unit_id = geojson_data["features"][0].get("id")
+                    metadata_url = f"https://fdw.fews.net/api/geographicunit/metadata/?id={unit_id}&format=json&fields=with_population"
+                    context.log.info(f"Fetching population metadata from {metadata_url}")
+                    metadata_response = requests.get(metadata_url)
+                    metadata_response.raise_for_status()
+
+                    metadata_json = metadata_response.json()
+
+                    # Extract population source from metadata
+                    population_source = None
+                    if "metadata" in metadata_json and "Population" in metadata_json["metadata"]:
+                        population_list = metadata_json["metadata"]["Population"]
+                        for pop_item in population_list:
+                            if pop_item.get("Name") == "Population distribution":
+                                population_source = pop_item.get("Description")
+                                context.log.info(f"Found population source: {population_source}")
+                                break
+
+                    if population_source:
+                        livelihood_zone_baseline.population_source = population_source
+                    else:
+                        context.log.warning(
+                            f"No population source found in metadata for {livelihood_zone_baseline} (fnid={fnid})"
+                        )
+                except (ValueError, TypeError) as e:
+                    context.log.warning(f"Invalid population data for {livelihood_zone_baseline} (fnid={fnid}): {e}")
+
+            livelihood_zone_baseline.save()
+
+            log_msg = f"Updated geometry for {livelihood_zone_baseline} (fnid={fnid})"
+            if population_estimate is not None:
+                log_msg += f" with population={livelihood_zone_baseline.population_estimate}"
+            context.log.info(log_msg)
+
+        except requests.RequestException as e:
+            context.log.error(f"Failed to fetch geography for fnid={fnid}, baseline={livelihood_zone_baseline}: {e}")
+        except (KeyError, ValueError, json.JSONDecodeError) as e:
+            context.log.error(
+                f"Failed to parse geography response for fnid={fnid}, baseline={livelihood_zone_baseline}: {e}"
+            )
 
 
 @job

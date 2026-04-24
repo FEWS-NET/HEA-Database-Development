@@ -2,13 +2,19 @@
 Models for managing HEA Baseline Surveys
 """
 
+import datetime
+import math
 import numbers
 
+import pandas as pd
 from django.conf import settings
 from django.contrib.gis.db import models
+from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
-from django.db.models import F
+from django.db.models import F, Func, Q, Sum, Value
+from django.db.models.functions import Lower
+from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 from model_utils.managers import InheritanceManager
 
@@ -18,6 +24,7 @@ from common.models import (
     ClassifiedProduct,
     Country,
     Currency,
+    SearchQueryMixin,
     UnitOfMeasure,
     UnitOfMeasureConversion,
 )
@@ -33,6 +40,28 @@ from metadata.models import (
     WealthCharacteristic,
     WealthGroupCategory,
 )
+
+
+class AnnualKcalsCost(Func):
+    """
+    Calculate the annual cost per person of 100% of recommended kcals.
+
+    This is required to calculate the combined food and income as kcals.
+
+    It is defined as the cost of providing 100% of required kcals for the P
+    Wealth Group divided by the average_household_size. The cost is
+    calculated as the cost of Basket 2 (Other food survival) plus the cost
+    of providing the remainder of kcals by purchasing the main staple. All
+    costs are in the currency for the BSS.
+
+    This calculation is based on the formulae in the Graphs worksheet.
+
+    It is implemented as a SQL function so that it is available to the
+    LivelihoodActivitySummaryViewSet.
+    """
+
+    function = "get_annual_kcals_cost"
+    output_field = models.FloatField()
 
 
 class SourceOrganizationManager(common_models.IdentifierManager):
@@ -60,6 +89,28 @@ class SourceOrganization(common_models.Model):
 
     class ExtraMeta:
         identifier = ["name"]
+
+
+class LivelihoodZoneQuerySet(SearchQueryMixin, models.QuerySet):
+    """
+    Searchable LivelihoodZones
+    """
+
+    def get_search_filter(self, search_term):
+        return (
+            Q(code__iexact=search_term)
+            | Q(alternate_code__iexact=search_term)
+            | Q(name_en__icontains=search_term)
+            | Q(name_pt__icontains=search_term)
+            | Q(name_es__icontains=search_term)
+            | Q(name_fr__icontains=search_term)
+            | Q(name_ar__icontains=search_term)
+            | Q(description_en__icontains=search_term)
+            | Q(description_pt__icontains=search_term)
+            | Q(description_es__icontains=search_term)
+            | Q(description_fr__icontains=search_term)
+            | Q(description_ar__icontains=search_term)
+        )
 
 
 class LivelihoodZone(common_models.Model):
@@ -95,19 +146,82 @@ class LivelihoodZone(common_models.Model):
             "Alternate identifier for the Livelihood Zone, typically a meaningful code based on the name of the Zone."
         ),  # NOQA: E501
     )
-    name = TranslatedField(common_models.NameField(max_length=200, unique=True))
+    name = TranslatedField(common_models.NameField(max_length=200))
     description = TranslatedField(common_models.DescriptionField())
     country = models.ForeignKey(Country, verbose_name=_("Country"), db_column="country_code", on_delete=models.PROTECT)
+    objects = common_models.IdentifierManager.from_queryset(LivelihoodZoneQuerySet)()
 
     class Meta:
         verbose_name = _("Livelihood Zone")
         verbose_name_plural = _("Livelihood Zones")
+        constraints = [
+            # Create a case-insensitive unique constraint on the code
+            models.UniqueConstraint(
+                Lower("code"),
+                name="baseline_livelihoodzone_code_lower_uniq",
+            ),
+            # Create a case-insensitive unique constraint on the country and the alternate code
+            models.UniqueConstraint(
+                "country",
+                Lower("alternate_code"),
+                condition=Q(alternate_code__isnull=False) & ~Q(alternate_code=""),
+                name="baseline_livelihoodzone_country_alternate_code_lower_uniq",
+            ),
+            # Create a case-insensitive unique constraint on the name
+            models.UniqueConstraint(
+                Lower("name_en"),
+                name="baseline_livelihoodzone_name_en_lower_uniq",
+            ),
+            models.UniqueConstraint(
+                Lower("name_ar"),
+                name="baseline_livelihoodzone_name_ar_lower_uniq",
+                condition=~Q(name_ar=""),
+            ),
+            models.UniqueConstraint(
+                Lower("name_es"),
+                name="baseline_livelihoodzone_name_es_lower_uniq",
+                condition=~Q(name_es=""),
+            ),
+            models.UniqueConstraint(
+                Lower("name_fr"),
+                name="baseline_livelihoodzone_name_fr_lower_uniq",
+                condition=~Q(name_fr=""),
+            ),
+            models.UniqueConstraint(
+                Lower("name_pt"),
+                name="baseline_livelihoodzone_name_pt_lower_uniq",
+                condition=~Q(name_pt=""),
+            ),
+        ]
 
     class ExtraMeta:
         identifier = ["code"]
 
 
-class LivelihoodZoneBaselineManager(common_models.IdentifierManager):
+class LivelihoodZoneBaselineQuerySet(models.QuerySet):
+    """
+    QuerySet for LivelihoodZoneBaseline that provides temporal filtering methods.
+    """
+
+    def filter_current(self, as_of_date=None):
+        """
+        Return a queryset filtered to the baselines that are valid as of the date specified.
+        """
+        if not as_of_date:
+            as_of_date = datetime.date.today()
+        return self.filter(
+            (models.Q(valid_from_date__lte=as_of_date) | models.Q(valid_from_date__isnull=True))
+            & (models.Q(valid_to_date__gte=as_of_date) | models.Q(valid_to_date__isnull=True))
+        )
+
+    def current_all(self, as_of_date=None):
+        """
+        Return all the baselines that are valid as of the date specified.
+        """
+        return self.filter_current(as_of_date).all()
+
+
+class LivelihoodZoneBaselineManager(common_models.IdentifierManager.from_queryset(LivelihoodZoneBaselineQuerySet)):
     def get_by_natural_key(self, code: str, reference_year_end_date: str):
         return self.get(livelihood_zone__code=code, reference_year_end_date=reference_year_end_date)
 
@@ -236,6 +350,94 @@ class LivelihoodZoneBaseline(common_models.Model):
     )
     objects = LivelihoodZoneBaselineManager()
 
+    def _get_annual_kcals_cost(self):
+        """
+        Calculate the annual cost per person of 100% of recommended kcals.
+
+        This is required to calculate the combined food and income as kcals.
+
+        It is defined as the cost of providing 100% of required kcals for the P
+        Wealth Group divided by the average_household_size. The cost is
+        calculated as the cost of Basket 2 (Other food survival) plus the cost
+        of providing the remainder of kcals by purchasing the main staple. All
+        costs are in the currency for the BSS.
+
+        This calculation is based on the formulae in the Graphs worksheet.
+        """
+        return (
+            type(self)
+            .objects.filter(pk=self.pk)
+            .annotate(
+                annual_kcals_cost=AnnualKcalsCost(
+                    F("id"),
+                    Value(WealthGroupCategory.POOR),
+                )
+            )
+            .values_list("annual_kcals_cost", flat=True)
+            .get()
+        )
+
+    def _get_annual_kcals_cost_python(self):
+        """
+        A Python implementation of the annual_kcals_cost calculation, used for troubleshooting.
+        """
+        poor_main_staple = LivelihoodProductCategory.objects.filter(
+            basket=LivelihoodProductCategory.ProductBasket.MAIN_STAPLE,
+            baseline_livelihood_activity__wealth_group__livelihood_zone_baseline=self,
+            baseline_livelihood_activity__wealth_group__wealth_group_category__code=WealthGroupCategory.POOR,
+        ).select_related(
+            "baseline_livelihood_activity__livelihood_strategy", "baseline_livelihood_activity__wealth_group"
+        )
+        if len(poor_main_staple) == 0:
+            # No main staple defined
+            return None
+        elif len(poor_main_staple) > 1:
+            raise ValueError(
+                "Livelihood Zone Baseline %s contains more than one Main Staple: %s"
+                % (
+                    str(self),
+                    ", ".join(x.baseline_livelihood_activity.livelihood_strategy.product_id for x in poor_main_staple),
+                )
+            )
+        poor_main_staple = poor_main_staple[0]
+        poor_other_food = LivelihoodProductCategory.objects.filter(
+            basket=LivelihoodProductCategory.ProductBasket.SURVIVAL_OTHER_FOOD,
+            baseline_livelihood_activity__wealth_group__livelihood_zone_baseline=self,
+            baseline_livelihood_activity__wealth_group__wealth_group_category__code=WealthGroupCategory.POOR,
+        ).aggregate(
+            total_percentage_kcals=Sum(
+                F("baseline_livelihood_activity__percentage_kcals") * F("percentage_allocation_to_basket")
+            ),
+            total_expenditure=Sum(
+                F("baseline_livelihood_activity__expenditure") * F("percentage_allocation_to_basket")
+            ),
+        )
+        poor_household_size = poor_main_staple.baseline_livelihood_activity.wealth_group.average_household_size
+        main_staple_kcals_per_unit = poor_main_staple.baseline_livelihood_activity.extra.get(
+            "product__kcals_per_unit",
+            poor_main_staple.baseline_livelihood_activity.livelihood_strategy.product.kcals_per_unit,
+        )
+        main_staple_percentage_kcals_required = 1 - poor_other_food["total_percentage_kcals"]
+        main_staple_cost = (
+            2100  # kcals per person per day
+            * 365  # days per year
+            * poor_household_size
+            * main_staple_percentage_kcals_required
+            / main_staple_kcals_per_unit
+            * poor_main_staple.baseline_livelihood_activity.price
+        )
+        total_cost = main_staple_cost + poor_other_food["total_expenditure"]
+        total_food_cost_per_person = total_cost / poor_household_size
+        return total_food_cost_per_person
+
+    def get_annual_kcals_cost(self):
+        key = f"livelihood_zone_baseline~{self.pk}~annual_kcals_cost"
+        annual_kcals_cost = cache.get(key)
+        if not annual_kcals_cost:
+            annual_kcals_cost = self._get_annual_kcals_cost()
+            cache.set(key, annual_kcals_cost, 60 * 60 * 24)
+        return annual_kcals_cost
+
     def natural_key(self):
         try:
             return (self.livelihood_zone_id, self.reference_year_end_date.isoformat())
@@ -251,9 +453,35 @@ class LivelihoodZoneBaseline(common_models.Model):
                 fields=("livelihood_zone", "reference_year_end_date"),
                 name="baseline_livelihoodzonebaseline_livelihood_zone_reference_year_end_date_uniq",
             ),
+            # Create a case-insensitive unique constraint on the name
             models.UniqueConstraint(
-                fields=("name_en", "reference_year_end_date"),
-                name="baseline_livelihoodzonebaseline_name_en_reference_year_end_date_uniq",
+                Lower("name_en"),
+                "reference_year_end_date",
+                name="baseline_livelihoodzonebaseline_name_en_lower_uniq",
+            ),
+            models.UniqueConstraint(
+                Lower("name_ar"),
+                "reference_year_end_date",
+                name="baseline_livelihoodzonebaseline_name_ar_lower_uniq",
+                condition=~Q(name_ar=""),
+            ),
+            models.UniqueConstraint(
+                Lower("name_es"),
+                "reference_year_end_date",
+                name="baseline_livelihoodzonebaseline_name_es_lower_uniq",
+                condition=~Q(name_es=""),
+            ),
+            models.UniqueConstraint(
+                Lower("name_fr"),
+                "reference_year_end_date",
+                name="baseline_livelihoodzonebaseline_name_fr_lower_uniq",
+                condition=~Q(name_fr=""),
+            ),
+            models.UniqueConstraint(
+                Lower("name_pt"),
+                "reference_year_end_date",
+                name="baseline_livelihoodzonebaseline_name_pt_lower_uniq",
+                condition=~Q(name_pt=""),
             ),
         ]
 
@@ -320,41 +548,6 @@ class LivelihoodZoneBaselineCorrection(common_models.Model):
                 name="baseline_livelihoodzonebaselinecorrection_uniq",
             ),
         ]
-
-
-# @TODO Decide whether to change the name of this model when we review the
-# LIAS and finalize models for expandability and coping. Ideally we want to be
-# able to identify Livelihood Activities that are produce staple foods, and/or
-# are part of the different baskets.
-class LivelihoodProductCategory(common_models.Model):
-    """
-    The usage category of the Product in the Livelihood Zone, such as staple food or livelihood protection.
-    """
-
-    class ProductBasket(models.IntegerChoices):
-        MAIN_STAPLE = 1, _("Main Staple")
-        OTHER_STAPLE = 2, _("Other Staple")
-        SURVIVAL_NON_FOOD = 3, _("Non-food survival")
-        LIVELIHOODS_PROTECTION = 4, _("Livelihoods Protection")
-
-    livelihood_zone_baseline = models.ForeignKey(
-        LivelihoodZoneBaseline,
-        on_delete=models.RESTRICT,
-        related_name="staple_foods",
-        verbose_name=_("Livelihood Zone Baseline"),
-    )
-    product = models.ForeignKey(
-        ClassifiedProduct,
-        db_column="product_code",
-        on_delete=models.RESTRICT,
-        related_name="staple_foods",
-        verbose_name=_("Product"),
-    )
-    basket = models.PositiveSmallIntegerField(choices=ProductBasket.choices, verbose_name=_("Product Basket"))
-
-    class Meta:
-        verbose_name = _("Livelihood Product Category")
-        verbose_name_plural = _("Livelihood Product Categories")
 
 
 class CommunityManager(common_models.IdentifierManager):
@@ -445,9 +638,11 @@ class Community(common_models.Model):
         verbose_name = _("Community")
         verbose_name_plural = _("Communities")
         constraints = [
+            # Create a case-insensitive unique constraint on the baseline and the full name.
             models.UniqueConstraint(
-                fields=("livelihood_zone_baseline", "full_name"),
-                name="baseline_community_livelihood_zone_baseline_full_name_uniq",
+                "livelihood_zone_baseline",
+                Lower("full_name"),
+                name="baseline_community_livelihood_zone_baseline_full_name_lower_uniq",
             ),
             # Create a unique constraint on id and livelihood_zone_baseline, so that we can use it as a target for a
             # composite foreign key from Seasonal Activity, which in turn allows us to ensure that the Community
@@ -517,20 +712,278 @@ class WealthGroup(common_models.Model):
     )
     wealth_group_category = models.ForeignKey(
         WealthGroupCategory,
+        related_name="wealth_groups",
         db_column="wealth_group_category_code",
         on_delete=models.CASCADE,
         verbose_name=_("Wealth Group Category"),
         help_text=_("Wealth Group Category, e.g. Poor or Better Off"),
     )
-    percentage_of_households = models.PositiveSmallIntegerField(
+    percentage_of_households = models.FloatField(
         blank=True,
         null=True,
+        validators=[MinValueValidator(0)],
         verbose_name=_("Percentage of households"),
         help_text=_("Percentage of households in the Community or Livelihood Zone that are in this Wealth Group"),
     )
-    average_household_size = models.PositiveSmallIntegerField(
-        blank=True, null=True, verbose_name=_("Average household size")
+    average_household_size = models.FloatField(
+        blank=True,
+        null=True,
+        validators=[common_models.validate_positive],
+        verbose_name=_("Average household size"),
+        help_text=_("Average number of people per household in this Wealth Group"),
     )
+
+    @cached_property
+    def household_annual_kcals_cost(self):
+        annual_kcals_cost = self.livelihood_zone_baseline.get_annual_kcals_cost()
+        if annual_kcals_cost and self.average_household_size:
+            return annual_kcals_cost * self.average_household_size
+
+    def _get_survival_threshold_as_percentage_kcals(self):
+        """
+        Calculate the Survival Threshold for the Wealth Group as a percentage of required household kcals.
+
+        The Survival Threshold is the minimum level of food and income required
+        for a household to meet basic food needs necessary for survival, without
+        considering broader livelihood sustainability.
+
+        It includes:
+          * 100% of minimum energy (calorie) requirements for the household
+          * the cost of essential non-food items required to support survival, such as:
+              - Water for human consumption and basic hygiene
+              - Fuel for cooking
+              - Basic food preparation items (e.g., salt)
+
+        The Survival Non-Food items are identified in Basket 3 of the Livelihood Product
+        Categories for the Baseline.
+
+        This basket is defined for the Poor Wealth Group, and other values use
+        the same expenditure, scaled according to average household size.
+        """
+        annual_kcals_cost = self.livelihood_zone_baseline.get_annual_kcals_cost()
+        poor_survival_non_food = (
+            LivelihoodProductCategory.objects.filter(
+                basket=LivelihoodProductCategory.ProductBasket.SURVIVAL_NON_FOOD,
+                baseline_livelihood_activity__wealth_group__livelihood_zone_baseline=self.livelihood_zone_baseline,
+                baseline_livelihood_activity__wealth_group__wealth_group_category__code=WealthGroupCategory.POOR,
+            )
+            .values(
+                "baseline_livelihood_activity__wealth_group__id",
+                "baseline_livelihood_activity__wealth_group__average_household_size",
+            )
+            .annotate(
+                total_expenditure=Sum(
+                    F("baseline_livelihood_activity__expenditure") * F("percentage_allocation_to_basket")
+                ),
+            )
+        )
+        if not poor_survival_non_food:
+            return None
+        # There should only be one Poor Wealth Group for the Baseline with Livelihood Product Categories defined.
+        elif len(poor_survival_non_food) > 1:
+            raise ValueError(
+                f"Found multiple Poor Wealth Groups with Livelihood Product Categories for {self.livelihood_zone_baseline}"
+            )
+        poor_non_food_expenditure = poor_survival_non_food[0]["total_expenditure"] or 0
+        poor_average_household_size = poor_survival_non_food[0][
+            "baseline_livelihood_activity__wealth_group__average_household_size"
+        ]
+        # Survival threshold is 1 (i.e. 100% kcals) + non-food needs scaled according to average household size
+        # Because the non-food expenditures are scaled according to the household size, they always
+        # return the same percentage as for the Poor wealth group.
+        if annual_kcals_cost and poor_average_household_size:
+            return 1 + poor_non_food_expenditure / (poor_average_household_size * annual_kcals_cost)
+
+    @cached_property
+    def survival_threshold_as_percentage_kcals(self):
+        key = f"wealth_group~{self.pk}~survival_kcals"
+        survival_threshold_as_percentage_kcals = cache.get(key)
+        if not survival_threshold_as_percentage_kcals:
+            survival_threshold_as_percentage_kcals = self._get_survival_threshold_as_percentage_kcals()
+            cache.set(key, survival_threshold_as_percentage_kcals, 60 * 60 * 24)
+        return survival_threshold_as_percentage_kcals
+
+    @cached_property
+    def survival_threshold_as_cash(self):
+        annual_kcals_cost = self.livelihood_zone_baseline.get_annual_kcals_cost()
+        if annual_kcals_cost and self.survival_threshold_as_percentage_kcals and self.average_household_size:
+            return self.survival_threshold_as_percentage_kcals * self.average_household_size * annual_kcals_cost
+
+    def _get_livelihoods_protection_threshold_as_percentage_kcals(self):
+        """
+        Calculate the Livelihoods Protection Threshold for the Wealth Group as a percentage of required household kcals.
+
+        The Livelihoods Protection Threshold is the minimum level of food and income required
+        for a household to meet basic food needs necessary for survival, and also to protect
+        livelihoods and avoid negative coping strategies that will prevent the household from
+        recovering after a shock.
+
+        Examples of negative coping strategies include selling land or tools or so many animals
+        that the herd size cannot recover.
+
+        It includes:
+
+          * The Survival Threshold, plus
+          * The cost of maintaining basic livelihood assets and functions, such as:
+              - Agricultural inputs (seeds, fertilizer, tools)
+              - Livestock maintenance (feed, veterinary care)
+              - Essential household expenditures:
+              - Basic clothing
+              - Soap and hygiene items
+              - Education costs (e.g., school fees)
+              - Basic healthcare
+
+        The Livelihood Protection items are identified in Basket 4 of the Livelihood
+        Product Categories for the Baseline. This Basket can contain some food items,
+        but any kcals they contribute are excluded from the Livelihoods Protection Threshold.
+
+        For Basket 4, some Livelihood Product Categories are defined separately for each
+        Wealth Group because the `percentage_allocation_to_basket` varies by Wealth Group.
+        For example, livestock expenditures such as drugs for animals vary according to
+        the number of animals owned by the household.
+
+        Other Livelihood Product Categories are defined only for the Poor Wealth Group,
+        and the `percentage_allocaton_to_basket` and the `expenditure` (scaled by household size)
+        is inherited for other Wealth Groups. For example, if Tea/Coffee/Cola is in the
+        Livelihoods Protection Basket then the amount is inherited from the Poor wealth group,
+        rather than based on typical consumption for the Wealth Group in the Reference Year.
+        """
+        annual_kcals_cost = self.livelihood_zone_baseline.get_annual_kcals_cost()
+
+        livelihood_protection_qs = LivelihoodProductCategory.objects.filter(
+            basket=LivelihoodProductCategory.ProductBasket.LIVELIHOODS_PROTECTION,
+            baseline_livelihood_activity__wealth_group__livelihood_zone_baseline=self.livelihood_zone_baseline,
+            baseline_livelihood_activity__wealth_group__wealth_group_category__code__in=[
+                WealthGroupCategory.POOR,
+                self.wealth_group_category_id,
+            ],
+        ).values(
+            "baseline_livelihood_activity_id",
+            "percentage_allocation_to_basket",
+            livelihood_strategy_id=F("baseline_livelihood_activity__livelihood_strategy__id"),
+            strategy_type=F("baseline_livelihood_activity__livelihood_strategy__strategy_type"),
+            product_name=F("baseline_livelihood_activity__livelihood_strategy__product__common_name_en"),
+            wealth_group_id=F("baseline_livelihood_activity__wealth_group_id"),
+            wealth_group_category=F("baseline_livelihood_activity__wealth_group__wealth_group_category__code"),
+            household_size=F("baseline_livelihood_activity__wealth_group__average_household_size"),
+            expenditure=F("baseline_livelihood_activity__expenditure"),
+            percentage_kcals=F("baseline_livelihood_activity__percentage_kcals"),
+        )
+
+        df = pd.DataFrame.from_records(livelihood_protection_qs)
+        if df.empty:
+            livelihoods_protection_expenditure = 0
+            livelihoods_protection_percentage_kcals = 0
+        else:
+
+            try:
+                # Split the Livelihood Product Categories into POOR defaults and
+                # Current Wealth Group Category overrides
+                poor_df = df[df["wealth_group_category"] == WealthGroupCategory.POOR].drop(
+                    columns=["wealth_group_category"]
+                )
+
+                wealth_group_df = df[df["wealth_group_category"] == self.wealth_group_category_id].drop(
+                    columns=["wealth_group_category"]
+                )
+
+                # Sanity check: POOR rows must be unique by livelihood_strategy
+                if poor_df["livelihood_strategy_id"].duplicated().any():
+                    duplicates = poor_df.loc[
+                        poor_df["livelihood_strategy_id"].duplicated(keep=False),
+                        "livelihood_strategy_id",
+                    ].tolist()
+                    raise ValueError(
+                        "Livelihoods Protection Threshold didn't identify distinct POOR Livelihood Strategies: "
+                        f"{duplicates}"
+                    )
+
+                # Sanity check: Current rows must also be unique by livelihood_strategy
+                if not wealth_group_df.empty and wealth_group_df["livelihood_strategy_id"].duplicated().any():
+                    duplicates = wealth_group_df.loc[
+                        wealth_group_df["livelihood_strategy_id"].duplicated(keep=False),
+                        "livelihood_strategy_id",
+                    ].tolist()
+                    raise ValueError(
+                        "Livelihoods Protection Threshold didn't identify distinct current Livelihood Strategies: "
+                        f"{duplicates}"
+                    )
+
+                # Merge Livelihood Product Categories for the current Wealth Group
+                # onto the POOR defaults by livelihood_strategy
+                merged = poor_df.merge(
+                    wealth_group_df,
+                    on="livelihood_strategy_id",
+                    how="outer",
+                    suffixes=("_poor", "_wealth_group"),
+                )
+
+                # Build effective values: use Livelihood Product Category for the current Wealth Group
+                # when present, falling back to the POOR record for strategies that aren't defined for
+                # the current Wealth Group
+                for column in poor_df.columns:
+                    if column != "livelihood_strategy_id":
+                        merged[f"effective_{column}"] = merged[f"{column}_wealth_group"].combine_first(
+                            merged[f"{column}_poor"]
+                        )
+
+                # Calculate the expenditure for the Basket by applying the
+                # effective_percentage_allocation_to_basket and scaling by
+                # household_size, to ensure that if the LivelihoodProductCategory
+                # was for the Poor Wealth Group the expenditure reflects the
+                # different household sizes.
+                merged["basket_expenditure"] = (
+                    merged["effective_expenditure"]
+                    * merged["effective_percentage_allocation_to_basket"]
+                    / merged["effective_household_size"]
+                    * self.average_household_size
+                )
+
+                # For the percentage_kcals we can apply the effective_percentage_allocation_to_basket
+                # directly because the value is already a percentage of required household kcals.
+                merged["basket_percentage_kcals"] = (
+                    merged["effective_percentage_kcals"] * merged["effective_percentage_allocation_to_basket"]
+                )
+
+                livelihoods_protection_expenditure = merged["basket_expenditure"].sum(skipna=True)
+                livelihoods_protection_percentage_kcals = merged["basket_percentage_kcals"].sum(skipna=True)
+
+            except Exception as e:
+                raise ValueError("Error calculating livelihoods protection threshold") from e
+
+        if annual_kcals_cost and self.survival_threshold_as_percentage_kcals and self.average_household_size:
+            return (
+                self.survival_threshold_as_percentage_kcals
+                - livelihoods_protection_percentage_kcals
+                + livelihoods_protection_expenditure / (self.average_household_size * annual_kcals_cost)
+            )
+
+        return None
+
+    @cached_property
+    def livelihoods_protection_threshold_as_percentage_kcals(self):
+        key = f"wealth_group~{self.pk}~livelihoods_protection_kcals"
+        livelihoods_protection_threshold_as_percentage_kcals = cache.get(key)
+        if not livelihoods_protection_threshold_as_percentage_kcals:
+            livelihoods_protection_threshold_as_percentage_kcals = (
+                self._get_livelihoods_protection_threshold_as_percentage_kcals()
+            )
+            cache.set(key, livelihoods_protection_threshold_as_percentage_kcals, 60 * 60 * 24)
+        return livelihoods_protection_threshold_as_percentage_kcals
+
+    @cached_property
+    def livelihoods_protection_threshold_as_cash(self):
+        annual_kcals_cost = self.livelihood_zone_baseline.get_annual_kcals_cost()
+        if (
+            annual_kcals_cost
+            and self.livelihoods_protection_threshold_as_percentage_kcals
+            and self.average_household_size
+        ):
+            return (
+                self.livelihoods_protection_threshold_as_percentage_kcals
+                * self.average_household_size
+                * annual_kcals_cost
+            )
 
     objects = WealthGroupManager()
 
@@ -565,6 +1018,12 @@ class WealthGroup(common_models.Model):
     class Meta:
         verbose_name = _("Wealth Group")
         verbose_name_plural = _("Wealth Groups")
+        ordering = [
+            "livelihood_zone_baseline__livelihood_zone__code",
+            "livelihood_zone_baseline__reference_year_end_date",
+            "wealth_group_category__ordering",
+            "community__name",
+        ]
         constraints = [
             models.UniqueConstraint(
                 fields=("livelihood_zone_baseline", "wealth_group_category", "community"),
@@ -844,14 +1303,64 @@ class WealthGroupCharacteristicValue(common_models.Model):
         ]
 
 
+class BaselineWealthGroupCharacteristicValueManager(InheritanceManager):
+    def get_queryset(self):
+        return super().get_queryset().filter(wealth_group__community__isnull=True).select_subclasses()
+
+
+class BaselineWealthGroupCharacteristicValue(WealthGroupCharacteristicValue):
+    """
+    An attribute of a Baseline Wealth Group such as the number of school-age children.
+    """
+
+    objects = BaselineWealthGroupCharacteristicValueManager()
+
+    def clean(self):
+        if self.wealth_group.community:
+            raise ValidationError(
+                _("A Baseline Wealth Group Characteristic Value cannot be for a Community Wealth Group")
+            )
+        super().clean()
+
+    class Meta:
+        verbose_name = _("Baseline Wealth Group Characteristic Value")
+        verbose_name_plural = _("Baseline Wealth Group Characteristic Values")
+        proxy = True
+
+
+class CommunityWealthGroupCharacteristicValueManager(InheritanceManager):
+    def get_queryset(self):
+        return super().get_queryset().exclude(wealth_group__community__isnull=True).select_subclasses()
+
+
+class CommunityWealthGroupCharacteristicValue(WealthGroupCharacteristicValue):
+    """
+    An attribute of a Community Wealth Group such as the number of school-age children.
+    """
+
+    objects = CommunityWealthGroupCharacteristicValueManager()
+
+    def clean(self):
+        if not self.wealth_group.community:
+            raise ValidationError(
+                _("A Community Wealth Group Characteristic Value must be for a Community Wealth Group")
+            )
+        super().clean()
+
+    class Meta:
+        verbose_name = _("Community Wealth Group Characteristic Value")
+        verbose_name_plural = _("Community Wealth Group Characteristic Values")
+        proxy = True
+
+
 class LivelihoodStrategyManager(common_models.IdentifierManager):
     def get_by_natural_key(
         self,
         code: str,
         reference_year_end_date: str,
         strategy_type: str,
-        season: str,
         product: str = "",
+        season: str = "",
         additional_identifier: str = "",
     ):
         criteria = {
@@ -860,15 +1369,15 @@ class LivelihoodStrategyManager(common_models.IdentifierManager):
             "strategy_type": strategy_type,
             "additional_identifier": additional_identifier,
         }
+        if product:
+            criteria["product__cpc"] = product
+        else:
+            criteria["product__isnull"] = True
         if season:
             criteria["season__name_en"] = season
             criteria["season__country"] = F("livelihood_zone_baseline__livelihood_zone__country")
         else:
             criteria["season__isnull"] = True
-        if product:
-            criteria["product__cpc"] = product
-        else:
-            criteria["product__isnull"] = True
 
         return self.get(**criteria)
 
@@ -963,8 +1472,12 @@ class LivelihoodStrategy(common_models.Model):
         """
         if self.strategy_type in self.REQUIRES_PRODUCT and not self.product:
             raise ValidationError(_("A %s Livelihood Strategy must have a Product" % self.strategy_type))
-        if self.strategy_type in ["MilkProduction", "ButterProduction"] and not self.season:
+        if self.strategy_type in self.REQUIRES_SEASON and not self.season:
             raise ValidationError(_("A %s Livelihood Strategy must have a Season" % self.strategy_type))
+        # All strategies require either a product or an additional identifier to distinguish them
+        if not self.product and not self.additional_identifier:
+            raise ValidationError(_("A Livelihood Strategy must have either a Product or an Additional Identifier"))
+
         super().clean()
 
     def save(self, *args, **kwargs):
@@ -980,8 +1493,8 @@ class LivelihoodStrategy(common_models.Model):
             self.livelihood_zone_baseline.livelihood_zone_id,
             self.livelihood_zone_baseline.reference_year_end_date.isoformat(),
             self.strategy_type,
-            self.season.name_en if self.season else "",
             self.product_id if self.product_id else "",
+            self.season.name_en if self.season else "",
             self.additional_identifier,
         )
 
@@ -1017,8 +1530,8 @@ class LivelihoodActivityManager(common_models.IdentifierManager):
         reference_year_end_date: str,
         wealth_group_category: str,
         strategy_type: str,
-        season: str = "",
         product: str = "",
+        season: str = "",
         additional_identifier: str = "",
         full_name: str = "",
     ):
@@ -1029,15 +1542,15 @@ class LivelihoodActivityManager(common_models.IdentifierManager):
             "strategy_type": strategy_type,
             "livelihood_strategy__additional_identifier": additional_identifier,
         }
+        if product:
+            criteria["livelihood_strategy__product__cpc"] = product
+        else:
+            criteria["livelihood_strategy__product__isnull"] = True
         if season:
             criteria["livelihood_strategy__season__name_en"] = season
             criteria["livelihood_strategy__season__country"] = F("livelihood_zone_baseline__livelihood_zone__country")
         else:
             criteria["livelihood_strategy__season__isnull"] = True
-        if product:
-            criteria["livelihood_strategy__product__cpc"] = product
-        else:
-            criteria["livelihood_strategy__product__isnull"] = True
 
         if not full_name:
             criteria["wealth_group__community__isnull"] = True
@@ -1095,15 +1608,21 @@ class LivelihoodActivity(common_models.Model):
     wealth_group = models.ForeignKey(WealthGroup, on_delete=models.CASCADE, help_text=_("Wealth Group"))
 
     # Also used for the quantity received for the PaymentInKind and ReliefGiftsOther Livelihood Strategies
-    quantity_produced = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Produced"))
-    quantity_purchased = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Purchased"))
-    quantity_sold = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Sold/Exchanged"))
-    quantity_other_uses = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Other Uses"))
+    quantity_produced = models.FloatField(blank=True, null=True, verbose_name=_("Quantity Produced"))
+    quantity_purchased = models.FloatField(blank=True, null=True, verbose_name=_("Quantity Purchased"))
+    quantity_sold = models.FloatField(blank=True, null=True, verbose_name=_("Quantity Sold/Exchanged"))
+    quantity_other_uses = models.FloatField(blank=True, null=True, verbose_name=_("Quantity Other Uses"))
     # Can normally be calculated / validated as `quantity_produced + quantity_purchased - quantity_sold - quantity_other_uses`  # NOQA: E501
-    # but there are exceptions, such as MilkProduction, where there is also an amount used for ButterProduction
-    quantity_consumed = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Consumed"))
+    # but there are exceptions, such as MilkProduction which also stores MilkProduction.quantity_butter_production
+    quantity_consumed = models.FloatField(blank=True, null=True, verbose_name=_("Quantity Consumed"))
 
-    price = models.FloatField(blank=True, null=True, verbose_name=_("Price"), help_text=_("Price per unit"))
+    price = models.FloatField(
+        blank=True,
+        null=True,
+        validators=[common_models.validate_positive],
+        verbose_name=_("Price"),
+        help_text=_("Price per unit"),
+    )
     # Can be calculated / validated as `quantity_sold * price` for livelihood strategies that involve the sale of
     # a proportion of the household's own production.
     income = models.FloatField(blank=True, null=True, help_text=_("Income"))
@@ -1111,7 +1630,7 @@ class LivelihoodActivity(common_models.Model):
     # of external goods or services.
     expenditure = models.FloatField(blank=True, null=True, help_text=_("Expenditure"))
 
-    # Can normally be calculated  / validated as `quantity_consumed` * `kcals_per_unit`
+    # Can normally be calculated  / validated as `quantity_consumed` * `livelihoodstrategy__product__kcals_per_unit`
     kcals_consumed = models.PositiveIntegerField(
         blank=True,
         null=True,
@@ -1123,9 +1642,12 @@ class LivelihoodActivity(common_models.Model):
     # some analyses may choose to use alternate thresholds and would need to calcuate
     # this value separately. For example, for program development some organizations
     # use 1900 kcal per person per day.
+    # Stored as a decimal percentage, e.g. 0.25 for 25%. Note that there is no max value because
+    # a B/O household could hypothetically generate more than 100% of required kcals.
     percentage_kcals = models.FloatField(
         blank=True,
         null=True,
+        validators=[MinValueValidator(0)],
         verbose_name=_("Percentage of required kcals"),
         help_text=_("Percentage of annual household kcal requirement provided by this livelihood strategy"),
     )
@@ -1147,7 +1669,66 @@ class LivelihoodActivity(common_models.Model):
         MEN = "men", _("Mainly Men")
         WOMEN = "women", _("Mainly Women")
         CHILDREN = "children", _("Mainly Children")
+        BOYS = "boys", _("Mainly Boys")
+        GIRLS = "girls", _("Mainly Girls")
+        ADULTS = "adults", _("Mainly Adults")
         ALL = "all", _("All Together")
+
+        @classmethod
+        def _missing_(cls, value):
+            """
+            Called when the value is missing from the enum
+            """
+            value_lower = str(value).lower()
+            if hasattr(cls, "_aliases") and value_lower in cls._aliases:
+                return cls(cls._aliases[value_lower])
+            return None
+
+        @classmethod
+        def get_all_labels(cls):
+            """
+            Return all possible labels (canonical values + display labels + aliases) for pattern matching.
+            """
+            canonical_values = [value for value, _label in cls.choices]
+            display_labels = [str(label) for _value, label in cls.choices]
+            alias_labels = list(cls._aliases.keys()) if hasattr(cls, "_aliases") else []
+            all_labels = canonical_values + display_labels + alias_labels
+            return sorted(all_labels, key=len, reverse=True)
+
+    HouseholdLaborProvider._aliases = {
+        # French singular/plural for men
+        "hommes": "men",
+        "homme": "men",
+        # French singular/plural for women
+        "femmes": "women",
+        "femme": "women",
+        # French singular/plural for boys
+        "garçons": "boys",
+        "garçon": "boys",
+        "garcons": "boys",  # without accent
+        "garcon": "boys",  # without accent
+        # French singular/plural for girls
+        "filles": "girls",
+        "fille": "girls",
+        # French for adults
+        "adultes": "adults",
+        # Children combinations (boys/girls in any order)
+        "boys/girls": "children",
+        "girls/boys": "children",
+        "garçons/filles": "children",
+        "filles/garçons": "children",
+        "garcons/filles": "children",  # without accent
+        "filles/garcons": "children",  # without accent
+        # Adults combinations (men/women in any order)
+        "men/women": "adults",
+        "women/men": "adults",
+        "men & women": "adults",
+        "women & men": "adults",
+        "hommes/femmes": "adults",
+        "femmes/hommes": "adults",
+        "hommes & femmes": "adults",
+        "femmes & hommes": "adults",
+    }
 
     household_labor_provider = models.CharField(
         max_length=10, choices=HouseholdLaborProvider.choices, blank=True, verbose_name=_("Activity done by")
@@ -1159,6 +1740,36 @@ class LivelihoodActivity(common_models.Model):
         verbose_name=_("Extra attributes"),
         help_text=_("Additional attributes from the BSS for this Livelihood Activity"),
     )
+
+    @cached_property
+    def total_income_as_percentage_kcals(self):
+        """
+        The total food consumed and income received as percentage of required household kcals.
+        """
+        annual_kcals_cost = self.livelihood_zone_baseline.get_annual_kcals_cost()
+        percentage_kcals = self.percentage_kcals or 0
+        income = self.income or 0
+        if self.wealth_group.average_household_size:
+            return (
+                percentage_kcals + (income / (self.wealth_group.average_household_size * annual_kcals_cost))
+                if annual_kcals_cost
+                else None
+            )
+
+    @cached_property
+    def total_income_as_cash(self):
+        """
+        The total food consumed and income received as an amount in the BSS currency.
+        """
+        annual_kcals_cost = self.livelihood_zone_baseline.get_annual_kcals_cost()
+        percentage_kcals = self.percentage_kcals or 0
+        income = self.income or 0
+        if self.wealth_group.average_household_size:
+            return (
+                (percentage_kcals * self.wealth_group.average_household_size * annual_kcals_cost) + income
+                if annual_kcals_cost
+                else None
+            )
 
     objects = LivelihoodActivityManager()
 
@@ -1183,30 +1794,47 @@ class LivelihoodActivity(common_models.Model):
         """
         pass
 
+    def validate_quantity_purchased(self):
+        """
+        Validate the quantity_purchased.
+
+        In most LivelihoodActivity subclasses the quantity_purchased is not used
+        and this validation passes.
+
+        However, FoodPurchase has additional fields that allow the quantity_purchased
+        to be validated. This method is overwritten in that subclass.
+        """
+        pass
+
     def validate_quantity_consumed(self):
         # Default to 0 if any of the quantities are None
         quantity_produced = self.quantity_produced or 0
+        quantity_purchased = self.quantity_purchased or 0
         quantity_sold = self.quantity_sold or 0
         quantity_other_uses = self.quantity_other_uses or 0
+        try:
+            quantity_butter_production = self.quantity_butter_production or 0
+        except AttributeError:
+            # Only MilkProduction has quantity_butter_production
+            quantity_butter_production = 0
 
         # Calculate the expected quantity_consumed with default values considered
-        expected_quantity_consumed = quantity_produced - quantity_sold - quantity_other_uses
-        quantity_consumed = self.quantity_consumed or 0
+        expected_quantity_consumed = (
+            quantity_produced + quantity_purchased - quantity_sold - quantity_other_uses - quantity_butter_production
+        )
 
         # Check if the actual quantity_consumed matches the expected quantity_consumed
-        if self.quantity_consumed and quantity_consumed != expected_quantity_consumed:
-            raise ValidationError(
-                _(
-                    "Quantity consumed for a Livelihood Activity must be quantity produced - quantity sold - quantity used for other things"  # NOQA: E501
-                )
-            )
+        if self.quantity_consumed and not math.isclose(self.quantity_consumed, expected_quantity_consumed):
+            if quantity_butter_production:
+                message = "Quantity consumed for Milk Production must be quantity produced + quantity purchased - quantity sold - quantity used for butter production - quantity used for other things"  # NOQA: E501
+            else:
+                message = "Quantity consumed for a Livelihood Activity must be quantity produced + quantity purchased - quantity sold - quantity used for other things"  # NOQA: E501
+            raise ValidationError(_(message))
 
     def validate_income(self):
-        income = self.income or 0
-        quantity_sold = self.quantity_sold or 0
-        price = self.price or 0
-        if self.income and income != quantity_sold * price:
-            raise ValidationError(_("Income for a Livelihood Activity must be quantity sold multiplied by price"))
+        if self.income and self.quantity_sold is not None and self.price is not None:
+            if not math.isclose(self.income, self.quantity_sold * self.price):
+                raise ValidationError(_("Income for a Livelihood Activity must be quantity sold multiplied by price"))
 
     def validate_expenditure(self):
         """
@@ -1224,23 +1852,38 @@ class LivelihoodActivity(common_models.Model):
         price = self.price or 0
         expenditure = self.expenditure or 0
 
-        if self.expenditure and expenditure != quantity_produced * price:
+        if self.expenditure and not math.isclose(expenditure, quantity_produced * price):
             raise ValidationError(
                 _("Expenditure for a Livelihood Activity must be quantity produced multiplied by price")
             )
 
     def validate_kcals_consumed(self):
-        conversion_factor = UnitOfMeasureConversion.objects.get_conversion_factor(
-            from_unit=self.livelihood_strategy.unit_of_measure,
-            to_unit=self.livelihood_strategy.product.unit_of_measure,
-        )
-        kcals_per_unit = self.livelihood_strategy.product.kcals_per_unit or 0
-        quantity_consumed = self.quantity_consumed or 0
-        kcals_consumed = self.kcals_consumed or 0
-        if self.kcals_consumed and kcals_consumed != quantity_consumed * conversion_factor * kcals_per_unit:
-            raise ValidationError(
-                _("Kcals consumed for a Livelihood Activity must be quantity consumed multiplied by kcals per unit")
-            )
+        if self.kcals_consumed and self.quantity_consumed and self.livelihood_strategy.product.kcals_per_unit:
+            try:
+                conversion_factor = UnitOfMeasureConversion.objects.get_conversion_factor(
+                    from_unit=self.livelihood_strategy.unit_of_measure,
+                    to_unit=self.livelihood_strategy.product.unit_of_measure,
+                )
+            except UnitOfMeasureConversion.DoesNotExist:
+                raise ValidationError(
+                    _(
+                        "No conversion factor found from unit %(from_unit)s for Livelihood Activity to unit %(to_unit)s for Product %(product)s for calculating kcals consumed."  # NOQA: E501
+                    )
+                    % {
+                        "from_unit": self.livelihood_strategy.unit_of_measure,
+                        "to_unit": self.livelihood_strategy.product.unit_of_measure,
+                        "product": self.livelihood_strategy.product,
+                    }
+                )
+            if not math.isclose(
+                self.kcals_consumed,
+                self.quantity_consumed * conversion_factor * self.livelihood_strategy.product.kcals_per_unit,
+            ):
+                raise ValidationError(
+                    _(
+                        "Kcals consumed for a Livelihood Activity must be quantity consumed multiplied by kcals per unit"
+                    )
+                )
 
     def validate_strategy_type(self):
         if (
@@ -1269,6 +1912,7 @@ class LivelihoodActivity(common_models.Model):
         self.validate_livelihood_zone_baseline()
         self.validate_strategy_type()
         self.validate_quantity_produced()
+        self.validate_quantity_purchased()
         self.validate_quantity_consumed()
         self.validate_income()
         self.validate_expenditure()
@@ -1290,8 +1934,8 @@ class LivelihoodActivity(common_models.Model):
             self.livelihood_zone_baseline.reference_year_end_date.isoformat(),
             self.wealth_group.wealth_group_category.code,
             self.strategy_type,
-            self.livelihood_strategy.season.name_en if self.livelihood_strategy.season else "",
             self.livelihood_strategy.product_id if self.livelihood_strategy.product_id else "",
+            self.livelihood_strategy.season.name_en if self.livelihood_strategy.season else "",
             self.livelihood_strategy.additional_identifier,
             self.wealth_group.community.full_name if self.wealth_group.community else "",
         )
@@ -1308,9 +1952,14 @@ class LivelihoodActivity(common_models.Model):
         identifier = ["livelihood_strategy", "wealth_group", "scenario"]
 
 
-class BaselineLivelihoodActivityManager(InheritanceManager):
+class BaselineLivelihoodActivityManager(InheritanceManager, LivelihoodActivityManager):
     def get_queryset(self):
-        return super().get_queryset().filter(scenario=LivelihoodActivityScenario.BASELINE).select_subclasses()
+        return (
+            super()
+            .get_queryset()
+            .filter(wealth_group__community__isnull=True, scenario=LivelihoodActivityScenario.BASELINE)
+            .select_subclasses()
+        )
 
 
 class BaselineLivelihoodActivity(LivelihoodActivity):
@@ -1318,8 +1967,8 @@ class BaselineLivelihoodActivity(LivelihoodActivity):
     An activity undertaken by households in a Wealth Group that produces food or income or requires expenditure.
 
     A Baseline Livelihood Activity contains the outputs of a Livelihood Strategy
-    employed by a Wealth Group in a Community or a Wealth Group representing
-    the Baseline as a whole in the reference year.
+    employed by a Wealth Group representing the Baseline as a whole during the
+    reference year.
 
     Stored on the BSS 'Data' worksheet.
     """
@@ -1337,9 +1986,14 @@ class BaselineLivelihoodActivity(LivelihoodActivity):
         proxy = True
 
 
-class ResponseLivelihoodActivityManager(InheritanceManager):
+class ResponseLivelihoodActivityManager(InheritanceManager, LivelihoodActivityManager):
     def get_queryset(self):
-        return super().get_queryset().filter(scenario=LivelihoodActivityScenario.RESPONSE).select_subclasses()
+        return (
+            super()
+            .get_queryset()
+            .filter(wealth_group__community__isnull=True, scenario=LivelihoodActivityScenario.RESPONSE)
+            .select_subclasses()
+        )
 
 
 class ResponseLivelihoodActivity(LivelihoodActivity):
@@ -1370,6 +2024,137 @@ class ResponseLivelihoodActivity(LivelihoodActivity):
         proxy = True
 
 
+class LivelihoodProductCategoryManager(common_models.IdentifierManager):
+    def get_by_natural_key(
+        self,
+        code: str,
+        reference_year_end_date: str,
+        wealth_group_category: str,
+        strategy_type: str,
+        basket: int,
+        product: str,
+        season: str = "",
+        additional_identifier: str = "",
+    ):
+        criteria = {
+            "baseline_livelihood_activity__livelihood_zone_baseline__livelihood_zone__code": code,
+            "baseline_livelihood_activity__livelihood_zone_baseline__reference_year_end_date": reference_year_end_date,
+            "baseline_livelihood_activity__wealth_group__wealth_group_category__code": wealth_group_category,
+            # We need the Baseline Livelihood Activity
+            "baseline_livelihood_activity__wealth_group__community__isnull": True,
+            "baseline_livelihood_activity__strategy_type": strategy_type,
+            "basket": basket,
+            "baseline_livelihood_activity__livelihood_strategy__product__cpc": product,
+            "baseline_livelihood_activity__livelihood_strategy__additional_identifier": additional_identifier,
+        }
+        if season:
+            criteria["baseline_livelihood_activity__livelihood_strategy__season__name_en"] = season
+            criteria["baseline_livelihood_activity__livelihood_strategy__season__country"] = F(
+                "baseline_livelihood_activity__livelihood_zone_baseline__livelihood_zone__country"
+            )
+        else:
+            criteria["baseline_livelihood_activity__livelihood_strategy__season__isnull"] = True
+        return self.get(**criteria)
+
+
+# @TODO Decide whether to change the name of this model when we review the
+# LIAS and finalize models for expandability and coping. Ideally we want to be
+# able to identify Livelihood Activities that are produce staple foods, and/or
+# are part of the different baskets.
+class LivelihoodProductCategory(common_models.Model):
+    """
+    The usage of the Product in the Livelihood Zone, such as staple food or livelihood protection.
+
+    Product usage is assigned to Baskets:
+        * Main Staple Crop
+        * Other Staple Crops and essential food purchases (e.g. Cooking Oil, Flour, Salt)
+        * Essential non-food purchases (Soap, Cooking Fuel, Lighting, Tea)
+        * Livelihoods Protection purchases (Seeds, Fertilizer, Animal Drugs)
+
+    The total usage of the Product may be split across multiple "baskets".
+    For example, OtherPurchase of Kerosene may be allocated as 75% in the
+    Essential Non-Food Purchase basket (which is part of the Survival Threshold).
+
+    This allocation can vary by Baseline Wealth Group. For example, cooking
+    needs may require 75%  of the total for VP Households, but only 50% for
+    M and B/O Households.
+
+    We only store a Livelihood Product Category for one Basket for each Product.
+    If there is a remainder then it is implicitly part of an Other Basket of
+    discretionary spending.
+
+    In practice this is linked via the FoodPurchase and OtherPurchase
+    Baseline Livelihood Activities for the Product, rather than by referencing the
+    Product directly.
+
+    The Survival Threshold is calculated using the Main Staple, Other Survival
+    Food and Survival Non-Food Items for the Poor Wealth Group.
+
+    The Livelihood Protection Threshold is calculated per Wealth Group and adds
+    the Livelihoods Protection items to the Survival Basket.
+    """
+
+    class ProductBasket(models.IntegerChoices):
+        MAIN_STAPLE = 1, _("Main Staple")
+        SURVIVAL_OTHER_FOOD = 2, _("Other food survival")
+        # Survival non-food needs: the minimum non-food items required for survival,
+        # typically including the costs of preparing and consuming food, including
+        # lighting and fuel, and any cash expenditure on water for human consumption.
+        SURVIVAL_NON_FOOD = 3, _("Non-food survival")
+        # Livelihoods Protection needs: the minimum non-food items required to
+        # maintain their livelihood, typically including agricultural and livestock
+        # inputs, clothes, education and basic healthcare.
+        LIVELIHOODS_PROTECTION = 4, _("Livelihoods Protection")
+
+    # Logically, a Product can only be in a single Basket for a given Baseline -
+    # a product can't be both essential for survival and only required for
+    # Livelihoods Protection; similarly, it can't be both Food and Non-Food.
+    # A Product Category can be defined for each Baseline Wealth Group. I.e. the
+    # Product Category is the intersection of a Livelihood Strategy and a
+    # Wealth Group, which matches the definition of a Livelihood Activity.
+    # Therefore, we use a OneToOneField to ensure we don't create a duplicate
+    # Product Category for a given Strategy and Wealth Group. Note that although
+    # in practice the Product Category is uniquely identified by the
+    # `baseline_livelihood_activity`, logically the `basket` is a key part of the
+    # definition and so `basket` is still part of the natural key.
+    baseline_livelihood_activity = models.OneToOneField(
+        BaselineLivelihoodActivity,
+        on_delete=models.RESTRICT,
+        verbose_name=_("Baseline Livelihood Activity"),
+    )
+    basket = models.PositiveSmallIntegerField(choices=ProductBasket.choices, verbose_name=_("Product Basket"))
+    # Stored as a decimal percentage, e.g. 0.25 for 25%.
+    percentage_allocation_to_basket = models.FloatField(
+        validators=[MinValueValidator(0)],
+        verbose_name=_("Percentage allocation to basket"),
+        help_text=_(
+            "The percentage of expenditure or kcals from the Livelihood Activity that is allocated to this Basket. The remainder is implicitly part of the 'Other' basket"
+        ),
+    )
+
+    objects = LivelihoodProductCategoryManager()
+
+    def natural_key(self):
+        return (
+            self.baseline_livelihood_activity.livelihood_zone_baseline.livelihood_zone_id,
+            self.baseline_livelihood_activity.livelihood_zone_baseline.reference_year_end_date.isoformat(),
+            self.baseline_livelihood_activity.wealth_group.wealth_group_category.code,
+            self.baseline_livelihood_activity.strategy_type,
+            self.basket,
+            self.baseline_livelihood_activity.livelihood_strategy.product_id,
+            (
+                self.baseline_livelihood_activity.livelihood_strategy.season.name_en
+                if self.baseline_livelihood_activity.livelihood_strategy.season
+                else ""
+            ),
+            self.baseline_livelihood_activity.livelihood_strategy.additional_identifier,
+        )
+
+    class Meta:
+        verbose_name = _("Livelihood Product Category")
+        verbose_name_plural = _("Livelihood Product Categories")
+
+
 class MilkProduction(LivelihoodActivity):
     """
     Production of milk by households in a Wealth Group for their own consumption, for sale and for other uses.
@@ -1382,7 +2167,12 @@ class MilkProduction(LivelihoodActivity):
         WHOLE = "whole", _("whole")
 
     # Production calculation /validation is `lactation days * daily_production`
-    milking_animals = models.PositiveSmallIntegerField(verbose_name=_("Number of milking animals"))
+    # Although logically we can't have a MilkProduction without milking animals,
+    # the BSS may contain records with 0 production and a blank milking_animals
+    # field, particularly in Season 2 in a Baseline, or in a Response scenario
+    milking_animals = models.PositiveSmallIntegerField(
+        blank=True, null=True, verbose_name=_("Number of milking animals")
+    )
     lactation_days = models.PositiveSmallIntegerField(
         blank=True, null=True, verbose_name=_("Average number of days of lactation")
     )
@@ -1409,7 +2199,7 @@ class MilkProduction(LivelihoodActivity):
     # https://unstats.un.org/unsd/classifications/Econ/Detail/EN/1074/22110. That LivelihoodActivity would have a
     # `quantity_produced` equal to the amount of whole milk that was used for ButterProduction, and then the
     # quantity_sold and the quantity_consumed could be tracked separately.
-    quantity_butter_production = models.PositiveIntegerField(
+    quantity_butter_production = models.FloatField(
         blank=True, null=True, verbose_name=_("Quantity used for Butter Production")
     )  # NOQA: E501
     type_of_milk_consumed = models.CharField(
@@ -1428,9 +2218,13 @@ class MilkProduction(LivelihoodActivity):
 
     def clean(self):
         super().clean()
-        if self.milking_animals and not self.lactation_days:
+        # Note that we check that lactation_days and daily_production are not None
+        # because 0 is a valid value for both fields.  It is possible to have a
+        # non-zero milking_animals but zero lactation_days or daily_production,
+        # particularly in Season 2 in a Baseline, or in a Response scenario.
+        if self.milking_animals and self.lactation_days is None:
             raise ValidationError(_("Lactation days must be provided if there are milking animals"))
-        if self.milking_animals and not self.daily_production:
+        if self.milking_animals and self.daily_production is None:
             raise ValidationError(_("Daily production must be provided if there are milking animals"))
 
     class Meta:
@@ -1491,14 +2285,25 @@ class MeatProduction(LivelihoodActivity):
     """
 
     # Production calculation /validation is `input_quantity` * `item_yield`
-    animals_slaughtered = models.PositiveSmallIntegerField(verbose_name=_("Number of animals slaughtered"))
-    carcass_weight = models.FloatField(verbose_name=_("Carcass weight per animal"))
+    animals_slaughtered = models.PositiveSmallIntegerField(
+        verbose_name=_("Number of animals slaughtered"), null=True, blank=True
+    )
+    carcass_weight = models.FloatField(verbose_name=_("Carcass weight per animal"), null=True, blank=True)
+
+    def clean(self):
+        super().clean()
+        # If animals were slaughtered, carcass weight must be recorded
+        if self.animals_slaughtered and self.animals_slaughtered > 0 and self.carcass_weight is None:
+            raise ValidationError(_("Carcass weight is required when animals slaughtered"))
 
     def validate_quantity_produced(self):
-        if self.quantity_produced != self.animals_slaughtered * self.carcass_weight:
-            raise ValidationError(
-                _("Quantity Produced for a Meat Production must be animals slaughtered multiplied by carcass weight")
-            )
+        if self.quantity_produced is not None and self.animals_slaughtered and self.carcass_weight is not None:
+            if not math.isclose(self.quantity_produced, self.animals_slaughtered * self.carcass_weight):
+                raise ValidationError(
+                    _(
+                        "Quantity Produced for a Meat Production must be animals slaughtered multiplied by carcass weight"
+                    )
+                )
 
     class Meta:
         verbose_name = LivelihoodStrategyType.MEAT_PRODUCTION.label
@@ -1546,8 +2351,11 @@ class FoodPurchase(LivelihoodActivity):
     # NIO93 Row B422 tia = 2.5kg
 
     # unit_multiple has names like wt_of_measure in the BSS.
-    unit_multiple = models.PositiveSmallIntegerField(
-        verbose_name=_("Unit Multiple"), help_text=_("Multiple of the unit of measure in a single purchase")
+    unit_multiple = models.FloatField(
+        blank=True,
+        null=True,
+        verbose_name=_("Unit Multiple"),
+        help_text=_("Multiple of the unit of measure in a single purchase"),
     )
     # This is a float field because data may be captured as "once per week",
     # which equates to "52 per year", which is "4.33 per month".
@@ -1559,17 +2367,35 @@ class FoodPurchase(LivelihoodActivity):
         help_text=_("Number of months in a year that the product is purchased"),
     )
     times_per_year = models.PositiveSmallIntegerField(
+        blank=True,
+        null=True,
         verbose_name=_("Times per year"),
         help_text=_("Number of times in a year that the purchase is made"),
     )
 
-    def validate_quantity_produced(self):
-        if self.quantity_produced != self.unit_multiple * self.times_per_month * self.months_per_year:
-            raise ValidationError(
-                _(
-                    "Quantity produced for a Food Purchase must be purchase amount * purchases per month * months per year"  # NOQA: E501
+    def validate_quantity_purchased(self):
+        if (
+            self.quantity_purchased is not None
+            and self.unit_multiple is not None
+            and self.times_per_month is not None
+            and self.months_per_year is not None
+        ):
+            if not math.isclose(
+                self.quantity_purchased, self.unit_multiple * self.times_per_month * self.months_per_year
+            ):
+                raise ValidationError(
+                    _(
+                        "Quantity purchased for a Food Purchase must be purchase amount * purchases per month * months per year"  # NOQA: E501
+                    )
                 )
-            )
+
+    def validate_expenditure(self):
+        quantity_purchased = self.quantity_purchased or 0
+        price = self.price or 0
+        expenditure = self.expenditure or 0
+
+        if self.expenditure and not math.isclose(expenditure, quantity_purchased * price):
+            raise ValidationError(_("Expenditure for a Food Purchase must be quantity purchased multiplied by price"))
 
     class Meta:
         verbose_name = LivelihoodStrategyType.FOOD_PURCHASE.label
@@ -1581,37 +2407,84 @@ class PaymentInKind(LivelihoodActivity):
     Food items that contribute to nutrition by households in a Wealth Group received in exchange for labor.
 
     Stored on the BSS 'Data' worksheet in the 'Payment In Kind' section, typically starting around Row 514.
+
+    Payments in kind contain two Product references: the `product` is the actual labor or service performed,
+    and the `payment_product` is the food item received as payment. The `quantity_produced` is the amount of the
+    `payment_product` received  annually, and the `kcals_consumed` should be the `quantity_produced` multiplied
+    by the `payment_product.kcals_per_unit`.
     """
 
-    # Production calculation/validation is `people_per_household * times_per_month * months_per_year`
-    payment_per_time = models.PositiveSmallIntegerField(
-        verbose_name=_("Payment per time"), help_text=_("Amount of item received each time the labor is performed")
+    # Note that payment_product is unusual because it is normally set using a label in Column A in the BSS,
+    # and so will have the same value for every Livelihood Activity. It could be considered part of the
+    # Livelihood Strategy rather than the individual Livelihood Activity, but it is the only example of an
+    # attribute that is logically part of the Livelihood Strategy but only for applies to a specific
+    # strategy type. We have included it in the PaymentInKind LivelihoodActivity for now, because many
+    # Livelihood Activity subclasses have additional attributes.
+    payment_product = models.ForeignKey(
+        ClassifiedProduct,
+        db_column="payment_product_code",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        verbose_name=_("Payment Product"),
+        help_text=_("Product provided as payment, typically a staple food item in exchange for labor"),
+        related_name="payments_in_kind",
+    )
+    # Production calculation/validation is `payment_per_time * people_per_household * times_per_month * months_per_year`
+    payment_per_time = models.FloatField(
+        blank=True,
+        null=True,  # Not required if people_per_household or times_per_month is null
+        validators=[common_models.validate_positive],
+        verbose_name=_("Payment per time"),
+        help_text=_("Amount of item received each time the labor is performed"),
     )
     people_per_household = models.PositiveSmallIntegerField(
-        verbose_name=_("People per household"), help_text=_("Number of household members who perform the labor")
+        blank=True,
+        null=True,
+        verbose_name=_("People per household"),
+        help_text=_("Number of household members who perform the labor"),
     )
     # This is a float field because data may be captured as "once per week",
     # which equates to "52 per year", which is "4.33 per month".
     times_per_month = models.FloatField(blank=True, null=True, verbose_name=_("Labor per month"))
     months_per_year = models.PositiveSmallIntegerField(
-        verbose_name=_("Months per year"), help_text=_("Number of months in a year that the labor is performed")
+        blank=True,
+        null=True,
+        verbose_name=_("Months per year"),
+        help_text=_("Number of months in a year that the labor is performed"),
     )
     times_per_year = models.PositiveSmallIntegerField(
+        blank=True,
+        null=True,
         verbose_name=_("Times per year"),
         help_text=_("Number of times in a year that the labor is performed"),
     )
 
+    def clean(self):
+        # payment_per_time is only required if people_per_household and times_per_month are provided
+        if self.people_per_household and self.times_per_month and not self.payment_per_time:
+            raise ValidationError(
+                _("Payment per time is required if people per household and times per month are provided")
+            )
+        super().clean()
+
     def validate_quantity_produced(self):
         if (
-            self.quantity_produced
-            and self.quantity_produced
-            != self.payment_per_time * self.people_per_household * self.times_per_month * self.months_per_year
+            self.quantity_produced is not None
+            and self.payment_per_time is not None
+            and self.people_per_household is not None
+            and self.times_per_month is not None
+            and self.months_per_year is not None
         ):
-            raise ValidationError(
-                _(
-                    "Quantity produced for Payment In Kind must be payment per time * number of people * labor per month * months per year"  # NOQA: E501
+            if not math.isclose(
+                self.quantity_produced,
+                self.payment_per_time * self.people_per_household * self.times_per_month * self.months_per_year,
+            ):
+                raise ValidationError(
+                    _(
+                        "Quantity produced for Payment In Kind must be payment per time * number of people * labor per month * months per year"  # NOQA: E501
+                    )
                 )
-            )
 
     class Meta:
         verbose_name = LivelihoodStrategyType.PAYMENT_IN_KIND.label
@@ -1628,8 +2501,11 @@ class ReliefGiftOther(LivelihoodActivity):
 
     # Production calculation /validation is `unit_of_measure * unit_multiple * times_per_year`
     # Also used for the number of children receiving school meals.
-    unit_multiple = models.PositiveSmallIntegerField(
-        verbose_name=_("Unit Multiple"), help_text=_("Multiple of the unit of measure received each time")
+    unit_multiple = models.FloatField(
+        blank=True,
+        null=True,
+        verbose_name=_("Unit Multiple"),
+        help_text=_("Multiple of the unit of measure received each time"),
     )
     # This is a float field because data may be captured as "once per week",
     # which equates to "52 per year", which is "4.33 per month".
@@ -1643,14 +2519,18 @@ class ReliefGiftOther(LivelihoodActivity):
         help_text=_("Number of months in a year that the item is received"),
     )
     times_per_year = models.PositiveSmallIntegerField(
-        verbose_name=_("Times per year"), help_text=_("Number of times in a year that the item is received")
+        blank=True,
+        null=True,
+        verbose_name=_("Times per year"),
+        help_text=_("Number of times in a year that the item is received"),
     )
 
     def validate_quantity_produced(self):
-        if self.quantity_produced != self.unit_multiple * self.times_per_year:
-            raise ValidationError(
-                _("Quantity produced for Relief, Gifts, Other must be amount received * times per year")
-            )
+        if self.quantity_produced is not None and self.unit_multiple is not None and self.times_per_year is not None:
+            if not math.isclose(self.quantity_produced, self.unit_multiple * self.times_per_year):
+                raise ValidationError(
+                    _("Quantity produced for Relief, Gifts, Other must be amount received * times per year")
+                )
 
     class Meta:
         verbose_name = LivelihoodStrategyType.RELIEF_GIFT_OTHER.label
@@ -1711,8 +2591,12 @@ class OtherCashIncome(LivelihoodActivity):
     # However, some other income (e.g. Remittances) just has a number of times per year and is not calculated from
     # people_per_household, etc. Therefore those fields must be nullable, and we must store the total number of times
     # per year as a separate field
-    payment_per_time = models.PositiveSmallIntegerField(
-        verbose_name=_("Payment per time"), help_text=_("Amount of money received each time the labor is performed")
+    payment_per_time = models.FloatField(
+        blank=True,
+        null=True,  # Not required if people_per_household or times_per_month is null
+        validators=[common_models.validate_positive],
+        verbose_name=_("Payment per time"),
+        help_text=_("Amount of money received each time the labor is performed"),
     )
     people_per_household = models.PositiveSmallIntegerField(
         verbose_name=_("People per household"),
@@ -1730,25 +2614,40 @@ class OtherCashIncome(LivelihoodActivity):
         help_text=_("Number of months in a year that the labor is performed"),
     )
     times_per_year = models.PositiveSmallIntegerField(
+        blank=True,
+        null=True,
         verbose_name=_("Times per year"),
         help_text=_("Number of times in a year that the income is received"),
     )
 
+    def clean(self):
+        # payment_per_time is only required if people_per_household and times_per_month are provided
+        if self.people_per_household and self.times_per_month and not self.payment_per_time:
+            raise ValidationError(
+                _("Payment per time is required if people per household and times per month are provided")
+            )
+        super().clean()
+
     def validate_income(self):
         if (
-            self.people_per_household
-            and self.income
-            != self.payment_per_time * self.people_per_household * self.times_per_month * self.months_per_year
+            self.people_per_household is not None
+            and self.income is not None
+            and self.payment_per_time is not None
+            and self.times_per_month is not None
+            and self.months_per_year is not None
         ):
-            raise ValidationError(
-                _(
-                    "Quantity produced for Other Cash Income must be payment per time * number of people * labor per month * months per year"  # NOQA: E501
+            if not math.isclose(
+                self.income,
+                self.payment_per_time * self.people_per_household * self.times_per_month * self.months_per_year,
+            ):
+                raise ValidationError(
+                    _(
+                        "Quantity produced for Other Cash Income must be payment per time * number of people * labor per month * months per year"  # NOQA: E501
+                    )
                 )
-            )
-        if self.income != self.payment_per_time * self.times_per_year:
-            raise ValidationError(
-                _("Quantity produced for Other Cash Income must be payment per time * times per year")
-            )
+        elif self.income is not None and self.payment_per_time is not None and self.times_per_year is not None:
+            if not math.isclose(self.income, self.payment_per_time * self.times_per_year):
+                raise ValidationError(_("Income for 'Other Cash Income' must be payment per time * times per year"))
 
     def calculate_fields(self):
         self.times_per_year = self.people_per_household * self.times_per_month * self.months_per_year
@@ -1771,7 +2670,7 @@ class OtherPurchase(LivelihoodActivity):
     # individual fields must be nullable
     # Do we need this, or can we use combined units of measure like FDW, e.g. 5kg
     # NIO93 Row B422 tia = 2.5kg
-    unit_multiple = models.PositiveSmallIntegerField(
+    unit_multiple = models.FloatField(
         blank=True,
         null=True,
         verbose_name=_("Unit Multiple"),
@@ -1787,21 +2686,40 @@ class OtherPurchase(LivelihoodActivity):
         help_text=_("Number of months in a year that the product is purchased"),
     )
     times_per_year = models.PositiveSmallIntegerField(
+        blank=True,
+        null=True,
         verbose_name=_("Times per year"),
         help_text=_("Number of times in a year that the product is purchased"),
     )
 
     def validate_expenditure(self):
-        if (
-            self.times_per_month
-            and self.months_per_year
-            and self.times_per_month * self.months_per_year != self.times_per_year
-        ):
-            raise ValidationError(_("Times per year must be times per month * months per year"))
-        if self.expenditure != self.price * self.unit_multiple * self.times_per_year:
-            raise ValidationError(
-                _("Expenditure for Other Purchases must be price * unit multiple * purchases per year")
-            )
+        errors = []
+        if self.times_per_month is not None and self.months_per_year is not None:
+            expected_times_per_year = self.times_per_month * self.months_per_year
+            if self.times_per_year is not None and not math.isclose(self.times_per_year, expected_times_per_year):
+                errors.append(
+                    _(
+                        "Times per year must be times per month * months per year. Expected: %(expected)s, Found: %(found)s"
+                    )
+                    % {
+                        "expected": expected_times_per_year,
+                        "found": self.times_per_year,
+                    }
+                )
+        if self.price is not None and self.unit_multiple is not None and self.times_per_year is not None:
+            expected_expenditure = self.price * self.unit_multiple * self.times_per_year
+            if self.expenditure is not None and not math.isclose(self.expenditure, expected_expenditure):
+                errors.append(
+                    _(
+                        "Expenditure for Other Purchases must be price * unit multiple * purchases per year. Expected: %(expected)s, Found: %(found)s"
+                    )
+                    % {
+                        "expected": expected_expenditure,
+                        "found": self.expenditure,
+                    }
+                )
+        if errors:
+            raise ValidationError(errors)
 
     class Meta:
         verbose_name = LivelihoodStrategyType.OTHER_PURCHASE.label
@@ -1846,10 +2764,10 @@ class SeasonalActivity(common_models.Model):
     # livelihood strategies for Sheep Milk Production, Sheep Butter Production,
     # Sheep Livestock Production, and Sheep Sales would all be related. The BSS
     # doesn't currently makes these links explicit, and so we haven't added the
-    # necessary ManyToManyFieldas yet.
+    # necessary ManyToManyField as yet.
     livelihood_zone_baseline = models.ForeignKey(
         LivelihoodZoneBaseline,
-        on_delete=models.RESTRICT,
+        on_delete=models.CASCADE,
         related_name="baseline_seasonal_activities",
         verbose_name=_("Livelihood Zone Baseline"),
     )
@@ -2343,18 +3261,31 @@ class ExpandabilityFactor(models.Model):
     wealth_group = models.ForeignKey(WealthGroup, on_delete=models.RESTRICT, verbose_name=_("Wealth Group"))
 
     # @TODO after review of the representation of expandability in the LIAS, make these percentages if appropriate
-    percentage_produced = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Produced"))
-    percentage_sold = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Sold/Exchanged"))
-    percentage_other_uses = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Other Uses"))
+    # All percentages are stored as decimal percentages, e.g. 0.25 for 25%.
+    percentage_produced = models.FloatField(
+        blank=True, null=True, validators=[MinValueValidator(0)], verbose_name=_("Quantity Produced")
+    )
+    percentage_sold = models.FloatField(
+        blank=True, null=True, validators=[MinValueValidator(0)], verbose_name=_("Quantity Sold/Exchanged")
+    )
+    percentage_other_uses = models.FloatField(
+        blank=True, null=True, validators=[MinValueValidator(0)], verbose_name=_("Quantity Other Uses")
+    )
     # Can normally be calculated / validated as `quantity_received - quantity_sold - quantity_other_uses`
-    percentage_consumed = models.PositiveIntegerField(blank=True, null=True, verbose_name=_("Quantity Consumed"))
+    percentage_consumed = models.FloatField(
+        blank=True, null=True, validators=[MinValueValidator(0)], verbose_name=_("Quantity Consumed")
+    )
 
     # Can be calculated / validated as `quantity_sold * price` for livelihood strategies that involve the sale of
     # a proportion of the household's own production.
-    percentage_income = models.FloatField(blank=True, null=True, help_text=_("Income"))
+    percentage_income = models.FloatField(
+        blank=True, null=True, validators=[MinValueValidator(0)], verbose_name=_("Income")
+    )
     # Can be calculated / validated as `quantity_consumed * price` for livelihood strategies that involve the purchase
     # of external goods or services.
-    percentage_expenditure = models.FloatField(blank=True, null=True, help_text=_("Expenditure"))
+    percentage_expenditure = models.FloatField(
+        blank=True, null=True, validators=[MinValueValidator(0)], verbose_name=_("Expenditure")
+    )
 
     # Sheet G contains some texts that seems describing where data is coming from, mostly 'Summ' sheet
     remark = models.TextField(max_length=255, verbose_name=_("Remark"), null=True, blank=True)

@@ -6,304 +6,245 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-03-21 07:17+0000\n"
+"POT-Creation-Date: 2026-03-27 10:51+0000\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 "
 "&& n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5;\n"
 
-#: apps/metadata/apps.py:8
 msgid "metadata"
 msgstr "انها ميتا"
 
-#: apps/metadata/models.py:23
 msgid "Code"
 msgstr "شفرة"
 
-#: apps/metadata/models.py:31
 msgid "Ordering"
 msgstr "ترتيب"
 
-#: apps/metadata/models.py:32
 msgid ""
 "The order to display the items in when sorting by this field, if not obvious."
 msgstr "ترتيب عرض العناصر عند الفرز حسب هذا الحقل ، إن لم يكن واضحًا."
 
-#: apps/metadata/models.py:37 apps/metadata/models.py:222
-#: apps/metadata/models.py:333
 msgid "aliases"
 msgstr "اسماء مستعارة"
 
-#: apps/metadata/models.py:38
 msgid "A list of alternate names for the object."
 msgstr "قائمة الأسماء البديلة للكائن."
 
-#: apps/metadata/models.py:75
+msgid "Color"
+msgstr ""
+
+msgid "Color hex value code for the Livelihood Category."
+msgstr ""
+
 msgid "Livelihood Category"
 msgstr "فئة رزق"
 
-#: apps/metadata/models.py:76
 msgid "Livelihood Categories"
 msgstr "فئات رزق"
 
-#: apps/metadata/models.py:88
+#, fuzzy
+#| msgid "Wealth Characteristic"
+msgid "Characteristic Group"
+msgstr "سمة الثروة"
+
+#, fuzzy
+#| msgid "Wealth Characteristics"
+msgid "Characteristic Groups"
+msgstr "خصائص الثروة"
+
 msgid "Numeric"
 msgstr "رقمي"
 
-#: apps/metadata/models.py:89
 msgid "String"
 msgstr "خيط"
 
-#: apps/metadata/models.py:90
 msgid "Boolean"
 msgstr "منطقية"
 
-#: apps/metadata/models.py:95
 msgid "Has Product?"
 msgstr "لديه المنتج؟"
 
-#: apps/metadata/models.py:97
 msgid ""
 "Does a value for this characteristic also require a product? If True, then "
 "aliases may contain a <product> placeholder."
 msgstr "هل تتطلب قيمة هذه الخاصية أيضًا منتجًا؟"
 
-#: apps/metadata/models.py:103
 msgid "Has Unit Of Measure?"
 msgstr "لديها وحدة القياس؟"
 
-#: apps/metadata/models.py:105
 msgid ""
 "Does a value for this characteristic also require a unit_of_measure? If "
 "True, then aliases may contain a <unit_of_measure> placeholder."
 msgstr "هل تتطلب قيمة هذه الخاصية أيضًا وحدة unit_of_measure؟"
 
-#: apps/metadata/models.py:112
 msgid "Variable Type"
 msgstr "نوع متغير"
 
-#: apps/metadata/models.py:116
 msgid "Whether the field is numeric, character, boolean, etc."
 msgstr "ما إذا كان الحقل رقميًا ، شخصية ، منطقية ، إلخ."
 
-#: apps/metadata/models.py:120
+msgid ""
+"Optional grouping for characteristics, such as 'Population', 'Income', "
+"'Land', 'Livestock', 'Other assets'"
+msgstr ""
+
 msgid "Wealth Characteristic"
 msgstr "سمة الثروة"
 
-#: apps/metadata/models.py:121
 msgid "Wealth Characteristics"
 msgstr "خصائص الثروة"
 
-#: apps/metadata/models.py:128
 msgid "Milk Production"
 msgstr "إنتاج الحليب"
 
-#: apps/metadata/models.py:129
 msgid "Butter Production"
 msgstr "إنتاج الزبدة"
 
-#: apps/metadata/models.py:130
 msgid "Meat Production"
 msgstr "إنتاج اللحوم"
 
-#: apps/metadata/models.py:131
 msgid "Livestock Sale"
 msgstr "بيع الماشية"
 
-#: apps/metadata/models.py:132
 msgid "Crop Production"
 msgstr "إنتاج المحاصيل"
 
-#: apps/metadata/models.py:133
 msgid "Food Purchase"
 msgstr "شراء الطعام"
 
-#: apps/metadata/models.py:134
 msgid "Payment in Kind"
 msgstr "دفع عيني"
 
-#: apps/metadata/models.py:135
 msgid "Relief, Gift or Other Food"
 msgstr "الإغاثة أو الهدية أو أي طعام آخر"
 
-#: apps/metadata/models.py:136
 msgid "Hunting"
 msgstr "الصيد"
 
-#: apps/metadata/models.py:137 apps/metadata/models.py:169
 msgid "Fishing"
 msgstr "صيد السمك"
 
-#: apps/metadata/models.py:138
 msgid "Wild Food Gathering"
 msgstr "جمع الطعام البري"
 
-#: apps/metadata/models.py:139
 msgid "Other Cash Income"
 msgstr "دخل نقدي آخر"
 
-#: apps/metadata/models.py:140
 msgid "Other Purchase"
 msgstr "شراء آخر"
 
-#: apps/metadata/models.py:145
 msgid "Baseline"
 msgstr "حدود"
 
-#: apps/metadata/models.py:146
 msgid "Response"
 msgstr "إجابة"
 
-#: apps/metadata/models.py:166
 msgid "Crops"
 msgstr "المحاصيل"
 
-#: apps/metadata/models.py:167
 msgid "Livestock"
 msgstr "الماشية"
 
-#: apps/metadata/models.py:168
 msgid "Gardening"
 msgstr "الحدائق"
 
-#: apps/metadata/models.py:172
 msgid "Activity Category"
 msgstr "فئة النشاط"
 
-#: apps/metadata/models.py:176
 msgid "Seasonal Activity Type"
 msgstr "نوع النشاط الموسمي"
 
-#: apps/metadata/models.py:177
 msgid "Seasonal Activity Types"
 msgstr "أنواع النشاط الموسمية"
 
-#: apps/metadata/models.py:189
 msgid "Wealth Group Category"
 msgstr "فئة مجموعة الثروة"
 
-#: apps/metadata/models.py:190
 msgid "Wealth Group Categories"
 msgstr "فئات مجموعة الثروة"
 
-#: apps/metadata/models.py:206
 msgid "country"
 msgstr "دولة"
 
-#: apps/metadata/models.py:214
 msgid "code"
 msgstr "شفرة"
 
-#: apps/metadata/models.py:215
 msgid "An identifier for the Unit, such as the FNID"
 msgstr "معرف للوحدة ، مثل FNID"
 
-#: apps/metadata/models.py:217
 msgid "full name"
 msgstr "الاسم الكامل"
 
-#: apps/metadata/models.py:223
 msgid "A list of alternate names for the Market."
 msgstr "قائمة الأسماء البديلة للسوق."
 
-#: apps/metadata/models.py:225
 msgid "geography"
 msgstr "جغرافية"
 
-#: apps/metadata/models.py:247
 msgid "Market"
 msgstr "سوق"
 
-#: apps/metadata/models.py:248
 msgid "Markets"
 msgstr "الأسواق"
 
-#: apps/metadata/models.py:261
 msgid "Hazard Category"
 msgstr "فئة الخطر"
 
-#: apps/metadata/models.py:262
 msgid "Hazard Categories"
 msgstr "فئات الخطر"
 
-#: apps/metadata/models.py:277
 msgid "Harvest"
 msgstr "محصول"
 
-#: apps/metadata/models.py:278
 msgid "Lean"
 msgstr "نحيف"
 
-#: apps/metadata/models.py:279
 msgid "Wet"
 msgstr "مبتل"
 
-#: apps/metadata/models.py:280
 msgid "Dry"
 msgstr "جاف"
 
-#: apps/metadata/models.py:281
 msgid "Mild"
 msgstr "خفيف"
 
-#: apps/metadata/models.py:282
 msgctxt "season"
 msgid "Spring"
 msgstr "ربيع"
 
-#: apps/metadata/models.py:283
 msgid "Summer"
 msgstr "صيف"
 
-#: apps/metadata/models.py:284
 msgctxt "season"
 msgid "Fall"
 msgstr "يسقط"
 
-#: apps/metadata/models.py:285
 msgid "Winter"
 msgstr "شتاء"
 
-#: apps/metadata/models.py:286
 msgid "Monsoon"
 msgstr "الرياح الموسمية"
 
-#: apps/metadata/models.py:289
 msgid "Start"
 msgstr "يبدأ"
 
-#: apps/metadata/models.py:290
 msgid "End"
 msgstr "نهاية"
 
-#: apps/metadata/models.py:292
 msgid "Country"
 msgstr "دولة"
 
-#: apps/metadata/models.py:295 apps/metadata/tests/test_admin.py:87
-#: apps/metadata/viewsets.py:29 apps/metadata/viewsets.py:30
-#: apps/metadata/viewsets.py:31 apps/metadata/viewsets.py:32
-#: apps/metadata/viewsets.py:33 apps/metadata/viewsets.py:154
-#: apps/metadata/viewsets.py:155 apps/metadata/viewsets.py:156
-#: apps/metadata/viewsets.py:157 apps/metadata/viewsets.py:158
 msgid "Name"
 msgstr "اسم"
 
-#: apps/metadata/models.py:296 apps/metadata/viewsets.py:35
-#: apps/metadata/viewsets.py:38 apps/metadata/viewsets.py:41
-#: apps/metadata/viewsets.py:44 apps/metadata/viewsets.py:47
-#: apps/metadata/viewsets.py:160 apps/metadata/viewsets.py:163
-#: apps/metadata/viewsets.py:166 apps/metadata/viewsets.py:169
-#: apps/metadata/viewsets.py:172
 msgid "Description"
 msgstr "وصف"
 
-#: apps/metadata/models.py:300
 msgid "Season Type"
 msgstr "نوع الموسم"
 
-#: apps/metadata/models.py:302
 msgid ""
 "Refers to the classification of a specific time of year based on weather "
 "patterns, temperature, and other factors"
@@ -311,19 +252,21 @@ msgstr ""
 "يشير إلى تصنيف وقت محدد من السنة بناءً على أنماط الطقس ودرجة الحرارة وعوامل "
 "أخرى"
 
-#: apps/metadata/models.py:310
+msgid "Purpose"
+msgstr ""
+
+msgid "The Livelihood Strategy Type that this Season is relevant for."
+msgstr ""
+
 msgid "Start Day"
 msgstr "تبدأ اليوم"
 
-#: apps/metadata/models.py:313
 msgid "End Day"
 msgstr "نهاية اليوم"
 
-#: apps/metadata/models.py:319
 msgid "Year alignment"
 msgstr "محاذاة العام"
 
-#: apps/metadata/models.py:321
 msgid ""
 "Whether a label for a season that contains a single year refers to the start "
 "year or the end year for that Season."
@@ -331,47 +274,167 @@ msgstr ""
 "ما إذا كانت التسمية لموسم تحتوي على سنة واحدة تشير إلى سنة البدء أو السنة "
 "النهائية لهذا الموسم."
 
-#: apps/metadata/models.py:327
 msgid "Order"
 msgstr "طلب"
 
-#: apps/metadata/models.py:328
 msgid "The order of the Season within the Season Year"
 msgstr "ترتيب الموسم خلال العام الموسم"
 
-#: apps/metadata/models.py:334
 msgid "A list of alternate names for the Season."
 msgstr "قائمة الأسماء البديلة للكائن."
 
-#: apps/metadata/models.py:343
 msgid "Season"
 msgstr "موسم"
 
-#: apps/metadata/models.py:344
 msgid "Seasons"
 msgstr "مواسم"
 
-#: apps/metadata/viewsets.py:29 apps/metadata/viewsets.py:35
-#: apps/metadata/viewsets.py:154 apps/metadata/viewsets.py:160
+msgid "Processed by Regular Expression"
+msgstr ""
+
+msgid "Override automatically recognized metadata"
+msgstr ""
+
+msgid "Under Discussion"
+msgstr ""
+
+msgid "Correct the BSS"
+msgstr ""
+
+msgid "Ignore this label and associated data in the row"
+msgstr ""
+
+#, fuzzy
+#| msgid "Livelihood Category"
+msgid "Livelihood Activity"
+msgstr "فئة رزق"
+
+#, fuzzy
+#| msgid "Wild Food Gathering"
+msgid "Wild Foods, Fishing or Hunting"
+msgstr "جمع الطعام البري"
+
+#, fuzzy
+#| msgid "Livelihood Category"
+msgid "Livelihood Summary"
+msgstr "فئة رزق"
+
+#, fuzzy
+#| msgid "Activity Category"
+msgid "Activity Label"
+msgstr "فئة النشاط"
+
+#, fuzzy
+#| msgid "Seasonal Activity Type"
+msgid "Activity Type"
+msgstr "نوع النشاط الموسمي"
+
+msgid ""
+"The type of Livelihood Activity the label is for: either a general "
+"Livelihood Activity, or an Other Cash Income activity from the 'Data2' "
+"worksheet, or a Wild Foods, Fishing or Hunting activity from the 'Data3' "
+"worksheet, or a label from the 'Summary' section of the 'Data' worksheet."
+msgstr ""
+
+msgid "Status"
+msgstr ""
+
+#, fuzzy
+#| msgid "Start"
+msgid "Is Start?"
+msgstr "يبدأ"
+
+msgid ""
+"Indicates whether this Activity Label marks the start of a new Livelihood "
+"Strategy"
+msgstr ""
+
+#, fuzzy
+#| msgid "Milk Production"
+msgid "Livestock Production"
+msgstr "إنتاج الحليب"
+
+#, fuzzy
+#| msgid "Variable Type"
+msgid "Strategy Type"
+msgstr "نوع متغير"
+
+msgid ""
+"The type of livelihood strategy, such as crop production, or wild food "
+"gathering."
+msgstr ""
+
+#, fuzzy
+#| msgid "Has Product?"
+msgid "Product"
+msgstr "لديه المنتج؟"
+
+#, fuzzy
+#| msgid "Meat Production"
+msgid "Payment Product"
+msgstr "إنتاج اللحوم"
+
+#, fuzzy
+#| msgid "Has Unit Of Measure?"
+msgid "Unit of Measure"
+msgstr "لديها وحدة القياس؟"
+
+msgid "Currency"
+msgstr ""
+
+msgid "Additional Identifier"
+msgstr ""
+
+msgid "Attribute"
+msgstr ""
+
+msgid "Notes"
+msgstr ""
+
+#, fuzzy
+#| msgid "Activity Category"
+msgid "Activity Labels"
+msgstr "فئة النشاط"
+
+msgid "Complete"
+msgstr ""
+
+#, fuzzy
+#| msgid "Wealth Characteristic"
+msgid "Wealth Characteristic Label"
+msgstr "سمة الثروة"
+
+#, fuzzy
+#| msgid "Wealth Characteristics"
+msgid "Wealth Characteristics Labels"
+msgstr "خصائص الثروة"
+
+msgid "Filter"
+msgstr ""
+
+msgid "Start typing to narrow filter..."
+msgstr ""
+
+msgid "Hide counts"
+msgstr ""
+
+msgid "Show counts"
+msgstr ""
+
+msgid "Clear all filters"
+msgstr ""
+
 msgid "English"
 msgstr "الإنجليزيّة"
 
-#: apps/metadata/viewsets.py:30 apps/metadata/viewsets.py:38
-#: apps/metadata/viewsets.py:155 apps/metadata/viewsets.py:163
 msgid "French"
 msgstr "الفرنسيّة"
 
-#: apps/metadata/viewsets.py:31 apps/metadata/viewsets.py:41
-#: apps/metadata/viewsets.py:156 apps/metadata/viewsets.py:166
 msgid "Spanish"
 msgstr "الإسبانيّة"
 
-#: apps/metadata/viewsets.py:32 apps/metadata/viewsets.py:44
-#: apps/metadata/viewsets.py:157 apps/metadata/viewsets.py:169
 msgid "Arabic"
 msgstr "العربيّة"
 
-#: apps/metadata/viewsets.py:33 apps/metadata/viewsets.py:47
-#: apps/metadata/viewsets.py:158 apps/metadata/viewsets.py:172
 msgid "Portuguese"
 msgstr "البرتغاليّة"

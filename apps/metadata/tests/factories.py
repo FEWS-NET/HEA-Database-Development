@@ -1,7 +1,13 @@
 import factory
 
 from common.tests.factories import CountryFactory
-from metadata.models import Market, Season, SeasonalActivityType, WealthCharacteristic
+from metadata.models import (
+    CharacteristicGroup,
+    Market,
+    Season,
+    SeasonalActivityType,
+    WealthCharacteristic,
+)
 
 
 class LivelihoodCategoryFactory(factory.django.DjangoModelFactory):
@@ -58,6 +64,24 @@ class WealthGroupCategoryFactory(factory.django.DjangoModelFactory):
     description_fr = factory.LazyAttribute(lambda o: f"{o.name_fr} Wealth Group Category Description fr")
 
 
+class CharacteristicGroupFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = CharacteristicGroup
+        django_get_or_create = ("code",)
+
+    code = factory.Iterator(["Population", "Income", "Land", "Livestock", "Other assets"])
+    name_en = factory.LazyAttribute(lambda o: f"{o.code}")
+    name_pt = factory.LazyAttribute(lambda o: f"{o.code} pt")
+    name_es = factory.LazyAttribute(lambda o: f"{o.code} es")
+    name_fr = factory.LazyAttribute(lambda o: f"{o.code} fr")
+    name_ar = factory.LazyAttribute(lambda o: f"{o.code} ar")
+    description_en = factory.LazyAttribute(lambda o: f"{o.code} Description en")
+    description_pt = factory.LazyAttribute(lambda o: f"{o.code} Description pt")
+    description_es = factory.LazyAttribute(lambda o: f"{o.code} Description es")
+    description_ar = factory.LazyAttribute(lambda o: f"{o.code} Description ar")
+    description_fr = factory.LazyAttribute(lambda o: f"{o.code} Description fr")
+
+
 class WealthCharacteristicFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = "metadata.WealthCharacteristic"
@@ -73,6 +97,7 @@ class WealthCharacteristicFactory(factory.django.DjangoModelFactory):
     )
     has_product = factory.Iterator([False, True])
     has_unit_of_measure = factory.Iterator([False, True])
+    characteristic_group = factory.SubFactory(CharacteristicGroupFactory)
     name_en = factory.LazyAttribute(lambda o: f"{o.code} Wealth Characteristic en")
     name_pt = factory.LazyAttribute(lambda o: f"{o.code} Wealth Characteristic pt")
     name_es = factory.LazyAttribute(lambda o: f"{o.code} Wealth Characteristic es")
@@ -114,7 +139,7 @@ class SeasonalActivityTypeFactory(factory.django.DjangoModelFactory):
 class SeasonFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Season
-        django_get_or_create = ("country", "name_en")
+        django_get_or_create = ("country", "name_en", "purpose")
 
     name_en = factory.LazyAttributeSequence(lambda o, n: f"{o.country.iso_en_ro_name}, Season {n}")
     name_es = factory.LazyAttributeSequence(lambda o, n: f"{o.country.iso_en_ro_name}, Season {n} es")
@@ -128,6 +153,7 @@ class SeasonFactory(factory.django.DjangoModelFactory):
     description_ar = factory.LazyAttribute(lambda o: f"Description {o.name_ar} {o.season_type}")
     country = factory.SubFactory(CountryFactory)
     season_type = factory.Iterator([Season.SeasonType.WET, Season.SeasonType.DRY, Season.SeasonType.MILD])
+    purpose = None
     order = factory.Iterator([1, 2, 3])
     start = factory.Iterator((25, 95, 200))
     end = factory.Iterator((95, 199, 360))
