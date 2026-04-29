@@ -1,7 +1,13 @@
 from dal import autocomplete
 from django.contrib.auth.mixins import LoginRequiredMixin
 
-from .models import Community, LivelihoodStrategy, LivelihoodZone, LivelihoodZoneBaseline, WealthGroup
+from .models import (
+    Community,
+    LivelihoodStrategy,
+    LivelihoodZone,
+    LivelihoodZoneBaseline,
+    WealthGroup,
+)
 
 
 class WealthGroupAutocomplete(LoginRequiredMixin, autocomplete.Select2QuerySetView):
