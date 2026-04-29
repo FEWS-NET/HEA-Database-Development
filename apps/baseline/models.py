@@ -870,6 +870,9 @@ class WealthGroup(common_models.Model):
         )
 
         df = pd.DataFrame.from_records(livelihood_protection_qs)
+        if not df.empty:
+            for col in ["expenditure", "percentage_allocation_to_basket", "household_size", "percentage_kcals"]:
+                df[col] = pd.to_numeric(df[col], errors="coerce")
         if df.empty:
             livelihoods_protection_expenditure = 0
             livelihoods_protection_percentage_kcals = 0
