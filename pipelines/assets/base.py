@@ -43,7 +43,9 @@ from baseline.models import LivelihoodZoneBaseline  # NOQA: E402
 from common.lookups import CountryLookup  # NOQA: E402
 from metadata.models import ActivityLabel, WealthCharacteristicLabel  # NOQA: E402
 
-# Map of values in cell A3 of the WB, Data, Data2, and Data3 worksheets to the language of the BSS
+# Map of cell values in Column A to the language of the BSS.
+# For Data/WB/Exp sheets these appear in row 3 (or row 2 for Exp factors).
+# For the Seas Cal sheet the worksheet title in row 1 is used instead.
 LANGS = {
     "wealth group": "en",
     "group de richesse": "fr",
@@ -53,6 +55,13 @@ LANGS = {
     "expandability parameters": "en",
     "paramètres d'extensibilité (expandability factors)": "fr",
     "parametres d'utilisation maximale (expandability)": "fr",
+    # Seas Cal worksheet titles (row 1)
+    "seasonal calendar": "en",
+    "calendrier saisonnier": "fr",
+    "calendrier saisonier": "fr",  # typo variant found in some BSSs
+    # Seas Cal row-3 col-A label in French BSSs that omit the title from A1
+    "activités/évenements": "fr",
+    "activites/evenements": "fr",  # no-accents variant
 }
 
 # List of labels that indicate the start of the summary columns from row 3 in the Data, Data, and Data3 worksheets
@@ -320,6 +329,7 @@ def get_bss_dataframe(
     end_col: str | None = None,
     num_summary_cols: int | None = None,
     fill_blank_rows: bool = True,
+    start_col_fallbacks: list[str] | None = None,  # Extra columns to search when col A has no start string match
 ) -> Output[pd.DataFrame]:
     """
     Retrieve a worksheet from a BSS and return it as a DataFrame.
@@ -356,10 +366,20 @@ def get_bss_dataframe(
         num_summary_cols = df.loc[3, "B":end_col].dropna().nunique()
     end_col = df.columns[df.columns.get_loc(end_col) + num_summary_cols]
 
-    # Find the row index of the start of the Livelihood Activities or Wealth Group Characteristic Values
+    # Find the row index of the start of the Livelihood Activities or Wealth Group Characteristic Values.
+    # Some BSSs (e.g. French Seas Cal) place the village/site label in col B rather than col A, so fall
+    # back to the columns listed in start_col_fallbacks when the col A search yields nothing.
     start_row = get_index(start_strings, df.loc[1:, "A"])
+    if not start_row and start_col_fallbacks:
+        for fallback_col in start_col_fallbacks:
+            start_row = get_index(start_strings, df.loc[1:, fallback_col])
+            if start_row:
+                break
     if not start_row:
-        raise ValueError(f'No cell in Column A containing any of the start strings: {", ".join(start_strings)}')
+        searched_cols = ", ".join(["A"] + (start_col_fallbacks or []))
+        raise ValueError(
+            f"No cell in Column(s) {searched_cols} containing any of the start strings: {', '.join(start_strings)}"
+        )
 
     if end_strings:
         # Find the row before the first row that contains an end string
@@ -377,16 +397,17 @@ def get_bss_dataframe(
         # for rows that rely on copying down the label in column A from a previous row.
         end_row = df.index[-1]
 
-    # Find the language based on the value in cell A3 (or A2 for 'Exp factors')
+    # Find the language from Column A.  Data/WB sheets carry the marker in row 3 (or row 2 for
+    # Exp factors); the Seas Cal sheet carries it in row 1 as the worksheet title.
     lang = None
-    for row in [2, 3]:
+    for row in [1, 2, 3]:
         try:
             lang = LANGS[df.loc[row, "A"].strip().lower()]
         except (AttributeError, KeyError):
-            # There isn't a text label in the cell, or the label isn't LANGS
+            # There isn't a text label in the cell, or the label isn't in LANGS
             pass
     if not lang:
-        raise ValueError(f'No language could be identified from the labels {df.loc[2:3, "A"].tolist()} in Column A')
+        raise ValueError(f'No language could be identified from the labels {df.loc[1:3, "A"].tolist()} in Column A')
 
     # Filter to just the header rows (typically the Wealth Groups) and the main data (e.g. Livelihood Activities)
     df = pd.concat(
