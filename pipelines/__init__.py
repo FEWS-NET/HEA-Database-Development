@@ -50,12 +50,13 @@ from .assets.other_cash_income import (
 )
 from .assets.seasonal_calendar import (
     all_seasonal_calendar_labels_dataframe,
-    consolidated_seas_cal_fixtures,
-    imported_seas_cals,
+    imported_seasonal_calendars,
     seasonal_calendar_dataframe,
+    seasonal_calendar_fixture,
     seasonal_calendar_instances,
     seasonal_calendar_label_dataframe,
-    validated_seas_cal_instances,
+    seasonal_calendar_valid_instances,
+    summary_seasonal_calendar_labels_dataframe,
 )
 from .assets.wealth_characteristic import (
     all_wealth_characteristic_labels_dataframe,
@@ -154,10 +155,11 @@ defs = Definitions(
         seasonal_calendar_dataframe,
         seasonal_calendar_label_dataframe,
         all_seasonal_calendar_labels_dataframe,
+        summary_seasonal_calendar_labels_dataframe,
         seasonal_calendar_instances,
-        validated_seas_cal_instances,
-        consolidated_seas_cal_fixtures,
-        imported_seas_cals,
+        seasonal_calendar_valid_instances,
+        seasonal_calendar_fixture,
+        imported_seasonal_calendars,
     ],
     jobs=[
         update_metadata,

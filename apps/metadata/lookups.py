@@ -12,6 +12,7 @@ from .models import (
     LivelihoodCategory,
     ReferenceData,
     Season,
+    SeasonalActivityType,
     WealthCharacteristic,
     WealthGroupCategory,
 )
@@ -29,6 +30,10 @@ class ReferenceDataLookup(Lookup):
 
 class LivelihoodCategoryLookup(ReferenceDataLookup):
     model = LivelihoodCategory
+
+
+class SeasonalActivityTypeLookup(ReferenceDataLookup):
+    model = SeasonalActivityType
 
 
 class WealthCharacteristicLookup(ReferenceDataLookup):
