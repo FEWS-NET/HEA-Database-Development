@@ -4,21 +4,17 @@ from django.db import migrations, models
 
 
 def populate_annual_kcals_cost(apps, schema_editor):
-    schema_editor.execute(
-        """
+    schema_editor.execute("""
         UPDATE baseline_livelihoodzonebaseline
         SET _annual_kcals_cost = get_annual_kcals_cost(id, 'P')
-        """
-    )
+        """)
 
 
 def clear_annual_kcals_cost(apps, schema_editor):
-    schema_editor.execute(
-        """
+    schema_editor.execute("""
         UPDATE baseline_livelihoodzonebaseline
         SET _annual_kcals_cost = NULL
-        """
-    )
+        """)
 
 
 class Migration(migrations.Migration):
