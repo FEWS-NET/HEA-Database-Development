@@ -108,7 +108,7 @@ class LivelihoodZoneBaselineTestCase(TestCase):
         self.baseline.refresh_from_db()
         self.assertAlmostEqual(self.baseline.annual_kcals_cost, self.get_expected_annual_kcals_cost())
 
-    def test_livelihood_activity_superclass_resaves_baseline_on_commit(self):
+    def test_baseline_livelihood_activity_superclass_resaves_baseline_on_commit(self):
         with self.captureOnCommitCallbacks(execute=True):
             activity = BaselineLivelihoodActivity.objects.get(pk=self.main_staple_activity.pk)
             activity.price = 4
@@ -119,7 +119,7 @@ class LivelihoodZoneBaselineTestCase(TestCase):
         self.main_staple_activity.refresh_from_db()
         self.assertAlmostEqual(self.baseline.annual_kcals_cost, self.get_expected_annual_kcals_cost())
 
-    def test_baseline_livelihood_activity_superclass_resaves_baseline_on_commit(self):
+    def test_livelihood_activity_superclass_resaves_baseline_on_commit(self):
         with self.captureOnCommitCallbacks(execute=True):
             activity = LivelihoodActivity.objects.get(pk=self.main_staple_activity.pk)
             activity.price = 5

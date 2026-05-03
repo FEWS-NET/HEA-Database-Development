@@ -348,7 +348,7 @@ class LivelihoodZoneBaseline(common_models.Model):
         verbose_name=_("Currency"),
         help_text=_("Default currency for income or expenditure from Livelihood Activities within this Baseline."),
     )
-    # Derived country field - always set by calculate_fields()
+    # Derived field - always set by calculate_fields()
     _annual_kcals_cost = models.FloatField(
         blank=True,
         null=True,
@@ -459,6 +459,11 @@ class LivelihoodZoneBaseline(common_models.Model):
             exclude=[field.name for field in self._meta.fields if isinstance(field, models.ForeignKey)],
             validate_unique=False,
         )
+
+        # Make sure that _annual_kcals_cost is included in the update_fields if the update_fields argument is provided.
+        update_fields = kwargs.get("update_fields")
+        if update_fields is not None:
+            kwargs["update_fields"] = set(update_fields) | {"_annual_kcals_cost"}
         super().save(*args, **kwargs)
 
     def natural_key(self):

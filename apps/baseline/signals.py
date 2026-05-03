@@ -75,7 +75,7 @@ def refresh_baseline_after_livelihood_activity_change(sender, instance, **kwargs
     """
     Refresh the LivelihoodZoneBaseline when a FoodPurchase BaselineLivelihoodActivity is changed.
 
-    This forces the recalculation of the annual_kcals_cost for the Baseline. The calculation depends on Baseline\
+    This forces the recalculation of the annual_kcals_cost for the Baseline. The calculation depends on Baseline
     FoodPurchase activities so we only need to trigger the refresh for Activities that meet those criteria.
 
     Django doesn't fire signals for subclasses of a model, so we need to listen to LivelihoodActivity and
