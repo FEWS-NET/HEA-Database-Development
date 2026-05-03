@@ -381,6 +381,7 @@ class LivelihoodZoneBaselineViewSetTestCase(APITestCase):
             "population_source",
             "population_estimate",
             "currency",
+            "annual_kcals_cost",
         )
         self.assertCountEqual(
             response.json().keys(),

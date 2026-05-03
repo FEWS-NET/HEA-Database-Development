@@ -1,14 +1,12 @@
-from django.db.models import F, FloatField, Sum, Value
+from django.db.models import F, FloatField, Sum
 from django.db.models.functions import Coalesce
 from rest_framework import serializers
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
 
 from common.fields import translation_fields
 from common.serializers import AggregatingSerializer
-from metadata.models import WealthGroupCategory
 
 from .models import (
-    AnnualKcalsCost,
     BaselineLivelihoodActivity,
     BaselineWealthGroup,
     BaselineWealthGroupCharacteristicValue,
@@ -77,6 +75,8 @@ class LivelihoodZoneSerializer(serializers.ModelSerializer):
 
 
 class LivelihoodZoneBaselineSerializer(serializers.ModelSerializer):
+    annual_kcals_cost = serializers.FloatField(read_only=True)
+
     class Meta:
         model = LivelihoodZoneBaseline
         fields = (
@@ -100,6 +100,7 @@ class LivelihoodZoneBaselineSerializer(serializers.ModelSerializer):
             "valid_to_date",
             "population_source",
             "population_estimate",
+            "annual_kcals_cost",
         )
 
     livelihood_zone_name = serializers.CharField(source="livelihood_zone.name", read_only=True)
@@ -113,6 +114,8 @@ class LivelihoodZoneBaselineSerializer(serializers.ModelSerializer):
 
 
 class LivelihoodZoneBaselineGeoSerializer(GeoFeatureModelSerializer):
+    annual_kcals_cost = serializers.FloatField(read_only=True)
+
     class Meta:
         model = LivelihoodZoneBaseline
         fields = (
@@ -137,6 +140,7 @@ class LivelihoodZoneBaselineGeoSerializer(GeoFeatureModelSerializer):
             "valid_to_date",
             "population_source",
             "population_estimate",
+            "annual_kcals_cost",
         )
         geo_field = "geography"
         auto_bbox = True
@@ -1721,9 +1725,7 @@ class LivelihoodActivitySummarySerializer(AggregatingSerializer):
                     Coalesce(F("income"), 0)
                     / (
                         F("wealth_group__average_household_size")
-                        * AnnualKcalsCost(
-                            F("wealth_group__livelihood_zone_baseline_id"), Value(WealthGroupCategory.POOR)
-                        )
+                        * F("wealth_group__livelihood_zone_baseline___annual_kcals_cost")
                     )
                 )
             ),
@@ -1734,7 +1736,7 @@ class LivelihoodActivitySummarySerializer(AggregatingSerializer):
                 (
                     Coalesce(F("percentage_kcals"), 0)
                     * F("wealth_group__average_household_size")
-                    * AnnualKcalsCost(F("wealth_group__livelihood_zone_baseline_id"), Value(WealthGroupCategory.POOR))
+                    * F("wealth_group__livelihood_zone_baseline___annual_kcals_cost")
                 )
                 + Coalesce(F("income"), 0)
             ),
