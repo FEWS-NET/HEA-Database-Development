@@ -12,6 +12,7 @@ from rest_framework import routers
 from baseline.autocomplete import (
     CommunityAutocomplete,
     LivelihoodStrategyAutocomplete,
+    LivelihoodZoneAutocomplete,
     LivelihoodZoneBaselineAutocomplete,
     WealthGroupAutocomplete,
 )
@@ -146,6 +147,7 @@ urlpatterns = [
     ########## LOCALE INDEPENDENT PATHS go here. ##########
     path("autocomplete/wealthgroup/", WealthGroupAutocomplete.as_view(), name="wealthgroup-autocomplete"),
     path("autocomplete/community/", CommunityAutocomplete.as_view(), name="community-autocomplete"),
+    path("autocomplete/livelihoodzone/", LivelihoodZoneAutocomplete.as_view(), name="livelihoodzone-autocomplete"),
     path(
         "autocomplete/livelihoodzonebaseline/",
         LivelihoodZoneBaselineAutocomplete.as_view(),

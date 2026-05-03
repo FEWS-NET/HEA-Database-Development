@@ -870,6 +870,9 @@ class WealthGroup(common_models.Model):
         )
 
         df = pd.DataFrame.from_records(livelihood_protection_qs)
+        if not df.empty:
+            for col in ["expenditure", "percentage_allocation_to_basket", "household_size", "percentage_kcals"]:
+                df[col] = pd.to_numeric(df[col], errors="coerce")
         if df.empty:
             livelihoods_protection_expenditure = 0
             livelihoods_protection_percentage_kcals = 0
@@ -922,8 +925,10 @@ class WealthGroup(common_models.Model):
                 # the current Wealth Group
                 for column in poor_df.columns:
                     if column != "livelihood_strategy_id":
-                        merged[f"effective_{column}"] = merged[f"{column}_wealth_group"].combine_first(
-                            merged[f"{column}_poor"]
+                        wealth_group_values = merged[f"{column}_wealth_group"]
+                        poor_values = merged[f"{column}_poor"]
+                        merged[f"effective_{column}"] = wealth_group_values.where(
+                            wealth_group_values.notna(), poor_values
                         )
 
                 # Calculate the expenditure for the Basket by applying the
@@ -932,10 +937,14 @@ class WealthGroup(common_models.Model):
                 # was for the Poor Wealth Group the expenditure reflects the
                 # different household sizes.
                 merged["basket_expenditure"] = (
-                    merged["effective_expenditure"]
-                    * merged["effective_percentage_allocation_to_basket"]
-                    / merged["effective_household_size"]
-                    * self.average_household_size
+                    (
+                        merged["effective_expenditure"]
+                        * merged["effective_percentage_allocation_to_basket"]
+                        / merged["effective_household_size"]
+                        * self.average_household_size
+                    )
+                    if self.average_household_size
+                    else None
                 )
 
                 # For the percentage_kcals we can apply the effective_percentage_allocation_to_basket

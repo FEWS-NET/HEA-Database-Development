@@ -328,7 +328,7 @@ class LivelihoodProductCategoryFilterSet(filters.FilterSet):
     )
     livelihood_zone = django_filters.ModelChoiceFilter(
         field_name="baseline_livelihood_activity__livelihood_zone_baseline__livelihood_zone",
-        queryset=LivelihoodZone.objects.select_related("livelihood_zone"),
+        queryset=LivelihoodZone.objects.select_related("country"),
         widget=autocomplete.ModelSelect2(url="livelihoodzone-autocomplete"),
         label="Livelihood Zone",
     )
@@ -447,7 +447,7 @@ class WealthGroupFilterSet(filters.FilterSet):
     )
     livelihood_zone = django_filters.ModelChoiceFilter(
         field_name="livelihood_zone_baseline__livelihood_zone",
-        queryset=LivelihoodZone.objects.select_related("livelihood_zone"),
+        queryset=LivelihoodZone.objects.select_related("country"),
         widget=autocomplete.ModelSelect2(url="livelihoodzone-autocomplete"),
         label="Livelihood Zone",
     )
