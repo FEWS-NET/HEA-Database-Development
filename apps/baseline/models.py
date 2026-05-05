@@ -1786,11 +1786,18 @@ class LivelihoodActivity(common_models.Model):
         percentage_kcals = self.percentage_kcals or 0
         income = self.income or 0
         if self.wealth_group.average_household_size:
-            return (
-                percentage_kcals + (income / (self.wealth_group.average_household_size * annual_kcals_cost))
-                if annual_kcals_cost
-                else None
-            )
+            if self.strategy_type == LivelihoodStrategyType.FOOD_PURCHASE:
+                # Calories from Food Purchase aren't included in total income.
+                # Cash Income is included and is counted as the percentage of
+                # the cost of 100% kcals that it could buy. If we also
+                # included the Food Purchase kcals we would be double-counting.
+                return 0
+            else:
+                return (
+                    percentage_kcals + (income / (self.wealth_group.average_household_size * annual_kcals_cost))
+                    if annual_kcals_cost
+                    else None
+                )
 
     @cached_property
     def total_income_as_cash(self):
@@ -1801,11 +1808,18 @@ class LivelihoodActivity(common_models.Model):
         percentage_kcals = self.percentage_kcals or 0
         income = self.income or 0
         if self.wealth_group.average_household_size:
-            return (
-                (percentage_kcals * self.wealth_group.average_household_size * annual_kcals_cost) + income
-                if annual_kcals_cost
-                else None
-            )
+            if self.strategy_type == LivelihoodStrategyType.FOOD_PURCHASE:
+                # Calories from Food Purchase aren't included in total income.
+                # Cash Income is included and is counted as the percentage of
+                # the cost of 100% kcals that it could buy. If we also
+                # included the Food Purchase kcals we would be double-counting.
+                return 0
+            else:
+                return (
+                    (percentage_kcals * self.wealth_group.average_household_size * annual_kcals_cost) + income
+                    if annual_kcals_cost
+                    else None
+                )
 
     objects = LivelihoodActivityManager()
 

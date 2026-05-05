@@ -1,10 +1,11 @@
-from django.db.models import F, FloatField, Sum
+from django.db.models import Case, F, FloatField, Sum, Value, When
 from django.db.models.functions import Coalesce
 from rest_framework import serializers
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
 
 from common.fields import translation_fields
 from common.serializers import AggregatingSerializer
+from metadata.models import LivelihoodStrategyType
 
 from .models import (
     BaselineLivelihoodActivity,
@@ -1720,9 +1721,16 @@ class LivelihoodActivitySummarySerializer(AggregatingSerializer):
         ),
         "total_income_as_percentage_kcals": Sum(
             (
-                Coalesce(F("percentage_kcals"), 0)
+                # Calories from Food Purchase aren't included in total income.
+                # Cash Income is included and is counted as the percentage of
+                # the cost of 100% kcals that it could buy. If we also
+                # included the Food Purchase kcals we would be double-counting.
+                Case(
+                    When(strategy_type=Value(LivelihoodStrategyType.FOOD_PURCHASE), then=0.0),
+                    default=Coalesce(F("percentage_kcals"), 0.0),
+                )
                 + (
-                    Coalesce(F("income"), 0)
+                    Coalesce(F("income"), 0.0)
                     / (
                         F("wealth_group__average_household_size")
                         * F("wealth_group__livelihood_zone_baseline___annual_kcals_cost")
@@ -1734,11 +1742,18 @@ class LivelihoodActivitySummarySerializer(AggregatingSerializer):
         "total_income_as_cash": Sum(
             (
                 (
-                    Coalesce(F("percentage_kcals"), 0)
+                    # Calories from Food Purchase aren't included in total income.
+                    # Cash Income is included and is counted as the percentage of
+                    # the cost of 100% kcals that it could buy. If we also
+                    # included the Food Purchase kcals we would be double-counting.
+                    Case(
+                        When(strategy_type=Value(LivelihoodStrategyType.FOOD_PURCHASE), then=0.0),
+                        default=Coalesce(F("percentage_kcals"), 0.0),
+                    )
                     * F("wealth_group__average_household_size")
                     * F("wealth_group__livelihood_zone_baseline___annual_kcals_cost")
                 )
-                + Coalesce(F("income"), 0)
+                + Coalesce(F("income"), 0.0)
             ),
             output_field=FloatField(),
         ),
