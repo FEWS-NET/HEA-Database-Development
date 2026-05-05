@@ -1005,6 +1005,11 @@ class LivelihoodActivityFilterSet(filters.FilterSet):
         widget=autocomplete.ModelSelect2(url="wealthgroup-autocomplete"),
         label="Wealth Group",
     )
+    wealth_group_category = django_filters.ModelChoiceFilter(
+        field_name="wealth_group__wealth_group_category",
+        queryset=WealthGroupCategory.objects.all(),
+        label="Wealth Group Category",
+    )
 
     class Meta:
         model = LivelihoodActivity
