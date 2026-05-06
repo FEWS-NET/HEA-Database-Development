@@ -1,7 +1,6 @@
-from django.db.models import Case, F, FloatField, Sum, Value, When
 from datetime import datetime, timedelta
 
-from django.db.models import F, FloatField, Sum, Value
+from django.db.models import Case, F, FloatField, Sum, Value, When
 from django.db.models.functions import Coalesce
 from rest_framework import serializers
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
