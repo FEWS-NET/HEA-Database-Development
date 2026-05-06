@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("baseline", "0033_add_annual_kcals_cost_function"),
+        ("baseline", "0034_livelihoodzonebaseline__annual_kcals_cost"),
     ]
 
     operations = [

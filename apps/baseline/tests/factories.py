@@ -112,6 +112,7 @@ class LivelihoodZoneBaselineFactory(factory.django.DjangoModelFactory):
     livelihood_zone = factory.SubFactory(LivelihoodZoneFactory)
     main_livelihood_category = factory.SubFactory(LivelihoodCategoryFactory)
     source_organization = factory.SubFactory(SourceOrganizationFactory)
+    bss = factory.django.FileField(filename="bss.xlsx")
     bss_language = factory.Iterator(["en", "pt", "es", "ar", "fr"])
     reference_year_start_date = factory.LazyAttribute(lambda o: o.reference_year_end_date - relativedelta(years=1))
     reference_year_end_date = factory.Sequence(lambda n: datetime.date(1900, 1, 1) + datetime.timedelta(days=n + 10))
@@ -518,6 +519,7 @@ class FoodPurchaseFactory(LivelihoodActivityFactory):
         lambda o: (o.quantity_purchased or 0) - (o.quantity_sold or 0) - (o.quantity_other_uses or 0)
     )
     income = None
+    expenditure = factory.LazyAttribute(lambda o: (o.quantity_purchased or 0) * o.price)
     unit_multiple = fuzzy.FuzzyInteger(1, 500)
     times_per_month = fuzzy.FuzzyInteger(10, 50)
     months_per_year = fuzzy.FuzzyInteger(1, 12)
