@@ -515,7 +515,12 @@ def get_seas_cal_instances_from_dataframe(
     ref_year = livelihood_zone_baseline.reference_year_end_date.isoformat()
 
     # Trim trailing "other" / "autre" filler rows that carry no real data.
-    last_valid_index = df[~df.iloc[:, 0].str.lower().isin(["other", "autre"])].index[-1]
+    if df.empty or df.shape[1] == 0:
+        return {}, []
+    valid_rows = df[~df.iloc[:, 0].str.lower().isin(["other", "autre"])]
+    if valid_rows.empty:
+        return {}, []
+    last_valid_index = valid_rows.index[-1]
     df_original = df.iloc[: last_valid_index + 1].reset_index(drop=True)
 
     # Row 0 is the village/community header; row 1 is the month header.
@@ -672,7 +677,12 @@ def get_seas_cal_instances_from_dataframe(
                 if not mapping_data.get("attribute") and not sat_code_cache.get(label_value):
                     unrecognized_subactivities.add(label_value)
                 for col_index, presence_value in data_cols.items():
-                    if not pd.isnull(presence_value) and presence_value >= 1:
+                    occurrence = (
+                        int(presence_value)
+                        if isinstance(presence_value, (int, float)) and not pd.isnull(presence_value)
+                        else (1 if not pd.isnull(presence_value) and str(presence_value).strip() else None)
+                    )
+                    if occurrence is not None and occurrence >= 1:
                         results.append(
                             {
                                 "seasonal_activity_label": current_header,
@@ -681,7 +691,7 @@ def get_seas_cal_instances_from_dataframe(
                                 "seasonal_activity_type": sat_code,
                                 "community": community_row[col_index],
                                 "month": int(month_row[col_index]),
-                                "occurrence": int(presence_value),
+                                "occurrence": occurrence,
                             }
                         )
 
@@ -702,7 +712,12 @@ def get_seas_cal_instances_from_dataframe(
                 if not sub_lookup.get("attribute") and not sat_code_cache.get(label_value):
                     unrecognized_subactivities.add(label_value)
                 for col_index, presence_value in data_cols.items():
-                    if not pd.isnull(presence_value) and presence_value >= 1:
+                    occurrence = (
+                        int(presence_value)
+                        if isinstance(presence_value, (int, float)) and not pd.isnull(presence_value)
+                        else (1 if not pd.isnull(presence_value) and str(presence_value).strip() else None)
+                    )
+                    if occurrence is not None and occurrence >= 1:
                         results.append(
                             {
                                 "seasonal_activity_label": current_header,
@@ -711,7 +726,7 @@ def get_seas_cal_instances_from_dataframe(
                                 "seasonal_activity_type": sat_code,
                                 "community": community_row[col_index],
                                 "month": int(month_row[col_index]),
-                                "occurrence": int(presence_value),
+                                "occurrence": occurrence,
                             }
                         )
             else:
