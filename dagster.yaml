@@ -42,3 +42,12 @@ run_coordinator:
     tag_concurrency_limits:
       - key: "dagster/backfill"
         limit: 10
+
+# Monitor worker heartbeats and mark runs as FAILURE when a worker stops heartbeating
+# See: https://docs.dagster.io/deployment/execution/run-monitoring
+run_monitoring:
+  enabled: true
+  max_resume_run_attempts: 0
+  max_runtime_seconds: 1800
+  poll_interval_seconds: 120
+  free_slots_after_run_end_seconds: 300
