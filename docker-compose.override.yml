@@ -51,6 +51,8 @@ services:
       - /usr/src/app/jupyter
       - /usr/src/app/log
       - /usr/src/app/media
+      # Suppress use of the local outer .env file
+      - /dev/null:/usr/src/app/.env
     environment:
       DJANGO_SETTINGS_MODULE: hea.settings.local
       LAUNCHER: ${LAUNCHER}  # e.g. "debugpy" or "ddtrace"
@@ -69,6 +71,8 @@ services:
       - /usr/src/app/jupyter
       - /usr/src/app/log
       - /usr/src/app/media
+      # Suppress use of the local outer .env file
+      - /dev/null:/usr/src/app/.env
     environment:
       DJANGO_SETTINGS_MODULE: hea.settings.local
       LAUNCHER: ${LAUNCHER}  # e.g. "debugpy" or "ddtrace"
