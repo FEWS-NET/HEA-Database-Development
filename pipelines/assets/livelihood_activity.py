@@ -91,6 +91,7 @@ from metadata.models import (  # NOQA: E402
     ActivityLabel,
     LivelihoodActivityScenario,
     LivelihoodStrategyType,
+    WealthGroupCategory,
 )
 
 # Indexes of header rows in the Data3 dataframe (wealth_group_category, district, village, household size)
@@ -2002,110 +2003,165 @@ def get_annotated_instances_from_dataframe(
         )
 
         # Annotate the output metadata with completeness information
-        # Get the summary dataframe, grouped by strategy_type
+        # Get the summary dataframe, filtered to the BaselineLivelhoodActivities and grouped by strategy_type
         summary_df = pd.DataFrame(reported_summary_output.value["LivelihoodActivity"])
+        summary_df = summary_df[
+            (summary_df["scenario"] == LivelihoodActivityScenario.BASELINE)  # Baseline activities only
+            & summary_df["wealth_group"].apply(lambda x: x[3] == "")  # Baseline-level activities, not community ones.
+        ]
         for col in ["income", "expenditure", "percentage_kcals", "kcals_consumed"]:
             summary_df[col] = pd.to_numeric(summary_df[col], errors="coerce").fillna(0)
+        summary_df["wealth_group_category"] = summary_df["wealth_group"].apply(lambda x: x[2])
         summary_df = (
-            summary_df[["strategy_type", "income", "expenditure", "percentage_kcals", "kcals_consumed"]]
-            .groupby("strategy_type")
+            summary_df[
+                [
+                    "strategy_type",
+                    "wealth_group_category",
+                    "income",
+                    "expenditure",
+                    "percentage_kcals",
+                    "kcals_consumed",
+                ]
+            ]
+            .groupby(["strategy_type", "wealth_group_category"])
             .sum()
         )
 
-        # Add the recognized Livelihood Activities, also grouped by strategy_type
+        # Add the recognized Livelihood Activities, also filtered to the BaselineLivelhoodActivities and grouped by strategy_type
         recognized_activities_df = pd.DataFrame(output.value["LivelihoodActivity"])
-        for column in ["income", "expenditure", "kcals_consumed"]:
+        recognized_activities_df = recognized_activities_df[
+            (recognized_activities_df["scenario"] == LivelihoodActivityScenario.BASELINE)
+            & recognized_activities_df["wealth_group"].apply(
+                lambda x: x[3] == ""
+            )  # Baseline-level activities, not community ones.
+        ]
+        for column in ["income", "expenditure", "percentage_kcals", "kcals_consumed"]:
             if column in recognized_activities_df:
                 recognized_activities_df[column] = pd.to_numeric(
                     recognized_activities_df[column], errors="coerce"
                 ).fillna(0)
             else:
                 recognized_activities_df[column] = 0
+        recognized_activities_df["wealth_group_category"] = recognized_activities_df["wealth_group"].apply(
+            lambda x: x[2]
+        )
+        recognized_activities_df = (
+            recognized_activities_df[
+                [
+                    "strategy_type",
+                    "wealth_group_category",
+                    "income",
+                    "expenditure",
+                    "percentage_kcals",
+                    "kcals_consumed",
+                ]
+            ]
+            .groupby(["strategy_type", "wealth_group_category"])
+            .sum()
+        )
+
         summary_df = summary_df.join(
-            recognized_activities_df[["strategy_type", "income", "expenditure", "kcals_consumed"]]
-            .groupby("strategy_type")
-            .sum(),
-            on="strategy_type",
+            recognized_activities_df,
+            on=["strategy_type", "wealth_group_category"],
             lsuffix="_summary",
             rsuffix="_recognized",
         ).fillna(0)
 
-        # Add a totals row at the end
-        summary_df.loc["Total"] = summary_df.sum(numeric_only=True)
-
-        # Add completeness percentages
-        summary_df = summary_df.round(0)
-        summary_df["income_completeness"] = summary_df.apply(
-            lambda row: (
-                round(row["income_recognized"] / row["income_summary"] * 100, 1)
-                if row["income_summary"] > 0
-                else pd.NA
-            ),
-            axis=1,
-        )
-        summary_df["expenditure_completeness"] = summary_df.apply(
-            lambda row: (
-                round(row["expenditure_recognized"] / row["expenditure_summary"] * 100, 1)
-                if row["expenditure_summary"] > 0
-                else pd.NA
-            ),
-            axis=1,
-        )
-        summary_df["kcals_consumed_completeness"] = summary_df.apply(
-            lambda row: (
-                round(row["kcals_consumed_recognized"] / row["kcals_consumed_summary"] * 100, 1)
-                if row["kcals_consumed_summary"] > 0
-                else pd.NA
-            ),
-            axis=1,
-        )
-        # Format the numbers as integers, for better display in the markdown table
-        for column in ["income", "expenditure", "kcals_consumed"]:
-            for source in ["recognized", "summary"]:
-                summary_df[f"{column}_{source}"] = summary_df.apply(
-                    lambda row: (
-                        int(row[f"{column}_{source}"])
-                        if (pd.notna(row[f"{column}_recognized"]) and row[f"{column}_recognized"] > 0)
-                        or (pd.notna(row[f"{column}_summary"]) and row[f"{column}_summary"] > 0)
-                        else pd.NA
-                    ),
-                    axis="columns",
-                )
-
-        # Transpose and reorder the columns and rows
-        # Sort the rows so that Strategy Types appear in the same order as in the BSS
+        # Sort the rows so that Strategy Types and Wealth Group Categories appear in the same order as in the BSS
+        summary_df = summary_df.reset_index(drop=False)
         ordered_strategy_types = ["LivestockProduction"] + [x for x in LivelihoodStrategyType] + ["Total"]
         summary_df["strategy_type"] = pd.Categorical(
-            summary_df.reset_index(drop=False)["strategy_type"],
+            summary_df["strategy_type"],
             categories=ordered_strategy_types,
             ordered=True,
         )
-        summary_df = summary_df.reset_index(drop=True).sort_values(by="strategy_type")
-        summary_df = summary_df[
-            [
-                "strategy_type",
-                "kcals_consumed_recognized",
-                "kcals_consumed_summary",
-                "kcals_consumed_completeness",
-                "income_recognized",
-                "income_summary",
-                "income_completeness",
-                "expenditure_recognized",
-                "expenditure_summary",
-                "expenditure_completeness",
+        ordered_wealth_group_categories = list(
+            WealthGroupCategory.objects.all().order_by("ordering").values_list("code", flat=True)
+        ) + ["All"]
+        summary_df["wealth_group_category"] = pd.Categorical(
+            summary_df["wealth_group_category"],
+            categories=ordered_wealth_group_categories,
+            ordered=True,
+        )
+        summary_df = summary_df.sort_values(by=["strategy_type", "wealth_group_category"])
+
+        completeness_dfs = {}
+        for column in ["income", "expenditure", "percentage_kcals", "kcals_consumed"]:
+            completeness_df = summary_df[
+                ["strategy_type", "wealth_group_category", f"{column}_recognized", f"{column}_summary"]
             ]
-        ]
-        summary_df = summary_df.set_index("strategy_type").transpose()
+            completeness_df.columns = ["strategy_type", "wealth_group_category", "recognized", "summary"]
+
+            # Ignore irrelevant strategy types
+            completeness_df = completeness_df[
+                completeness_df["strategy_type"].isin(
+                    completeness_df.groupby("strategy_type")[["recognized", "summary"]]
+                    .sum()
+                    .sum(axis=1)
+                    .loc[lambda x: x > 0]
+                    .index
+                )
+            ]
+
+            # Add a total row
+            completeness_df = completeness_df.set_index(["strategy_type", "wealth_group_category"])
+            completeness_df = completeness_df.unstack()
+            completeness_df.loc["Total"] = completeness_df.sum()
+            completeness_df = completeness_df.stack()
+            # Add the difference
+            completeness_df["unrecognized"] = completeness_df["summary"] - completeness_df["recognized"]
+            # Add the completeness percentage
+            completeness_df[f"{column}_completeness"] = completeness_df.apply(
+                lambda row: (round(row["recognized"] / row["summary"] * 100, 1) if row["summary"] > 0 else pd.NA),
+                axis=1,
+            )
+            # Format the numbers as integers, for better display in the markdown table
+            if column in ["income", "expenditure", "kcals_consumed"]:
+                for source in ["recognized", "summary", "unrecognized"]:
+                    completeness_df[source] = completeness_df.apply(
+                        lambda row: (
+                            int(row[source])
+                            if (pd.notna(row["recognized"]) and row["recognized"] > 0)
+                            or (pd.notna(row["summary"]) and row["summary"] > 0)
+                            else pd.NA
+                        ),
+                        axis=1,
+                    )
+            else:
+                # Format percentage_kcals as percentages.
+                for source in ["recognized", "summary", "unrecognized"]:
+                    completeness_df[source] = (completeness_df[source] * 100).round(1).replace(-0.0, 0.0)
+
+            completeness_dfs[column] = completeness_df
 
         # Add the completeness summary to the output metadata
-        output.metadata["pct_kcals_consumed_recognized"] = float(
-            summary_df.loc["kcals_consumed_completeness", "Total"]
+        output.metadata["pct_income_recognized"] = round(
+            completeness_dfs["income"].loc["Total", "recognized"].sum()
+            / completeness_dfs["income"].loc["Total", "summary"].sum()
+            * 100
         )
-        output.metadata["pct_income_recognized"] = float(summary_df.loc["income_completeness", "Total"])
-        output.metadata["pct_expenditure_recognized"] = float(summary_df.loc["expenditure_completeness", "Total"])
-        output.metadata["completeness_summary"] = MetadataValue.md(
-            summary_df.replace(pd.NA, None).to_markdown(floatfmt=",.0f")
+        output.metadata["pct_expenditure_recognized"] = round(
+            completeness_dfs["expenditure"].loc["Total", "recognized"].sum()
+            / completeness_dfs["expenditure"].loc["Total", "summary"].sum()
+            * 100
         )
+        output.metadata["pct_kcals_consumed_recognized"] = round(
+            completeness_dfs["kcals_consumed"].loc["Total", "recognized"].sum()
+            / completeness_dfs["kcals_consumed"].loc["Total", "summary"].sum()
+            * 100
+        )
+        completeness_summary = "### Completeness of recognized Livelihood Activities compared to the summary for Baseline-level activities\n"
+        for column in ["income", "expenditure", "percentage_kcals", "kcals_consumed"]:
+            completeness_summary += f"<details>\n\n<summary>{column.replace('_', ' ').title()}</summary>\n\n"
+            completeness_summary += f"#### {column.replace('_', ' ').title()}\n\n"
+            completeness_summary += (
+                completeness_dfs[column]
+                .replace(pd.NA, None)
+                .reset_index()
+                .to_markdown(index=False, floatfmt=",.1f", intfmt=",")
+            )
+            completeness_summary += "\n\n</details>\n\n"
+        output.metadata["completeness_summary"] = MetadataValue.md(completeness_summary)
 
         # Move the preview and errors metadata item to the end of the dict
         if "errors" in output.metadata:
