@@ -58,6 +58,8 @@ class SeasonalActivityTypeSerializer(ReferenceDataSerializer):
         model = SeasonalActivityType
         fields = ReferenceDataSerializer.Meta.fields + [
             "activity_category",
+            "has_product",
+            "is_key",
         ]
 
 

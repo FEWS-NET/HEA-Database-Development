@@ -75,9 +75,13 @@ class SeasonalActivityTypeAdmin(ReferenceDataAdmin):
         "code",
         *translation_fields("name"),
         "activity_category",
+        "has_product",
+        "is_key",
         "aliases",
         *translation_fields("description"),
     )
+    list_display = ReferenceDataAdmin.list_display + ("activity_category", "has_product", "is_key")
+    list_filter = ("activity_category", "has_product", "is_key")
 
 
 class WealthGroupCategoryAdmin(ReferenceDataAdmin):

@@ -2792,13 +2792,12 @@ class SeasonalActivityManager(common_models.IdentifierManager):
             "livelihood_zone_baseline__livelihood_zone__code": code,
             "livelihood_zone_baseline__reference_year_end_date": reference_year_end_date,
             "seasonal_activity_type__code": seasonal_activity_type,
+            "additional_identifier": additional_identifier,
         }
         if product:
             criteria["product__cpc"] = product
         else:
             criteria["product__isnull"] = True
-        if additional_identifier:
-            criteria["additional_identifier__iexact"] = additional_identifier
         return self.get(**criteria)
 
 
@@ -2854,8 +2853,23 @@ class SeasonalActivity(common_models.Model):
         verbose_name=_("Additional Identifier"),
         help_text=_("Additional text identifying the seasonal activity"),
     )
+    is_key = models.BooleanField(
+        verbose_name=_("Key Seasonal Activity?"),
+        help_text=_("Whether this seasonal activity is a key seasonal activity for the livelihood zone baseline"),
+    )
 
     objects = SeasonalActivityManager()
+
+    def calculate_fields(self):
+        if self.is_key is None:
+            if self.seasonal_activity_type_id:
+                self.is_key = self.seasonal_activity_type.is_key
+            else:
+                self.is_key = False
+
+    def save(self, *args, **kwargs):
+        self.calculate_fields()
+        super().save(*args, **kwargs)
 
     def natural_key(self):
         return (
@@ -2863,7 +2877,7 @@ class SeasonalActivity(common_models.Model):
             self.livelihood_zone_baseline.reference_year_end_date.isoformat(),
             self.seasonal_activity_type.code,
             self.product.cpc if self.product else "",
-            self.additional_identifier if self.additional_identifier else "",
+            self.additional_identifier,
         )
 
     class Meta:
@@ -2881,6 +2895,46 @@ class SeasonalActivity(common_models.Model):
 
     class ExtraMeta:
         identifier = ["livelihood_zone_baseline", "seasonal_activity_type", "product"]
+
+
+class SeasonalActivityOccurrenceManager(common_models.IdentifierManager):
+    def get_by_natural_key(
+        self,
+        code: str,
+        reference_year_end_date: str,
+        seasonal_activity_type: str,
+        product: str = "",
+        additional_identifier: str = "",
+        full_name: str = "",
+        start: int = None,
+        end: int = None,
+    ):
+        criteria = {
+            "livelihood_zone_baseline__livelihood_zone__code": code,
+            "livelihood_zone_baseline__reference_year_end_date": reference_year_end_date,
+            "seasonal_activity__seasonal_activity_type__code": seasonal_activity_type,
+            "seasonal_activity__additional_identifier": additional_identifier,
+        }
+        if product:
+            criteria["seasonal_activity__product__cpc"] = product
+        else:
+            criteria["seasonal_activity__product__isnull"] = True
+        if start is not None:
+            criteria["start"] = start
+        if end is not None:
+            criteria["end"] = end
+        if not full_name:
+            criteria["community__isnull"] = True
+            return self.get(**criteria)
+        else:
+            try:
+                criteria["community__full_name"] = full_name
+                return self.get(**criteria)
+            except SeasonalActivityOccurrence.DoesNotExist:
+                # Also try matching just the Community name instead of the full_name
+                del criteria["community__full_name"]
+                criteria["community__name"] = full_name
+                return self.get(**criteria)
 
 
 class SeasonalActivityOccurrence(common_models.Model):
@@ -2922,17 +2976,7 @@ class SeasonalActivityOccurrence(common_models.Model):
         validators=[MaxValueValidator(365), MinValueValidator(1)], verbose_name=_("End Day")
     )
 
-    def natural_key(self):
-        return (
-            self.livelihood_zone_baseline.livelihood_zone_id,
-            self.livelihood_zone_baseline.reference_year_end_date.isoformat(),
-            self.seasonal_activity.seasonal_activity_type.code,
-            self.seasonal_activity.product.cpc if self.seasonal_activity.product else "",
-            self.seasonal_activity.additional_identifier if self.seasonal_activity.additional_identifier else "",
-            self.community.full_name if self.community else "",
-            str(self.start),
-            str(self.end),
-        )
+    objects = SeasonalActivityOccurrenceManager()
 
     def start_month(self):
         return get_month_from_day_number(self.start)
@@ -2964,6 +3008,18 @@ class SeasonalActivityOccurrence(common_models.Model):
         )
         super().save(*args, **kwargs)
 
+    def natural_key(self):
+        return (
+            self.livelihood_zone_baseline.livelihood_zone_id,
+            self.livelihood_zone_baseline.reference_year_end_date.isoformat(),
+            self.seasonal_activity.seasonal_activity_type.code,
+            self.seasonal_activity.product.cpc if self.seasonal_activity.product else "",
+            self.seasonal_activity.additional_identifier,
+            self.community.full_name if self.community else "",
+            self.start,
+            self.end,
+        )
+
     class Meta:
         verbose_name = _("Seasonal Activity Occurrence")
         verbose_name_plural = _("Seasonal Activity Occurrences")
@@ -2971,6 +3027,31 @@ class SeasonalActivityOccurrence(common_models.Model):
             # @TODO Add constraints either declared here or in a custom migration that target the composite foreign
             # keys for Community and Seasonal Activity that include the livelihood_zone_baseline.
         ]
+
+
+class BaselineSeasonalActivityOccurrenceManager(InheritanceManager, SeasonalActivityOccurrenceManager):
+    def get_queryset(self):
+        return super().get_queryset().filter(community__isnull=True).select_subclasses()
+
+
+class BaselineSeasonalActivityOccurrence(SeasonalActivityOccurrence):
+    """
+    The specific times when a Seasonal Activity is undertaken in the Liveihood Zone as a whole.
+
+    Stored in the BSS 'Seas Cal' worksheet, if present.
+    """
+
+    objects = BaselineSeasonalActivityOccurrenceManager()
+
+    def clean(self):
+        if self.community:
+            raise ValidationError(_("A Baseline Seasonal Activity Occurrence cannot be for a Community"))
+        super().clean()
+
+    class Meta:
+        verbose_name = _("Baseline Seasonal Activity Occurrence")
+        verbose_name_plural = _("Baseline Seasonal Activity Occurrences")
+        proxy = True
 
 
 class CommunityCropProduction(common_models.Model):

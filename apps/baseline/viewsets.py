@@ -26,6 +26,7 @@ from metadata.models import LivelihoodStrategyType, WealthGroupCategory
 
 from .models import (
     BaselineLivelihoodActivity,
+    BaselineSeasonalActivityOccurrence,
     BaselineWealthGroup,
     BaselineWealthGroupCharacteristicValue,
     ButterProduction,
@@ -66,6 +67,7 @@ from .models import (
 )
 from .serializers import (
     BaselineLivelihoodActivitySerializer,
+    BaselineSeasonalActivityOccurrenceSerializer,
     BaselineWealthGroupCharacteristicValueSerializer,
     BaselineWealthGroupSerializer,
     ButterProductionSerializer,
@@ -1459,6 +1461,7 @@ class SeasonalActivityFilterSet(filters.FilterSet):
             "seasonal_activity_type",
             "season",
             "product",
+            "is_key",
         ]
 
 
@@ -1479,9 +1482,7 @@ class SeasonalActivityViewSet(BaseModelViewSet):
 
 
 class SeasonalActivityOccurrenceFilterSet(filters.FilterSet):
-    show_zone_level_only = filters.BooleanFilter(
-        field_name="community", lookup_expr="isnull", label="Show zone level calendar only"
-    )
+    is_key = filters.BooleanFilter(field_name="seasonal_activity__is_key", label="Key seasonal activity")
 
     class Meta:
         model = SeasonalActivityOccurrence
@@ -1491,7 +1492,7 @@ class SeasonalActivityOccurrenceFilterSet(filters.FilterSet):
             "community",
             "start",
             "end",
-            "show_zone_level_only",
+            "is_key",
         ]
 
 
@@ -1508,6 +1509,26 @@ class SeasonalActivityOccurrenceViewSet(BaseModelViewSet):
     ).prefetch_related("seasonal_activity__season")
     serializer_class = SeasonalActivityOccurrenceSerializer
     filterset_class = SeasonalActivityOccurrenceFilterSet
+
+
+class BaselineSeasonalActivityOccurrenceFilterSet(SeasonalActivityOccurrenceFilterSet):
+
+    class Meta(SeasonalActivityOccurrenceFilterSet.Meta):
+        model = BaselineSeasonalActivityOccurrence
+
+
+class BaselineSeasonalActivityOccurrenceViewSet(BaseModelViewSet):
+    """
+    API endpoint that allows zone-level seasonal activity occurrences to be viewed or edited.
+    """
+
+    queryset = BaselineSeasonalActivityOccurrence.objects.select_related(
+        "livelihood_zone_baseline__livelihood_zone__country",
+        "livelihood_zone_baseline__source_organization",
+        "seasonal_activity__product",
+    ).prefetch_related("seasonal_activity__season")
+    serializer_class = BaselineSeasonalActivityOccurrenceSerializer
+    filterset_class = BaselineSeasonalActivityOccurrenceFilterSet
 
 
 class CommunityCropProductionFilterSet(filters.FilterSet):

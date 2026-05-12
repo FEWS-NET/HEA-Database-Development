@@ -226,13 +226,27 @@ class SeasonalActivityType(ReferenceData):
     """
 
     class SeasonalActivityCategory(models.TextChoices):
+        SEASON = "season", _("Season")
         CROP = "crop", _("Crops")
         LIVESTOCK = "livestock", _("Livestock")
-        GARDENING = "gardening", _("Gardening")
         FISHING = "fishing", _("Fishing")
+        OTHER = "other", _("Other")
 
     activity_category = models.CharField(
         max_length=20, choices=SeasonalActivityCategory.choices, verbose_name=_("Activity Category")
+    )
+    has_product = models.BooleanField(
+        default=False,
+        verbose_name=_("Has Product?"),
+        help_text=_(
+            "Does a Seasonal Activity of this type require a product? "
+            "If True, then aliases may contain a <product> placeholder."
+        ),
+    )
+    is_key = models.BooleanField(
+        default=False,
+        verbose_name=_("Key Seasonal Activity?"),
+        help_text=_("Are SeasonalActivity instances of this type key seasonal activities?"),
     )
 
     class Meta:
@@ -437,7 +451,6 @@ class ActivityLabel(common_models.Model):
         LIVELIHOOD_SUMMARY = "LivelihoodSummary", _(
             "Livelihood Summary"
         )  # Labels from the 'Summary' section of the 'Data' worksheet
-        SEAS_CAL = "Seas Cal", _("Seas Cal")  # Header labels from the 'SeasCal' worksheet
 
     activity_label = common_models.NameField(max_length=200, verbose_name=_("Activity Label"))
     activity_type = models.CharField(

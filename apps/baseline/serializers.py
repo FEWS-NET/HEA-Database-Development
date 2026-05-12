@@ -11,6 +11,7 @@ from metadata.models import LivelihoodStrategyType
 
 from .models import (
     BaselineLivelihoodActivity,
+    BaselineSeasonalActivityOccurrence,
     BaselineWealthGroup,
     BaselineWealthGroupCharacteristicValue,
     ButterProduction,
@@ -961,6 +962,7 @@ class SeasonalActivitySerializer(serializers.ModelSerializer):
             "product_common_name",
             "product_description",
             "additional_identifier",
+            "is_key",
         ]
 
     livelihood_zone_name = serializers.CharField(
@@ -982,6 +984,7 @@ class SeasonalActivitySerializer(serializers.ModelSerializer):
     activity_category = serializers.CharField(source="seasonal_activity_type.activity_category", read_only=True)
     activity_category_label = serializers.SerializerMethodField()
     additional_identifier = serializers.CharField(read_only=True)
+    is_key = serializers.BooleanField(default=None, required=False)
 
     def get_activity_category_label(self, obj):
         return obj.seasonal_activity_type.get_activity_category_display()
@@ -1023,9 +1026,11 @@ class SeasonalActivityOccurrenceSerializer(serializers.ModelSerializer):
             "product_description",
             "additional_identifier",
             "seasonal_activity_label",
+            "is_key",
             # End SeasonalActivity
             "community",
             "community_name",
+            "community_full_name",
             "start",
             "end",
             "start_date",
@@ -1042,7 +1047,8 @@ class SeasonalActivityOccurrenceSerializer(serializers.ModelSerializer):
     livelihood_zone_country_name = serializers.CharField(
         source="livelihood_zone_baseline.livelihood_zone.country.name", read_only=True
     )
-    community_name = serializers.CharField(source="community.name", read_only=True)
+    community_name = serializers.SerializerMethodField()
+    community_full_name = serializers.SerializerMethodField()
     source_organization = serializers.IntegerField(
         source="livelihood_zone_baseline.source_organization.pk", read_only=True
     )
@@ -1054,10 +1060,17 @@ class SeasonalActivityOccurrenceSerializer(serializers.ModelSerializer):
     def get_livelihood_zone_baseline_label(self, obj):
         return str(obj.livelihood_zone_baseline)
 
+    def get_community_name(self, obj):
+        return obj.community.name if obj.community else None
+
+    def get_community_full_name(self, obj):
+        return obj.community.full_name if obj.community else None
+
     product = serializers.CharField(source="seasonal_activity.product.pk", read_only=True)
     product_common_name = serializers.CharField(source="seasonal_activity.product.common_name", read_only=True)
     product_description = serializers.CharField(source="seasonal_activity.product.description", read_only=True)
     additional_identifier = serializers.CharField(source="seasonal_activity.additional_identifier", read_only=True)
+    is_key = serializers.BooleanField(source="seasonal_activity.is_key", read_only=True)
     seasonal_activity_type = serializers.CharField(
         source="seasonal_activity.seasonal_activity_type.pk", read_only=True
     )
@@ -1103,6 +1116,16 @@ class SeasonalActivityOccurrenceSerializer(serializers.ModelSerializer):
             return additional_identifier.capitalize()
         if product:
             return product.common_name.capitalize()
+
+
+class BaselineSeasonalActivityOccurrenceSerializer(SeasonalActivityOccurrenceSerializer):
+    class Meta:
+        model = BaselineSeasonalActivityOccurrence
+        fields = [
+            f
+            for f in SeasonalActivityOccurrenceSerializer.Meta.fields
+            if f not in ["community", "community_name", "community_full_name"]
+        ]
 
 
 class CommunityCropProductionSerializer(serializers.ModelSerializer):
