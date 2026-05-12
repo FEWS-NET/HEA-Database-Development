@@ -313,8 +313,10 @@ class Lookup(ABC):
 
         merge_df = merge_df.rename(columns={"lookup_value": match_column})
 
-        # Drop redundant columns
         if lookup_column:
+            # Make sure the original dataframe is unchanged
+            df.drop(["lookup_candidate"], axis="columns", inplace=True)
+            # Drop redundant columns from the result
             merge_df = merge_df.drop(["lookup_candidate", "lookup_key"], axis="columns")
 
         # Preserve the original index
@@ -329,6 +331,15 @@ class Lookup(ABC):
         if related_models:
             queryset = queryset.select_related(*related_models)
         model_map = {instance.pk: instance for instance in queryset.iterator()}
+        df[column] = df[column].map(model_map)
+        return df
+
+    def get_attribute(self, df, column, attribute):
+        """
+        Replace the primary key value in a DataFrame column with a model attribute
+        """
+        queryset = self.model.objects.filter(pk__in=df[column].dropna().unique()).values("pk", attribute)
+        model_map = {instance["pk"]: instance[attribute] for instance in queryset.iterator()}
         df[column] = df[column].map(model_map)
         return df
 

@@ -44,22 +44,24 @@ from common.lookups import CountryLookup  # NOQA: E402
 from metadata.models import ActivityLabel, WealthCharacteristicLabel  # NOQA: E402
 
 # Map of cell values in Column A to the language of the BSS.
-# For Data/WB/Exp sheets these appear in row 3 (or row 2 for Exp factors).
-# For the Seas Cal sheet the worksheet title in row 1 is used instead.
+# For WB, Data, Data2 and Data3 worksheets these appear in row 3
+# For 'Exp factors' they appear in row 2
+# For 'Seas Cal' they appear in row 1 or 3.
 LANGS = {
     "wealth group": "en",
     "group de richesse": "fr",
     "groupe de richesse": "fr",
     "groupe socio-economique": "fr",
     "group socio-economique": "fr",
+    # 'Exp factors' (row 2)
     "expandability parameters": "en",
     "paramètres d'extensibilité (expandability factors)": "fr",
     "parametres d'utilisation maximale (expandability)": "fr",
-    # Seas Cal worksheet titles (row 1)
+    # 'Seas Cal' (row 1)
     "seasonal calendar": "en",
     "calendrier saisonnier": "fr",
     "calendrier saisonier": "fr",  # typo variant found in some BSSs
-    # Seas Cal row-3 col-A label in French BSSs that omit the title from A1
+    # 'Seas Cal' (row 3) - French BSSs that omit the title from  row 1
     "activités/évenements": "fr",
     "activites/evenements": "fr",  # no-accents variant
 }
@@ -74,6 +76,7 @@ SUMMARY_LABELS = [
     "range",
     "interval",
     "intervales",  # 2023 Mali BSSs
+    # Seas Cal worksheets
     "Results",
     "Synthèse",
 ]
@@ -329,7 +332,6 @@ def get_bss_dataframe(
     end_col: str | None = None,
     num_summary_cols: int | None = None,
     fill_blank_rows: bool = True,
-    start_col_fallbacks: list[str] | None = None,  # Extra columns to search when col A has no start string match
 ) -> Output[pd.DataFrame]:
     """
     Retrieve a worksheet from a BSS and return it as a DataFrame.
@@ -366,20 +368,14 @@ def get_bss_dataframe(
         num_summary_cols = df.loc[3, "B":end_col].dropna().nunique()
     end_col = df.columns[df.columns.get_loc(end_col) + num_summary_cols]
 
-    # Find the row index of the start of the Livelihood Activities or Wealth Group Characteristic Values.
-    # Some BSSs (e.g. French Seas Cal) place the village/site label in col B rather than col A, so fall
+    # Find the row index of the start of dataframe by searching for one of the start strings in column A.
+    # Some dataframes (e.g. 'Seas Cal' in some French BSSs) place the village/site label in col B rather than col A, so fall
     # back to the columns listed in start_col_fallbacks when the col A search yields nothing.
     start_row = get_index(start_strings, df.loc[1:, "A"])
-    if not start_row and start_col_fallbacks:
-        for fallback_col in start_col_fallbacks:
-            start_row = get_index(start_strings, df.loc[1:, fallback_col])
-            if start_row:
-                break
     if not start_row:
-        searched_cols = ", ".join(["A"] + (start_col_fallbacks or []))
-        raise ValueError(
-            f"No cell in Column(s) {searched_cols} containing any of the start strings: {', '.join(start_strings)}"
-        )
+        start_row = get_index(start_strings, df.loc[1:, "B"])
+    if not start_row:
+        raise ValueError(f"No cell in Column(s) A:B containing any of the start strings: {', '.join(start_strings)}")
 
     if end_strings:
         # Find the row before the first row that contains an end string
@@ -397,10 +393,12 @@ def get_bss_dataframe(
         # for rows that rely on copying down the label in column A from a previous row.
         end_row = df.index[-1]
 
-    # Find the language from Column A.  Data/WB sheets carry the marker in row 3 (or row 2 for
-    # Exp factors); the Seas Cal sheet carries it in row 1 as the worksheet title.
+    # Find the language using the cells in Column A.
+    # For WB, Data, Data2 and Data3 worksheets these appear in row 3
+    # For 'Exp factors' they appear in row 2
+    # For 'Seas Cal' they appear in row 1 or 3.
     lang = None
-    for row in [1, 2, 3]:
+    for row in [3, 2, 1]:
         try:
             lang = LANGS[df.loc[row, "A"].strip().lower()]
         except (AttributeError, KeyError):
@@ -410,6 +408,7 @@ def get_bss_dataframe(
         raise ValueError(f'No language could be identified from the labels {df.loc[1:3, "A"].tolist()} in Column A')
 
     # Filter to just the header rows (typically the Wealth Groups) and the main data (e.g. Livelihood Activities)
+    header_rows = [row for row in header_rows if row < start_row]
     df = pd.concat(
         [df.loc[header_rows, :end_col] if header_rows else pd.DataFrame(), df.loc[start_row:end_row, :end_col]]
     )
@@ -462,7 +461,13 @@ def get_bss_dataframe(
 
 
 def get_bss_label_dataframe(
-    context: AssetExecutionContext, config: BSSMetadataConfig, df: pd.DataFrame, asset_key: str, num_header_rows: int
+    context: AssetExecutionContext,
+    config: BSSMetadataConfig,
+    df: pd.DataFrame,
+    asset_key: str,
+    num_header_rows: int,
+    num_label_cols: int = 1,
+    num_summary_cols: int | None = None,
 ) -> Output[pd.DataFrame]:
     """
     Dataframe of Label References for a worksheet in a BSS.
@@ -475,9 +480,16 @@ def get_bss_label_dataframe(
             },
         )
 
-    # The summary columns won't have a community, so find the column after the last column with a community name
-    last_community_col = df.loc[5][df.loc[5].replace("", pd.NA).notna()].index[-1]
-    summary_start_col = df.columns[df.columns.get_loc(last_community_col) + 1]
+    first_community_col = df.columns[num_label_cols]
+    if num_summary_cols:
+        last_community_col = df.columns[-num_summary_cols - 1]
+    else:
+        # The summary columns won't have a community, so find the column after the last column with a community name
+        last_community_col = df.loc[5][df.loc[5].replace("", pd.NA).notna()].index[-1]
+
+    # Create a numeric representation of the summary columns that we can use to identify rows with summary data.
+    first_summary_col = df.columns[df.columns.get_loc(last_community_col) + 1]
+    summary_cols = df.loc[:, first_summary_col:].fillna(0).map(lambda x: 0 if isinstance(x, str) else x).astype(float)
 
     df = df.iloc[num_header_rows:]  # Ignore the header rows
     instance = context.instance
@@ -490,23 +502,63 @@ def get_bss_label_dataframe(
         limit=1,
     )[0].asset_materialization
 
+    # Most worksheets have a single label column (i.e. Column A), but the 'Seas Cal' worksheet may have labels in
+    # Columns A and B, add the extra labels from Column B as separate rows in the label_df.
     label_df = pd.DataFrame()
-    label_df["label"] = df["A"]
-    label_df["label_lower"] = prepare_lookup(label_df["label"])
-    label_df["bss"] = context.asset_partition_key_for_output()
-    label_df["lang"] = dataframe_materialization.metadata["lang"].text
-    label_df["worksheet"] = dataframe_materialization.metadata["worksheet"].text
-    label_df["row_number"] = df.index
-    label_df["datapoint_count"] = df.loc[:, "B":].apply(lambda row: sum((row != 0) & (row != "")), axis="columns")
+    for label_col in df.columns[0:num_label_cols]:
+        column_df = pd.DataFrame()
+        column_df["label"] = df[label_col]
+        column_df["label_lower"] = prepare_lookup(column_df["label"])
+        column_df["bss"] = context.asset_partition_key_for_output()
+        column_df["lang"] = dataframe_materialization.metadata["lang"].text
+        column_df["worksheet"] = dataframe_materialization.metadata["worksheet"].text
+        column_df["row_number"] = df.index
+        column_df["datapoint_count"] = df.loc[:, first_community_col:].apply(
+            lambda row: sum((row != 0) & (row != "")), axis="columns"
+        )
+        # Create a flag for whether the label/row contains summary data.
+        column_df["in_summary"] = summary_cols.sum(axis="columns") > 0
+        label_df = pd.concat([label_df, column_df], ignore_index=True)
 
-    # Store a bool to indicate whether the row contains any summary data
-    summary_cols = df.loc[:, summary_start_col:].fillna(0).map(lambda x: 0 if isinstance(x, str) else x).astype(float)
-    label_df["in_summary"] = summary_cols.sum(axis="columns") > 0
+    # Drop rows where the label is blank and there are no datapoints.
+    label_df = label_df[~((label_df["label"] == "") & (label_df["datapoint_count"] == 0))]
 
-    # Create a sample of rows that contain data, because the first rows may not contain any values.
+    # Drop rows where the label is blank but there is another label for the same row that isn't blank.
+    label_df = label_df[
+        ~((label_df["label"] == "") & (label_df.groupby("row_number")["label"].transform(lambda x: (x != "").any())))
+    ]
+
+    # Avoid double-counting by setting the datapoint_count and in_summary to None if there is another label for the
+    # same row that isn't blank, even if the current row's label is also not blank - because sometimes the 'Seas Cal'
+    # worksheet has labels in both Column A and B, and these would otherwise cause the row to be double-counted.
+    for col in ["datapoint_count", "in_summary"]:
+        label_df[col] = label_df.apply(
+            lambda row: (
+                pd.NA
+                if (
+                    label_df.loc[: row.name - 1][
+                        (label_df.loc[: row.name - 1]["row_number"] == row["row_number"])
+                        & (label_df.loc[: row.name - 1]["label"] != "")
+                    ].shape[0]
+                    > 0
+                )
+                else row[col]
+            ),
+            axis="columns",
+        )
+
+    # Sort by row_number to ensure the labels are in the same order as the original worksheet, using a stable sort
+    # so that the labels are orderd by row and then column.
+    label_df = label_df.sort_values(by="row_number", kind="stable").reset_index(drop=True)
+
+    # Create a sample of rows that contain summary data, because the first rows may not contain any values.
     # For example the Data sheet contains data for Camel's Milk first, which isn't a common Livelihood Activity.
-    sample_df = label_df[label_df["in_summary"]]
+    sample_df = label_df[label_df["in_summary"].fillna(False)]
     sample_rows = min(len(sample_df), config.preview_rows)
+    sample_df = sample_df.sample(sample_rows)
+    # Filter by row_number so that if the dataframe has more than one label column (e.g. 'Seas Cal') then
+    # the sample contains all the labels from the sampled rows.
+    sample_df = label_df[label_df["row_number"].isin(sample_df["row_number"])].sort_values(by=["row_number"])
 
     return Output(
         label_df,
@@ -516,7 +568,7 @@ def get_bss_label_dataframe(
             "num_summaries": int(label_df["in_summary"].sum()),
             # Escape the ~ in the partition_key, otherwise it is rendered as strikethrough
             "preview": MetadataValue.md(label_df.head(config.preview_rows).to_markdown().replace("~", "\\~")),
-            "sample": MetadataValue.md(sample_df.sample(sample_rows).sort_index().to_markdown().replace("~", "\\~")),
+            "sample": MetadataValue.md(sample_df.to_markdown().replace("~", "\\~")),
         },
     )
 
@@ -528,6 +580,19 @@ def get_all_bss_labels_dataframe(
     Combined dataframe of the activity labels in use across all BSSs.
     """
     df = pd.concat(list(label_dataframe.values()))
+
+    # Create a sample of rows that contain summary data, because the first rows may not contain any values.
+    # For example the Data sheet contains data for Camel's Milk first, which isn't a common Livelihood Activity.
+    sample_df = df[df["in_summary"].fillna(False)]
+    sample_rows = min(len(sample_df), config.preview_rows)
+    sample_df = sample_df.sample(sample_rows)
+    # Include any additional labels from the sampled rows by filtering by bss and row_number, so that if the dataframe
+    # has more than one label column (e.g. 'Seas Cal') then the sample contains all the labels from the sampled rows.
+    bss_row_pairs = set(zip(sample_df["bss"], sample_df["row_number"]))
+    sample_df = df[df.apply(lambda row: (row["bss"], row["row_number"]) in bss_row_pairs, axis=1)].sort_values(
+        by=["bss", "row_number"]
+    )
+
     return Output(
         df,
         metadata={
@@ -536,9 +601,7 @@ def get_all_bss_labels_dataframe(
             "num_summaries": int(df["in_summary"].sum()),
             # Escape the ~ in the partition_key, otherwise it is rendered as strikethrough
             "preview": MetadataValue.md(df.head(config.preview_rows).to_markdown().replace("~", "\\~")),
-            "sample": MetadataValue.md(
-                df[df["in_summary"]].sample(config.preview_rows).sort_index().to_markdown().replace("~", "\\~")
-            ),
+            "sample": MetadataValue.md(sample_df.to_markdown().replace("~", "\\~")),
         },
     )
 
@@ -579,7 +642,7 @@ def get_summary_bss_label_dataframe(
         """
         Use the Google Translate API to translate the label from <lang> to English
         """
-        langs = [lang.strip() for lang in langs.split(",") if lang != "en"]
+        langs = [lang.strip() for lang in langs.split(",") if lang.strip() != "en"]
         if not langs:
             return label
         try:
@@ -642,6 +705,7 @@ def get_summary_bss_label_dataframe(
         metadata={
             "num_labels": len(df),
             "num_datapoints": int(df["datapoint_count"].sum()),
+            "num_summaries": int(df["summary_count"].sum()),
             "preview": MetadataValue.md(df.sample(config.preview_rows).to_markdown()),
             "datapoint_preview": MetadataValue.md(
                 df[df["datapoint_count"] > 0].sample(config.preview_rows).to_markdown()
