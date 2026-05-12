@@ -2003,7 +2003,7 @@ def get_annotated_instances_from_dataframe(
         )
 
         # Annotate the output metadata with completeness information
-        # Get the summary dataframe, filtered to the BaselineLivelhoodActivities and grouped by strategy_type
+        # Get the summary dataframe, filtered to the BaselineLivelihoodActivities and grouped by strategy_type
         summary_df = pd.DataFrame(reported_summary_output.value["LivelihoodActivity"])
         summary_df = summary_df[
             (summary_df["scenario"] == LivelihoodActivityScenario.BASELINE)  # Baseline activities only
@@ -2027,7 +2027,7 @@ def get_annotated_instances_from_dataframe(
             .sum()
         )
 
-        # Add the recognized Livelihood Activities, also filtered to the BaselineLivelhoodActivities and grouped by strategy_type
+        # Add the recognized Livelihood Activities, also filtered to the BaselineLivelihoodActivities and grouped by strategy_type
         recognized_activities_df = pd.DataFrame(output.value["LivelihoodActivity"])
         recognized_activities_df = recognized_activities_df[
             (recognized_activities_df["scenario"] == LivelihoodActivityScenario.BASELINE)
@@ -2135,21 +2135,14 @@ def get_annotated_instances_from_dataframe(
             completeness_dfs[column] = completeness_df
 
         # Add the completeness summary to the output metadata
-        output.metadata["pct_income_recognized"] = round(
-            completeness_dfs["income"].loc["Total", "recognized"].sum()
-            / completeness_dfs["income"].loc["Total", "summary"].sum()
-            * 100
-        )
-        output.metadata["pct_expenditure_recognized"] = round(
-            completeness_dfs["expenditure"].loc["Total", "recognized"].sum()
-            / completeness_dfs["expenditure"].loc["Total", "summary"].sum()
-            * 100
-        )
-        output.metadata["pct_kcals_consumed_recognized"] = round(
-            completeness_dfs["kcals_consumed"].loc["Total", "recognized"].sum()
-            / completeness_dfs["kcals_consumed"].loc["Total", "summary"].sum()
-            * 100
-        )
+        def get_overall_recognized_percentage(metric: str) -> int:
+            recognized_total = completeness_dfs[metric].loc["Total", "recognized"].sum()
+            summary_total = completeness_dfs[metric].loc["Total", "summary"].sum()
+            return round(recognized_total / summary_total * 100) if summary_total > 0 else 0
+
+        output.metadata["pct_income_recognized"] = get_overall_recognized_percentage("income")
+        output.metadata["pct_expenditure_recognized"] = get_overall_recognized_percentage("expenditure")
+        output.metadata["pct_kcals_consumed_recognized"] = get_overall_recognized_percentage("kcals_consumed")
         completeness_summary = "### Completeness of recognized Livelihood Activities compared to the summary for Baseline-level activities\n"
         for column in ["income", "expenditure", "percentage_kcals", "kcals_consumed"]:
             completeness_summary += f"<details>\n\n<summary>{column.replace('_', ' ').title()}</summary>\n\n"
