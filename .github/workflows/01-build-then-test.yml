@@ -30,7 +30,7 @@ env:
 jobs:
   lint:
     runs-on: [ fewsnet ]
-    container: "python:3.11"
+    container: "python:3.12"
 
     steps:
       - uses: "actions/checkout@v4"

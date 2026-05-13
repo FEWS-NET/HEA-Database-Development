@@ -1,14 +1,13 @@
-from django.db.models import F, FloatField, Sum, Value
+from django.db.models import Case, F, FloatField, Sum, Value, When
 from django.db.models.functions import Coalesce
 from rest_framework import serializers
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
 
 from common.fields import translation_fields
 from common.serializers import AggregatingSerializer
-from metadata.models import WealthGroupCategory
+from metadata.models import LivelihoodStrategyType
 
 from .models import (
-    AnnualKcalsCost,
     BaselineLivelihoodActivity,
     BaselineWealthGroup,
     BaselineWealthGroupCharacteristicValue,
@@ -77,6 +76,8 @@ class LivelihoodZoneSerializer(serializers.ModelSerializer):
 
 
 class LivelihoodZoneBaselineSerializer(serializers.ModelSerializer):
+    annual_kcals_cost = serializers.FloatField(read_only=True)
+
     class Meta:
         model = LivelihoodZoneBaseline
         fields = (
@@ -100,6 +101,7 @@ class LivelihoodZoneBaselineSerializer(serializers.ModelSerializer):
             "valid_to_date",
             "population_source",
             "population_estimate",
+            "annual_kcals_cost",
         )
 
     livelihood_zone_name = serializers.CharField(source="livelihood_zone.name", read_only=True)
@@ -113,6 +115,8 @@ class LivelihoodZoneBaselineSerializer(serializers.ModelSerializer):
 
 
 class LivelihoodZoneBaselineGeoSerializer(GeoFeatureModelSerializer):
+    annual_kcals_cost = serializers.FloatField(read_only=True)
+
     class Meta:
         model = LivelihoodZoneBaseline
         fields = (
@@ -137,6 +141,7 @@ class LivelihoodZoneBaselineGeoSerializer(GeoFeatureModelSerializer):
             "valid_to_date",
             "population_source",
             "population_estimate",
+            "annual_kcals_cost",
         )
         geo_field = "geography"
         auto_bbox = True
@@ -1716,14 +1721,19 @@ class LivelihoodActivitySummarySerializer(AggregatingSerializer):
         ),
         "total_income_as_percentage_kcals": Sum(
             (
-                Coalesce(F("percentage_kcals"), 0)
+                # Calories from Food Purchase aren't included in total income.
+                # Cash Income is included and is counted as the percentage of
+                # the cost of 100% kcals that it could buy. If we also
+                # included the Food Purchase kcals we would be double-counting.
+                Case(
+                    When(strategy_type=Value(LivelihoodStrategyType.FOOD_PURCHASE), then=0.0),
+                    default=Coalesce(F("percentage_kcals"), 0.0),
+                )
                 + (
-                    Coalesce(F("income"), 0)
+                    Coalesce(F("income"), 0.0)
                     / (
                         F("wealth_group__average_household_size")
-                        * AnnualKcalsCost(
-                            F("wealth_group__livelihood_zone_baseline_id"), Value(WealthGroupCategory.POOR)
-                        )
+                        * F("wealth_group__livelihood_zone_baseline___annual_kcals_cost")
                     )
                 )
             ),
@@ -1732,11 +1742,18 @@ class LivelihoodActivitySummarySerializer(AggregatingSerializer):
         "total_income_as_cash": Sum(
             (
                 (
-                    Coalesce(F("percentage_kcals"), 0)
+                    # Calories from Food Purchase aren't included in total income.
+                    # Cash Income is included and is counted as the percentage of
+                    # the cost of 100% kcals that it could buy. If we also
+                    # included the Food Purchase kcals we would be double-counting.
+                    Case(
+                        When(strategy_type=Value(LivelihoodStrategyType.FOOD_PURCHASE), then=0.0),
+                        default=Coalesce(F("percentage_kcals"), 0.0),
+                    )
                     * F("wealth_group__average_household_size")
-                    * AnnualKcalsCost(F("wealth_group__livelihood_zone_baseline_id"), Value(WealthGroupCategory.POOR))
+                    * F("wealth_group__livelihood_zone_baseline___annual_kcals_cost")
                 )
-                + Coalesce(F("income"), 0)
+                + Coalesce(F("income"), 0.0)
             ),
             output_field=FloatField(),
         ),

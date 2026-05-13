@@ -1,8 +1,13 @@
+import datetime
+
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 
 from baseline.models import (
+    BaselineLivelihoodActivity,
     FoodPurchase,
+    LivelihoodActivity,
+    LivelihoodProductCategory,
     OtherCashIncome,
     OtherPurchase,
     PaymentInKind,
@@ -11,8 +16,137 @@ from baseline.models import (
 )
 from common.tests.factories import ClassifiedProductFactory
 from common.utils import conditional_logging
+from metadata.models import WealthGroupCategory
 
-from .factories import CommunityFactory, WealthGroupCharacteristicValueFactory
+from .factories import (
+    BaselineWealthGroupFactory,
+    CommunityFactory,
+    FoodPurchaseFactory,
+    LivelihoodProductCategoryFactory,
+    LivelihoodZoneBaselineFactory,
+    WealthGroupCharacteristicValueFactory,
+)
+
+
+class LivelihoodZoneBaselineTestCase(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.baseline = LivelihoodZoneBaselineFactory(reference_year_end_date=datetime.date(2024, 12, 31))
+        cls.poor_wealth_group = BaselineWealthGroupFactory(
+            livelihood_zone_baseline=cls.baseline,
+            wealth_group_category__code=WealthGroupCategory.POOR,
+            average_household_size=5,
+        )
+        cls.main_staple_activity = FoodPurchaseFactory(
+            livelihood_zone_baseline=cls.baseline,
+            wealth_group=cls.poor_wealth_group,
+            extra={"product__kcals_per_unit": 100},
+        )
+        cls.other_food_activity = FoodPurchaseFactory(
+            livelihood_zone_baseline=cls.baseline,
+            wealth_group=cls.poor_wealth_group,
+        )
+        cls.main_staple_category = LivelihoodProductCategoryFactory(
+            baseline_livelihood_activity=cls.main_staple_activity,
+            basket=LivelihoodProductCategory.ProductBasket.MAIN_STAPLE,
+            percentage_allocation_to_basket=1,
+        )
+        cls.other_food_category = LivelihoodProductCategoryFactory(
+            baseline_livelihood_activity=cls.other_food_activity,
+            basket=LivelihoodProductCategory.ProductBasket.SURVIVAL_OTHER_FOOD,
+            percentage_allocation_to_basket=0.25,
+        )
+        # Save the Baseline to force the calculation of annual_kcals_cost.
+        cls.baseline.save()
+
+    def get_expected_annual_kcals_cost(self):
+        # Calculate the expected annual kcals cost.
+        # It is defined as the cost of providing 100% of required kcals for the P
+        # Wealth Group divided by the average_household_size. The cost is
+        # calculated as the cost of Basket 2 (Other food survival) plus the cost
+        # of providing the remainder of kcals by purchasing the main staple. All
+        # costs are in the currency for the BSS.
+        return (
+            self.other_food_activity.expenditure * self.other_food_category.percentage_allocation_to_basket
+            + (
+                (
+                    1
+                    - (
+                        self.other_food_activity.percentage_kcals
+                        * self.other_food_category.percentage_allocation_to_basket
+                    )
+                )
+                * 2100
+                * 365
+                * self.poor_wealth_group.average_household_size
+                / self.main_staple_activity.extra["product__kcals_per_unit"]
+                * self.main_staple_activity.price
+            )
+        ) / self.poor_wealth_group.average_household_size
+
+    def test_calculate_fields_stores_annual_kcals_cost(self):
+        expected_annual_kcals_cost = self.get_expected_annual_kcals_cost()
+        self.assertAlmostEqual(self.baseline.annual_kcals_cost, expected_annual_kcals_cost)
+        self.assertAlmostEqual(self.baseline._annual_kcals_cost, expected_annual_kcals_cost)
+        self.assertAlmostEqual(self.baseline._get_annual_kcals_cost(), expected_annual_kcals_cost)
+        self.assertAlmostEqual(self.baseline._get_annual_kcals_cost_sql(), expected_annual_kcals_cost)
+
+    def test_product_category_change_resaves_baseline_on_commit(self):
+        with self.captureOnCommitCallbacks(execute=True):
+            self.other_food_category.percentage_allocation_to_basket = 0.5
+            self.other_food_category.save()
+
+        self.baseline.refresh_from_db()
+        self.assertAlmostEqual(self.baseline.annual_kcals_cost, self.get_expected_annual_kcals_cost())
+
+    def test_baseline_livelihood_activity_change_resaves_baseline_on_commit(self):
+        with self.captureOnCommitCallbacks(execute=True):
+            self.main_staple_activity.price = 3
+            self.main_staple_activity.expenditure = self.main_staple_activity.quantity_purchased * 3
+            self.main_staple_activity.save()
+
+        self.baseline.refresh_from_db()
+        self.assertAlmostEqual(self.baseline.annual_kcals_cost, self.get_expected_annual_kcals_cost())
+
+    def test_baseline_livelihood_activity_superclass_resaves_baseline_on_commit(self):
+        with self.captureOnCommitCallbacks(execute=True):
+            activity = BaselineLivelihoodActivity.objects.get(pk=self.main_staple_activity.pk)
+            activity.price = 4
+            activity.expenditure = activity.quantity_purchased * 4
+            activity.save()
+
+        self.baseline.refresh_from_db()
+        self.main_staple_activity.refresh_from_db()
+        self.assertAlmostEqual(self.baseline.annual_kcals_cost, self.get_expected_annual_kcals_cost())
+
+    def test_livelihood_activity_superclass_resaves_baseline_on_commit(self):
+        with self.captureOnCommitCallbacks(execute=True):
+            activity = LivelihoodActivity.objects.get(pk=self.main_staple_activity.pk)
+            activity.price = 5
+            activity.expenditure = activity.quantity_purchased * 5
+            activity.save()
+
+        self.baseline.refresh_from_db()
+        self.main_staple_activity.refresh_from_db()
+        self.assertAlmostEqual(self.baseline.annual_kcals_cost, self.get_expected_annual_kcals_cost())
+
+    def test_product_category_changes_for_same_baseline_queue_one_on_commit_callback(self):
+        with self.captureOnCommitCallbacks(execute=False) as callbacks:
+            self.main_staple_category.percentage_allocation_to_basket = 0.9
+            self.main_staple_category.save()
+            self.other_food_category.percentage_allocation_to_basket = 0.5
+            self.other_food_category.save()
+
+        self.assertEqual(len(callbacks), 1)
+
+    def test_poor_baseline_wealth_group_change_resaves_baseline_on_commit(self):
+        with self.captureOnCommitCallbacks(execute=True):
+            self.poor_wealth_group.average_household_size = 10
+            self.poor_wealth_group.save()
+
+        self.baseline.refresh_from_db()
+        self.poor_wealth_group.refresh_from_db()
+        self.assertAlmostEqual(self.baseline.annual_kcals_cost, self.get_expected_annual_kcals_cost())
 
 
 class WealthGroupCharacteristicValueTestCase(TestCase):
