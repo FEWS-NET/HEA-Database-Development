@@ -2448,19 +2448,8 @@ class FoodPurchase(LivelihoodActivity):
         price = self.price or 0
         expenditure = self.expenditure or 0
 
-        if self.expenditure:
-            if self.unit_multiple is not None:
-                # quantity_purchased is already the annual total
-                expected = quantity_purchased * price
-            elif self.times_per_year is not None:
-                # quantity_purchased is per-purchase; multiply by times_per_year for annual total
-                expected = quantity_purchased * self.times_per_year * price
-            else:
-                expected = quantity_purchased * price
-            if not math.isclose(expenditure, expected):
-                raise ValidationError(
-                    _("Expenditure for a Food Purchase must be quantity purchased multiplied by price")
-                )
+        if self.expenditure and not math.isclose(expenditure, quantity_purchased * price):
+            raise ValidationError(_("Expenditure for a Food Purchase must be quantity purchased multiplied by price"))
 
     class Meta:
         verbose_name = LivelihoodStrategyType.FOOD_PURCHASE.label
