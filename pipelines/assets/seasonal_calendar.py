@@ -240,6 +240,9 @@ def seasonal_activity_instances(
     """
     SeasonalActivity and SeasonalActivityOccurrence instance dicts extracted from a BSS Seas Cal sheet.
     """
+    if seasonal_calendar_dataframe.empty:
+        return Output({}, metadata={"message": "No 'Seas Cal' worksheet found in this BSS"})
+
     partition_key = context.asset_partition_key_for_output()
     livelihood_zone_baseline = LivelihoodZoneBaseline.objects.get_by_natural_key(*partition_key.split("~")[1:])
     livelihood_zone_id = livelihood_zone_baseline.livelihood_zone_id
@@ -431,8 +434,13 @@ def seasonal_activity_instances(
                     "label": label,
                 }
                 for column in df.loc[row, first_summary_column:].index:
-                    if df.loc[row, column] >= (community_count * COMMUNITY_OCCURRENCE_THRESHOLD):
-                        months.append(int(df.loc[4, column]))
+                    try:
+                        if df.loc[row, column] >= (community_count * COMMUNITY_OCCURRENCE_THRESHOLD):
+                            months.append(int(df.loc[4, column]))
+                    except TypeError:
+                        errors.append(
+                            f"Unexpected value '{df.loc[row, column]}' in summary column {column} from {label} for row {row}"
+                        )
                 if months:
                     finalize_occurences()
         except Exception as e:
@@ -468,8 +476,27 @@ def seasonal_activity_instances(
     metadata["num_unrecognized_labels"] = len(unrecognized_labels)
     if unrecognized_labels:
         metadata["unrecognized_labels"] = MetadataValue.md("\n".join(f"- {label}" for label in unrecognized_labels))
+    metadata["pct_seasonal_activities_recognized"] = (
+        round(100 * (len(seasonal_activities) / (len(seasonal_activities) + len(unrecognized_labels))))
+        if seasonal_activities or unrecognized_labels
+        else ""
+    )
     metadata["label_columns"] = "A:B" if first_data_column == "C" else "A"
     metadata["preview"] = MetadataValue.md(f"```json\n{json.dumps(instances, indent=4, ensure_ascii=False)}\n```")
+
+    if errors:
+        if config.strict:
+            raise RuntimeError(
+                "Missing or inconsistent metadata in BSS %s worksheet '%s':\n%s"
+                % (partition_key, "Seas Cal", "\n".join(errors))
+            )
+        else:
+            context.log.error(
+                "Missing or inconsistent metadata in BSS %s worksheet '%s':\n%s"
+                % (partition_key, "Seas Cal", "\n".join(errors))
+            )
+            metadata["errors"] = MetadataValue.md(f'```text\n{"\n".join(errors)}\n```')
+
     return Output(instances, metadata=metadata)
 
 

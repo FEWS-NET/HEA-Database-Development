@@ -253,7 +253,7 @@ def get_start_end_day_numbers_from_month(month: int):
     Return the first and last day-of-year numbers for a month in a simplified 365-day year.
     """
     if month < 1 or month > 12:
-        raise ValueError("Month must be between 1 and 12.")
+        raise ValueError("Month '%d' is not between 1 and 12." % month)
 
     month_lengths = (31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
     start = sum(month_lengths[: month - 1]) + 1
