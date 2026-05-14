@@ -396,6 +396,7 @@ class WealthGroupCharacteristicValueSerializer(serializers.ModelSerializer):
             "wealth_characteristic_ordering",
             "variable_type",
             "characteristic_group",
+            "characteristic_group_ordering",
             "product",
             "product_common_name",
             "unit_of_measure",
@@ -460,6 +461,9 @@ class WealthGroupCharacteristicValueSerializer(serializers.ModelSerializer):
         source="wealth_group.community.livelihood_zone_baseline.source_organization.name", read_only=True
     )
     characteristic_group = serializers.SerializerMethodField()
+    characteristic_group_ordering = serializers.IntegerField(
+        source="wealth_characteristic.characteristic_group.ordering", read_only=True
+    )
 
     def get_characteristic_group(self, obj):
         """
@@ -507,6 +511,7 @@ class BaselineWealthGroupCharacteristicValueSerializer(serializers.ModelSerializ
             "wealth_characteristic_ordering",
             "variable_type",
             "characteristic_group",
+            "characteristic_group_ordering",
             "product",
             "product_common_name",
             "unit_of_measure",
@@ -568,6 +573,9 @@ class BaselineWealthGroupCharacteristicValueSerializer(serializers.ModelSerializ
         source="wealth_group.livelihood_zone_baseline.source_organization.name", read_only=True
     )
     characteristic_group = serializers.SerializerMethodField()
+    characteristic_group_ordering = serializers.IntegerField(
+        source="wealth_characteristic.characteristic_group.ordering", read_only=True
+    )
 
     def get_characteristic_group(self, obj):
         """
