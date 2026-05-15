@@ -528,7 +528,7 @@ def get_bss_label_dataframe(
         ~((label_df["label"] == "") & (label_df.groupby("row_number")["label"].transform(lambda x: (x != "").any())))
     ]
 
-    # Avoid double-counting by setting the datapoint_count and in_summary to None if there is another label for the
+    # Avoid double-counting by setting the datapoint_count and in_summary to NA if there is another label for the
     # same row that isn't blank, even if the current row's label is also not blank - because sometimes the 'Seas Cal'
     # worksheet has labels in both Column A and B, and these would otherwise cause the row to be double-counted.
     for col in ["datapoint_count", "in_summary"]:
@@ -564,8 +564,8 @@ def get_bss_label_dataframe(
         label_df,
         metadata={
             "num_labels": len(label_df),
-            "num_datapoints": int(label_df["datapoint_count"].sum()),
-            "num_summaries": int(label_df["in_summary"].sum()),
+            "num_datapoints": int(label_df["datapoint_count"].fillna(0).sum()),
+            "num_summaries": int(label_df["in_summary"].fillna(0).astype(int).sum()),
             # Escape the ~ in the partition_key, otherwise it is rendered as strikethrough
             "preview": MetadataValue.md(label_df.head(config.preview_rows).to_markdown().replace("~", "\\~")),
             "sample": MetadataValue.md(sample_df.to_markdown().replace("~", "\\~")),
@@ -619,21 +619,20 @@ def get_summary_bss_label_dataframe(
                 "lang",
                 lambda x: ", ".join(x.sort_values().unique()),
             ),  # Create comma-separated list of unique languages
-            datapoint_count_sum=("datapoint_count", "sum"),
-            in_summary_sum=("in_summary", "sum"),
+            datapoint_count=("datapoint_count", lambda x: x.fillna(0).sum()),
+            # Force single True/False values to 1/0 and then sum.
+            summary_count=("in_summary", lambda x: x.fillna(0).astype(int).sum()),
             unique_bss_count=("bss", pd.Series.nunique),
             min_row_number=("row_number", "min"),
             max_row_number=("row_number", "max"),
             bss_for_min_row=("bss", "first"),  # Assuming df is sorted by row_number within each group
             bss_for_max_row=("bss", "last"),  # Assuming df is sorted by row_number within each group
         )
+        .rename(columns={"label_lower": "label"})
         .reset_index()
     )
 
     df = df.sort_values(by=["min_row_number", "label_lower", "bss_for_min_row", "bss_for_max_row"])
-    df = df.rename(
-        columns={"label_lower": "label", "datapoint_count_sum": "datapoint_count", "in_summary_sum": "summary_count"}
-    )
 
     # Add a translation of the label
     translator = Translator()

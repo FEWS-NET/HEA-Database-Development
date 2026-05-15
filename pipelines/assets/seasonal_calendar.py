@@ -169,7 +169,7 @@ def summary_seasonal_calendar_labels_dataframe(
         .agg(
             # Create comma-separated list of unique languages
             langs=("lang", lambda x: ", ".join(x.sort_values().unique())),
-            datapoint_count=("datapoint_count", "sum"),
+            datapoint_count=("datapoint_count", lambda x: x.fillna(0).sum()),
             # Force single True/False values to 1/0 and then sum.
             summary_count=("in_summary", lambda x: x.fillna(0).astype(int).sum()),
             unique_bss_count=("bss", pd.Series.nunique),
@@ -314,7 +314,7 @@ def seasonal_activity_instances(
                 range[0],
                 range[1],
             ]
-            seasonal_activity_occurrences.append(seasonal_activity_occurrence)
+            seasonal_activity_occurrences.append(seasonal_activity_occurrence.copy())
 
     # Iterate over the rows
     seasonal_activities = []

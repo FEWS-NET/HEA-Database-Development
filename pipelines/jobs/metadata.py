@@ -153,8 +153,6 @@ def load_metadata_for_model(context: OpExecutionContext, sheet_name: str, model:
             id_fields = "abbreviation"
         elif model_name == "ActivityLabel":
             id_fields = ["activity_label", "activity_type"]
-        elif model_name == "SeasonalActivityLabel":
-            id_fields = "seasonal_activity_label"
         elif model_name == "WealthCharacteristicLabel":
             id_fields = "wealth_characteristic_label"
         else:
