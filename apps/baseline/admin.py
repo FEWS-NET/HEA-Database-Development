@@ -1094,10 +1094,9 @@ class SeasonalActivityOccurrenceAdmin(admin.ModelAdmin):
         "seasonal_activity__additional_identifier",
     )
     list_filter = (
-        "community",
         "seasonal_activity__seasonal_activity_type",
-        "seasonal_activity__season",
-        "seasonal_activity__product",
+        ("seasonal_activity__season", admin.RelatedOnlyFieldListFilter),
+        ("seasonal_activity__product", admin.RelatedOnlyFieldListFilter),
     )
     ordering = ["start"]
 

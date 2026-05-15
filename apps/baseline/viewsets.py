@@ -1479,6 +1479,13 @@ class SeasonalActivityViewSet(BaseModelViewSet):
     ).prefetch_related("season")
     serializer_class = SeasonalActivitySerializer
     filterset_class = SeasonalActivityFilterSet
+    ordering = [
+        "livelihood_zone_baseline__livelihood_zone__code",
+        "livelihood_zone_baseline__reference_year_end_date",
+        "seasonal_activity_type__activity_category",
+        "product__cpc",
+        "seasonal_activity_type__ordering",
+    ]
 
 
 class SeasonalActivityOccurrenceFilterSet(filters.FilterSet):
@@ -1509,6 +1516,14 @@ class SeasonalActivityOccurrenceViewSet(BaseModelViewSet):
     ).prefetch_related("seasonal_activity__season")
     serializer_class = SeasonalActivityOccurrenceSerializer
     filterset_class = SeasonalActivityOccurrenceFilterSet
+    ordering = [
+        "livelihood_zone_baseline__livelihood_zone__code",
+        "livelihood_zone_baseline__reference_year_end_date",
+        "community__name",
+        "seasonal_activity__seasonal_activity_type__activity_category",
+        "seasonal_activity__product__cpc",
+        "seasonal_activity__seasonal_activity_type__ordering",
+    ]
 
 
 class BaselineSeasonalActivityOccurrenceFilterSet(SeasonalActivityOccurrenceFilterSet):
@@ -1529,6 +1544,13 @@ class BaselineSeasonalActivityOccurrenceViewSet(BaseModelViewSet):
     ).prefetch_related("seasonal_activity__season")
     serializer_class = BaselineSeasonalActivityOccurrenceSerializer
     filterset_class = BaselineSeasonalActivityOccurrenceFilterSet
+    ordering = [
+        "livelihood_zone_baseline__livelihood_zone__code",
+        "livelihood_zone_baseline__reference_year_end_date",
+        "seasonal_activity__seasonal_activity_type__activity_category",
+        "seasonal_activity__product__cpc",
+        "seasonal_activity__seasonal_activity_type__ordering",
+    ]
 
 
 class CommunityCropProductionFilterSet(filters.FilterSet):

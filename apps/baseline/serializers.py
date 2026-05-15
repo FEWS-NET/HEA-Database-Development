@@ -1,4 +1,5 @@
-from datetime import datetime, timedelta
+import calendar
+import datetime
 
 from django.db.models import Case, F, FloatField, Sum, Value, When
 from django.db.models.functions import Coalesce
@@ -956,8 +957,10 @@ class SeasonalActivitySerializer(serializers.ModelSerializer):
             "seasonal_activity_type",
             "seasonal_activity_type_name",
             "seasonal_activity_type_description",
+            "seasonal_activity_type_ordering",
             "activity_category",
             "activity_category_label",
+            "activity_category_ordering",
             "product",
             "product_common_name",
             "product_description",
@@ -981,8 +984,14 @@ class SeasonalActivitySerializer(serializers.ModelSerializer):
     seasonal_activity_type_description = serializers.CharField(
         source="seasonal_activity_type.description", read_only=True
     )
+    seasonal_activity_type_ordering = serializers.IntegerField(
+        source="seasonal_activity_type.ordering", read_only=True
+    )
     activity_category = serializers.CharField(source="seasonal_activity_type.activity_category", read_only=True)
     activity_category_label = serializers.SerializerMethodField()
+    activity_category_ordering = serializers.IntegerField(
+        source="seasonal_activity_type.activity_category_ordering", read_only=True
+    )
     additional_identifier = serializers.CharField(read_only=True)
     is_key = serializers.BooleanField(default=None, required=False)
 
@@ -1019,8 +1028,10 @@ class SeasonalActivityOccurrenceSerializer(serializers.ModelSerializer):
             "seasonal_activity_type",
             "seasonal_activity_type_name",
             "seasonal_activity_type_description",
+            "seasonal_activity_type_ordering",
             "activity_category",
             "activity_category_label",
+            "activity_category_ordering",
             "product",
             "product_common_name",
             "product_description",
@@ -1080,10 +1091,16 @@ class SeasonalActivityOccurrenceSerializer(serializers.ModelSerializer):
     seasonal_activity_type_description = serializers.CharField(
         source="seasonal_activity.seasonal_activity_type.description", read_only=True
     )
+    seasonal_activity_type_ordering = serializers.IntegerField(
+        source="seasonal_activity.seasonal_activity_type.ordering", read_only=True
+    )
     activity_category = serializers.CharField(
         source="seasonal_activity.seasonal_activity_type.activity_category", read_only=True
     )
     activity_category_label = serializers.SerializerMethodField()
+    activity_category_ordering = serializers.IntegerField(
+        source="seasonal_activity.seasonal_activity_type.activity_category_ordering", read_only=True
+    )
     start_date = serializers.SerializerMethodField()
     end_date = serializers.SerializerMethodField()
     seasonal_activity_label = serializers.SerializerMethodField()
@@ -1092,17 +1109,31 @@ class SeasonalActivityOccurrenceSerializer(serializers.ModelSerializer):
         return obj.seasonal_activity.seasonal_activity_type.get_activity_category_display()
 
     def get_start_date(self, obj):
-        """Compute start_date based on the start day of the year."""
+        """Compute start_date based on the reference year."""
         if obj.start is None:
             return None
-        start_date = datetime(datetime.now().year, 1, 1) + timedelta(days=obj.start - 1)
+        start_yday = obj.livelihood_zone_baseline.reference_year_start_date.timetuple().tm_yday
+        year = obj.livelihood_zone_baseline.reference_year_start_date.year
+        # Normalize for a non-leap year
+        if start_yday > 59 and calendar.isleap(year):
+            start_yday -= 1
+        if obj.start < start_yday:
+            year += 1
+        start_date = datetime.date(year, 1, 1) + datetime.timedelta(days=obj.start - 1)
         return start_date.strftime("%Y-%m-%d")
 
     def get_end_date(self, obj):
-        """Compute end_date based on the end day of the year."""
+        """Compute end_date based on the reference year."""
         if obj.end is None:
             return None
-        end_date = datetime(datetime.now().year, 1, 1) + timedelta(days=obj.end - 1)
+        start_yday = obj.livelihood_zone_baseline.reference_year_start_date.timetuple().tm_yday
+        year = obj.livelihood_zone_baseline.reference_year_start_date.year
+        # Normalize for a non-leap year
+        if start_yday > 59 and calendar.isleap(year):
+            start_yday -= 1
+        if obj.end < start_yday:
+            year += 1
+        end_date = datetime.date(year, 1, 1) + datetime.timedelta(days=obj.end - 1)
         return end_date.strftime("%Y-%m-%d")
 
     def get_seasonal_activity_label(self, obj):

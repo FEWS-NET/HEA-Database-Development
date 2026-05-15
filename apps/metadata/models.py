@@ -249,6 +249,10 @@ class SeasonalActivityType(ReferenceData):
         help_text=_("Are SeasonalActivity instances of this type key seasonal activities?"),
     )
 
+    @property
+    def activity_category_ordering(self):
+        return self.SeasonalActivityCategory.values.index(self.activity_category)
+
     class Meta:
         verbose_name = _("Seasonal Activity Type")
         verbose_name_plural = _("Seasonal Activity Types")
