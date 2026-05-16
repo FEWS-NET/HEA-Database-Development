@@ -2026,6 +2026,7 @@ class LivelihoodActivity(common_models.Model):
         verbose_name_plural = _("Livelihood Activities")
         indexes = [
             models.Index(fields=["sort_key"], name="activity_sort_key_idx"),
+            models.Index(fields=["livelihood_zone_baseline", "sort_key"], name="activity_lzb_sort_key_idx"),
         ]
         constraints = [
             # @TODO Add constraints either declared here or in a custom migration that target the composite foreign

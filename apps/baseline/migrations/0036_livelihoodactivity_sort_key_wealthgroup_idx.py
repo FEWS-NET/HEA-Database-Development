@@ -35,7 +35,7 @@ UPDATE baseline_livelihoodactivity SET sort_key = ''
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("baseline", "0033_add_annual_kcals_cost_function"),
+        ("baseline", "0035_float_fields_for_fractional_bss_values"),
         ("metadata", "0016_activitylabel_payment_product"),
     ]
 
@@ -52,6 +52,13 @@ class Migration(migrations.Migration):
         migrations.AddIndex(
             model_name="livelihoodactivity",
             index=models.Index(fields=["sort_key"], name="activity_sort_key_idx"),
+        ),
+        migrations.AddIndex(
+            model_name="livelihoodactivity",
+            index=models.Index(
+                fields=["livelihood_zone_baseline", "sort_key"],
+                name="activity_lzb_sort_key_idx",
+            ),
         ),
         migrations.AddIndex(
             model_name="wealthgroup",
