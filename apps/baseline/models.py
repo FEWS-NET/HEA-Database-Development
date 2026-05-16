@@ -348,7 +348,35 @@ class LivelihoodZoneBaseline(common_models.Model):
         verbose_name=_("Currency"),
         help_text=_("Default currency for income or expenditure from Livelihood Activities within this Baseline."),
     )
+    # Derived field - always set by calculate_fields()
+    _annual_kcals_cost = models.FloatField(
+        blank=True,
+        null=True,
+        verbose_name=_("Annual kcals cost"),
+        help_text=_("Annual cost per person of 100% of recommended kcals in the baseline currency."),
+    )
     objects = LivelihoodZoneBaselineManager()
+
+    def _get_annual_kcals_cost_sql(self):
+        """
+        Calculate the annual cost per person of 100% of recommended kcals.
+
+        This method uses a stored SQL function and is used for troubleshooting.
+        """
+        if not self.pk:
+            return None
+        return (
+            type(self)
+            .objects.filter(pk=self.pk)
+            .annotate(
+                annual_kcals_cost=AnnualKcalsCost(
+                    F("id"),
+                    Value(WealthGroupCategory.POOR),
+                )
+            )
+            .values_list("annual_kcals_cost", flat=True)
+            .get()
+        )
 
     def _get_annual_kcals_cost(self):
         """
@@ -364,23 +392,8 @@ class LivelihoodZoneBaseline(common_models.Model):
 
         This calculation is based on the formulae in the Graphs worksheet.
         """
-        return (
-            type(self)
-            .objects.filter(pk=self.pk)
-            .annotate(
-                annual_kcals_cost=AnnualKcalsCost(
-                    F("id"),
-                    Value(WealthGroupCategory.POOR),
-                )
-            )
-            .values_list("annual_kcals_cost", flat=True)
-            .get()
-        )
-
-    def _get_annual_kcals_cost_python(self):
-        """
-        A Python implementation of the annual_kcals_cost calculation, used for troubleshooting.
-        """
+        if not self.pk:
+            return None
         poor_main_staple = LivelihoodProductCategory.objects.filter(
             basket=LivelihoodProductCategory.ProductBasket.MAIN_STAPLE,
             baseline_livelihood_activity__wealth_group__livelihood_zone_baseline=self,
@@ -400,6 +413,10 @@ class LivelihoodZoneBaseline(common_models.Model):
                 )
             )
         poor_main_staple = poor_main_staple[0]
+        poor_household_size = poor_main_staple.baseline_livelihood_activity.wealth_group.average_household_size
+        if not poor_household_size:
+            # Cannot calculate without household size
+            return None
         poor_other_food = LivelihoodProductCategory.objects.filter(
             basket=LivelihoodProductCategory.ProductBasket.SURVIVAL_OTHER_FOOD,
             baseline_livelihood_activity__wealth_group__livelihood_zone_baseline=self,
@@ -412,12 +429,11 @@ class LivelihoodZoneBaseline(common_models.Model):
                 F("baseline_livelihood_activity__expenditure") * F("percentage_allocation_to_basket")
             ),
         )
-        poor_household_size = poor_main_staple.baseline_livelihood_activity.wealth_group.average_household_size
         main_staple_kcals_per_unit = poor_main_staple.baseline_livelihood_activity.extra.get(
             "product__kcals_per_unit",
             poor_main_staple.baseline_livelihood_activity.livelihood_strategy.product.kcals_per_unit,
         )
-        main_staple_percentage_kcals_required = 1 - poor_other_food["total_percentage_kcals"]
+        main_staple_percentage_kcals_required = 1 - (poor_other_food["total_percentage_kcals"] or 0)
         main_staple_cost = (
             2100  # kcals per person per day
             * 365  # days per year
@@ -426,17 +442,29 @@ class LivelihoodZoneBaseline(common_models.Model):
             / main_staple_kcals_per_unit
             * poor_main_staple.baseline_livelihood_activity.price
         )
-        total_cost = main_staple_cost + poor_other_food["total_expenditure"]
+        total_cost = main_staple_cost + (poor_other_food["total_expenditure"] or 0)
         total_food_cost_per_person = total_cost / poor_household_size
         return total_food_cost_per_person
 
-    def get_annual_kcals_cost(self):
-        key = f"livelihood_zone_baseline~{self.pk}~annual_kcals_cost"
-        annual_kcals_cost = cache.get(key)
-        if not annual_kcals_cost:
-            annual_kcals_cost = self._get_annual_kcals_cost()
-            cache.set(key, annual_kcals_cost, 60 * 60 * 24)
-        return annual_kcals_cost
+    @property
+    def annual_kcals_cost(self):
+        return self._annual_kcals_cost
+
+    def calculate_fields(self):
+        self._annual_kcals_cost = self._get_annual_kcals_cost()
+
+    def save(self, *args, **kwargs):
+        self.calculate_fields()
+        self.full_clean(
+            exclude=[field.name for field in self._meta.fields if isinstance(field, models.ForeignKey)],
+            validate_unique=False,
+        )
+
+        # Make sure that _annual_kcals_cost is included in the update_fields if the update_fields argument is provided.
+        update_fields = kwargs.get("update_fields")
+        if update_fields is not None:
+            kwargs["update_fields"] = set(update_fields) | {"_annual_kcals_cost"}
+        super().save(*args, **kwargs)
 
     def natural_key(self):
         try:
@@ -734,7 +762,7 @@ class WealthGroup(common_models.Model):
 
     @cached_property
     def household_annual_kcals_cost(self):
-        annual_kcals_cost = self.livelihood_zone_baseline.get_annual_kcals_cost()
+        annual_kcals_cost = self.livelihood_zone_baseline.annual_kcals_cost
         if annual_kcals_cost and self.average_household_size:
             return annual_kcals_cost * self.average_household_size
 
@@ -759,7 +787,7 @@ class WealthGroup(common_models.Model):
         This basket is defined for the Poor Wealth Group, and other values use
         the same expenditure, scaled according to average household size.
         """
-        annual_kcals_cost = self.livelihood_zone_baseline.get_annual_kcals_cost()
+        annual_kcals_cost = self.livelihood_zone_baseline.annual_kcals_cost
         poor_survival_non_food = (
             LivelihoodProductCategory.objects.filter(
                 basket=LivelihoodProductCategory.ProductBasket.SURVIVAL_NON_FOOD,
@@ -804,7 +832,7 @@ class WealthGroup(common_models.Model):
 
     @cached_property
     def survival_threshold_as_cash(self):
-        annual_kcals_cost = self.livelihood_zone_baseline.get_annual_kcals_cost()
+        annual_kcals_cost = self.livelihood_zone_baseline.annual_kcals_cost
         if annual_kcals_cost and self.survival_threshold_as_percentage_kcals and self.average_household_size:
             return self.survival_threshold_as_percentage_kcals * self.average_household_size * annual_kcals_cost
 
@@ -847,7 +875,7 @@ class WealthGroup(common_models.Model):
         Livelihoods Protection Basket then the amount is inherited from the Poor wealth group,
         rather than based on typical consumption for the Wealth Group in the Reference Year.
         """
-        annual_kcals_cost = self.livelihood_zone_baseline.get_annual_kcals_cost()
+        annual_kcals_cost = self.livelihood_zone_baseline.annual_kcals_cost
 
         livelihood_protection_qs = LivelihoodProductCategory.objects.filter(
             basket=LivelihoodProductCategory.ProductBasket.LIVELIHOODS_PROTECTION,
@@ -870,6 +898,9 @@ class WealthGroup(common_models.Model):
         )
 
         df = pd.DataFrame.from_records(livelihood_protection_qs)
+        if not df.empty:
+            for col in ["expenditure", "percentage_allocation_to_basket", "household_size", "percentage_kcals"]:
+                df[col] = pd.to_numeric(df[col], errors="coerce")
         if df.empty:
             livelihoods_protection_expenditure = 0
             livelihoods_protection_percentage_kcals = 0
@@ -922,8 +953,10 @@ class WealthGroup(common_models.Model):
                 # the current Wealth Group
                 for column in poor_df.columns:
                     if column != "livelihood_strategy_id":
-                        merged[f"effective_{column}"] = merged[f"{column}_wealth_group"].combine_first(
-                            merged[f"{column}_poor"]
+                        wealth_group_values = merged[f"{column}_wealth_group"]
+                        poor_values = merged[f"{column}_poor"]
+                        merged[f"effective_{column}"] = wealth_group_values.where(
+                            wealth_group_values.notna(), poor_values
                         )
 
                 # Calculate the expenditure for the Basket by applying the
@@ -932,10 +965,14 @@ class WealthGroup(common_models.Model):
                 # was for the Poor Wealth Group the expenditure reflects the
                 # different household sizes.
                 merged["basket_expenditure"] = (
-                    merged["effective_expenditure"]
-                    * merged["effective_percentage_allocation_to_basket"]
-                    / merged["effective_household_size"]
-                    * self.average_household_size
+                    (
+                        merged["effective_expenditure"]
+                        * merged["effective_percentage_allocation_to_basket"]
+                        / merged["effective_household_size"]
+                        * self.average_household_size
+                    )
+                    if self.average_household_size
+                    else None
                 )
 
                 # For the percentage_kcals we can apply the effective_percentage_allocation_to_basket
@@ -972,7 +1009,7 @@ class WealthGroup(common_models.Model):
 
     @cached_property
     def livelihoods_protection_threshold_as_cash(self):
-        annual_kcals_cost = self.livelihood_zone_baseline.get_annual_kcals_cost()
+        annual_kcals_cost = self.livelihood_zone_baseline.annual_kcals_cost
         if (
             annual_kcals_cost
             and self.livelihoods_protection_threshold_as_percentage_kcals
@@ -1758,30 +1795,44 @@ class LivelihoodActivity(common_models.Model):
         """
         The total food consumed and income received as percentage of required household kcals.
         """
-        annual_kcals_cost = self.livelihood_zone_baseline.get_annual_kcals_cost()
+        annual_kcals_cost = self.livelihood_zone_baseline.annual_kcals_cost
         percentage_kcals = self.percentage_kcals or 0
         income = self.income or 0
         if self.wealth_group.average_household_size:
-            return (
-                percentage_kcals + (income / (self.wealth_group.average_household_size * annual_kcals_cost))
-                if annual_kcals_cost
-                else None
-            )
+            if self.strategy_type == LivelihoodStrategyType.FOOD_PURCHASE:
+                # Calories from Food Purchase aren't included in total income.
+                # Cash Income is included and is counted as the percentage of
+                # the cost of 100% kcals that it could buy. If we also
+                # included the Food Purchase kcals we would be double-counting.
+                return 0
+            else:
+                return (
+                    percentage_kcals + (income / (self.wealth_group.average_household_size * annual_kcals_cost))
+                    if annual_kcals_cost
+                    else None
+                )
 
     @cached_property
     def total_income_as_cash(self):
         """
         The total food consumed and income received as an amount in the BSS currency.
         """
-        annual_kcals_cost = self.livelihood_zone_baseline.get_annual_kcals_cost()
+        annual_kcals_cost = self.livelihood_zone_baseline.annual_kcals_cost
         percentage_kcals = self.percentage_kcals or 0
         income = self.income or 0
         if self.wealth_group.average_household_size:
-            return (
-                (percentage_kcals * self.wealth_group.average_household_size * annual_kcals_cost) + income
-                if annual_kcals_cost
-                else None
-            )
+            if self.strategy_type == LivelihoodStrategyType.FOOD_PURCHASE:
+                # Calories from Food Purchase aren't included in total income.
+                # Cash Income is included and is counted as the percentage of
+                # the cost of 100% kcals that it could buy. If we also
+                # included the Food Purchase kcals we would be double-counting.
+                return 0
+            else:
+                return (
+                    (percentage_kcals * self.wealth_group.average_household_size * annual_kcals_cost) + income
+                    if annual_kcals_cost
+                    else None
+                )
 
     objects = LivelihoodActivityManager()
 
@@ -1874,15 +1925,17 @@ class LivelihoodActivity(common_models.Model):
 
         However, some LivelihoodActivity subclasses, such as FoodPurchase and
         OtherPurchase, involve spending money to acquire the item, in which
-        case we must validate that expenditure = quantity_produced * price
+        case we must validate that expenditure = quantity_purchased * price
         """
-        quantity_produced = self.quantity_produced or 0
+        quantity_produced_or_purchased = self.quantity_produced or self.quantity_purchased or 0
         price = self.price or 0
         expenditure = self.expenditure or 0
 
-        if self.expenditure and not math.isclose(expenditure, quantity_produced * price):
+        if self.expenditure and not math.isclose(expenditure, quantity_produced_or_purchased * price):
             raise ValidationError(
-                _("Expenditure for a Livelihood Activity must be quantity produced multiplied by price")
+                _(
+                    "Expenditure for a Livelihood Activity must be quantity produced or quantity purchased multiplied by price"
+                )
             )
 
     def validate_kcals_consumed(self):
@@ -2391,13 +2444,15 @@ class FoodPurchase(LivelihoodActivity):
     # This is a float field because data may be captured as "once per week",
     # which equates to "52 per year", which is "4.33 per month".
     times_per_month = models.FloatField(blank=True, null=True, verbose_name=_("Purchases per month"))
-    months_per_year = models.PositiveSmallIntegerField(
+    # This is a float field because BSS data may have fractional months (e.g. 6.4 months).
+    months_per_year = models.FloatField(
         blank=True,
         null=True,
         verbose_name=_("Months per year"),
         help_text=_("Number of months in a year that the product is purchased"),
     )
-    times_per_year = models.PositiveSmallIntegerField(
+    # This is a float field because BSS data may have fractional times (e.g. 103.2 purchases/year).
+    times_per_year = models.FloatField(
         blank=True,
         null=True,
         verbose_name=_("Times per year"),
@@ -2629,7 +2684,8 @@ class OtherCashIncome(LivelihoodActivity):
         verbose_name=_("Payment per time"),
         help_text=_("Amount of money received each time the labor is performed"),
     )
-    people_per_household = models.PositiveSmallIntegerField(
+    # This is a float field because BSS data may have fractional people per household (e.g. 0.5).
+    people_per_household = models.FloatField(
         verbose_name=_("People per household"),
         blank=True,
         null=True,
@@ -2710,13 +2766,15 @@ class OtherPurchase(LivelihoodActivity):
     # This is a float field because data may be captured as "once per week",
     # which equates to "52 per year", which is "4.33 per month".
     times_per_month = models.FloatField(blank=True, null=True, verbose_name=_("Purchases per month"))
-    months_per_year = models.PositiveSmallIntegerField(
+    # This is a float field because BSS data may have fractional months (e.g. 6.4 months).
+    months_per_year = models.FloatField(
         blank=True,
         null=True,
         verbose_name=_("Months per year"),
         help_text=_("Number of months in a year that the product is purchased"),
     )
-    times_per_year = models.PositiveSmallIntegerField(
+    # This is a float field because times_per_month * months_per_year may be fractional (e.g. 51.6 * 4 = 206.4).
+    times_per_year = models.FloatField(
         blank=True,
         null=True,
         verbose_name=_("Times per year"),

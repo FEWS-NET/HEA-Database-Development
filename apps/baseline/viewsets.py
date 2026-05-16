@@ -328,7 +328,7 @@ class LivelihoodProductCategoryFilterSet(filters.FilterSet):
     )
     livelihood_zone = django_filters.ModelChoiceFilter(
         field_name="baseline_livelihood_activity__livelihood_zone_baseline__livelihood_zone",
-        queryset=LivelihoodZone.objects.select_related("livelihood_zone"),
+        queryset=LivelihoodZone.objects.select_related("country"),
         widget=autocomplete.ModelSelect2(url="livelihoodzone-autocomplete"),
         label="Livelihood Zone",
     )
@@ -447,7 +447,7 @@ class WealthGroupFilterSet(filters.FilterSet):
     )
     livelihood_zone = django_filters.ModelChoiceFilter(
         field_name="livelihood_zone_baseline__livelihood_zone",
-        queryset=LivelihoodZone.objects.select_related("livelihood_zone"),
+        queryset=LivelihoodZone.objects.select_related("country"),
         widget=autocomplete.ModelSelect2(url="livelihoodzone-autocomplete"),
         label="Livelihood Zone",
     )
@@ -681,6 +681,7 @@ class WealthGroupCharacteristicValueViewSet(BaseModelViewSet):
         "wealth_group__community__livelihood_zone_baseline__reference_year_end_date",
         "wealth_group__wealth_group_category__ordering",
         "wealth_group__community__name",
+        "wealth_characteristic__characteristic_group__ordering",
         "wealth_characteristic__ordering",
         "product",
         "wealth_characteristic__code",
@@ -785,6 +786,7 @@ class BaselineWealthGroupCharacteristicValueViewSet(BaseModelViewSet):
         "wealth_group__livelihood_zone_baseline__livelihood_zone__code",
         "wealth_group__livelihood_zone_baseline__reference_year_end_date",
         "wealth_group__wealth_group_category__ordering",
+        "wealth_characteristic__characteristic_group__ordering",
         "wealth_characteristic__ordering",
         "product",
         "wealth_characteristic__code",
@@ -894,6 +896,7 @@ class CommunityWealthGroupCharacteristicValueViewSet(BaseModelViewSet):
         "wealth_group__community__livelihood_zone_baseline__reference_year_end_date",
         "wealth_group__wealth_group_category__ordering",
         "wealth_group__community__name",
+        "wealth_characteristic__characteristic_group__ordering",
         "wealth_characteristic__ordering",
         "product",
         "wealth_characteristic__code",
@@ -1008,6 +1011,11 @@ class LivelihoodActivityFilterSet(filters.FilterSet):
         ),
         widget=autocomplete.ModelSelect2(url="wealthgroup-autocomplete"),
         label="Wealth Group",
+    )
+    wealth_group_category = django_filters.ModelChoiceFilter(
+        field_name="wealth_group__wealth_group_category",
+        queryset=WealthGroupCategory.objects.all(),
+        label="Wealth Group Category",
     )
 
     class Meta:

@@ -6,3 +6,6 @@ class BaselineConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "baseline"
     verbose_name = _("baseline")
+
+    def ready(self):
+        import baseline.signals  # noqa: F401

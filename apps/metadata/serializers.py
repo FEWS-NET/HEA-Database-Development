@@ -39,11 +39,15 @@ class WealthCharacteristicSerializer(ReferenceDataSerializer):
     """
 
     variable_type = serializers.CharField()
+    characteristic_group = serializers.CharField(source="characteristic_group.name", read_only=True)
+    characteristic_group_ordering = serializers.IntegerField(source="characteristic_group.ordering", read_only=True)
 
     class Meta(ReferenceDataSerializer.Meta):
         model = WealthCharacteristic
         fields = ReferenceDataSerializer.Meta.fields + [
             "variable_type",
+            "characteristic_group",
+            "characteristic_group_ordering",
         ]
 
 
