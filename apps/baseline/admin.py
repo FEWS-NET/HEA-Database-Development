@@ -330,6 +330,7 @@ class LivelihoodStrategyAdmin(admin.ModelAdmin):
         *translation_fields("livelihood_zone_baseline__livelihood_zone__name__icontains"),
         *translation_fields("product__common_name__icontains"),
         *translation_fields("season__name__icontains"),
+        "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name",
     )
 
     list_filter = (
@@ -527,6 +528,7 @@ class LivelihoodActivityAdmin(admin.ModelAdmin):
         *translation_fields("livelihood_strategy__product__common_name__icontains"),
         *translation_fields("livelihood_strategy__product__description__icontains"),
         *translation_fields("livelihood_strategy__season__name__icontains"),
+        "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name",
     )
 
     def get_search_results(self, request, queryset, search_term):
