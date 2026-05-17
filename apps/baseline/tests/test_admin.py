@@ -717,8 +717,8 @@ class LivelihoodActivityAdminTestCase(TestCase):
         soup = BeautifulSoup(response.content, "html.parser")
         result_list = soup.find(id="result_list")
         result_list_str = str(result_list)
-        self.assertIn(str(self.activity1.pk), result_list_str)
-        self.assertNotIn(str(self.activity2.pk), result_list_str)
+        self.assertIn(f'value="{self.activity1.pk}"', result_list_str)
+        self.assertNotIn(f'value="{self.activity2.pk}"', result_list_str)
 
     def test_get_product_common_name(self):
         modeladmin = LivelihoodActivityAdmin(LivelihoodActivity, self.site)
