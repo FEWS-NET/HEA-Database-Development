@@ -707,6 +707,19 @@ class LivelihoodActivityAdminTestCase(TestCase):
         self.assertIn(self.livelihood_strategy1.strategy_type, result_list_str)
         self.assertNotIn(self.livelihood_strategy2.strategy_type, result_list_str)
 
+    def test_search_by_baseline_natural_key(self):
+        zone_code = self.livelihood_zone_baseline1.livelihood_zone.code
+        ref_end_date = self.livelihood_zone_baseline1.reference_year_end_date.isoformat()
+        natural_key = f"{zone_code}: {ref_end_date}"
+        url = reverse("admin:baseline_livelihoodactivity_changelist") + f"?q={natural_key}"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        soup = BeautifulSoup(response.content, "html.parser")
+        result_list = soup.find(id="result_list")
+        result_list_str = str(result_list)
+        self.assertIn(str(self.activity1.pk), result_list_str)
+        self.assertNotIn(str(self.activity2.pk), result_list_str)
+
     def test_get_product_common_name(self):
         modeladmin = LivelihoodActivityAdmin(LivelihoodActivity, self.site)
         self.assertEqual(
@@ -738,6 +751,7 @@ class LivelihoodActivityAdminTestCase(TestCase):
         filters = {
             "strategy_type": self.livelihood_strategy1.strategy_type,
             "scenario": self.activity3.scenario,
+            "livelihood_zone_baseline__id__exact": self.livelihood_zone_baseline1.pk,
             "livelihood_strategy__product__cpc": self.livelihood_strategy1.product.cpc,
             "livelihood_strategy__season__id__exact": self.livelihood_strategy2.season.pk,
             "livelihood_zone_baseline__livelihood_zone__country": country.iso3166a2,

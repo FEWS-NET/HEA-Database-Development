@@ -504,6 +504,7 @@ class LivelihoodActivityAdmin(admin.ModelAdmin):
     list_filter = (
         "strategy_type",
         "scenario",
+        ("livelihood_zone_baseline", admin.RelatedOnlyFieldListFilter),
         ("livelihood_strategy__product", admin.RelatedOnlyFieldListFilter),
         ("livelihood_strategy__season", admin.RelatedOnlyFieldListFilter),
         ("livelihood_zone_baseline__livelihood_zone__country", admin.RelatedOnlyFieldListFilter),
@@ -517,6 +518,8 @@ class LivelihoodActivityAdmin(admin.ModelAdmin):
         "livelihood_strategy__additional_identifier__icontains",
         "livelihood_zone_baseline__livelihood_zone__code",
         "livelihood_zone_baseline__livelihood_zone__alternate_code",
+        *translation_fields("livelihood_zone_baseline__livelihood_zone__name"),
+        "livelihood_zone_baseline__reference_year_end_date__icontains",
         "livelihood_strategy__product__cpc__iexact",
         "livelihood_strategy__product__aliases__icontains",
         "livelihood_strategy__season__aliases__icontains",
@@ -525,6 +528,10 @@ class LivelihoodActivityAdmin(admin.ModelAdmin):
         *translation_fields("livelihood_strategy__product__description__icontains"),
         *translation_fields("livelihood_strategy__season__name__icontains"),
     )
+
+    def get_search_results(self, request, queryset, search_term):
+        # Allow natural key format "BF01: 2011-10-31" by stripping the colon separator.
+        return super().get_search_results(request, queryset, search_term.replace(":", ""))
 
     def get_object(self, request, object_id, from_field=None):
         obj = super().get_object(request, object_id, from_field)
@@ -600,6 +607,7 @@ class LivelihoodActivityAdmin(admin.ModelAdmin):
             None,
             {
                 "fields": [
+                    "wealth_group",
                     "livelihood_strategy",
                     "scenario",
                     "extra",
