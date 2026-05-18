@@ -178,8 +178,8 @@ def summary_seasonal_calendar_labels_dataframe(
             bss_for_min_row=("bss", "first"),  # Assuming df is sorted by row_number within each group
             bss_for_max_row=("bss", "last"),  # Assuming df is sorted by row_number within each group
         )
-        .rename(columns={"label_lower": "label"})
         .reset_index()
+        .rename(columns={"label_lower": "label"})
     )
 
     df = df.sort_values(by=["min_row_number", "label_lower", "bss_for_min_row", "bss_for_max_row"])
