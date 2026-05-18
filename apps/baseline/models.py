@@ -2442,6 +2442,13 @@ class FoodPurchase(LivelihoodActivity):
                         "Quantity purchased for a Food Purchase must be purchase amount * purchases per month * months per year"  # NOQA: E501
                     )
                 )
+        elif (
+            self.quantity_purchased is not None and self.unit_multiple is not None and self.times_per_year is not None
+        ):
+            if not math.isclose(self.quantity_purchased, self.unit_multiple * self.times_per_year):
+                raise ValidationError(
+                    _("Quantity purchased for a Food Purchase must be purchase amount * purchases per year")
+                )
 
     def validate_expenditure(self):
         quantity_purchased = self.quantity_purchased or 0
@@ -2537,6 +2544,21 @@ class PaymentInKind(LivelihoodActivity):
                 raise ValidationError(
                     _(
                         "Quantity produced for Payment In Kind must be payment per time * number of people * labor per month * months per year"  # NOQA: E501
+                    )
+                )
+        elif (
+            self.quantity_produced is not None
+            and self.payment_per_time is not None
+            and self.people_per_household is not None
+            and self.times_per_year is not None
+        ):
+            if not math.isclose(
+                self.quantity_produced,
+                self.payment_per_time * self.people_per_household * self.times_per_year,
+            ):
+                raise ValidationError(
+                    _(
+                        "Quantity produced for Payment In Kind must be payment per time * number of people * times per year"  # NOQA: E501
                     )
                 )
 
