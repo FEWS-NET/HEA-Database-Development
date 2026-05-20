@@ -1066,11 +1066,13 @@ class SeasonalActivityAdmin(admin.ModelAdmin):
         "season",
         "product",
         "additional_identifier",
+        "is_key",
     )
     list_display = (
         "livelihood_zone_baseline",
         "seasonal_activity_type",
         "product",
+        "is_key",
     )
     search_fields = (
         "seasonal_activity_type",
@@ -1083,6 +1085,7 @@ class SeasonalActivityAdmin(admin.ModelAdmin):
         "seasonal_activity_type",
         "season",
         "product",
+        "is_key",
     )
 
 
@@ -1090,6 +1093,7 @@ class SeasonalActivityOccurrenceAdmin(admin.ModelAdmin):
     list_display = (
         "seasonal_activity",
         "community",
+        "seasonal_activity_is_key",
         "start_month",
         "end_month",
     )
@@ -1100,12 +1104,15 @@ class SeasonalActivityOccurrenceAdmin(admin.ModelAdmin):
         "seasonal_activity__additional_identifier",
     )
     list_filter = (
-        "community",
         "seasonal_activity__seasonal_activity_type",
-        "seasonal_activity__season",
-        "seasonal_activity__product",
+        ("seasonal_activity__season", admin.RelatedOnlyFieldListFilter),
+        ("seasonal_activity__product", admin.RelatedOnlyFieldListFilter),
     )
     ordering = ["start"]
+
+    @admin.display(boolean=True, description="Key seasonal activity")
+    def seasonal_activity_is_key(self, obj):
+        return obj.seasonal_activity.is_key
 
 
 class CommunityCropProductionAdmin(admin.ModelAdmin):

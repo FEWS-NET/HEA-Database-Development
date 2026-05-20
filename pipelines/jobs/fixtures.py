@@ -27,6 +27,12 @@ from ..assets.other_cash_income import (
     other_cash_income_valid_instances,
     summary_other_cash_income_labels_dataframe,
 )
+from ..assets.seasonal_calendar import (
+    imported_seasonal_activities,
+    seasonal_activity_fixture,
+    seasonal_activity_instances,
+    seasonal_activity_valid_instances,
+)
 from ..assets.wealth_characteristic import (
     all_wealth_characteristic_labels_dataframe,
     summary_wealth_characteristic_labels_dataframe,
@@ -62,6 +68,16 @@ import_baseline_from_fixture = define_asset_job(
     partitions_def=bss_instances_partitions_def,
 )
 
+import_seas_cal_from_fixture = define_asset_job(
+    name="import_seas_cal_from_fixture",
+    selection=(
+        seasonal_activity_instances,
+        seasonal_activity_valid_instances,
+        seasonal_activity_fixture,
+        imported_seasonal_activities,
+    ),
+    partitions_def=bss_instances_partitions_def,
+)
 
 update_external_assets = define_asset_job(
     name="update_external_assets",
