@@ -20,15 +20,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="seasonalactivityoccurrence",
             constraint=models.UniqueConstraint(
-                fields=(
-                    "livelihood_zone_baseline",
-                    "seasonal_activity_type",
-                    "product",
-                    "additional_identifier",
-                    "community",
-                    "start",
-                    "end",
-                ),
+                fields=("seasonal_activity", "community", "start", "end"),
                 name="baseline_seasonalactivityoccurrence_uniq",
             ),
         ),

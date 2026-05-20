@@ -3037,10 +3037,7 @@ class SeasonalActivityOccurrence(common_models.Model):
             # Create a unique constraint to enforce the natural key.
             models.UniqueConstraint(
                 fields=[
-                    "livelihood_zone_baseline",
-                    "seasonal_activity_type",
-                    "product",
-                    "additional_identifier",
+                    "seasonal_activity",
                     "community",
                     "start",
                     "end",
