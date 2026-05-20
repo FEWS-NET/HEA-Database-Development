@@ -24,6 +24,7 @@ from .factories import (
     FoodPurchaseFactory,
     LivelihoodProductCategoryFactory,
     LivelihoodZoneBaselineFactory,
+    SeasonalActivityFactory,
     WealthGroupCharacteristicValueFactory,
 )
 
@@ -147,6 +148,24 @@ class LivelihoodZoneBaselineTestCase(TestCase):
         self.baseline.refresh_from_db()
         self.poor_wealth_group.refresh_from_db()
         self.assertAlmostEqual(self.baseline.annual_kcals_cost, self.get_expected_annual_kcals_cost())
+
+
+class SeasonalActivityTestCase(TestCase):
+    def test_is_key_defaults_from_seasonal_activity_type(self):
+        seasonal_activity = SeasonalActivityFactory(
+            seasonal_activity_type__code="KEYSA", seasonal_activity_type__is_key=True
+        )
+
+        self.assertTrue(seasonal_activity.is_key)
+
+    def test_is_key_can_override_seasonal_activity_type_default(self):
+        seasonal_activity = SeasonalActivityFactory(
+            seasonal_activity_type__code="KEYSB",
+            seasonal_activity_type__is_key=True,
+            is_key=False,
+        )
+
+        self.assertFalse(seasonal_activity.is_key)
 
 
 class WealthGroupCharacteristicValueTestCase(TestCase):
