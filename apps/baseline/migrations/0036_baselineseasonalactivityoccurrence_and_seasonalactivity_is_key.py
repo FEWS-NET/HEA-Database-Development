@@ -10,6 +10,28 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.AddConstraint(
+            model_name="seasonalactivity",
+            constraint=models.UniqueConstraint(
+                fields=("livelihood_zone_baseline", "seasonal_activity_type", "product", "additional_identifier"),
+                name="baseline_seasonalactivity_uniq",
+            ),
+        ),
+        migrations.AddConstraint(
+            model_name="seasonalactivityoccurrence",
+            constraint=models.UniqueConstraint(
+                fields=(
+                    "livelihood_zone_baseline",
+                    "seasonal_activity_type",
+                    "product",
+                    "additional_identifier",
+                    "community",
+                    "start",
+                    "end",
+                ),
+                name="baseline_seasonalactivityoccurrence_uniq",
+            ),
+        ),
         migrations.AddField(
             model_name="seasonalactivity",
             name="is_key",

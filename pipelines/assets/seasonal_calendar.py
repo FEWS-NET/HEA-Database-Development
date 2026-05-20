@@ -1,5 +1,5 @@
 """
-Dagster assets related to Seasonal Calender, read from the 'Seas Cal' worksheet in a BSS.
+Dagster assets related to Seasonal Calendar, read from the 'Seas Cal' worksheet in a BSS.
 
 An example of relevant rows from the worksheet:
 
@@ -180,9 +180,8 @@ def summary_seasonal_calendar_labels_dataframe(
         )
         .reset_index()
         .rename(columns={"label_lower": "label"})
+        .sort_values(by=["min_row_number", "label", "bss_for_min_row", "bss_for_max_row"])
     )
-
-    df = df.sort_values(by=["min_row_number", "label_lower", "bss_for_min_row", "bss_for_max_row"])
 
     # Add a translation of the label
     translator = Translator()

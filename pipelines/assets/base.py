@@ -369,8 +369,8 @@ def get_bss_dataframe(
     end_col = df.columns[df.columns.get_loc(end_col) + num_summary_cols]
 
     # Find the row index of the start of dataframe by searching for one of the start strings in column A.
-    # Some dataframes (e.g. 'Seas Cal' in some French BSSs) place the village/site label in col B rather than col A, so fall
-    # back to the columns listed in start_col_fallbacks when the col A search yields nothing.
+    # Some dataframes (e.g. 'Seas Cal' in some French BSSs) place the village/site label in col B rather than col A,
+    # so check col B when the col A search yields nothing.
     start_row = get_index(start_strings, df.loc[1:, "A"])
     if not start_row:
         start_row = get_index(start_strings, df.loc[1:, "B"])
@@ -630,9 +630,8 @@ def get_summary_bss_label_dataframe(
         )
         .reset_index()
         .rename(columns={"label_lower": "label"})
+        .sort_values(by=["min_row_number", "label", "bss_for_min_row", "bss_for_max_row"])
     )
-
-    df = df.sort_values(by=["min_row_number", "label_lower", "bss_for_min_row", "bss_for_max_row"])
 
     # Add a translation of the label
     translator = Translator()

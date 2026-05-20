@@ -2889,6 +2889,11 @@ class SeasonalActivity(common_models.Model):
         verbose_name = _("Seasonal Activity")
         verbose_name_plural = _("Seasonal Activities")
         constraints = [
+            # Create a unique constraint to enforce the natural key.
+            models.UniqueConstraint(
+                fields=["livelihood_zone_baseline", "seasonal_activity_type", "product", "additional_identifier"],
+                name="baseline_seasonalactivity_uniq",
+            ),
             # Create a unique constraint on id and livelihood_zone_baseline, so that we can use it as a target for a
             # composite foreign key from Seasonal Activity Ocurrence, which in turn allows us to ensure that the
             # Community and the Seasonal Activity for a Seasonal Activity Occurrence have the same Livelihood Baseline.
@@ -3029,6 +3034,19 @@ class SeasonalActivityOccurrence(common_models.Model):
         verbose_name = _("Seasonal Activity Occurrence")
         verbose_name_plural = _("Seasonal Activity Occurrences")
         constraints = [
+            # Create a unique constraint to enforce the natural key.
+            models.UniqueConstraint(
+                fields=[
+                    "livelihood_zone_baseline",
+                    "seasonal_activity_type",
+                    "product",
+                    "additional_identifier",
+                    "community",
+                    "start",
+                    "end",
+                ],
+                name="baseline_seasonalactivityoccurrence_uniq",
+            ),
             # @TODO Add constraints either declared here or in a custom migration that target the composite foreign
             # keys for Community and Seasonal Activity that include the livelihood_zone_baseline.
         ]
