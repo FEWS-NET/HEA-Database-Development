@@ -542,6 +542,10 @@ class BaselineWealthGroupViewSet(BaseModelViewSet):
     )
     serializer_class = BaselineWealthGroupSerializer
     filterset_class = BaselineWealthGroupFilterSet
+    ordering = [
+        "livelihood_zone_baseline",
+        "wealth_group_category__ordering",
+    ]
 
 
 class CommunityWealthGroupFilterSet(filters.FilterSet):
@@ -589,6 +593,11 @@ class CommunityWealthGroupViewSet(BaseModelViewSet):
     )
     serializer_class = CommunityWealthGroupSerializer
     filterset_class = CommunityWealthGroupFilterSet
+    ordering = [
+        "livelihood_zone_baseline",
+        "wealth_group_category__ordering",
+        "community",
+    ]
 
 
 class WealthGroupCharacteristicValueFilterSet(filters.FilterSet):
@@ -972,12 +981,7 @@ class LivelihoodStrategyViewSet(BaseModelViewSet):
     ]
 
 
-LIVELIHOOD_ACTIVITY_ORDER_BY = [
-    "livelihood_zone_baseline",
-    "wealth_group",
-    "strategy_type",
-    "scenario",
-]
+LIVELIHOOD_ACTIVITY_ORDER_BY = ["sort_key"]
 
 
 class LivelihoodActivityFilterSet(filters.FilterSet):
@@ -2049,7 +2053,9 @@ class LivelihoodZoneBaselineFacetedSearchView(APIView):
                 "livelihood_zone__code": baseline.livelihood_zone.code,
                 "reference_year_end_date": baseline.reference_year_end_date,
             }
-            for baseline in baselines_qs.select_related("livelihood_zone")
+            for baseline in baselines_qs.select_related("livelihood_zone").order_by(
+                "livelihood_zone_id", "reference_year_end_date"
+            )
         ]
 
     def _search_products(self, search_term):
