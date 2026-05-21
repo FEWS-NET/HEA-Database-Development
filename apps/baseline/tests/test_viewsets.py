@@ -25,6 +25,7 @@ from metadata.models import LivelihoodActivityScenario, LivelihoodStrategyType
 from metadata.tests.factories import (
     CharacteristicGroupFactory,
     LivelihoodCategoryFactory,
+    SeasonalActivityTypeFactory,
     WealthCharacteristicFactory,
     WealthGroupCategoryFactory,
 )
@@ -381,6 +382,7 @@ class LivelihoodZoneBaselineViewSetTestCase(APITestCase):
             "population_source",
             "population_estimate",
             "currency",
+            "annual_kcals_cost",
         )
         self.assertCountEqual(
             response.json().keys(),
@@ -1661,6 +1663,7 @@ class WealthGroupCharacteristicValueViewSetTestCase(APITestCase):
             "wealth_characteristic_ordering",
             "variable_type",
             "characteristic_group",
+            "characteristic_group_ordering",
             "product",
             "product_common_name",
             "unit_of_measure",
@@ -1954,6 +1957,7 @@ class BaselineWealthGroupCharacteristicValueViewSetTestCase(APITestCase):
                 "wealth_characteristic_ordering",
                 "variable_type",
                 "characteristic_group",
+                "characteristic_group_ordering",
                 "product",
                 "product_common_name",
                 "unit_of_measure",
@@ -5082,6 +5086,7 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
         activity_df["livelihood_zone_baseline"] = activity_df["livelihood_zone_baseline_id"]
         activity_df["reference_year_end_date"] = activity_df["reference_year_end_date"].apply(lambda x: x.isoformat())
         cls.activity_df = activity_df
+        cls.wealth_group = wealth_group  # Save the last wealth group for further use in test cases.
         cls.url = reverse("livelihoodactivitysummary-list")
 
     @classmethod
@@ -5163,6 +5168,31 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
             self.assertNotIn("kcals_consumed_sum_slice_percentage_of_row", row)
             self.assertNotIn("income_sum_slice_percentage_of_row", row)
             self.assertNotIn("expenditure_sum_slice_percentage_of_row", row)
+
+    def test_summary_treats_food_purchase_kcals_as_zero_in_total_income_aggregates(self):
+        food_purchase = FoodPurchaseFactory(
+            livelihood_zone_baseline=self.wealth_group.livelihood_zone_baseline,
+            wealth_group=self.wealth_group,
+            scenario=LivelihoodActivityScenario.BASELINE,
+            livelihood_strategy__product__cpc="R01122",
+        )
+
+        response = self.client.get(
+            self.url,
+            {
+                "fields": "livelihood_zone_baseline,scenario",
+                "livelihood_zone_baseline": self.wealth_group.livelihood_zone_baseline.pk,
+                "scenario": LivelihoodActivityScenario.BASELINE,
+                "strategy_type": LivelihoodStrategyType.FOOD_PURCHASE,
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 1)
+        row = response.json()[0]
+        self.assertEqual(row["livelihood_zone_baseline"], food_purchase.livelihood_zone_baseline_id)
+        self.assertEqual(row["scenario"], food_purchase.scenario)
+        self.assertEqual(row["total_income_as_cash_row"], 0, row)
+        self.assertEqual(row["total_income_as_percentage_kcals_row"], 0, row)
 
     def check_row_against_expected_slices(self, row, fields, expected, expected_slice):
         expected_row = expected.loc[*[row[field] for field in fields]]
@@ -5600,6 +5630,8 @@ class SeasonalActivityViewSetTestCase(APITestCase):
     def setUpTestData(cls):
         cls.num_records = 5
         cls.data = [SeasonalActivityFactory() for _ in range(cls.num_records)]
+        cls.data[0].is_key = True
+        cls.data[0].save()
         cls.user = User.objects.create_superuser("test", "test@test.com", "password")
 
     def setUp(self):
@@ -5623,12 +5655,15 @@ class SeasonalActivityViewSetTestCase(APITestCase):
             "seasonal_activity_type",
             "seasonal_activity_type_name",
             "seasonal_activity_type_description",
+            "seasonal_activity_type_ordering",
             "activity_category",
             "activity_category_label",
+            "activity_category_ordering",
             "product",
             "product_common_name",
             "product_description",
             "additional_identifier",
+            "is_key",
         )
         self.assertCountEqual(
             response.json().keys(),
@@ -5660,10 +5695,57 @@ class SeasonalActivityViewSetTestCase(APITestCase):
                 "livelihood_zone_baseline": self.data[0].livelihood_zone_baseline.pk,
                 "seasonal_activity_type": self.data[0].seasonal_activity_type.pk,
                 "product": self.data[0].product.pk,
+                "is_key": self.data[0].is_key,
             },
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), 1)
+
+    def test_filter_by_is_key(self):
+        response = self.client.get(self.url, {"is_key": True})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([result["id"] for result in response.json()], [self.data[0].id])
+
+        response = self.client.get(self.url, {"is_key": False})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), self.num_records - 1)
+
+    def test_create_defaults_is_key_from_seasonal_activity_type(self):
+        self.client.force_login(self.user)
+        seasonal_activity_type = SeasonalActivityTypeFactory(code="KEYSACREATE", is_key=True)
+
+        response = self.client.post(
+            self.url,
+            {
+                "livelihood_zone_baseline": self.data[0].livelihood_zone_baseline_id,
+                "seasonal_activity_type": seasonal_activity_type.pk,
+                "product": self.data[0].product_id,
+                "additional_identifier": "defaulted key activity",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(response.json()["is_key"])
+
+    def test_create_can_override_seasonal_activity_type_is_key_default(self):
+        self.client.force_login(self.user)
+        seasonal_activity_type = SeasonalActivityTypeFactory(code="KEYSAOVERRIDE", is_key=True)
+
+        response = self.client.post(
+            self.url,
+            {
+                "livelihood_zone_baseline": self.data[0].livelihood_zone_baseline_id,
+                "seasonal_activity_type": seasonal_activity_type.pk,
+                "product": self.data[0].product_id,
+                "additional_identifier": "overridden key activity",
+                "is_key": False,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertFalse(response.json()["is_key"])
 
     def test_json(self):
         response = self.client.get(self.url, {"format": "json"})
@@ -5697,6 +5779,8 @@ class SeasonalActivityOccurrenceViewSetTestCase(APITestCase):
     def setUpTestData(cls):
         cls.num_records = 5
         cls.data = [SeasonalActivityOccurrenceFactory() for _ in range(cls.num_records)]
+        cls.data[0].seasonal_activity.is_key = True
+        cls.data[0].seasonal_activity.save()
         cls.user = User.objects.create_superuser("test", "test@test.com", "password")
 
     def setUp(self):
@@ -5721,16 +5805,23 @@ class SeasonalActivityOccurrenceViewSetTestCase(APITestCase):
             "seasonal_activity_type",
             "seasonal_activity_type_name",
             "seasonal_activity_type_description",
+            "seasonal_activity_type_ordering",
             "activity_category",
             "activity_category_label",
+            "activity_category_ordering",
             "product",
             "product_common_name",
             "product_description",
             "additional_identifier",
+            "is_key",
             "community",
             "community_name",
+            "community_full_name",
             "start",
             "end",
+            "seasonal_activity_label",
+            "start_date",
+            "end_date",
         )
         self.assertCountEqual(
             response.json().keys(),
@@ -5782,6 +5873,15 @@ class SeasonalActivityOccurrenceViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), 1)
 
+    def test_filter_by_is_key(self):
+        response = self.client.get(self.url, {"is_key": True})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([result["id"] for result in response.json()], [self.data[0].id])
+
+        response = self.client.get(self.url, {"is_key": False})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), self.num_records - 1)
+
     def test_json(self):
         response = self.client.get(self.url, {"format": "json"})
         self.assertEqual(response.status_code, 200)
@@ -5807,6 +5907,91 @@ class SeasonalActivityOccurrenceViewSetTestCase(APITestCase):
             content = response.content
         df = pd.read_html(content)[0].fillna("")
         self.assertEqual(len(df), self.num_records + 1)
+
+
+class BaselineSeasonalActivityOccurrenceViewSetTestCase(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.num_records = 2
+        cls.baseline_occurrences = [SeasonalActivityOccurrenceFactory(community=None) for _ in range(cls.num_records)]
+        cls.baseline_occurrences[0].seasonal_activity.is_key = True
+        cls.baseline_occurrences[0].seasonal_activity.save()
+        cls.community_occurrence = SeasonalActivityOccurrenceFactory()
+        cls.user = User.objects.create_superuser("test", "test@test.com", "password")
+
+    def setUp(self):
+        self.url = reverse("baselineseasonalactivityoccurrence-list")
+        self.url_get = lambda n: reverse(
+            "baselineseasonalactivityoccurrence-detail",
+            args=(self.baseline_occurrences[n].pk,),
+        )
+
+    def test_get_record(self):
+        response = self.client.get(self.url_get(0))
+        self.assertEqual(response.status_code, 200)
+        self.assertIsInstance(response.json(), dict)
+        expected_fields = (
+            "id",
+            "source_organization",
+            "source_organization_name",
+            "livelihood_zone_baseline",
+            "livelihood_zone_baseline_label",
+            "livelihood_zone",
+            "livelihood_zone_name",
+            "livelihood_zone_country",
+            "livelihood_zone_country_name",
+            "seasonal_activity",
+            "seasonal_activity_type",
+            "seasonal_activity_type_name",
+            "seasonal_activity_type_description",
+            "seasonal_activity_type_ordering",
+            "activity_category",
+            "activity_category_label",
+            "activity_category_ordering",
+            "product",
+            "product_common_name",
+            "product_description",
+            "additional_identifier",
+            "is_key",
+            "start",
+            "end",
+            "seasonal_activity_label",
+            "start_date",
+            "end_date",
+        )
+        self.assertCountEqual(response.json().keys(), expected_fields)
+
+    def test_list_returns_only_baseline_occurrences(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        results = response.json()
+        returned_ids = {result["id"] for result in results}
+
+        self.assertEqual(returned_ids, {occurrence.id for occurrence in self.baseline_occurrences})
+        self.assertNotIn(self.community_occurrence.id, returned_ids)
+
+    def test_list_returns_filtered_data(self):
+        occurrence = self.baseline_occurrences[0]
+        response = self.client.get(
+            self.url,
+            {
+                "seasonal_activity": occurrence.seasonal_activity_id,
+                "livelihood_zone_baseline": occurrence.livelihood_zone_baseline_id,
+                "start": occurrence.start,
+                "end": occurrence.end,
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([result["id"] for result in response.json()], [occurrence.id])
+
+    def test_filter_by_is_key(self):
+        response = self.client.get(self.url, {"is_key": True})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([result["id"] for result in response.json()], [self.baseline_occurrences[0].id])
+
+        response = self.client.get(self.url, {"is_key": False})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([result["id"] for result in response.json()], [self.baseline_occurrences[1].id])
 
 
 class CommunityCropProductionViewSetTestCase(APITestCase):

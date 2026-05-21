@@ -6,6 +6,32 @@ from rest_framework.test import APIClient
 
 from common.fields import translation_fields
 from common.tests.factories import ClassifiedProductFactory
+from common.utils import (
+    get_start_end_day_numbers_from_month,
+    get_start_end_day_ranges_from_months,
+)
+
+
+class DateUtilsTestCase(TestCase):
+    def test_get_start_end_day_numbers_from_month(self):
+        self.assertEqual(get_start_end_day_numbers_from_month(1), (1, 31))
+        self.assertEqual(get_start_end_day_numbers_from_month(2), (32, 59))
+        self.assertEqual(get_start_end_day_numbers_from_month(12), (335, 365))
+
+    def test_get_start_end_day_numbers_from_month_validates_month(self):
+        with self.assertRaises(ValueError):
+            get_start_end_day_numbers_from_month(0)
+        with self.assertRaises(ValueError):
+            get_start_end_day_numbers_from_month(13)
+
+    def test_get_start_end_day_ranges_from_months(self):
+        self.assertEqual(get_start_end_day_ranges_from_months([]), [])
+        self.assertEqual(get_start_end_day_ranges_from_months([1, 2, 3]), [(1, 90)])
+        self.assertEqual(
+            get_start_end_day_ranges_from_months([1, 2, 4, 5]),
+            [(1, 59), (91, 151)],
+        )
+        self.assertEqual(get_start_end_day_ranges_from_months([11, 12, 1]), [(305, 31)])
 
 
 class TranslatedFieldsTestCase(TestCase):

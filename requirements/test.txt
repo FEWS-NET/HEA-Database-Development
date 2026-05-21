@@ -1,4 +1,6 @@
 -r base.txt
+# Pin authlib to avoid "AuthlibDeprecationWarning: authlib.jose module is deprecated, please use joserfc instead." when running `safety check` with authlib 1.7.0
+authlib<1.7.0,>=1.6.0
 beautifulsoup4==4.12.2
 coverage==7.2.7
 safety==3.6.1

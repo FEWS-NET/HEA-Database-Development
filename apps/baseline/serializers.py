@@ -1,15 +1,18 @@
-from django.db.models import F, FloatField, Sum, Value
+import calendar
+import datetime
+
+from django.db.models import Case, F, FloatField, Sum, Value, When
 from django.db.models.functions import Coalesce
 from rest_framework import serializers
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
 
 from common.fields import translation_fields
 from common.serializers import AggregatingSerializer
-from metadata.models import WealthGroupCategory
+from metadata.models import LivelihoodStrategyType
 
 from .models import (
-    AnnualKcalsCost,
     BaselineLivelihoodActivity,
+    BaselineSeasonalActivityOccurrence,
     BaselineWealthGroup,
     BaselineWealthGroupCharacteristicValue,
     ButterProduction,
@@ -77,6 +80,8 @@ class LivelihoodZoneSerializer(serializers.ModelSerializer):
 
 
 class LivelihoodZoneBaselineSerializer(serializers.ModelSerializer):
+    annual_kcals_cost = serializers.FloatField(read_only=True)
+
     class Meta:
         model = LivelihoodZoneBaseline
         fields = (
@@ -100,6 +105,7 @@ class LivelihoodZoneBaselineSerializer(serializers.ModelSerializer):
             "valid_to_date",
             "population_source",
             "population_estimate",
+            "annual_kcals_cost",
         )
 
     livelihood_zone_name = serializers.CharField(source="livelihood_zone.name", read_only=True)
@@ -113,6 +119,8 @@ class LivelihoodZoneBaselineSerializer(serializers.ModelSerializer):
 
 
 class LivelihoodZoneBaselineGeoSerializer(GeoFeatureModelSerializer):
+    annual_kcals_cost = serializers.FloatField(read_only=True)
+
     class Meta:
         model = LivelihoodZoneBaseline
         fields = (
@@ -137,6 +145,7 @@ class LivelihoodZoneBaselineGeoSerializer(GeoFeatureModelSerializer):
             "valid_to_date",
             "population_source",
             "population_estimate",
+            "annual_kcals_cost",
         )
         geo_field = "geography"
         auto_bbox = True
@@ -391,6 +400,7 @@ class WealthGroupCharacteristicValueSerializer(serializers.ModelSerializer):
             "wealth_characteristic_ordering",
             "variable_type",
             "characteristic_group",
+            "characteristic_group_ordering",
             "product",
             "product_common_name",
             "unit_of_measure",
@@ -455,6 +465,9 @@ class WealthGroupCharacteristicValueSerializer(serializers.ModelSerializer):
         source="wealth_group.community.livelihood_zone_baseline.source_organization.name", read_only=True
     )
     characteristic_group = serializers.SerializerMethodField()
+    characteristic_group_ordering = serializers.IntegerField(
+        source="wealth_characteristic.characteristic_group.ordering", read_only=True
+    )
 
     def get_characteristic_group(self, obj):
         """
@@ -502,6 +515,7 @@ class BaselineWealthGroupCharacteristicValueSerializer(serializers.ModelSerializ
             "wealth_characteristic_ordering",
             "variable_type",
             "characteristic_group",
+            "characteristic_group_ordering",
             "product",
             "product_common_name",
             "unit_of_measure",
@@ -563,6 +577,9 @@ class BaselineWealthGroupCharacteristicValueSerializer(serializers.ModelSerializ
         source="wealth_group.livelihood_zone_baseline.source_organization.name", read_only=True
     )
     characteristic_group = serializers.SerializerMethodField()
+    characteristic_group_ordering = serializers.IntegerField(
+        source="wealth_characteristic.characteristic_group.ordering", read_only=True
+    )
 
     def get_characteristic_group(self, obj):
         """
@@ -948,12 +965,15 @@ class SeasonalActivitySerializer(serializers.ModelSerializer):
             "seasonal_activity_type",
             "seasonal_activity_type_name",
             "seasonal_activity_type_description",
+            "seasonal_activity_type_ordering",
             "activity_category",
             "activity_category_label",
+            "activity_category_ordering",
             "product",
             "product_common_name",
             "product_description",
             "additional_identifier",
+            "is_key",
         ]
 
     livelihood_zone_name = serializers.CharField(
@@ -972,9 +992,16 @@ class SeasonalActivitySerializer(serializers.ModelSerializer):
     seasonal_activity_type_description = serializers.CharField(
         source="seasonal_activity_type.description", read_only=True
     )
+    seasonal_activity_type_ordering = serializers.IntegerField(
+        source="seasonal_activity_type.ordering", read_only=True
+    )
     activity_category = serializers.CharField(source="seasonal_activity_type.activity_category", read_only=True)
     activity_category_label = serializers.SerializerMethodField()
+    activity_category_ordering = serializers.IntegerField(
+        source="seasonal_activity_type.activity_category_ordering", read_only=True
+    )
     additional_identifier = serializers.CharField(read_only=True)
+    is_key = serializers.BooleanField(default=None, required=False)
 
     def get_activity_category_label(self, obj):
         return obj.seasonal_activity_type.get_activity_category_display()
@@ -1009,17 +1036,24 @@ class SeasonalActivityOccurrenceSerializer(serializers.ModelSerializer):
             "seasonal_activity_type",
             "seasonal_activity_type_name",
             "seasonal_activity_type_description",
+            "seasonal_activity_type_ordering",
             "activity_category",
             "activity_category_label",
+            "activity_category_ordering",
             "product",
             "product_common_name",
             "product_description",
             "additional_identifier",
+            "seasonal_activity_label",
+            "is_key",
             # End SeasonalActivity
             "community",
             "community_name",
+            "community_full_name",
             "start",
             "end",
+            "start_date",
+            "end_date",
         ]
 
     livelihood_zone_name = serializers.CharField(
@@ -1032,7 +1066,8 @@ class SeasonalActivityOccurrenceSerializer(serializers.ModelSerializer):
     livelihood_zone_country_name = serializers.CharField(
         source="livelihood_zone_baseline.livelihood_zone.country.name", read_only=True
     )
-    community_name = serializers.CharField(source="community.name", read_only=True)
+    community_name = serializers.SerializerMethodField()
+    community_full_name = serializers.SerializerMethodField()
     source_organization = serializers.IntegerField(
         source="livelihood_zone_baseline.source_organization.pk", read_only=True
     )
@@ -1044,10 +1079,17 @@ class SeasonalActivityOccurrenceSerializer(serializers.ModelSerializer):
     def get_livelihood_zone_baseline_label(self, obj):
         return str(obj.livelihood_zone_baseline)
 
+    def get_community_name(self, obj):
+        return obj.community.name if obj.community else None
+
+    def get_community_full_name(self, obj):
+        return obj.community.full_name if obj.community else None
+
     product = serializers.CharField(source="seasonal_activity.product.pk", read_only=True)
     product_common_name = serializers.CharField(source="seasonal_activity.product.common_name", read_only=True)
     product_description = serializers.CharField(source="seasonal_activity.product.description", read_only=True)
     additional_identifier = serializers.CharField(source="seasonal_activity.additional_identifier", read_only=True)
+    is_key = serializers.BooleanField(source="seasonal_activity.is_key", read_only=True)
     seasonal_activity_type = serializers.CharField(
         source="seasonal_activity.seasonal_activity_type.pk", read_only=True
     )
@@ -1057,13 +1099,72 @@ class SeasonalActivityOccurrenceSerializer(serializers.ModelSerializer):
     seasonal_activity_type_description = serializers.CharField(
         source="seasonal_activity.seasonal_activity_type.description", read_only=True
     )
+    seasonal_activity_type_ordering = serializers.IntegerField(
+        source="seasonal_activity.seasonal_activity_type.ordering", read_only=True
+    )
     activity_category = serializers.CharField(
         source="seasonal_activity.seasonal_activity_type.activity_category", read_only=True
     )
     activity_category_label = serializers.SerializerMethodField()
+    activity_category_ordering = serializers.IntegerField(
+        source="seasonal_activity.seasonal_activity_type.activity_category_ordering", read_only=True
+    )
+    start_date = serializers.SerializerMethodField()
+    end_date = serializers.SerializerMethodField()
+    seasonal_activity_label = serializers.SerializerMethodField()
 
     def get_activity_category_label(self, obj):
         return obj.seasonal_activity.seasonal_activity_type.get_activity_category_display()
+
+    def get_start_date(self, obj):
+        """Compute start_date based on the reference year."""
+        if obj.start is None:
+            return None
+        start_yday = obj.livelihood_zone_baseline.reference_year_start_date.timetuple().tm_yday
+        year = obj.livelihood_zone_baseline.reference_year_start_date.year
+        # Normalize for a non-leap year
+        if start_yday > 59 and calendar.isleap(year):
+            start_yday -= 1
+        if obj.start < start_yday:
+            year += 1
+        start_date = datetime.date(year, 1, 1) + datetime.timedelta(days=obj.start - 1)
+        return start_date.strftime("%Y-%m-%d")
+
+    def get_end_date(self, obj):
+        """Compute end_date based on the reference year."""
+        if obj.end is None:
+            return None
+        start_yday = obj.livelihood_zone_baseline.reference_year_start_date.timetuple().tm_yday
+        year = obj.livelihood_zone_baseline.reference_year_start_date.year
+        # Normalize for a non-leap year
+        if start_yday > 59 and calendar.isleap(year):
+            start_yday -= 1
+        if obj.end < start_yday:
+            year += 1
+        end_date = datetime.date(year, 1, 1) + datetime.timedelta(days=obj.end - 1)
+        return end_date.strftime("%Y-%m-%d")
+
+    def get_seasonal_activity_label(self, obj):
+        """Generate activity_label based on additional_identifier and product."""
+        additional_identifier = obj.seasonal_activity.additional_identifier
+        product = obj.seasonal_activity.product
+
+        if additional_identifier and product:
+            return f"{additional_identifier.capitalize()}:{product.common_name.capitalize()}"
+        if additional_identifier:
+            return additional_identifier.capitalize()
+        if product:
+            return product.common_name.capitalize()
+
+
+class BaselineSeasonalActivityOccurrenceSerializer(SeasonalActivityOccurrenceSerializer):
+    class Meta:
+        model = BaselineSeasonalActivityOccurrence
+        fields = [
+            f
+            for f in SeasonalActivityOccurrenceSerializer.Meta.fields
+            if f not in ["community", "community_name", "community_full_name"]
+        ]
 
 
 class CommunityCropProductionSerializer(serializers.ModelSerializer):
@@ -1716,14 +1817,19 @@ class LivelihoodActivitySummarySerializer(AggregatingSerializer):
         ),
         "total_income_as_percentage_kcals": Sum(
             (
-                Coalesce(F("percentage_kcals"), 0)
+                # Calories from Food Purchase aren't included in total income.
+                # Cash Income is included and is counted as the percentage of
+                # the cost of 100% kcals that it could buy. If we also
+                # included the Food Purchase kcals we would be double-counting.
+                Case(
+                    When(strategy_type=Value(LivelihoodStrategyType.FOOD_PURCHASE), then=0.0),
+                    default=Coalesce(F("percentage_kcals"), 0.0),
+                )
                 + (
-                    Coalesce(F("income"), 0)
+                    Coalesce(F("income"), 0.0)
                     / (
                         F("wealth_group__average_household_size")
-                        * AnnualKcalsCost(
-                            F("wealth_group__livelihood_zone_baseline_id"), Value(WealthGroupCategory.POOR)
-                        )
+                        * F("wealth_group__livelihood_zone_baseline___annual_kcals_cost")
                     )
                 )
             ),
@@ -1732,11 +1838,18 @@ class LivelihoodActivitySummarySerializer(AggregatingSerializer):
         "total_income_as_cash": Sum(
             (
                 (
-                    Coalesce(F("percentage_kcals"), 0)
+                    # Calories from Food Purchase aren't included in total income.
+                    # Cash Income is included and is counted as the percentage of
+                    # the cost of 100% kcals that it could buy. If we also
+                    # included the Food Purchase kcals we would be double-counting.
+                    Case(
+                        When(strategy_type=Value(LivelihoodStrategyType.FOOD_PURCHASE), then=0.0),
+                        default=Coalesce(F("percentage_kcals"), 0.0),
+                    )
                     * F("wealth_group__average_household_size")
-                    * AnnualKcalsCost(F("wealth_group__livelihood_zone_baseline_id"), Value(WealthGroupCategory.POOR))
+                    * F("wealth_group__livelihood_zone_baseline___annual_kcals_cost")
                 )
-                + Coalesce(F("income"), 0)
+                + Coalesce(F("income"), 0.0)
             ),
             output_field=FloatField(),
         ),

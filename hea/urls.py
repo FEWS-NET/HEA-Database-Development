@@ -12,11 +12,13 @@ from rest_framework import routers
 from baseline.autocomplete import (
     CommunityAutocomplete,
     LivelihoodStrategyAutocomplete,
+    LivelihoodZoneAutocomplete,
     LivelihoodZoneBaselineAutocomplete,
     WealthGroupAutocomplete,
 )
 from baseline.viewsets import (
     BaselineLivelihoodActivityViewSet,
+    BaselineSeasonalActivityOccurrenceViewSet,
     BaselineWealthGroupCharacteristicValueViewSet,
     BaselineWealthGroupViewSet,
     ButterProductionViewSet,
@@ -133,6 +135,11 @@ router.register(r"othercashincome", OtherCashIncomeViewSet)
 router.register(r"otherpurchase", OtherPurchaseViewSet)
 router.register(r"seasonalactivity", SeasonalActivityViewSet)
 router.register(r"seasonalactivityoccurrence", SeasonalActivityOccurrenceViewSet)
+router.register(
+    r"baselineseasonalactivityoccurrence",
+    BaselineSeasonalActivityOccurrenceViewSet,
+    "baselineseasonalactivityoccurrence",
+)
 router.register(r"communitycropproduction", CommunityCropProductionViewSet)
 router.register(r"communitylivestock", CommunityLivestockViewSet)
 router.register(r"marketprice", MarketPriceViewSet)
@@ -146,6 +153,7 @@ urlpatterns = [
     ########## LOCALE INDEPENDENT PATHS go here. ##########
     path("autocomplete/wealthgroup/", WealthGroupAutocomplete.as_view(), name="wealthgroup-autocomplete"),
     path("autocomplete/community/", CommunityAutocomplete.as_view(), name="community-autocomplete"),
+    path("autocomplete/livelihoodzone/", LivelihoodZoneAutocomplete.as_view(), name="livelihoodzone-autocomplete"),
     path(
         "autocomplete/livelihoodzonebaseline/",
         LivelihoodZoneBaselineAutocomplete.as_view(),

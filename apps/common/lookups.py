@@ -249,76 +249,82 @@ class Lookup(ABC):
         left_fields = [field for field in target_fields if field in df.columns]
         right_fields = [field for field in self.parent_fields if field.split("__")[-1] in df.columns]
 
-        if lookup_column:
-            df["lookup_candidate"] = df[lookup_column]
-            df["lookup_candidate"] = self.prepare_column_for_lookup(df["lookup_candidate"])
-
-            left_fields.append("lookup_candidate")
-            right_fields.append("lookup_key")
-
-        # Set up the fields we need in the lookup dataframe
-        lookup_fields = ["lookup_value", *right_fields]
-
-        # Get the lookup dataframe, dropping duplicates to eliminate duplicates caused by
-        # lookup key and primary key when there isn't actually a lookup_column to need them
-        lookup_df = self.prepare_lookup_df()[lookup_fields].drop_duplicates()
-
         try:
-            merge_df = df.merge(lookup_df, how="left", left_on=left_fields, right_on=right_fields)
-        except ValueError as e:
-            # Mismatched column types
-            errors = [f"{self.__class__.__qualname__} has mismatched column dtypes:"]
-            for left, right in zip(left_fields, right_fields):
-                if df[left].dtype != lookup_df[right].dtype:
-                    errors.append(
-                        f"Source column {left} with dtype {df[left].dtype} doesn't match lookup column {right} with dtype {lookup_df[right].dtype}"  # NOQA: E501
-                    )
-            raise ValueError("\n".join(errors)) from e
+            if lookup_column:
+                df["lookup_candidate"] = df[lookup_column]
+                df["lookup_candidate"] = self.prepare_column_for_lookup(df["lookup_candidate"])
 
-        # If we didn't match anything, then the set up is probably wrong
-        if self.require_match and merge_df["lookup_value"].isnull().values.all():
-            errors = []
-            errors.append(f"{self.__class__.__qualname__} didn't find any matches:")
-            errors.append("Source" if len(df) <= 10 else "Source (first 10 rows only)")
-            errors.append(df[left_fields].iloc[:10].to_string(index=False))
-            errors.append(
-                "Expected Lookup Values" if len(lookup_df) <= 10 else "Expected Lookup Values (first 10 rows only)"
-            )
-            # Filter the lookup_df to only include the rows that match the parent fields
-            for field in right_fields[:-1]:
-                lookup_df = lookup_df[lookup_df[field].isin(df[field].unique())]
-            errors.append(lookup_df[right_fields].iloc[:10].to_string(index=False))
-            raise ValueError("\n".join(errors))
+                left_fields.append("lookup_candidate")
+                right_fields.append("lookup_key")
 
-        # Make sure we didn't add any rows!
-        if exact_match and len(merge_df) != len(df):
-            columns = [lookup_column if column == "lookup_candidate" else column for column in left_fields]
-            duplicates = merge_df[columns + ["lookup_value"]].drop_duplicates()
-            duplicates = duplicates.loc[
-                ~duplicates["lookup_value"].isnull() & duplicates.duplicated(columns, keep=False)
-            ]
-            duplicates = duplicates.rename(columns={"lookup_value": match_column})
-            raise ValueError(
-                f"{self.__class__.__qualname__} found multiple {self.model.__name__} matches for some rows:\n{duplicates.to_string(index=False)}"  # NOQA: E501
-            )
+            # Set up the fields we need in the lookup dataframe
+            lookup_fields = ["lookup_value", *right_fields]
 
-        # Keep values from the existing dataframe where we don't have a match
-        if update and not merge_df["lookup_value"].empty:
-            merge_df["lookup_value"] = merge_df["lookup_value"].mask(
-                merge_df["lookup_value"].isnull(), merge_df[match_column]
-            )
+            # Get the lookup dataframe, dropping duplicates to eliminate duplicates caused by
+            # lookup key and primary key when there isn't actually a lookup_column to need them
+            lookup_df = self.prepare_lookup_df()[lookup_fields].drop_duplicates()
 
-        if match_column in merge_df.columns:
-            merge_df = merge_df.rename(columns={match_column: f"{match_column}_original"})
+            try:
+                merge_df = df.merge(lookup_df, how="left", left_on=left_fields, right_on=right_fields)
+            except ValueError as e:
+                # Mismatched column types
+                errors = [f"{self.__class__.__qualname__} has mismatched column dtypes:"]
+                for left, right in zip(left_fields, right_fields):
+                    if df[left].dtype != lookup_df[right].dtype:
+                        errors.append(
+                            f"Source column {left} with dtype {df[left].dtype} doesn't match lookup column {right} with dtype {lookup_df[right].dtype}"  # NOQA: E501
+                        )
+                raise ValueError("\n".join(errors)) from e
 
-        merge_df = merge_df.rename(columns={"lookup_value": match_column})
+            # If we didn't match anything, then the set up is probably wrong
+            if self.require_match and merge_df["lookup_value"].isnull().values.all():
+                errors = []
+                errors.append(f"{self.__class__.__qualname__} didn't find any matches:")
+                errors.append("Source" if len(df) <= 10 else "Source (first 10 rows only)")
+                errors.append(df[left_fields].iloc[:10].to_string(index=False))
+                errors.append(
+                    "Expected Lookup Values" if len(lookup_df) <= 10 else "Expected Lookup Values (first 10 rows only)"
+                )
+                # Filter the lookup_df to only include the rows that match the parent fields
+                for field in right_fields[:-1]:
+                    lookup_df = lookup_df[lookup_df[field].isin(df[field].unique())]
+                errors.append(lookup_df[right_fields].iloc[:10].to_string(index=False))
+                raise ValueError("\n".join(errors))
 
-        # Drop redundant columns
-        if lookup_column:
-            merge_df = merge_df.drop(["lookup_candidate", "lookup_key"], axis="columns")
+            # Make sure we didn't add any rows!
+            if exact_match and len(merge_df) != len(df):
+                columns = [lookup_column if column == "lookup_candidate" else column for column in left_fields]
+                duplicates = merge_df[columns + ["lookup_value"]].drop_duplicates()
+                duplicates = duplicates.loc[
+                    ~duplicates["lookup_value"].isnull() & duplicates.duplicated(columns, keep=False)
+                ]
+                duplicates = duplicates.rename(columns={"lookup_value": match_column})
+                raise ValueError(
+                    f"{self.__class__.__qualname__} found multiple {self.model.__name__} matches for some rows:\n{duplicates.to_string(index=False)}"  # NOQA: E501
+                )
 
-        # Preserve the original index
-        return merge_df.set_index(df.index)
+            # Keep values from the existing dataframe where we don't have a match
+            if update and not merge_df["lookup_value"].empty:
+                merge_df["lookup_value"] = merge_df["lookup_value"].mask(
+                    merge_df["lookup_value"].isnull(), merge_df[match_column]
+                )
+
+            if match_column in merge_df.columns:
+                merge_df = merge_df.rename(columns={match_column: f"{match_column}_original"})
+
+            merge_df = merge_df.rename(columns={"lookup_value": match_column})
+
+            # Drop redundant columns from the result
+            if lookup_column:
+                merge_df = merge_df.drop(["lookup_candidate", "lookup_key"], axis="columns")
+
+            # Preserve the original index
+            return merge_df.set_index(df.index)
+
+        finally:
+            # Make sure the original dataframe is unchanged
+            if lookup_column:
+                df.drop(["lookup_candidate"], axis="columns", inplace=True)
 
     def get_instances(self, df, column, related_models=None):
         """
@@ -329,6 +335,15 @@ class Lookup(ABC):
         if related_models:
             queryset = queryset.select_related(*related_models)
         model_map = {instance.pk: instance for instance in queryset.iterator()}
+        df[column] = df[column].map(model_map)
+        return df
+
+    def get_attribute(self, df, column, attribute):
+        """
+        Replace the primary key value in a DataFrame column with a model attribute
+        """
+        queryset = self.model.objects.filter(pk__in=df[column].dropna().unique()).values("pk", attribute)
+        model_map = {instance["pk"]: instance[attribute] for instance in queryset.iterator()}
         df[column] = df[column].map(model_map)
         return df
 

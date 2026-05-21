@@ -56,12 +56,16 @@ def validate_instances(
 
     valid_instances = {model_name: [] for model_name in instances}
     valid_keys = {model_name: {} for model_name in instances}
+    # Track which models have completed their validation loop so we can distinguish
+    # "not validated yet" from "validated but all instances were invalid" (empty valid_keys).
+    validated_models: set[str] = set()
     errors = []
     current_timestamp = datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
     for model_name, model_instances in instances.items():
 
         # Ignore models where we don't have any instances to validate.
         if not model_instances:
+            validated_models.add(model_name)
             continue
 
         model = class_from_name(f"baseline.models.{model_name}")
@@ -125,7 +129,10 @@ def validate_instances(
                     else:
                         # Validate foreign key values
                         # If related model is part of the fixture, then it should have already been validated
-                        if field.related_model.__name__ in instances and not valid_keys[field.related_model.__name__]:
+                        if (
+                            field.related_model.__name__ in instances
+                            and field.related_model.__name__ not in validated_models
+                        ):
                             raise RuntimeError(
                                 "Related model %s not validated yet but needed for %s"
                                 % (field.related_model.__name__, model_name)
@@ -240,6 +247,8 @@ def validate_instances(
                 valid_instances[model_name].append(instance)
                 valid_keys[model_name][tuple(instance["natural_key"])] = model_instance
 
+        validated_models.add(model_name)
+
     metadata = {}
     for model_name in instances.keys():
         metadata[f"valid_{model_name}"] = f"{len(valid_instances[model_name])}/{len(instances[model_name])}"
@@ -264,7 +273,7 @@ def validate_instances(
     return Output(valid_instances, metadata=metadata)
 
 
-def get_fixture_from_instances(instance_dict: dict[str, list[dict]]) -> tuple[list[dict], dict]:
+def get_fixture_from_instances(instance_dict: dict[str, list[dict]]) -> Output[list[dict]]:
     """
     Convert a dict containing a list of instances for each model into a Django fixture.
     """

@@ -1,7 +1,13 @@
 from dal import autocomplete
 from django.contrib.auth.mixins import LoginRequiredMixin
 
-from .models import Community, LivelihoodStrategy, LivelihoodZoneBaseline, WealthGroup
+from .models import (
+    Community,
+    LivelihoodStrategy,
+    LivelihoodZone,
+    LivelihoodZoneBaseline,
+    WealthGroup,
+)
 
 
 class WealthGroupAutocomplete(LoginRequiredMixin, autocomplete.Select2QuerySetView):
@@ -34,6 +40,20 @@ class CommunityAutocomplete(LoginRequiredMixin, autocomplete.Select2QuerySetView
                 Community.objects.filter(name__icontains=self.q)
                 | Community.objects.filter(full_name__icontains=self.q)
                 | Community.objects.filter(livelihood_zone_baseline__livelihood_zone__code__icontains=self.q)
+            )
+        return qs
+
+
+class LivelihoodZoneAutocomplete(LoginRequiredMixin, autocomplete.Select2QuerySetView):
+    # autocomplete endpoint for LivelihoodZone FK fields
+
+    def get_queryset(self):
+        qs = LivelihoodZone.objects.select_related("country")
+        if self.q:
+            qs = (
+                LivelihoodZone.objects.filter(code__icontains=self.q)
+                | LivelihoodZone.objects.filter(name_en__icontains=self.q)
+                | LivelihoodZone.objects.filter(alternate_code__icontains=self.q)
             )
         return qs
 
