@@ -2047,7 +2047,7 @@ class LivelihoodZoneBaselineFacetedSearchView(APIView):
     permission_classes = [AllowAny]
 
     def _get_baselines(self, baselines_qs):
-        # returs a list of baseline dicts with id, name, livelihood_zone__code, reference_year_end_date.
+        # returns a list of baseline dicts with id, name, livelihood_zone__code, reference_year_end_date.
         return [
             {
                 "id": baseline.id,
