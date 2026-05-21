@@ -1015,6 +1015,16 @@ class LivelihoodZoneBaselineFacetedSearchViewTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data.get("products", [])), 0)
 
+    def test_search_with_whitespace_only_term(self):
+        response = self.client.get(self.url, {"search": "   "})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data.get("products"), [])
+        self.assertEqual(response.data.get("zone_types"), [])
+        self.assertEqual(response.data.get("zones"), [])
+        self.assertEqual(response.data.get("items"), [])
+        self.assertEqual(response.data.get("countries"), [])
+        self.assertEqual(response.data.get("livelihood_strategy_types"), [])
+
 
 class LivelihoodProductCategoryViewSetTestCase(APITestCase):
     @classmethod

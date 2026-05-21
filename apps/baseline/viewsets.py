@@ -2064,7 +2064,9 @@ class LivelihoodZoneBaselineFacetedSearchView(APIView):
         """
         Multi-word AND search against a model that uses SearchQueryMixin.
         """
-        terms = search_term.split() if search_term else [search_term]
+        terms = (search_term or "").strip().split()
+        if not terms:
+            return ModelClass.objects.none()
         qs = ModelClass.objects.search(terms[0])
         for term in terms[1:]:
             qs = qs.search(term)
@@ -2072,7 +2074,9 @@ class LivelihoodZoneBaselineFacetedSearchView(APIView):
 
     def _search_products(self, search_term):
         # Search products using icontains for broader matching than the default iexact search.
-        terms = search_term.split() if search_term else [search_term]
+        terms = (search_term or "").strip().split()
+        if not terms:
+            return ClassifiedProduct.objects.none()
         qs = ClassifiedProduct.objects.all()
         for term in terms:
             q_object = Q()
@@ -2087,7 +2091,9 @@ class LivelihoodZoneBaselineFacetedSearchView(APIView):
     def _search_zones(self, search_term):
         # Multi-word AND search for LivelihoodZone, extended to include country name so that
         # a term like "mali ml01" finds zones where "mali" matches the country and "ml01"
-        terms = search_term.split() if search_term else [search_term]
+        terms = (search_term or "").strip().split()
+        if not terms:
+            return LivelihoodZone.objects.none()
         qs = LivelihoodZone.objects.all()
         for term in terms:
             q_object = (
