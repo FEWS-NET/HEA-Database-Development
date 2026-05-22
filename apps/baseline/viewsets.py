@@ -969,6 +969,9 @@ class LivelihoodStrategyViewSet(BaseModelViewSet):
     search_fields = [
         "additional_identifier",
         "strategy_type",
+        "livelihood_zone_baseline__livelihood_zone__code",
+        "livelihood_zone_baseline__livelihood_zone__alternate_code",
+        "livelihood_zone_baseline__reference_year_end_date",
     ]
 
 
@@ -1081,6 +1084,9 @@ class LivelihoodActivityViewSet(BaseModelViewSet):
     search_fields = [
         "scenario",
         "strategy_type",
+        "livelihood_zone_baseline__livelihood_zone__code",
+        "livelihood_zone_baseline__livelihood_zone__alternate_code",
+        "livelihood_zone_baseline__reference_year_end_date",
     ]
 
 

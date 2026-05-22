@@ -323,6 +323,7 @@ class LivelihoodStrategyAdmin(admin.ModelAdmin):
         "strategy_type__icontains",
         "livelihood_zone_baseline__livelihood_zone__code",
         "livelihood_zone_baseline__livelihood_zone__alternate_code",
+        "livelihood_zone_baseline__reference_year_end_date__icontains",
         "additional_identifier__icontains",
         "product__cpc__iexact",
         "product__aliases__icontains",
@@ -338,6 +339,10 @@ class LivelihoodStrategyAdmin(admin.ModelAdmin):
         "livelihood_zone_baseline__livelihood_zone",
         ("livelihood_zone_baseline__livelihood_zone__country", admin.RelatedOnlyFieldListFilter),
     )
+
+    def get_search_results(self, request, queryset, search_term):
+        # Allow natural key format "BF01: 2011-10-31" by stripping the colon separator.
+        return super().get_search_results(request, queryset, search_term.replace(":", ""))
 
     def get_queryset(self, request):
         return (
@@ -506,6 +511,7 @@ class LivelihoodActivityAdmin(admin.ModelAdmin):
         "strategy_type",
         "scenario",
         ("livelihood_zone_baseline", admin.RelatedOnlyFieldListFilter),
+        ("wealth_group__wealth_group_category", admin.RelatedOnlyFieldListFilter),
         ("livelihood_strategy__product", admin.RelatedOnlyFieldListFilter),
         ("livelihood_strategy__season", admin.RelatedOnlyFieldListFilter),
         ("livelihood_zone_baseline__livelihood_zone__country", admin.RelatedOnlyFieldListFilter),
@@ -1075,18 +1081,28 @@ class SeasonalActivityAdmin(admin.ModelAdmin):
         "is_key",
     )
     search_fields = (
-        "seasonal_activity_type",
-        "season",
-        "product",
-        "additional_identifier",
+        "livelihood_zone_baseline__livelihood_zone__code",
+        "livelihood_zone_baseline__livelihood_zone__alternate_code",
+        "livelihood_zone_baseline__reference_year_end_date__icontains",
+        "seasonal_activity_type__code__icontains",
+        *translation_fields("seasonal_activity_type__name__icontains"),
+        *translation_fields("season__name__icontains"),
+        "season__aliases__icontains",
+        *translation_fields("product__common_name__icontains"),
+        "product__cpc__iexact",
+        "additional_identifier__icontains",
     )
     list_filter = (
         "livelihood_zone_baseline__livelihood_zone",
         "seasonal_activity_type",
-        "season",
-        "product",
+        ("season", admin.RelatedOnlyFieldListFilter),
+        ("product", admin.RelatedOnlyFieldListFilter),
         "is_key",
     )
+
+    def get_search_results(self, request, queryset, search_term):
+        # Allow natural key format "BF01: 2011-10-31" by stripping the colon separator.
+        return super().get_search_results(request, queryset, search_term.replace(":", ""))
 
 
 class SeasonalActivityOccurrenceAdmin(admin.ModelAdmin):
@@ -1098,10 +1114,16 @@ class SeasonalActivityOccurrenceAdmin(admin.ModelAdmin):
         "end_month",
     )
     search_fields = (
-        "seasonal_activity__seasonal_activity_type",
-        "seasonal_activity__season",
-        "seasonal_activity__product",
-        "seasonal_activity__additional_identifier",
+        "seasonal_activity__livelihood_zone_baseline__livelihood_zone__code",
+        "seasonal_activity__livelihood_zone_baseline__livelihood_zone__alternate_code",
+        "seasonal_activity__livelihood_zone_baseline__reference_year_end_date__icontains",
+        "seasonal_activity__seasonal_activity_type__code__icontains",
+        *translation_fields("seasonal_activity__seasonal_activity_type__name__icontains"),
+        *translation_fields("seasonal_activity__season__name__icontains"),
+        "seasonal_activity__season__aliases__icontains",
+        *translation_fields("seasonal_activity__product__common_name__icontains"),
+        "seasonal_activity__product__cpc__iexact",
+        "seasonal_activity__additional_identifier__icontains",
     )
     list_filter = (
         "seasonal_activity__seasonal_activity_type",
@@ -1109,6 +1131,10 @@ class SeasonalActivityOccurrenceAdmin(admin.ModelAdmin):
         ("seasonal_activity__product", admin.RelatedOnlyFieldListFilter),
     )
     ordering = ["start"]
+
+    def get_search_results(self, request, queryset, search_term):
+        # Allow natural key format "BF01: 2011-10-31" by stripping the colon separator.
+        return super().get_search_results(request, queryset, search_term.replace(":", ""))
 
     @admin.display(boolean=True, description="Key seasonal activity")
     def seasonal_activity_is_key(self, obj):
