@@ -949,6 +949,82 @@ class LivelihoodZoneBaselineFacetedSearchViewTestCase(APITestCase):
         self.assertEqual(len(baseline_data), 1)
         self.assertEqual(baseline_data[0]["name"], self.baseline1.name)
 
+    def test_search_with_multiple_words_zone(self):
+        # "mali ml01" must find the zone because the zone search includes country name.
+        mali = CountryFactory(iso3166a2="ML", iso_en_name="Mali")
+        zone1 = LivelihoodZoneFactory(code="ML01", name_en="Pastoral Zone", country=mali)
+        baseline1 = LivelihoodZoneBaselineFactory(livelihood_zone=zone1)
+
+        zone2 = LivelihoodZoneFactory(code="ML02", name_en="Agropastoral Zone", country=mali)
+        LivelihoodZoneBaselineFactory(livelihood_zone=zone2)
+
+        # Both words together must find zone1 via country name + zone code
+        response = self.client.get(self.url, {"search": "Mali ML01"})
+        self.assertEqual(response.status_code, 200)
+        zones = response.json()["zones"]
+        self.assertEqual(len(zones), 1)
+        self.assertEqual(len(zones[0]["livelihood_zone_baselines"]), 1)
+        self.assertEqual(zones[0]["livelihood_zone_baselines"][0]["id"], baseline1.id)
+
+        # All three words together must still find zone1 (code + country + zone name word)
+        response = self.client.get(self.url, {"search": "Mali ML01 Pastoral"})
+        self.assertEqual(response.status_code, 200)
+        zones = response.json()["zones"]
+        self.assertEqual(len(zones), 1)
+        self.assertEqual(zones[0]["livelihood_zone_baselines"][0]["id"], baseline1.id)
+
+        # Second word matches no zone code or country — must return nothing
+        response = self.client.get(self.url, {"search": "Mali XY99"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()["zones"]), 0)
+
+    def test_search_with_multiple_words_product(self):
+        # multi-word product search should AND all terms, narrowing results compared to single-word
+        zone = LivelihoodZoneFactory(code="TZ01", name_en="Test Zone")
+        baseline = LivelihoodZoneBaselineFactory(livelihood_zone=zone)
+
+        broad_product = ClassifiedProductFactory(description_en="Goat Live Animal", common_name_en="Goat")
+        specific_product = ClassifiedProductFactory(description_en="Goat Milk Fresh", common_name_en="Goat Milk")
+        LivelihoodStrategyFactory(
+            product=broad_product,
+            livelihood_zone_baseline=baseline,
+            strategy_type=LivelihoodStrategyType.LIVESTOCK_SALE,
+        )
+        LivelihoodStrategyFactory(
+            product=specific_product,
+            livelihood_zone_baseline=baseline,
+            strategy_type=LivelihoodStrategyType.MILK_PRODUCTION,
+        )
+
+        # "Goat" alone returns both products
+        response = self.client.get(self.url, {"search": "Goat"})
+        self.assertEqual(response.status_code, 200)
+        product_cpcs = {item["value"] for item in response.data.get("products", [])}
+        self.assertIn(broad_product.cpc, product_cpcs)
+        self.assertIn(specific_product.cpc, product_cpcs)
+
+        # "Goat Milk" narrows to only the milk product (AND: must contain both "Goat" and "Milk")
+        response = self.client.get(self.url, {"search": "Goat Milk"})
+        self.assertEqual(response.status_code, 200)
+        product_cpcs = {item["value"] for item in response.data.get("products", [])}
+        self.assertIn(specific_product.cpc, product_cpcs)
+        self.assertNotIn(broad_product.cpc, product_cpcs)
+
+        # "Goat Cheese" matches no product (no product has "Cheese" in any field)
+        response = self.client.get(self.url, {"search": "Goat Cheese"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data.get("products", [])), 0)
+
+    def test_search_with_whitespace_only_term(self):
+        response = self.client.get(self.url, {"search": "   "})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data.get("products"), [])
+        self.assertEqual(response.data.get("zone_types"), [])
+        self.assertEqual(response.data.get("zones"), [])
+        self.assertEqual(response.data.get("items"), [])
+        self.assertEqual(response.data.get("countries"), [])
+        self.assertEqual(response.data.get("livelihood_strategy_types"), [])
+
 
 class LivelihoodProductCategoryViewSetTestCase(APITestCase):
     @classmethod
