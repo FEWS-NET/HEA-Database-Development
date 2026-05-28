@@ -2409,6 +2409,19 @@ class LivestockSale(LivelihoodActivity):
         proxy = True
 
 
+class OtherLivestockProduction(LivelihoodActivity):
+    """
+    Other livestock production by households in a Wealth Group, such as eggs, blood, skins, etc.
+
+    Stored on the BSS 'Data' worksheet in the 'Livestock Production' section.
+    """
+
+    class Meta:
+        verbose_name = LivelihoodStrategyType.OTHER_LIVESTOCK_PRODUCTION.label
+        verbose_name_plural = LivelihoodStrategyType.OTHER_LIVESTOCK_PRODUCTION.label
+        proxy = True
+
+
 class CropProduction(LivelihoodActivity):
     """
     Production of crops by households in a Wealth Group for their own consumption, for sale and for other uses.

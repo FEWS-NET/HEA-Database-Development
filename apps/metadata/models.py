@@ -193,6 +193,7 @@ class LivelihoodStrategyType(models.TextChoices):
     BUTTER_PRODUCTION = "ButterProduction", _("Butter Production")
     MEAT_PRODUCTION = "MeatProduction", _("Meat Production")
     LIVESTOCK_SALE = "LivestockSale", _("Livestock Sale")
+    OTHER_LIVESTOCK_PRODUCTION = "OtherLivestockProduction", _("Other Livestock Production")
     CROP_PRODUCTION = "CropProduction", _("Crop Production")
     FOOD_PURCHASE = "FoodPurchase", _("Food Purchase")
     PAYMENT_IN_KIND = "PaymentInKind", _("Payment in Kind")

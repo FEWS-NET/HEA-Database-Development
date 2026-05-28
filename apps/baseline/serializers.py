@@ -39,6 +39,7 @@ from .models import (
     MeatProduction,
     MilkProduction,
     OtherCashIncome,
+    OtherLivestockProduction,
     OtherPurchase,
     PaymentInKind,
     ReliefGiftOther,
@@ -855,6 +856,12 @@ class MeatProductionSerializer(LivelihoodActivitySerializer):
 class LivestockSaleSerializer(LivelihoodActivitySerializer):
     class Meta:
         model = LivestockSale
+        fields = LivelihoodActivitySerializer.Meta.fields
+
+
+class OtherLivestockProductionSerializer(LivelihoodActivitySerializer):
+    class Meta:
+        model = OtherLivestockProduction
         fields = LivelihoodActivitySerializer.Meta.fields
 
 

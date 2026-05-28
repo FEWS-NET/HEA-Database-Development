@@ -47,6 +47,7 @@ from baseline.viewsets import (
     MeatProductionViewSet,
     MilkProductionViewSet,
     OtherCashIncomeViewSet,
+    OtherLivestockProductionViewSet,
     OtherPurchaseViewSet,
     PaymentInKindViewSet,
     ReliefGiftOtherViewSet,
@@ -124,6 +125,7 @@ router.register(r"milkproduction", MilkProductionViewSet)
 router.register(r"butterproduction", ButterProductionViewSet)
 router.register(r"meatproduction", MeatProductionViewSet)
 router.register(r"livestocksale", LivestockSaleViewSet)
+router.register(r"otherlivestockproduction", OtherLivestockProductionViewSet)
 router.register(r"cropproduction", CropProductionViewSet)
 router.register(r"foodpurchase", FoodPurchaseViewSet)
 router.register(r"paymentinkind", PaymentInKindViewSet)

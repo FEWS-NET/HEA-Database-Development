@@ -55,6 +55,7 @@ from .models import (
     MeatProduction,
     MilkProduction,
     OtherCashIncome,
+    OtherLivestockProduction,
     OtherPurchase,
     PaymentInKind,
     ReliefGiftOther,
@@ -98,6 +99,7 @@ from .serializers import (
     MeatProductionSerializer,
     MilkProductionSerializer,
     OtherCashIncomeSerializer,
+    OtherLivestockProductionSerializer,
     OtherPurchaseSerializer,
     PaymentInKindSerializer,
     ReliefGiftOtherSerializer,
@@ -1265,6 +1267,28 @@ class LivestockSaleViewSet(LivelihoodActivityViewSet):
     ).order_by(*LIVELIHOOD_ACTIVITY_ORDER_BY)
     serializer_class = LivestockSaleSerializer
     filterset_class = LivestockSaleFilterSet
+
+
+class OtherLivestockProductionFilterSet(LivelihoodActivityFilterSet):
+    class Meta(LivelihoodActivityFilterSet.Meta):
+        model = OtherLivestockProduction
+
+
+class OtherLivestockProductionViewSet(LivelihoodActivityViewSet):
+    """
+    API endpoint that allows other livestock production to be viewed or edited.
+    """
+
+    queryset = OtherLivestockProduction.objects.select_related(
+        "livelihood_strategy__product",
+        "livelihood_strategy__season",
+        "livelihood_strategy__unit_of_measure",
+        "wealth_group__community__livelihood_zone_baseline__livelihood_zone__country",
+        "wealth_group__community__livelihood_zone_baseline__source_organization",
+        "wealth_group__wealth_group_category",
+    ).order_by(*LIVELIHOOD_ACTIVITY_ORDER_BY)
+    serializer_class = OtherLivestockProductionSerializer
+    filterset_class = OtherLivestockProductionFilterSet
 
 
 class CropProductionFilterSet(LivelihoodActivityFilterSet):

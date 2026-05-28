@@ -32,6 +32,7 @@ from baseline.models import (
     MeatProduction,
     MilkProduction,
     OtherCashIncome,
+    OtherLivestockProduction,
     OtherPurchase,
     PaymentInKind,
     ReliefGiftOther,
@@ -481,6 +482,22 @@ class LivestockSaleFactory(LivelihoodActivityFactory):
     expenditure = None
     kcals_consumed = None
     percentage_kcals = None
+
+
+class OtherLivestockProductionFactory(LivelihoodActivityFactory):
+    class Meta:
+        model = OtherLivestockProduction
+        django_get_or_create = [
+            "livelihood_strategy",
+            "livelihood_zone_baseline",
+            "strategy_type",
+            "scenario",
+            "wealth_group",
+        ]
+
+    strategy_type = "OtherLivestockProduction"
+    quantity_purchased = None
+    expenditure = None
 
 
 class CropProductionFactory(LivelihoodActivityFactory):

@@ -47,6 +47,7 @@ from .models import (
     MeatProduction,
     MilkProduction,
     OtherCashIncome,
+    OtherLivestockProduction,
     OtherPurchase,
     PaymentInKind,
     ReliefGiftOther,
@@ -851,6 +852,13 @@ class LivestockSaleInlineAdmin(LivelihoodActivityInlineAdmin):
 
     def get_queryset(self, request):
         return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyType.LIVESTOCK_SALE)
+
+
+class OtherLivestockProductionInlineAdmin(LivelihoodActivityInlineAdmin):
+    model = OtherLivestockProduction
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyType.OTHER_LIVESTOCK_PRODUCTION)
 
 
 class CropProductionInlineAdmin(LivelihoodActivityInlineAdmin):
