@@ -2111,6 +2111,16 @@ class LivelihoodStrategyViewSetTestCase(APITestCase):
         df = pd.read_html(content)[0].fillna("")
         self.assertEqual(len(df), self.num_records + 1)
 
+    def test_search_by_zone_code_and_year(self):
+        baseline = LivelihoodZoneBaselineFactory()
+        strategy = LivelihoodStrategyFactory(livelihood_zone_baseline=baseline)
+        zone_code = baseline.livelihood_zone.code
+        ref_year = baseline.reference_year_end_date.year
+        response = self.client.get(self.url, {"search": f"{zone_code} {ref_year}"})
+        self.assertEqual(response.status_code, 200)
+        ids = [r["id"] for r in response.json()]
+        self.assertIn(strategy.pk, ids)
+
     def test_filter_by_country(self):
         country = CountryFactory(
             iso3166a2="AA",
@@ -2360,6 +2370,16 @@ class LivelihoodActivityViewSetTestCase(APITestCase):
             content = response.content
         df = pd.read_html(content)[0].fillna("")
         self.assertEqual(len(df), self.num_records + 1)
+
+    def test_search_by_zone_code_and_year(self):
+        baseline = LivelihoodZoneBaselineFactory()
+        activity = LivelihoodActivityFactory(livelihood_zone_baseline=baseline)
+        zone_code = baseline.livelihood_zone.code
+        ref_year = baseline.reference_year_end_date.year
+        response = self.client.get(self.url, {"search": f"{zone_code} {ref_year}"})
+        self.assertEqual(response.status_code, 200)
+        ids = [r["id"] for r in response.json()]
+        self.assertIn(activity.pk, ids)
 
     def test_filter_by_country(self):
         country = CountryFactory(
