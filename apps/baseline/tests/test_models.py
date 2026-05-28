@@ -288,19 +288,37 @@ class FoodPurchaseTestCase(TestCase):
             unit_multiple=None,
             times_per_month=None,
             months_per_year=None,
+            times_per_year=None,
             quantity_purchased=None,
         )
+        # Correct via times_per_month/months_per_year path (times_per_year matches)
         cls.foodpurchase2 = FoodPurchase(
             unit_multiple=2,
             times_per_month=5,
             months_per_year=12,
-            quantity_purchased=120,
+            times_per_year=60,  # 5 * 12 = 60
+            quantity_purchased=120,  # 2 * 60 = 120
         )
-        # Incorrect: 2 * 5 * 12 = 120
+        # Incorrect quantity_purchased: 2 * 60 = 120, not 100
         cls.foodpurchase3 = FoodPurchase(
             unit_multiple=2,
             times_per_month=5,
             months_per_year=12,
+            times_per_year=60,
+            quantity_purchased=100,
+        )
+        # Correct via times_per_year only (no times_per_month/months_per_year)
+        cls.foodpurchase4 = FoodPurchase(
+            unit_multiple=3,
+            times_per_year=10,
+            quantity_purchased=30,  # 3 * 10 = 30
+        )
+        # Inconsistent times_per_year vs times_per_month * months_per_year
+        cls.foodpurchase5 = FoodPurchase(
+            unit_multiple=2,
+            times_per_month=5,
+            months_per_year=12,
+            times_per_year=50,  # Incorrect: should be 60
             quantity_purchased=100,
         )
 
@@ -310,11 +328,16 @@ class FoodPurchaseTestCase(TestCase):
         """
         # Missing data should not raise ValidationError
         self.foodpurchase1.validate_quantity_purchased()
-        # Expected consistant values, should not raise
+        # Correct via times_per_month/months_per_year (times_per_year set consistently)
         self.foodpurchase2.validate_quantity_purchased()
-        # Incorrect: 2 * 5 * 12 = 120
+        # Incorrect quantity_purchased
         with conditional_logging():
             self.assertRaises(ValidationError, self.foodpurchase3.validate_quantity_purchased)
+        # Correct via times_per_year only
+        self.foodpurchase4.validate_quantity_purchased()
+        # Inconsistent times_per_year
+        with self.assertRaises(ValidationError):
+            self.foodpurchase5.validate_quantity_purchased()
 
 
 class PaymentInKindTestCase(TestCase):
@@ -326,21 +349,26 @@ class PaymentInKindTestCase(TestCase):
             people_per_household=None,
             times_per_month=None,
             months_per_year=None,
+            times_per_year=None,
             quantity_produced=None,
         )
+        # Correct: times_per_year = 5 * 12 = 60; quantity_produced = 10 * 2 * 60 = 1200
         cls.paymentinkind2 = PaymentInKind(
             payment_per_time=10,
             people_per_household=2,
             times_per_month=5,
             months_per_year=12,
-            quantity_produced=1200,  # 10 * 2 * 5 * 12 = 1200
+            times_per_year=60,
+            quantity_produced=1200,
         )
+        # Incorrect quantity_produced: 10 * 2 * 60 = 1200, not 1000
         cls.paymentinkind3 = PaymentInKind(
             payment_per_time=10,
             people_per_household=2,
             times_per_month=5,
             months_per_year=12,
-            quantity_produced=1000,  # Incorrect: should be 1200
+            times_per_year=60,
+            quantity_produced=1000,
         )
 
     def test_validate_quantity_produced(self):
@@ -350,10 +378,10 @@ class PaymentInKindTestCase(TestCase):
         # Missing data should not raise ValidationError
         self.paymentinkind1.validate_quantity_produced()
 
-        # Expected consistent values, should not raise ValidationError
+        # Correct (times_per_year consistent with times_per_month * months_per_year)
         self.paymentinkind2.validate_quantity_produced()
 
-        # Incorrect: 10 * 2 * 5 * 12 = 1200
+        # Incorrect quantity_produced
         with self.assertRaises(ValidationError):
             self.paymentinkind3.validate_quantity_produced()
 
@@ -377,18 +405,22 @@ class ReliefGiftOtherTestCase(TestCase):
         # Create different instances without saving
         cls.reliefgift1 = ReliefGiftOther(
             unit_multiple=None,
+            times_per_month=None,
+            months_per_year=None,
             times_per_year=None,
             quantity_produced=None,
         )
+        # Correct via times_per_year only
         cls.reliefgift2 = ReliefGiftOther(
             unit_multiple=10,
             times_per_year=12,
             quantity_produced=120,  # 10 * 12 = 120
         )
+        # Incorrect quantity_produced
         cls.reliefgift3 = ReliefGiftOther(
             unit_multiple=10,
             times_per_year=12,
-            quantity_produced=100,  # Incorrect: should be 10 * 12 = 120
+            quantity_produced=100,  # Incorrect: should be 120
         )
 
     def test_validate_quantity_produced(self):
@@ -398,10 +430,10 @@ class ReliefGiftOtherTestCase(TestCase):
         # Missing data should not raise ValidationError
         self.reliefgift1.validate_quantity_produced()
 
-        # Expected consistent values, should not raise ValidationError
+        # Correct via times_per_year only
         self.reliefgift2.validate_quantity_produced()
 
-        # Incorrect: 10 * 12 = 120
+        # Incorrect quantity_produced
         with self.assertRaises(ValidationError):
             self.reliefgift3.validate_quantity_produced()
 
@@ -415,27 +447,34 @@ class OtherCashIncomeTestCase(TestCase):
             people_per_household=None,
             times_per_month=None,
             months_per_year=None,
+            times_per_year=None,
             income=None,
         )
+        # Correct: times_per_year = 2 * 5 * 12 = 120; income = 100 * 120 = 12000
         cls.othercashincome2 = OtherCashIncome(
             payment_per_time=100,
             people_per_household=2,
             times_per_month=5,
             months_per_year=12,
-            income=12000,  # 100 * 2 * 5 * 12 = 12000
+            times_per_year=120,
+            income=12000,
         )
+        # Incorrect income: 100 * 120 = 12000, not 10000
         cls.othercashincome3 = OtherCashIncome(
             payment_per_time=100,
             people_per_household=2,
             times_per_month=5,
             months_per_year=12,
-            income=10000,  # Incorrect: should be 12000
+            times_per_year=120,
+            income=10000,
         )
+        # Correct via times_per_year only (no people_per_household/times_per_month)
         cls.othercashincome4 = OtherCashIncome(
             payment_per_time=100,
             times_per_year=24,
             income=2400,  # 100 * 24 = 2400
         )
+        # Incorrect income via times_per_year only
         cls.othercashincome5 = OtherCashIncome(
             payment_per_time=100,
             times_per_year=24,
@@ -448,7 +487,7 @@ class OtherCashIncomeTestCase(TestCase):
         # Correct data should not raise ValidationError
         self.othercashincome2.validate_income()
         self.othercashincome4.validate_income()
-        # Incorrect data should raise ValidationError.
+        # Incorrect income should raise ValidationError
         with self.assertRaises(ValidationError):
             self.othercashincome3.validate_income()
         with self.assertRaises(ValidationError):
