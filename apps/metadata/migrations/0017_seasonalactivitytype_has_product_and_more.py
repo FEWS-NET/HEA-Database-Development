@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("metadata", "0017_other_livestock_production"),
+        ("metadata", "0016_activitylabel_payment_product"),
     ]
 
     operations = [
