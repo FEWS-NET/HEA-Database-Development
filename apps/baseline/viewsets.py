@@ -1878,6 +1878,11 @@ class LivelihoodActivitySummaryViewSet(AggregatingViewSet):
         percentage_kcals_sum_slice
         percentage_kcals_sum_slice_percentage_of_row
 
+    The slice_percentage_of_row fields represent the percentage of the total row value that is contributed by the
+    slice.  Note that if the slice field (product or strategy type) is also included in the &fields parameter, then the
+    slice_percentage_of_row values will either be 0 or 100%, depending on whether the value for that field in this
+    row matches the slice.
+
     You can filter by any calculated slice or row aggregate by prefixing its name with `min_` or `max_`. For example:
 
         &min_income_sum_slice_percentage_of_row=52
