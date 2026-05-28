@@ -118,7 +118,7 @@ class SeasonalActivityTypeFactory(factory.django.DjangoModelFactory):
     code = factory.Iterator(["AC1", "AC2", "AC3", "AC4"])
     activity_category = factory.Iterator(
         [
-            SeasonalActivityType.SeasonalActivityCategory.SEASON,
+            SeasonalActivityType.SeasonalActivityCategory.CLIMATOLOGY,
             SeasonalActivityType.SeasonalActivityCategory.CROP,
             SeasonalActivityType.SeasonalActivityCategory.LIVESTOCK,
             SeasonalActivityType.SeasonalActivityCategory.OTHER,
