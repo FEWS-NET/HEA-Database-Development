@@ -4,6 +4,7 @@ from pathlib import Path
 import pandas as pd
 from django.test import TestCase
 from pipelines.assets.livelihood_activity import (
+    _get_completeness_dataframe,
     get_all_label_attributes,
     get_label_attributes,
     get_livelihood_activity_label_map,
@@ -140,3 +141,15 @@ class GetActivityLabelAttributesTestCase(TestCase):
             livelihood_zone_id=livelihood_zone_id,
         )
         self.assertEqual(attributes_df.loc[0, "season"], general_season.name_en)
+
+    def test_finalize_completeness_dataframe_with_no_rows(self):
+        column = "income"
+        summary_df = pd.DataFrame(
+            columns=["strategy_type", "wealth_group_category", f"{column}_recognized", f"{column}_summary"]
+        )
+
+        result = _get_completeness_dataframe(summary_df, column)
+
+        self.assertTrue(result.empty)
+        self.assertEqual(result.index.names, ["strategy_type", "wealth_group_category"])
+        self.assertEqual(list(result.columns), ["recognized", "summary", "unrecognized", "income_completeness"])
