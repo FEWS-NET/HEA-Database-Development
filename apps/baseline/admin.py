@@ -1,3 +1,4 @@
+import re
 from copy import deepcopy
 
 from binary_database_files.models import File
@@ -323,7 +324,6 @@ class LivelihoodStrategyAdmin(admin.ModelAdmin):
         "strategy_type__icontains",
         "livelihood_zone_baseline__livelihood_zone__code",
         "livelihood_zone_baseline__livelihood_zone__alternate_code",
-        "livelihood_zone_baseline__reference_year_end_date__icontains",
         "additional_identifier__icontains",
         "product__cpc__iexact",
         "product__aliases__icontains",
@@ -342,7 +342,19 @@ class LivelihoodStrategyAdmin(admin.ModelAdmin):
 
     def get_search_results(self, request, queryset, search_term):
         # Allow natural key format "BF01: 2011-10-31" by stripping the colon separator.
-        return super().get_search_results(request, queryset, search_term.replace(":", ""))
+        normalized = search_term.replace(":", "")
+        date_match = re.search(r"\b(\d{4}-\d{2}-\d{2})\b", normalized)
+        year_match = re.search(r"\b(\d{4})\b", normalized)
+        # Remove date/year from the term so text fields are searched without them.
+        text_term = re.sub(r"\b\d{4}(?:-\d{2}-\d{2})?\b", "", normalized).strip()
+        queryset, use_distinct = super().get_search_results(request, queryset, text_term)
+        if date_match:
+            queryset = queryset.filter(livelihood_zone_baseline__reference_year_end_date=date_match.group(1))
+        elif year_match:
+            queryset = queryset.filter(
+                livelihood_zone_baseline__reference_year_end_date__year=int(year_match.group(1))
+            )
+        return queryset, use_distinct
 
     def get_queryset(self, request):
         return (
@@ -526,7 +538,6 @@ class LivelihoodActivityAdmin(admin.ModelAdmin):
         "livelihood_zone_baseline__livelihood_zone__code",
         "livelihood_zone_baseline__livelihood_zone__alternate_code",
         *translation_fields("livelihood_zone_baseline__livelihood_zone__name"),
-        "livelihood_zone_baseline__reference_year_end_date__icontains",
         "livelihood_strategy__product__cpc__iexact",
         "livelihood_strategy__product__aliases__icontains",
         "livelihood_strategy__season__aliases__icontains",
@@ -539,7 +550,18 @@ class LivelihoodActivityAdmin(admin.ModelAdmin):
 
     def get_search_results(self, request, queryset, search_term):
         # Allow natural key format "BF01: 2011-10-31" by stripping the colon separator.
-        return super().get_search_results(request, queryset, search_term.replace(":", ""))
+        normalized = search_term.replace(":", "")
+        date_match = re.search(r"\b(\d{4}-\d{2}-\d{2})\b", normalized)
+        year_match = re.search(r"\b(\d{4})\b", normalized)
+        text_term = re.sub(r"\b\d{4}(?:-\d{2}-\d{2})?\b", "", normalized).strip()
+        queryset, use_distinct = super().get_search_results(request, queryset, text_term)
+        if date_match:
+            queryset = queryset.filter(livelihood_zone_baseline__reference_year_end_date=date_match.group(1))
+        elif year_match:
+            queryset = queryset.filter(
+                livelihood_zone_baseline__reference_year_end_date__year=int(year_match.group(1))
+            )
+        return queryset, use_distinct
 
     def get_object(self, request, object_id, from_field=None):
         obj = super().get_object(request, object_id, from_field)
@@ -1083,7 +1105,6 @@ class SeasonalActivityAdmin(admin.ModelAdmin):
     search_fields = (
         "livelihood_zone_baseline__livelihood_zone__code",
         "livelihood_zone_baseline__livelihood_zone__alternate_code",
-        "livelihood_zone_baseline__reference_year_end_date__icontains",
         "seasonal_activity_type__code__icontains",
         *translation_fields("seasonal_activity_type__name__icontains"),
         *translation_fields("season__name__icontains"),
@@ -1102,7 +1123,18 @@ class SeasonalActivityAdmin(admin.ModelAdmin):
 
     def get_search_results(self, request, queryset, search_term):
         # Allow natural key format "BF01: 2011-10-31" by stripping the colon separator.
-        return super().get_search_results(request, queryset, search_term.replace(":", ""))
+        normalized = search_term.replace(":", "")
+        date_match = re.search(r"\b(\d{4}-\d{2}-\d{2})\b", normalized)
+        year_match = re.search(r"\b(\d{4})\b", normalized)
+        text_term = re.sub(r"\b\d{4}(?:-\d{2}-\d{2})?\b", "", normalized).strip()
+        queryset, use_distinct = super().get_search_results(request, queryset, text_term)
+        if date_match:
+            queryset = queryset.filter(livelihood_zone_baseline__reference_year_end_date=date_match.group(1))
+        elif year_match:
+            queryset = queryset.filter(
+                livelihood_zone_baseline__reference_year_end_date__year=int(year_match.group(1))
+            )
+        return queryset, use_distinct
 
 
 class SeasonalActivityOccurrenceAdmin(admin.ModelAdmin):
@@ -1116,7 +1148,6 @@ class SeasonalActivityOccurrenceAdmin(admin.ModelAdmin):
     search_fields = (
         "seasonal_activity__livelihood_zone_baseline__livelihood_zone__code",
         "seasonal_activity__livelihood_zone_baseline__livelihood_zone__alternate_code",
-        "seasonal_activity__livelihood_zone_baseline__reference_year_end_date__icontains",
         "seasonal_activity__seasonal_activity_type__code__icontains",
         *translation_fields("seasonal_activity__seasonal_activity_type__name__icontains"),
         *translation_fields("seasonal_activity__season__name__icontains"),
@@ -1134,7 +1165,20 @@ class SeasonalActivityOccurrenceAdmin(admin.ModelAdmin):
 
     def get_search_results(self, request, queryset, search_term):
         # Allow natural key format "BF01: 2011-10-31" by stripping the colon separator.
-        return super().get_search_results(request, queryset, search_term.replace(":", ""))
+        normalized = search_term.replace(":", "")
+        date_match = re.search(r"\b(\d{4}-\d{2}-\d{2})\b", normalized)
+        year_match = re.search(r"\b(\d{4})\b", normalized)
+        text_term = re.sub(r"\b\d{4}(?:-\d{2}-\d{2})?\b", "", normalized).strip()
+        queryset, use_distinct = super().get_search_results(request, queryset, text_term)
+        if date_match:
+            queryset = queryset.filter(
+                seasonal_activity__livelihood_zone_baseline__reference_year_end_date=date_match.group(1)
+            )
+        elif year_match:
+            queryset = queryset.filter(
+                seasonal_activity__livelihood_zone_baseline__reference_year_end_date__year=int(year_match.group(1))
+            )
+        return queryset, use_distinct
 
     @admin.display(boolean=True, description="Key seasonal activity")
     def seasonal_activity_is_key(self, obj):

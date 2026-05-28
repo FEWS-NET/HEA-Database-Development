@@ -5,8 +5,8 @@ from dal import autocomplete
 from django.apps import apps
 from django.conf import settings
 from django.db import models
-from django.db.models import Expression, F, Q, Subquery, TextField, Value
-from django.db.models.functions import Coalesce, NullIf
+from django.db.models import CharField, Expression, F, Q, Subquery, TextField, Value
+from django.db.models.functions import Cast, Coalesce, ExtractYear, NullIf
 from django.utils import translation
 from django.utils.decorators import method_decorator
 from django.utils.translation import override
@@ -982,8 +982,20 @@ class LivelihoodStrategyViewSet(BaseModelViewSet):
         "strategy_type",
         "livelihood_zone_baseline__livelihood_zone__code",
         "livelihood_zone_baseline__livelihood_zone__alternate_code",
-        "livelihood_zone_baseline__reference_year_end_date",
+        "reference_year",
     ]
+
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .annotate(
+                reference_year=Cast(
+                    ExtractYear("livelihood_zone_baseline__reference_year_end_date"),
+                    output_field=CharField(),
+                )
+            )
+        )
 
 
 LIVELIHOOD_ACTIVITY_ORDER_BY = ["sort_key"]
@@ -1092,8 +1104,20 @@ class LivelihoodActivityViewSet(BaseModelViewSet):
         "strategy_type",
         "livelihood_zone_baseline__livelihood_zone__code",
         "livelihood_zone_baseline__livelihood_zone__alternate_code",
-        "livelihood_zone_baseline__reference_year_end_date",
+        "reference_year",
     ]
+
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .annotate(
+                reference_year=Cast(
+                    ExtractYear("livelihood_zone_baseline__reference_year_end_date"),
+                    output_field=CharField(),
+                )
+            )
+        )
 
 
 class BaselineLivelihoodActivityFilterSet(LivelihoodActivityFilterSet):
