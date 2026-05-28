@@ -801,6 +801,23 @@ class OtherPurchaseInlineAdmin(LivelihoodActivityInlineAdmin):
         return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyType.OTHER_PURCHASE)
 
 
+class CommunityRelatedOnlyFieldListFilter(admin.RelatedOnlyFieldListFilter):
+    """
+    RelatedOnlyFieldListFilter for Community that prefetches livelihood_zone_baseline__livelihood_zone.
+    To avoid the current excess repeated queries executed due to str(community)
+    """
+
+    def field_choices(self, field, request, model_admin):
+        pk_qs = model_admin.get_queryset(request).distinct().values_list("%s__pk" % self.field_path, flat=True)
+        ordering = self.field_admin_ordering(field, request, model_admin)
+        return [
+            (community.pk, str(community))
+            for community in Community.objects.filter(pk__in=pk_qs)
+            .select_related("livelihood_zone_baseline__livelihood_zone")
+            .order_by(*ordering)
+        ]
+
+
 class WealthGroupAdmin(admin.ModelAdmin):
     form = WealthGroupForm
     list_display = (
@@ -818,9 +835,9 @@ class WealthGroupAdmin(admin.ModelAdmin):
         "livelihood_zone_baseline__source_organization",
         ("livelihood_zone_baseline__livelihood_zone__country", admin.RelatedOnlyFieldListFilter),
         *translation_fields("livelihood_zone_baseline__livelihood_zone__name"),
-        ("community", admin.RelatedOnlyFieldListFilter),
-        SummaryValueListFilter,
+        ("community", CommunityRelatedOnlyFieldListFilter),
         "wealth_group_category",
+        SummaryValueListFilter,
     )
     inlines = [
         WealthGroupCharacteristicValueInlineAdmin,
