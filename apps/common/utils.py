@@ -248,6 +248,47 @@ def get_month_from_day_number(day_number):
     return _date.month
 
 
+def get_start_end_day_numbers_from_month(month: int):
+    """
+    Return the first and last day-of-year numbers for a month in a simplified 365-day year.
+    """
+    if month < 1 or month > 12:
+        raise ValueError("Month '%d' is not between 1 and 12." % month)
+
+    month_lengths = (31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
+    start = sum(month_lengths[: month - 1]) + 1
+    end = start + month_lengths[month - 1] - 1
+    return start, end
+
+
+def get_start_end_day_ranges_from_months(months: list[int]):
+    """
+    Return start/end day-of-year ranges for contiguous month runs.
+    """
+    if not months:
+        return []
+
+    ranges = []
+    start_month = months[0]
+    previous_month = start_month
+
+    for current_month in months[1:]:
+        consecutive = current_month == previous_month + 1 or (previous_month == 12 and current_month == 1)
+        if consecutive:
+            previous_month = current_month
+        else:
+            start, _ = get_start_end_day_numbers_from_month(start_month)
+            _, end = get_start_end_day_numbers_from_month(previous_month)
+            ranges.append((start, end))
+            start_month = current_month
+            previous_month = current_month
+
+    start, _ = get_start_end_day_numbers_from_month(start_month)
+    _, end = get_start_end_day_numbers_from_month(previous_month)
+    ranges.append((start, end))
+    return ranges
+
+
 def b74encode(n):
     """Generates short, unique strings from a sequence number, for test data for short CharFields
     (5,476 codes in two characters instead of the 100 that 00-99 permits)."""

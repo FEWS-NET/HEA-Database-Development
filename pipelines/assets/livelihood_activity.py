@@ -896,6 +896,7 @@ def get_instances_from_dataframe(
 
     # Initialize variables
     strategy_type = None
+    activity_attribute = None
     activity_field_names = None
     livelihood_strategy = previous_livelihood_strategy = None
     livelihood_strategies = []
@@ -2010,7 +2011,10 @@ def get_annotated_instances_from_dataframe(
             & summary_df["wealth_group"].apply(lambda x: x[3] == "")  # Baseline-level activities, not community ones.
         ]
         for col in ["income", "expenditure", "percentage_kcals", "kcals_consumed"]:
-            summary_df[col] = pd.to_numeric(summary_df[col], errors="coerce").fillna(0)
+            if col not in summary_df.columns:
+                summary_df[col] = 0
+            else:
+                summary_df[col] = pd.to_numeric(summary_df[col], errors="coerce").fillna(0)
         summary_df["wealth_group_category"] = summary_df["wealth_group"].apply(lambda x: x[2])
         summary_df = (
             summary_df[

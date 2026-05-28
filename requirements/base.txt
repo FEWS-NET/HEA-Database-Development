@@ -1,5 +1,7 @@
 # Do not pip freeze into this file. Add only the packages you need so pip can align dependencies.
 channels==4.3.1
+# Pin click to avoid "Error: Invalid value for '--policy-file': Policy file YAML is not valid." when running `safety check` with click 8.4.0
+click<8.4.0,>=8.3.0
 dagster==1.13.3
 dagster_aws==0.29.3
 dagster-pipes==1.13.3

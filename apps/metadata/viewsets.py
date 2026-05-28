@@ -151,13 +151,17 @@ class SeasonalActivityTypeFilterSet(ReferenceDataFilterSet):
     activity_category = filters.ChoiceFilter(
         choices=SeasonalActivityType.SeasonalActivityCategory.choices,
     )
+    has_product = filters.BooleanFilter()
+    is_key = filters.BooleanFilter()
 
     class Meta:
-        model = ReferenceData
+        model = SeasonalActivityType
         fields = (
             *translation_fields("name"),
             *translation_fields("description"),
             "activity_category",
+            "has_product",
+            "is_key",
         )
 
 
@@ -170,6 +174,8 @@ class SeasonalActivityTypeViewSet(ReferenceDataViewSet):
         *translation_fields("name"),
         *translation_fields("description"),
         "activity_category",
+        "has_product",
+        "is_key",
         "aliases",
     )
 
