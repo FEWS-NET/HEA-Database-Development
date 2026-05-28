@@ -226,10 +226,12 @@ class SeasonalActivityType(ReferenceData):
     """
 
     class SeasonalActivityCategory(models.TextChoices):
-        SEASON = "season", _("Season")
+        CLIMATOLOGY = "climatology", _("Climatology")
+        STRESS_PERIODS = "stress_period", _("Stress Periods")
         CROP = "crop", _("Crops")
         LIVESTOCK = "livestock", _("Livestock")
         FISHING = "fishing", _("Fishing")
+        OTHER_INCOME = "other_income", _("Employment and Other Income")
         OTHER = "other", _("Other")
 
     activity_category = models.CharField(
