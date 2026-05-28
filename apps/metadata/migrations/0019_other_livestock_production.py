@@ -4,7 +4,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("metadata", "0017_seasonalactivitytype_has_product_and_more"),
+        ("metadata", "0018_alter_seasonalactivitytype_activity_category"),
     ]
 
     operations = [
