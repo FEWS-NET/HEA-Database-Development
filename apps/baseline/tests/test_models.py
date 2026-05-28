@@ -1,8 +1,13 @@
+import datetime
+
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 
 from baseline.models import (
+    BaselineLivelihoodActivity,
     FoodPurchase,
+    LivelihoodActivity,
+    LivelihoodProductCategory,
     OtherCashIncome,
     OtherPurchase,
     PaymentInKind,
@@ -11,8 +16,156 @@ from baseline.models import (
 )
 from common.tests.factories import ClassifiedProductFactory
 from common.utils import conditional_logging
+from metadata.models import WealthGroupCategory
 
-from .factories import CommunityFactory, WealthGroupCharacteristicValueFactory
+from .factories import (
+    BaselineWealthGroupFactory,
+    CommunityFactory,
+    FoodPurchaseFactory,
+    LivelihoodProductCategoryFactory,
+    LivelihoodZoneBaselineFactory,
+    SeasonalActivityFactory,
+    WealthGroupCharacteristicValueFactory,
+)
+
+
+class LivelihoodZoneBaselineTestCase(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.baseline = LivelihoodZoneBaselineFactory(reference_year_end_date=datetime.date(2024, 12, 31))
+        cls.poor_wealth_group = BaselineWealthGroupFactory(
+            livelihood_zone_baseline=cls.baseline,
+            wealth_group_category__code=WealthGroupCategory.POOR,
+            average_household_size=5,
+        )
+        cls.main_staple_activity = FoodPurchaseFactory(
+            livelihood_zone_baseline=cls.baseline,
+            wealth_group=cls.poor_wealth_group,
+            extra={"product__kcals_per_unit": 100},
+        )
+        cls.other_food_activity = FoodPurchaseFactory(
+            livelihood_zone_baseline=cls.baseline,
+            wealth_group=cls.poor_wealth_group,
+        )
+        cls.main_staple_category = LivelihoodProductCategoryFactory(
+            baseline_livelihood_activity=cls.main_staple_activity,
+            basket=LivelihoodProductCategory.ProductBasket.MAIN_STAPLE,
+            percentage_allocation_to_basket=1,
+        )
+        cls.other_food_category = LivelihoodProductCategoryFactory(
+            baseline_livelihood_activity=cls.other_food_activity,
+            basket=LivelihoodProductCategory.ProductBasket.SURVIVAL_OTHER_FOOD,
+            percentage_allocation_to_basket=0.25,
+        )
+        # Save the Baseline to force the calculation of annual_kcals_cost.
+        cls.baseline.save()
+
+    def get_expected_annual_kcals_cost(self):
+        # Calculate the expected annual kcals cost.
+        # It is defined as the cost of providing 100% of required kcals for the P
+        # Wealth Group divided by the average_household_size. The cost is
+        # calculated as the cost of Basket 2 (Other food survival) plus the cost
+        # of providing the remainder of kcals by purchasing the main staple. All
+        # costs are in the currency for the BSS.
+        return (
+            self.other_food_activity.expenditure * self.other_food_category.percentage_allocation_to_basket
+            + (
+                (
+                    1
+                    - (
+                        self.other_food_activity.percentage_kcals
+                        * self.other_food_category.percentage_allocation_to_basket
+                    )
+                )
+                * 2100
+                * 365
+                * self.poor_wealth_group.average_household_size
+                / self.main_staple_activity.extra["product__kcals_per_unit"]
+                * self.main_staple_activity.price
+            )
+        ) / self.poor_wealth_group.average_household_size
+
+    def test_calculate_fields_stores_annual_kcals_cost(self):
+        expected_annual_kcals_cost = self.get_expected_annual_kcals_cost()
+        self.assertAlmostEqual(self.baseline.annual_kcals_cost, expected_annual_kcals_cost)
+        self.assertAlmostEqual(self.baseline._annual_kcals_cost, expected_annual_kcals_cost)
+        self.assertAlmostEqual(self.baseline._get_annual_kcals_cost(), expected_annual_kcals_cost)
+        self.assertAlmostEqual(self.baseline._get_annual_kcals_cost_sql(), expected_annual_kcals_cost)
+
+    def test_product_category_change_resaves_baseline_on_commit(self):
+        with self.captureOnCommitCallbacks(execute=True):
+            self.other_food_category.percentage_allocation_to_basket = 0.5
+            self.other_food_category.save()
+
+        self.baseline.refresh_from_db()
+        self.assertAlmostEqual(self.baseline.annual_kcals_cost, self.get_expected_annual_kcals_cost())
+
+    def test_baseline_livelihood_activity_change_resaves_baseline_on_commit(self):
+        with self.captureOnCommitCallbacks(execute=True):
+            self.main_staple_activity.price = 3
+            self.main_staple_activity.expenditure = self.main_staple_activity.quantity_purchased * 3
+            self.main_staple_activity.save()
+
+        self.baseline.refresh_from_db()
+        self.assertAlmostEqual(self.baseline.annual_kcals_cost, self.get_expected_annual_kcals_cost())
+
+    def test_baseline_livelihood_activity_superclass_resaves_baseline_on_commit(self):
+        with self.captureOnCommitCallbacks(execute=True):
+            activity = BaselineLivelihoodActivity.objects.get(pk=self.main_staple_activity.pk)
+            activity.price = 4
+            activity.expenditure = activity.quantity_purchased * 4
+            activity.save()
+
+        self.baseline.refresh_from_db()
+        self.main_staple_activity.refresh_from_db()
+        self.assertAlmostEqual(self.baseline.annual_kcals_cost, self.get_expected_annual_kcals_cost())
+
+    def test_livelihood_activity_superclass_resaves_baseline_on_commit(self):
+        with self.captureOnCommitCallbacks(execute=True):
+            activity = LivelihoodActivity.objects.get(pk=self.main_staple_activity.pk)
+            activity.price = 5
+            activity.expenditure = activity.quantity_purchased * 5
+            activity.save()
+
+        self.baseline.refresh_from_db()
+        self.main_staple_activity.refresh_from_db()
+        self.assertAlmostEqual(self.baseline.annual_kcals_cost, self.get_expected_annual_kcals_cost())
+
+    def test_product_category_changes_for_same_baseline_queue_one_on_commit_callback(self):
+        with self.captureOnCommitCallbacks(execute=False) as callbacks:
+            self.main_staple_category.percentage_allocation_to_basket = 0.9
+            self.main_staple_category.save()
+            self.other_food_category.percentage_allocation_to_basket = 0.5
+            self.other_food_category.save()
+
+        self.assertEqual(len(callbacks), 1)
+
+    def test_poor_baseline_wealth_group_change_resaves_baseline_on_commit(self):
+        with self.captureOnCommitCallbacks(execute=True):
+            self.poor_wealth_group.average_household_size = 10
+            self.poor_wealth_group.save()
+
+        self.baseline.refresh_from_db()
+        self.poor_wealth_group.refresh_from_db()
+        self.assertAlmostEqual(self.baseline.annual_kcals_cost, self.get_expected_annual_kcals_cost())
+
+
+class SeasonalActivityTestCase(TestCase):
+    def test_is_key_defaults_from_seasonal_activity_type(self):
+        seasonal_activity = SeasonalActivityFactory(
+            seasonal_activity_type__code="KEYSA", seasonal_activity_type__is_key=True
+        )
+
+        self.assertTrue(seasonal_activity.is_key)
+
+    def test_is_key_can_override_seasonal_activity_type_default(self):
+        seasonal_activity = SeasonalActivityFactory(
+            seasonal_activity_type__code="KEYSB",
+            seasonal_activity_type__is_key=True,
+            is_key=False,
+        )
+
+        self.assertFalse(seasonal_activity.is_key)
 
 
 class WealthGroupCharacteristicValueTestCase(TestCase):
@@ -135,19 +288,37 @@ class FoodPurchaseTestCase(TestCase):
             unit_multiple=None,
             times_per_month=None,
             months_per_year=None,
+            times_per_year=None,
             quantity_purchased=None,
         )
+        # Correct via times_per_month/months_per_year path (times_per_year matches)
         cls.foodpurchase2 = FoodPurchase(
             unit_multiple=2,
             times_per_month=5,
             months_per_year=12,
-            quantity_purchased=120,
+            times_per_year=60,  # 5 * 12 = 60
+            quantity_purchased=120,  # 2 * 60 = 120
         )
-        # Incorrect: 2 * 5 * 12 = 120
+        # Incorrect quantity_purchased: 2 * 60 = 120, not 100
         cls.foodpurchase3 = FoodPurchase(
             unit_multiple=2,
             times_per_month=5,
             months_per_year=12,
+            times_per_year=60,
+            quantity_purchased=100,
+        )
+        # Correct via times_per_year only (no times_per_month/months_per_year)
+        cls.foodpurchase4 = FoodPurchase(
+            unit_multiple=3,
+            times_per_year=10,
+            quantity_purchased=30,  # 3 * 10 = 30
+        )
+        # Inconsistent times_per_year vs times_per_month * months_per_year
+        cls.foodpurchase5 = FoodPurchase(
+            unit_multiple=2,
+            times_per_month=5,
+            months_per_year=12,
+            times_per_year=50,  # Incorrect: should be 60
             quantity_purchased=100,
         )
 
@@ -157,11 +328,16 @@ class FoodPurchaseTestCase(TestCase):
         """
         # Missing data should not raise ValidationError
         self.foodpurchase1.validate_quantity_purchased()
-        # Expected consistant values, should not raise
+        # Correct via times_per_month/months_per_year (times_per_year set consistently)
         self.foodpurchase2.validate_quantity_purchased()
-        # Incorrect: 2 * 5 * 12 = 120
+        # Incorrect quantity_purchased
         with conditional_logging():
             self.assertRaises(ValidationError, self.foodpurchase3.validate_quantity_purchased)
+        # Correct via times_per_year only
+        self.foodpurchase4.validate_quantity_purchased()
+        # Inconsistent times_per_year
+        with self.assertRaises(ValidationError):
+            self.foodpurchase5.validate_quantity_purchased()
 
 
 class PaymentInKindTestCase(TestCase):
@@ -173,21 +349,26 @@ class PaymentInKindTestCase(TestCase):
             people_per_household=None,
             times_per_month=None,
             months_per_year=None,
+            times_per_year=None,
             quantity_produced=None,
         )
+        # Correct: times_per_year = 5 * 12 = 60; quantity_produced = 10 * 2 * 60 = 1200
         cls.paymentinkind2 = PaymentInKind(
             payment_per_time=10,
             people_per_household=2,
             times_per_month=5,
             months_per_year=12,
-            quantity_produced=1200,  # 10 * 2 * 5 * 12 = 1200
+            times_per_year=60,
+            quantity_produced=1200,
         )
+        # Incorrect quantity_produced: 10 * 2 * 60 = 1200, not 1000
         cls.paymentinkind3 = PaymentInKind(
             payment_per_time=10,
             people_per_household=2,
             times_per_month=5,
             months_per_year=12,
-            quantity_produced=1000,  # Incorrect: should be 1200
+            times_per_year=60,
+            quantity_produced=1000,
         )
 
     def test_validate_quantity_produced(self):
@@ -197,10 +378,10 @@ class PaymentInKindTestCase(TestCase):
         # Missing data should not raise ValidationError
         self.paymentinkind1.validate_quantity_produced()
 
-        # Expected consistent values, should not raise ValidationError
+        # Correct (times_per_year consistent with times_per_month * months_per_year)
         self.paymentinkind2.validate_quantity_produced()
 
-        # Incorrect: 10 * 2 * 5 * 12 = 1200
+        # Incorrect quantity_produced
         with self.assertRaises(ValidationError):
             self.paymentinkind3.validate_quantity_produced()
 
@@ -224,18 +405,22 @@ class ReliefGiftOtherTestCase(TestCase):
         # Create different instances without saving
         cls.reliefgift1 = ReliefGiftOther(
             unit_multiple=None,
+            times_per_month=None,
+            months_per_year=None,
             times_per_year=None,
             quantity_produced=None,
         )
+        # Correct via times_per_year only
         cls.reliefgift2 = ReliefGiftOther(
             unit_multiple=10,
             times_per_year=12,
             quantity_produced=120,  # 10 * 12 = 120
         )
+        # Incorrect quantity_produced
         cls.reliefgift3 = ReliefGiftOther(
             unit_multiple=10,
             times_per_year=12,
-            quantity_produced=100,  # Incorrect: should be 10 * 12 = 120
+            quantity_produced=100,  # Incorrect: should be 120
         )
 
     def test_validate_quantity_produced(self):
@@ -245,10 +430,10 @@ class ReliefGiftOtherTestCase(TestCase):
         # Missing data should not raise ValidationError
         self.reliefgift1.validate_quantity_produced()
 
-        # Expected consistent values, should not raise ValidationError
+        # Correct via times_per_year only
         self.reliefgift2.validate_quantity_produced()
 
-        # Incorrect: 10 * 12 = 120
+        # Incorrect quantity_produced
         with self.assertRaises(ValidationError):
             self.reliefgift3.validate_quantity_produced()
 
@@ -262,27 +447,34 @@ class OtherCashIncomeTestCase(TestCase):
             people_per_household=None,
             times_per_month=None,
             months_per_year=None,
+            times_per_year=None,
             income=None,
         )
+        # Correct: times_per_year = 2 * 5 * 12 = 120; income = 100 * 120 = 12000
         cls.othercashincome2 = OtherCashIncome(
             payment_per_time=100,
             people_per_household=2,
             times_per_month=5,
             months_per_year=12,
-            income=12000,  # 100 * 2 * 5 * 12 = 12000
+            times_per_year=120,
+            income=12000,
         )
+        # Incorrect income: 100 * 120 = 12000, not 10000
         cls.othercashincome3 = OtherCashIncome(
             payment_per_time=100,
             people_per_household=2,
             times_per_month=5,
             months_per_year=12,
-            income=10000,  # Incorrect: should be 12000
+            times_per_year=120,
+            income=10000,
         )
+        # Correct via times_per_year only (no people_per_household/times_per_month)
         cls.othercashincome4 = OtherCashIncome(
             payment_per_time=100,
             times_per_year=24,
             income=2400,  # 100 * 24 = 2400
         )
+        # Incorrect income via times_per_year only
         cls.othercashincome5 = OtherCashIncome(
             payment_per_time=100,
             times_per_year=24,
@@ -295,7 +487,7 @@ class OtherCashIncomeTestCase(TestCase):
         # Correct data should not raise ValidationError
         self.othercashincome2.validate_income()
         self.othercashincome4.validate_income()
-        # Incorrect data should raise ValidationError.
+        # Incorrect income should raise ValidationError
         with self.assertRaises(ValidationError):
             self.othercashincome3.validate_income()
         with self.assertRaises(ValidationError):

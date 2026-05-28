@@ -140,6 +140,22 @@ class ReferenceDataViewSetTestCase(APITestCase):
         self.assertEqual(len(result), 1)
         self.assertEqual(self.seasonalactivitytype1.code, result[0]["code"])
 
+    def test_seasonalactivitytype_filter_by_has_product(self):
+        response = self.client.get(
+            self.seasonalactivitytype_url, {"has_product": self.seasonalactivitytype1.has_product}
+        )
+        self.assertEqual(response.status_code, 200)
+        result = json.loads(response.content.decode("utf-8"))
+        self.assertTrue(all(item["has_product"] == self.seasonalactivitytype1.has_product for item in result))
+
+    def test_seasonalactivitytype_filter_by_is_key(self):
+        self.seasonalactivitytype1.is_key = True
+        self.seasonalactivitytype1.save()
+        response = self.client.get(self.seasonalactivitytype_url, {"is_key": True})
+        self.assertEqual(response.status_code, 200)
+        result = json.loads(response.content.decode("utf-8"))
+        self.assertEqual([item["code"] for item in result], [self.seasonalactivitytype1.code])
+
     def test_wealthcharacteristic_filter_by_variable_type(self):
         response = self.client.get(
             self.wealthcharacteristic_url, {"variable_type": self.wealthcharacteristic1.variable_type}

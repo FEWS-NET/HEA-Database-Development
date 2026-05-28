@@ -1,3 +1,4 @@
+import re
 from copy import deepcopy
 
 from binary_database_files.models import File
@@ -13,8 +14,11 @@ from .forms import (
     FoodPurchaseForm,
     LivelihoodActivityForm,
     LivelihoodStrategyForm,
+    MeatProductionForm,
     MilkProductionForm,
+    OtherCashIncomeForm,
     OtherPurchaseForm,
+    PaymentInKindForm,
     ReliefGiftOtherForm,
     WealthGroupCharacteristicValueForm,
     WealthGroupForm,
@@ -33,6 +37,7 @@ from .models import (
     Hazard,
     Hunting,
     LivelihoodActivity,
+    LivelihoodProductCategory,
     LivelihoodStrategy,
     LivelihoodZone,
     LivelihoodZoneBaseline,
@@ -42,6 +47,7 @@ from .models import (
     MeatProduction,
     MilkProduction,
     OtherCashIncome,
+    OtherLivestockProduction,
     OtherPurchase,
     PaymentInKind,
     ReliefGiftOther,
@@ -117,6 +123,9 @@ class LivelihoodZoneAdmin(admin.ModelAdmin):
         "country__iso_en_ro_name",
     ]
     list_filter = (("country", admin.RelatedOnlyFieldListFilter),)
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("country")
 
 
 class LivelihoodZoneBaselineCorrectionAdmin(admin.ModelAdmin):
@@ -214,6 +223,17 @@ class LivelihoodZoneBaselineAdmin(GISModelAdminReadOnly):
         LivelihoodZoneBaselineCorrectionInlineAdmin,
     ]
 
+    def get_queryset(self, request):
+        return (
+            super()
+            .get_queryset(request)
+            .select_related(
+                "livelihood_zone__country",
+                "main_livelihood_category",
+                "source_organization",
+            )
+        )
+
     @admin.display(description=_("Livelihood Zone Alternate Code"))
     def livelihood_zone_alternate_code(self, instance):
         """
@@ -297,6 +317,9 @@ class CommunityAdmin(GISModelAdminReadOnly):
         """
         return instance.livelihood_zone_baseline.livelihood_zone.country
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("livelihood_zone_baseline__livelihood_zone__country")
+
     def get_fields(self, request, obj=None):
         fields = super().get_fields(request, obj=obj)
         if obj and obj.geography:
@@ -340,6 +363,7 @@ class LivelihoodStrategyAdmin(admin.ModelAdmin):
         *translation_fields("livelihood_zone_baseline__livelihood_zone__name__icontains"),
         *translation_fields("product__common_name__icontains"),
         *translation_fields("season__name__icontains"),
+        "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name",
     )
 
     list_filter = (
@@ -347,6 +371,34 @@ class LivelihoodStrategyAdmin(admin.ModelAdmin):
         "livelihood_zone_baseline__livelihood_zone",
         ("livelihood_zone_baseline__livelihood_zone__country", admin.RelatedOnlyFieldListFilter),
     )
+
+    def get_search_results(self, request, queryset, search_term):
+        # Allow natural key format "BF01: 2011-10-31" by stripping the colon separator.
+        normalized = search_term.replace(":", "")
+        date_match = re.search(r"\b(\d{4}-\d{2}-\d{2})\b", normalized)
+        year_match = re.search(r"\b(\d{4})\b", normalized)
+        # Remove date/year from the term so text fields are searched without them.
+        text_term = re.sub(r"\b\d{4}(?:-\d{2}-\d{2})?\b", "", normalized).strip()
+        queryset, use_distinct = super().get_search_results(request, queryset, text_term)
+        if date_match:
+            queryset = queryset.filter(livelihood_zone_baseline__reference_year_end_date=date_match.group(1))
+        elif year_match:
+            queryset = queryset.filter(
+                livelihood_zone_baseline__reference_year_end_date__year=int(year_match.group(1))
+            )
+        return queryset, use_distinct
+
+    def get_queryset(self, request):
+        return (
+            super()
+            .get_queryset(request)
+            .select_related(
+                "livelihood_zone_baseline__livelihood_zone",
+                "season",
+                "product",
+                "unit_of_measure",
+            )
+        )
 
 
 class WealthGroupCharacteristicValueInlineAdmin(admin.TabularInline):
@@ -364,6 +416,134 @@ class WealthGroupCharacteristicValueInlineAdmin(admin.TabularInline):
 
 class LivelihoodActivityAdmin(admin.ModelAdmin):
     form = LivelihoodActivityForm
+
+    # Maps strategy_type to the subclass accessor name, its form, extra fieldsets,
+    # and any extra fields to append to the base "Quantity" fieldset.
+    _SUBCLASS_CONFIG = {
+        LivelihoodStrategyType.MILK_PRODUCTION: {
+            "accessor": "milkproduction",
+            "form": MilkProductionForm,
+            "quantity_extra": ["quantity_butter_production"],
+            "extra_fieldsets": [
+                (
+                    "Milk source",
+                    {
+                        "fields": [
+                            "milking_animals",
+                            "lactation_days",
+                            "daily_production",
+                            "type_of_milk_consumed",
+                            "type_of_milk_sold_or_other_uses",
+                        ]
+                    },
+                ),
+            ],
+        },
+        LivelihoodStrategyType.MEAT_PRODUCTION: {
+            "accessor": "meatproduction",
+            "form": MeatProductionForm,
+            "extra_fieldsets": [
+                (
+                    "Meat source",
+                    {
+                        "fields": [
+                            "animals_slaughtered",
+                            "carcass_weight",
+                        ]
+                    },
+                ),
+            ],
+        },
+        LivelihoodStrategyType.FOOD_PURCHASE: {
+            "accessor": "foodpurchase",
+            "form": FoodPurchaseForm,
+            "extra_fieldsets": [
+                (
+                    "Purchases",
+                    {
+                        "fields": [
+                            "unit_multiple",
+                            "times_per_month",
+                            "months_per_year",
+                            "times_per_year",
+                        ]
+                    },
+                ),
+            ],
+        },
+        LivelihoodStrategyType.PAYMENT_IN_KIND: {
+            "accessor": "paymentinkind",
+            "form": PaymentInKindForm,
+            "extra_fieldsets": [
+                (
+                    "Payment",
+                    {
+                        "fields": [
+                            "payment_product",
+                            "payment_per_time",
+                            "people_per_household",
+                            "times_per_month",
+                            "months_per_year",
+                            "times_per_year",
+                        ]
+                    },
+                ),
+            ],
+        },
+        LivelihoodStrategyType.RELIEF_GIFT_OTHER: {
+            "accessor": "reliefgiftother",
+            "form": ReliefGiftOtherForm,
+            "extra_fieldsets": [
+                (
+                    "Relief",
+                    {
+                        "fields": [
+                            "unit_multiple",
+                            "times_per_month",
+                            "months_per_year",
+                            "times_per_year",
+                        ]
+                    },
+                ),
+            ],
+        },
+        LivelihoodStrategyType.OTHER_CASH_INCOME: {
+            "accessor": "othercashincome",
+            "form": OtherCashIncomeForm,
+            "extra_fieldsets": [
+                (
+                    "Income",
+                    {
+                        "fields": [
+                            "payment_per_time",
+                            "people_per_household",
+                            "times_per_month",
+                            "months_per_year",
+                            "times_per_year",
+                        ]
+                    },
+                ),
+            ],
+        },
+        LivelihoodStrategyType.OTHER_PURCHASE: {
+            "accessor": "otherpurchase",
+            "form": OtherPurchaseForm,
+            "extra_fieldsets": [
+                (
+                    "Purchases",
+                    {
+                        "fields": [
+                            "unit_multiple",
+                            "times_per_month",
+                            "months_per_year",
+                            "times_per_year",
+                        ]
+                    },
+                ),
+            ],
+        },
+    }
+
     list_display = (
         "wealth_group",
         "strategy_type",
@@ -375,6 +555,8 @@ class LivelihoodActivityAdmin(admin.ModelAdmin):
         WealthGroupSummaryValueListFilter,
         "strategy_type",
         "scenario",
+        ("livelihood_zone_baseline", admin.RelatedOnlyFieldListFilter),
+        ("wealth_group__wealth_group_category", admin.RelatedOnlyFieldListFilter),
         ("livelihood_strategy__product", admin.RelatedOnlyFieldListFilter),
         ("livelihood_strategy__season", admin.RelatedOnlyFieldListFilter),
         ("livelihood_zone_baseline__livelihood_zone__country", admin.RelatedOnlyFieldListFilter),
@@ -388,6 +570,7 @@ class LivelihoodActivityAdmin(admin.ModelAdmin):
         "livelihood_strategy__additional_identifier__icontains",
         "livelihood_zone_baseline__livelihood_zone__code",
         "livelihood_zone_baseline__livelihood_zone__alternate_code",
+        *translation_fields("livelihood_zone_baseline__livelihood_zone__name"),
         "livelihood_strategy__product__cpc__iexact",
         "livelihood_strategy__product__aliases__icontains",
         "livelihood_strategy__season__aliases__icontains",
@@ -395,11 +578,65 @@ class LivelihoodActivityAdmin(admin.ModelAdmin):
         *translation_fields("livelihood_strategy__product__common_name__icontains"),
         *translation_fields("livelihood_strategy__product__description__icontains"),
         *translation_fields("livelihood_strategy__season__name__icontains"),
+        "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name",
     )
+
+    def get_search_results(self, request, queryset, search_term):
+        # Allow natural key format "BF01: 2011-10-31" by stripping the colon separator.
+        normalized = search_term.replace(":", "")
+        date_match = re.search(r"\b(\d{4}-\d{2}-\d{2})\b", normalized)
+        year_match = re.search(r"\b(\d{4})\b", normalized)
+        text_term = re.sub(r"\b\d{4}(?:-\d{2}-\d{2})?\b", "", normalized).strip()
+        queryset, use_distinct = super().get_search_results(request, queryset, text_term)
+        if date_match:
+            queryset = queryset.filter(livelihood_zone_baseline__reference_year_end_date=date_match.group(1))
+        elif year_match:
+            queryset = queryset.filter(
+                livelihood_zone_baseline__reference_year_end_date__year=int(year_match.group(1))
+            )
+        return queryset, use_distinct
+
+    def get_object(self, request, object_id, from_field=None):
+        obj = super().get_object(request, object_id, from_field)
+        if obj is None:
+            return None
+        config = self._SUBCLASS_CONFIG.get(obj.strategy_type)
+        if config:
+            try:
+                return getattr(obj, config["accessor"])
+            except AttributeError:
+                pass
+        return obj
+
+    def get_form(self, request, obj=None, change=False, **kwargs):
+        if obj is not None:
+            config = self._SUBCLASS_CONFIG.get(obj.strategy_type)
+            if config and config.get("form"):
+                return config["form"]
+        return super().get_form(request, obj, change, **kwargs)
+
+    def get_fieldsets(self, request, obj=None):
+        fieldsets = deepcopy(self.fieldsets)
+        if obj is None:
+            return fieldsets
+        config = self._SUBCLASS_CONFIG.get(obj.strategy_type)
+        if not config:
+            return fieldsets
+        for extra_field in config.get("quantity_extra", []):
+            for fs in fieldsets:
+                if fs[0] == "Quantity":
+                    fs[1]["fields"].append(extra_field)
+                    break
+        for i, extra_fs in enumerate(config.get("extra_fieldsets", []), start=1):
+            fieldsets.insert(i, extra_fs)
+        return fieldsets
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         return qs.select_related(
+            "wealth_group__community__livelihood_zone_baseline__livelihood_zone",
+            "wealth_group__wealth_group_category",
+            "wealth_group__livelihood_zone_baseline",
             "livelihood_strategy__product",
             "livelihood_strategy__season",
             "livelihood_zone_baseline__livelihood_zone__country",
@@ -433,6 +670,7 @@ class LivelihoodActivityAdmin(admin.ModelAdmin):
             None,
             {
                 "fields": [
+                    "wealth_group",
                     "livelihood_strategy",
                     "scenario",
                     "extra",
@@ -522,7 +760,12 @@ class WealthGroupCharacteristicValueAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         return qs.select_related(
-            "wealth_group__livelihood_zone_baseline__livelihood_zone__country", "product", "unit_of_measure"
+            "wealth_group__livelihood_zone_baseline__livelihood_zone__country",
+            "wealth_group__community__livelihood_zone_baseline__livelihood_zone",
+            "wealth_group__wealth_group_category",
+            "wealth_characteristic",
+            "product",
+            "unit_of_measure",
         )
 
     def get_wealth_characteristic_common_name(self, obj):
@@ -642,6 +885,13 @@ class LivestockSaleInlineAdmin(LivelihoodActivityInlineAdmin):
 
     def get_queryset(self, request):
         return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyType.LIVESTOCK_SALE)
+
+
+class OtherLivestockProductionInlineAdmin(LivelihoodActivityInlineAdmin):
+    model = OtherLivestockProduction
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyType.OTHER_LIVESTOCK_PRODUCTION)
 
 
 class CropProductionInlineAdmin(LivelihoodActivityInlineAdmin):
@@ -801,6 +1051,23 @@ class OtherPurchaseInlineAdmin(LivelihoodActivityInlineAdmin):
         return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyType.OTHER_PURCHASE)
 
 
+class CommunityRelatedOnlyFieldListFilter(admin.RelatedOnlyFieldListFilter):
+    """
+    RelatedOnlyFieldListFilter for Community that prefetches livelihood_zone_baseline__livelihood_zone.
+    To avoid the current excess repeated queries executed due to str(community)
+    """
+
+    def field_choices(self, field, request, model_admin):
+        pk_qs = model_admin.get_queryset(request).distinct().values_list("%s__pk" % self.field_path, flat=True)
+        ordering = self.field_admin_ordering(field, request, model_admin)
+        return [
+            (community.pk, str(community))
+            for community in Community.objects.filter(pk__in=pk_qs)
+            .select_related("livelihood_zone_baseline__livelihood_zone")
+            .order_by(*ordering)
+        ]
+
+
 class WealthGroupAdmin(admin.ModelAdmin):
     form = WealthGroupForm
     list_display = (
@@ -826,8 +1093,39 @@ class WealthGroupAdmin(admin.ModelAdmin):
     ] + [child for child in LivelihoodActivityInlineAdmin.__subclasses__()]
 
     def get_queryset(self, request):
-        queryset = super().get_queryset(request).prefetch_related("livelihoodactivity_set")
-        return queryset
+        return (
+            super()
+            .get_queryset(request)
+            .select_related(
+                "community__livelihood_zone_baseline__livelihood_zone",
+                "wealth_group_category",
+                "livelihood_zone_baseline",
+            )
+            .prefetch_related("livelihoodactivity_set")
+        )
+
+
+class LivelihoodProductCategoryAdmin(admin.ModelAdmin):
+    fields = (
+        "baseline_livelihood_activity",
+        "basket",
+        "percentage_allocation_to_basket",
+    )
+    list_display = (
+        "baseline_livelihood_activity",
+        "basket",
+        "percentage_allocation_to_basket",
+    )
+    search_fields = (
+        "baseline_livelihood_activity__livelihood_zone_baseline__livelihood_zone__code",
+        "baseline_livelihood_activity__livelihood_zone_baseline__livelihood_zone__alternate_code",
+        "baseline_livelihood_activity__wealth_group__wealth_group_category__code",
+        "baseline_livelihood_activity__livelihood_strategy__product__cpc",
+    )
+    list_filter = (
+        "baseline_livelihood_activity__wealth_group__wealth_group_category__code",
+        "basket",
+    )
 
 
 class SeasonalActivityAdmin(admin.ModelAdmin):
@@ -837,45 +1135,95 @@ class SeasonalActivityAdmin(admin.ModelAdmin):
         "season",
         "product",
         "additional_identifier",
+        "is_key",
     )
     list_display = (
         "livelihood_zone_baseline",
         "seasonal_activity_type",
         "product",
+        "is_key",
     )
     search_fields = (
-        "seasonal_activity_type",
-        "season",
-        "product",
-        "additional_identifier",
+        "livelihood_zone_baseline__livelihood_zone__code",
+        "livelihood_zone_baseline__livelihood_zone__alternate_code",
+        "seasonal_activity_type__code__icontains",
+        *translation_fields("seasonal_activity_type__name__icontains"),
+        *translation_fields("season__name__icontains"),
+        "season__aliases__icontains",
+        *translation_fields("product__common_name__icontains"),
+        "product__cpc__iexact",
+        "additional_identifier__icontains",
     )
     list_filter = (
         "livelihood_zone_baseline__livelihood_zone",
         "seasonal_activity_type",
-        "season",
-        "product",
+        ("season", admin.RelatedOnlyFieldListFilter),
+        ("product", admin.RelatedOnlyFieldListFilter),
+        "is_key",
     )
+
+    def get_search_results(self, request, queryset, search_term):
+        # Allow natural key format "BF01: 2011-10-31" by stripping the colon separator.
+        normalized = search_term.replace(":", "")
+        date_match = re.search(r"\b(\d{4}-\d{2}-\d{2})\b", normalized)
+        year_match = re.search(r"\b(\d{4})\b", normalized)
+        text_term = re.sub(r"\b\d{4}(?:-\d{2}-\d{2})?\b", "", normalized).strip()
+        queryset, use_distinct = super().get_search_results(request, queryset, text_term)
+        if date_match:
+            queryset = queryset.filter(livelihood_zone_baseline__reference_year_end_date=date_match.group(1))
+        elif year_match:
+            queryset = queryset.filter(
+                livelihood_zone_baseline__reference_year_end_date__year=int(year_match.group(1))
+            )
+        return queryset, use_distinct
 
 
 class SeasonalActivityOccurrenceAdmin(admin.ModelAdmin):
     list_display = (
         "seasonal_activity",
         "community",
+        "seasonal_activity_is_key",
         "start_month",
         "end_month",
     )
     search_fields = (
-        "seasonal_activity__seasonal_activity_type",
-        "seasonal_activity__season",
-        "seasonal_activity__product",
-        "seasonal_activity__additional_identifier",
+        "seasonal_activity__livelihood_zone_baseline__livelihood_zone__code",
+        "seasonal_activity__livelihood_zone_baseline__livelihood_zone__alternate_code",
+        "seasonal_activity__seasonal_activity_type__code__icontains",
+        *translation_fields("seasonal_activity__seasonal_activity_type__name__icontains"),
+        *translation_fields("seasonal_activity__season__name__icontains"),
+        "seasonal_activity__season__aliases__icontains",
+        *translation_fields("seasonal_activity__product__common_name__icontains"),
+        "seasonal_activity__product__cpc__iexact",
+        "seasonal_activity__additional_identifier__icontains",
     )
     list_filter = (
         "seasonal_activity__seasonal_activity_type",
-        "seasonal_activity__season",
-        "seasonal_activity__product",
+        ("seasonal_activity__season", admin.RelatedOnlyFieldListFilter),
+        ("seasonal_activity__product", admin.RelatedOnlyFieldListFilter),
     )
     ordering = ["start"]
+
+    def get_search_results(self, request, queryset, search_term):
+        # Allow natural key format "BF01: 2011-10-31" by stripping the colon separator.
+        normalized = search_term.replace(":", "")
+        date_match = re.search(r"\b(\d{4}-\d{2}-\d{2})\b", normalized)
+        year_match = re.search(r"\b(\d{4})\b", normalized)
+        text_term = re.sub(r"\b\d{4}(?:-\d{2}-\d{2})?\b", "", normalized).strip()
+        queryset, use_distinct = super().get_search_results(request, queryset, text_term)
+        if date_match:
+            queryset = queryset.filter(
+                seasonal_activity__livelihood_zone_baseline__reference_year_end_date=date_match.group(1)
+            )
+        elif year_match:
+            queryset = queryset.filter(
+                seasonal_activity__livelihood_zone_baseline__reference_year_end_date__year=int(year_match.group(1))
+            )
+        return queryset, use_distinct
+
+    @admin.display(boolean=True, description="Key seasonal activity")
+    def seasonal_activity_is_key(self, obj):
+        return obj.seasonal_activity.is_key
 
 
 class CommunityCropProductionAdmin(admin.ModelAdmin):
@@ -1123,6 +1471,7 @@ admin.site.register(Event, EventAdmin)
 admin.site.register(ExpandabilityFactor, ExpandabilityFactorAdmin)
 admin.site.register(CopingStrategy, CopingStrategyAdmin)
 
+admin.site.register(LivelihoodProductCategory, LivelihoodProductCategoryAdmin)
 admin.site.register(SeasonalActivity, SeasonalActivityAdmin)
 admin.site.register(SeasonalActivityOccurrence, SeasonalActivityOccurrenceAdmin)
 admin.site.register(SeasonalProductionPerformance, SeasonalProductionPerformanceAdmin)

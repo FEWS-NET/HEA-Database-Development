@@ -30,6 +30,14 @@ from .assets.livelihood_activity import (
     summary_livelihood_activity_labels_dataframe,
     summary_livelihood_summary_labels_dataframe,
 )
+from .assets.livelihood_product_category import (
+    imported_livelihood_product_categories,
+    livelihood_product_category_dataframe,
+    livelihood_product_category_fixture,
+    livelihood_product_category_instances,
+    livelihood_product_category_valid_instances,
+    other_food_purchase_summ_dataframe,
+)
 from .assets.other_cash_income import (
     all_other_cash_income_labels_dataframe,
     imported_other_cash_income_activities,
@@ -39,6 +47,16 @@ from .assets.other_cash_income import (
     other_cash_income_label_dataframe,
     other_cash_income_valid_instances,
     summary_other_cash_income_labels_dataframe,
+)
+from .assets.seasonal_calendar import (
+    all_seasonal_calendar_labels_dataframe,
+    imported_seasonal_activities,
+    seasonal_activity_fixture,
+    seasonal_activity_instances,
+    seasonal_activity_valid_instances,
+    seasonal_calendar_dataframe,
+    seasonal_calendar_label_dataframe,
+    summary_seasonal_calendar_labels_dataframe,
 )
 from .assets.wealth_characteristic import (
     all_wealth_characteristic_labels_dataframe,
@@ -63,6 +81,7 @@ from .assets.wild_foods import (
 from .jobs.fixtures import (
     extract_dataframes,
     import_baseline_from_fixture,
+    import_seas_cal_from_fixture,
     update_external_assets,
     upload_baselines,
 )
@@ -115,14 +134,28 @@ defs = Definitions(
         wild_foods_valid_instances,
         wild_foods_fixture,
         imported_wild_foods_activities,
+        livelihood_product_category_dataframe,
+        other_food_purchase_summ_dataframe,
+        livelihood_product_category_instances,
+        livelihood_product_category_valid_instances,
+        livelihood_product_category_fixture,
+        imported_livelihood_product_categories,
         wealth_characteristic_dataframe,
         wealth_characteristic_label_dataframe,
         all_wealth_characteristic_labels_dataframe,
+        summary_wealth_characteristic_labels_dataframe,
         wealth_characteristic_instances,
         wealth_characteristic_valid_instances,
         wealth_characteristic_fixture,
         imported_wealth_characteristics,
-        summary_wealth_characteristic_labels_dataframe,
+        seasonal_calendar_dataframe,
+        seasonal_calendar_label_dataframe,
+        all_seasonal_calendar_labels_dataframe,
+        summary_seasonal_calendar_labels_dataframe,
+        seasonal_activity_instances,
+        seasonal_activity_valid_instances,
+        seasonal_activity_fixture,
+        imported_seasonal_activities,
         consolidated_fixture,
         uploaded_baselines,
         imported_communities,
@@ -135,6 +168,7 @@ defs = Definitions(
         extract_dataframes,
         import_baseline_from_fixture,
         load_all_geographies,
+        import_seas_cal_from_fixture,
     ],
     resources={
         "io_manager": PickleIOManager(base_path=EnvVar("DAGSTER_ASSET_BASE_PATH")),  # Used by default

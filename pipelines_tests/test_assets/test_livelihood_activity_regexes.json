@@ -145,6 +145,42 @@
         "product_id": "cattle",
         "attribute": "quantity_sold"
     },
+    "cattle sales - local: no. sold": {
+        "strategy_type": "LivestockSale",
+        "is_start": true,
+        "product_id": "cattle sales - local",
+        "attribute": "quantity_sold"
+    },
+    "cattle - local: no. sold": {
+        "strategy_type": "LivestockSale",
+        "is_start": true,
+        "product_id": "cattle - local",
+        "attribute": "quantity_sold"
+    },
+    "goat sales - local: no. sold": {
+        "strategy_type": "LivestockSale",
+        "is_start": true,
+        "product_id": "goat sales - local",
+        "attribute": "quantity_sold"
+    },
+    "goat - local: no. sold": {
+        "strategy_type": "LivestockSale",
+        "is_start": true,
+        "product_id": "goat - local",
+        "attribute": "quantity_sold"
+    },
+    "pig sales - local: no. sold": {
+        "strategy_type": "LivestockSale",
+        "is_start": true,
+        "product_id": "pig sales - local",
+        "attribute": "quantity_sold"
+    },
+    "pig - local: no. sold": {
+        "strategy_type": "LivestockSale",
+        "is_start": true,
+        "product_id": "pig - local",
+        "attribute": "quantity_sold"
+    },
     "cattle offtake (% sold/slaughtered)": {
         "product_id": "cattle",
         "attribute": "percentage_sold_slaughtered"

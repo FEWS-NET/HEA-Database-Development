@@ -193,6 +193,7 @@ class LivelihoodStrategyType(models.TextChoices):
     BUTTER_PRODUCTION = "ButterProduction", _("Butter Production")
     MEAT_PRODUCTION = "MeatProduction", _("Meat Production")
     LIVESTOCK_SALE = "LivestockSale", _("Livestock Sale")
+    OTHER_LIVESTOCK_PRODUCTION = "OtherLivestockProduction", _("Other Livestock Production")
     CROP_PRODUCTION = "CropProduction", _("Crop Production")
     FOOD_PURCHASE = "FoodPurchase", _("Food Purchase")
     PAYMENT_IN_KIND = "PaymentInKind", _("Payment in Kind")
@@ -226,14 +227,34 @@ class SeasonalActivityType(ReferenceData):
     """
 
     class SeasonalActivityCategory(models.TextChoices):
+        CLIMATOLOGY = "climatology", _("Climatology")
+        STRESS_PERIODS = "stress_period", _("Stress Periods")
         CROP = "crop", _("Crops")
         LIVESTOCK = "livestock", _("Livestock")
-        GARDENING = "gardening", _("Gardening")
         FISHING = "fishing", _("Fishing")
+        OTHER_INCOME = "other_income", _("Employment and Other Income")
+        OTHER = "other", _("Other")
 
     activity_category = models.CharField(
         max_length=20, choices=SeasonalActivityCategory.choices, verbose_name=_("Activity Category")
     )
+    has_product = models.BooleanField(
+        default=False,
+        verbose_name=_("Has Product?"),
+        help_text=_(
+            "Does a Seasonal Activity of this type require a product? "
+            "If True, then aliases may contain a <product> placeholder."
+        ),
+    )
+    is_key = models.BooleanField(
+        default=False,
+        verbose_name=_("Key Seasonal Activity?"),
+        help_text=_("Are SeasonalActivity instances of this type key seasonal activities?"),
+    )
+
+    @property
+    def activity_category_ordering(self):
+        return self.SeasonalActivityCategory.values.index(self.activity_category)
 
     class Meta:
         verbose_name = _("Seasonal Activity Type")
@@ -247,6 +268,8 @@ class WealthGroupCategory(ReferenceData):
     Standardized from the BSS 'WB' worksheet in Column B and the 'Data'
     worksheet in Row 3, so that it can be shared across all BSS.
     """
+
+    POOR = "P"  # Category Code for the Poor Wealth Group, used for defining the Survival Threshold.
 
     class Meta:
         verbose_name = _("Wealth Group Category")

@@ -60,6 +60,10 @@ def load_metadata_for_model(context: OpExecutionContext, sheet_name: str, model:
         df["kcals_per_unit"] = df["kcals_per_unit"].astype(object).replace("", None)
     if "is_start" in df:
         df["is_start"] = df["is_start"].replace("", False)
+    if "is_key" in df:
+        df["is_key"] = df["is_key"].replace("", False)
+    if "has_product" in df:
+        df["has_product"] = df["has_product"].replace("", False)
     if "product_name" in df or "payment_product_name" in df:
         classifiedproductlookup = ClassifiedProductLookup(require_match=False)
         if "product_name" in df:

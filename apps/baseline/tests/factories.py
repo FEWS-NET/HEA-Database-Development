@@ -1,6 +1,4 @@
 import datetime
-import random
-import string
 
 import factory
 from dateutil.relativedelta import relativedelta
@@ -34,6 +32,7 @@ from baseline.models import (
     MeatProduction,
     MilkProduction,
     OtherCashIncome,
+    OtherLivestockProduction,
     OtherPurchase,
     PaymentInKind,
     ReliefGiftOther,
@@ -84,9 +83,7 @@ class LivelihoodZoneFactory(factory.django.DjangoModelFactory):
         ]
 
     code = factory.LazyAttributeSequence(lambda o, n: f"{o.country.pk}{n:04d}")
-    alternate_code = factory.LazyAttribute(
-        lambda o: f"{o.country.pk}{''.join(random.choice(string.ascii_uppercase) for _ in range(3))}"
-    )
+    alternate_code = factory.LazyAttributeSequence(lambda o, n: f"{o.country.pk}{n:05d}")
     name_en = factory.LazyAttribute(lambda o: f"{o.code} name EN")
     name_fr = factory.LazyAttribute(lambda o: f"{o.code} name FR")
     name_es = factory.LazyAttribute(lambda o: f"{o.code} name ES")
@@ -116,6 +113,7 @@ class LivelihoodZoneBaselineFactory(factory.django.DjangoModelFactory):
     livelihood_zone = factory.SubFactory(LivelihoodZoneFactory)
     main_livelihood_category = factory.SubFactory(LivelihoodCategoryFactory)
     source_organization = factory.SubFactory(SourceOrganizationFactory)
+    bss = factory.django.FileField(filename="bss.xlsx")
     bss_language = factory.Iterator(["en", "pt", "es", "ar", "fr"])
     reference_year_start_date = factory.LazyAttribute(lambda o: o.reference_year_end_date - relativedelta(years=1))
     reference_year_end_date = factory.Sequence(lambda n: datetime.date(1900, 1, 1) + datetime.timedelta(days=n + 10))
@@ -158,7 +156,7 @@ class WealthGroupFactory(factory.django.DjangoModelFactory):
         livelihood_zone_baseline=factory.SelfAttribute("..livelihood_zone_baseline"),
     )
     wealth_group_category = factory.SubFactory(WealthGroupCategoryFactory)
-    percentage_of_households = fuzzy.FuzzyInteger(10, 91)
+    percentage_of_households = fuzzy.FuzzyDecimal(0.10, 0.90, precision=2)
     average_household_size = fuzzy.FuzzyDecimal(2.0, 31.0, precision=2)
 
 
@@ -331,7 +329,7 @@ class LivelihoodActivityFactory(factory.django.DjangoModelFactory):
     kcals_consumed = factory.LazyAttribute(
         lambda o: (o.quantity_consumed or 0) * o.livelihood_strategy.product.kcals_per_unit
     )
-    percentage_kcals = fuzzy.FuzzyInteger(1, 200)
+    percentage_kcals = fuzzy.FuzzyFloat(0.02, 0.45)
     wealth_group = factory.SubFactory(
         WealthGroupFactory, livelihood_zone_baseline=factory.SelfAttribute("..livelihood_zone_baseline")
     )
@@ -486,6 +484,22 @@ class LivestockSaleFactory(LivelihoodActivityFactory):
     percentage_kcals = None
 
 
+class OtherLivestockProductionFactory(LivelihoodActivityFactory):
+    class Meta:
+        model = OtherLivestockProduction
+        django_get_or_create = [
+            "livelihood_strategy",
+            "livelihood_zone_baseline",
+            "strategy_type",
+            "scenario",
+            "wealth_group",
+        ]
+
+    strategy_type = "OtherLivestockProduction"
+    quantity_purchased = None
+    expenditure = None
+
+
 class CropProductionFactory(LivelihoodActivityFactory):
     class Meta:
         model = CropProduction
@@ -522,6 +536,7 @@ class FoodPurchaseFactory(LivelihoodActivityFactory):
         lambda o: (o.quantity_purchased or 0) - (o.quantity_sold or 0) - (o.quantity_other_uses or 0)
     )
     income = None
+    expenditure = factory.LazyAttribute(lambda o: (o.quantity_purchased or 0) * o.price)
     unit_multiple = fuzzy.FuzzyInteger(1, 500)
     times_per_month = fuzzy.FuzzyInteger(10, 50)
     months_per_year = fuzzy.FuzzyInteger(1, 12)
@@ -649,7 +664,7 @@ class OtherCashIncomeFactory(LivelihoodActivityFactory):
     people_per_household = fuzzy.FuzzyInteger(1, 30)
     times_per_month = fuzzy.FuzzyInteger(1, 40)
     months_per_year = fuzzy.FuzzyInteger(1, 12)
-    times_per_year = factory.LazyAttribute(lambda o: o.times_per_month * o.months_per_year)
+    times_per_year = factory.LazyAttribute(lambda o: o.people_per_household * o.times_per_month * o.months_per_year)
 
 
 class OtherPurchaseFactory(LivelihoodActivityFactory):

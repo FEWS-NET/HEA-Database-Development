@@ -118,12 +118,14 @@ class SeasonalActivityTypeFactory(factory.django.DjangoModelFactory):
     code = factory.Iterator(["AC1", "AC2", "AC3", "AC4"])
     activity_category = factory.Iterator(
         [
+            SeasonalActivityType.SeasonalActivityCategory.CLIMATOLOGY,
             SeasonalActivityType.SeasonalActivityCategory.CROP,
-            SeasonalActivityType.SeasonalActivityCategory.FISHING,
             SeasonalActivityType.SeasonalActivityCategory.LIVESTOCK,
-            SeasonalActivityType.SeasonalActivityCategory.GARDENING,
+            SeasonalActivityType.SeasonalActivityCategory.OTHER,
         ]
     )
+    has_product = factory.Iterator([False, True])
+    is_key = False
     name_en = factory.LazyAttribute(lambda o: f"{o.code} Seasonal Activity Type en")
     name_pt = factory.LazyAttribute(lambda o: f"{o.code} Seasonal Activity Type pt")
     name_es = factory.LazyAttribute(lambda o: f"{o.code} Seasonal Activity Type es")

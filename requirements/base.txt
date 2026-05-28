@@ -1,11 +1,13 @@
 # Do not pip freeze into this file. Add only the packages you need so pip can align dependencies.
 channels==4.3.1
-dagster==1.12.17
-dagster_aws==0.28.17
-dagster-pipes==1.12.17
-dagster-postgres==0.28.17
-dagster-webserver==1.12.17
-Django==5.2.12
+# Pin click to avoid "Error: Invalid value for '--policy-file': Policy file YAML is not valid." when running `safety check` with click 8.4.0
+click<8.4.0,>=8.3.0
+dagster==1.13.3
+dagster_aws==0.29.3
+dagster-pipes==1.13.3
+dagster-postgres==0.29.3
+dagster-webserver==1.13.3
+Django==5.2.14
 django-binary-database-files==1.0.18
 django-cors-headers==4.9.0
 django-environ==0.11.2
@@ -28,8 +30,8 @@ graphviz==0.21
 gunicorn==23.0.0
 html5lib==1.1
 json-logging-py==0.2
-jupyterlab==4.4.8
-lxml==4.9.3
+jupyterlab==4.5.7
+lxml==6.1.0
 # Support .xls files that use transparent encryption to lock worksheets
 git+https://github.com/nolze/msoffcrypto-tool.git@0f320cbe042b94cfc9087cd0cb693d6ae90d518e
 # Make sure that same version of numpy is specified here and in docker/app/Dockerfile
@@ -39,7 +41,7 @@ pandas==2.3.2
 # Required for rendering Dagster asset status in Jupyter notebooks
 plotly==6.3.0
 psycopg==3.2.10
-requests==2.32.5
+requests==2.33.0
 # s3fs provides S3 support for Dagster UPathIOManager subclasses
 s3fs==2024.2.0
 sentry-sdk[django]==2.8.0

@@ -12,11 +12,13 @@ from rest_framework import routers
 from baseline.autocomplete import (
     CommunityAutocomplete,
     LivelihoodStrategyAutocomplete,
+    LivelihoodZoneAutocomplete,
     LivelihoodZoneBaselineAutocomplete,
     WealthGroupAutocomplete,
 )
 from baseline.viewsets import (
     BaselineLivelihoodActivityViewSet,
+    BaselineSeasonalActivityOccurrenceViewSet,
     BaselineWealthGroupCharacteristicValueViewSet,
     BaselineWealthGroupViewSet,
     ButterProductionViewSet,
@@ -45,6 +47,7 @@ from baseline.viewsets import (
     MeatProductionViewSet,
     MilkProductionViewSet,
     OtherCashIncomeViewSet,
+    OtherLivestockProductionViewSet,
     OtherPurchaseViewSet,
     PaymentInKindViewSet,
     ReliefGiftOtherViewSet,
@@ -122,6 +125,7 @@ router.register(r"milkproduction", MilkProductionViewSet)
 router.register(r"butterproduction", ButterProductionViewSet)
 router.register(r"meatproduction", MeatProductionViewSet)
 router.register(r"livestocksale", LivestockSaleViewSet)
+router.register(r"otherlivestockproduction", OtherLivestockProductionViewSet)
 router.register(r"cropproduction", CropProductionViewSet)
 router.register(r"foodpurchase", FoodPurchaseViewSet)
 router.register(r"paymentinkind", PaymentInKindViewSet)
@@ -133,6 +137,11 @@ router.register(r"othercashincome", OtherCashIncomeViewSet)
 router.register(r"otherpurchase", OtherPurchaseViewSet)
 router.register(r"seasonalactivity", SeasonalActivityViewSet)
 router.register(r"seasonalactivityoccurrence", SeasonalActivityOccurrenceViewSet)
+router.register(
+    r"baselineseasonalactivityoccurrence",
+    BaselineSeasonalActivityOccurrenceViewSet,
+    "baselineseasonalactivityoccurrence",
+)
 router.register(r"communitycropproduction", CommunityCropProductionViewSet)
 router.register(r"communitylivestock", CommunityLivestockViewSet)
 router.register(r"marketprice", MarketPriceViewSet)
@@ -146,6 +155,7 @@ urlpatterns = [
     ########## LOCALE INDEPENDENT PATHS go here. ##########
     path("autocomplete/wealthgroup/", WealthGroupAutocomplete.as_view(), name="wealthgroup-autocomplete"),
     path("autocomplete/community/", CommunityAutocomplete.as_view(), name="community-autocomplete"),
+    path("autocomplete/livelihoodzone/", LivelihoodZoneAutocomplete.as_view(), name="livelihoodzone-autocomplete"),
     path(
         "autocomplete/livelihoodzonebaseline/",
         LivelihoodZoneBaselineAutocomplete.as_view(),

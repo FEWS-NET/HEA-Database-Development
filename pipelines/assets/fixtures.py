@@ -26,7 +26,6 @@ django.setup()
 from baseline.models import LivelihoodActivity, LivelihoodZoneBaseline  # NOQA: E402
 from common.management.commands import verbose_load_data  # NOQA: E402
 from common.models import ClassifiedProduct  # NOQA: E402
-from metadata.models import LivelihoodStrategyType  # NOQA: E402
 
 
 def validate_instances(
@@ -57,12 +56,16 @@ def validate_instances(
 
     valid_instances = {model_name: [] for model_name in instances}
     valid_keys = {model_name: {} for model_name in instances}
+    # Track which models have completed their validation loop so we can distinguish
+    # "not validated yet" from "validated but all instances were invalid" (empty valid_keys).
+    validated_models: set[str] = set()
     errors = []
     current_timestamp = datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
     for model_name, model_instances in instances.items():
 
         # Ignore models where we don't have any instances to validate.
         if not model_instances:
+            validated_models.add(model_name)
             continue
 
         model = class_from_name(f"baseline.models.{model_name}")
@@ -83,43 +86,6 @@ def validate_instances(
                 if field in valid_field_names and field not in instance:
                     instance[field] = current_timestamp
 
-            # Add the natural key so we can validate foreign keys in child models.
-            if model_name == "LivelihoodZone":
-                instance["natural_key"] = instance["code"]
-            elif model_name == "LivelihoodZoneBaseline":
-                instance["natural_key"] = [instance["livelihood_zone_id"], instance["reference_year_end_date"]]
-            elif model_name == "Community":
-                instance["natural_key"] = instance["livelihood_zone_baseline"] + [instance["full_name"]]
-            elif model_name == "WealthGroup":
-                instance["natural_key"] = instance["livelihood_zone_baseline"] + [
-                    instance["wealth_group_category"],
-                    instance["full_name"],
-                ]
-            elif model_name == "LivelihoodStrategy":
-                instance["natural_key"] = instance["livelihood_zone_baseline"] + [
-                    instance["strategy_type"],
-                    # instance['season'] is a natural key itself, so it is stored as a list even though it only
-                    # has a single component - the season name - so take the first element of the list.
-                    # Natural key components must be "" rather than None
-                    instance["season"][0] if instance["season"] else "",
-                    instance["product_id"] or "",  # Natural key components must be "" rather than None
-                    instance["additional_identifier"],
-                ]
-            elif model_name in ["LivelihoodActivity"] + [x for x in LivelihoodStrategyType]:
-                instance["natural_key"] = (
-                    instance["wealth_group"][:3]  # livelihood_zone, reference_year_end_date, wealth_group_category
-                    + instance["livelihood_strategy"][2:]  # strategy_type, season, product_id, additional_identifier
-                    + [instance["wealth_group"][3]]  # full_name
-                )
-            elif model_name == "WealthGroupCharacteristicValue":
-                instance["natural_key"] = instance["wealth_group"][
-                    :3  # livelihood_zone, reference_year_end_date, wealth_group_category
-                ] + [
-                    instance["wealth_characteristic_id"],
-                    instance["reference_type"],
-                    instance["product_id"] or "",  # Natural key components must be "" rather than None
-                    instance["wealth_group"][3],  # full_name
-                ]
             # The natural key is a list of strings, or possibly numbers, so validate that here to avoid confusing
             # error messages later.
             if "natural_key" not in instance:
@@ -163,7 +129,10 @@ def validate_instances(
                     else:
                         # Validate foreign key values
                         # If related model is part of the fixture, then it should have already been validated
-                        if field.related_model.__name__ in instances and not valid_keys[field.related_model.__name__]:
+                        if (
+                            field.related_model.__name__ in instances
+                            and field.related_model.__name__ not in validated_models
+                        ):
                             raise RuntimeError(
                                 "Related model %s not validated yet but needed for %s"
                                 % (field.related_model.__name__, model_name)
@@ -278,6 +247,8 @@ def validate_instances(
                 valid_instances[model_name].append(instance)
                 valid_keys[model_name][tuple(instance["natural_key"])] = model_instance
 
+        validated_models.add(model_name)
+
     metadata = {}
     for model_name in instances.keys():
         metadata[f"valid_{model_name}"] = f"{len(valid_instances[model_name])}/{len(instances[model_name])}"
@@ -302,7 +273,7 @@ def validate_instances(
     return Output(valid_instances, metadata=metadata)
 
 
-def get_fixture_from_instances(instance_dict: dict[str, list[dict]]) -> tuple[list[dict], dict]:
+def get_fixture_from_instances(instance_dict: dict[str, list[dict]]) -> Output[list[dict]]:
     """
     Convert a dict containing a list of instances for each model into a Django fixture.
     """

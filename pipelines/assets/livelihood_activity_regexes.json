@@ -476,7 +476,7 @@
         "percentage_sold_slaughtered"
     ],
     [
-        "{product_pattern} sales{separator_pattern} {nbr_pattern} sold",
+        "{product_pattern}(?: sales)?{separator_pattern} {nbr_pattern} sold",
         "LivestockSale",
         true,
         "quantity_sold"

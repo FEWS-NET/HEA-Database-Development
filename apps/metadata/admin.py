@@ -75,9 +75,13 @@ class SeasonalActivityTypeAdmin(ReferenceDataAdmin):
         "code",
         *translation_fields("name"),
         "activity_category",
+        "has_product",
+        "is_key",
         "aliases",
         *translation_fields("description"),
     )
+    list_display = ReferenceDataAdmin.list_display + ("activity_category", "has_product", "is_key")
+    list_filter = ("activity_category", "has_product", "is_key")
 
 
 class WealthGroupCategoryAdmin(ReferenceDataAdmin):
@@ -154,6 +158,9 @@ class SeasonAdmin(admin.ModelAdmin):
     )
     ordering = ("country", "order")
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("country")
+
 
 class MarketAdmin(ReferenceDataAdmin):
     fields = (
@@ -206,6 +213,9 @@ class ActivityLabelAdmin(admin.ModelAdmin):
         "attribute",
     )
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("product", "unit_of_measure")
+
 
 class WealthCharacteristicLabelAdmin(admin.ModelAdmin):
     fields = (
@@ -234,6 +244,9 @@ class WealthCharacteristicLabelAdmin(admin.ModelAdmin):
         "status",
         "wealth_characteristic",
     )
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("wealth_characteristic", "product", "unit_of_measure")
 
 
 admin.site.register(LivelihoodCategory, LivelihoodCategoryAdmin)
