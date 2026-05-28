@@ -2474,20 +2474,27 @@ class FoodPurchase(LivelihoodActivity):
         help_text=_("Number of times in a year that the purchase is made"),
     )
 
+    def calculate_fields(self):
+        if self.times_per_year is None and self.times_per_month is not None and self.months_per_year is not None:
+            self.times_per_year = self.times_per_month * self.months_per_year
+        if self.quantity_purchased is None and self.unit_multiple is not None and self.times_per_year is not None:
+            self.quantity_purchased = self.unit_multiple * self.times_per_year
+        super().calculate_fields()
+
     def validate_quantity_purchased(self):
-        if (
-            self.quantity_purchased is not None
-            and self.unit_multiple is not None
-            and self.times_per_month is not None
-            and self.months_per_year is not None
-        ):
-            if not math.isclose(
-                self.quantity_purchased, self.unit_multiple * self.times_per_month * self.months_per_year
-            ):
+        if self.times_per_month is not None and self.months_per_year is not None:
+            expected_times_per_year = self.times_per_month * self.months_per_year
+            if self.times_per_year is not None and not math.isclose(self.times_per_year, expected_times_per_year):
                 raise ValidationError(
                     _(
-                        "Quantity purchased for a Food Purchase must be purchase amount * purchases per month * months per year"  # NOQA: E501
+                        "Times per year must be times per month * months per year. Expected: %(expected)s, Found: %(found)s"  # NOQA: E501
                     )
+                    % {"expected": expected_times_per_year, "found": self.times_per_year}
+                )
+        if self.quantity_purchased is not None and self.unit_multiple is not None and self.times_per_year is not None:
+            if not math.isclose(self.quantity_purchased, self.unit_multiple * self.times_per_year):
+                raise ValidationError(
+                    _("Quantity purchased for a Food Purchase must be purchase amount * purchases per year")
                 )
 
     def validate_expenditure(self):
@@ -2569,21 +2576,41 @@ class PaymentInKind(LivelihoodActivity):
             )
         super().clean()
 
+    def calculate_fields(self):
+        if self.times_per_year is None and self.times_per_month is not None and self.months_per_year is not None:
+            self.times_per_year = self.times_per_month * self.months_per_year
+        if (
+            self.quantity_produced is None
+            and self.payment_per_time is not None
+            and self.people_per_household is not None
+            and self.times_per_year is not None
+        ):
+            self.quantity_produced = self.payment_per_time * self.people_per_household * self.times_per_year
+        super().calculate_fields()
+
     def validate_quantity_produced(self):
+        if self.times_per_month is not None and self.months_per_year is not None:
+            expected_times_per_year = self.times_per_month * self.months_per_year
+            if self.times_per_year is not None and not math.isclose(self.times_per_year, expected_times_per_year):
+                raise ValidationError(
+                    _(
+                        "Times per year must be times per month * months per year. Expected: %(expected)s, Found: %(found)s"  # NOQA: E501
+                    )
+                    % {"expected": expected_times_per_year, "found": self.times_per_year}
+                )
         if (
             self.quantity_produced is not None
             and self.payment_per_time is not None
             and self.people_per_household is not None
-            and self.times_per_month is not None
-            and self.months_per_year is not None
+            and self.times_per_year is not None
         ):
             if not math.isclose(
                 self.quantity_produced,
-                self.payment_per_time * self.people_per_household * self.times_per_month * self.months_per_year,
+                self.payment_per_time * self.people_per_household * self.times_per_year,
             ):
                 raise ValidationError(
                     _(
-                        "Quantity produced for Payment In Kind must be payment per time * number of people * labor per month * months per year"  # NOQA: E501
+                        "Quantity produced for Payment In Kind must be payment per time * number of people * times per year"  # NOQA: E501
                     )
                 )
 
@@ -2626,7 +2653,23 @@ class ReliefGiftOther(LivelihoodActivity):
         help_text=_("Number of times in a year that the item is received"),
     )
 
+    def calculate_fields(self):
+        if self.times_per_year is None and self.times_per_month is not None and self.months_per_year is not None:
+            self.times_per_year = self.times_per_month * self.months_per_year
+        if self.quantity_produced is None and self.unit_multiple is not None and self.times_per_year is not None:
+            self.quantity_produced = self.unit_multiple * self.times_per_year
+        super().calculate_fields()
+
     def validate_quantity_produced(self):
+        if self.times_per_month is not None and self.months_per_year is not None:
+            expected_times_per_year = self.times_per_month * self.months_per_year
+            if self.times_per_year is not None and not math.isclose(self.times_per_year, expected_times_per_year):
+                raise ValidationError(
+                    _(
+                        "Times per year must be times per month * months per year. Expected: %(expected)s, Found: %(found)s"  # NOQA: E501
+                    )
+                    % {"expected": expected_times_per_year, "found": self.times_per_year}
+                )
         if self.quantity_produced is not None and self.unit_multiple is not None and self.times_per_year is not None:
             if not math.isclose(self.quantity_produced, self.unit_multiple * self.times_per_year):
                 raise ValidationError(
@@ -2733,26 +2776,31 @@ class OtherCashIncome(LivelihoodActivity):
     def validate_income(self):
         if (
             self.people_per_household is not None
-            and self.income is not None
-            and self.payment_per_time is not None
             and self.times_per_month is not None
             and self.months_per_year is not None
         ):
-            if not math.isclose(
-                self.income,
-                self.payment_per_time * self.people_per_household * self.times_per_month * self.months_per_year,
-            ):
+            expected_times_per_year = self.people_per_household * self.times_per_month * self.months_per_year
+            if self.times_per_year is not None and not math.isclose(self.times_per_year, expected_times_per_year):
                 raise ValidationError(
                     _(
-                        "Quantity produced for Other Cash Income must be payment per time * number of people * labor per month * months per year"  # NOQA: E501
+                        "Times per year must be people per household * times per month * months per year. Expected: %(expected)s, Found: %(found)s"  # NOQA: E501
                     )
+                    % {"expected": expected_times_per_year, "found": self.times_per_year}
                 )
-        elif self.income is not None and self.payment_per_time is not None and self.times_per_year is not None:
+        if self.income is not None and self.payment_per_time is not None and self.times_per_year is not None:
             if not math.isclose(self.income, self.payment_per_time * self.times_per_year):
                 raise ValidationError(_("Income for 'Other Cash Income' must be payment per time * times per year"))
 
     def calculate_fields(self):
-        self.times_per_year = self.people_per_household * self.times_per_month * self.months_per_year
+        if (
+            self.times_per_year is None
+            and self.people_per_household is not None
+            and self.times_per_month is not None
+            and self.months_per_year is not None
+        ):
+            self.times_per_year = self.people_per_household * self.times_per_month * self.months_per_year
+        if self.income is None and self.payment_per_time is not None and self.times_per_year is not None:
+            self.income = self.payment_per_time * self.times_per_year
         super().calculate_fields()
 
     class Meta:
@@ -2795,6 +2843,18 @@ class OtherPurchase(LivelihoodActivity):
         verbose_name=_("Times per year"),
         help_text=_("Number of times in a year that the product is purchased"),
     )
+
+    def calculate_fields(self):
+        if self.times_per_year is None and self.times_per_month is not None and self.months_per_year is not None:
+            self.times_per_year = self.times_per_month * self.months_per_year
+        if (
+            self.expenditure is None
+            and self.price is not None
+            and self.unit_multiple is not None
+            and self.times_per_year is not None
+        ):
+            self.expenditure = self.price * self.unit_multiple * self.times_per_year
+        super().calculate_fields()
 
     def validate_expenditure(self):
         errors = []
