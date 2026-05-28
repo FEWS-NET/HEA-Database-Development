@@ -65,6 +65,37 @@ admin.site.index_title = "Livelihoods Database"
 admin.site.site_title = "Livelihoods Database Administration"
 
 
+class SummaryValueListFilter(admin.SimpleListFilter):
+    """
+    Filter that toggles between summary (community is null) and community-level records.
+    """
+
+    title = _("record type")
+    parameter_name = "record_type"
+    community_field = "community"
+
+    def lookups(self, request, model_admin):
+        return [
+            ("summary", _("Summary only")),
+            ("community", _("Community only")),
+        ]
+
+    def queryset(self, request, queryset):
+        if self.value() == "summary":
+            return queryset.filter(**{f"{self.community_field}__isnull": True})
+        if self.value() == "community":
+            return queryset.filter(**{f"{self.community_field}__isnull": False})
+        return queryset
+
+
+class WealthGroupSummaryValueListFilter(SummaryValueListFilter):
+    """
+    Summary/community filter for models that reach community via wealth_group FK.
+    """
+
+    community_field = "wealth_group__community"
+
+
 class SourceOrganizationAdmin(admin.ModelAdmin):
     list_display = (
         "name",
@@ -521,6 +552,7 @@ class LivelihoodActivityAdmin(admin.ModelAdmin):
         "get_country_name",
     )
     list_filter = (
+        WealthGroupSummaryValueListFilter,
         "strategy_type",
         "scenario",
         ("livelihood_zone_baseline", admin.RelatedOnlyFieldListFilter),
@@ -689,6 +721,7 @@ class WealthGroupCharacteristicValueAdmin(admin.ModelAdmin):
         ("wealth_group__livelihood_zone_baseline", admin.RelatedOnlyFieldListFilter),
         "wealth_group__wealth_group_category",
         ("wealth_group__livelihood_zone_baseline__livelihood_zone__country", admin.RelatedOnlyFieldListFilter),
+        WealthGroupSummaryValueListFilter,
         "wealth_characteristic__has_product",
         ("product", admin.RelatedOnlyFieldListFilter),
         "wealth_characteristic__has_unit_of_measure",
@@ -715,7 +748,7 @@ class WealthGroupCharacteristicValueAdmin(admin.ModelAdmin):
     def get_wealth_group_category(self, obj):
         return obj.wealth_group.wealth_group_category.name
 
-    get_wealth_group_category.admin_order_field = "wealth_group__category__name"
+    get_wealth_group_category.admin_order_field = "wealth_group__wealth_group_category__name_en"
     get_wealth_group_category.short_description = "Wealth group category"
 
     def get_country_name(self, obj):
@@ -738,7 +771,7 @@ class WealthGroupCharacteristicValueAdmin(admin.ModelAdmin):
     def get_wealth_characteristic_common_name(self, obj):
         return obj.wealth_characteristic.name
 
-    get_wealth_characteristic_common_name.admin_order_field = "wealth_characteristic.name"
+    get_wealth_characteristic_common_name.admin_order_field = "wealth_characteristic__name_en"
     get_wealth_characteristic_common_name.short_description = "Wealth characteristic name"
 
 
@@ -1052,8 +1085,8 @@ class WealthGroupAdmin(admin.ModelAdmin):
         "livelihood_zone_baseline__source_organization",
         ("livelihood_zone_baseline__livelihood_zone__country", admin.RelatedOnlyFieldListFilter),
         *translation_fields("livelihood_zone_baseline__livelihood_zone__name"),
-        ("community", CommunityRelatedOnlyFieldListFilter),
         "wealth_group_category",
+        SummaryValueListFilter,
     )
     inlines = [
         WealthGroupCharacteristicValueInlineAdmin,
@@ -1222,7 +1255,6 @@ class CommunityCropProductionAdmin(admin.ModelAdmin):
 
     list_filter = (
         "community__livelihood_zone_baseline__livelihood_zone",
-        "community__full_name",
         "crop",
         "season",
     )
@@ -1249,7 +1281,6 @@ class CommunityLivestockAdmin(admin.ModelAdmin):
     search_fields = (*translation_fields("livestock__common_name"),)
     list_filter = (
         "community__livelihood_zone_baseline__livelihood_zone",
-        "community__full_name",
         "livestock",
     )
 
@@ -1288,7 +1319,6 @@ class MarketPriceAdmin(admin.ModelAdmin):
         "market",
     )
     list_filter = (
-        "community",
         "market",
         "community__livelihood_zone_baseline__livelihood_zone",
         "product",
@@ -1315,7 +1345,6 @@ class HazardAdmin(admin.ModelAdmin):
         "hazard_category",
     )
     list_filter = (
-        "community",
         "hazard_category",
         "chronic_or_periodic",
         "community__livelihood_zone_baseline__livelihood_zone",
@@ -1342,10 +1371,7 @@ class SeasonalProductionPerformanceAdmin(admin.ModelAdmin):
         "seasonal_performance",
         "description",
     )
-    list_filter = (
-        "community",
-        "community__livelihood_zone_baseline__livelihood_zone",
-    )
+    list_filter = ("community__livelihood_zone_baseline__livelihood_zone",)
 
 
 class EventAdmin(admin.ModelAdmin):
@@ -1365,10 +1391,7 @@ class EventAdmin(admin.ModelAdmin):
         "community",
         "description",
     )
-    list_filter = (
-        "community",
-        "community__livelihood_zone_baseline__livelihood_zone",
-    )
+    list_filter = ("community__livelihood_zone_baseline__livelihood_zone",)
 
 
 class ExpandabilityFactorAdmin(admin.ModelAdmin):
@@ -1426,7 +1449,6 @@ class CopingStrategyAdmin(admin.ModelAdmin):
         "wealth_group",
     )
     list_filter = (
-        "community",
         "livelihood_strategy",
         "wealth_group",
     )

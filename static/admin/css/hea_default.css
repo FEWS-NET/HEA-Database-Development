@@ -37,7 +37,7 @@
 
     --darkened-bg: #f8f8f8; /* A bit darker than --body-bg */
     --selected-bg: #e4e4e4; /* E.g. selected table cells */
-    --selected-row: #ffc;
+    --selected-row: var(--primary); /* Light green theme colour instead of Django's default yellow */
 
     --button-fg: #fff;
     --button-bg: var(--primary);
@@ -1262,6 +1262,12 @@ input[readonly] {
     max-width: calc(100%);
 }
 
+/* Clip any horizontal overflow inside the sidebar (nav_sidebar.css sets overflow:auto
+   which would otherwise let .sidebar-nav bleed past the sidebar's right border) */
+#nav-sidebar {
+    overflow: hidden;
+}
+
 
 /* Override the font */
 input, textarea, select, .form-row p, form .button {
@@ -1447,9 +1453,6 @@ input[class="vDateField"], input[class="vTimeField"] {
     color: var(--body-bg);
 }
 
-#changelist table tbody tr.selected {
-    background-color: var(--primary);
-}
 
 #changelist table thead th {
   padding: 10px;
