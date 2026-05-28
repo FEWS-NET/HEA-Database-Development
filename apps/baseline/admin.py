@@ -801,23 +801,6 @@ class OtherPurchaseInlineAdmin(LivelihoodActivityInlineAdmin):
         return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyType.OTHER_PURCHASE)
 
 
-class CommunityRelatedOnlyFieldListFilter(admin.RelatedOnlyFieldListFilter):
-    """
-    RelatedOnlyFieldListFilter for Community that prefetches livelihood_zone_baseline__livelihood_zone.
-    To avoid the current excess repeated queries executed due to str(community)
-    """
-
-    def field_choices(self, field, request, model_admin):
-        pk_qs = model_admin.get_queryset(request).distinct().values_list("%s__pk" % self.field_path, flat=True)
-        ordering = self.field_admin_ordering(field, request, model_admin)
-        return [
-            (community.pk, str(community))
-            for community in Community.objects.filter(pk__in=pk_qs)
-            .select_related("livelihood_zone_baseline__livelihood_zone")
-            .order_by(*ordering)
-        ]
-
-
 class WealthGroupAdmin(admin.ModelAdmin):
     form = WealthGroupForm
     list_display = (
@@ -835,7 +818,6 @@ class WealthGroupAdmin(admin.ModelAdmin):
         "livelihood_zone_baseline__source_organization",
         ("livelihood_zone_baseline__livelihood_zone__country", admin.RelatedOnlyFieldListFilter),
         *translation_fields("livelihood_zone_baseline__livelihood_zone__name"),
-        ("community", CommunityRelatedOnlyFieldListFilter),
         "wealth_group_category",
         SummaryValueListFilter,
     )
@@ -889,7 +871,6 @@ class SeasonalActivityOccurrenceAdmin(admin.ModelAdmin):
         "seasonal_activity__additional_identifier",
     )
     list_filter = (
-        "community",
         "seasonal_activity__seasonal_activity_type",
         "seasonal_activity__season",
         "seasonal_activity__product",
@@ -926,7 +907,6 @@ class CommunityCropProductionAdmin(admin.ModelAdmin):
 
     list_filter = (
         "community__livelihood_zone_baseline__livelihood_zone",
-        "community__full_name",
         "crop",
         "season",
     )
@@ -953,7 +933,6 @@ class CommunityLivestockAdmin(admin.ModelAdmin):
     search_fields = (*translation_fields("livestock__common_name"),)
     list_filter = (
         "community__livelihood_zone_baseline__livelihood_zone",
-        "community__full_name",
         "livestock",
     )
 
@@ -992,7 +971,6 @@ class MarketPriceAdmin(admin.ModelAdmin):
         "market",
     )
     list_filter = (
-        "community",
         "market",
         "community__livelihood_zone_baseline__livelihood_zone",
         "product",
@@ -1019,7 +997,6 @@ class HazardAdmin(admin.ModelAdmin):
         "hazard_category",
     )
     list_filter = (
-        "community",
         "hazard_category",
         "chronic_or_periodic",
         "community__livelihood_zone_baseline__livelihood_zone",
@@ -1046,10 +1023,7 @@ class SeasonalProductionPerformanceAdmin(admin.ModelAdmin):
         "seasonal_performance",
         "description",
     )
-    list_filter = (
-        "community",
-        "community__livelihood_zone_baseline__livelihood_zone",
-    )
+    list_filter = ("community__livelihood_zone_baseline__livelihood_zone",)
 
 
 class EventAdmin(admin.ModelAdmin):
@@ -1069,10 +1043,7 @@ class EventAdmin(admin.ModelAdmin):
         "community",
         "description",
     )
-    list_filter = (
-        "community",
-        "community__livelihood_zone_baseline__livelihood_zone",
-    )
+    list_filter = ("community__livelihood_zone_baseline__livelihood_zone",)
 
 
 class ExpandabilityFactorAdmin(admin.ModelAdmin):
@@ -1130,7 +1101,6 @@ class CopingStrategyAdmin(admin.ModelAdmin):
         "wealth_group",
     )
     list_filter = (
-        "community",
         "livelihood_strategy",
         "wealth_group",
     )

@@ -562,22 +562,6 @@ class CommunityCropProductionAdminTestCase(TestCase):
         self.assertIn(str(self.cropproduction1.crop), table_rows[1].get_text())
         self.assertNotIn(str(self.cropproduction2.crop), table_rows[1].get_text())
 
-    def test_filter_community_crop_production(self):
-        response = self.client.get(
-            reverse(self.url), {"community__full_name": self.cropproduction1.community.full_name}
-        )
-        self.assertEqual(response.status_code, 200)
-
-        # Parse the HTML content of the response
-        soup = BeautifulSoup(response.content, "html.parser")
-
-        # Find the table rows in the result set
-        table_rows = soup.find_all("tr")
-        self.assertEqual(len(table_rows), 2)
-        # Check that the table rows only contain the filtered results
-        self.assertIn(str(self.cropproduction1.crop), table_rows[1].get_text())
-        self.assertNotIn(str(self.cropproduction2.crop), table_rows[1].get_text())
-
 
 class CommunityLivestockAdminTestCase(TestCase):
     @classmethod
@@ -624,23 +608,6 @@ class CommunityLivestockAdminTestCase(TestCase):
         self.assertContains(response, self.livestockproduction2.livestock)
         self.assertContains(response, self.livestockproduction2.wet_season_milk_production)
         self.assertContains(response, self.livestockproduction2.dry_season_milk_production)
-
-    def test_filter_community_livestock(self):
-        response = self.client.get(
-            reverse(self.url), {"community__full_name": self.livestockproduction1.community.full_name}
-        )
-        self.assertEqual(response.status_code, 200)
-
-        # Parse the HTML content of the response
-        soup = BeautifulSoup(response.content, "html.parser")
-
-        # Find the table rows in the result set
-        table_rows = soup.find_all("tr")
-        self.assertEqual(len(table_rows), 2)
-
-        # Check that the table rows only contain the filtered results
-        self.assertIn(str(self.livestockproduction1.livestock), table_rows[1].get_text())
-        self.assertNotIn(str(self.livestockproduction2.livestock), table_rows[1].get_text())
 
 
 class LivelihoodActivityAdminTestCase(TestCase):
