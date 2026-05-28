@@ -227,14 +227,32 @@ class SeasonalActivityType(ReferenceData):
     """
 
     class SeasonalActivityCategory(models.TextChoices):
+        SEASON = "season", _("Season")
         CROP = "crop", _("Crops")
         LIVESTOCK = "livestock", _("Livestock")
-        GARDENING = "gardening", _("Gardening")
         FISHING = "fishing", _("Fishing")
+        OTHER = "other", _("Other")
 
     activity_category = models.CharField(
         max_length=20, choices=SeasonalActivityCategory.choices, verbose_name=_("Activity Category")
     )
+    has_product = models.BooleanField(
+        default=False,
+        verbose_name=_("Has Product?"),
+        help_text=_(
+            "Does a Seasonal Activity of this type require a product? "
+            "If True, then aliases may contain a <product> placeholder."
+        ),
+    )
+    is_key = models.BooleanField(
+        default=False,
+        verbose_name=_("Key Seasonal Activity?"),
+        help_text=_("Are SeasonalActivity instances of this type key seasonal activities?"),
+    )
+
+    @property
+    def activity_category_ordering(self):
+        return self.SeasonalActivityCategory.values.index(self.activity_category)
 
     class Meta:
         verbose_name = _("Seasonal Activity Type")

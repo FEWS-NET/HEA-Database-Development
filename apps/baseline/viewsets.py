@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 import django_filters
 from dal import autocomplete
 from django.apps import apps
@@ -26,6 +28,7 @@ from metadata.models import LivelihoodStrategyType, WealthGroupCategory
 
 from .models import (
     BaselineLivelihoodActivity,
+    BaselineSeasonalActivityOccurrence,
     BaselineWealthGroup,
     BaselineWealthGroupCharacteristicValue,
     ButterProduction,
@@ -67,6 +70,7 @@ from .models import (
 )
 from .serializers import (
     BaselineLivelihoodActivitySerializer,
+    BaselineSeasonalActivityOccurrenceSerializer,
     BaselineWealthGroupCharacteristicValueSerializer,
     BaselineWealthGroupSerializer,
     ButterProductionSerializer,
@@ -542,6 +546,10 @@ class BaselineWealthGroupViewSet(BaseModelViewSet):
     )
     serializer_class = BaselineWealthGroupSerializer
     filterset_class = BaselineWealthGroupFilterSet
+    ordering = [
+        "livelihood_zone_baseline",
+        "wealth_group_category__ordering",
+    ]
 
 
 class CommunityWealthGroupFilterSet(filters.FilterSet):
@@ -589,6 +597,11 @@ class CommunityWealthGroupViewSet(BaseModelViewSet):
     )
     serializer_class = CommunityWealthGroupSerializer
     filterset_class = CommunityWealthGroupFilterSet
+    ordering = [
+        "livelihood_zone_baseline",
+        "wealth_group_category__ordering",
+        "community",
+    ]
 
 
 class WealthGroupCharacteristicValueFilterSet(filters.FilterSet):
@@ -972,12 +985,7 @@ class LivelihoodStrategyViewSet(BaseModelViewSet):
     ]
 
 
-LIVELIHOOD_ACTIVITY_ORDER_BY = [
-    "livelihood_zone_baseline",
-    "wealth_group",
-    "strategy_type",
-    "scenario",
-]
+LIVELIHOOD_ACTIVITY_ORDER_BY = ["sort_key"]
 
 
 class LivelihoodActivityFilterSet(filters.FilterSet):
@@ -1486,6 +1494,7 @@ class SeasonalActivityFilterSet(filters.FilterSet):
             "seasonal_activity_type",
             "season",
             "product",
+            "is_key",
         ]
 
 
@@ -1503,9 +1512,18 @@ class SeasonalActivityViewSet(BaseModelViewSet):
     ).prefetch_related("season")
     serializer_class = SeasonalActivitySerializer
     filterset_class = SeasonalActivityFilterSet
+    ordering = [
+        "livelihood_zone_baseline__livelihood_zone__code",
+        "livelihood_zone_baseline__reference_year_end_date",
+        "seasonal_activity_type__activity_category",
+        "product__cpc",
+        "seasonal_activity_type__ordering",
+    ]
 
 
 class SeasonalActivityOccurrenceFilterSet(filters.FilterSet):
+    is_key = filters.BooleanFilter(field_name="seasonal_activity__is_key", label="Key seasonal activity")
+
     class Meta:
         model = SeasonalActivityOccurrence
         fields = [
@@ -1514,6 +1532,7 @@ class SeasonalActivityOccurrenceFilterSet(filters.FilterSet):
             "community",
             "start",
             "end",
+            "is_key",
         ]
 
 
@@ -1530,6 +1549,41 @@ class SeasonalActivityOccurrenceViewSet(BaseModelViewSet):
     ).prefetch_related("seasonal_activity__season")
     serializer_class = SeasonalActivityOccurrenceSerializer
     filterset_class = SeasonalActivityOccurrenceFilterSet
+    ordering = [
+        "livelihood_zone_baseline__livelihood_zone__code",
+        "livelihood_zone_baseline__reference_year_end_date",
+        "community__name",
+        "seasonal_activity__seasonal_activity_type__activity_category",
+        "seasonal_activity__product__cpc",
+        "seasonal_activity__seasonal_activity_type__ordering",
+    ]
+
+
+class BaselineSeasonalActivityOccurrenceFilterSet(SeasonalActivityOccurrenceFilterSet):
+
+    class Meta(SeasonalActivityOccurrenceFilterSet.Meta):
+        model = BaselineSeasonalActivityOccurrence
+
+
+class BaselineSeasonalActivityOccurrenceViewSet(BaseModelViewSet):
+    """
+    API endpoint that allows zone-level seasonal activity occurrences to be viewed or edited.
+    """
+
+    queryset = BaselineSeasonalActivityOccurrence.objects.select_related(
+        "livelihood_zone_baseline__livelihood_zone__country",
+        "livelihood_zone_baseline__source_organization",
+        "seasonal_activity__product",
+    ).prefetch_related("seasonal_activity__season")
+    serializer_class = BaselineSeasonalActivityOccurrenceSerializer
+    filterset_class = BaselineSeasonalActivityOccurrenceFilterSet
+    ordering = [
+        "livelihood_zone_baseline__livelihood_zone__code",
+        "livelihood_zone_baseline__reference_year_end_date",
+        "seasonal_activity__seasonal_activity_type__activity_category",
+        "seasonal_activity__product__cpc",
+        "seasonal_activity__seasonal_activity_type__ordering",
+    ]
 
 
 class CommunityCropProductionFilterSet(filters.FilterSet):
@@ -2017,7 +2071,7 @@ class LivelihoodZoneBaselineFacetedSearchView(APIView):
     permission_classes = [AllowAny]
 
     def _get_baselines(self, baselines_qs):
-        # returs a list of baseline dicts with id, name, livelihood_zone__code, reference_year_end_date.
+        # returns a list of baseline dicts with id, name, livelihood_zone__code, reference_year_end_date.
         return [
             {
                 "id": baseline.id,
@@ -2025,18 +2079,147 @@ class LivelihoodZoneBaselineFacetedSearchView(APIView):
                 "livelihood_zone__code": baseline.livelihood_zone.code,
                 "reference_year_end_date": baseline.reference_year_end_date,
             }
-            for baseline in baselines_qs.select_related("livelihood_zone")
+            for baseline in baselines_qs.select_related("livelihood_zone").order_by(
+                "livelihood_zone_id", "reference_year_end_date"
+            )
         ]
+
+    def _search_model(self, ModelClass, search_term):
+        """
+        Multi-word AND search against a model that uses SearchQueryMixin.
+        """
+        terms = (search_term or "").strip().split()
+        if not terms:
+            return ModelClass.objects.none()
+        qs = ModelClass.objects.search(terms[0])
+        for term in terms[1:]:
+            qs = qs.search(term)
+        return qs
 
     def _search_products(self, search_term):
         # Search products using icontains for broader matching than the default iexact search.
-        q_object = Q()
-        for field in [*translation_fields("description"), *translation_fields("common_name")]:
-            q_object |= Q(**{f"{field}__icontains": search_term})
-        q_object |= Q(cpc__startswith=search_term)
-        q_object |= Q(aliases__contains=[search_term.lower()])
-        q_object |= Q(scientific_name__icontains=search_term)
-        return ClassifiedProduct.objects.filter(q_object).distinct()
+        terms = (search_term or "").strip().split()
+        if not terms:
+            return ClassifiedProduct.objects.none()
+        qs = ClassifiedProduct.objects.all()
+        for term in terms:
+            q_object = Q()
+            for field in [*translation_fields("description"), *translation_fields("common_name")]:
+                q_object |= Q(**{f"{field}__icontains": term})
+            q_object |= Q(cpc__startswith=term)
+            q_object |= Q(aliases__contains=[term.lower()])
+            q_object |= Q(scientific_name__icontains=term)
+            qs = qs.filter(q_object)
+        return qs.distinct()
+
+    def _search_zones(self, search_term):
+        # Multi-word AND search for LivelihoodZone, extended to include country name so that
+        # a term like "mali ml01" finds zones where "mali" matches the country and "ml01"
+        terms = (search_term or "").strip().split()
+        if not terms:
+            return LivelihoodZone.objects.none()
+        qs = LivelihoodZone.objects.all()
+        for term in terms:
+            q_object = (
+                Q(code__iexact=term)
+                | Q(alternate_code__iexact=term)
+                | Q(country__iso3166a2__iexact=term)
+                | Q(country__iso3166a3__iexact=term)
+                | Q(country__name__icontains=term)
+                | Q(country__iso_en_name__icontains=term)
+                | Q(country__iso_en_proper__icontains=term)
+                | Q(country__iso_en_ro_name__icontains=term)
+                | Q(country__iso_en_ro_proper__icontains=term)
+                | Q(country__iso_fr_name__icontains=term)
+                | Q(country__iso_fr_proper__icontains=term)
+                | Q(country__iso_es_name__icontains=term)
+            )
+            for field in translation_fields("name"):
+                q_object |= Q(**{f"{field}__icontains": term})
+            for field in translation_fields("description"):
+                q_object |= Q(**{f"{field}__icontains": term})
+            qs = qs.filter(q_object)
+        return qs.distinct()
+
+    def _batch_baselines_for_results(self, model_name, search_results):
+        """
+        Return a mapping of search-result pk → list of LivelihoodZoneBaseline objects.
+        """
+        if model_name == "ClassifiedProduct":
+            rows = list(
+                LivelihoodStrategy.objects.filter(product__in=search_results)
+                .values("product_id", "livelihood_zone_baseline_id")
+                .distinct()
+            )
+            baseline_ids = {r["livelihood_zone_baseline_id"] for r in rows}
+            baselines_by_id = {
+                b.id: b
+                for b in LivelihoodZoneBaseline.objects.filter(id__in=baseline_ids).select_related("livelihood_zone")
+            }
+            result = defaultdict(list)
+            seen = defaultdict(set)
+            for row in rows:
+                pid, bid = row["product_id"], row["livelihood_zone_baseline_id"]
+                if bid not in seen[pid] and bid in baselines_by_id:
+                    seen[pid].add(bid)
+                    result[pid].append(baselines_by_id[bid])
+            return result
+
+        if model_name == "LivelihoodCategory":
+            result = defaultdict(list)
+            for b in LivelihoodZoneBaseline.objects.filter(main_livelihood_category__in=search_results).select_related(
+                "livelihood_zone"
+            ):
+                result[b.main_livelihood_category_id].append(b)
+            return result
+
+        if model_name == "LivelihoodZone":
+            result = defaultdict(list)
+            for b in LivelihoodZoneBaseline.objects.filter(livelihood_zone__in=search_results).select_related(
+                "livelihood_zone"
+            ):
+                result[b.livelihood_zone_id].append(b)
+            return result
+
+        if model_name == "WealthCharacteristic":
+            rows = list(
+                WealthGroupCharacteristicValue.objects.filter(wealth_characteristic__in=search_results)
+                .values("wealth_characteristic_id", "wealth_group__livelihood_zone_baseline_id")
+                .distinct()
+            )
+            baseline_ids = {r["wealth_group__livelihood_zone_baseline_id"] for r in rows}
+            baselines_by_id = {
+                b.id: b
+                for b in LivelihoodZoneBaseline.objects.filter(id__in=baseline_ids).select_related("livelihood_zone")
+            }
+            result = defaultdict(list)
+            seen = defaultdict(set)
+            for row in rows:
+                cid, bid = row["wealth_characteristic_id"], row["wealth_group__livelihood_zone_baseline_id"]
+                if bid not in seen[cid] and bid in baselines_by_id:
+                    seen[cid].add(bid)
+                    result[cid].append(baselines_by_id[bid])
+            return result
+
+        if model_name == "Country":
+            result = defaultdict(list)
+            for b in (
+                LivelihoodZoneBaseline.objects.filter(livelihood_zone__country__in=search_results)
+                .select_related("livelihood_zone")
+                .annotate(country_pk=F("livelihood_zone__country_id"))
+            ):
+                result[b.country_pk].append(b)
+            return result
+
+        return {}
+
+    def _baseline_obj_to_dict(self, baseline):
+        return {
+            "id": baseline.id,
+            "name": baseline.name,
+            "livelihood_zone__code": baseline.livelihood_zone.code,
+            "reference_year_end_date": baseline.reference_year_end_date,
+        }
 
     def get(self, request, format=None):
         """
@@ -2056,60 +2239,55 @@ class LivelihoodZoneBaselineFacetedSearchView(APIView):
                 ModelClass = apps.get_model(app_name, model_name)
                 if model_name == "ClassifiedProduct":
                     search_per_model = self._search_products(search_term)
+                elif model_name == "LivelihoodZone":
+                    search_per_model = self._search_zones(search_term)
                 else:
-                    search_per_model = ModelClass.objects.search(search_term)
+                    search_per_model = self._search_model(ModelClass, search_term)
                 results[filter_category] = []
-                # for activating language
+                search_per_model = list(search_per_model)
+                if not search_per_model:
+                    continue
+                # Fetch all baseline relationships in bulk
+                pk_to_baselines = self._batch_baselines_for_results(model_name, search_per_model)
+
                 with override(language):
                     for search_result in search_per_model:
+                        baseline_objs = pk_to_baselines.get(search_result.pk, [])
+                        if not baseline_objs:
+                            continue
                         if model_name == "ClassifiedProduct":
-                            baselines_qs = LivelihoodZoneBaseline.objects.filter(
-                                id__in=LivelihoodStrategy.objects.filter(product=search_result).values(
-                                    "livelihood_zone_baseline"
-                                )
-                            ).distinct()
                             value_label, value = search_result.common_name, search_result.pk
                         elif model_name == "LivelihoodCategory":
-                            baselines_qs = LivelihoodZoneBaseline.objects.filter(
-                                main_livelihood_category=search_result
-                            )
                             value_label, value = search_result.description, search_result.pk
                         elif model_name == "LivelihoodZone":
-                            baselines_qs = LivelihoodZoneBaseline.objects.filter(livelihood_zone=search_result)
                             value_label, value = search_result.name, search_result.pk
                         elif model_name == "WealthCharacteristic":
-                            baselines_qs = LivelihoodZoneBaseline.objects.filter(
-                                id__in=WealthGroupCharacteristicValue.objects.filter(
-                                    wealth_characteristic=search_result
-                                ).values("wealth_group__livelihood_zone_baseline")
-                            ).distinct()
                             value_label, value = search_result.description, search_result.pk
                         elif model_name == "Country":
-                            baselines_qs = LivelihoodZoneBaseline.objects.filter(
-                                livelihood_zone__country=search_result
-                            ).distinct()
                             value_label, value = search_result.iso_en_name, search_result.pk
-                        baselines = self._get_baselines(baselines_qs)
-                        if baselines:
-                            results[filter_category].append(
-                                {
-                                    "filter": filter_key,
-                                    "filter_label": filter_label,
-                                    "value_label": value_label,
-                                    "value": value,
-                                    "count": len(baselines),
-                                    "livelihood_zone_baselines": baselines,
-                                }
-                            )
+                        baselines = [self._baseline_obj_to_dict(b) for b in baseline_objs]
+                        results[filter_category].append(
+                            {
+                                "filter": filter_key,
+                                "filter_label": filter_label,
+                                "value_label": value_label,
+                                "value": value,
+                                "count": len(baselines),
+                                "livelihood_zone_baselines": baselines,
+                            }
+                        )
 
             # Search livelihood strategy types (not a model query)
             results["livelihood_strategy_types"] = []
             search_lower = search_term.lower()
-            # Get English labels outside language override for matching
+            # Collect English labels for term matching outside language context
             english_labels = {}
             with override("en"):
                 for strategy_type in LivelihoodStrategyType:
                     english_labels[strategy_type.value] = str(strategy_type.label).lower()
+
+            # Identify all matching strategy types and their translated labels in one pass
+            matching_strategy_types = []
             with override(language):
                 for strategy_type in LivelihoodStrategyType:
                     translated_label = str(strategy_type.label)
@@ -2118,22 +2296,46 @@ class LivelihoodZoneBaselineFacetedSearchView(APIView):
                         or search_lower in english_labels[strategy_type.value]
                         or search_lower in translated_label.lower()
                     ):
-                        baselines_qs = LivelihoodZoneBaseline.objects.filter(
-                            id__in=LivelihoodStrategy.objects.filter(strategy_type=strategy_type.value).values(
-                                "livelihood_zone_baseline"
-                            )
-                        ).distinct()
-                        baselines = self._get_baselines(baselines_qs)
-                        if baselines:
-                            results["livelihood_strategy_types"].append(
-                                {
-                                    "filter": "strategy_type",
-                                    "filter_label": "Livelihood Strategy Type",
-                                    "value_label": translated_label,
-                                    "value": strategy_type.value,
-                                    "count": len(baselines),
-                                    "livelihood_zone_baselines": baselines,
-                                }
-                            )
+                        matching_strategy_types.append((strategy_type, translated_label))
+
+            if matching_strategy_types:
+                # Fetch all strategy→baseline links for all matching types in a single query
+                matching_values = [st.value for st, _ in matching_strategy_types]
+                rows = list(
+                    LivelihoodStrategy.objects.filter(strategy_type__in=matching_values)
+                    .values("strategy_type", "livelihood_zone_baseline_id")
+                    .distinct()
+                )
+                baseline_ids = {r["livelihood_zone_baseline_id"] for r in rows}
+                baselines_by_id = {
+                    b.id: b
+                    for b in LivelihoodZoneBaseline.objects.filter(id__in=baseline_ids).select_related(
+                        "livelihood_zone"
+                    )
+                }
+                type_to_baseline_ids = defaultdict(set)
+                for row in rows:
+                    type_to_baseline_ids[row["strategy_type"]].add(row["livelihood_zone_baseline_id"])
+
+                with override(language):
+                    for strategy_type, translated_label in matching_strategy_types:
+                        baseline_objs = [
+                            baselines_by_id[bid]
+                            for bid in type_to_baseline_ids.get(strategy_type.value, set())
+                            if bid in baselines_by_id
+                        ]
+                        if not baseline_objs:
+                            continue
+                        baselines = [self._baseline_obj_to_dict(b) for b in baseline_objs]
+                        results["livelihood_strategy_types"].append(
+                            {
+                                "filter": "strategy_type",
+                                "filter_label": "Livelihood Strategy Type",
+                                "value_label": translated_label,
+                                "value": strategy_type.value,
+                                "count": len(baselines),
+                                "livelihood_zone_baselines": baselines,
+                            }
+                        )
 
         return Response(results)

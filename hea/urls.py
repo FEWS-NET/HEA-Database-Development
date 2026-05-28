@@ -18,6 +18,7 @@ from baseline.autocomplete import (
 )
 from baseline.viewsets import (
     BaselineLivelihoodActivityViewSet,
+    BaselineSeasonalActivityOccurrenceViewSet,
     BaselineWealthGroupCharacteristicValueViewSet,
     BaselineWealthGroupViewSet,
     ButterProductionViewSet,
@@ -136,6 +137,11 @@ router.register(r"othercashincome", OtherCashIncomeViewSet)
 router.register(r"otherpurchase", OtherPurchaseViewSet)
 router.register(r"seasonalactivity", SeasonalActivityViewSet)
 router.register(r"seasonalactivityoccurrence", SeasonalActivityOccurrenceViewSet)
+router.register(
+    r"baselineseasonalactivityoccurrence",
+    BaselineSeasonalActivityOccurrenceViewSet,
+    "baselineseasonalactivityoccurrence",
+)
 router.register(r"communitycropproduction", CommunityCropProductionViewSet)
 router.register(r"communitylivestock", CommunityLivestockViewSet)
 router.register(r"marketprice", MarketPriceViewSet)
