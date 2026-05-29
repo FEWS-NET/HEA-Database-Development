@@ -51,8 +51,10 @@ LANGS = {
     "wealth group": "en",
     "group de richesse": "fr",
     "groupe de richesse": "fr",
+    "groupe socio-économique": "fr",
     "groupe socio-economique": "fr",
     "group socio-economique": "fr",
+    "grop socio-economique": "fr",
     # 'Exp factors' (row 2)
     "expandability parameters": "en",
     "paramètres d'extensibilité (expandability factors)": "fr",
