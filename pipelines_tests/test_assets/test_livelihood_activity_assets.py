@@ -142,7 +142,7 @@ class GetActivityLabelAttributesTestCase(TestCase):
         )
         self.assertEqual(attributes_df.loc[0, "season"], general_season.name_en)
 
-    def test_finalize_completeness_dataframe_with_no_rows(self):
+    def test_get_completeness_dataframe_with_no_rows(self):
         column = "income"
         summary_df = pd.DataFrame(
             columns=["strategy_type", "wealth_group_category", f"{column}_recognized", f"{column}_summary"]
