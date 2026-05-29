@@ -105,6 +105,129 @@ WORKSHEET_MAP = {
     ActivityLabel.LivelihoodActivityType.LIVELIHOOD_SUMMARY: "Data",
 }
 
+SUBTOTAL_PREFIXES = ("total", "sub-total", "subtotal", "sous-total", "revenu total", "kcal total")
+
+
+def _is_section_header_label(label: str, row_values: pd.Series) -> bool:
+    """
+    Detect section header labels in the Data2 and Data3 worksheets.
+
+    Examples include:
+      * AGRICULTURAL LABOUR INCOME - CULTIVATION (PRE-HARVEST)
+      * AGRICULTURAL LABOUR INCOME - HARVEST AND POST-HARVEST
+      * CONSTRUCTION-RELATED CASH INCOME
+      * WILD FOODS
+      * FISHING
+
+    We assume a header will be in all uppercase characters and won't have any data in the row.
+    """
+    if not label or row_values.str.strip().any():
+        return False
+    normalized_label = prepare_lookup(label)
+    return str(label).strip() == str(label).strip().upper() and not normalized_label.startswith(SUBTOTAL_PREFIXES)
+
+
+def _get_subtotal_indicator(label: str, activity_type: str) -> str | None:
+    """
+    Detect the indicator for a sub-total in the Data2 and Data3 worksheets.
+
+    Data2 contains OtherCashIncome activities and the indicator is always Income.
+    Data3 contains WildFoodGathering, Fishing and Hunting activities which provide
+    both Income and Kcals (reported as percentage_kcals for the Wealth Group).
+    """
+    normalized_label = prepare_lookup(label)
+    if normalized_label.startswith(SUBTOTAL_PREFIXES):
+        if activity_type == ActivityLabel.LivelihoodActivityType.OTHER_CASH_INCOME:
+            return "income"
+        elif activity_type == ActivityLabel.LivelihoodActivityType.WILD_FOODS:
+            if "kcal" in normalized_label:
+                return "percentage_kcals"
+            if "income" in normalized_label or "revenu" in normalized_label or "cash" in normalized_label:
+                return "income"
+    return None
+
+
+def _add_section_metadata(
+    df: pd.DataFrame, livelihood_strategies: list[dict], activity_type: str, num_header_rows: int
+) -> list[dict]:
+    """
+    Add section/sub-total metadata to LivelihoodStrategy instances from Data2 and Data3 worksheets.
+
+    The Data2 and Data3 worksheets contain Livelihood Strategies that are organized into sections,
+    for example, AGRICULTURAL LABOUR INCOME - CULTIVATION (PRE-HARVEST). Each section contains a
+    footer that provides the sub-total of the `income` and `percentage_kcals` (for Data3) for the
+    strategies in that section. There are rows in the Data worksheet for each section in Data2 and
+    Data3 that are are used to include the income and percentage_kcals in the overall Baseline. Other
+    worksheets, for example the Key Parameters section of the Summ worksheet, reference these section
+    sub-total rows rather than the individual Livelihood Strategies.
+
+    This function adds the section/sub-total metadata to each LivelihoodStrategy instance, to enable
+    the section rows in Data to be linked to the individual Livelihood Strategies in Data2 and Data3.
+    """
+    if activity_type not in (
+        ActivityLabel.LivelihoodActivityType.OTHER_CASH_INCOME,
+        ActivityLabel.LivelihoodActivityType.WILD_FOODS,
+    ):
+        return livelihood_strategies
+
+    value_columns = df.columns[1:].tolist()
+    row_livelihood_strategy_map = {strategy["bss_row"]: strategy for strategy in livelihood_strategies}
+
+    # Iterate through the rows in column A, setting the section header and then adding it to all the strategies
+    # in that section and doing the same when we find the sub-total indicators, labels and rows.
+    current_section_header_label = None
+    current_section_header_row = None
+    current_section_strategies = []
+
+    for row in df.iloc[num_header_rows:].index:
+        label = df.loc[row, "A"]
+        if not label:
+            continue
+
+        if row in row_livelihood_strategy_map:
+            if not current_section_header_label:
+                # If we find a LivelihoodStrategy before we have a section header, then raise an error.
+                raise ValueError("Found LivelihoodStrategy from row %s without a section_header_label set" % row)
+
+            # We have found a LivelihoodStrategy, so add the current section header metadata to it
+            # and add it to the current section strategies list so we can add the sub-total metadata to it
+            # when we find the sub-total rows for the section.
+            row_livelihood_strategy_map[row]["section_header_label"] = current_section_header_label
+            row_livelihood_strategy_map[row]["section_header_row"] = current_section_header_row
+            current_section_strategies.append(row_livelihood_strategy_map[row])
+            continue
+
+        subtotal_indicator = _get_subtotal_indicator(label, activity_type)
+        if subtotal_indicator:
+            # We have a section sub-total row, so add the sub-total metadata to the strategies.
+            for strategy in current_section_strategies:
+                strategy[f"{subtotal_indicator}_subtotal_label"] = label
+                strategy[f"{subtotal_indicator}_subtotal_row"] = row
+            continue
+
+        if _is_section_header_label(label, df.loc[row, value_columns]):
+            # Check that we found the expected sub-total rows
+            if current_section_strategies:
+                if "income_subtotal_label" not in current_section_strategies[0]:
+                    raise ValueError(
+                        "Found new section header '%s' from row %s without an income_subtotal_label set for the previous section with label '%s' from row %s"
+                        % (label, row, current_section_header_label, current_section_header_row)
+                    )
+                if (
+                    activity_type == ActivityLabel.LivelihoodActivityType.WILD_FOODS
+                    and "percentage_kcals_subtotal_label" not in current_section_strategies[0]
+                ):
+                    raise ValueError(
+                        "Found new section header '%s' from row %s without a percentage_kcals_subtotal_label set for the previous section with label '%s' from row %s"
+                        % (label, row, current_section_header_label, current_section_header_row)
+                    )
+            # The last section was valid, or this is the first section, so initialize the new section.
+            current_section_header_label = label
+            current_section_header_row = row
+            current_section_strategies = []
+
+    return livelihood_strategies
+
 
 def _get_completeness_dataframe(summary_df: pd.DataFrame, column: str) -> pd.DataFrame:
     """
@@ -885,6 +1008,7 @@ def get_instances_from_dataframe(
 
     # Get a dataframe of the Wealth Groups for each column
     wealth_group_df = get_wealth_group_dataframe(df, livelihood_zone_baseline, worksheet_name, partition_key)
+    value_columns = df.columns[1:].tolist()
 
     # Summary columns are those with a Wealth Group Category but not a Community
     summary_columns = wealth_group_df[
@@ -914,7 +1038,7 @@ def get_instances_from_dataframe(
     else:
         # Boolean mask of which cells are used
         # Count datapoints per row
-        unrecognized_labels["datapoint_count"] = unrecognized_labels.loc[:, "B":].apply(
+        unrecognized_labels["datapoint_count"] = unrecognized_labels.loc[:, value_columns].apply(
             lambda row: sum((row != 0) & (row != "")), axis="columns"
         )
         # Count datapoints per row that are in the summary columns
@@ -1076,11 +1200,11 @@ def get_instances_from_dataframe(
                     livelihood_strategy["attribute_rows"]["kcals_consumed"] = row
                     for i, livelihood_activity in enumerate(livelihood_activities_for_strategy):
                         # Set the column for troubleshooting
-                        column = df.columns[i + 1]
+                        column = value_columns[i]
                         # The household size will always be the 4th header row in the dataframe, even though the
                         # original row number (which is the index) will be different between the Data and Data3
                         # worksheets
-                        household_size = df.iloc[3, i + 1]
+                        household_size = df.loc[df.index[3], value_columns[i]]
 
                         # Convert to numeric to handle string values (e.g., "6" instead of 6)
                         try:
@@ -1286,7 +1410,7 @@ def get_instances_from_dataframe(
                     livelihood_strategy["attribute_rows"]["times_per_year"] = row
                     for i, livelihood_activity in enumerate(livelihood_activities_for_strategy):
                         # Set the column for troubleshooting
-                        column = df.columns[i + 1]
+                        column = value_columns[i]
                         kcals_per_unit = classifiedproductlookup.get_instance(
                             livelihood_strategy["product_id"]
                         ).kcals_per_unit
@@ -1310,7 +1434,7 @@ def get_instances_from_dataframe(
                     livelihood_strategy["attribute_rows"]["quantity_purchased"] = row
                     for i, livelihood_activity in enumerate(livelihood_activities_for_strategy):
                         # Set the column for troubleshooting
-                        column = df.columns[i + 1]
+                        column = value_columns[i]
                         livelihood_activity["quantity_purchased"] = (
                             livelihood_activity["unit_multiple"] * livelihood_activity["times_per_year"]
                             if livelihood_activity.get("times_per_year") and livelihood_activity.get("unit_multiple")
@@ -1577,11 +1701,11 @@ def get_instances_from_dataframe(
                 "wealth_group": wealth_group_df.iloc[i]["natural_key"],
                 # Include the column and row to aid trouble-shooting
                 "bss_sheet": worksheet_name,
-                "bss_column": df.columns[i + 1],
+                "bss_column": value_columns[i],
                 "bss_row": row,
                 "activity_label": label,
             }
-            for i in range(len(df.loc[row, "B":]))
+            for i in range(len(value_columns))
         ]
 
     # Iterate over the rows
@@ -1726,7 +1850,7 @@ def get_instances_from_dataframe(
                             livelihood_activity[attribute] = value
 
             # Update the LivelihoodActivity records
-            if any(value for value in df.loc[row, "B":].astype(str).str.strip()):
+            if df.loc[row, value_columns].astype(str).str.strip().any():
 
                 # Some labels are ambiguous and map to different attributes depending on the strategy_type.
                 if activity_attribute == "quantity_produced_or_purchased":
@@ -1773,7 +1897,7 @@ def get_instances_from_dataframe(
                 # Therefore, if we have specified the product__name as the attribute, check that the product
                 # can be identified and is the same for all columns and then add it to the Livelihood Strategy.
                 elif activity_attribute == "product__name":
-                    product_name_df = pd.DataFrame(df.loc[row, "B":]).rename(columns={row: "product__name"})
+                    product_name_df = pd.DataFrame(df.loc[row, value_columns]).rename(columns={row: "product__name"})
                     product_name_df["product__name"] = product_name_df["product__name"].replace(["", 0], pd.NA)
                     if product_name_df["product__name"].dropna().nunique() > 0:
                         try:
@@ -1854,7 +1978,7 @@ def get_instances_from_dataframe(
                     # We can ignore the values if they are all 0 or all 1, as they are typically just
                     # copy/paste errors from the previous row, or a note that data exists for the
                     # Livelihood Activity without containing any actual data.
-                    values = df.loc[row, "B":].replace("", pd.NA).dropna().astype(str).str.strip().unique()
+                    values = df.loc[row, value_columns].replace("", pd.NA).dropna().astype(str).str.strip().unique()
                     if values.size > 1 or values[0] not in ["0", "1"]:
                         # Include the header rows so that we can see which Wealth Groups are affected
                         rows = df.index[:num_header_rows].tolist() + [row]
@@ -1898,7 +2022,7 @@ def get_instances_from_dataframe(
                         "Found activity_attribute %s from row %s, but there is no Livelihood Strategy and therefore no activity_field_names defined."
                         % (activity_attribute, row)
                     )
-                    for i, value in enumerate(df.loc[row, "B":]):
+                    for i, value in enumerate(df.loc[row, value_columns]):
                         # Some attributes are stored in LivelihoodActivity.extra rather than individual fields.
                         if activity_attribute not in activity_field_names:
                             if "extra" not in livelihood_activities_for_strategy[i]:
@@ -1921,6 +2045,20 @@ def get_instances_from_dataframe(
 
     # Finalize the last strategy
     finalize_strategy()
+
+    # Augment the OtherCashIncome, WildFoodGathering, Fishing and Hunting strategies
+    # from the Data2 and Data3 worksheets with additional attributes to capture what
+    # section they are in and how the section subtotals are linked to the rows in the
+    # Data worksheet. This information is required to allow us to map the '- see Data2'
+    # and '- see Data3' rows in the Data worksheet to the actual LivelihoodStrategy
+    # instances they represent, which is required to, for example, find the
+    # LivelihoodStrategy linked to a KeyParameter instance.
+    livelihood_strategies = _add_section_metadata(
+        df,
+        livelihood_strategies,
+        activity_type,
+        num_header_rows,
+    )
 
     result = {
         "LivelihoodStrategy": livelihood_strategies,
