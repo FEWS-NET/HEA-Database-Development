@@ -106,6 +106,65 @@ WORKSHEET_MAP = {
 }
 
 
+def _get_completeness_dataframe(summary_df: pd.DataFrame, column: str) -> pd.DataFrame:
+    """
+    Build a completeness dataframe for metadata output.
+    """
+    completeness_df = summary_df[
+        ["strategy_type", "wealth_group_category", f"{column}_recognized", f"{column}_summary"]
+    ]
+    completeness_df.columns = ["strategy_type", "wealth_group_category", "recognized", "summary"]
+
+    # Ignore irrelevant strategy types
+    completeness_df = completeness_df[
+        completeness_df["strategy_type"].isin(
+            completeness_df.groupby("strategy_type")[["recognized", "summary"]]
+            .sum()
+            .sum(axis=1)
+            .loc[lambda x: x > 0]
+            .index
+        )
+    ]
+
+    if completeness_df.empty:
+        return pd.DataFrame(
+            columns=["recognized", "summary", "unrecognized", f"{column}_completeness"],
+            index=pd.MultiIndex.from_arrays([[], []], names=["strategy_type", "wealth_group_category"]),
+        )
+
+    # Add a total row and pivot the wealth group categories into columns so the final
+    # metadata table is easy to scan in Dagster.
+    completeness_df = completeness_df.set_index(["strategy_type", "wealth_group_category"])
+    completeness_df = completeness_df.unstack()
+    completeness_df.loc["Total"] = completeness_df.sum()
+    completeness_df = completeness_df.stack()
+    # Add the difference
+    completeness_df["unrecognized"] = completeness_df["summary"] - completeness_df["recognized"]
+    # Add the completeness percentage
+    completeness_df[f"{column}_completeness"] = completeness_df.apply(
+        lambda row: (round(row["recognized"] / row["summary"] * 100, 1) if row["summary"] > 0 else pd.NA),
+        axis=1,
+    )
+    # Format the numbers as integers, for better display in the markdown table
+    if column in ["income", "expenditure", "kcals_consumed"]:
+        for source in ["recognized", "summary", "unrecognized"]:
+            completeness_df[source] = completeness_df.apply(
+                lambda row: (
+                    int(row[source])
+                    if (pd.notna(row["recognized"]) and row["recognized"] > 0)
+                    or (pd.notna(row["summary"]) and row["summary"] > 0)
+                    else pd.NA
+                ),
+                axis=1,
+            )
+    else:
+        # Format percentage_kcals as percentages.
+        for source in ["recognized", "summary", "unrecognized"]:
+            completeness_df[source] = (completeness_df[source] * 100).round(1).replace(-0.0, 0.0)
+
+    return completeness_df
+
+
 @asset(partitions_def=bss_instances_partitions_def)
 def livelihood_activity_dataframe(config: BSSMetadataConfig, corrected_files) -> Output[pd.DataFrame]:
     """
@@ -1998,8 +2057,9 @@ def get_annotated_instances_from_dataframe(
             livelihood_zone_baseline,
             ActivityLabel.LivelihoodActivityType.LIVELIHOOD_SUMMARY,
             # The summary section is on the Data worksheet, so has the same number of header rows
-            # regardless of the activity_type
-            len(HEADER_ROWS),
+            # regardless of the activity_type. The Summary dataframe doesn't include the average_household_size
+            # so there are only 3 header rows (wealth_group_category, district and village) rather than 4.
+            3,
             partition_key,
         )
 
@@ -2091,57 +2151,16 @@ def get_annotated_instances_from_dataframe(
 
         completeness_dfs = {}
         for column in ["income", "expenditure", "percentage_kcals", "kcals_consumed"]:
-            completeness_df = summary_df[
-                ["strategy_type", "wealth_group_category", f"{column}_recognized", f"{column}_summary"]
-            ]
-            completeness_df.columns = ["strategy_type", "wealth_group_category", "recognized", "summary"]
-
-            # Ignore irrelevant strategy types
-            completeness_df = completeness_df[
-                completeness_df["strategy_type"].isin(
-                    completeness_df.groupby("strategy_type")[["recognized", "summary"]]
-                    .sum()
-                    .sum(axis=1)
-                    .loc[lambda x: x > 0]
-                    .index
-                )
-            ]
-
-            # Add a total row
-            completeness_df = completeness_df.set_index(["strategy_type", "wealth_group_category"])
-            completeness_df = completeness_df.unstack()
-            completeness_df.loc["Total"] = completeness_df.sum()
-            completeness_df = completeness_df.stack()
-            # Add the difference
-            completeness_df["unrecognized"] = completeness_df["summary"] - completeness_df["recognized"]
-            # Add the completeness percentage
-            completeness_df[f"{column}_completeness"] = completeness_df.apply(
-                lambda row: (round(row["recognized"] / row["summary"] * 100, 1) if row["summary"] > 0 else pd.NA),
-                axis=1,
-            )
-            # Format the numbers as integers, for better display in the markdown table
-            if column in ["income", "expenditure", "kcals_consumed"]:
-                for source in ["recognized", "summary", "unrecognized"]:
-                    completeness_df[source] = completeness_df.apply(
-                        lambda row: (
-                            int(row[source])
-                            if (pd.notna(row["recognized"]) and row["recognized"] > 0)
-                            or (pd.notna(row["summary"]) and row["summary"] > 0)
-                            else pd.NA
-                        ),
-                        axis=1,
-                    )
-            else:
-                # Format percentage_kcals as percentages.
-                for source in ["recognized", "summary", "unrecognized"]:
-                    completeness_df[source] = (completeness_df[source] * 100).round(1).replace(-0.0, 0.0)
-
-            completeness_dfs[column] = completeness_df
+            completeness_dfs[column] = _get_completeness_dataframe(summary_df, column)
 
         # Add the completeness summary to the output metadata
         def get_overall_recognized_percentage(metric: str) -> int:
-            recognized_total = completeness_dfs[metric].loc["Total", "recognized"].sum()
-            summary_total = completeness_dfs[metric].loc["Total", "summary"].sum()
+            completeness_df = completeness_dfs[metric]
+            if completeness_df.empty:
+                return 0
+
+            recognized_total = completeness_df.loc["Total", "recognized"].sum()
+            summary_total = completeness_df.loc["Total", "summary"].sum()
             return round(recognized_total / summary_total * 100) if summary_total > 0 else 0
 
         output.metadata["pct_income_recognized"] = get_overall_recognized_percentage("income")
