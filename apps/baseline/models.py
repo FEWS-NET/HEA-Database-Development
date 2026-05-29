@@ -537,6 +537,7 @@ class LivelihoodZoneBaselineCorrection(common_models.Model):
         DATA = "Data", _("Data")
         DATA2 = "Data2", _("Data2")
         DATA3 = "Data3", _("Data3")
+        SUMM = "Summ", _("Summ")
         TIMELINE = "Timeline", _("Timeline")
         SEAS_CAL = "Seas Cal", _("Seas Cal")
 
@@ -1566,6 +1567,74 @@ class LivelihoodStrategy(common_models.Model):
         ]
 
 
+class KeyParameterManager(common_models.IdentifierManager):
+    def get_by_natural_key(
+        self,
+        code: str,
+        reference_year_end_date: str,
+        strategy_type: str,
+        product: str,  # Key Parameters must be for a Strategy with a Product
+        season: str = "",
+        additional_identifier: str = "",
+    ):
+        criteria = {
+            "livelihood_strategy__livelihood_zone_baseline__livelihood_zone__code": code,
+            "livelihood_strategy__livelihood_zone_baseline__reference_year_end_date": reference_year_end_date,
+            "livelihood_strategy__strategy_type": strategy_type,
+            "livelihood_strategy__product__cpc": product,
+            "livelihood_strategy__additional_identifier": additional_identifier,
+        }
+        if season:
+            criteria["livelihood_strategy__season__name_en"] = season
+            criteria["livelihood_strategy__season__country"] = F(
+                "livelihood_strategy__livelihood_zone_baseline__livelihood_zone__country"
+            )
+        else:
+            criteria["livelihood_strategy__season__isnull"] = True
+
+        return self.get(**criteria)
+
+
+class KeyParameter(common_models.Model):
+    """
+    A Livelihood Strategy selected from the Summ worksheet key parameters analysis for monitoring.
+
+    By default a Key Parameter is a Livelihood Strategy contributes more than 5% of
+    food + cash for two or more Wealth Groups, or more than 10% for a single Wealth Group
+
+    If the Strategy meets this threshold for the Baseline then it is a Production Key Parameter,
+    and the quantity produced or available should be monitored.  It the Strategy meets this
+    threshold for the Response scenario then it is a Price Key Parameter and the price per unit
+    should be monitored. If the Strategy meets the threshold in both the Baseline and Response
+    scenarios then both quantity and price should be monitored.
+
+    Note that the threshold is only a default and it is possible to have Key Parameters that don't
+    meet the threshold. For example, a Strategy that provides the majority of income for VP or P
+    households during the lean season may not reach 10% of annual income, but still be considered
+    a Key Parameter.
+
+    The Key Parameters section is typically between rows 931 and 1025 of the Summ worksheet.
+    """
+
+    livelihood_strategy = models.OneToOneField(
+        LivelihoodStrategy,
+        on_delete=models.CASCADE,
+        related_name="key_parameter",
+        verbose_name=_("Livelihood Strategy"),
+    )
+    monitor_quantity = models.BooleanField(default=False, verbose_name=_("Monitor Quantity"))
+    monitor_price = models.BooleanField(default=False, verbose_name=_("Monitor Price"))
+
+    objects = KeyParameterManager()
+
+    def natural_key(self):
+        return self.livelihood_strategy.natural_key()
+
+    class Meta:
+        verbose_name = _("Key Parameter")
+        verbose_name_plural = _("Key Parameters")
+
+
 class LivelihoodActivityManager(common_models.IdentifierManager):
     def get_by_natural_key(
         self,
@@ -2091,6 +2160,23 @@ class ResponseLivelihoodActivity(LivelihoodActivity):
     response to a shock.
 
     Stored on the BSS 'Summ' worksheet.
+
+    The income, expenditure and/or percentage_kcals for the Response Livelihood Activities
+    are calculated from the ExpandabilityFactors (stored in the 'Exp factors' worksheet).
+    The expandability factors, at least in early BSS (e.g. BF01~2011), are stored for
+    categories (e.g. Pulses) that don't have a clear text lookup with the Livelihood Activity
+    labels (e.g. 'Niébé nom du mesure') and instead rely on the absolute cell references:
+    the comment on Data!A478 says "reserved for the main pulse". This makes it more reliable
+    to load the Response Activity by reading the Summ worksheet than by loading the
+    Expandability Factors and then calculating the Response.
+
+    Baseline Activities that don't have any income, expenditure or percentage_kcals are
+    not stored. However, Response Activities that are purchases may have 0 values because
+    in response to a shock households may stop purchasing that item. Note that this
+    doesn't apply to production activities because Response Activities in the Baseline
+    assume normal or higher production - the expansion of an activity to make up for a
+    shortfall elsewhere. Reductions in production activities resulting from a specific
+    shock is part of Outcome Analysis.
     """
 
     # Note that the ResponseLivelihoodActivity contains the full set of attributes
@@ -2118,7 +2204,7 @@ class LivelihoodProductCategoryManager(common_models.IdentifierManager):
         wealth_group_category: str,
         strategy_type: str,
         basket: int,
-        product: str,
+        product: str,  # Livelihood Product Category must have a Product
         season: str = "",
         additional_identifier: str = "",
     ):
@@ -2227,6 +2313,7 @@ class LivelihoodProductCategory(common_models.Model):
             self.baseline_livelihood_activity.wealth_group.wealth_group_category.code,
             self.baseline_livelihood_activity.strategy_type,
             self.basket,
+            # Livelihood Product Categories must have a Product
             self.baseline_livelihood_activity.livelihood_strategy.product_id,
             (
                 self.baseline_livelihood_activity.livelihood_strategy.season.name_en
