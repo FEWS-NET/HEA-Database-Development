@@ -121,7 +121,7 @@ def _get_completeness_dataframe(summary_df: pd.DataFrame, column: str) -> pd.Dat
             completeness_df.groupby("strategy_type")[["recognized", "summary"]]
             .sum()
             .sum(axis=1)
-            .loc[lambda x: x < 0]
+            .loc[lambda x: x > 0]
             .index
         )
     ]
