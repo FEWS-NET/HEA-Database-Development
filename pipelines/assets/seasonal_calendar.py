@@ -355,7 +355,7 @@ def seasonal_activity_instances(
                         additional_identifier = label
 
             # If we have any occurrences for this row, then build the SeasonalActivity instance
-            if any(df.loc[row, first_data_column:].notna()):
+            if df.loc[row, first_data_column:].dropna().astype(str).str.strip().any():
                 label = (label, label_b) if first_data_column == "C" else label  # composite label for trouble-shooting
                 if not seasonal_activity_type:
                     errors.append(f"Couldn't identify SeasonalActivity matching label {label} from row {row}")
