@@ -5163,6 +5163,7 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
     def test_summary_contains_all_fields(self):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
+        self.assertGreater(len(response.json()), 0)
         expected_fields = {
             "country",
             "source_organization_name",
