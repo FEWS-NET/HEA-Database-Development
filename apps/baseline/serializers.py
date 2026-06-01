@@ -1803,9 +1803,13 @@ class LivelihoodActivitySummarySerializer(AggregatingSerializer):
             "population_estimate",
             "product",  # cpc code for the Product
             "product_common_name",
+            "season_name",
+            "season_ordering",
+            "additional_identifier",
             "strategy_type",  # CropProduction, etc.
             "scenario",  # baseline or response
             "id",  # Primary key of the LivelihoodActivity
+            "season",  # Primary key of the Season
             "livelihood_strategy",  # Primary key of the LivelihoodStrategy
             "wealth_group",  # Primary key of the WealthGroup
             "livelihood_zone_baseline",  # Primary key of the LivelihoodZoneBaseline

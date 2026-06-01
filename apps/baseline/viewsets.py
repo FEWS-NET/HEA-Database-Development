@@ -2059,6 +2059,10 @@ class LivelihoodActivitySummaryViewSet(AggregatingViewSet):
             "product_common_name": translated_field(
                 "livelihood_strategy__product__common_name",
             ),
+            "season_name": translated_field("livelihood_strategy__season__name"),
+            "season_ordering": F("livelihood_strategy__season__order"),
+            "season": F("livelihood_strategy__season__pk"),
+            "additional_identifier": F("livelihood_strategy__additional_identifier"),
             "source_organization": F("livelihood_zone_baseline__source_organization__pk"),
             "iso3166a2": F("livelihood_zone_baseline__livelihood_zone__country__iso3166a2"),
         }
