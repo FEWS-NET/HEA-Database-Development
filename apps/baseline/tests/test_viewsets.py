@@ -5160,6 +5160,52 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), len(self.activity_df))
 
+    def test_summary_contains_all_fields(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        expected_fields = {
+            "country",
+            "source_organization_name",
+            "livelihood_zone",
+            "livelihood_zone_baseline_name",
+            "reference_year_start_date",
+            "reference_year_end_date",
+            "valid_from_date",
+            "valid_to_date",
+            "main_livelihood_category",
+            "livelihood_zone_baseline_description",
+            "product",
+            "product_common_name",
+            "season_name",
+            "season_ordering",
+            "additional_identifier",
+            "strategy_type",
+            "wealth_group_category",
+            "wealth_group_category_name",
+            "wealth_group_category_ordering",
+            "percentage_of_households",
+            "average_household_size",
+            "currency",
+            "population_source",
+            "population_estimate",
+            "scenario",
+            "id",
+            "season",
+            "livelihood_strategy",
+            "wealth_group",
+            "livelihood_zone_baseline",
+            "source_organization",
+            "iso3166a2",
+            "kcals_consumed_sum_row",
+            "income_sum_row",
+            "expenditure_sum_row",
+            "percentage_kcals_sum_row",
+            "total_income_as_percentage_kcals_row",
+            "total_income_as_cash_row",
+        }
+        for field in expected_fields:
+            self.assertIn(field, response.json()[0], f"Expected field '{field}' not found in response.")
+
     def test_summary_uses_filters(self):
         response = self.client.get(self.url, {"scenario": LivelihoodActivityScenario.BASELINE})
         self.assertLess(
