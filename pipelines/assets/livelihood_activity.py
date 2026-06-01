@@ -121,7 +121,11 @@ def _is_section_header_label(label: str, row_values: pd.Series) -> bool:
 
     We assume a header will be in all uppercase characters and won't have any data in the row.
     """
-    if not label or row_values.str.strip().any():
+    if not label:
+        return False
+
+    # Treat NA/empty/whitespace-only values as blank; any other value means this is a data row.
+    if row_values.dropna().astype(str).str.strip().any():
         return False
     normalized_label = prepare_lookup(label)
     return str(label).strip() == str(label).strip().upper() and not normalized_label.startswith(SUBTOTAL_PREFIXES)
@@ -225,6 +229,22 @@ def _add_section_metadata(
             current_section_header_label = label
             current_section_header_row = row
             current_section_strategies = []
+
+    # Validate that the final section has the expected subtotals before finishing.
+    if current_section_strategies:
+        if "income_subtotal_label" not in current_section_strategies[0]:
+            raise ValueError(
+                "Reached end of worksheet without an income_subtotal_label set for section with label '%s' from row %s"
+                % (current_section_header_label, current_section_header_row)
+            )
+        if (
+            activity_type == ActivityLabel.LivelihoodActivityType.WILD_FOODS
+            and "percentage_kcals_subtotal_label" not in current_section_strategies[0]
+        ):
+            raise ValueError(
+                "Reached end of worksheet without a percentage_kcals_subtotal_label set for section with label '%s' from row %s"
+                % (current_section_header_label, current_section_header_row)
+            )
 
     return livelihood_strategies
 
