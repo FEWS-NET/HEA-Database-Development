@@ -1360,5 +1360,124 @@
         "is_start": true,
         "product_id": "eau pour le bétail",
         "attribute": "name_of_local_measure"
+    },
+    "karité (kg cueillis)": {
+        "is_start": true,
+        "product_id": "karité",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
+    },
+    "karité - kg cueillis": {
+        "is_start": true,
+        "product_id": "karité",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
+    },
+    "karité: kg cueillis": {
+        "is_start": true,
+        "product_id": "karité",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
+    },
+    "karité kg cueillis": {
+        "is_start": true,
+        "product_id": "karité",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
+    },
+    "karité (kg collectés)": {
+        "is_start": true,
+        "product_id": "karité",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
+    },
+    "karité - kg ramassé": {
+        "is_start": true,
+        "product_id": "karité",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
+    },
+    "karité - litres cueillis": {
+        "is_start": true,
+        "product_id": "karité",
+        "unit_of_measure_id": "litres",
+        "attribute": "quantity_produced"
+    },
+    "cueillette: champignons (kg collectés)": {
+        "is_start": true,
+        "product_id": "champignons",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
+    },
+    "cueillette: fumbwa (kg collectés)": {
+        "is_start": true,
+        "product_id": "fumbwa",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
+    },
+    "cueillette: chenille (kg collectés)": {
+        "is_start": true,
+        "product_id": "chenille",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
+    },
+    "arbre véritable - kg cueillis": {
+        "is_start": true,
+        "product_id": "arbre véritable",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
+    },
+    "cactus rouge et local- kg cueillis": {
+        "is_start": true,
+        "product_id": "cactus rouge et local",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
+    },
+    "aliment 1 - kg cueillis": {
+        "is_start": true,
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
+    },
+    "aliment 1 - kg cueillis karité": {
+        "is_start": true,
+        "product_id": "karité",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
+    },
+    "aliment 1 - kg cueillis (fonio sauvage)": {
+        "is_start": true,
+        "product_id": "fonio sauvage",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
+    },
+    "aliment 1 - kg cueillis nere": {
+        "is_start": true,
+        "product_id": "nere",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
+    },
+    "aliment 1 : amande de karité - kg cueillis": {
+        "is_start": true,
+        "product_id": "amande de karité",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
+    },
+    "aliment 1 - raisin sauvage kg cueillis": {
+        "is_start": true,
+        "product_id": "raisin sauvage",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
+    },
+    "aliment 1 graines et poudre de néré - kg cueillis": {
+        "is_start": true,
+        "product_id": "graines et poudre de néré",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
+    },
+    "aliment 1: grain de nere - kg cueillis": {
+        "is_start": true,
+        "product_id": "grain de nere",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_produced"
     }
 }

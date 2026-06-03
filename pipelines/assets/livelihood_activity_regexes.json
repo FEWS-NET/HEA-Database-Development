@@ -776,7 +776,19 @@
         "quantity_produced"
     ],
     [
-        "(?:wild foods?{separator_pattern} )?{product_pattern}{separator_pattern} \\(?{unit_of_measure_pattern} gathered\\)?",
+        "aliment [0-9]+{separator_pattern}{product_pattern}{separator_pattern}{unit_of_measure_pattern} (?:cueillis?|collectés?|ramassés?|gathered)",
+        null,
+        true,
+        "quantity_produced"
+    ],
+    [
+        "aliment [0-9]+{separator_pattern}{unit_of_measure_pattern} (?:cueillis?|collectés?|ramassés?|gathered) *[-:/]? *\\(?(?P<product_id>{label_pattern})?\\)?",
+        null,
+        true,
+        "quantity_produced"
+    ],
+    [
+        "(?:(?:wild foods?|cueillette){separator_pattern} )?{product_pattern}{separator_pattern} \\(?{unit_of_measure_pattern} (?:gathered|cueillis?|collectés?|ramassés?)\\)?",
         null,
         true,
         "quantity_produced"
@@ -788,7 +800,7 @@
         "quantity_produced"
     ],
     [
-        "{product_pattern}{separator_pattern}\\(?{unit_of_measure_pattern} gathered\\)?",
+        "{product_pattern}{separator_pattern}\\(?{unit_of_measure_pattern} (?:gathered|cueillis?|collectés?|ramassés?)\\)?",
         null,
         true,
         "quantity_produced"
