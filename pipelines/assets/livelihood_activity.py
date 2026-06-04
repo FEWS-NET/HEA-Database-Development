@@ -910,7 +910,7 @@ def get_instances_from_dataframe(
     ]
     if unrecognized_labels.empty:
         # Keep the same shape as the non-empty case (label, rows, datapoint_count, in_summary)
-        unrecognized_labels = pd.DataFrame(columns=["label", "rows", "datapoint_count", "in_summary"])
+        unrecognized_labels = pd.DataFrame(columns=["label", "rows", "datapoints", "summary_datapoints"])
     else:
         # Boolean mask of which cells are used
         # Count datapoints per row
