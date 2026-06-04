@@ -134,6 +134,12 @@
         "income"
     ],
     [
+        "revenu total (?:cueillette|p[êe]che)",
+        null,
+        false,
+        "income"
+    ],
+    [
         "other use \\({unit_of_measure_pattern}\\)",
         null,
         false,
@@ -141,6 +147,12 @@
     ],
     [
         "kcals \\(%\\)",
+        null,
+        false,
+        "percentage_kcals"
+    ],
+    [
+        "(?:kcals? total|total kcals?) (?:cueillette|p[êe]che)(?: \\(%\\))?",
         null,
         false,
         "percentage_kcals"

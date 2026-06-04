@@ -1479,5 +1479,17 @@
         "product_id": "grain de nere",
         "unit_of_measure_id": "kg",
         "attribute": "quantity_produced"
+    },
+    "revenu total cueillette": {
+        "attribute": "income"
+    },
+    "kcal total cueillette (%)": {
+        "attribute": "percentage_kcals"
+    },
+    "revenu total pêche": {
+        "attribute": "income"
+    },
+    "total kcal pêche (%)": {
+        "attribute": "percentage_kcals"
     }
 }
