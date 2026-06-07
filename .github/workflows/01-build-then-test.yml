@@ -21,6 +21,14 @@ env:
   GOOGLE_ADMIN_EMAIL: ""
   GOOGLE_APPLICATION_CREDENTIALS: ""
 
+  # Ingestion parameters - use secrets if actual credentials are required
+  BSS_METADATA_WORKBOOK: "gdrive://Database Design/BSS Metadata"
+  BSS_METADATA_STORAGE_OPTIONS: '{"token": "service_account", "access": "read_only", "creds": "valid_creds_object", "root_file_id": "0AOJ0gJ8sjnO7Uk9PVA"}'
+  BSS_LABEL_RECOGNITION_WORKBOOK: "gdrive://Database Design/BSS Labels (CI).xlsx"
+  BSS_LABEL_RECOGNITION_STORAGE_OPTIONS: '{"token": "service_account", "access": "read_only", "creds": "valid_creds_object", "root_file_id": "0AOJ0gJ8sjnO7Uk9PVA"}'
+  BSS_FILES_FOLDER: "gdrive://Discovery Folder/Baseline Storage Sheets (BSS)"
+  BSS_FILES_STORAGE_OPTIONS: '{"token": "service_account", "access": "read_only", "creds": "valid_creds_object", "root_file_id": "0AOJ0gJ8sjnO7Uk9PVA"}'
+
   # AWS Variables
   ECR_REGISTRY: "888016039450.dkr.ecr.us-east-1.amazonaws.com"
   AWS_REGION: "us-east-1"
