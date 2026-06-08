@@ -2845,7 +2845,8 @@ class OtherCashIncome(LivelihoodActivity):
         verbose_name=_("Months per year"),
         help_text=_("Number of months in a year that the labor is performed"),
     )
-    times_per_year = models.PositiveSmallIntegerField(
+    # This is a float field because times_per_month may be fractional (e.g. 4.3/month * 12 months = 51.6/year).
+    times_per_year = models.FloatField(
         blank=True,
         null=True,
         verbose_name=_("Times per year"),

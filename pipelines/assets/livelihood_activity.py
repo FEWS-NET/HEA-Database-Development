@@ -454,7 +454,7 @@ def get_livelihood_activity_regexes() -> list:
         "age_gender_pattern": age_gender_pattern,
         "unit_of_measure_pattern": r"(?P<unit_of_measure_id>[a-z]+)",
         "nbr_pattern": r"(?:n[bo]?r?e?|no)\.?",
-        "vendu_pattern": r"(?:quantité )?vendu(?:e|s|ss|es|ses)?",
+        "vendu_pattern": r"(?:(?:quantité )?vendu(?:e|s|ss|es|ses)?|sold)",
         "separator_pattern": r" *[:-]? *",
         "name_of_local_measure_pattern": r"(?:name of (?:local )?(?:meas(?:ure)?\.?)|nom(?: (?:de la mesure(?: locale?)?|de mesure locale?|du mesure|d'unité|mesure(?: locale?)?|unité de mesure))?)",
     }
@@ -1054,7 +1054,7 @@ def get_instances_from_dataframe(
     ]
     if unrecognized_labels.empty:
         # Keep the same shape as the non-empty case (label, rows, datapoint_count, in_summary)
-        unrecognized_labels = pd.DataFrame(columns=["label", "rows", "datapoint_count", "in_summary"])
+        unrecognized_labels = pd.DataFrame(columns=["label", "rows", "datapoints", "summary_datapoints"])
     else:
         # Boolean mask of which cells are used
         # Count datapoints per row
