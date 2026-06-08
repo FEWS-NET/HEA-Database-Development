@@ -46,7 +46,7 @@ def get_index(search_text: str | list[str], data: pd.Series, offset: int = 0) ->
     search_text = [str(search_term).lower().strip() for search_term in search_text]
     # Convert the Series to a set of True/False values based on whether they match one of the
     # search_text values.
-    matches = data.str.lower().str.strip().isin(search_text)
+    matches = data.astype(str).str.lower().str.strip().isin(search_text)
     # If we don't find a match, return None
     if not matches.any():
         return None
