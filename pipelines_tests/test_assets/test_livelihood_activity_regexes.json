@@ -201,6 +201,10 @@
         "product_id": "eggs",
         "attribute": "quantity_sold"
     },
+    "kg sold": {
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_sold"
+    },
     "vente de légume: kg vendus": {
         "is_start": true,
         "product_id": "légume",
