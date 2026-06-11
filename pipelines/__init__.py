@@ -15,6 +15,12 @@ from .assets.fixtures import (
     imported_communities,
     uploaded_baselines,
 )
+from .assets.key_parameter import (
+    key_parameter_dataframe,
+    key_parameter_instances,
+    key_parameter_valid_instances,
+    livelihood_activity_groups,
+)
 from .assets.livelihood_activity import (
     all_livelihood_activity_labels_dataframe,
     all_livelihood_summary_labels_dataframe,
@@ -126,6 +132,10 @@ defs = Definitions(
         other_cash_income_valid_instances,
         other_cash_income_fixture,
         imported_other_cash_income_activities,
+        livelihood_activity_groups,
+        key_parameter_dataframe,
+        key_parameter_instances,
+        key_parameter_valid_instances,
         wild_foods_dataframe,
         wild_foods_label_dataframe,
         all_wild_foods_labels_dataframe,

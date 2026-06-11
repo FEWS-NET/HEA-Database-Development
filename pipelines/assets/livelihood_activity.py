@@ -124,11 +124,15 @@ def _is_section_header_label(label: str, row_values: pd.Series) -> bool:
     if not label:
         return False
 
-    # Treat NA/empty/whitespace-only values as blank; any other value means this is a data row.
+    # Rows with data in columns B onwards are not section headers.
     if row_values.dropna().astype(str).str.strip().any():
         return False
-    normalized_label = prepare_lookup(label)
-    return str(label).strip() == str(label).strip().upper() and not normalized_label.startswith(SUBTOTAL_PREFIXES)
+    # Subtotal rows are not section headers.
+    if prepare_lookup(label).startswith(SUBTOTAL_PREFIXES):
+        return False
+    # Assume a section header if the label is uppercase (ignoring trailing text in parentheses)
+    # e.g. "AGRICULTURAL LABOUR INCOME - CULTIVATION (pre-harvest)" is a section header.
+    return re.match(r"^[A-ZÀ-Ý0-9 ':/\.\>\-]+(\(.*\))?$", label) is not None
 
 
 def _get_subtotal_indicator(label: str, activity_type: str) -> str | None:
@@ -1080,7 +1084,7 @@ def get_instances_from_dataframe(
         unrecognized_labels = unrecognized_labels.sort_values(
             by="rows", key=lambda x: x.str.split(",").str.get(0).astype(int)
         )
-        message = "Unrecognized activity labels:\n\n" + unrecognized_labels.to_markdown(index=False)
+        message = f"Unrecognized {activity_type} labels:\n\n" + unrecognized_labels.to_markdown(index=False)
         if allow_unrecognized_labels:
             context.log.warning(message)
         else:
@@ -2220,6 +2224,11 @@ def get_annotated_instances_from_dataframe(
             3,
             partition_key,
         )
+        if not reported_summary_output.value["LivelihoodActivity"]:
+            raise RuntimeError(
+                "Cannot identify Summary Livelihood Activities in BSS %s worksheet '%s'"
+                % (partition_key, WORKSHEET_MAP[activity_type])
+            )
 
         # Annotate the output metadata with completeness information
         # Get the summary dataframe, filtered to the BaselineLivelihoodActivities and grouped by strategy_type
