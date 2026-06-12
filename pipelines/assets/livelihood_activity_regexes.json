@@ -116,6 +116,12 @@
         null
     ],
     [
+        "other purchases?: {product_pattern}",
+        "OtherPurchase",
+        true,
+        null
+    ],
+    [
         "sold/exchanged \\({unit_of_measure_pattern}\\)",
         null,
         false,
