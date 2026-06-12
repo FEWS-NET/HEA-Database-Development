@@ -588,7 +588,7 @@ def wealth_characteristic_fixture(
     return get_fixture_from_instances(wealth_characteristic_valid_instances)
 
 
-@asset(partitions_def=bss_instances_partitions_def)
+@asset(partitions_def=bss_instances_partitions_def, pool="django_loaddata")
 def imported_wealth_characteristics(
     context: AssetExecutionContext,
     wealth_characteristic_fixture,

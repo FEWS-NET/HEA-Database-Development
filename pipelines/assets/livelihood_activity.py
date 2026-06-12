@@ -2408,7 +2408,7 @@ def livelihood_activity_fixture(
     return get_fixture_from_instances(livelihood_activity_valid_instances)
 
 
-@asset(partitions_def=bss_instances_partitions_def)
+@asset(partitions_def=bss_instances_partitions_def, pool="django_loaddata")
 def imported_livelihood_activities(
     context: AssetExecutionContext,
     livelihood_activity_fixture,
