@@ -397,6 +397,16 @@
         "attribute": "quantity_produced",
         "unit_of_measure_id": "kg"
     },
+    "kg produite": {
+        "attribute": "quantity_produced",
+        "unit_of_measure_id": "kg"
+    },
+    "arachide: kg produite": {
+        "is_start": true,
+        "product_id": "arachide",
+        "attribute": "quantity_produced",
+        "unit_of_measure_id": "kg"
+    },
     "PRODUCTION ANIMALE:": {},
     "nb d'animaux laitiers": {
         "attribute": "milking_animals"
