@@ -664,7 +664,7 @@ class OtherCashIncomeFactory(LivelihoodActivityFactory):
     people_per_household = fuzzy.FuzzyInteger(1, 30)
     times_per_month = fuzzy.FuzzyInteger(1, 40)
     months_per_year = fuzzy.FuzzyInteger(1, 12)
-    times_per_year = factory.LazyAttribute(lambda o: o.people_per_household * o.times_per_month * o.months_per_year)
+    times_per_year = factory.LazyAttribute(lambda o: o.times_per_month * o.months_per_year)
 
 
 class OtherPurchaseFactory(LivelihoodActivityFactory):
