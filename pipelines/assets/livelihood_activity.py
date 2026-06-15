@@ -1135,6 +1135,10 @@ def get_instances_from_dataframe(
                     ) and livelihood_activity.get("percentage_kcals") == 0:
                         livelihood_activity["percentage_kcals"] = None
 
+            # Find the non-empty livelihood activities. We only want to save Livelihood Strategies and Livelihood
+            # Activities where there is at least one Livelihood Activity that has non-zero income, expenditure,
+            # or consumption. We deliberately ignore Livelihood Activities that contain only zero values because
+            # otherwise we end up with duplicate Livelihood Strategies and Activities from unused rows in the BSS.
             # Also ignore any livelihood activities that don't have a Wealth Category component to the Wealth Group
             # natural key. These are from blank columns between Wealth Category groups in the BSS, which sometimes
             # contain data where values or formulae have been copied across all the columns in a row.
@@ -1143,7 +1147,7 @@ def get_instances_from_dataframe(
                 for livelihood_activity in livelihood_activities_for_strategy
                 if livelihood_activity["wealth_group"][2]  # Make sure there is a Wealth Category
                 and any(
-                    (field in livelihood_activity and (livelihood_activity[field] or livelihood_activity[field] == 0))
+                    (field in livelihood_activity and livelihood_activity[field])
                     for field in [
                         "quantity_produced",  # MilkProduction may have quantity_produced but not any of the others.
                         "income",
@@ -1507,15 +1511,20 @@ def get_instances_from_dataframe(
                 strategy_is_valid = True
 
                 # Find the non-empty summary activities, so we can use them to decide whether to raise errors.
-                # Note that we save non-empty livelihood activities that include 0 values for income, expenditure,
-                # or kcals_consumed, but we don't count summary activities that have 0 values for these fields.
+                # Note that we don't count activities that have 0 values for income, expenditure, etc.
                 non_empty_summary_activities = [
                     livelihood_activity
                     for livelihood_activity in livelihood_activities_for_strategy
                     if livelihood_activity["wealth_group"][3] == ""
                     and any(
                         (field in livelihood_activity and livelihood_activity[field])
-                        for field in ["income", "expenditure", "kcals_consumed", "percentage_kcals"]
+                        for field in [
+                            "quantity_produced",  # MilkProduction may have quantity_produced but not any of the others.
+                            "income",
+                            "expenditure",
+                            "kcals_consumed",
+                            "percentage_kcals",
+                        ]
                     )
                 ]
 

@@ -220,7 +220,7 @@ def corrected_files(context: AssetExecutionContext, config: BSSMetadataConfig) -
                 previous_value = ""
             if expected_previous_value in ["None", "nan", "#N/A", "N/A"]:
                 expected_previous_value = ""
-        else:
+        elif isinstance(expected_previous_value, numbers.Number):
             # Provide similar precisions between the Google sheet and original Excel
             expected_previous_value = round(expected_previous_value, 6)
             previous_value = round(previous_value, 6)
