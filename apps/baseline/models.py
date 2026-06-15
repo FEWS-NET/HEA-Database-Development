@@ -2555,13 +2555,15 @@ class PaymentInKind(LivelihoodActivity):
     # This is a float field because data may be captured as "once per week",
     # which equates to "52 per year", which is "4.33 per month".
     times_per_month = models.FloatField(blank=True, null=True, verbose_name=_("Labor per month"))
-    months_per_year = models.PositiveSmallIntegerField(
+    months_per_year = models.FloatField(
         blank=True,
         null=True,
         verbose_name=_("Months per year"),
         help_text=_("Number of months in a year that the labor is performed"),
     )
-    times_per_year = models.PositiveSmallIntegerField(
+    # This is a float field because times_per_month may be fractional (e.g. 4.3/month * 12 months = 51.6/year).
+    # `times_per_year` must be `times_per_month * months_per_year` if those fields are not null.
+    times_per_year = models.FloatField(
         blank=True,
         null=True,
         verbose_name=_("Times per year"),
@@ -2640,13 +2642,15 @@ class ReliefGiftOther(LivelihoodActivity):
     times_per_month = models.FloatField(
         blank=True, null=True, verbose_name=_("Number of times per month the item is received")
     )
-    months_per_year = models.PositiveSmallIntegerField(
+    months_per_year = models.FloatField(
         blank=True,
         null=True,
         verbose_name=_("Months per year"),
         help_text=_("Number of months in a year that the item is received"),
     )
-    times_per_year = models.PositiveSmallIntegerField(
+    # This is a float field because times_per_month may be fractional (e.g. 4.3/month * 12 months = 51.6/year).
+    # `times_per_year` must be `times_per_month * months_per_year` if those fields are not null.
+    times_per_year = models.FloatField(
         blank=True,
         null=True,
         verbose_name=_("Times per year"),
@@ -2731,10 +2735,10 @@ class OtherCashIncome(LivelihoodActivity):
     typically starting around Row 580.
     """
 
-    # Production calculation/validation is `people_per_household * times_per_month * months_per_year`
-    # However, some other income (e.g. Remittances) just has a number of times per year and is not calculated from
-    # people_per_household, etc. Therefore those fields must be nullable, and we must store the total number of times
-    # per year as a separate field
+    # Income calculation/validation: `income = payment_per_time * people_per_household * times_per_year`
+    # where `times_per_year = times_per_month * months_per_year`.
+    # Some income types (e.g. Remittances) record only a times_per_year without people_per_household,
+    # so all of these fields must be nullable.
     payment_per_time = models.FloatField(
         blank=True,
         null=True,  # Not required if people_per_household or times_per_month is null
@@ -2752,13 +2756,14 @@ class OtherCashIncome(LivelihoodActivity):
     # This is a float field because data may be captured as "once per week",
     # which equates to "52 per year", which is "4.33 per month".
     times_per_month = models.FloatField(blank=True, null=True, verbose_name=_("Labor per month"))
-    months_per_year = models.PositiveSmallIntegerField(
+    months_per_year = models.FloatField(
         blank=True,
         null=True,
         verbose_name=_("Months per year"),
         help_text=_("Number of months in a year that the labor is performed"),
     )
     # This is a float field because times_per_month may be fractional (e.g. 4.3/month * 12 months = 51.6/year).
+    # `times_per_year` must be `times_per_month * months_per_year` if those fields are not null.
     times_per_year = models.FloatField(
         blank=True,
         null=True,
@@ -2775,33 +2780,38 @@ class OtherCashIncome(LivelihoodActivity):
         super().clean()
 
     def validate_income(self):
-        if (
-            self.people_per_household is not None
-            and self.times_per_month is not None
-            and self.months_per_year is not None
-        ):
-            expected_times_per_year = self.people_per_household * self.times_per_month * self.months_per_year
+        if self.times_per_month is not None and self.months_per_year is not None:
+            expected_times_per_year = self.times_per_month * self.months_per_year
             if self.times_per_year is not None and not math.isclose(self.times_per_year, expected_times_per_year):
                 raise ValidationError(
                     _(
-                        "Times per year must be people per household * times per month * months per year. Expected: %(expected)s, Found: %(found)s"  # NOQA: E501
+                        "Times per year must be times per month * months per year. Expected: %(expected)s, Found: %(found)s"  # NOQA: E501
                     )
                     % {"expected": expected_times_per_year, "found": self.times_per_year}
                 )
-        if self.income is not None and self.payment_per_time is not None and self.times_per_year is not None:
-            if not math.isclose(self.income, self.payment_per_time * self.times_per_year):
-                raise ValidationError(_("Income for 'Other Cash Income' must be payment per time * times per year"))
+        if (
+            self.income is not None
+            and self.payment_per_time is not None
+            and self.people_per_household is not None
+            and self.times_per_year is not None
+        ):
+            if not math.isclose(self.income, self.payment_per_time * self.people_per_household * self.times_per_year):
+                raise ValidationError(
+                    _(
+                        "Income for 'Other Cash Income' must be payment per time * people per household * times per year"  # NOQA: E501
+                    )
+                )
 
     def calculate_fields(self):
+        if self.times_per_year is None and self.times_per_month is not None and self.months_per_year is not None:
+            self.times_per_year = self.times_per_month * self.months_per_year
         if (
-            self.times_per_year is None
+            self.income is None
+            and self.payment_per_time is not None
             and self.people_per_household is not None
-            and self.times_per_month is not None
-            and self.months_per_year is not None
+            and self.times_per_year is not None
         ):
-            self.times_per_year = self.people_per_household * self.times_per_month * self.months_per_year
-        if self.income is None and self.payment_per_time is not None and self.times_per_year is not None:
-            self.income = self.payment_per_time * self.times_per_year
+            self.income = self.payment_per_time * self.people_per_household * self.times_per_year
         super().calculate_fields()
 
     class Meta:
