@@ -230,13 +230,7 @@
         "times_per_year"
     ],
     [
-        "(?P<unit_of_measure_id>kg|l) produits?",
-        null,
-        false,
-        "quantity_produced"
-    ],
-    [
-        "(?P<unit_of_measure_id>kg|l) produced",
+        "(?P<unit_of_measure_id>kg|l) (?:produit(?:es?|s)?|produced)",
         null,
         false,
         "quantity_produced"
@@ -758,31 +752,31 @@
         "carcass_weight"
     ],
     [
-        "autre (?:culture de rente|culture|cereale|céréale/légumineuse|céréale? principal|légumineuse)?{separator_pattern} \\(?{product_pattern}\\)?{separator_pattern} {unit_of_measure_pattern} produits?",
+        "autre (?:culture de rente|culture|cereale|céréale/légumineuse|céréale? principal|légumineuse)?{separator_pattern} \\(?{product_pattern}\\)?{separator_pattern} {unit_of_measure_pattern} produit(?:es?|s)?",
         null,
         true,
         "quantity_produced"
     ],
     [
-        "autre (?:culture de rente|culture|cereale|céréale/légumineuse|céréale? principal|légumineuse)?{separator_pattern} {unit_of_measure_pattern} produits?{separator_pattern} ?\\(?{product_pattern}\\)?",
+        "autre (?:culture de rente|culture|cereale|céréale/légumineuse|céréale? principal|légumineuse)?{separator_pattern} {unit_of_measure_pattern} produit(?:es?|s)?{separator_pattern} ?\\(?{product_pattern}\\)?",
         null,
         true,
         "quantity_produced"
     ],
     [
-        "{product_pattern}{separator_pattern} {additional_identifier_pattern}{separator_pattern} {unit_of_measure_pattern} produits?",
+        "{product_pattern}{separator_pattern} {additional_identifier_pattern}{separator_pattern} {unit_of_measure_pattern} produit(?:es?|s)?",
         null,
         true,
         "quantity_produced"
     ],
     [
-        "{product_pattern}{separator_pattern} {season_pattern}{separator_pattern} {unit_of_measure_pattern} produits?",
+        "{product_pattern}{separator_pattern} {season_pattern}{separator_pattern} {unit_of_measure_pattern} produit(?:es?|s)?",
         null,
         true,
         "quantity_produced"
     ],
     [
-        "{product_pattern}{separator_pattern} {unit_of_measure_pattern} produits?",
+        "{product_pattern}{separator_pattern} {unit_of_measure_pattern} produit(?:es?|s)?",
         null,
         true,
         "quantity_produced"
