@@ -133,10 +133,7 @@ def validate_instances(
                     valid_instances[model_name][tuple(instance["natural_key"])]
                 )
                 changes = diff(instance_reference, existing_reference, marshal=True)
-                try:
-                    ref = json.dumps({**instance_reference, "changes": changes}, indent=4, ensure_ascii=False)
-                except Exception as e:
-                    raise e
+                ref = json.dumps({**instance_reference, "changes": changes}, indent=4, ensure_ascii=False)
                 if changes:
                     error = f"{model_name} {i} duplicates existing record with different values:\n{ref}"
                 else:
