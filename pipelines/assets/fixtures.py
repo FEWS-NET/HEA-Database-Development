@@ -137,7 +137,7 @@ def validate_instances(
                 if changes:
                     error = f"{model_name} {i} duplicates existing record with different values:\n{ref}"
                 else:
-                    error = f"{model_name} {i} duplicates existing record with same values:\n{ref}. "
+                    error = f"{model_name} {i} duplicates existing record with same values:\n{ref}"
                 model_errors.append(error)
 
             # Apply field-level checks
