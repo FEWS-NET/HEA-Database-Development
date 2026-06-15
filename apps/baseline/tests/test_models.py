@@ -450,35 +450,36 @@ class OtherCashIncomeTestCase(TestCase):
             times_per_year=None,
             income=None,
         )
-        # Correct: times_per_year = 2 * 5 * 12 = 120; income = 100 * 120 = 12000
+        # Correct: times_per_year = 5 * 12 = 60; income = 100 * 2 * 60 = 12000
         cls.othercashincome2 = OtherCashIncome(
             payment_per_time=100,
             people_per_household=2,
             times_per_month=5,
             months_per_year=12,
-            times_per_year=120,
+            times_per_year=60,
             income=12000,
         )
-        # Incorrect income: 100 * 120 = 12000, not 10000
+        # Incorrect income: 100 * 2 * 60 = 12000, not 10000
         cls.othercashincome3 = OtherCashIncome(
             payment_per_time=100,
             people_per_household=2,
             times_per_month=5,
             months_per_year=12,
-            times_per_year=120,
+            times_per_year=60,
             income=10000,
         )
-        # Correct via times_per_year only (no people_per_household/times_per_month)
+        # Correct via times_per_year only (no people_per_household — income cannot be validated)
         cls.othercashincome4 = OtherCashIncome(
             payment_per_time=100,
             times_per_year=24,
-            income=2400,  # 100 * 24 = 2400
+            income=2400,
         )
-        # Incorrect income via times_per_year only
+        # Incorrect income with all fields present: 100 * 2 * 24 = 4800, not 2000
         cls.othercashincome5 = OtherCashIncome(
             payment_per_time=100,
+            people_per_household=2,
             times_per_year=24,
-            income=2000,  # Incorrect: should be 2400
+            income=2000,
         )
 
     def test_validate_income(self):
@@ -486,6 +487,7 @@ class OtherCashIncomeTestCase(TestCase):
         self.othercashincome1.validate_income()
         # Correct data should not raise ValidationError
         self.othercashincome2.validate_income()
+        # No people_per_household: income cannot be validated, so no error even with mismatched income
         self.othercashincome4.validate_income()
         # Incorrect income should raise ValidationError
         with self.assertRaises(ValidationError):
