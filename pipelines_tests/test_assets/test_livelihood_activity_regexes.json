@@ -903,6 +903,41 @@
         "unit_of_measure_id": "kg",
         "attribute": "unit_multiple"
     },
+    "other purchase: date": {
+        "strategy_type": "OtherPurchase",
+        "is_start": true,
+        "product_id": "date"
+    },
+    "other purchase: fish": {
+        "strategy_type": "OtherPurchase",
+        "is_start": true,
+        "product_id": "fish"
+    },
+    "other purchase: bananas": {
+        "strategy_type": "OtherPurchase",
+        "is_start": true,
+        "product_id": "bananas"
+    },
+    "other purchase: dried fish": {
+        "strategy_type": "OtherPurchase",
+        "is_start": true,
+        "product_id": "dried fish"
+    },
+    "other purchase: fresh fish": {
+        "strategy_type": "OtherPurchase",
+        "is_start": true,
+        "product_id": "fresh fish"
+    },
+    "other purchase: irish potatoes": {
+        "strategy_type": "OtherPurchase",
+        "is_start": true,
+        "product_id": "irish potatoes"
+    },
+    "other purchases: maize": {
+        "strategy_type": "OtherPurchase",
+        "is_start": true,
+        "product_id": "maize"
+    },
     "AUTRE ACHAT": {
         "strategy_type": "OtherPurchase",
         "is_start": true
