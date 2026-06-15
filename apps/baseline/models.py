@@ -1904,7 +1904,9 @@ class LivelihoodActivity(common_models.Model):
         )
 
         # Check if the actual quantity_consumed matches the expected quantity_consumed
-        if self.quantity_consumed and not math.isclose(self.quantity_consumed, expected_quantity_consumed):
+        if self.quantity_consumed and not math.isclose(
+            self.quantity_consumed, expected_quantity_consumed, abs_tol=0.1
+        ):
             if quantity_butter_production:
                 message = "Quantity consumed for Milk Production must be quantity produced + quantity purchased - quantity sold - quantity used for butter production - quantity used for other things"  # NOQA: E501
             else:
@@ -1913,7 +1915,7 @@ class LivelihoodActivity(common_models.Model):
 
     def validate_income(self):
         if self.income and self.quantity_sold is not None and self.price is not None:
-            if not math.isclose(self.income, self.quantity_sold * self.price):
+            if not math.isclose(self.income, self.quantity_sold * self.price, abs_tol=0.1):
                 raise ValidationError(_("Income for a Livelihood Activity must be quantity sold multiplied by price"))
 
     def validate_expenditure(self):
@@ -1932,7 +1934,7 @@ class LivelihoodActivity(common_models.Model):
         price = self.price or 0
         expenditure = self.expenditure or 0
 
-        if self.expenditure and not math.isclose(expenditure, quantity_produced_or_purchased * price):
+        if self.expenditure and not math.isclose(expenditure, quantity_produced_or_purchased * price, abs_tol=0.1):
             raise ValidationError(
                 _(
                     "Expenditure for a Livelihood Activity must be quantity produced or quantity purchased multiplied by price"
@@ -1960,6 +1962,7 @@ class LivelihoodActivity(common_models.Model):
             if not math.isclose(
                 self.kcals_consumed,
                 self.quantity_consumed * conversion_factor * self.livelihood_strategy.product.kcals_per_unit,
+                abs_tol=0.1,
             ):
                 raise ValidationError(
                     _(
@@ -2384,7 +2387,7 @@ class MeatProduction(LivelihoodActivity):
 
     def validate_quantity_produced(self):
         if self.quantity_produced is not None and self.animals_slaughtered and self.carcass_weight is not None:
-            if not math.isclose(self.quantity_produced, self.animals_slaughtered * self.carcass_weight):
+            if not math.isclose(self.quantity_produced, self.animals_slaughtered * self.carcass_weight, abs_tol=0.1):
                 raise ValidationError(
                     _(
                         "Quantity Produced for a Meat Production must be animals slaughtered multiplied by carcass weight"
@@ -2484,7 +2487,9 @@ class FoodPurchase(LivelihoodActivity):
     def validate_quantity_purchased(self):
         if self.times_per_month is not None and self.months_per_year is not None:
             expected_times_per_year = self.times_per_month * self.months_per_year
-            if self.times_per_year is not None and not math.isclose(self.times_per_year, expected_times_per_year):
+            if self.times_per_year is not None and not math.isclose(
+                self.times_per_year, expected_times_per_year, abs_tol=0.1
+            ):
                 raise ValidationError(
                     _(
                         "Times per year must be times per month * months per year. Expected: %(expected)s, Found: %(found)s"  # NOQA: E501
@@ -2492,7 +2497,7 @@ class FoodPurchase(LivelihoodActivity):
                     % {"expected": expected_times_per_year, "found": self.times_per_year}
                 )
         if self.quantity_purchased is not None and self.unit_multiple is not None and self.times_per_year is not None:
-            if not math.isclose(self.quantity_purchased, self.unit_multiple * self.times_per_year):
+            if not math.isclose(self.quantity_purchased, self.unit_multiple * self.times_per_year, abs_tol=0.1):
                 raise ValidationError(
                     _("Quantity purchased for a Food Purchase must be purchase amount * purchases per year")
                 )
@@ -2502,7 +2507,7 @@ class FoodPurchase(LivelihoodActivity):
         price = self.price or 0
         expenditure = self.expenditure or 0
 
-        if self.expenditure and not math.isclose(expenditure, quantity_purchased * price):
+        if self.expenditure and not math.isclose(expenditure, quantity_purchased * price, abs_tol=0.1):
             raise ValidationError(_("Expenditure for a Food Purchase must be quantity purchased multiplied by price"))
 
     class Meta:
@@ -2593,7 +2598,9 @@ class PaymentInKind(LivelihoodActivity):
     def validate_quantity_produced(self):
         if self.times_per_month is not None and self.months_per_year is not None:
             expected_times_per_year = self.times_per_month * self.months_per_year
-            if self.times_per_year is not None and not math.isclose(self.times_per_year, expected_times_per_year):
+            if self.times_per_year is not None and not math.isclose(
+                self.times_per_year, expected_times_per_year, abs_tol=0.1
+            ):
                 raise ValidationError(
                     _(
                         "Times per year must be times per month * months per year. Expected: %(expected)s, Found: %(found)s"  # NOQA: E501
@@ -2609,6 +2616,7 @@ class PaymentInKind(LivelihoodActivity):
             if not math.isclose(
                 self.quantity_produced,
                 self.payment_per_time * self.people_per_household * self.times_per_year,
+                abs_tol=0.1,
             ):
                 raise ValidationError(
                     _(
@@ -2667,7 +2675,9 @@ class ReliefGiftOther(LivelihoodActivity):
     def validate_quantity_produced(self):
         if self.times_per_month is not None and self.months_per_year is not None:
             expected_times_per_year = self.times_per_month * self.months_per_year
-            if self.times_per_year is not None and not math.isclose(self.times_per_year, expected_times_per_year):
+            if self.times_per_year is not None and not math.isclose(
+                self.times_per_year, expected_times_per_year, abs_tol=0.1
+            ):
                 raise ValidationError(
                     _(
                         "Times per year must be times per month * months per year. Expected: %(expected)s, Found: %(found)s"  # NOQA: E501
@@ -2675,7 +2685,7 @@ class ReliefGiftOther(LivelihoodActivity):
                     % {"expected": expected_times_per_year, "found": self.times_per_year}
                 )
         if self.quantity_produced is not None and self.unit_multiple is not None and self.times_per_year is not None:
-            if not math.isclose(self.quantity_produced, self.unit_multiple * self.times_per_year):
+            if not math.isclose(self.quantity_produced, self.unit_multiple * self.times_per_year, abs_tol=0.1):
                 raise ValidationError(
                     _("Quantity produced for Relief, Gifts, Other must be amount received * times per year")
                 )
@@ -2782,7 +2792,9 @@ class OtherCashIncome(LivelihoodActivity):
     def validate_income(self):
         if self.times_per_month is not None and self.months_per_year is not None:
             expected_times_per_year = self.times_per_month * self.months_per_year
-            if self.times_per_year is not None and not math.isclose(self.times_per_year, expected_times_per_year):
+            if self.times_per_year is not None and not math.isclose(
+                self.times_per_year, expected_times_per_year, abs_tol=0.1
+            ):
                 raise ValidationError(
                     _(
                         "Times per year must be times per month * months per year. Expected: %(expected)s, Found: %(found)s"  # NOQA: E501
@@ -2795,7 +2807,9 @@ class OtherCashIncome(LivelihoodActivity):
             and self.people_per_household is not None
             and self.times_per_year is not None
         ):
-            if not math.isclose(self.income, self.payment_per_time * self.people_per_household * self.times_per_year):
+            if not math.isclose(
+                self.income, self.payment_per_time * self.people_per_household * self.times_per_year, abs_tol=0.1
+            ):
                 raise ValidationError(
                     _(
                         "Income for 'Other Cash Income' must be payment per time * people per household * times per year"  # NOQA: E501
@@ -2871,7 +2885,9 @@ class OtherPurchase(LivelihoodActivity):
         errors = []
         if self.times_per_month is not None and self.months_per_year is not None:
             expected_times_per_year = self.times_per_month * self.months_per_year
-            if self.times_per_year is not None and not math.isclose(self.times_per_year, expected_times_per_year):
+            if self.times_per_year is not None and not math.isclose(
+                self.times_per_year, expected_times_per_year, abs_tol=0.1
+            ):
                 errors.append(
                     _(
                         "Times per year must be times per month * months per year. Expected: %(expected)s, Found: %(found)s"
@@ -2883,7 +2899,7 @@ class OtherPurchase(LivelihoodActivity):
                 )
         if self.price is not None and self.unit_multiple is not None and self.times_per_year is not None:
             expected_expenditure = self.price * self.unit_multiple * self.times_per_year
-            if self.expenditure is not None and not math.isclose(self.expenditure, expected_expenditure):
+            if self.expenditure is not None and not math.isclose(self.expenditure, expected_expenditure, abs_tol=0.1):
                 errors.append(
                     _(
                         "Expenditure for Other Purchases must be price * unit multiple * purchases per year. Expected: %(expected)s, Found: %(found)s"
