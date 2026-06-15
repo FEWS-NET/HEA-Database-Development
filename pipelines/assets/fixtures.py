@@ -12,6 +12,7 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files import File
 from django.core.management import call_command
 from django.db import models
+from jsondiff import diff
 
 from ..configs import BSSMetadataConfig
 from ..partitions import bss_files_partitions_def, bss_instances_partitions_def
@@ -26,6 +27,24 @@ django.setup()
 from baseline.models import LivelihoodActivity, LivelihoodZoneBaseline  # NOQA: E402
 from common.management.commands import verbose_load_data  # NOQA: E402
 from common.models import ClassifiedProduct  # NOQA: E402
+
+
+def _get_instance_reference(instance: dict) -> dict[str, object]:
+    cell_reference = ""
+    if "bss_sheet" in instance:
+        cell_reference += f"'{instance['bss_sheet']}'!"
+    if "bss_column" in instance and "bss_row" in instance:
+        cell_reference += f"{instance['bss_column']}{instance['bss_row']}"
+    elif "bss_column" in instance:
+        cell_reference += f"{instance['bss_column']}:{instance['bss_column']}"
+    elif "bss_row" in instance:
+        cell_reference += f"{instance['bss_row']}:{instance['bss_row']}"
+
+    return {
+        "cell_reference": cell_reference,
+        "natural_key": instance.get("natural_key", []),
+        "instance": instance,
+    }
 
 
 def validate_instances(
@@ -45,16 +64,12 @@ def validate_instances(
         for instance in instances["LivelihoodActivity"]:
             subclass_instance = instance.copy()
             # The subclass instances also need a pointer to the base class instance
-            subclass_instance["livelihoodactivity_ptr"] = (
-                instance["wealth_group"][:3]  # livelihood_zone, reference_year_end_date, wealth_group_category
-                + instance["livelihood_strategy"][2:]  # strategy_type, season, product_id, additional_identifier
-                + [instance["wealth_group"][3]]  # full_name
-            )
+            subclass_instance["livelihoodactivity_ptr"] = instance["natural_key"]
             subclass_livelihood_activities[instance["strategy_type"]].append(subclass_instance)
 
         instances = {**instances, **subclass_livelihood_activities}
 
-    valid_instances = {model_name: [] for model_name in instances}
+    valid_instances = {model_name: {} for model_name in instances}
     valid_keys = {model_name: {} for model_name in instances}
     # Track which models have completed their validation loop so we can distinguish
     # "not validated yet" from "validated but all instances were invalid" (empty valid_keys).
@@ -101,16 +116,32 @@ def validate_instances(
                     )
 
             # Create a string reference to the record for error messages
-            record_reference = f"{model_name} {i} from "
-            if "bss_sheet" in instance:
-                record_reference += f"'{instance['bss_sheet']}'!"
-            if "bss_column" in instance and "bss_row" in instance:
-                record_reference += f"{instance['bss_column']}{instance['bss_row']}: "
-            elif "bss_column" in instance:
-                record_reference += f"{instance['bss_column']}:{instance['bss_column']}: "
-            elif "bss_row" in instance:
-                record_reference += f"{instance['bss_row']}:{instance['bss_row']}: "
-            record_reference += f"{str({k: v for k,v in instance.items()})}"
+            instance_reference = _get_instance_reference(instance)
+            record_reference = (
+                f"{model_name} {i} from {instance_reference['cell_reference']} "
+                f"with natural key {instance_reference['natural_key']}\n"
+                f"{json.dumps(instance, indent=4, ensure_ascii=False)}"
+            )
+
+            # Check for duplicate instances.
+            # The instance is derived from a specific set of cells in the BSS, and includes the row and column
+            # references for troubleshooting. We expect the instances to be unique within each worksheet, so
+            # instances with the same natural key from different rows in the BSS are errors, and so are duplicate
+            # instances from the same rows (for example because of a duplicate Community name in the header).
+            if tuple(instance["natural_key"]) in valid_instances[model_name]:
+                existing_reference = _get_instance_reference(
+                    valid_instances[model_name][tuple(instance["natural_key"])]
+                )
+                changes = diff(instance_reference, existing_reference, marshal=True)
+                try:
+                    ref = json.dumps({**instance_reference, "changes": changes}, indent=4, ensure_ascii=False)
+                except Exception as e:
+                    raise e
+                if changes:
+                    error = f"{model_name} {i} duplicates existing record with different values:\n{ref}"
+                else:
+                    error = f"{model_name} {i} duplicates existing record with same values:\n{ref}. "
+                model_errors.append(error)
 
             # Apply field-level checks
             for field in model._meta.concrete_fields:
@@ -244,11 +275,13 @@ def validate_instances(
                 errors += model_errors
             else:
                 # Instance is valid, so add it to the list of valid instances
-                valid_instances[model_name].append(instance)
+                valid_instances[model_name][tuple(instance["natural_key"])] = instance
+                # Store the model instance so that we can use it to populate foreign key fields in child models.
                 valid_keys[model_name][tuple(instance["natural_key"])] = model_instance
 
         validated_models.add(model_name)
 
+    valid_instances = {model_name: list(instances.values()) for model_name, instances in valid_instances.items()}
     metadata = {}
     for model_name in instances.keys():
         metadata[f"valid_{model_name}"] = f"{len(valid_instances[model_name])}/{len(instances[model_name])}"
@@ -379,27 +412,51 @@ def consolidated_fixture(
     """
     Consolidated Django fixture for a BSS, including Livelihood Activities and Wealth Group Characteristic Values.
     """
+    # Keep track of duplicate records across the different fixtures.
+    seen_instances = defaultdict(dict)
+
+    def process_instances(model_name: str, instances: list[dict], allow_unchanged_duplicates: bool = False):
+        errors = []
+        for i, instance in enumerate(instances):
+            if tuple(instance["natural_key"]) in seen_instances[model_name]:
+                instance_reference = _get_instance_reference(instance)
+                existing_reference = _get_instance_reference(
+                    seen_instances[model_name][tuple(instance["natural_key"])]
+                )
+                changes = diff(instance_reference, existing_reference, marshal=True)
+                ref = json.dumps({**instance_reference, "changes": changes}, indent=4, ensure_ascii=False)
+                if changes:
+                    # Duplicate natural keys with different values are always an error.
+                    error = f"{model_name} {i} duplicates existing record with different values:\n{ref}"
+                    errors.append(error)
+                elif not allow_unchanged_duplicates:
+                    # Duplicate natural keys with the same values are normally an error, but not for Livelihood
+                    # Strategies when they are parents to model instances other than Livelihood Activities.
+                    error = f"{model_name} {i} duplicates existing record with same values:\n{ref}"
+                    errors.append(error)
+            else:
+                seen_instances[model_name][tuple(instance["natural_key"])] = instance
+        if errors:
+            raise RuntimeError("\n".join(errors))
+
     # Combine the Wealth Charactertistic fixture with the records from the
     # Livelihood Activities fixtures, ignoring the duplicate Wealth Group
     # records.
-    consolidated_instances = {
-        # Put the wealth_characteristic_fixture first, because it loads the
-        # WealthGroup instances, which are needed as a foreign key from LivelihoodActivity, etc.
-        **wealth_characteristic_valid_instances,
-        **{
-            model_name: instances
-            for model_name, instances in livelihood_activity_valid_instances.items()
-            if model_name != "WealthGroup"
-        },
-    }
-
-    # Add the wild foods and other cash income instances, if they are present
-    for model_name, instances in {**other_cash_income_valid_instances, **wild_foods_valid_instances}.items():
+    for model_name, instances in wealth_characteristic_valid_instances.items():
+        process_instances(model_name, instances)
+    for model_name, instances in livelihood_activity_valid_instances.items():
         if instances and model_name != "WealthGroup":
-            if model_name not in consolidated_instances:
-                consolidated_instances[model_name] = []
-            consolidated_instances[model_name] += instances
+            process_instances(model_name, instances)
 
+    # Add the other cash income, wild foods and key parameter instances, if they are present
+    for model_name, instances in other_cash_income_valid_instances.items():
+        if instances and model_name != "WealthGroup":
+            process_instances(model_name, instances, allow_unchanged_duplicates=False)
+    for model_name, instances in wild_foods_valid_instances.items():
+        if instances and model_name != "WealthGroup":
+            process_instances(model_name, instances, allow_unchanged_duplicates=False)
+
+    consolidated_instances = {model_name: list(instances.values()) for model_name, instances in seen_instances.items()}
     return get_fixture_from_instances(consolidated_instances)
 
 
@@ -434,7 +491,7 @@ def uploaded_baselines(
     )
 
 
-@asset(partitions_def=bss_instances_partitions_def)
+@asset(partitions_def=bss_instances_partitions_def, pool="django_loaddata")
 def imported_communities(
     context: AssetExecutionContext,
     community_instances,
@@ -446,7 +503,7 @@ def imported_communities(
     return import_fixture(output.value)
 
 
-@asset(partitions_def=bss_instances_partitions_def)
+@asset(partitions_def=bss_instances_partitions_def, pool="django_loaddata")
 def imported_baseline(
     context: AssetExecutionContext,
     consolidated_fixture,
