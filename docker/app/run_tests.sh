@@ -57,6 +57,13 @@ fi
 #    Affected spec: <3.12.1
 #    ADVISORY: Affected versions of the gdal package are vulnerable to
 #    path traversal due to insufficient path sanitization in multiple drivers.
+#  Vulnerability ID: SFTY-20260510-89962
+#    Affected spec: <3.13.0RC1
+#    ADVISORY: A flaw has been found in OSGeo gdal up to 3.13.0dev-4.
+#    Affected by this vulnerability is the function SWSDfldsrch of the file
+#   frmts/hdf4/hdf-eos/SWapi.c. Executing a manipulation can lead to heap-
+#   based buffer overflow. The attack requires local access. The exploit has
+#   been published and may be used.
 
 # Ignore vulnerability found in jinja2 version 3.1.4
 # We do not allow any untrusted templates, and so are not affected.
@@ -87,7 +94,7 @@ fi
 #  Will ignore this and update once we got a fix
 
 echo Package Vulnerabilities:
-pip freeze | safety check --stdin --full-report -i 62283 -i 70612 -i 74054 -i 82915 -i 83150
+pip freeze | safety check --stdin --full-report -i 62283 -i 70612 -i 74054 -i 82915 -i 83150 -i SFTY-20260510-89962
 SAFETY_RESULT=$?
 
 # Suppress SAFETY_RESULT unless CHECK_SAFETY is set
