@@ -9,7 +9,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("baseline", "0039_othercashincome_times_per_year_float"),
+        ("baseline", "0040_float_fields_months_per_year_times_per_year"),
     ]
 
     operations = [
