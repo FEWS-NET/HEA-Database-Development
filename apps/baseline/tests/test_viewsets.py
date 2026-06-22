@@ -1419,6 +1419,17 @@ class BaselineWealthGroupViewSetTestCase(APITestCase):
             f"BaselineWealthGroup: Fields expected: {expected_fields}. Fields found: {response.json().keys()}.",
         )
 
+    def test_wealth_group_population_estimate(self):
+        response = self.client.get(self.url_get(0))
+        self.assertEqual(response.status_code, 200)
+        record = self.data[0]
+        data = response.json()
+        self.assertEqual(data["population_source"], record.livelihood_zone_baseline.population_source)
+        expected_population = round(
+            record.percentage_of_households * record.livelihood_zone_baseline.population_estimate
+        )
+        self.assertEqual(data["population"], expected_population)
+
     def test_patch_requires_authentication(self):
         logging.disable(logging.CRITICAL)
         response = self.client.patch(self.url_get(0), {"created": self.data[1].created})

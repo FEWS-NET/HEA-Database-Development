@@ -342,7 +342,11 @@ class WealthGroupSerializer(serializers.ModelSerializer):
 class BaselineWealthGroupSerializer(WealthGroupSerializer):
     class Meta:
         model = BaselineWealthGroup
-        fields = [f for f in WealthGroupSerializer.Meta.fields if f not in {"community", "community_name"}] + [
+        fields = [
+            f
+            for f in WealthGroupSerializer.Meta.fields
+            if f not in {"community", "community_name", "community_full_name"}
+        ] + [
             "population_source",
             "population",
         ]
