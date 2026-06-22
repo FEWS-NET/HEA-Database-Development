@@ -543,6 +543,7 @@ class BaselineWealthGroupViewSet(BaseModelViewSet):
     queryset = BaselineWealthGroup.objects.select_related(
         "livelihood_zone_baseline__livelihood_zone__country",
         "livelihood_zone_baseline__source_organization",
+        "wealth_group_category",
     )
     serializer_class = BaselineWealthGroupSerializer
     filterset_class = BaselineWealthGroupFilterSet

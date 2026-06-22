@@ -1410,6 +1410,8 @@ class BaselineWealthGroupViewSetTestCase(APITestCase):
             "survival_threshold_as_cash",
             "livelihoods_protection_threshold_as_percentage_kcals",
             "livelihoods_protection_threshold_as_cash",
+            "population_source",
+            "population",
         )
         self.assertCountEqual(
             response.json().keys(),

@@ -342,7 +342,10 @@ class WealthGroupSerializer(serializers.ModelSerializer):
 class BaselineWealthGroupSerializer(WealthGroupSerializer):
     class Meta:
         model = BaselineWealthGroup
-        fields = [f for f in WealthGroupSerializer.Meta.fields if f not in {"community", "community_name"}]
+        fields = [f for f in WealthGroupSerializer.Meta.fields if f not in {"community", "community_name"}] + [
+            "population_source",
+            "population",
+        ]
 
     livelihood_zone_baseline_label = serializers.SerializerMethodField()
 
@@ -365,6 +368,15 @@ class BaselineWealthGroupSerializer(WealthGroupSerializer):
     source_organization_name = serializers.CharField(
         source="livelihood_zone_baseline.source_organization.name", read_only=True
     )
+    population_source = serializers.CharField(source="livelihood_zone_baseline.population_source", read_only=True)
+    population = serializers.SerializerMethodField()
+
+    def get_population(self, obj):
+        pct = obj.percentage_of_households
+        total = obj.livelihood_zone_baseline.population_estimate
+        if pct is None or total is None:
+            return None
+        return round(pct * total)
 
 
 class CommunityWealthGroupSerializer(WealthGroupSerializer):
