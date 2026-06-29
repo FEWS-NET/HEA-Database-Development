@@ -1627,6 +1627,20 @@ class KeyParameter(common_models.Model):
 
     objects = KeyParameterManager()
 
+    def clean(self):
+        # Key Parameters must be for a Strategy with a Product
+        if not self.livelihood_strategy.product:
+            raise ValidationError({"livelihood_strategy": _("Key Parameters must be for a Strategy with a Product")})
+        super().clean()
+
+    def save(self, *args, **kwargs):
+        # No need to enforce foreign keys or uniqueness because database constraints will do it anyway
+        self.full_clean(
+            exclude=[field.name for field in self._meta.fields if isinstance(field, models.ForeignKey)],
+            validate_unique=False,
+        )
+        super().save(*args, **kwargs)
+
     def natural_key(self):
         return self.livelihood_strategy.natural_key()
 
@@ -2305,6 +2319,26 @@ class LivelihoodProductCategory(common_models.Model):
     )
 
     objects = LivelihoodProductCategoryManager()
+
+    def clean(self):
+        # Livelihood Product Category must be for a Strategy with a Product
+        if not self.baseline_livelihood_activity.livelihood_strategy.product:
+            raise ValidationError(
+                {
+                    "baseline_livelihood_activity": _(
+                        "Livelihood Product Categories must be for a Strategy with a Product"
+                    )
+                }
+            )
+        super().clean()
+
+    def save(self, *args, **kwargs):
+        # No need to enforce foreign keys or uniqueness because database constraints will do it anyway
+        self.full_clean(
+            exclude=[field.name for field in self._meta.fields if isinstance(field, models.ForeignKey)],
+            validate_unique=False,
+        )
+        super().save(*args, **kwargs)
 
     def natural_key(self):
         return (

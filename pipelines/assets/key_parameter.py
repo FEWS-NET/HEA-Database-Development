@@ -73,15 +73,6 @@ from baseline.models import LivelihoodZoneBaseline  # NOQA: E402
 from metadata.models import ActivityLabel  # NOQA: E402
 
 
-def _get_grouped_detail_strategies(instances: dict, subtotal_field: str) -> dict[str, list[dict]]:
-    grouped_strategies = defaultdict(list)
-    for strategy in instances.get("LivelihoodStrategy", []):
-        subtotal_label = strategy.get(subtotal_field)
-        if subtotal_label:
-            grouped_strategies[subtotal_label].append(strategy)
-    return grouped_strategies
-
-
 def _get_livelihood_activity_groups(
     livelihood_zone_baseline: LivelihoodZoneBaseline,
     livelihood_activity_dataframe: pd.DataFrame,
@@ -253,10 +244,9 @@ def key_parameter_instances(
         return Output({}, metadata={"message": "No key parameter dataframe to parse"})
 
     partition_key = context.asset_partition_key_for_output()
-    livelihood_strategy_map = {
-        strategy["activity_label"]: [strategy]
-        for strategy in livelihood_activity_instances.get("LivelihoodStrategy", [])
-    }
+    livelihood_strategy_map = defaultdict(list)
+    for strategy in livelihood_activity_instances.get("LivelihoodStrategy", []):
+        livelihood_strategy_map[strategy["activity_label"]].append(strategy)
     for group_label, group in livelihood_activity_groups.items():
         if group["detail_sheet"] == "Data2":
             livelihood_strategy_map[group_label] = [
@@ -282,9 +272,10 @@ def key_parameter_instances(
     price_headings = ["price", "prix"]
     for row in key_parameter_dataframe.index:
         for col in key_parameter_dataframe.columns:
-            if key_parameter_dataframe.loc[row, col] in (quantity_headings):
+            candidate = str(key_parameter_dataframe.loc[row, col]).strip().lower()
+            if candidate in quantity_headings:
                 quantity_column = col
-            if key_parameter_dataframe.loc[row, col] in (price_headings):
+            if candidate in price_headings:
                 price_column = col
         if quantity_column and price_column:
             first_key_parameter_row = row
@@ -295,6 +286,8 @@ def key_parameter_instances(
     key_parameters_by_natural_key = {}
     errors = []
     headings = ["key parameter?"] + quantity_headings + price_headings
+    # The key parameters are recognized by a formula that only returns "yes" or "", so there are
+    # currently no other true values, and we don't need to account for case-sensitvity or whitespace.
     true_values = ["yes"]
     for row in key_parameter_dataframe.loc[first_key_parameter_row:].index:
         label = key_parameter_dataframe.loc[row, "A"].strip() if key_parameter_dataframe.loc[row, "A"] else ""
@@ -330,11 +323,32 @@ def key_parameter_instances(
                 if not label:
                     errors.append("No LivelihoodStrategy label for Key Parameter at 'Summ'!%s%s" % ("A", row))
                     continue
+
                 livelihood_strategies = livelihood_strategy_map.get(label)
 
                 if not livelihood_strategies:
                     errors.append(
                         "No matching LivelihoodStrategy for Key Parameter '%s' at 'Summ'!%s%s" % (label, "A", row)
+                    )
+                    continue
+
+                if len(livelihood_strategies) > 1 and label not in livelihood_activity_groups:
+                    # Each key parameter (except the Livelihood Activity Groups) should only
+                    # match a single LivelihoodStrategy, because in the BSS the cross-reference
+                    # is actually to a specific row number.
+                    errors.append(
+                        "Multiple matching LivelihoodStrategies for Key Parameter '%s' at 'Summ'!%s%s: %s"
+                        % (
+                            label,
+                            "A",
+                            row,
+                            ", ".join(
+                                [
+                                    f"{strategy['bss_sheet']}!{strategy['bss_row']}"
+                                    for strategy in livelihood_strategies
+                                ]
+                            ),
+                        )
                     )
                     continue
 
