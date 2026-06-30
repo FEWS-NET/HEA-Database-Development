@@ -135,7 +135,7 @@ class LivelihoodZoneBaselineCorrectionAdmin(admin.ModelAdmin):
         "livelihood_zone_baseline__livelihood_zone__code",
         "livelihood_zone_baseline__livelihood_zone__alternate_code",
         *translation_fields("livelihood_zone_baseline__livelihood_zone__name"),
-        *translation_fields("livelihood_zone_baseline__main_livelihood_category__name"),
+        *translation_fields("livelihood_zone_baseline__primary_livelihood_system__name"),
         "livelihood_zone_baseline__source_organization__name",
         "cell_range",
         "previous_value",
@@ -171,7 +171,7 @@ class LivelihoodZoneBaselineAdmin(GISModelAdminReadOnly):
                     "livelihood_zone_alternate_code",
                     "country",
                     *translation_fields("name"),
-                    "main_livelihood_category",
+                    "primary_livelihood_system",
                     "source_organization",
                     "bss",
                     "bss_uploaded_date_time",
@@ -204,7 +204,7 @@ class LivelihoodZoneBaselineAdmin(GISModelAdminReadOnly):
     list_display = (
         "livelihood_zone",
         "livelihood_zone_alternate_code",
-        "main_livelihood_category",
+        "primary_livelihood_system",
         "source_organization",
         "reference_year_start_date",
         "reference_year_end_date",
@@ -214,7 +214,7 @@ class LivelihoodZoneBaselineAdmin(GISModelAdminReadOnly):
         "livelihood_zone__code",
         "livelihood_zone__alternate_code",
         *translation_fields("livelihood_zone__name"),
-        *translation_fields("main_livelihood_category__name"),
+        *translation_fields("primary_livelihood_system__name"),
         "source_organization__name",
     )
     list_filter = ["source_organization", ("livelihood_zone__country", admin.RelatedOnlyFieldListFilter)]
@@ -229,7 +229,7 @@ class LivelihoodZoneBaselineAdmin(GISModelAdminReadOnly):
             .get_queryset(request)
             .select_related(
                 "livelihood_zone__country",
-                "main_livelihood_category",
+                "primary_livelihood_system",
                 "source_organization",
             )
         )

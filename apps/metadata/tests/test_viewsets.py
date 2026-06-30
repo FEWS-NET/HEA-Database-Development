@@ -280,9 +280,9 @@ class LivelihoodCategoryViewSetTestCase(APITestCase):
             iso_en_name="BB Country",
             name="BB Country",
         )
-        WealthGroupFactory(livelihood_zone_baseline__main_livelihood_category=self.livelihood_category_with_groups)
+        WealthGroupFactory(livelihood_zone_baseline__primary_livelihood_system=self.livelihood_category_with_groups)
         WealthGroupFactory(
-            livelihood_zone_baseline__main_livelihood_category=self.livelihood_category_with_groups,
+            livelihood_zone_baseline__primary_livelihood_system=self.livelihood_category_with_groups,
             livelihood_zone_baseline__livelihood_zone__country=self.country_a,
         )
 

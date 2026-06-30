@@ -80,7 +80,7 @@ class LivelihoodCategoryFilter(ReferenceDataFilterSet):
             return queryset
         WealthGroup = apps.get_model("baseline", "WealthGroup")
         wealth_group_exists = WealthGroup.objects.filter(
-            livelihood_zone_baseline__main_livelihood_category=OuterRef("pk")
+            livelihood_zone_baseline__primary_livelihood_system=OuterRef("pk")
         )
         if value:
             return queryset.filter(Exists(wealth_group_exists))

@@ -208,7 +208,7 @@ class LivelihoodZoneBaselineAdminTestCase(TestCase):
             "name_en": f"{livelihood_zone.code} Baseline",
             "description": f"{livelihood_zone.code} Baseline description",
             "livelihood_zone": livelihood_zone.pk,
-            "main_livelihood_category": LivelihoodCategoryFactory().pk,
+            "primary_livelihood_system": LivelihoodCategoryFactory().pk,
             "source_organization": SourceOrganizationFactory().pk,
             "bss": bss,
             "currency": currency,

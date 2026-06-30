@@ -95,7 +95,7 @@ class LivelihoodZoneBaselineSerializer(serializers.ModelSerializer):
             "livelihood_zone_name",
             "livelihood_zone_country",
             "livelihood_zone_country_name",
-            "main_livelihood_category",
+            "primary_livelihood_system",
             "bss",
             "bss_language",
             "currency",
@@ -135,7 +135,7 @@ class LivelihoodZoneBaselineGeoSerializer(GeoFeatureModelSerializer):
             "livelihood_zone_country",
             "livelihood_zone_country_name",
             "geography",
-            "main_livelihood_category",
+            "primary_livelihood_system",
             "bss",
             "bss_language",
             "currency",
@@ -1791,7 +1791,7 @@ class LivelihoodActivitySummarySerializer(AggregatingSerializer):
             "reference_year_end_date",
             "valid_from_date",
             "valid_to_date",  # to display "is latest" / "is historic" in the UI for each ref yr
-            "main_livelihood_category",
+            "primary_livelihood_system",
             "livelihood_zone_baseline_description",
             "wealth_group_category",  # E.g. VP, P, M, B/O
             "wealth_group_category_name",

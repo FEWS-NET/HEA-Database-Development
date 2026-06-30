@@ -125,7 +125,7 @@ def bss_metadata(context: AssetExecutionContext, config: BSSMetadataConfig) -> O
         metadata={
             "num_baselines": len(df),
             "preview": MetadataValue.md(
-                df[["partition_key", "bss_path", "status", "name_en", "main_livelihood_category_id"]]
+                df[["partition_key", "bss_path", "status", "name_en", "primary_livelihood_system_id"]]
                 .head(config.preview_rows)
                 .to_markdown(index=False)
                 .replace("~", "\\~")  # Escape the ~ in the partition_key, otherwise it is rendered as strikethrough
@@ -145,7 +145,7 @@ def completed_bss_metadata(config: BSSMetadataConfig, bss_metadata) -> Output[pd
         "country_id",
         "source_organization",
         "name_en",
-        "main_livelihood_category_id",
+        "primary_livelihood_system_id",
         "currency_id",
         "reference_year_start_date",
         "reference_year_end_date",
@@ -165,13 +165,13 @@ def completed_bss_metadata(config: BSSMetadataConfig, bss_metadata) -> Output[pd
             "num_complete": len(complete_df),
             "num_incomplete": len(incomplete_df),
             "complete": MetadataValue.md(
-                complete_df[["bss_path", "name_en", "main_livelihood_category_id"]].to_markdown()
+                complete_df[["bss_path", "name_en", "primary_livelihood_system_id"]].to_markdown()
             ),
             "incomplete": MetadataValue.md(
-                incomplete_df[["bss_path", "status", "name_en", "main_livelihood_category_id"]].to_markdown()
+                incomplete_df[["bss_path", "status", "name_en", "primary_livelihood_system_id"]].to_markdown()
             ),
             "preview": MetadataValue.md(
-                complete_df[["bss_path", "status", "name_en", "main_livelihood_category_id"]]
+                complete_df[["bss_path", "status", "name_en", "primary_livelihood_system_id"]]
                 .head(config.preview_rows)
                 .to_markdown()
             ),

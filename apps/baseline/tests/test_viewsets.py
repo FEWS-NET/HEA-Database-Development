@@ -371,7 +371,7 @@ class LivelihoodZoneBaselineViewSetTestCase(APITestCase):
             "livelihood_zone_name",
             "livelihood_zone_country",
             "livelihood_zone_country_name",
-            "main_livelihood_category",
+            "primary_livelihood_system",
             "bss",
             "bss_language",
             *translation_fields("profile_report"),
@@ -406,16 +406,16 @@ class LivelihoodZoneBaselineViewSetTestCase(APITestCase):
 
     def test_patch(self):
         self.client.force_login(self.user)
-        new_value = self.client.get(self.url_get(1)).json()["main_livelihood_category"]
+        new_value = self.client.get(self.url_get(1)).json()["primary_livelihood_system"]
         logging.disable(logging.CRITICAL)
-        response = self.client.patch(self.url_get(0), {"main_livelihood_category": new_value})
+        response = self.client.patch(self.url_get(0), {"primary_livelihood_system": new_value})
         logging.disable(logging.NOTSET)
         self.assertEqual(response.status_code, 200)
         response = self.client.get(self.url_get(0))
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.json(), dict)
-        self.assertIn("main_livelihood_category", response.json())
-        self.assertEqual(response.json()["main_livelihood_category"], new_value)
+        self.assertIn("primary_livelihood_system", response.json())
+        self.assertEqual(response.json()["primary_livelihood_system"], new_value)
 
     def test_list_returns_all_records(self):
         response = self.client.get(self.url)
@@ -725,8 +725,8 @@ class LivelihoodZoneBaselineViewSetTestCase(APITestCase):
 class LivelihoodZoneBaselineFacetedSearchViewTestCase(APITestCase):
     def setUp(self):
         self.category1 = LivelihoodCategoryFactory()
-        self.baseline1 = LivelihoodZoneBaselineFactory(main_livelihood_category=self.category1)
-        self.baseline2 = LivelihoodZoneBaselineFactory(main_livelihood_category=self.category1)
+        self.baseline1 = LivelihoodZoneBaselineFactory(primary_livelihood_system=self.category1)
+        self.baseline2 = LivelihoodZoneBaselineFactory(primary_livelihood_system=self.category1)
         self.baseline3 = LivelihoodZoneBaselineFactory()
         self.product1 = ClassifiedProductFactory(
             cpc="K0111",
@@ -760,7 +760,7 @@ class LivelihoodZoneBaselineFacetedSearchViewTestCase(APITestCase):
             livelihood_zone_baseline=self.baseline3,
             strategy_type=LivelihoodStrategyType.FOOD_PURCHASE,
         )
-        self.baseline = LivelihoodZoneBaselineFactory(main_livelihood_category=self.category1)
+        self.baseline = LivelihoodZoneBaselineFactory(primary_livelihood_system=self.category1)
         self.url = reverse("livelihood-zone-baseline-faceted-search")
 
     def test_search_with_product(self):
@@ -5173,7 +5173,7 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
             "reference_year_end_date",
             "valid_from_date",
             "valid_to_date",
-            "main_livelihood_category",
+            "primary_livelihood_system",
             "livelihood_zone_baseline_description",
             "product",
             "product_common_name",
