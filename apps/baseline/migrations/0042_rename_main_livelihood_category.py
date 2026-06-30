@@ -4,7 +4,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("baseline", "0040_float_fields_months_per_year_times_per_year"),
+        ("baseline", "0041_add_keyparameter"),
     ]
 
     operations = [
