@@ -267,7 +267,7 @@ class LivelihoodZoneBaseline(common_models.Model):
         LivelihoodCategory,
         db_column="livelihood_system_code",
         on_delete=models.RESTRICT,
-        verbose_name=_("Livelihood Zone Type"),
+        verbose_name=_("Primary Livelihood System"),
     )
     source_organization = models.ForeignKey(
         SourceOrganization, on_delete=models.RESTRICT, verbose_name=_("Source Organization")

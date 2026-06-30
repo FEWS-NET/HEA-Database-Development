@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
                 db_column="livelihood_system_code",
                 on_delete=models.RESTRICT,
                 to="metadata.livelihoodcategory",
-                verbose_name="Livelihood Zone Type",
+                verbose_name="Primary Livelihood System",
             ),
         ),
     ]
