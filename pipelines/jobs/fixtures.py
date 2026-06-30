@@ -11,6 +11,12 @@ from ..assets.fixtures import (
     imported_baseline,
     uploaded_baselines,
 )
+from ..assets.key_parameter import (
+    key_parameter_dataframe,
+    key_parameter_instances,
+    key_parameter_valid_instances,
+    livelihood_activity_groups,
+)
 from ..assets.livelihood_activity import (
     all_livelihood_activity_labels_dataframe,
     livelihood_activity_dataframe,
@@ -58,10 +64,13 @@ import_baseline_from_fixture = define_asset_job(
         livelihood_activity_instances,
         other_cash_income_instances,
         wild_foods_instances,
+        livelihood_activity_groups,
+        key_parameter_instances,
         wealth_characteristic_valid_instances,
         livelihood_activity_valid_instances,
         other_cash_income_valid_instances,
         wild_foods_valid_instances,
+        key_parameter_valid_instances,
         consolidated_fixture,
         imported_baseline,
     ),
@@ -104,6 +113,7 @@ extract_dataframes = define_asset_job(
         livelihood_activity_dataframe,
         other_cash_income_dataframe,
         wild_foods_dataframe,
+        key_parameter_dataframe,
         wealth_characteristic_label_dataframe,
         livelihood_activity_label_dataframe,
         other_cash_income_label_dataframe,
