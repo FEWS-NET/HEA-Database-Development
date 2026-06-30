@@ -64,6 +64,25 @@ fi
 #   frmts/hdf4/hdf-eos/SWapi.c. Executing a manipulation can lead to heap-
 #   based buffer overflow. The attack requires local access. The exploit has
 #   been published and may be used.
+#   Vulnerability ID: 98069
+#   Affected spec: <3.13.0
+#   ADVISORY: Affected versions of the GDAL package are vulnerable to
+#   a Heap-based Buffer Overflow due to insufficient bounds checking in the
+#   GDnentries function within frmts/hdf4/hdf-eos/GDapi.c. Manipulating the
+#   DataFieldName argument supplied to this function can cause a write
+#   operation to exceed the allocated heap buffer boundaries. A local attacker
+#   with low-level privileges who can supply a malicious HDF-EOS file to a
+#   process using GDAL can trigger this overflow, potentially resulting in
+#   memory corruption, disclosure of sensitive data, or code execution.
+#   Vulnerability ID: 98070
+#   Affected spec: <3.13.0
+#   ADVISORY: Affected versions of the GDAL package are vulnerable to
+#   an Out-of-bounds Read due to insufficient validation in the GDfieldinfo
+#   function within frmts/hdf4/hdf-eos/GDapi.c. A manipulated input to this
+#   function can cause a read operation to access memory outside the intended
+#   buffer boundaries. A local attacker can supply a crafted HDF-EOS dataset
+#   to trigger this out-of-bounds read, resulting in a partial Denial of
+#   Service through abnormal process termination.
 
 # Ignore vulnerability found in jinja2 version 3.1.4
 # We do not allow any untrusted templates, and so are not affected.
@@ -94,7 +113,7 @@ fi
 #  Will ignore this and update once we got a fix
 
 echo Package Vulnerabilities:
-pip freeze | safety check --stdin --full-report -i 62283 -i 70612 -i 74054 -i 82915 -i 83150 -i SFTY-20260510-89962
+pip freeze | safety check --stdin --full-report -i 62283 -i 70612 -i 74054 -i 82915 -i 83150 -i SFTY-20260510-89962 -i 98069 -i 98070
 SAFETY_RESULT=$?
 
 # Suppress SAFETY_RESULT unless CHECK_SAFETY is set
