@@ -405,6 +405,7 @@ def consolidated_fixture(
     livelihood_activity_valid_instances,
     other_cash_income_valid_instances,
     wild_foods_valid_instances,
+    key_parameter_valid_instances,
 ) -> Output[list[dict]]:
     """
     Consolidated Django fixture for a BSS, including Livelihood Activities and Wealth Group Characteristic Values.
@@ -429,6 +430,7 @@ def consolidated_fixture(
                 elif not allow_unchanged_duplicates:
                     # Duplicate natural keys with the same values are normally an error, but not for Livelihood
                     # Strategies when they are parents to model instances other than Livelihood Activities.
+                    # For example, Key Parameters have a 1:1 relationship to a Livelihood Strategy.
                     error = f"{model_name} {i} duplicates existing record with same values:\n{ref}"
                     errors.append(error)
             else:
@@ -452,6 +454,11 @@ def consolidated_fixture(
     for model_name, instances in wild_foods_valid_instances.items():
         if instances and model_name != "WealthGroup":
             process_instances(model_name, instances, allow_unchanged_duplicates=False)
+    for model_name, instances in key_parameter_valid_instances.items():
+        if instances:
+            # Allow duplicate Livelihood Strategies because they will already have been
+            # added from `livelihood_activity_valid_instances`, etc.
+            process_instances(model_name, instances, allow_unchanged_duplicates=(model_name == "LivelihoodStrategy"))
 
     consolidated_instances = {model_name: list(instances.values()) for model_name, instances in seen_instances.items()}
     return get_fixture_from_instances(consolidated_instances)

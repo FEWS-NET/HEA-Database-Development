@@ -22,6 +22,7 @@ from baseline.models import (
     FoodPurchase,
     Hazard,
     Hunting,
+    KeyParameter,
     LivelihoodActivity,
     LivelihoodProductCategory,
     LivelihoodStrategy,
@@ -348,6 +349,18 @@ class LivelihoodActivityFactory(factory.django.DjangoModelFactory):
             {"percentage of calories that come from green consumption during that period": 15},
         ]
     )
+
+
+class KeyParameterFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = KeyParameter
+        django_get_or_create = [
+            "livelihood_strategy",
+        ]
+
+    livelihood_strategy = factory.SubFactory(LivelihoodStrategyFactory)
+    monitor_quantity = True
+    monitor_price = True
 
 
 class BaselineLivelihoodActivityFactory(LivelihoodActivityFactory):

@@ -375,7 +375,7 @@ def livelihood_product_category_fixture(
     return get_fixture_from_instances(livelihood_product_category_valid_instances)
 
 
-@asset(partitions_def=bss_instances_partitions_def)
+@asset(partitions_def=bss_instances_partitions_def, pool="django_loaddata")
 def imported_livelihood_product_categories(
     context: AssetExecutionContext,
     livelihood_product_category_fixture,

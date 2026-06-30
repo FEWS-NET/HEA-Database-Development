@@ -180,7 +180,7 @@ def other_cash_income_fixture(
     return get_fixture_from_instances(other_cash_income_valid_instances)
 
 
-@asset(partitions_def=bss_instances_partitions_def)
+@asset(partitions_def=bss_instances_partitions_def, pool="django_loaddata")
 def imported_other_cash_income_activities(
     context: AssetExecutionContext,
     other_cash_income_fixture,

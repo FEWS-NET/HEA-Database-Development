@@ -1,6 +1,6 @@
 import pandas as pd
 from django.test import TestCase
-from pipelines.utils import prepare_lookup
+from pipelines.utils import get_formula_references, prepare_lookup
 
 
 class PrepareLookupTestCase(TestCase):
@@ -105,3 +105,57 @@ class PrepareLookupTestCase(TestCase):
         # some unicode characters
         result = prepare_lookup("Revenu (Espèces)")
         self.assertEqual(result, "revenu (espèces)")
+
+
+class GetFormulaReferencesTestCase(TestCase):
+
+    def test_single_cell_reference(self):
+        self.assertEqual(
+            get_formula_references('=IF(Data2!B39=0,"",Data2!B39)'),
+            [
+                {
+                    "sheet": "Data2",
+                    "start_coordinate": "B39",
+                    "start_col": "B",
+                    "start_row": 39,
+                    "end_coordinate": "B39",
+                    "end_col": "B",
+                    "end_row": 39,
+                    "is_range": False,
+                }
+            ],
+        )
+
+    def test_range_and_quoted_sheet_reference(self):
+        self.assertEqual(
+            get_formula_references("=SUM('Data 3'!$C$45:$K$45)"),
+            [
+                {
+                    "sheet": "Data 3",
+                    "start_coordinate": "C45",
+                    "start_col": "C",
+                    "start_row": 45,
+                    "end_coordinate": "K45",
+                    "end_col": "K",
+                    "end_row": 45,
+                    "is_range": True,
+                }
+            ],
+        )
+
+    def test_default_sheet_reference(self):
+        self.assertEqual(
+            get_formula_references("=SUM(B39:K39)", default_sheet="Data"),
+            [
+                {
+                    "sheet": "Data",
+                    "start_coordinate": "B39",
+                    "start_col": "B",
+                    "start_row": 39,
+                    "end_coordinate": "K39",
+                    "end_col": "K",
+                    "end_row": 39,
+                    "is_range": True,
+                }
+            ],
+        )
