@@ -16,6 +16,7 @@ from baseline.models import (
     FoodPurchase,
     Hazard,
     Hunting,
+    KeyParameter,
     LivelihoodActivity,
     LivelihoodProductCategory,
     LivelihoodStrategy,
@@ -57,6 +58,7 @@ from .factories import (
     FoodPurchaseFactory,
     HazardFactory,
     HuntingFactory,
+    KeyParameterFactory,
     LivelihoodActivityFactory,
     LivelihoodProductCategoryFactory,
     LivelihoodStrategyFactory,
@@ -150,6 +152,11 @@ class FactoryTestCase(TestCase):
         for _ in range(self.num_records):
             ResponseLivelihoodActivityFactory()
         self.assertEqual(ResponseLivelihoodActivity.objects.count(), self.num_records)
+
+    def test_keyparameter_factory(self):
+        for _ in range(self.num_records):
+            KeyParameterFactory()
+        self.assertEqual(KeyParameter.objects.count(), self.num_records)
 
     def test_milkproduction_factory(self):
         for _ in range(self.num_records):

@@ -190,7 +190,7 @@ def wild_foods_fixture(
     return get_fixture_from_instances(wild_foods_valid_instances)
 
 
-@asset(partitions_def=bss_instances_partitions_def)
+@asset(partitions_def=bss_instances_partitions_def, pool="django_loaddata")
 def imported_wild_foods_activities(
     context: AssetExecutionContext,
     wild_foods_fixture,

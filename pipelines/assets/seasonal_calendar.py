@@ -524,7 +524,7 @@ def seasonal_activity_fixture(
     return get_fixture_from_instances(seasonal_activity_valid_instances)
 
 
-@asset(partitions_def=bss_instances_partitions_def)
+@asset(partitions_def=bss_instances_partitions_def, pool="django_loaddata")
 def imported_seasonal_activities(
     context: AssetExecutionContext,
     seasonal_activity_fixture,
