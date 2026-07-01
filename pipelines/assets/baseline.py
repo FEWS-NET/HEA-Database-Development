@@ -51,10 +51,22 @@ def get_wealth_group_dataframe(
 
     # Build a dataframe of the relevant columns
     try:
-        start_column = "C" if worksheet_name == "WB" else "B"
+        if worksheet_name == "WB":
+            start_column = "C"
+        else:
+            # Some dataframes, such as the response section in Summ, omit the baseline columns entirely
+            # so use the first available non-label column rather than assuming column B.
+            start_column = next(column for column in df.columns if column != "A")
         wealthgroupcategorylookup = WealthGroupCategoryLookup()
         wealth_group_df = df.loc[3:5, start_column:].transpose().reset_index()
-        wealth_group_df.columns = ["bss_column", "wealth_group_category", "district", "name"]
+        if worksheet_name == "Summ":
+            wealth_group_df.columns = ["bss_column", "district", "wealth_group_category", "name"]
+            # Clear the unwanted column - the Summ worksheet only contains Baseline Wealth Groups
+            # so the "district" row actually contains the "Baseline", "Maximum (or Minimum)"
+            # or "Expandability" headings.
+            wealth_group_df.loc[0, "district"] = ""
+        else:
+            wealth_group_df.columns = ["bss_column", "wealth_group_category", "district", "name"]
         wealth_group_df = wealthgroupcategorylookup.do_lookup(
             wealth_group_df, "wealth_group_category", "wealth_group_category"
         )
@@ -67,7 +79,7 @@ def get_wealth_group_dataframe(
             lambda row: row["name"] + ", " + row["district"] if row["district"] else row["name"], axis="columns"
         )
 
-        # Ignore text in the District and Community row that are in the from the summary columns.
+        # Ignore text in the District and Community row that are from the summary columns.
         first_wealth_category_index = wealth_group_df["wealth_group_category"].notnull().idxmax()
 
         wealth_group_df["full_name"] = wealth_group_df["full_name"].mask(
@@ -79,7 +91,7 @@ def get_wealth_group_dataframe(
         # Group Category is in Row 4 (District)rather than Row 3 (Wealth Group Category)
         # so do a second lookup to update the blank rows.
         # Note that in a WB worksheet there are no extra Wealth Group Categories on Row 4
-        if worksheet_name != "WB":
+        if worksheet_name in ["Data", "Data2", "Data3"]:
             wealth_group_df = wealthgroupcategorylookup.do_lookup(
                 wealth_group_df, "district", "wealth_group_category", update=True
             )
@@ -103,10 +115,13 @@ def get_wealth_group_dataframe(
                 % (partition_key, worksheet_name, "\n".join(unique_values))
             )
         # Lookup the Community instances
-        community_lookup = CommunityLookup()
         wealth_group_df["livelihood_zone_baseline"] = livelihood_zone_baseline.id  # required parent for lookup
-        wealth_group_df = community_lookup.do_lookup(wealth_group_df, "full_name", "community")
-        wealth_group_df = community_lookup.get_instances(wealth_group_df, "community")
+        if (wealth_group_df["full_name"] == "").all():
+            wealth_group_df["community"] = None
+        else:
+            community_lookup = CommunityLookup()
+            wealth_group_df = community_lookup.do_lookup(wealth_group_df, "full_name", "community")
+            wealth_group_df = community_lookup.get_instances(wealth_group_df, "community")
 
         # Check that the community names are recognized
         unmatched_full_names = wealth_group_df[

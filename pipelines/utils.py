@@ -1,7 +1,14 @@
 import importlib
+import re
 from collections.abc import Iterable
 
 import pandas as pd
+
+EXCEL_FORMULA_REFERENCE_RE = re.compile(
+    r"(?:(?P<sheet>'(?:[^']|'')+'|[A-Za-z0-9_]+)!)?"
+    r"(?P<start_col>\$?[A-Z]{1,3})(?P<start_row>\$?\d+)"
+    r"(?::(?P<end_col>\$?[A-Z]{1,3})(?P<end_row>\$?\d+))?"
+)
 
 
 def name_from_class(obj):
@@ -128,3 +135,60 @@ def verbose_pivot(df: pd.DataFrame, values: str | list[str], index: str | list[s
         error_df = pd.merge(df.fillna(""), duplicates[index + columns], on=index + columns)
 
         raise ValueError(str(e) + "\n" + error_df.to_markdown()) from e
+
+
+def get_cell_formula(worksheet, cell_reference: str) -> str | None:
+    """
+    Return the formula string from a worksheet cell, or None if the cell does not contain a formula.
+    """
+    value = worksheet[cell_reference].value
+    return value if isinstance(value, str) and value.startswith("=") else None
+
+
+def get_formula_references(formula: str, default_sheet: str | None = None) -> list[dict[str, str | int | bool]]:
+    """
+    Decode an Excel formula and return the referenced cells/ranges.
+
+    Each reference includes the sheet name (or the supplied default sheet), the
+    start/end coordinates, the row numbers and whether the reference is a range.
+    Duplicate references are removed.
+    """
+    references = []
+    seen = set()
+
+    for match in EXCEL_FORMULA_REFERENCE_RE.finditer(formula):
+        sheet = match.group("sheet")
+        if sheet:
+            if sheet.startswith("'") and sheet.endswith("'"):
+                sheet = sheet[1:-1].replace("''", "'")
+        else:
+            sheet = default_sheet
+
+        start_col = match.group("start_col").replace("$", "")
+        start_row = int(match.group("start_row").replace("$", ""))
+        end_col = match.group("end_col")
+        end_row = match.group("end_row")
+        if end_col:
+            end_col = end_col.replace("$", "")
+        if end_row:
+            end_row = int(end_row.replace("$", ""))
+        else:
+            end_row = start_row
+            end_col = start_col
+
+        reference = {
+            "sheet": sheet or "",
+            "start_coordinate": f"{start_col}{start_row}",
+            "start_col": start_col,
+            "start_row": start_row,
+            "end_coordinate": f"{end_col}{end_row}",
+            "end_col": end_col,
+            "end_row": end_row,
+            "is_range": bool(match.group("end_col")),
+        }
+        key = tuple(reference.items())
+        if key not in seen:
+            seen.add(key)
+            references.append(reference)
+
+    return references
