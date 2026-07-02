@@ -1411,7 +1411,8 @@ class BaselineWealthGroupViewSetTestCase(APITestCase):
             "livelihoods_protection_threshold_as_percentage_kcals",
             "livelihoods_protection_threshold_as_cash",
             "population_source",
-            "population",
+            "percentage_of_population",
+            "population_estimate",
         )
         self.assertCountEqual(
             response.json().keys(),
@@ -1425,10 +1426,39 @@ class BaselineWealthGroupViewSetTestCase(APITestCase):
         record = self.data[0]
         data = response.json()
         self.assertEqual(data["population_source"], record.livelihood_zone_baseline.population_source)
-        expected_population = round(
+        self.assertAlmostEqual(data["percentage_of_population"], record.percentage_of_households)
+        expected_population_estimate = round(
             record.percentage_of_households * record.livelihood_zone_baseline.population_estimate
         )
-        self.assertEqual(data["population"], expected_population)
+        self.assertEqual(data["population_estimate"], expected_population_estimate)
+
+    def test_wealth_group_population_estimate_matches_lias_example(self):
+
+        livelihood_zone_baseline = LivelihoodZoneBaselineFactory(population_estimate=1000000)
+        wealth_groups = {
+            code: BaselineWealthGroupFactory(
+                livelihood_zone_baseline=livelihood_zone_baseline,
+                wealth_group_category=WealthGroupCategoryFactory(code=code),
+                percentage_of_households=percentage_of_households,
+                average_household_size=average_household_size,
+            )
+            for code, percentage_of_households, average_household_size in [
+                ("VP", 0.37, 8),
+                ("P", 0.28, 10),
+                ("M", 0.20, 20),
+                ("BO", 0.15, 30),
+            ]
+        }
+        # Weighted mean household size = (.37*8 + .28*10 + .20*20 + .15*30) / (.37 + .28 + .20 + .15) = 14.26
+        expected_percentage_of_population = {"VP": 21, "P": 20, "M": 28, "BO": 32}
+        for code, expected_pct in expected_percentage_of_population.items():
+            response = self.client.get(reverse("baselinewealthgroup-detail", args=(wealth_groups[code].pk,)))
+            data = response.json()
+            self.assertEqual(
+                round(data["percentage_of_population"] * 100),
+                expected_pct,
+                f"Wealth Group {code}: expected {expected_pct}% of population, got {data['percentage_of_population']}",
+            )
 
     def test_patch_requires_authentication(self):
         logging.disable(logging.CRITICAL)

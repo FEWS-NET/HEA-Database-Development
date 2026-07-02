@@ -348,7 +348,8 @@ class BaselineWealthGroupSerializer(WealthGroupSerializer):
             if f not in {"community", "community_name", "community_full_name"}
         ] + [
             "population_source",
-            "population",
+            "percentage_of_population",
+            "population_estimate",
         ]
 
     livelihood_zone_baseline_label = serializers.SerializerMethodField()
@@ -373,14 +374,11 @@ class BaselineWealthGroupSerializer(WealthGroupSerializer):
         source="livelihood_zone_baseline.source_organization.name", read_only=True
     )
     population_source = serializers.CharField(source="livelihood_zone_baseline.population_source", read_only=True)
-    population = serializers.SerializerMethodField()
-
-    def get_population(self, obj):
-        pct = obj.percentage_of_households
-        total = obj.livelihood_zone_baseline.population_estimate
-        if pct is None or total is None:
-            return None
-        return round(pct * total)
+    # `percentage_of_population` and `population_estimate` are annotated onto the queryset in
+    # `BaselineWealthGroupViewSet.get_queryset()` because the calculation requires comparing every Baseline Wealth
+    # Group for the same Livelihood Zone Baseline as each row, which would cause an N+1 query if done here instead.
+    percentage_of_population = serializers.FloatField(read_only=True)
+    population_estimate = serializers.IntegerField(read_only=True)
 
 
 class CommunityWealthGroupSerializer(WealthGroupSerializer):
