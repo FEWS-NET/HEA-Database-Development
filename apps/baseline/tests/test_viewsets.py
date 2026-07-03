@@ -16,6 +16,7 @@ from django.utils.timezone import now
 from rest_framework.test import APITestCase
 
 from baseline.models import (
+    KeyParameter,
     LivelihoodActivity,
     LivelihoodZoneBaseline,
 )
@@ -2306,6 +2307,40 @@ class KeyParameterViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), 1)
         self.assertEqual(response.json()[0]["id"], self.data[0].id)
+
+    def test_post_create(self):
+        self.client.force_login(self.user)
+        strategy = LivelihoodStrategyFactory(additional_identifier="create-key-parameter")
+        payload = {
+            "livelihood_strategy": strategy.pk,
+            "monitor_quantity": True,
+            "monitor_price": False,
+        }
+
+        response = self.client.post(self.url, payload)
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json()["livelihood_strategy"], strategy.pk)
+        self.assertTrue(response.json()["monitor_quantity"])
+        self.assertFalse(response.json()["monitor_price"])
+        self.assertTrue(
+            KeyParameter.objects.filter(
+                livelihood_strategy=strategy,
+                monitor_quantity=True,
+                monitor_price=False,
+            ).exists()
+        )
+
+    def test_browsable_api_uses_input_for_livelihood_strategy(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(self.url, HTTP_ACCEPT="text/html")
+
+        self.assertEqual(response.status_code, 200)
+        soup = BeautifulSoup(response.content, "html.parser")
+        field = soup.find(attrs={"name": "livelihood_strategy"})
+        self.assertIsNotNone(field)
+        self.assertEqual(field.name, "input")
 
 
 class LivelihoodActivityViewSetTestCase(APITestCase):

@@ -708,7 +708,10 @@ class KeyParameterSerializer(serializers.ModelSerializer):
             "monitor_price",
         ]
 
-    livelihood_strategy = serializers.IntegerField(source="livelihood_strategy.pk")
+    livelihood_strategy = serializers.PrimaryKeyRelatedField(
+        queryset=LivelihoodStrategy.objects.all(),
+        style={"base_template": "input.html"},
+    )
     livelihood_zone_baseline = serializers.IntegerField(
         source="livelihood_strategy.livelihood_zone_baseline.pk", read_only=True
     )
