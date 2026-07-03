@@ -46,6 +46,7 @@ from .factories import (
     FoodPurchaseFactory,
     HazardFactory,
     HuntingFactory,
+    KeyParameterFactory,
     LivelihoodActivityFactory,
     LivelihoodProductCategoryFactory,
     LivelihoodStrategyFactory,
@@ -2201,6 +2202,110 @@ class LivelihoodStrategyViewSetTestCase(APITestCase):
         response = self.client.get(self.url, {"cpc": "K01111"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 0)
+
+
+class KeyParameterViewSetTestCase(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.num_records = 5
+        cls.data = [
+            KeyParameterFactory(
+                livelihood_strategy=LivelihoodStrategyFactory(additional_identifier=f"alpha-{index}"),
+                monitor_quantity=index % 2 == 0,
+                monitor_price=index % 2 == 1,
+            )
+            for index in range(cls.num_records)
+        ]
+        cls.user = User.objects.create_superuser("test", "test@test.com", "password")
+
+    def setUp(self):
+        self.url = reverse("keyparameter-list")
+        self.url_get = lambda n: reverse("keyparameter-detail", args=(self.data[n].pk,))
+
+    def test_get_record(self):
+        response = self.client.get(self.url_get(0))
+        self.assertEqual(response.status_code, 200)
+        self.assertIsInstance(response.json(), dict)
+        expected_fields = (
+            "id",
+            "livelihood_strategy",
+            "source_organization",
+            "source_organization_name",
+            "livelihood_zone_baseline",
+            "livelihood_zone_baseline_label",
+            "livelihood_zone",
+            "livelihood_zone_name",
+            "livelihood_zone_country",
+            "livelihood_zone_country_name",
+            "strategy_type",
+            "strategy_type_label",
+            "season",
+            "season_name",
+            "season_description",
+            "season_type",
+            "season_type_label",
+            "product",
+            "product_common_name",
+            "product_description",
+            "unit_of_measure",
+            "unit_of_measure_description",
+            "currency",
+            "additional_identifier",
+            "monitor_quantity",
+            "monitor_price",
+        )
+        self.assertCountEqual(
+            response.json().keys(),
+            expected_fields,
+            f"KeyParameter: Fields expected: {expected_fields}. Fields found: {response.json().keys()}.",
+        )
+
+    def test_patch_requires_authentication(self):
+        logging.disable(logging.CRITICAL)
+        response = self.client.patch(self.url_get(0), {"monitor_quantity": False})
+        logging.disable(logging.NOTSET)
+        self.assertEqual(response.status_code, 403)
+
+    def test_delete_requires_authentication(self):
+        logging.disable(logging.CRITICAL)
+        response = self.client.delete(self.url_get(0))
+        logging.disable(logging.NOTSET)
+        self.assertEqual(response.status_code, 403)
+
+    def test_patch(self):
+        self.client.force_login(self.user)
+        response = self.client.patch(self.url_get(0), {"monitor_quantity": False})
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get(self.url_get(0))
+        self.assertEqual(response.status_code, 200)
+        self.assertIsInstance(response.json(), dict)
+        self.assertIn("monitor_quantity", response.json())
+        self.assertFalse(response.json()["monitor_quantity"])
+
+    def test_list_returns_all_records(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), self.num_records)
+
+    def test_list_returns_filtered_data(self):
+        response = self.client.get(
+            self.url,
+            {"monitor_quantity": self.data[0].monitor_quantity},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertGreater(len(response.json()), 0)
+        self.assertLess(len(response.json()), self.num_records)
+
+    def test_search(self):
+        response = self.client.get(
+            self.url,
+            {
+                "search": self.data[0].livelihood_strategy.additional_identifier,
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 1)
+        self.assertEqual(response.json()[0]["id"], self.data[0].id)
 
 
 class LivelihoodActivityViewSetTestCase(APITestCase):

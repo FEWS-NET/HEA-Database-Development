@@ -29,6 +29,7 @@ from .models import (
     FoodPurchase,
     Hazard,
     Hunting,
+    KeyParameter,
     LivelihoodActivity,
     LivelihoodProductCategory,
     LivelihoodStrategy,
@@ -673,6 +674,91 @@ class LivelihoodStrategySerializer(serializers.ModelSerializer):
 
     def get_livelihood_zone_baseline_label(self, obj):
         return str(obj.livelihood_zone_baseline)
+
+
+class KeyParameterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = KeyParameter
+        fields = [
+            "id",
+            "livelihood_strategy",
+            "source_organization",
+            "source_organization_name",
+            "livelihood_zone_baseline",
+            "livelihood_zone_baseline_label",
+            "livelihood_zone",
+            "livelihood_zone_name",
+            "livelihood_zone_country",
+            "livelihood_zone_country_name",
+            "strategy_type",
+            "strategy_type_label",
+            "season",
+            "season_name",
+            "season_description",
+            "season_type",
+            "season_type_label",
+            "product",
+            "product_common_name",
+            "product_description",
+            "unit_of_measure",
+            "unit_of_measure_description",
+            "currency",
+            "additional_identifier",
+            "monitor_quantity",
+            "monitor_price",
+        ]
+
+    livelihood_strategy = serializers.IntegerField(source="livelihood_strategy.pk")
+    livelihood_zone_baseline = serializers.IntegerField(
+        source="livelihood_strategy.livelihood_zone_baseline.pk", read_only=True
+    )
+    livelihood_zone_baseline_label = serializers.SerializerMethodField()
+    livelihood_zone_name = serializers.CharField(
+        source="livelihood_strategy.livelihood_zone_baseline.livelihood_zone.name", read_only=True
+    )
+    livelihood_zone = serializers.CharField(
+        source="livelihood_strategy.livelihood_zone_baseline.livelihood_zone.pk", read_only=True
+    )
+    livelihood_zone_country = serializers.CharField(
+        source="livelihood_strategy.livelihood_zone_baseline.livelihood_zone.country.pk", read_only=True
+    )
+    livelihood_zone_country_name = serializers.CharField(
+        source="livelihood_strategy.livelihood_zone_baseline.livelihood_zone.country.name", read_only=True
+    )
+    source_organization = serializers.IntegerField(
+        source="livelihood_strategy.livelihood_zone_baseline.source_organization.pk", read_only=True
+    )
+    source_organization_name = serializers.CharField(
+        source="livelihood_strategy.livelihood_zone_baseline.source_organization.name", read_only=True
+    )
+    season = serializers.IntegerField(source="livelihood_strategy.season.pk", read_only=True, allow_null=True)
+    unit_of_measure_description = serializers.CharField(
+        source="livelihood_strategy.unit_of_measure.description", read_only=True
+    )
+    unit_of_measure = serializers.CharField(
+        source="livelihood_strategy.unit_of_measure.pk", read_only=True, allow_null=True
+    )
+    product = serializers.CharField(source="livelihood_strategy.product.pk", read_only=True, allow_null=True)
+    product_common_name = serializers.CharField(source="livelihood_strategy.product.common_name", read_only=True)
+    product_description = serializers.CharField(source="livelihood_strategy.product.description", read_only=True)
+    currency = serializers.CharField(source="livelihood_strategy.currency.pk", read_only=True)
+    additional_identifier = serializers.CharField(source="livelihood_strategy.additional_identifier", read_only=True)
+    season_name = serializers.CharField(source="livelihood_strategy.season.name", read_only=True)
+    season_description = serializers.CharField(source="livelihood_strategy.season.description", read_only=True)
+    season_type = serializers.CharField(source="livelihood_strategy.season.season_type", read_only=True)
+    season_type_label = serializers.SerializerMethodField()
+    strategy_type = serializers.CharField(source="livelihood_strategy.strategy_type", read_only=True)
+    strategy_type_label = serializers.SerializerMethodField()
+    livelihood_zone_baseline_label = serializers.SerializerMethodField()
+
+    def get_season_type_label(self, obj):
+        return obj.livelihood_strategy.season.get_season_type_display() if obj.livelihood_strategy.season else ""
+
+    def get_strategy_type_label(self, obj):
+        return obj.livelihood_strategy.get_strategy_type_display()
+
+    def get_livelihood_zone_baseline_label(self, obj):
+        return str(obj.livelihood_strategy.livelihood_zone_baseline)
 
 
 class LivelihoodActivitySerializer(serializers.ModelSerializer):
