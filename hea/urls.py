@@ -35,6 +35,7 @@ from baseline.viewsets import (
     FoodPurchaseViewSet,
     HazardViewSet,
     HuntingViewSet,
+    KeyParameterViewSet,
     LivelihoodActivitySummaryViewSet,
     LivelihoodActivityViewSet,
     LivelihoodProductCategoryViewSet,
@@ -118,6 +119,7 @@ router.register(
     "communitywealthgroupcharacteristicvalue",
 )
 router.register(r"livelihoodstrategy", LivelihoodStrategyViewSet)
+router.register(r"keyparameter", KeyParameterViewSet)
 router.register(r"livelihoodactivity", LivelihoodActivityViewSet)
 router.register(r"baselinelivelihoodactivity", BaselineLivelihoodActivityViewSet)
 router.register(r"responselivelihoodactivity", ResponseLivelihoodActivityViewSet)

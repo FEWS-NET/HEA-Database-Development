@@ -45,6 +45,7 @@ from .models import (
     FoodPurchase,
     Hazard,
     Hunting,
+    KeyParameter,
     LivelihoodActivity,
     LivelihoodProductCategory,
     LivelihoodStrategy,
@@ -87,6 +88,7 @@ from .serializers import (
     FoodPurchaseSerializer,
     HazardSerializer,
     HuntingSerializer,
+    KeyParameterSerializer,
     LivelihoodActivitySerializer,
     LivelihoodActivitySummarySerializer,
     LivelihoodProductCategorySerializer,
@@ -998,6 +1000,83 @@ class LivelihoodStrategyViewSet(BaseModelViewSet):
                 )
             )
         )
+
+
+class KeyParameterFilterSet(filters.FilterSet):
+    livelihood_strategy = django_filters.ModelChoiceFilter(
+        queryset=LivelihoodStrategy.objects.select_related(
+            "livelihood_zone_baseline__livelihood_zone__country",
+            "season",
+            "product",
+        ),
+        widget=autocomplete.ModelSelect2(url="livelihoodstrategy-autocomplete"),
+        label="Livelihood Strategy",
+    )
+    country = MultiFieldFilter(
+        [
+            "livelihood_strategy__livelihood_zone_baseline__livelihood_zone__country__iso3166a2",
+            "livelihood_strategy__livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name",
+            "livelihood_strategy__livelihood_zone_baseline__livelihood_zone__country__iso_en_name",
+            "livelihood_strategy__livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_proper",
+            "livelihood_strategy__livelihood_zone_baseline__livelihood_zone__country__iso_en_proper",
+            "livelihood_strategy__livelihood_zone_baseline__livelihood_zone__country__iso_fr_name",
+            "livelihood_strategy__livelihood_zone_baseline__livelihood_zone__country__iso_fr_proper",
+            "livelihood_strategy__livelihood_zone_baseline__livelihood_zone__country__iso_es_name",
+        ],
+        lookup_expr="iexact",
+        label="Country",
+    )
+    product = MultiFieldFilter(
+        [
+            *[(field, "icontains") for field in translation_fields("livelihood_strategy__product__common_name")],
+            ("livelihood_strategy__product__cpc", "istartswith"),
+            *[(field, "icontains") for field in translation_fields("livelihood_strategy__product__description")],
+            ("livelihood_strategy__product__aliases", "icontains"),
+        ],
+        label="Product",
+    )
+    strategy_type = filters.MultipleChoiceFilter(
+        choices=LivelihoodStrategyType.choices,
+        field_name="livelihood_strategy__strategy_type",
+        label="Strategy Type",
+    )
+
+    class Meta:
+        model = KeyParameter
+        fields = [
+            "livelihood_strategy",
+            "monitor_quantity",
+            "monitor_price",
+        ]
+
+
+class KeyParameterViewSet(BaseModelViewSet):
+    """
+    API endpoint that allows key parameters to be viewed or edited.
+    """
+
+    queryset = KeyParameter.objects.select_related(
+        "livelihood_strategy__livelihood_zone_baseline__livelihood_zone__country",
+        "livelihood_strategy__livelihood_zone_baseline__source_organization",
+        "livelihood_strategy__season",
+        "livelihood_strategy__product",
+        "livelihood_strategy__unit_of_measure",
+    )
+    serializer_class = KeyParameterSerializer
+    filterset_class = KeyParameterFilterSet
+    ordering = [
+        "livelihood_strategy__livelihood_zone_baseline",
+        "livelihood_strategy__strategy_type",
+        "livelihood_strategy__season",
+        "livelihood_strategy__product",
+        "livelihood_strategy__additional_identifier",
+    ]
+    search_fields = [
+        "livelihood_strategy__additional_identifier",
+        "livelihood_strategy__livelihood_zone_baseline__livelihood_zone__code",
+        "livelihood_strategy__livelihood_zone_baseline__livelihood_zone__alternate_code",
+        "livelihood_strategy__product__cpc",
+    ]
 
 
 LIVELIHOOD_ACTIVITY_ORDER_BY = ["sort_key"]

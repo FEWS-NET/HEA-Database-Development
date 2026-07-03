@@ -36,6 +36,7 @@ from .models import (
     FoodPurchase,
     Hazard,
     Hunting,
+    KeyParameter,
     LivelihoodActivity,
     LivelihoodProductCategory,
     LivelihoodStrategy,
@@ -397,6 +398,47 @@ class LivelihoodStrategyAdmin(admin.ModelAdmin):
                 "season",
                 "product",
                 "unit_of_measure",
+            )
+        )
+
+
+class KeyParameterAdmin(admin.ModelAdmin):
+    autocomplete_fields = ("livelihood_strategy",)
+    fields = (
+        "livelihood_strategy",
+        "monitor_quantity",
+        "monitor_price",
+    )
+    list_display = (
+        "livelihood_strategy",
+        "monitor_quantity",
+        "monitor_price",
+    )
+    search_fields = (
+        "livelihood_strategy__livelihood_zone_baseline__livelihood_zone__code",
+        "livelihood_strategy__livelihood_zone_baseline__livelihood_zone__alternate_code",
+        *translation_fields("livelihood_strategy__product__common_name"),
+        *translation_fields("livelihood_strategy__product__description"),
+        "livelihood_strategy__product__cpc",
+        "livelihood_strategy__additional_identifier",
+    )
+    list_filter = (
+        "monitor_quantity",
+        "monitor_price",
+        "livelihood_strategy__strategy_type",
+        ("livelihood_strategy__livelihood_zone_baseline__livelihood_zone__country", admin.RelatedOnlyFieldListFilter),
+        ("livelihood_strategy__product", admin.RelatedOnlyFieldListFilter),
+    )
+
+    def get_queryset(self, request):
+        return (
+            super()
+            .get_queryset(request)
+            .select_related(
+                "livelihood_strategy__livelihood_zone_baseline__livelihood_zone__country",
+                "livelihood_strategy__season",
+                "livelihood_strategy__product",
+                "livelihood_strategy__unit_of_measure",
             )
         )
 
@@ -1460,6 +1502,7 @@ admin.site.register(LivelihoodZoneBaseline, LivelihoodZoneBaselineAdmin)
 admin.site.register(LivelihoodZoneBaselineCorrection, LivelihoodZoneBaselineCorrectionAdmin)
 admin.site.register(Community, CommunityAdmin)
 admin.site.register(LivelihoodStrategy, LivelihoodStrategyAdmin)
+admin.site.register(KeyParameter, KeyParameterAdmin)
 admin.site.register(WealthGroup, WealthGroupAdmin)
 
 admin.site.register(CommunityCropProduction, CommunityCropProductionAdmin)

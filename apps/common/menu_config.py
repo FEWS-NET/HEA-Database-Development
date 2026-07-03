@@ -317,6 +317,7 @@ ADMIN_MENU_CONFIG = [
                     "baseline.view_livelihoodactivity",
                     "baseline.view_wealthgroupcharacteristicvalue",
                     "baseline.view_livelihoodstrategy",
+                    "baseline.view_keyparameter",
                 ],
                 "items": [
                     {
@@ -333,6 +334,11 @@ ADMIN_MENU_CONFIG = [
                         "label": _("Livelihood Activity"),
                         "url_name": "admin:baseline_livelihoodactivity_changelist",
                         "perm": "baseline.view_livelihoodactivity",
+                    },
+                    {
+                        "label": _("Key Parameter"),
+                        "url_name": "admin:baseline_keyparameter_changelist",
+                        "perm": "baseline.view_keyparameter",
                     },
                 ],
             },
