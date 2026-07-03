@@ -749,7 +749,6 @@ class KeyParameterSerializer(serializers.ModelSerializer):
     season_type_label = serializers.SerializerMethodField()
     strategy_type = serializers.CharField(source="livelihood_strategy.strategy_type", read_only=True)
     strategy_type_label = serializers.SerializerMethodField()
-    livelihood_zone_baseline_label = serializers.SerializerMethodField()
 
     def get_season_type_label(self, obj):
         return obj.livelihood_strategy.season.get_season_type_display() if obj.livelihood_strategy.season else ""
