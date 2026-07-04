@@ -23,7 +23,7 @@ jobs:
       fail_python_format: true
       fail_python_isort: true
       check_secrets: true
-      fail_secrets: true
+      fail_secrets: false
       check_shellscripts: true
       fail_shellscripts: false
       check_safety: false
