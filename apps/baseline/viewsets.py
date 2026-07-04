@@ -1012,6 +1012,18 @@ class KeyParameterFilterSet(filters.FilterSet):
         widget=autocomplete.ModelSelect2(url="livelihoodstrategy-autocomplete"),
         label="Livelihood Strategy",
     )
+    livelihood_zone_baseline = django_filters.ModelChoiceFilter(
+        field_name="livelihood_strategy__livelihood_zone_baseline",
+        queryset=LivelihoodZoneBaseline.objects.select_related("livelihood_zone"),
+        widget=autocomplete.ModelSelect2(url="livelihoodzonebaseline-autocomplete"),
+        label="Livelihood Zone Baseline",
+    )
+    livelihood_zone = django_filters.ModelChoiceFilter(
+        field_name="livelihood_strategy__livelihood_zone_baseline__livelihood_zone",
+        queryset=LivelihoodZone.objects.all(),
+        widget=autocomplete.ModelSelect2(url="livelihoodzone-autocomplete"),
+        label="Livelihood Zone",
+    )
     country = MultiFieldFilter(
         [
             "livelihood_strategy__livelihood_zone_baseline__livelihood_zone__country__iso3166a2",
@@ -1045,6 +1057,8 @@ class KeyParameterFilterSet(filters.FilterSet):
         model = KeyParameter
         fields = [
             "livelihood_strategy",
+            "livelihood_zone_baseline",
+            "livelihood_zone",
             "monitor_quantity",
             "monitor_price",
         ]
