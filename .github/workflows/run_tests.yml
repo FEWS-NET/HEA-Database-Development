@@ -42,6 +42,10 @@ on:
         required: false
         type: boolean
         default: false
+      force_no_cache_build:
+        required: false
+        type: boolean
+        default: false
 
       aws_role_to_assume:
         required: true
@@ -57,7 +61,7 @@ on:
         type: string
 
     secrets:
-      SSH_PRIVATE_KEY:
+      GIT_SSH_PRIVATE_KEY:
         required: true
       DOCKER_HUB_TOKEN:
         required: true
@@ -148,7 +152,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          ssh-key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
           persist-credentials: true
           submodules: recursive
           fetch-depth: 0
@@ -159,7 +163,12 @@ jobs:
           echo "${{ github.ref_name }}-${GITHUB_SHA::8}" | tee VERSION.txt
 
       - name: Build Docker images
-        run: docker compose build
+        run: |
+          if [[ "${{ inputs.force_no_cache_build }}" == "true" ]]; then
+            docker compose build --pull --force-rm --no-cache
+          else
+            docker compose build
+          fi
 
       - name: Save images to speed up future builds
         if: ${{ inputs.push_edge_images }}

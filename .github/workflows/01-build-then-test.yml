@@ -13,7 +13,6 @@ on:
 
 env:
   AWS_REGION: "us-east-1"
-  AWS_ROLE_TO_ASSUME: "arn:aws:iam::888016039450:role/data-prod-eks-cluster-github-actions-arc-role"
 
 jobs:
   lint:
@@ -133,6 +132,7 @@ jobs:
           --name ci-${APP}-${CI_PIPELINE_ID}-${{ github.job }} \
           app --keepdb --exclude-tag=perf 2>&1 | tee test_output.log
       add_version_txt: false
+      force_no_cache_build: true
       push_edge_images: true
       push_latest_images: true
       push_stable_images: true
