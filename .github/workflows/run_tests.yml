@@ -1,0 +1,292 @@
+name: Run tests
+
+permissions:
+  contents: read
+  id-token: write
+
+on:
+  workflow_call:
+    inputs:
+      name:
+        required: true
+        type: string
+      test_command:
+        required: true
+        type: string
+
+      add_version_txt:
+        required: false
+        type: boolean
+        default: false
+      check_test_output:
+        required: false
+        type: boolean
+        default: true
+      save_docker_logs:
+        required: false
+        type: boolean
+        default: true
+      push_edge_images:
+        required: false
+        type: boolean
+        default: false
+      push_latest_images:
+        required: false
+        type: boolean
+        default: false
+      push_tagged_images:
+        required: false
+        type: boolean
+        default: false
+      push_stable_images:
+        required: false
+        type: boolean
+        default: false
+
+      aws_role_to_assume:
+        required: true
+        type: string
+      ecr_registry:
+        required: true
+        type: string
+      ecr_registry_image:
+        required: true
+        type: string
+      aws_s3_bucket:
+        required: true
+        type: string
+
+    secrets:
+      SSH_PRIVATE_KEY:
+        required: true
+      DOCKER_HUB_TOKEN:
+        required: true
+      DOCKER_HUB_USERNAME:
+        required: true
+      SECRET_KEY:
+        required: true
+
+env:
+  AWS_REGION: "us-east-1"
+
+jobs:
+  run_tests:
+    runs-on: fewsnet-dind-runners
+
+    defaults:
+      run:
+        shell: bash --noprofile --norc -e -o pipefail {0}
+
+    env:
+      CI_PIPELINE_ID: ${{ github.run_id }}
+      COMPOSE_PROJECT_NAME: ci-hea-${{ github.run_id }}
+      COMPOSE_FILE: docker-compose.yml:docker-compose.ci.yml:docker-compose.utils.yml
+      BUILD_IMAGES: "app db"
+
+      CLIENT: "fnt"
+      APP: "hea"
+      ENV: "tst"
+
+      SUPPORT_EMAIL_ADDRESS: "helpdesk@fews.net"
+
+      DATABASE_URL: "postgis://fntheatst:testpass@db:5432/fntheatst"
+      PGDATABASE: "fntheatst"
+      PGHOST: "db"
+      PGPASSWORD: "testpass"
+      PGPORT: "5432"
+      PGUSER: "heatst"
+
+      PIP_INDEX_URL: "https://pypi.python.org/simple/"
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
+
+      GOOGLE_ADMIN_EMAIL: ""
+      GOOGLE_APPLICATION_CREDENTIALS: ""
+
+      BSS_METADATA_WORKBOOK: "gdrive://Database Design/BSS Metadata"
+      BSS_METADATA_STORAGE_OPTIONS: '{"token": "service_account", "access": "read_only", "creds": "valid_creds_object", "root_file_id": "0AOJ0gJ8sjnO7Uk9PVA"}'
+      BSS_LABEL_RECOGNITION_WORKBOOK: "gdrive://Database Design/BSS Labels (CI).xlsx"
+      BSS_LABEL_RECOGNITION_STORAGE_OPTIONS: '{"token": "service_account", "access": "read_only", "creds": "valid_creds_object", "root_file_id": "0AOJ0gJ8sjnO7Uk9PVA"}'
+      BSS_FILES_FOLDER: "gdrive://Discovery Folder/Baseline Storage Sheets (BSS)"
+      BSS_FILES_STORAGE_OPTIONS: '{"token": "service_account", "access": "read_only", "creds": "valid_creds_object", "root_file_id": "0AOJ0gJ8sjnO7Uk9PVA"}'
+
+      ECR_REGISTRY: ${{ inputs.ecr_registry }}
+      ECR_REGISTRY_IMAGE: ${{ inputs.ecr_registry_image }}
+      AWS_S3_BUCKET: ${{ inputs.aws_s3_bucket }}
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ inputs.aws_role_to_assume }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-duration-seconds: 14400
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          registries: "888016039450"
+          mask-password: "true"
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      - name: Pull previous images to speed up builds
+        run: |
+          for SERVICE in ${BUILD_IMAGES}; do
+            docker pull "${ECR_REGISTRY_IMAGE}/${SERVICE}:edge" \
+              | grep -i -e 'Pulling from' -e Digest -e Status -e Error || true
+          done
+
+          for SERVICE in ${BUILD_IMAGES}; do
+            docker pull "${ECR_REGISTRY_IMAGE}/${SERVICE}:latest" \
+              | grep -i -e 'Pulling from' -e Digest -e Status -e Error || true
+          done
+
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          persist-credentials: true
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Add VERSION.txt to Docker build context
+        if: ${{ inputs.add_version_txt }}
+        run: |
+          echo "${{ github.ref_name }}-${GITHUB_SHA::8}" | tee VERSION.txt
+
+      - name: Build Docker images
+        run: docker compose build
+
+      - name: Save images to speed up future builds
+        if: ${{ inputs.push_edge_images }}
+        run: |
+          for SERVICE in ${BUILD_IMAGES}; do
+            docker tag "${COMPOSE_PROJECT_NAME}-${SERVICE}:latest" "${ECR_REGISTRY_IMAGE}/${SERVICE}:edge"
+          done
+
+          for SERVICE in ${BUILD_IMAGES}; do
+            docker push "${ECR_REGISTRY_IMAGE}/${SERVICE}:edge" \
+              | grep -i -e 'The push refers to' -e Digest -e Status -e Error
+          done
+
+      - name: Start the service containers
+        run: docker compose up -d db
+
+      - name: Wait for containers to be ready
+        run: |
+          echo "$(date) Wait for containers to be ready"
+          docker compose run -e TARGETS=db:5432 -e TIMEOUT=90 wait
+          echo "$(date) Containers ready"
+          docker compose exec -T db pg_config --version
+
+      - name: Run test suite
+        run: |
+          ${{ inputs.test_command }}
+
+      - name: Test that the output is clean
+        if: ${{ inputs.check_test_output }}
+        run: |
+          cat test_output.log | docker compose run -T --rm --entrypoint=/usr/src/app/manage.py app check_test_output -
+
+      - name: Save docker logs as artifacts
+        if: ${{ inputs.save_docker_logs }}
+        run: |
+          docker compose logs --no-color > ./docker.log
+
+          for SERVICE in $(docker compose ps --services); do
+            docker compose logs --no-color "${SERVICE}" > "./docker.${SERVICE}.log"
+          done
+
+          docker cp "ci-${APP}-${CI_PIPELINE_ID}-${{ github.job }}:/usr/src/app/log" ./ || true
+          docker cp "ci-${APP}-${CI_PIPELINE_ID}-${{ github.job }}:/usr/src/app/coverage.txt" ./ || true
+
+      - name: Save latest Docker images
+        if: ${{ inputs.push_latest_images }}
+        run: |
+          for SERVICE in ${BUILD_IMAGES}; do
+            docker tag "ci-${APP}-${CI_PIPELINE_ID}-${SERVICE}:latest" "${ECR_REGISTRY_IMAGE}/${SERVICE}:latest"
+          done
+
+          for SERVICE in ${BUILD_IMAGES}; do
+            docker push "${ECR_REGISTRY_IMAGE}/${SERVICE}:latest" \
+              | grep -i -e 'The push refers to' -e Digest -e Status -e Error
+          done
+
+      - name: Create prod image without test requirements
+        if: ${{ inputs.push_tagged_images }}
+        run: |
+          docker compose -f docker-compose.yml build app
+
+          for SERVICE in ${BUILD_IMAGES}; do
+            docker tag "ci-${APP}-${CI_PIPELINE_ID}-${SERVICE}:latest" "${ECR_REGISTRY_IMAGE}/${SERVICE}:${GITHUB_REF_NAME}"
+          done
+
+          for SERVICE in ${BUILD_IMAGES}; do
+            docker push "${ECR_REGISTRY_IMAGE}/${SERVICE}:${GITHUB_REF_NAME}" \
+              | grep -i -e 'The push refers to' -e Digest -e Status -e Error
+          done
+
+      - name: Push stable image
+        if: ${{ inputs.push_stable_images }}
+        run: |
+          for SERVICE in ${BUILD_IMAGES}; do
+            docker tag "ci-${APP}-${CI_PIPELINE_ID}-${SERVICE}:latest" "${ECR_REGISTRY_IMAGE}/${SERVICE}:stable"
+          done
+
+          for SERVICE in ${BUILD_IMAGES}; do
+            docker push "${ECR_REGISTRY_IMAGE}/${SERVICE}:stable" \
+              | grep -i -e 'The push refers to' -e Digest -e Status -e Error
+          done
+
+      - name: Upload test artifacts
+        if: success() || failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ env.CI_PIPELINE_ID }}-${{ inputs.name }}-${{ github.job }}-artifacts
+          path: |
+            log
+            coverage.txt
+            docker*.log
+            ecs-params.yml
+            schema.diff
+            schema.yml
+            test_output.log
+          retention-days: 1
+
+      - name: Upload test artifacts to S3
+        if: success() || failure()
+        id: upload-artifacts-to-s3
+        uses: ./.github/actions/collect_artifacts_and_push_to_s3
+        with:
+          source-files-or-folders: "log coverage.txt docker*.log ecs-params.yml schema.diff schema.yml test_output.log"
+          aws-s3-bucket: ${{ env.AWS_S3_BUCKET }}
+
+      - name: Print artifact URL
+        if: success() || failure()
+        run: |
+          echo "Link to s3 console: ${{ steps.upload-artifacts-to-s3.outputs.aws-console-url }}"
+
+      - name: Clean up
+        if: success() || failure()
+        run: |
+          docker compose down --volumes 2>/dev/null || true
+
+          CONTAINERS_TO_STOP="$(docker ps -a -q | grep -v "$(hostname)" || true)"
+          if [[ -n "${CONTAINERS_TO_STOP}" ]]; then
+            docker stop ${CONTAINERS_TO_STOP} || true
+            docker rm ${CONTAINERS_TO_STOP} || true
+          fi
+
+          for SERVICE in ${BUILD_IMAGES}; do
+            for TAG in "ci-${APP}-${CI_PIPELINE_ID}-${SERVICE}:latest" \
+                       "${ECR_REGISTRY_IMAGE}/${SERVICE}:latest" \
+                       "${ECR_REGISTRY_IMAGE}/${SERVICE}:edge" \
+                       "${ECR_REGISTRY_IMAGE}/${SERVICE}:${GITHUB_REF_NAME}" \
+                       "${ECR_REGISTRY_IMAGE}/${SERVICE}:stable"; do
+              docker image rm "${TAG}" >/dev/null 2>&1 || true
+            done
+          done

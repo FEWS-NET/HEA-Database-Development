@@ -1,738 +1,144 @@
 name: Build then test
 
+permissions:
+  contents: read
+  id-token: write
+
 on:
   push:
+    branches:
+      - "**"
+    tags:
+      - "*"
 
 env:
-  CLIENT: "fnt"
-  APP: "hea"
-  ENV: "tst"
-  SUPPORT_EMAIL_ADDRESS: "helpdesk@fews.net"
-  DATABASE_URL: "postgis://fntheatst:testpass@db:5432/fntheatst"
-  PGDATABASE: "fntheatst"
-  PGHOST: "db"
-  PGPASSWORD: "testpass"
-  PGPORT: "5432"
-  PGUSER: "heatst"
-  PIP_INDEX_URL: "https://pypi.python.org/simple/"
-  SECRET_KEY: ${{ secrets.SECRET_KEY }}
-
-  # Avoid "variable is not set. Defaulting to a blank string." warnings
-  GOOGLE_ADMIN_EMAIL: ""
-  GOOGLE_APPLICATION_CREDENTIALS: ""
-
-  # Ingestion parameters - use secrets if actual credentials are required
-  BSS_METADATA_WORKBOOK: "gdrive://Database Design/BSS Metadata"
-  BSS_METADATA_STORAGE_OPTIONS: '{"token": "service_account", "access": "read_only", "creds": "valid_creds_object", "root_file_id": "0AOJ0gJ8sjnO7Uk9PVA"}'
-  BSS_LABEL_RECOGNITION_WORKBOOK: "gdrive://Database Design/BSS Labels (CI).xlsx"
-  BSS_LABEL_RECOGNITION_STORAGE_OPTIONS: '{"token": "service_account", "access": "read_only", "creds": "valid_creds_object", "root_file_id": "0AOJ0gJ8sjnO7Uk9PVA"}'
-  BSS_FILES_FOLDER: "gdrive://Discovery Folder/Baseline Storage Sheets (BSS)"
-  BSS_FILES_STORAGE_OPTIONS: '{"token": "service_account", "access": "read_only", "creds": "valid_creds_object", "root_file_id": "0AOJ0gJ8sjnO7Uk9PVA"}'
-
-  # AWS Variables
-  ECR_REGISTRY: "888016039450.dkr.ecr.us-east-1.amazonaws.com"
   AWS_REGION: "us-east-1"
-  # @TODO: Create this bucket with the -hea suffix
-  AWS_S3_BUCKET: "fntgithub-ci-artifacts-hea"
+  AWS_ROLE_TO_ASSUME: "arn:aws:iam::888016039450:role/data-prod-eks-cluster-github-actions-arc-role"
 
 jobs:
   lint:
-    runs-on: [ fewsnet ]
-    container: "python:3.12"
-
-    steps:
-      - uses: "actions/checkout@v4"
-        with:
-          ssh-key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
-          # use ssh-key for updating submodules, will be removed in post-job
-          persist-credentials: true
-          submodules: "recursive"
-      - name: Install lint dependencies
-        run: pip install -r requirements/lint.txt
-      - name: Run ruff check
-        run: ruff check .
-      - name: Run black check
-        run: black --check .
-      - name: Run isort check
-        run: isort --check .
-
-  start-runner-test_branch:
-    if: ${{ !(startsWith(github.ref, 'refs/tags/')) && !(github.ref == 'refs/heads/main') }}
-    needs: lint
-    runs-on: [ fewsnet ]
-    outputs:
-      label: ${{ steps.start-ec2-runner.outputs.label }}
-      ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
-    steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-region: ${{ vars.AWS_REGION }}
-      - name: Start EC2 runner test_branch
-        id: start-ec2-runner
-        uses: American-Institutes-for-Research/gitops-actions/fewsnet-start-runner@main
-        with:
-          gh_personal_access_token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-          project-key: "HEA"
-
-  start-runner-test_keepdb:
-    needs: lint
-    runs-on: [ fewsnet ]
-    outputs:
-      label: ${{ steps.start-ec2-runner.outputs.label }}
-      ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
-    steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-region: ${{ env.AWS_REGION }}
-      - name: Start EC2 runner test_keepdb
-        id: start-ec2-runner
-        uses: American-Institutes-for-Research/gitops-actions/fewsnet-start-runner@main
-        with:
-          gh_personal_access_token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-          project-key: "HEA"
-
-  start-runner-test_main:
-    if: github.ref == 'refs/heads/main'
-    needs: lint
-    runs-on: [ fewsnet ]
-    outputs:
-      label: ${{ steps.start-ec2-runner.outputs.label }}
-      ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
-    steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-region: ${{ vars.AWS_REGION }}
-      - name: Start EC2 runner test_main
-        id: start-ec2-runner
-        uses: American-Institutes-for-Research/gitops-actions/fewsnet-start-runner@main
-        with:
-          gh_personal_access_token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-          project-key: "HEA"
-
-  start-runner-test_tag:
-    if: startsWith(github.ref, 'refs/tags/')
-    needs: lint
-    runs-on: [ fewsnet ]
-    outputs:
-      label: ${{ steps.start-ec2-runner.outputs.label }}
-      ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
-    steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-region: ${{ env.AWS_REGION }}
-      - name: Start EC2 runner test_tag
-        id: start-ec2-runner
-        uses: American-Institutes-for-Research/gitops-actions/fewsnet-start-runner@main
-        with:
-          gh_personal_access_token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-          project-key: "HEA"
+    uses: American-Institutes-for-Research/adw-infra/.github/workflows/run_linters.yml@main
+    with:
+      check_python: true
+      fail_python_format: true
+      fail_python_isort: true
+      check_secrets: true
+      fail_secrets: true
+      check_shellscripts: true
+      fail_shellscripts: false
+      check_safety: false
+      fail_safety: false
+    secrets: inherit
 
   test_branch:
     if: ${{ !(startsWith(github.ref, 'refs/tags/')) && !(github.ref == 'refs/heads/main') }}
-
-    # Build and test in a single step so that we don't have to wait
-    # while we push the built containers to a Registry and then wait
-    # again while we pull them in later CI steps.
-    runs-on: ${{ needs.start-runner-test_branch.outputs.label }} # run the job on the newly created runner
-    needs:
-      - start-runner-test_branch
-    container:
-      image: airorg/fewsnet-inf:docker-latest
-      credentials:
-        username: ${{ secrets.DOCKER_HUB_USERNAME }}
-        password: ${{ secrets.DOCKER_HUB_TOKEN }}
-    defaults:
-      run:
-        shell: ash --noprofile --norc -eo pipefail {0} # Fail on any non-zero exit code, even in piped commands
-    env:
-      # @TODO: Decide which env values can be moved to "local" scopes
-
-      # Use a unique name for the network and and containers so that we can run multiple builds simultaneously
-      # Getting the value for ${APP} seems to work in steps, but not here. So hardcoding it in COMPOSE_PROJECT_NAME - or maybe ${{ env. }} works?
-      # @TODO: Rename CI_PIPELINE_ID (used in docker-compose.ci.yml)
-      # @TODO: Properly understand and decide whether to use e.g. ${{ github.run_id }} or ${GITHUB_RUN_ID}
-      # in all places. The variable doesn't always work
-      # @TODO: Check if we can use "CI_PIPELINE_ID" in COMPOSE_PROJECT_NAME, seems we cannot:
-      CI_PIPELINE_ID: ${{ github.run_id }}
-      COMPOSE_PROJECT_NAME: ci-hea-${{ github.run_id }}
-      COMPOSE_FILE: docker-compose.yml:docker-compose.ci.yml:docker-compose.utils.yml
-      CI_REGISTRY_IMAGE: "888016039450.dkr.ecr.us-east-1.amazonaws.com/hea"
-      BUILD_IMAGES: "app db"
-
-    steps:
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-        with:
-          mask-password: 'true'
-      # Docker hub is rate-limiting unauthenticated users, so we have to
-      # authenticate: https://www.docker.com/increase-rate-limits
-      - name: Login to the DockerHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_TOKEN }}
-      - name: "Pull previous images to speed up builds"
-        run: |
-          for SERVICE in ${BUILD_IMAGES}; do (docker pull ${CI_REGISTRY_IMAGE}/${SERVICE}:edge | grep -i -e 'Pulling from' -e Digest -e Status -e Error) || true; done
-          for SERVICE in ${BUILD_IMAGES}; do (docker pull ${CI_REGISTRY_IMAGE}/${SERVICE}:latest | grep -i -e 'Pulling from' -e Digest -e Status -e Error) || true; done
-      - uses: "actions/checkout@v4"
-        with:
-          ssh-key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
-          # use ssh-key for updating submodules, will be removed in post-job
-          persist-credentials: true
-          submodules: "recursive"
-          # fetch full git history, because we need to run git commands to determine e.g. branch
-          fetch-depth: 0
-      - name: "Add VERSION.txt to Docker build context"
-        run: |
-          # Make sure the VERSION.txt reflects the actual commit we are building.
-          # In Gitlab CI, we were using: "${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHORT_SHA}"
-          echo "$(git rev-parse --abbrev-ref HEAD)-$(git rev-parse HEAD | cut -c -8)" | tee VERSION.txt
-      - name: "Build Docker images"
-        run: docker compose build
-      - name: "Save images to speed up future builds"
-        run: |
-          for SERVICE in ${{ env.BUILD_IMAGES }}; do docker tag ${{ env.COMPOSE_PROJECT_NAME }}-${SERVICE}:latest ${CI_REGISTRY_IMAGE}/${SERVICE}:edge; done
-          for SERVICE in ${{ env.BUILD_IMAGES }}; do docker push ${{ env.CI_REGISTRY_IMAGE }}/${SERVICE}:edge | grep -i -e 'The push refers to' -e Digest -e Status -e Error; done
-      - name: "Start the service containers"
-        run: docker compose up -d db
-      - name: "Wait for containers to be ready"
-        run: |
-          echo $(date) Wait for containers to be ready
-          docker compose run -e TARGETS=db:5432 -e TIMEOUT=90 wait
-          echo $(date) Containers ready
-          docker compose exec -T db pg_config --version
-      - name: "Run test suite"
-        run: |
-          # Use run instead of up because we want docker-compose to return the exit code
-          # Exclude the perf test and run it separately, so that we can run it in parallel with the rest of the tests
-          docker compose run --name ci-${APP}-${CI_PIPELINE_ID}-${{ github.job }} app --keepdb --exclude-tag=perf 2>&1 | tee test_output.log
-      - name: 'Test that the output is "clean"'
-        run: |
-          # there is an issue mounting test_output.log into the container, seems to have to do with the way
-          # Github runs steps, and/or "dind". The same did work in Gitlab.
-          # So we'll try to pass the file into the container via stdin
-          cat test_output.log | docker compose run -T --rm --entrypoint=/usr/src/app/manage.py app check_test_output -
-      # - name: 'Save a "review" Docker image'
-      #   run: |
-      #     CI_COMMIT_REF_SLUG=$(git describe)
-      #     for SERVICE in ${BUILD_IMAGES}; do docker tag ci-${APP}-${CI_PIPELINE_ID}-${SERVICE}:latest ${CI_REGISTRY_IMAGE}/${SERVICE}:test-${CI_COMMIT_REF_SLUG}; done
-      #     for SERVICE in ${BUILD_IMAGES}; do docker push ${CI_REGISTRY_IMAGE}/${SERVICE}:test-${CI_COMMIT_REF_SLUG} | grep -i -e 'The push refers to' -e Digest -e Status -e Error; done
-      #     for SERVICE in ${BUILD_IMAGES}; do docker image rm ${CI_REGISTRY_IMAGE}/${SERVICE}:test-${CI_COMMIT_REF_SLUG} >/dev/null; done
-      # - name: "Create Docker Compose file compatible with ecs-cli for use in deploy_review"
-      #   run: |
-      #     # @TODO: write this to environment when used before, don't call `git describe` again here
-      #     # docker-compose.review.yml uses CI_COMMIT_REF_SLUG
-      #     CI_COMMIT_REF_SLUG=$(git describe)
-      #     docker compose -f docker-compose.yml -f docker-compose.review.yml config --no-interpolate > docker-compose.ecs.yml
-      - name: "Save docker logs as artifacts"
-        if: success() || failure()
-        run: |
-          docker compose logs --no-color > ./docker.log
-          for SERVICE in $(docker compose ps --services); do docker compose logs --no-color ${SERVICE} > ./docker.${SERVICE}.log; done
-          # Copy the artifacts out of the Docker container to project directory
-          docker cp ci-${APP}-${CI_PIPELINE_ID}-${{ github.job }}:/usr/src/app/log ./ || true
-          docker cp ci-${APP}-${CI_PIPELINE_ID}-${{ github.job }}:/usr/src/app/coverage.txt ./ || true
-
-      - name: "Upload test artifacts"
-        if: success() || failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.CI_PIPELINE_ID }}-${{ github.job }}-artifacts
-          path: |
-            log
-            coverage.txt
-            docker*.log
-            ecs-params.yml
-            schema.diff
-            schema.yml
-            test_output.log
-          retention-days: 1
-      - name: "Upload test artifacts to s3"
-        if: success() || failure()
-        id: upload-artifacts-to-s3
-        uses: ./.github/actions/collect_artifacts_and_push_to_s3
-        with:
-          source-files-or-folders: "log coverage.txt docker*.log ecs-params.yml schema.diff schema.yml test_output.log"
-      - name: "Print artifact URLs"
-        if: success() || failure()
-        run: |
-          echo "${{ github.job }} artifact download link (expires in 7 days):" ${{ steps.upload-artifacts-to-s3.outputs.presigned-url }}
-          echo "Link to s3 console: ${{ steps.upload-artifacts-to-s3.outputs.aws-console-url }}"
-      - name: "Clean up"
-        if: success() || failure()
-        run: |
-          docker compose down --volumes 2>/dev/null
-          # kill all containers except the "dind" one, to avoid issues during cleanup
-          docker stop $(docker ps -a -q | grep -v "$(hostname)") && docker rm $(docker ps -a -q | grep -v "$(hostname)")
-          for SERVICE in ${BUILD_IMAGES}; do docker image rm ci-${APP}-${CI_PIPELINE_ID}-${SERVICE}:latest >/dev/null; done
-          for SERVICE in ${BUILD_IMAGES}; do docker image rm ${CI_REGISTRY_IMAGE}/${SERVICE}:edge >/dev/null; done
-          for SERVICE in ${BUILD_IMAGES}; do docker image rm ${CI_REGISTRY_IMAGE}/${SERVICE}:latest >/dev/null; done
+    needs: [lint]
+    uses: ./.github/workflows/run_tests.yml
+    with:
+      name: test_branch
+      test_command: |
+        docker compose run \
+          -e AWS_ACCESS_KEY_ID \
+          -e AWS_SECRET_ACCESS_KEY \
+          -e AWS_SESSION_TOKEN \
+          -e AWS_REGION \
+          -e AWS_DEFAULT_REGION=${AWS_REGION} \
+          --name ci-${APP}-${CI_PIPELINE_ID}-${{ github.job }} \
+          app --keepdb --exclude-tag=perf 2>&1 | tee test_output.log
+      add_version_txt: true
+      push_edge_images: true
+      push_latest_images: false
+      push_tagged_images: false
+      aws_role_to_assume: "arn:aws:iam::888016039450:role/data-prod-eks-cluster-github-actions-arc-role"
+      ecr_registry: "888016039450.dkr.ecr.us-east-1.amazonaws.com"
+      ecr_registry_image: "888016039450.dkr.ecr.us-east-1.amazonaws.com/hea"
+      aws_s3_bucket: "fntgithub-ci-artifacts-hea"
+    secrets: inherit
 
   test_keepdb:
-    # @TODO: REMOVE DUPLICATION BELOW!! COMMON PARTS SHOULD BE FACTORED OUT INTO SEPARATE ACTION
+    needs: [lint]
+    uses: ./.github/workflows/run_tests.yml
+    with:
+      name: test_keepdb
+      test_command: |
+        docker compose run --rm \
+          -e AWS_ACCESS_KEY_ID \
+          -e AWS_SECRET_ACCESS_KEY \
+          -e AWS_SESSION_TOKEN \
+          -e AWS_REGION \
+          -e AWS_DEFAULT_REGION=${AWS_REGION} \
+          app --keepdb
 
-    # Build and test in a single step so that we don't have to wait
-    # while we push the built containers to a Registry and then wait
-    # again while we pull them in later CI steps.
-    runs-on: ${{ needs.start-runner-test_keepdb.outputs.label }} # run the job on the newly created runner
-    needs:
-      - start-runner-test_keepdb
-    container:
-      image: airorg/fewsnet-inf:docker-latest
-      credentials:
-        username: ${{ secrets.DOCKER_HUB_USERNAME }}
-        password: ${{ secrets.DOCKER_HUB_TOKEN }}
-    defaults:
-      run:
-        shell: ash --noprofile --norc -eo pipefail {0} # Fail on any non-zero exit code, even in piped commands
-    env:
-      # @TODO: Decide which env values can be moved to "local" scopes
-
-      # Use a unique name for the network and and containers so that we can run multiple builds simultaneously
-      # Getting the value for ${APP} seems to work in steps, but not here. So hardcoding it in COMPOSE_PROJECT_NAME - or maybe ${{ env. }} works?
-      # @TODO: Rename CI_PIPELINE_ID (used in docker-compose.ci.yml)
-      # @TODO: Properly understand and decide whether to use e.g. ${GITHUB_run_id }} or ${GITHUB_RUN_ID}
-      # in all places. The variable doesn't always work
-      # @TODO: Check if we can use "CI_PIPELINE_ID" in COMPOSE_PROJECT_NAME
-      CI_PIPELINE_ID: ${{ github.run_id }}
-      COMPOSE_PROJECT_NAME: ci-hea-${{ github.run_id }}
-      COMPOSE_FILE: docker-compose.yml:docker-compose.ci.yml:docker-compose.utils.yml
-      CI_REGISTRY_IMAGE: "888016039450.dkr.ecr.us-east-1.amazonaws.com/hea"
-      BUILD_IMAGES: "app db"
-
-    steps:
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-        with:
-          mask-password: 'true'
-      # Docker hub is rate-limiting unauthenticated users, so we have to
-      # authenticate: https://www.docker.com/increase-rate-limits
-      - name: Login to the DockerHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_TOKEN }}
-      - name: "Pull previous images to speed up builds"
-        run: |
-          for SERVICE in ${BUILD_IMAGES}; do (docker pull ${CI_REGISTRY_IMAGE}/${SERVICE}:edge | grep -i -e 'Pulling from' -e Digest -e Status -e Error) || true; done
-          for SERVICE in ${BUILD_IMAGES}; do (docker pull ${CI_REGISTRY_IMAGE}/${SERVICE}:latest | grep -i -e 'Pulling from' -e Digest -e Status -e Error) || true; done
-      - uses: "actions/checkout@v4"
-        with:
-          ssh-key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
-          # use ssh-key for updating submodules, will be removed in post-job
-          persist-credentials: true
-          submodules: "recursive"
-      - name: "Add VERSION.txt to Docker build context"
-        run: |
-          # Make sure the VERSION.txt reflects the actual commit we are building.
-          # In Gitlab CI, we were using: "${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHORT_SHA}"
-          echo "$(git rev-parse --abbrev-ref HEAD)-$(git rev-parse HEAD | cut -c -8)" | tee VERSION.txt
-      - name: "Build Docker images"
-        run: docker compose build
-      - name: "Save images to speed up future builds"
-        run: |
-          for SERVICE in ${{ env.BUILD_IMAGES }}; do docker tag ${{ env.COMPOSE_PROJECT_NAME }}-${SERVICE}:latest ${CI_REGISTRY_IMAGE}/${SERVICE}:edge; done
-          for SERVICE in ${{ env.BUILD_IMAGES }}; do docker push ${{ env.CI_REGISTRY_IMAGE }}/${SERVICE}:edge | grep -i -e 'The push refers to' -e Digest -e Status -e Error; done
-      - name: "Start the service containers"
-        run: docker compose up -d db
-      - name: "Wait for containers to be ready"
-        run: |
-          echo $(date) Wait for containers to be ready
-          docker compose run -e TARGETS=db:5432 -e TIMEOUT=90 wait
-          echo $(date) Containers ready
-          docker compose exec -T db pg_config --version
-      - name: "Run test suite"
-        run: |
-          # Use run instead of up because we want docker-compose to return the exit code
-          # Run a TransactionTestCase and retain the database. TransactionTestCase truncates all the tables after running the test.
-          # This leaves a database with migrations already run, and tables existing, but without any data that might have been created by those migrations.
-          docker compose run --rm app --keepdb
-      - name: Run tests again, to ensure they set up all required test data and consequently work correctly with a truncated database
-        # @TODO: we do not run check_test_output here - is this on purpose? If yes, remove "tee" below. If not, add that step
-        run: docker compose run --name ci-${APP}-${CI_PIPELINE_ID}-${{ github.job }} app --keepdb --exclude-tag=perf 2>&1 | tee test_output.log
-      - name: "Save docker logs as artifacts"
-        if: success() || failure()
-        run: |
-          docker compose logs --no-color > ./docker.log
-          for SERVICE in $(docker compose ps --services); do docker compose logs --no-color ${SERVICE} > ./docker.${SERVICE}.log; done
-          # Copy the artifacts out of the Docker container to project directory
-          docker cp ci-${APP}-${CI_PIPELINE_ID}-${{ github.job }}:/usr/src/app/log ./ || true
-          docker cp ci-${APP}-${CI_PIPELINE_ID}-${{ github.job }}:/usr/src/app/coverage.txt ./ || true
-      - name: "Upload test artifacts"
-        if: success() || failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.CI_PIPELINE_ID }}-${{ github.job }}-artifacts
-          path: |
-            log
-            coverage.txt
-            docker*.log
-            ecs-params.yml
-            schema.diff
-            schema.yml
-            test_output.log
-          retention-days: 1
-      - name: "Upload test artifacts to s3"
-        if: success() || failure()
-        id: upload-artifacts-to-s3
-        uses: ./.github/actions/collect_artifacts_and_push_to_s3
-        with:
-          source-files-or-folders: "log coverage.txt docker*.log ecs-params.yml schema.diff schema.yml test_output.log"
-      - name: "Print artifact URLs"
-        if: success() || failure()
-        run: |
-          echo "${{ github.job }} artifact download link (expires in 7 days):" ${{ steps.upload-artifacts-to-s3.outputs.presigned-url }}
-          echo "Link to s3 console: ${{ steps.upload-artifacts-to-s3.outputs.aws-console-url }}"
-      - name: "Clean up"
-        if: success() || failure()
-        run: |
-          docker compose down --volumes 2>/dev/null
-          # kill all containers except the "dind" one, to avoid issues during cleanup
-          docker stop $(docker ps -a -q | grep -v "$(hostname)") && docker rm $(docker ps -a -q | grep -v "$(hostname)")
-          for SERVICE in ${BUILD_IMAGES}; do docker image rm ci-${APP}-${CI_PIPELINE_ID}-${SERVICE}:latest >/dev/null; done
-          for SERVICE in ${BUILD_IMAGES}; do docker image rm ${CI_REGISTRY_IMAGE}/${SERVICE}:edge >/dev/null; done
-          for SERVICE in ${BUILD_IMAGES}; do docker image rm ${CI_REGISTRY_IMAGE}/${SERVICE}:latest >/dev/null; done
+        docker compose run \
+          -e AWS_ACCESS_KEY_ID \
+          -e AWS_SECRET_ACCESS_KEY \
+          -e AWS_SESSION_TOKEN \
+          -e AWS_REGION \
+          -e AWS_DEFAULT_REGION=${AWS_REGION} \
+          --name ci-${APP}-${CI_PIPELINE_ID}-${{ github.job }} \
+          app --keepdb --exclude-tag=perf 2>&1 | tee test_output.log
+      add_version_txt: true
+      check_test_output: false
+      push_edge_images: true
+      push_latest_images: false
+      push_tagged_images: false
+      aws_role_to_assume: "arn:aws:iam::888016039450:role/data-prod-eks-cluster-github-actions-arc-role"
+      ecr_registry: "888016039450.dkr.ecr.us-east-1.amazonaws.com"
+      ecr_registry_image: "888016039450.dkr.ecr.us-east-1.amazonaws.com/hea"
+      aws_s3_bucket: "fntgithub-ci-artifacts-hea"
+    secrets: inherit
 
   test_main:
     if: github.ref == 'refs/heads/main'
-    # Build and test in a single step so that we don't have to wait
-    # while we push the built containers to a Registry and then wait
-    # again while we pull them in later CI steps.
-    runs-on: ${{ needs.start-runner-test_main.outputs.label }} # run the job on the newly created runner
-    needs:
-      - start-runner-test_main
-    container:
-      image: airorg/fewsnet-inf:docker-latest
-      credentials:
-        username: ${{ secrets.DOCKER_HUB_USERNAME }}
-        password: ${{ secrets.DOCKER_HUB_TOKEN }}
-    defaults:
-      run:
-        shell: ash --noprofile --norc -eo pipefail {0} # Fail on any non-zero exit code, even in piped commands
-    env:
-      # @TODO: Decide which env values can be moved to "local" scopes
-
-      # Use a unique name for the network and and containers so that we can run multiple builds simultaneously
-      # Getting the value for ${APP} seems to work in steps, but not here. So hardcoding it in COMPOSE_PROJECT_NAME - or maybe ${{ env. }} works?
-      # @TODO: Rename CI_PIPELINE_ID (used in docker-compose.ci.yml)
-      # @TODO: Properly understand and decide whether to use e.g. ${GITHUB_run_id }} or ${GITHUB_RUN_ID}
-      # in all places. The variable doesn't always work
-      # @TODO: Check if we can use "CI_PIPELINE_ID" in COMPOSE_PROJECT_NAME
-      CI_PIPELINE_ID: ${{ github.run_id }}
-      COMPOSE_PROJECT_NAME: ci-hea-${{ github.run_id }}
-      COMPOSE_FILE: docker-compose.yml:docker-compose.ci.yml:docker-compose.utils.yml
-      CI_REGISTRY_IMAGE: "888016039450.dkr.ecr.us-east-1.amazonaws.com/hea"
-      BUILD_IMAGES: "app db"
-
-    steps:
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-        with:
-          mask-password: 'true'
-      # Docker hub is rate-limiting unauthenticated users, so we have to
-      # authenticate: https://www.docker.com/increase-rate-limits
-      - name: Login to the DockerHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_TOKEN }}
-      - name: "Pull previous images to speed up builds"
-        run: |
-          echo Using registry image ${CI_REGISTRY_IMAGE}
-          for SERVICE in ${BUILD_IMAGES}; do (docker pull ${CI_REGISTRY_IMAGE}/${SERVICE}:edge | grep -i -e 'Pulling from' -e Digest -e Status -e Error) || true; done
-          for SERVICE in ${BUILD_IMAGES}; do (docker pull ${CI_REGISTRY_IMAGE}/${SERVICE}:latest | grep -i -e 'Pulling from' -e Digest -e Status -e Error) || true; done
-      - uses: "actions/checkout@v4"
-        with:
-          ssh-key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
-          # use ssh-key for updating submodules, will be removed in post-job
-          persist-credentials: true
-          submodules: "recursive"
-      - name: "Add VERSION.txt to Docker build context"
-        run: |
-          # Make sure the VERSION.txt reflects the actual commit we are building.
-          # In Gitlab CI, we were using: "${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHORT_SHA}"
-          echo "$(git rev-parse --abbrev-ref HEAD)-$(git rev-parse HEAD | cut -c -8)" | tee VERSION.txt
-      - name: "Build Docker images"
-        run: docker compose build
-      - name: "Save images to speed up future builds"
-        run: |
-          for SERVICE in ${{ env.BUILD_IMAGES }}; do docker tag ${{ env.COMPOSE_PROJECT_NAME }}-${SERVICE}:latest ${CI_REGISTRY_IMAGE}/${SERVICE}:edge; done
-          for SERVICE in ${{ env.BUILD_IMAGES }}; do docker push ${{ env.CI_REGISTRY_IMAGE }}/${SERVICE}:edge | grep -i -e 'The push refers to' -e Digest -e Status -e Error; done
-      - name: "Start the service containers"
-        run: docker compose up -d db
-      - name: "Wait for containers to be ready"
-        run: |
-          echo $`date` Wait for containers to be ready
-          docker compose run -e TARGETS=db:5432 -e TIMEOUT=90 wait
-          echo $`date` Containers ready
-          docker compose exec -T db pg_config --version
-      - name: "Run test suite"
-        run: |
-          # Use run instead of up because we want docker-compose to return the exit code
-          docker compose run --name ci-${APP}-${CI_PIPELINE_ID}-${{ github.job }} -e CHECK_SAFETY=1 -e TEST_OUTPUT_VERBOSE=2 app --keepdb --exclude-tag=perf 2>&1 | tee test_output.log
-      - name: 'Test that the output is "clean"'
-        run: cat test_output.log | docker compose run -T --rm --entrypoint=/usr/src/app/manage.py app check_test_output -
-      - name: 'Save a "latest" Docker image'
-        run: |
-          for SERVICE in ${BUILD_IMAGES}; do docker tag ci-${APP}-${CI_PIPELINE_ID}-${SERVICE}:latest ${CI_REGISTRY_IMAGE}/${SERVICE}:latest; done
-          for SERVICE in ${BUILD_IMAGES}; do docker push ${CI_REGISTRY_IMAGE}/${SERVICE}:latest | grep -i -e 'The push refers to' -e Digest -e Status -e Error; done
-      - name: "Save docker logs as artifacts"
-        if: success() || failure()
-        run: |
-          docker compose logs --no-color > ./docker.log
-          for SERVICE in $(docker compose ps --services); do docker compose logs --no-color ${SERVICE} > ./docker.${SERVICE}.log; done
-          # Copy the artifacts out of the Docker container to project directory
-          docker cp ci-${APP}-${CI_PIPELINE_ID}-${{ github.job }}:/usr/src/app/log ./ || true
-          docker cp ci-${APP}-${CI_PIPELINE_ID}-${{ github.job }}:/usr/src/app/coverage.txt ./ || true
-      - name: "Upload test artifacts"
-        if: success() || failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.CI_PIPELINE_ID }}-${{ github.job }}-artifacts
-          path: |
-            log
-            coverage.txt
-            docker*.log
-            ecs-params.yml
-            schema.diff
-            schema.yml
-            test_output.log
-          retention-days: 1
-      - name: "Upload test artifacts to s3"
-        if: success() || failure()
-        id: upload-artifacts-to-s3
-        uses: ./.github/actions/collect_artifacts_and_push_to_s3
-        with:
-          source-files-or-folders: "log coverage.txt docker*.log ecs-params.yml schema.diff schema.yml test_output.log"
-      - name: "Print artifact URLs"
-        if: success() || failure()
-        run: |
-          echo "${{ github.job }} artifact download link (expires in 7 days):" ${{ steps.upload-artifacts-to-s3.outputs.presigned-url }}
-          echo "Link to s3 console: ${{ steps.upload-artifacts-to-s3.outputs.aws-console-url }}"
-      - name: "Clean up"
-        if: success() || failure()
-        run: |
-          docker compose down --volumes 2>/dev/null
-          # kill all containers except the "dind" one, to avoid issues during cleanup
-          docker stop $(docker ps -a -q | grep -v "$(hostname)") && docker rm $(docker ps -a -q | grep -v "$(hostname)")
-          for SERVICE in ${BUILD_IMAGES}; do docker image rm ci-${APP}-${CI_PIPELINE_ID}-${SERVICE}:latest >/dev/null; done
-          for SERVICE in ${BUILD_IMAGES}; do docker image rm ${CI_REGISTRY_IMAGE}/${SERVICE}:edge >/dev/null; done
-          for SERVICE in ${BUILD_IMAGES}; do docker image rm ${CI_REGISTRY_IMAGE}/${SERVICE}:latest >/dev/null; done
+    needs: [lint]
+    uses: ./.github/workflows/run_tests.yml
+    with:
+      name: test_main
+      test_command: |
+        docker compose run \
+          -e AWS_ACCESS_KEY_ID \
+          -e AWS_SECRET_ACCESS_KEY \
+          -e AWS_SESSION_TOKEN \
+          -e AWS_REGION \
+          -e AWS_DEFAULT_REGION=${AWS_REGION} \
+          -e CHECK_SAFETY=1 \
+          -e TEST_OUTPUT_VERBOSE=2 \
+          --name ci-${APP}-${CI_PIPELINE_ID}-${{ github.job }} \
+          app --keepdb --exclude-tag=perf 2>&1 | tee test_output.log
+      add_version_txt: true
+      push_edge_images: true
+      push_latest_images: true
+      push_tagged_images: false
+      aws_role_to_assume: "arn:aws:iam::888016039450:role/data-prod-eks-cluster-github-actions-arc-role"
+      ecr_registry: "888016039450.dkr.ecr.us-east-1.amazonaws.com"
+      ecr_registry_image: "888016039450.dkr.ecr.us-east-1.amazonaws.com/hea"
+      aws_s3_bucket: "fntgithub-ci-artifacts-hea"
+    secrets: inherit
 
   test_tag:
     if: startsWith(github.ref, 'refs/tags/')
-
-    # Build and test in a single step so that we don't have to wait
-    # while we push the built containers to a Registry and then wait
-    # again while we pull them in later CI steps.
-    runs-on: ${{ needs.start-runner-test_tag.outputs.label }} # run the job on the newly created runner
-    needs:
-      - start-runner-test_tag
-    container:
-      image: airorg/fewsnet-inf:docker-latest
-      credentials:
-        username: ${{ secrets.DOCKER_HUB_USERNAME }}
-        password: ${{ secrets.DOCKER_HUB_TOKEN }}
-    defaults:
-      run:
-        shell: ash --noprofile --norc -eo pipefail {0} # Fail on any non-zero exit code, even in piped commands
-    env:
-      # @TODO: Decide which env values can be moved to "local" scopes
-
-      # Use a unique name for the network and and containers so that we can run multiple builds simultaneously
-      # Getting the value for ${APP} seems to work in steps, but not here. So hardcoding it in COMPOSE_PROJECT_NAME - or maybe ${{ env. }} works?
-      # @TODO: Rename CI_PIPELINE_ID (used in docker-compose.ci.yml)
-      # @TODO: Properly understand and decide whether to use e.g. ${GITHUB_run_id }} or ${GITHUB_RUN_ID}
-      # in all places. The variable doesn't always work
-      # @TODO: Check if we can use "CI_PIPELINE_ID" in COMPOSE_PROJECT_NAME
-      CI_PIPELINE_ID: ${{ github.run_id }}
-      COMPOSE_PROJECT_NAME: ci-hea-${{ github.run_id }}
-      COMPOSE_FILE: docker-compose.yml:docker-compose.ci.yml:docker-compose.utils.yml
-      CI_REGISTRY_IMAGE: "888016039450.dkr.ecr.us-east-1.amazonaws.com/hea"
-      BUILD_IMAGES: "app db"
-
-    steps:
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-        with:
-          mask-password: 'true'
-      # Docker hub is rate-limiting unauthenticated users, so we have to
-      # authenticate: https://www.docker.com/increase-rate-limits
-      - name: Login to the DockerHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_TOKEN }}
-      - uses: "actions/checkout@v4"
-        with:
-          ssh-key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
-          # use ssh-key for updating submodules, will be removed in post-job
-          persist-credentials: true
-          submodules: "recursive"
-          # fetch full git history, because we need to run git commands to determine e.g. branch
-          fetch-depth: 0
-      - name: "Build Docker images"
-        run: |
-          echo Using registry image ${CI_REGISTRY_IMAGE}
-          # log in to ECR
-          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
-
-          # Pull new images and disable the cache so we pick up any security fixes
-          docker compose build --pull --force-rm --no-cache
-      - name: "Save images to speed up future builds"
-        run: |
-          for SERVICE in ${BUILD_IMAGES}; do docker tag ci-${APP}-${CI_PIPELINE_ID}-${SERVICE}:latest ${CI_REGISTRY_IMAGE}/${SERVICE}:edge; done
-          for SERVICE in ${BUILD_IMAGES}; do docker push ${CI_REGISTRY_IMAGE}/${SERVICE}:edge | grep -i -e 'The push refers to' -e Digest -e Status -e Error; done
-      - name: "Start the service containers"
-        run: docker compose up -d db
-      - name: "Wait for containers to be ready"
-        run: docker compose run -e TARGETS=db:5432 -e TIMEOUT=60 wait
-      - name: "Run test suite"
-        run: |
-          # Use run instead of up because we want docker-compose to return the exit code
-          docker compose run --name ci-${APP}-${CI_PIPELINE_ID}-${{ github.job }} -e CHECK_SAFETY=1 -e TEST_OUTPUT_VERBOSE=2 app --keepdb --exclude-tag=perf 2>&1 | tee test_output.log
-      - name: 'Test that the output is "clean"'
-        run: cat test_output.log | docker compose run --rm --entrypoint=/usr/src/app/manage.py app check_test_output -
-      - name: Create prod image without test requirements
-        run: docker compose -f docker-compose.yml build app
-      - name: Tag the prod image
-        run: |
-          for SERVICE in ${BUILD_IMAGES}; do docker tag ci-${APP}-${CI_PIPELINE_ID}-${SERVICE}:latest ${CI_REGISTRY_IMAGE}/${SERVICE}:${GITHUB_REF_NAME}; done
-          for SERVICE in ${BUILD_IMAGES}; do docker push ${CI_REGISTRY_IMAGE}/${SERVICE}:${GITHUB_REF_NAME} | grep -i -e 'The push refers to' -e Digest -e Status -e Error; done
-          for SERVICE in ${BUILD_IMAGES}; do docker tag ci-${APP}-${CI_PIPELINE_ID}-${SERVICE}:latest ${CI_REGISTRY_IMAGE}/${SERVICE}:latest; done
-          for SERVICE in ${BUILD_IMAGES}; do docker push ${CI_REGISTRY_IMAGE}/${SERVICE}:latest | grep -i -e 'The push refers to' -e Digest -e Status -e Error; done
-          for SERVICE in ${BUILD_IMAGES}; do docker tag ci-${APP}-${CI_PIPELINE_ID}-${SERVICE}:latest ${CI_REGISTRY_IMAGE}/${SERVICE}:stable; done
-          for SERVICE in ${BUILD_IMAGES}; do docker push ${CI_REGISTRY_IMAGE}/${SERVICE}:stable | grep -i -e 'The push refers to' -e Digest -e Status -e Error; done
-      - name: "Save docker logs as artifacts"
-        if: success() || failure()
-        run: |
-          docker compose logs --no-color > ./docker.log
-          for SERVICE in $(docker compose ps --services); do docker compose logs --no-color ${SERVICE} > ./docker.${SERVICE}.log; done
-          # Copy the artifacts out of the Docker container to project directory
-          docker cp ci-${APP}-${CI_PIPELINE_ID}-${{ github.job }}:/usr/src/app/log ./ || true
-          docker cp ci-${APP}-${CI_PIPELINE_ID}-${{ github.job }}:/usr/src/app/coverage.txt ./ || true
-      - name: "Upload test artifacts"
-        if: success() || failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.CI_PIPELINE_ID }}-${{ github.job }}-artifacts
-          path: |
-            log
-            coverage.txt
-            docker*.log
-            ecs-params.yml
-            schema.diff
-            schema.yml
-            test_output.log
-          retention-days: 1
-      - name: "Upload test artifacts to s3"
-        if: success() || failure()
-        id: upload-artifacts-to-s3
-        uses: ./.github/actions/collect_artifacts_and_push_to_s3
-        with:
-          source-files-or-folders: "log coverage.txt docker*.log ecs-params.yml schema.diff schema.yml test_output.log"
-      - name: "Print artifact URLs"
-        if: success() || failure()
-        run: |
-          echo "${{ github.job }} artifact download link (expires in 7 days):" ${{ steps.upload-artifacts-to-s3.outputs.presigned-url }}
-          echo "Link to s3 console: ${{ steps.upload-artifacts-to-s3.outputs.aws-console-url }}"
-      - name: "Clean up"
-        if: success() || failure()
-        run: |
-          docker compose down --volumes 2>/dev/null
-          # kill all containers except the "dind" one, to avoid issues during cleanup
-          docker stop $(docker ps -a -q | grep -v "$(hostname)") && docker rm $(docker ps -a -q | grep -v "$(hostname)")
-          for SERVICE in ${BUILD_IMAGES}; do docker image rm ci-${APP}-${CI_PIPELINE_ID}-${SERVICE}:latest >/dev/null; done
-          for SERVICE in ${BUILD_IMAGES}; do docker image rm ${CI_REGISTRY_IMAGE}/${SERVICE}:edge >/dev/null; done
-          for SERVICE in ${BUILD_IMAGES}; do docker image rm ${CI_REGISTRY_IMAGE}/${SERVICE}:latest >/dev/null; done
-          for SERVICE in ${BUILD_IMAGES}; do docker image rm ${CI_REGISTRY_IMAGE}/${SERVICE}:stable >/dev/null; done
-          for SERVICE in ${BUILD_IMAGES}; do docker image rm ${CI_REGISTRY_IMAGE}/${SERVICE}:${GITHUB_REF_NAME} >/dev/null; done
-
-  stop-runner-test_branch:
-    if: ${{ needs.start-runner-test_branch.result != 'skipped' && always() }} # this needs to run even if previous jobs failed, but not if they were skipped
-    needs:
-      - start-runner-test_branch # required to get output from the start-runner-test_branch job
-      - test_branch # required to wait until the main jobs are done
-    runs-on: [ fewsnet ]
-
-    steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-region: ${{ env.AWS_REGION }}
-      - name: Stop EC2 runner
-        uses: American-Institutes-for-Research/ec2-github-runner@598310b0225c539534b6ef47575f36404dedf3b1
-        with:
-          mode: stop
-          github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-          label: ${{ needs.start-runner-test_branch.outputs.label }}
-          ec2-instance-id: ${{ needs.start-runner-test_branch.outputs.ec2-instance-id }}
-
-  stop-runner-test_keepdb:
-    if: ${{ needs.start-runner-test_keepdb.result != 'skipped' && always() }} # this needs to run even if previous jobs failed, but not if they were skipped
-    needs:
-      - start-runner-test_keepdb # required to get output from the start-runner-test_keepdb job
-      - test_keepdb
-    runs-on: [ fewsnet ]
-
-    steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-region: ${{ env.AWS_REGION }}
-      - name: Stop EC2 runner
-        uses: American-Institutes-for-Research/ec2-github-runner@598310b0225c539534b6ef47575f36404dedf3b1
-        with:
-          mode: stop
-          github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-          label: ${{ needs.start-runner-test_keepdb.outputs.label }}
-          ec2-instance-id: ${{ needs.start-runner-test_keepdb.outputs.ec2-instance-id }}
-
-  stop-runner-test_main:
-    if: ${{ needs.start-runner-test_main.result != 'skipped' && always() }} # this needs to run even if previous jobs failed, but not if they were skipped
-    needs:
-      - start-runner-test_main # required to get output from the start-runner-test_main job
-      - test_main
-    runs-on: [ fewsnet ]
-
-    steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-region: ${{ env.AWS_REGION }}
-      - name: Stop EC2 runner
-        uses: American-Institutes-for-Research/ec2-github-runner@598310b0225c539534b6ef47575f36404dedf3b1
-        with:
-          mode: stop
-          github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-          label: ${{ needs.start-runner-test_main.outputs.label }}
-          ec2-instance-id: ${{ needs.start-runner-test_main.outputs.ec2-instance-id }}
-
-  stop-runner-test_tag:
-    if: ${{ needs.start-runner-test_tag.result != 'skipped' && always() }} # this needs to run even if previous jobs failed, but not if they were skipped
-    needs:
-      - start-runner-test_tag # required to get output from the start-runner-test_tag job
-      - test_tag
-    runs-on: [ fewsnet ]
-
-    steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-region: ${{ env.AWS_REGION }}
-      - name: Stop EC2 runner
-        uses: American-Institutes-for-Research/ec2-github-runner@598310b0225c539534b6ef47575f36404dedf3b1
-        with:
-          mode: stop
-          github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-          label: ${{ needs.start-runner-test_tag.outputs.label }}
-          ec2-instance-id: ${{ needs.start-runner-test_tag.outputs.ec2-instance-id }}
+    needs: [lint]
+    uses: ./.github/workflows/run_tests.yml
+    with:
+      name: test_tag
+      test_command: |
+        docker compose run \
+          -e AWS_ACCESS_KEY_ID \
+          -e AWS_SECRET_ACCESS_KEY \
+          -e AWS_SESSION_TOKEN \
+          -e AWS_REGION \
+          -e AWS_DEFAULT_REGION=${AWS_REGION} \
+          -e CHECK_SAFETY=1 \
+          -e TEST_OUTPUT_VERBOSE=2 \
+          --name ci-${APP}-${CI_PIPELINE_ID}-${{ github.job }} \
+          app --keepdb --exclude-tag=perf 2>&1 | tee test_output.log
+      add_version_txt: false
+      push_edge_images: true
+      push_latest_images: true
+      push_stable_images: true
+      push_tagged_images: true
+      aws_role_to_assume: "arn:aws:iam::888016039450:role/data-prod-eks-cluster-github-actions-arc-role"
+      ecr_registry: "888016039450.dkr.ecr.us-east-1.amazonaws.com"
+      ecr_registry_image: "888016039450.dkr.ecr.us-east-1.amazonaws.com/hea"
+      aws_s3_bucket: "fntgithub-ci-artifacts-hea"
+    secrets: inherit

@@ -22,19 +22,25 @@ runs:
   using: "composite"
   steps:
     - id: s3-upload
-      shell: ash --noprofile --norc -eo pipefail {0} # Fail on any non-zero exit code, even in piped commands
+      shell: bash
       run: |
-        export S3_SOURCE_DIR=${{ github.repository }}/${{ env.CI_PIPELINE_ID }}
-        export ARTIFACTS_DIR=${{ github.job }}-artifacts
-        export AWS_S3_BUCKET=${{ inputs.aws-s3-bucket }}
-        mkdir -p ${S3_SOURCE_DIR}/${ARTIFACTS_DIR}
+        set -euo pipefail
+
+        S3_SOURCE_DIR="${{ github.repository }}/${{ env.CI_PIPELINE_ID }}"
+        ARTIFACTS_DIR="${{ github.job }}-artifacts"
+        AWS_S3_BUCKET="${{ inputs.aws-s3-bucket }}"
+
+        mkdir -p "${S3_SOURCE_DIR}/${ARTIFACTS_DIR}"
         echo "Created artifact directory ${S3_SOURCE_DIR}/${ARTIFACTS_DIR}"
-        mv -v ${{ inputs.source-files-or-folders }} \
-          ${S3_SOURCE_DIR}/${ARTIFACTS_DIR} || true
-        cd ${S3_SOURCE_DIR}
-        tar cfz ${ARTIFACTS_DIR}.tar.gz ${ARTIFACTS_DIR}
-        rm -r ${ARTIFACTS_DIR}
-        cd -
-        aws s3 sync ${S3_SOURCE_DIR} s3://${AWS_S3_BUCKET}/${S3_SOURCE_DIR}
-        echo "presigned-url=$(aws s3 presign s3://${AWS_S3_BUCKET}/${S3_SOURCE_DIR}/${ARTIFACTS_DIR}.tar.gz --expires-in=604800)" >> $GITHUB_OUTPUT
-        echo "aws-console-url=https://s3.console.aws.amazon.com/s3/buckets/${AWS_S3_BUCKET}?prefix=${S3_SOURCE_DIR}/${ARTIFACTS_DIR}.tar.gz&region=us-east-1" >> $GITHUB_OUTPUT
+
+        mv -v ${{ inputs.source-files-or-folders }} "${S3_SOURCE_DIR}/${ARTIFACTS_DIR}" || true
+
+        tar -czf "${S3_SOURCE_DIR}/${ARTIFACTS_DIR}.tar.gz" -C "${S3_SOURCE_DIR}" "${ARTIFACTS_DIR}"
+        rm -rf "${S3_SOURCE_DIR:?}/${ARTIFACTS_DIR}"
+
+        aws s3 sync "${S3_SOURCE_DIR}" "s3://${AWS_S3_BUCKET}/${S3_SOURCE_DIR}"
+
+        {
+          echo "presigned-url=$(aws s3 presign "s3://${AWS_S3_BUCKET}/${S3_SOURCE_DIR}/${ARTIFACTS_DIR}.tar.gz" --expires-in=604800)"
+          echo "aws-console-url=https://s3.console.aws.amazon.com/s3/buckets/${AWS_S3_BUCKET}?prefix=${S3_SOURCE_DIR}/${ARTIFACTS_DIR}.tar.gz&region=us-east-1"
+        } >> "$GITHUB_OUTPUT"

@@ -12,7 +12,7 @@ on:
 
 jobs:
   mirror:
-    runs-on: [ fewsnet ]
+    runs-on: fewsnet-dind-runners
     # run in container to avoid file permission issues like EACCES: permission denied
     container: "python:3.12"
     steps:
