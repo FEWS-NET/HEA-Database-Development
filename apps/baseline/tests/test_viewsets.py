@@ -2297,6 +2297,38 @@ class KeyParameterViewSetTestCase(APITestCase):
         self.assertGreater(len(response.json()), 0)
         self.assertLess(len(response.json()), self.num_records)
 
+    def test_filter_by_livelihood_zone_baseline(self):
+        baseline = LivelihoodZoneBaselineFactory()
+        other_baseline = LivelihoodZoneBaselineFactory()
+        matching_key_parameter = KeyParameterFactory(
+            livelihood_strategy=LivelihoodStrategyFactory(livelihood_zone_baseline=baseline)
+        )
+        KeyParameterFactory(livelihood_strategy=LivelihoodStrategyFactory(livelihood_zone_baseline=other_baseline))
+
+        response = self.client.get(self.url, {"livelihood_zone_baseline": baseline.pk})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 1)
+        self.assertEqual(response.json()[0]["id"], matching_key_parameter.id)
+        self.assertEqual(response.json()[0]["livelihood_zone_baseline"], baseline.pk)
+
+    def test_filter_by_livelihood_zone(self):
+        zone = LivelihoodZoneFactory()
+        other_zone = LivelihoodZoneFactory()
+        baseline = LivelihoodZoneBaselineFactory(livelihood_zone=zone)
+        other_baseline = LivelihoodZoneBaselineFactory(livelihood_zone=other_zone)
+        matching_key_parameter = KeyParameterFactory(
+            livelihood_strategy=LivelihoodStrategyFactory(livelihood_zone_baseline=baseline)
+        )
+        KeyParameterFactory(livelihood_strategy=LivelihoodStrategyFactory(livelihood_zone_baseline=other_baseline))
+
+        response = self.client.get(self.url, {"livelihood_zone": zone.pk})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 1)
+        self.assertEqual(response.json()[0]["id"], matching_key_parameter.id)
+        self.assertEqual(response.json()[0]["livelihood_zone"], zone.pk)
+
     def test_search(self):
         response = self.client.get(
             self.url,
