@@ -1434,31 +1434,60 @@ class BaselineWealthGroupViewSetTestCase(APITestCase):
 
     def test_wealth_group_population_estimate_matches_lias_example(self):
 
-        livelihood_zone_baseline = LivelihoodZoneBaselineFactory(population_estimate=1000000)
+        population_estimate = 1000000
+        livelihood_zone_baseline = LivelihoodZoneBaselineFactory(population_estimate=population_estimate)
+        wealth_group_inputs = {
+            "VP": {"percentage_of_households": 0.37, "average_household_size": 8},
+            "P": {"percentage_of_households": 0.28, "average_household_size": 10},
+            "M": {"percentage_of_households": 0.20, "average_household_size": 20},
+            "BO": {"percentage_of_households": 0.15, "average_household_size": 30},
+        }
         wealth_groups = {
             code: BaselineWealthGroupFactory(
                 livelihood_zone_baseline=livelihood_zone_baseline,
                 wealth_group_category=WealthGroupCategoryFactory(code=code),
-                percentage_of_households=percentage_of_households,
-                average_household_size=average_household_size,
+                **inputs,
             )
-            for code, percentage_of_households, average_household_size in [
-                ("VP", 0.37, 8),
-                ("P", 0.28, 10),
-                ("M", 0.20, 20),
-                ("BO", 0.15, 30),
-            ]
+            for code, inputs in wealth_group_inputs.items()
         }
-        # Weighted mean household size = (.37*8 + .28*10 + .20*20 + .15*30) / (.37 + .28 + .20 + .15) = 14.26
-        expected_percentage_of_population = {"VP": 21, "P": 20, "M": 28, "BO": 32}
-        for code, expected_pct in expected_percentage_of_population.items():
+        baseline_weighted_average_household_size = sum(
+            inputs["percentage_of_households"] * inputs["average_household_size"]
+            for inputs in wealth_group_inputs.values()
+        ) / sum(inputs["percentage_of_households"] for inputs in wealth_group_inputs.values())
+
+        for code, inputs in wealth_group_inputs.items():
+            expected_percentage_of_population = (
+                inputs["percentage_of_households"]
+                * inputs["average_household_size"]
+                / baseline_weighted_average_household_size
+            )
+            expected_population_estimate = round(population_estimate * expected_percentage_of_population)
+
             response = self.client.get(reverse("baselinewealthgroup-detail", args=(wealth_groups[code].pk,)))
             data = response.json()
-            self.assertEqual(
-                round(data["percentage_of_population"] * 100),
-                expected_pct,
-                f"Wealth Group {code}: expected {expected_pct}% of population, got {data['percentage_of_population']}",
+            self.assertAlmostEqual(
+                data["percentage_of_population"],
+                expected_percentage_of_population,
+                msg=(
+                    f"Wealth Group {code}: expected percentage_of_population "
+                    f"{expected_percentage_of_population}, got {data['percentage_of_population']}"
+                ),
             )
+            self.assertEqual(
+                data["population_estimate"],
+                expected_population_estimate,
+                f"Wealth Group {code}: expected population_estimate {expected_population_estimate}, "
+                f"got {data['population_estimate']}",
+            )
+
+        # The percentages across all Wealth Groups for a Livelihood Zone Baseline must sum to 100% of the population.
+        total_percentage_of_population = sum(
+            self.client.get(reverse("baselinewealthgroup-detail", args=(wealth_group.pk,))).json()[
+                "percentage_of_population"
+            ]
+            for wealth_group in wealth_groups.values()
+        )
+        self.assertAlmostEqual(total_percentage_of_population, 1.0)
 
     def test_patch_requires_authentication(self):
         logging.disable(logging.CRITICAL)
