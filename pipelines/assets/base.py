@@ -334,11 +334,15 @@ def get_bss_dataframe(
     end_col: str | None = None,
     num_summary_cols: int | None = None,
     fill_blank_rows: bool = True,
+    ignore_label_patterns: list[str] | None = None,
 ) -> Output[pd.DataFrame]:
     """
     Retrieve a worksheet from a BSS and return it as a DataFrame.
 
     Uses Excel row numbers, starting from 1, and column letters, starting from A.
+
+    `ignore_label_patterns` is an optional list of case-insensitive regular expressions. Any Column A cell whose
+    stripped text fully matches one of these patterns is treated as blank
     """
     try:
         df = pd.read_excel(filepath_or_buffer, bss_sheet, header=None)
@@ -425,6 +429,12 @@ def get_bss_dataframe(
     #   |  20 |                                                | M                   | 1.4                |
     #   |  21 |                                                | B/O                 | 1.4                |
     #   |  22 | Camels: total owned at start of year           | VP                  | 0                  |
+
+    if ignore_label_patterns:
+        noise_pattern = "|".join(f"(?:{pattern})" for pattern in ignore_label_patterns)
+        is_noise = df["A"].str.strip().str.fullmatch(noise_pattern, case=False, na=False)
+        df.loc[is_noise, "A"] = None
+
     if fill_blank_rows:
         # We do this by setting the missing values to pd.NA and then using .ffill()
         # Note that we need to replace the None with something else before the mask() and ffill() so that only

@@ -81,6 +81,7 @@ An example of relevant rows from the worksheet:
 
 import json
 import os
+import re
 
 import django
 import pandas as pd
@@ -114,6 +115,21 @@ from metadata.models import WealthCharacteristicLabel  # NOQA: E402
 # Indexes of header rows in the Data3 dataframe (wealth_group_category, district, village)
 HEADER_ROWS = [3, 4, 5]
 
+# Section headings that are sometimes repeated in Column A of the WB worksheet and don't describe the row.
+WB_HEADING_LABELS = [
+    "Wealth characteristics",
+    "Caractéristiques socio-économiques",
+    "Caractéristiques de richesse",
+]
+
+# Explanatory notes that authors sometimes leave in Column A of the WB worksheet, referring to other labels or forms
+# rather than to the contents of the row - see HEA-994.
+# These should be treated as if the cell were blank.
+WB_NOISE_LABEL_PATTERNS = [re.escape(label) for label in WB_HEADING_LABELS] + [
+    r"tss\s*ligne\s*\d+",  # References to a line number on the TSS, e.g. "TSS ligne 27"
+    r"f\d\s*(?:pas|non)\s*f\d.*",  # References to another form, e.g. "F3 pas F4 (pas TSS)"
+]
+
 
 @asset(partitions_def=bss_instances_partitions_def)
 def wealth_characteristic_dataframe(config: BSSMetadataConfig, corrected_files) -> Output[pd.DataFrame]:
@@ -124,12 +140,13 @@ def wealth_characteristic_dataframe(config: BSSMetadataConfig, corrected_files) 
         config,
         corrected_files,
         "WB",
-        start_strings=["Wealth characteristics", "Caractéristiques socio-économiques", "Caractéristiques de richesse"],
+        start_strings=WB_HEADING_LABELS,
         end_strings=["Informations sur les équidés"],
         header_rows=HEADER_ROWS,
         # The final three relevant columns are Summary/From/To in Row 4. Range/Interval will be in the cell above
         # From (i.e. in Row 3) so force two additional summary columns.
         num_summary_cols=2,
+        ignore_label_patterns=WB_NOISE_LABEL_PATTERNS,
     )
 
 
