@@ -726,9 +726,9 @@ class LivelihoodZoneBaselineViewSetTestCase(APITestCase):
 
 class LivelihoodZoneBaselineFacetedSearchViewTestCase(APITestCase):
     def setUp(self):
-        self.category1 = LivelihoodSystemFactory()
-        self.baseline1 = LivelihoodZoneBaselineFactory(primary_livelihood_system=self.category1)
-        self.baseline2 = LivelihoodZoneBaselineFactory(primary_livelihood_system=self.category1)
+        self.livelihood_system1 = LivelihoodSystemFactory()
+        self.baseline1 = LivelihoodZoneBaselineFactory(primary_livelihood_system=self.livelihood_system1)
+        self.baseline2 = LivelihoodZoneBaselineFactory(primary_livelihood_system=self.livelihood_system1)
         self.baseline3 = LivelihoodZoneBaselineFactory()
         self.product1 = ClassifiedProductFactory(
             cpc="K0111",
@@ -762,7 +762,7 @@ class LivelihoodZoneBaselineFacetedSearchViewTestCase(APITestCase):
             livelihood_zone_baseline=self.baseline3,
             strategy_type=LivelihoodStrategyType.FOOD_PURCHASE,
         )
-        self.baseline = LivelihoodZoneBaselineFactory(primary_livelihood_system=self.category1)
+        self.baseline = LivelihoodZoneBaselineFactory(primary_livelihood_system=self.livelihood_system1)
         self.url = reverse("livelihood-zone-baseline-faceted-search")
 
     def test_search_with_product(self):

@@ -223,7 +223,7 @@ class WealthGroupCategoryViewSetTestCase(APITestCase):
         self.cat_with_groups = WealthGroupCategoryFactory()
         self.cat_without_groups = WealthGroupCategoryFactory()
 
-        # import baseline factory to avoid circular depdnecies
+        # import baseline factory to avoid circular dependencies
         module = importlib.import_module("baseline.tests.factories")
         WealthGroupFactory = getattr(module, "WealthGroupFactory")
 
@@ -260,7 +260,7 @@ class LivelihoodSystemViewSetTestCase(APITestCase):
         self.livelihood_system_with_groups = LivelihoodSystemFactory()
         self.livelihood_system_without_groups = LivelihoodSystemFactory()
 
-        # import baseline factory to avoid circular depdnecies
+        # import baseline factory to avoid circular dependencies
         module = importlib.import_module("baseline.tests.factories")
         WealthGroupFactory = getattr(module, "WealthGroupFactory")
 

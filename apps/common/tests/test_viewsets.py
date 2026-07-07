@@ -25,7 +25,7 @@ class CountryViewSetTestCase(APITestCase):
         cls.country3 = CountryFactory()
         cls.country4 = CountryFactory()
 
-        # import baseline factory to avoid circular depdnecies
+        # import baseline factory to avoid circular dependencies
         module = importlib.import_module("baseline.tests.factories")
         WealthGroupFactory = getattr(module, "WealthGroupFactory")
         LivelihoodZoneBaselineFactory = getattr(module, "LivelihoodZoneBaselineFactory")
@@ -33,14 +33,14 @@ class CountryViewSetTestCase(APITestCase):
 
         cls.wealth_group1 = WealthGroupFactory(livelihood_zone_baseline__livelihood_zone__country=cls.country1)
 
-        # Set up livelihood category cascade filter test data
+        # Set up livelihood system cascade filter test data
         metadata_module = importlib.import_module("metadata.tests.factories")
         LivelihoodSystemFactory = getattr(metadata_module, "LivelihoodSystemFactory")
-        cls.category_a = LivelihoodSystemFactory()
-        cls.category_b = LivelihoodSystemFactory()
+        cls.livelihood_system_a = LivelihoodSystemFactory()
+        cls.livelihood_system_b = LivelihoodSystemFactory()
         LivelihoodZoneBaselineFactory(
             livelihood_zone__country=cls.country2,
-            primary_livelihood_system=cls.category_a,
+            primary_livelihood_system=cls.livelihood_system_a,
         )
 
         # Set up strategy_type cascade filter test data
@@ -127,16 +127,16 @@ class CountryViewSetTestCase(APITestCase):
         self.assertNotIn(self.country1.iso3166a2, result)
 
     def test_filter_by_livelihood_system(self):
-        # country2 has a baseline with category_a
-        response = self.client.get(self.url, {"livelihood_system": self.category_a.code})
+        # country2 has a baseline with livelihood_system_a
+        response = self.client.get(self.url, {"livelihood_system": self.livelihood_system_a.code})
         self.assertEqual(response.status_code, 200)
         result = json.loads(response.content.decode("utf-8"))
         country_codes = [r["iso3166a2"] for r in result]
         self.assertIn(self.country2.iso3166a2, country_codes)
         self.assertNotIn(self.country4.iso3166a2, country_codes)
 
-        # category_b has no baselines
-        response = self.client.get(self.url, {"livelihood_system": self.category_b.code})
+        # livelihood_system_b has no baselines
+        response = self.client.get(self.url, {"livelihood_system": self.livelihood_system_b.code})
         self.assertEqual(response.status_code, 200)
         result = json.loads(response.content.decode("utf-8"))
         self.assertEqual(len(result), 0)
@@ -245,7 +245,7 @@ class ClassifiedProductViewSetTestCase(APITestCase):
             name="BB Country",
         )
 
-        # import baseline factory to avoid circular depdnecies
+        # import baseline factory to avoid circular dependencies
         module = importlib.import_module("baseline.tests.factories")
         WealthGroupFactory = getattr(module, "WealthGroupFactory")
         LivelihoodStrategyFactory = getattr(module, "LivelihoodStrategyFactory")
@@ -257,16 +257,18 @@ class ClassifiedProductViewSetTestCase(APITestCase):
             livelihood_zone_baseline=livelihood_zone_baseline, product=cls.product1, season__country=cls.country_a
         )
 
-        # Set up livelihood category cascade filter test data
+        # Set up livelihood system cascade filter test data
         metadata_module = importlib.import_module("metadata.tests.factories")
         LivelihoodSystemFactory = getattr(metadata_module, "LivelihoodSystemFactory")
-        cls.category_a = LivelihoodSystemFactory()
-        cls.category_b = LivelihoodSystemFactory()
-        baseline_category_a = LivelihoodZoneBaselineFactory(
-            livelihood_zone__country=cls.country_a, primary_livelihood_system=cls.category_a
+        cls.livelihood_system_a = LivelihoodSystemFactory()
+        cls.livelihood_system_b = LivelihoodSystemFactory()
+        baseline_livelihood_system_a = LivelihoodZoneBaselineFactory(
+            livelihood_zone__country=cls.country_a, primary_livelihood_system=cls.livelihood_system_a
         )
         LivelihoodStrategyFactory(
-            livelihood_zone_baseline=baseline_category_a, product=cls.product1, season__country=cls.country_a
+            livelihood_zone_baseline=baseline_livelihood_system_a,
+            product=cls.product1,
+            season__country=cls.country_a,
         )
 
         # Set up strategy_type cascade filter test data
@@ -359,15 +361,15 @@ class ClassifiedProductViewSetTestCase(APITestCase):
         self.assertEqual(self.product1.cpc, result[0]["cpc"])
 
     def test_filter_by_livelihood_system(self):
-        # product1 is in a baseline with category_a
-        response = self.client.get(self.url, {"livelihood_system": self.category_a.code})
+        # product1 is in a baseline with livelihood_system_a
+        response = self.client.get(self.url, {"livelihood_system": self.livelihood_system_a.code})
         self.assertEqual(response.status_code, 200)
         result = json.loads(response.content.decode("utf-8"))
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0]["cpc"], self.product1.cpc)
 
-        # category_b has no strategies
-        response = self.client.get(self.url, {"livelihood_system": self.category_b.code})
+        # livelihood_system_b has no strategies
+        response = self.client.get(self.url, {"livelihood_system": self.livelihood_system_b.code})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 0)
 
