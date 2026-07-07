@@ -1,4 +1,4 @@
-from django.db import migrations
+from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
@@ -11,6 +11,20 @@ class Migration(migrations.Migration):
         migrations.RenameModel(
             old_name="LivelihoodCategory",
             new_name="LivelihoodSystem",
+        ),
+        migrations.AlterModelOptions(
+            name="livelihoodsystem",
+            options={"verbose_name": "Livelihood System", "verbose_name_plural": "Livelihood Systems"},
+        ),
+        migrations.AlterField(
+            model_name="livelihoodsystem",
+            name="color",
+            field=models.CharField(
+                default="#FFFFFF",
+                help_text="Color hex value code for the Livelihood System.",
+                max_length=7,
+                verbose_name="Color",
+            ),
         ),
         migrations.AlterModelTable(
             name="livelihoodsystem",
