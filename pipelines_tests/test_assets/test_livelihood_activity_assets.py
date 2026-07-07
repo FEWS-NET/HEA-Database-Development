@@ -3,16 +3,16 @@ from pathlib import Path
 
 import pandas as pd
 from django.test import TestCase
+
+from common.tests.factories import CountryFactory
+from metadata.models import ActivityLabel
+from metadata.tests.factories import SeasonFactory
 from pipelines.assets.livelihood_activity import (
     _get_completeness_dataframe,
     get_all_label_attributes,
     get_label_attributes,
     get_livelihood_activity_label_map,
 )
-
-from common.tests.factories import CountryFactory
-from metadata.models import ActivityLabel
-from metadata.tests.factories import SeasonFactory
 
 LIVELIHOOD_ACTIVITY = ActivityLabel.LivelihoodActivityType.LIVELIHOOD_ACTIVITY
 

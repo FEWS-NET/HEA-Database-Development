@@ -2,10 +2,10 @@ from unittest.mock import patch
 
 import pandas as pd
 from django.test import TestCase
-from pipelines.assets.baseline import get_wealth_group_dataframe
 
 from baseline.tests.factories import LivelihoodZoneBaselineFactory
 from metadata.tests.factories import WealthGroupCategoryFactory
+from pipelines.assets.baseline import get_wealth_group_dataframe
 
 
 class GetWealthGroupDataframeTestCase(TestCase):

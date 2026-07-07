@@ -158,7 +158,13 @@ def load_metadata_for_model(context: OpExecutionContext, sheet_name: str, model:
         else:
             id_fields = "code"
         # Ensure we don't have any duplicate entries
-        duplicates_df = df[df.duplicated(subset=id_fields, keep=False)]
+        if model_name == "ActivityLabel":
+            # Activity Labels must be unique case-insensitively
+            df["activity_label_lower"] = df["activity_label"].str.lower()
+            duplicates_df = df[df.duplicated(subset=["activity_label_lower", "activity_type"], keep=False)]
+        else:
+            duplicates_df = df[df.duplicated(subset=id_fields, keep=False)]
+
         if not duplicates_df.empty:
             raise ValueError(
                 f"Found duplicate entries in worksheet '{sheet_name}' for {model_name}:\n{duplicates_df.to_markdown()}"
@@ -171,11 +177,22 @@ def load_metadata_for_model(context: OpExecutionContext, sheet_name: str, model:
             keys_df = pd.DataFrame.from_records(model.objects.all().values(model._meta.pk.name, *id_fields))
             if keys_df.empty:
                 keys_df = pd.DataFrame(columns=[model._meta.pk.name] + id_fields)
-            df = df.merge(
-                keys_df,
-                how="left",
-                on=id_fields,
-            )
+            if model_name == "ActivityLabel":
+                keys_df["activity_label_lower"] = keys_df["activity_label"].str.lower()
+                df = df.merge(
+                    keys_df,
+                    how="left",
+                    on=["activity_label_lower", "activity_type"],
+                    suffixes=("", "_existing"),
+                )
+                df["activity_label"] = df["activity_label_existing"].combine_first(df["activity_label"])
+                df = df.drop(columns=["activity_label_existing", "activity_label_lower"])
+            else:
+                df = df.merge(
+                    keys_df,
+                    how="left",
+                    on=id_fields,
+                )
             df[model._meta.pk.name] = df[model._meta.pk.name].replace(nan, None)
         # Turn the dataframe into a set of unsaved model instances
         instances = []
