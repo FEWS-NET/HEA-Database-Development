@@ -95,9 +95,9 @@ class ReferenceData(common_models.Model):
         identifier = ["name_en"]
 
 
-class LivelihoodCategory(ReferenceData):
+class LivelihoodSystem(ReferenceData):
     """
-    A type of Livelihood Zone, such as Pastoral or Rain-fed AgroPastoral, etc.
+    A livelihood system, such as Pastoral or Rain-fed AgroPastoral.
     """
 
     color = models.CharField(
@@ -106,13 +106,14 @@ class LivelihoodCategory(ReferenceData):
         verbose_name=_(
             "Color",
         ),
-        help_text=_("Color hex value code for the Livelihood Category."),
+        help_text=_("Color hex value code for the Livelihood System."),
     )
     objects = IdentifierManager.from_queryset(ReferenceDataQuerySet)()
 
     class Meta:
-        verbose_name = _("Livelihood Category")
-        verbose_name_plural = _("Livelihood Categories")
+        verbose_name = _("Livelihood System")
+        verbose_name_plural = _("Livelihood Systems")
+        db_table = "metadata_livelihoodsystem"
 
 
 class CharacteristicGroup(ReferenceData):

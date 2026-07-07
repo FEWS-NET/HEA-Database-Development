@@ -7,7 +7,7 @@ from rest_framework.test import APITestCase
 from common.tests.factories import CountryFactory
 from metadata.models import (
     HazardCategory,
-    LivelihoodCategory,
+    LivelihoodSystem,
     SeasonalActivityType,
     WealthCharacteristic,
     WealthGroupCategory,
@@ -15,7 +15,7 @@ from metadata.models import (
 
 from .factories import (
     HazardCategoryFactory,
-    LivelihoodCategoryFactory,
+    LivelihoodSystemFactory,
     SeasonalActivityTypeFactory,
     SeasonFactory,
     WealthCharacteristicFactory,
@@ -26,9 +26,9 @@ from .factories import (
 class ReferenceDataViewSetTestCase(APITestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.livelihoodcategory1 = LivelihoodCategoryFactory()
-        cls.livelihoodcategory2 = LivelihoodCategoryFactory()
-        cls.livelihoodcategory3 = LivelihoodCategoryFactory()
+        cls.livelihoodsystem1 = LivelihoodSystemFactory()
+        cls.livelihoodsystem2 = LivelihoodSystemFactory()
+        cls.livelihoodsystem3 = LivelihoodSystemFactory()
 
         cls.hazardcategory1 = HazardCategoryFactory()
         cls.hazardcategory2 = HazardCategoryFactory()
@@ -45,15 +45,15 @@ class ReferenceDataViewSetTestCase(APITestCase):
         cls.wealthcharacteristic3 = WealthCharacteristicFactory()
 
     def setUp(self) -> None:
-        self.livelihoodcategory_url = reverse("livelihoodcategory-list")
+        self.livelihoodsystem_url = reverse("livelihoodsystem-list")
         self.hazardcategory_url = reverse("hazardcategory-list")
         self.wealthgroupcategory_url = reverse("wealthgroupcategory-list")
         self.seasonalactivitytype_url = reverse("seasonalactivitytype-list")
         self.wealthcharacteristic_url = reverse("wealthcharacteristic-list")
 
     def test_list_returns_all_records(self):
-        # LivelihoodCategory
-        response = self.client.get(self.livelihoodcategory_url)
+        # LivelihoodSystem
+        response = self.client.get(self.livelihoodsystem_url)
         self.assertEqual(response.status_code, 200)
         result = json.loads(response.content.decode("utf-8"))
         self.assertEqual(len(result), 3)
@@ -118,7 +118,7 @@ class ReferenceDataViewSetTestCase(APITestCase):
 
     def test_search_and_filter(self):
         models_to_test = [
-            LivelihoodCategory,
+            LivelihoodSystem,
             HazardCategory,
             WealthGroupCategory,
             SeasonalActivityType,
@@ -253,12 +253,12 @@ class WealthGroupCategoryViewSetTestCase(APITestCase):
         self.assertEqual(len(result), 2)
 
 
-class LivelihoodCategoryViewSetTestCase(APITestCase):
+class LivelihoodSystemViewSetTestCase(APITestCase):
     def setUp(self):
-        self.url = reverse("livelihoodcategory-list")
-        # Create livelihood categories
-        self.livelihood_category_with_groups = LivelihoodCategoryFactory()
-        self.livelihood_category_without_groups = LivelihoodCategoryFactory()
+        self.url = reverse("livelihoodsystem-list")
+        # Create livelihood systems
+        self.livelihood_system_with_groups = LivelihoodSystemFactory()
+        self.livelihood_system_without_groups = LivelihoodSystemFactory()
 
         # import baseline factory to avoid circular depdnecies
         module = importlib.import_module("baseline.tests.factories")
@@ -280,9 +280,9 @@ class LivelihoodCategoryViewSetTestCase(APITestCase):
             iso_en_name="BB Country",
             name="BB Country",
         )
-        WealthGroupFactory(livelihood_zone_baseline__primary_livelihood_system=self.livelihood_category_with_groups)
+        WealthGroupFactory(livelihood_zone_baseline__primary_livelihood_system=self.livelihood_system_with_groups)
         WealthGroupFactory(
-            livelihood_zone_baseline__primary_livelihood_system=self.livelihood_category_with_groups,
+            livelihood_zone_baseline__primary_livelihood_system=self.livelihood_system_with_groups,
             livelihood_zone_baseline__livelihood_zone__country=self.country_a,
         )
 
@@ -293,7 +293,7 @@ class LivelihoodCategoryViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         result = json.loads(response.content.decode("utf-8"))
         self.assertEqual(len(result), 1)
-        self.assertEqual(self.livelihood_category_with_groups.name, result[0]["name"])
+        self.assertEqual(self.livelihood_system_with_groups.name, result[0]["name"])
 
         # test by has_wealthgroups set to false
         filter_data = {"has_wealthgroups": "false"}
@@ -301,7 +301,7 @@ class LivelihoodCategoryViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         result = json.loads(response.content.decode("utf-8"))
         self.assertEqual(len(result), 1)
-        self.assertEqual(self.livelihood_category_without_groups.name, result[0]["name"])
+        self.assertEqual(self.livelihood_system_without_groups.name, result[0]["name"])
 
         # test by all returns without filtering
         response = self.client.get(self.url)
@@ -317,7 +317,7 @@ class LivelihoodCategoryViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         result = json.loads(response.content.decode("utf-8"))
         self.assertEqual(len(result), 1)
-        self.assertEqual(self.livelihood_category_with_groups.name, result[0]["name"])
+        self.assertEqual(self.livelihood_system_with_groups.name, result[0]["name"])
 
         filter_data = {"country": self.country_b.iso3166a2}
         response = self.client.get(self.url, filter_data)
@@ -330,4 +330,4 @@ class LivelihoodCategoryViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         result = json.loads(response.content.decode("utf-8"))
         self.assertEqual(len(result), 1)
-        self.assertEqual(self.livelihood_category_with_groups.name, result[0]["name"])
+        self.assertEqual(self.livelihood_system_with_groups.name, result[0]["name"])

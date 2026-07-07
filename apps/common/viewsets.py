@@ -121,10 +121,10 @@ class CountryFilterSet(filters.FilterSet):
     )
 
     has_wealthgroups = filters.BooleanFilter(method="filter_has_wealthgroups")
-    livelihood_category = filters.ModelMultipleChoiceFilter(
-        queryset=lambda request: apps.get_model("metadata", "LivelihoodCategory").objects.all(),
-        method="filter_by_livelihood_category",
-        label="Livelihood Category",
+    livelihood_system = filters.ModelMultipleChoiceFilter(
+        queryset=lambda request: apps.get_model("metadata", "LivelihoodSystem").objects.all(),
+        method="filter_by_livelihood_system",
+        label="Livelihood System",
     )
     strategy_type = filters.MultipleChoiceFilter(
         choices=[],
@@ -144,7 +144,7 @@ class CountryFilterSet(filters.FilterSet):
         else:
             return queryset.exclude(Exists(wealth_group_exists))
 
-    def filter_by_livelihood_category(self, queryset, name, value):
+    def filter_by_livelihood_system(self, queryset, name, value):
         if not value:
             return queryset
         return queryset.filter(livelihoodzone__livelihoodzonebaseline__primary_livelihood_system__in=value).distinct()
@@ -352,10 +352,10 @@ class ClassifiedProductFilterSet(filters.FilterSet):
     unit_of_measure = filters.ModelChoiceFilter(queryset=UnitOfMeasure.objects.all(), field_name="unit_of_measure")
     has_wealthgroups = filters.BooleanFilter(method="filter_has_wealthgroups")
     country = CaseInsensitiveModelMultipleChoiceFilter(queryset=Country.objects.all(), method="filter_by_country")
-    livelihood_category = filters.ModelMultipleChoiceFilter(
-        queryset=lambda request: apps.get_model("metadata", "LivelihoodCategory").objects.all(),
-        method="filter_by_livelihood_category",
-        label="Livelihood Category",
+    livelihood_system = filters.ModelMultipleChoiceFilter(
+        queryset=lambda request: apps.get_model("metadata", "LivelihoodSystem").objects.all(),
+        method="filter_by_livelihood_system",
+        label="Livelihood System",
     )
     strategy_type = filters.MultipleChoiceFilter(
         choices=[],
@@ -390,7 +390,7 @@ class ClassifiedProductFilterSet(filters.FilterSet):
 
         return queryset.filter(country_queries).distinct()
 
-    def filter_by_livelihood_category(self, queryset, name, value):
+    def filter_by_livelihood_system(self, queryset, name, value):
         if not value:
             return queryset
         return queryset.filter(

@@ -2229,7 +2229,7 @@ MODELS_TO_SEARCH = [
     },
     {
         "app_name": "metadata",
-        "model_name": "LivelihoodCategory",
+        "model_name": "LivelihoodSystem",
         "filter": {
             "key": "primary_livelihood_system",
             "label": "Primary Livelihood System",
@@ -2361,7 +2361,7 @@ class LivelihoodZoneBaselineFacetedSearchView(APIView):
                     result[pid].append(baselines_by_id[bid])
             return result
 
-        if model_name == "LivelihoodCategory":
+        if model_name == "LivelihoodSystem":
             result = defaultdict(list)
             for b in LivelihoodZoneBaseline.objects.filter(
                 primary_livelihood_system__in=search_results
@@ -2453,7 +2453,7 @@ class LivelihoodZoneBaselineFacetedSearchView(APIView):
                             continue
                         if model_name == "ClassifiedProduct":
                             value_label, value = search_result.common_name, search_result.pk
-                        elif model_name == "LivelihoodCategory":
+                        elif model_name == "LivelihoodSystem":
                             value_label, value = search_result.description, search_result.pk
                         elif model_name == "LivelihoodZone":
                             value_label, value = search_result.name, search_result.pk

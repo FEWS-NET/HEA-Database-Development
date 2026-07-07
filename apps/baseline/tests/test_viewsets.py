@@ -25,7 +25,7 @@ from common.tests.factories import ClassifiedProductFactory, CountryFactory
 from metadata.models import LivelihoodActivityScenario, LivelihoodStrategyType
 from metadata.tests.factories import (
     CharacteristicGroupFactory,
-    LivelihoodCategoryFactory,
+    LivelihoodSystemFactory,
     SeasonalActivityTypeFactory,
     WealthCharacteristicFactory,
     WealthGroupCategoryFactory,
@@ -726,7 +726,7 @@ class LivelihoodZoneBaselineViewSetTestCase(APITestCase):
 
 class LivelihoodZoneBaselineFacetedSearchViewTestCase(APITestCase):
     def setUp(self):
-        self.category1 = LivelihoodCategoryFactory()
+        self.category1 = LivelihoodSystemFactory()
         self.baseline1 = LivelihoodZoneBaselineFactory(primary_livelihood_system=self.category1)
         self.baseline2 = LivelihoodZoneBaselineFactory(primary_livelihood_system=self.category1)
         self.baseline3 = LivelihoodZoneBaselineFactory()
