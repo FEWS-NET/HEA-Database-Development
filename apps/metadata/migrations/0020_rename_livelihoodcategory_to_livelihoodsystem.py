@@ -5,6 +5,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("metadata", "0019_other_livestock_production"),
+        ("baseline", "0042_rename_main_livelihood_category"),
     ]
 
     operations = [
