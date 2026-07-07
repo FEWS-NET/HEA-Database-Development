@@ -205,7 +205,7 @@ class LivelihoodZoneBaselineFilterSet(filters.FilterSet):
         model = LivelihoodZoneBaseline
         fields = (
             "livelihood_zone",
-            "main_livelihood_category",
+            "primary_livelihood_system",
             "source_organization",
             "reference_year_start_date",
             "reference_year_end_date",
@@ -2114,7 +2114,7 @@ class LivelihoodActivitySummaryViewSet(AggregatingViewSet):
         &scenario=baseline
         &slice_by_product=R011
         &slice_by_strategy_type=CropProduction
-        &fields=country,livelihood_zone_baseline_name,main_livelihood_category,currency,reference_year_start_date,
+        &fields=country,livelihood_zone_baseline_name,primary_livelihood_system,currency,reference_year_start_date,
             reference_year_end_date,valid_from_date,valid_to_date,population_source,population_estimate,
             wealth_group_category,product,product_common_name
         &min_income_sum_slice_percentage_of_row=52
@@ -2141,7 +2141,7 @@ class LivelihoodActivitySummaryViewSet(AggregatingViewSet):
         .select_related(
             "livelihood_zone_baseline__livelihood_zone__country",
             "livelihood_zone_baseline__source_organization",
-            "livelihood_zone_baseline__main_livelihood_category",
+            "livelihood_zone_baseline__primary_livelihood_system",
             "wealth_group__wealth_group_category",
             "livelihood_strategy__product",
             "livelihood_strategy__season",
@@ -2196,7 +2196,7 @@ class LivelihoodActivitySummaryViewSet(AggregatingViewSet):
             "reference_year_end_date": F("livelihood_zone_baseline__reference_year_end_date"),
             "valid_from_date": F("livelihood_zone_baseline__valid_from_date"),
             "valid_to_date": F("livelihood_zone_baseline__valid_to_date"),
-            "main_livelihood_category": F("livelihood_zone_baseline__main_livelihood_category__code"),
+            "primary_livelihood_system": F("livelihood_zone_baseline__primary_livelihood_system__code"),
             "livelihood_zone_baseline_description": translated_field("livelihood_zone_baseline__description"),
             "wealth_group_category": F("wealth_group__wealth_group_category__code"),
             "wealth_group_category_name": translated_field(
@@ -2230,7 +2230,11 @@ MODELS_TO_SEARCH = [
     {
         "app_name": "metadata",
         "model_name": "LivelihoodCategory",
-        "filter": {"key": "main_livelihood_category", "label": "Main Livelihood Category", "category": "zone_types"},
+        "filter": {
+            "key": "primary_livelihood_system",
+            "label": "Primary Livelihood System",
+            "category": "zone_types",
+        },
     },
     {
         "app_name": "baseline",
@@ -2359,10 +2363,10 @@ class LivelihoodZoneBaselineFacetedSearchView(APIView):
 
         if model_name == "LivelihoodCategory":
             result = defaultdict(list)
-            for b in LivelihoodZoneBaseline.objects.filter(main_livelihood_category__in=search_results).select_related(
-                "livelihood_zone"
-            ):
-                result[b.main_livelihood_category_id].append(b)
+            for b in LivelihoodZoneBaseline.objects.filter(
+                primary_livelihood_system__in=search_results
+            ).select_related("livelihood_zone"):
+                result[b.primary_livelihood_system_id].append(b)
             return result
 
         if model_name == "LivelihoodZone":

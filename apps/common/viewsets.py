@@ -147,7 +147,7 @@ class CountryFilterSet(filters.FilterSet):
     def filter_by_livelihood_category(self, queryset, name, value):
         if not value:
             return queryset
-        return queryset.filter(livelihoodzone__livelihoodzonebaseline__main_livelihood_category__in=value).distinct()
+        return queryset.filter(livelihoodzone__livelihoodzonebaseline__primary_livelihood_system__in=value).distinct()
 
     def filter_by_strategy_type(self, queryset, name, value):
         if not value:
@@ -394,7 +394,7 @@ class ClassifiedProductFilterSet(filters.FilterSet):
         if not value:
             return queryset
         return queryset.filter(
-            livelihood_strategies__livelihood_zone_baseline__main_livelihood_category__in=value
+            livelihood_strategies__livelihood_zone_baseline__primary_livelihood_system__in=value
         ).distinct()
 
     def filter_by_strategy_type(self, queryset, name, value):

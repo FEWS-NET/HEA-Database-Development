@@ -40,7 +40,7 @@ class CountryViewSetTestCase(APITestCase):
         cls.category_b = LivelihoodCategoryFactory()
         LivelihoodZoneBaselineFactory(
             livelihood_zone__country=cls.country2,
-            main_livelihood_category=cls.category_a,
+            primary_livelihood_system=cls.category_a,
         )
 
         # Set up strategy_type cascade filter test data
@@ -263,7 +263,7 @@ class ClassifiedProductViewSetTestCase(APITestCase):
         cls.category_a = LivelihoodCategoryFactory()
         cls.category_b = LivelihoodCategoryFactory()
         baseline_category_a = LivelihoodZoneBaselineFactory(
-            livelihood_zone__country=cls.country_a, main_livelihood_category=cls.category_a
+            livelihood_zone__country=cls.country_a, primary_livelihood_system=cls.category_a
         )
         LivelihoodStrategyFactory(
             livelihood_zone_baseline=baseline_category_a, product=cls.product1, season__country=cls.country_a
