@@ -5,8 +5,21 @@ from dal import autocomplete
 from django.apps import apps
 from django.conf import settings
 from django.db import models
-from django.db.models import CharField, Expression, F, Q, Subquery, TextField, Value
-from django.db.models.functions import Cast, Coalesce, ExtractYear, NullIf
+from django.db.models import (
+    CharField,
+    Expression,
+    ExpressionWrapper,
+    F,
+    FloatField,
+    IntegerField,
+    OuterRef,
+    Q,
+    Subquery,
+    Sum,
+    TextField,
+    Value,
+)
+from django.db.models.functions import Cast, Coalesce, ExtractYear, NullIf, Round
 from django.utils import translation
 from django.utils.decorators import method_decorator
 from django.utils.translation import override
@@ -545,6 +558,7 @@ class BaselineWealthGroupViewSet(BaseModelViewSet):
     queryset = BaselineWealthGroup.objects.select_related(
         "livelihood_zone_baseline__livelihood_zone__country",
         "livelihood_zone_baseline__source_organization",
+        "wealth_group_category",
     )
     serializer_class = BaselineWealthGroupSerializer
     filterset_class = BaselineWealthGroupFilterSet
@@ -552,6 +566,52 @@ class BaselineWealthGroupViewSet(BaseModelViewSet):
         "livelihood_zone_baseline",
         "wealth_group_category__ordering",
     ]
+
+    def get_queryset(self):
+        """
+        Annotate the queryset with `percentage_of_population` and `population_estimate`.
+
+        This copies the approach from the '% Population' section in the 'P' worksheet in the LIAS, weighting
+        `percentage_of_households` by `average_household_size` because household size can vary by Wealth Group.
+        """
+        baseline_weighted_average_household_size = (
+            WealthGroup.objects.filter(
+                livelihood_zone_baseline=OuterRef("livelihood_zone_baseline"),
+                community__isnull=True,
+                percentage_of_households__isnull=False,
+                percentage_of_households__gt=0,
+                average_household_size__isnull=False,
+            )
+            .values("livelihood_zone_baseline")
+            .annotate(
+                weighted_average_household_size=Sum(F("percentage_of_households") * F("average_household_size"))
+                / Sum("percentage_of_households")
+            )
+            .values("weighted_average_household_size")
+        )
+        return (
+            super()
+            .get_queryset()
+            .annotate(
+                baseline_weighted_average_household_size=Subquery(
+                    baseline_weighted_average_household_size, output_field=FloatField()
+                )
+            )
+            .annotate(
+                percentage_of_population=ExpressionWrapper(
+                    F("percentage_of_households")
+                    * F("average_household_size")
+                    / F("baseline_weighted_average_household_size"),
+                    output_field=FloatField(),
+                )
+            )
+            .annotate(
+                population_estimate=ExpressionWrapper(
+                    Round(F("livelihood_zone_baseline__population_estimate") * F("percentage_of_population")),
+                    output_field=IntegerField(),
+                )
+            )
+        )
 
 
 class CommunityWealthGroupFilterSet(filters.FilterSet):
