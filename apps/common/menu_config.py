@@ -170,9 +170,9 @@ APP_INDEX_CONFIG = {
         # Group 1 – Reference lookup types
         [
             {
-                "label": _("Livelihood Categories"),
-                "url_name": "admin:metadata_livelihoodcategory_changelist",
-                "perm": "metadata.view_livelihoodcategory",
+                "label": _("Livelihood Systems"),
+                "url_name": "admin:metadata_livelihoodsystem_changelist",
+                "perm": "metadata.view_livelihoodsystem",
                 "icon": "bi-layers",
             },
             {
@@ -525,7 +525,7 @@ ADMIN_MENU_CONFIG = [
                 "icon": "bi-list-ul",
                 "perms_any": [
                     "metadata.view_hazardcategory",
-                    "metadata.view_livelihoodcategory",
+                    "metadata.view_livelihoodsystem",
                     "metadata.view_season",
                     "metadata.view_wealthgroupcategory",
                     "metadata.view_characteristicgroup",
@@ -538,9 +538,9 @@ ADMIN_MENU_CONFIG = [
                         "perm": "metadata.view_hazardcategory",
                     },
                     {
-                        "label": _("Livelihood Categories"),
-                        "url_name": "admin:metadata_livelihoodcategory_changelist",
-                        "perm": "metadata.view_livelihoodcategory",
+                        "label": _("Livelihood Systems"),
+                        "url_name": "admin:metadata_livelihoodsystem_changelist",
+                        "perm": "metadata.view_livelihoodsystem",
                     },
                     {
                         "label": _("Seasons"),

@@ -72,7 +72,7 @@ from common.viewsets import (
 )
 from metadata.viewsets import (
     HazardCategoryViewSet,
-    LivelihoodCategoryViewSet,
+    LivelihoodSystemViewSet,
     SeasonalActivityTypeViewSet,
     SeasonViewSet,
     WealthCharacteristicViewSet,
@@ -90,7 +90,7 @@ router.register(r"user", UserViewSet)
 router.register(r"userprofile", UserProfileViewSet)
 
 # Metadata
-router.register(r"livelihoodcategory", LivelihoodCategoryViewSet)
+router.register(r"livelihoodsystem", LivelihoodSystemViewSet)
 router.register(r"wealthcharacteristic", WealthCharacteristicViewSet)
 router.register(r"wealthgroupcategory", WealthGroupCategoryViewSet)
 router.register(r"seasonalactivitytype", SeasonalActivityTypeViewSet)

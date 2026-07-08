@@ -9,7 +9,7 @@ from common.fields import translation_fields
 from common.lookups import Lookup
 
 from .models import (
-    LivelihoodCategory,
+    LivelihoodSystem,
     ReferenceData,
     Season,
     SeasonalActivityType,
@@ -28,8 +28,8 @@ class ReferenceDataLookup(Lookup):
     )
 
 
-class LivelihoodCategoryLookup(ReferenceDataLookup):
-    model = LivelihoodCategory
+class LivelihoodSystemLookup(ReferenceDataLookup):
+    model = LivelihoodSystem
 
 
 class SeasonalActivityTypeLookup(ReferenceDataLookup):

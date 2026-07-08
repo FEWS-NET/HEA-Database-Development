@@ -52,7 +52,7 @@ from common.tests.factories import (
 )
 from metadata.models import LivelihoodStrategyType
 from metadata.tests.factories import (
-    LivelihoodCategoryFactory,
+    LivelihoodSystemFactory,
     SeasonFactory,
     WealthGroupCategoryFactory,
 )
@@ -211,7 +211,7 @@ class LivelihoodZoneBaselineAdminTestCase(TestCase):
             "name_en": f"{livelihood_zone.code} Baseline",
             "description": f"{livelihood_zone.code} Baseline description",
             "livelihood_zone": livelihood_zone.pk,
-            "primary_livelihood_system": LivelihoodCategoryFactory().pk,
+            "primary_livelihood_system": LivelihoodSystemFactory().pk,
             "source_organization": SourceOrganizationFactory().pk,
             "bss": bss,
             "currency": currency,
