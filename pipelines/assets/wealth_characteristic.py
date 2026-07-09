@@ -335,51 +335,76 @@ def wealth_characteristic_instances(
 
                         wealth_group_characteristic_value["reference_type"] = reference_type
 
-                        # The percentage of households should be stored as a  decimal fraction between 0 and 1,
-                        # but some BSS store it as an integer between 1 and 100, so correct those values
-                        try:
-                            if (
-                                wealth_group_characteristic_value["wealth_characteristic_id"]
-                                == "percentage of households"
-                                and str(value).strip()
-                                and float(value) > 1
-                            ):
-                                value = float(value) / 100
-                        except Exception as e:
-                            raise ValueError(
-                                "Error in %s converting percentage of households value '%s' to float from 'WB'!%s%s"
-                                % (partition_key, value, column, row)
-                            ) from e
-
-                        wealth_group_characteristic_value["value"] = value
+                        is_percentage = "percentage" in wealth_group_characteristic_value["wealth_characteristic_id"]
 
                         # If this is the summary, then also save the min and max values
                         if reference_type == WealthGroupCharacteristicValue.CharacteristicReference.SUMMARY:
                             min_value = df.loc[row, df.columns[-2]]
                             max_value = df.loc[row, df.columns[-1]]
-                            # Convert min/max percentage of households values from integers to decimal fractions
-                            if (
-                                wealth_group_characteristic_value["wealth_characteristic_id"]
-                                == "percentage of households"
-                            ):
-                                try:
-                                    if str(min_value).strip() and float(min_value) > 1:
-                                        min_value = float(min_value) / 100
-                                except Exception as e:
-                                    raise ValueError(
-                                        "Error in %s converting percentage of households value '%s' to float from 'WB'!%s%s"
-                                        % (partition_key, min_value, df.columns[-2], row)
-                                    ) from e
-                                try:
-                                    if str(max_value).strip() and float(max_value) > 1:
-                                        max_value = float(max_value) / 100
-                                except Exception as e:
-                                    raise ValueError(
-                                        "Error in %s converting percentage of households value '%s' to float from 'WB'!%s%s"
-                                        % (partition_key, max_value, df.columns[-1], row)
-                                    ) from e
+
+                            # Percentages should be stored as a decimal fraction between 0 and 1, but some BSS
+                            # store them as an integer between 1 and 100. The Summary value, min_value and
+                            # max_value are a self-contained group entered/computed together (independently of
+                            # the Community and Wealth Group Interview values in the row, which may be
+                            # on a different scale), so decide whether the whole group needs converting by
+                            # checking all three together. A single cell like "1" is ambiguous in isolation (it
+                            # could be a fraction meaning 100%, or a whole number meaning 1%), but if either of
+                            # its group members is unambiguously a whole number (i.e. greater than 1), then all
+                            # three must be interpreted on that same whole-number scale.
+                            # E.g. see ML09 'WB'!BL345:BN345 ("percentage of female-headed households" for VP),
+                            # where value=1 only makes sense as 1% once min=0/max=2 show the row is whole-number.
+                            if is_percentage:
+                                summary_group_is_whole_number_percentage = False
+                                for raw_value in (value, min_value, max_value):
+                                    if not str(raw_value).strip():
+                                        continue
+                                    try:
+                                        if float(raw_value) > 1:
+                                            summary_group_is_whole_number_percentage = True
+                                            break
+                                    except (TypeError, ValueError):
+                                        continue
+                                if summary_group_is_whole_number_percentage:
+                                    try:
+                                        if str(value).strip():
+                                            value = float(value) / 100
+                                    except Exception as e:
+                                        raise ValueError(
+                                            "Error in %s converting percentage value '%s' to float from 'WB'!%s%s"
+                                            % (partition_key, value, column, row)
+                                        ) from e
+                                    try:
+                                        if str(min_value).strip():
+                                            min_value = float(min_value) / 100
+                                    except Exception as e:
+                                        raise ValueError(
+                                            "Error in %s converting percentage value '%s' to float from 'WB'!%s%s"
+                                            % (partition_key, min_value, df.columns[-2], row)
+                                        ) from e
+                                    try:
+                                        if str(max_value).strip():
+                                            max_value = float(max_value) / 100
+                                    except Exception as e:
+                                        raise ValueError(
+                                            "Error in %s converting percentage value '%s' to float from 'WB'!%s%s"
+                                            % (partition_key, max_value, df.columns[-1], row)
+                                        ) from e
                             wealth_group_characteristic_value["min_value"] = min_value
                             wealth_group_characteristic_value["max_value"] = max_value
+                        elif is_percentage:
+                            # Community and Wealth Group Interview values are standalone cells, so use the
+                            # simple per-cell rule: convert whole-number percentages (> 1) to decimal
+                            # fractions.
+                            try:
+                                if str(value).strip() and float(value) > 1:
+                                    value = float(value) / 100
+                            except Exception as e:
+                                raise ValueError(
+                                    "Error in %s converting percentage value '%s' to float from 'WB'!%s%s"
+                                    % (partition_key, value, column, row)
+                                ) from e
+
+                        wealth_group_characteristic_value["value"] = value
 
                         # Save the column and row, to aid trouble-shooting
                         wealth_group_characteristic_value["bss_sheet"] = "WB"
