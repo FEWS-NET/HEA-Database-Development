@@ -334,8 +334,10 @@ def wealth_characteristic_instances(
                         ]
 
                         wealth_group_characteristic_value["reference_type"] = reference_type
-
-                        is_percentage = "percentage" in wealth_group_characteristic_value["wealth_characteristic_id"]
+                        is_percentage = (
+                            "percentage"
+                            in (wealth_group_characteristic_value["wealth_characteristic_id"] or "").lower()
+                        )
 
                         # If this is the summary, then also save the min and max values
                         if reference_type == WealthGroupCharacteristicValue.CharacteristicReference.SUMMARY:
@@ -355,15 +357,22 @@ def wealth_characteristic_instances(
                             # where value=1 only makes sense as 1% once min=0/max=2 show the row is whole-number.
                             if is_percentage:
                                 summary_group_is_whole_number_percentage = False
-                                for raw_value in (value, min_value, max_value):
+                                for raw_value, raw_value_column in (
+                                    (value, column),
+                                    (min_value, df.columns[-2]),
+                                    (max_value, df.columns[-1]),
+                                ):
                                     if not str(raw_value).strip():
                                         continue
                                     try:
                                         if float(raw_value) > 1:
                                             summary_group_is_whole_number_percentage = True
                                             break
-                                    except (TypeError, ValueError):
-                                        continue
+                                    except (TypeError, ValueError) as e:
+                                        raise ValueError(
+                                            "Error in %s converting percentage value '%s' to float from 'WB'!%s%s"
+                                            % (partition_key, raw_value, raw_value_column, row)
+                                        ) from e
                                 if summary_group_is_whole_number_percentage:
                                     try:
                                         if str(value).strip():
