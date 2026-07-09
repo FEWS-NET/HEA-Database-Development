@@ -60,7 +60,7 @@ exclude = '''
 [tool.isort]
 profile = "black"
 skip = [".history", ".tox", ".venv"]
-src_paths = ["apps"]
+src_paths = ["apps", "pipelines"]
 
 [tool.dagster]
 module_name = "pipelines"

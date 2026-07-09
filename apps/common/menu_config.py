@@ -170,9 +170,9 @@ APP_INDEX_CONFIG = {
         # Group 1 – Reference lookup types
         [
             {
-                "label": _("Livelihood Categories"),
-                "url_name": "admin:metadata_livelihoodcategory_changelist",
-                "perm": "metadata.view_livelihoodcategory",
+                "label": _("Livelihood Systems"),
+                "url_name": "admin:metadata_livelihoodsystem_changelist",
+                "perm": "metadata.view_livelihoodsystem",
                 "icon": "bi-layers",
             },
             {
@@ -317,6 +317,7 @@ ADMIN_MENU_CONFIG = [
                     "baseline.view_livelihoodactivity",
                     "baseline.view_wealthgroupcharacteristicvalue",
                     "baseline.view_livelihoodstrategy",
+                    "baseline.view_keyparameter",
                 ],
                 "items": [
                     {
@@ -333,6 +334,11 @@ ADMIN_MENU_CONFIG = [
                         "label": _("Livelihood Activity"),
                         "url_name": "admin:baseline_livelihoodactivity_changelist",
                         "perm": "baseline.view_livelihoodactivity",
+                    },
+                    {
+                        "label": _("Key Parameter"),
+                        "url_name": "admin:baseline_keyparameter_changelist",
+                        "perm": "baseline.view_keyparameter",
                     },
                 ],
             },
@@ -519,7 +525,7 @@ ADMIN_MENU_CONFIG = [
                 "icon": "bi-list-ul",
                 "perms_any": [
                     "metadata.view_hazardcategory",
-                    "metadata.view_livelihoodcategory",
+                    "metadata.view_livelihoodsystem",
                     "metadata.view_season",
                     "metadata.view_wealthgroupcategory",
                     "metadata.view_characteristicgroup",
@@ -532,9 +538,9 @@ ADMIN_MENU_CONFIG = [
                         "perm": "metadata.view_hazardcategory",
                     },
                     {
-                        "label": _("Livelihood Categories"),
-                        "url_name": "admin:metadata_livelihoodcategory_changelist",
-                        "perm": "metadata.view_livelihoodcategory",
+                        "label": _("Livelihood Systems"),
+                        "url_name": "admin:metadata_livelihoodsystem_changelist",
+                        "perm": "metadata.view_livelihoodsystem",
                     },
                     {
                         "label": _("Seasons"),

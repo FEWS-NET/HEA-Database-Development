@@ -64,13 +64,12 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hea.settings.production")
 # Configure Django with our custom settings before importing any Django classes
 django.setup()
 
+from baseline.models import LivelihoodZoneBaseline  # NOQA: E402
+from metadata.models import ActivityLabel  # NOQA: E402
 from pipelines.utils import (  # NOQA: E402
     get_cell_formula,
     get_formula_references,
 )
-
-from baseline.models import LivelihoodZoneBaseline  # NOQA: E402
-from metadata.models import ActivityLabel  # NOQA: E402
 
 
 def _get_livelihood_activity_groups(

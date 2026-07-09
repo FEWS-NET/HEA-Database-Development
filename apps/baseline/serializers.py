@@ -29,6 +29,7 @@ from .models import (
     FoodPurchase,
     Hazard,
     Hunting,
+    KeyParameter,
     LivelihoodActivity,
     LivelihoodProductCategory,
     LivelihoodStrategy,
@@ -95,7 +96,7 @@ class LivelihoodZoneBaselineSerializer(serializers.ModelSerializer):
             "livelihood_zone_name",
             "livelihood_zone_country",
             "livelihood_zone_country_name",
-            "main_livelihood_category",
+            "primary_livelihood_system",
             "bss",
             "bss_language",
             "currency",
@@ -135,7 +136,7 @@ class LivelihoodZoneBaselineGeoSerializer(GeoFeatureModelSerializer):
             "livelihood_zone_country",
             "livelihood_zone_country_name",
             "geography",
-            "main_livelihood_category",
+            "primary_livelihood_system",
             "bss",
             "bss_language",
             "currency",
@@ -342,7 +343,15 @@ class WealthGroupSerializer(serializers.ModelSerializer):
 class BaselineWealthGroupSerializer(WealthGroupSerializer):
     class Meta:
         model = BaselineWealthGroup
-        fields = [f for f in WealthGroupSerializer.Meta.fields if f not in {"community", "community_name"}]
+        fields = [
+            f
+            for f in WealthGroupSerializer.Meta.fields
+            if f not in {"community", "community_name", "community_full_name"}
+        ] + [
+            "population_source",
+            "percentage_of_population",
+            "population_estimate",
+        ]
 
     livelihood_zone_baseline_label = serializers.SerializerMethodField()
 
@@ -365,6 +374,12 @@ class BaselineWealthGroupSerializer(WealthGroupSerializer):
     source_organization_name = serializers.CharField(
         source="livelihood_zone_baseline.source_organization.name", read_only=True
     )
+    population_source = serializers.CharField(source="livelihood_zone_baseline.population_source", read_only=True)
+    # `percentage_of_population` and `population_estimate` are annotated onto the queryset in
+    # `BaselineWealthGroupViewSet.get_queryset()` because the calculation requires comparing every Baseline Wealth
+    # Group for the same Livelihood Zone Baseline as each row, which would cause an N+1 query if done here instead.
+    percentage_of_population = serializers.FloatField(read_only=True)
+    population_estimate = serializers.IntegerField(read_only=True)
 
 
 class CommunityWealthGroupSerializer(WealthGroupSerializer):
@@ -673,6 +688,93 @@ class LivelihoodStrategySerializer(serializers.ModelSerializer):
 
     def get_livelihood_zone_baseline_label(self, obj):
         return str(obj.livelihood_zone_baseline)
+
+
+class KeyParameterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = KeyParameter
+        fields = [
+            "id",
+            "livelihood_strategy",
+            "source_organization",
+            "source_organization_name",
+            "livelihood_zone_baseline",
+            "livelihood_zone_baseline_label",
+            "livelihood_zone",
+            "livelihood_zone_name",
+            "livelihood_zone_country",
+            "livelihood_zone_country_name",
+            "strategy_type",
+            "strategy_type_label",
+            "season",
+            "season_name",
+            "season_description",
+            "season_type",
+            "season_type_label",
+            "product",
+            "product_common_name",
+            "product_description",
+            "unit_of_measure",
+            "unit_of_measure_description",
+            "currency",
+            "additional_identifier",
+            "monitor_quantity",
+            "monitor_price",
+        ]
+
+    livelihood_strategy = serializers.PrimaryKeyRelatedField(
+        queryset=LivelihoodStrategy.objects.all(),
+        style={"base_template": "input.html"},
+    )
+    livelihood_zone_baseline = serializers.IntegerField(
+        source="livelihood_strategy.livelihood_zone_baseline.pk", read_only=True
+    )
+    livelihood_zone_baseline_label = serializers.SerializerMethodField()
+    livelihood_zone_name = serializers.CharField(
+        source="livelihood_strategy.livelihood_zone_baseline.livelihood_zone.name", read_only=True
+    )
+    livelihood_zone = serializers.CharField(
+        source="livelihood_strategy.livelihood_zone_baseline.livelihood_zone.pk", read_only=True
+    )
+    livelihood_zone_country = serializers.CharField(
+        source="livelihood_strategy.livelihood_zone_baseline.livelihood_zone.country.pk", read_only=True
+    )
+    livelihood_zone_country_name = serializers.CharField(
+        source="livelihood_strategy.livelihood_zone_baseline.livelihood_zone.country.name", read_only=True
+    )
+    source_organization = serializers.IntegerField(
+        source="livelihood_strategy.livelihood_zone_baseline.source_organization.pk", read_only=True
+    )
+    source_organization_name = serializers.CharField(
+        source="livelihood_strategy.livelihood_zone_baseline.source_organization.name", read_only=True
+    )
+    season = serializers.IntegerField(source="livelihood_strategy.season.pk", read_only=True, allow_null=True)
+    unit_of_measure_description = serializers.CharField(
+        source="livelihood_strategy.unit_of_measure.description", read_only=True
+    )
+    unit_of_measure = serializers.CharField(
+        source="livelihood_strategy.unit_of_measure.pk", read_only=True, allow_null=True
+    )
+    product = serializers.CharField(source="livelihood_strategy.product.pk", read_only=True, allow_null=True)
+    product_common_name = serializers.CharField(source="livelihood_strategy.product.common_name", read_only=True)
+    product_description = serializers.CharField(source="livelihood_strategy.product.description", read_only=True)
+    currency = serializers.CharField(source="livelihood_strategy.currency.pk", read_only=True)
+    additional_identifier = serializers.CharField(source="livelihood_strategy.additional_identifier", read_only=True)
+    season_name = serializers.CharField(source="livelihood_strategy.season.name", read_only=True)
+    season_description = serializers.CharField(source="livelihood_strategy.season.description", read_only=True)
+    season_type = serializers.CharField(source="livelihood_strategy.season.season_type", read_only=True)
+    season_type_label = serializers.SerializerMethodField()
+    strategy_type = serializers.CharField(source="livelihood_strategy.strategy_type", read_only=True)
+    strategy_type_label = serializers.SerializerMethodField()
+
+    def get_season_type_label(self, obj):
+        return obj.livelihood_strategy.season.get_season_type_display() if obj.livelihood_strategy.season else ""
+
+    def get_strategy_type_label(self, obj):
+        return obj.livelihood_strategy.get_strategy_type_display()
+
+    def get_livelihood_zone_baseline_label(self, obj):
+        return str(obj.livelihood_strategy.livelihood_zone_baseline)
 
 
 class LivelihoodActivitySerializer(serializers.ModelSerializer):
@@ -1791,7 +1893,7 @@ class LivelihoodActivitySummarySerializer(AggregatingSerializer):
             "reference_year_end_date",
             "valid_from_date",
             "valid_to_date",  # to display "is latest" / "is historic" in the UI for each ref yr
-            "main_livelihood_category",
+            "primary_livelihood_system",
             "livelihood_zone_baseline_description",
             "wealth_group_category",  # E.g. VP, P, M, B/O
             "wealth_group_category_name",

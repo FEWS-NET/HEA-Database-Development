@@ -10,22 +10,22 @@ from metadata.models import (
 )
 
 
-class LivelihoodCategoryFactory(factory.django.DjangoModelFactory):
+class LivelihoodSystemFactory(factory.django.DjangoModelFactory):
     class Meta:
-        model = "metadata.LivelihoodCategory"
+        model = "metadata.LivelihoodSystem"
         django_get_or_create = ("code",)
 
     code = factory.Iterator(["AG", "PA", "AP", "FI"])
-    name_en = factory.LazyAttribute(lambda o: f"{o.code} Livelihood Category en")
-    name_pt = factory.LazyAttribute(lambda o: f"{o.code} Livelihood Category pt")
-    name_es = factory.LazyAttribute(lambda o: f"{o.code} Livelihood Category es")
-    name_fr = factory.LazyAttribute(lambda o: f"{o.code} Livelihood Category fr")
-    name_ar = factory.LazyAttribute(lambda o: f"{o.code} Livelihood Category ar")
-    description_en = factory.LazyAttribute(lambda o: f"{o.code} Livelihood Category Description en")
-    description_pt = factory.LazyAttribute(lambda o: f"{o.code} Livelihood Category Description pt")
-    description_es = factory.LazyAttribute(lambda o: f"{o.code} Livelihood Category Description es")
-    description_ar = factory.LazyAttribute(lambda o: f"{o.code} Livelihood Category Description ar")
-    description_fr = factory.LazyAttribute(lambda o: f"{o.code} Livelihood Category Description fr")
+    name_en = factory.LazyAttribute(lambda o: f"{o.code} Livelihood System en")
+    name_pt = factory.LazyAttribute(lambda o: f"{o.code} Livelihood System pt")
+    name_es = factory.LazyAttribute(lambda o: f"{o.code} Livelihood System es")
+    name_fr = factory.LazyAttribute(lambda o: f"{o.code} Livelihood System fr")
+    name_ar = factory.LazyAttribute(lambda o: f"{o.code} Livelihood System ar")
+    description_en = factory.LazyAttribute(lambda o: f"{o.code} Livelihood System Description en")
+    description_pt = factory.LazyAttribute(lambda o: f"{o.code} Livelihood System Description pt")
+    description_es = factory.LazyAttribute(lambda o: f"{o.code} Livelihood System Description es")
+    description_ar = factory.LazyAttribute(lambda o: f"{o.code} Livelihood System Description ar")
+    description_fr = factory.LazyAttribute(lambda o: f"{o.code} Livelihood System Description fr")
 
 
 class HazardCategoryFactory(factory.django.DjangoModelFactory):

@@ -127,7 +127,7 @@ def bss_metadata(context: AssetExecutionContext, config: BSSMetadataConfig) -> O
         metadata={
             "num_baselines": len(df),
             "preview": MetadataValue.md(
-                df[["partition_key", "bss_path", "status", "name_en", "main_livelihood_category_id"]]
+                df[["partition_key", "bss_path", "status", "name_en", "primary_livelihood_system_id"]]
                 .head(config.preview_rows)
                 .to_markdown(index=False)
                 .replace("~", "\\~")  # Escape the ~ in the partition_key, otherwise it is rendered as strikethrough
@@ -147,7 +147,7 @@ def completed_bss_metadata(config: BSSMetadataConfig, bss_metadata) -> Output[pd
         "country_id",
         "source_organization",
         "name_en",
-        "main_livelihood_category_id",
+        "primary_livelihood_system_id",
         "currency_id",
         "reference_year_start_date",
         "reference_year_end_date",
@@ -167,13 +167,13 @@ def completed_bss_metadata(config: BSSMetadataConfig, bss_metadata) -> Output[pd
             "num_complete": len(complete_df),
             "num_incomplete": len(incomplete_df),
             "complete": MetadataValue.md(
-                complete_df[["bss_path", "name_en", "main_livelihood_category_id"]].to_markdown()
+                complete_df[["bss_path", "name_en", "primary_livelihood_system_id"]].to_markdown()
             ),
             "incomplete": MetadataValue.md(
-                incomplete_df[["bss_path", "status", "name_en", "main_livelihood_category_id"]].to_markdown()
+                incomplete_df[["bss_path", "status", "name_en", "primary_livelihood_system_id"]].to_markdown()
             ),
             "preview": MetadataValue.md(
-                complete_df[["bss_path", "status", "name_en", "main_livelihood_category_id"]]
+                complete_df[["bss_path", "status", "name_en", "primary_livelihood_system_id"]]
                 .head(config.preview_rows)
                 .to_markdown()
             ),
@@ -334,11 +334,15 @@ def get_bss_dataframe(
     end_col: str | None = None,
     num_summary_cols: int | None = None,
     fill_blank_rows: bool = True,
+    ignore_label_patterns: list[str] | None = None,
 ) -> Output[pd.DataFrame]:
     """
     Retrieve a worksheet from a BSS and return it as a DataFrame.
 
     Uses Excel row numbers, starting from 1, and column letters, starting from A.
+
+    `ignore_label_patterns` is an optional list of case-insensitive regular expressions. Any Column A cell whose
+    stripped text fully matches one of these patterns is treated as blank
     """
     try:
         df = pd.read_excel(filepath_or_buffer, bss_sheet, header=None)
@@ -425,6 +429,12 @@ def get_bss_dataframe(
     #   |  20 |                                                | M                   | 1.4                |
     #   |  21 |                                                | B/O                 | 1.4                |
     #   |  22 | Camels: total owned at start of year           | VP                  | 0                  |
+
+    if ignore_label_patterns:
+        noise_pattern = "|".join(f"(?:{pattern})" for pattern in ignore_label_patterns)
+        is_noise = df["A"].str.strip().str.fullmatch(noise_pattern, case=False, na=False)
+        df.loc[is_noise, "A"] = None
+
     if fill_blank_rows:
         # We do this by setting the missing values to pd.NA and then using .ffill()
         # Note that we need to replace the None with something else before the mask() and ffill() so that only

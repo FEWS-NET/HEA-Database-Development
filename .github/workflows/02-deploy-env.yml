@@ -1,6 +1,10 @@
 name: Deploy to environment
 run-name: Deploy to ${{ inputs.environment }} triggered by @${{ github.actor }}
 
+permissions:
+  contents: read
+  id-token: write
+
 on:
   workflow_dispatch:
     inputs:
@@ -12,43 +16,59 @@ on:
 env:
   CLIENT: "fnt"
   APP: "hea"
-
-  # workflow_dispatch input variables
   ENV: ${{ inputs.environment }}
-
-  # AWS Variables
-  ECS_CLUSTER: "data-prod-ecs-cluster"
   AWS_REGION: "us-east-1"
+  ECS_CLUSTER: "data-prod-ecs-cluster"
 
 jobs:
   deploy_env:
-    # this will allow us to access secrets defined for this environment
+    name: Deploy HEA
     environment: ${{ inputs.environment }}
-    runs-on: [ fewsnet ]
-    container:
-      image: alpine:3.17
+    runs-on: fewsnet-dind-runners
+
     defaults:
       run:
-        shell: ash --noprofile --norc -eo pipefail {0} # Fail on any non-zero exit code, even in piped commands
+        shell: bash --noprofile --norc -eo pipefail {0}
 
     steps:
-      - name: Restart services
-        run: |
-          echo "using environment \"$ENV\""
-          # Force a re-deployment of the services. Allow a long health check grace period for the services
-          # behind load balancers, so that migrations have time to run, etc.
-          # Use jq to filter out meaningless event history - the events related to the re-deployment haven't happened yet
-          apk --no-cache add jq=1.6-r2 aws-cli=1.25.97-r0
-          aws ecs update-service --region ${AWS_REGION} --cluster ${ECS_CLUSTER} --service ${CLIENT}-${APP}${ENV}-app --force-new-deployment --health-check-grace-period-seconds 600 | jq "del(.[] | .events)"
-          aws ecs update-service --region ${AWS_REGION} --cluster ${ECS_CLUSTER} --service ${CLIENT}-${APP}${ENV}-dagster-webserver --force-new-deployment --health-check-grace-period-seconds 600 | jq "del(.[] | .events)"
-          aws ecs update-service --region ${AWS_REGION} --cluster ${ECS_CLUSTER} --service ${CLIENT}-${APP}${ENV}-dagster-daemon --force-new-deployment | jq "del(.[] | .events)"
-          echo -n "Initiated deployment to "
-          case $ENV in
-            dev)
-              echo -n '"https://headev.fews.net/en/admin/"'
-              ;;
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: "arn:aws:iam::888016039450:role/data-prod-eks-cluster-github-actions-arc-role"
+          aws-region: ${{ env.AWS_REGION }}
 
-            tst)
-              echo -n '"https://heastage.fews.net/en/admin/"'
-              ;;
-          esac
+      - name: Restart HEA Services
+        run: |
+          echo "🚀 Deploying $APP to $ENV on ECS cluster: $ECS_CLUSTER"
+
+          SERVICES=(
+            "${CLIENT}-${APP}${ENV}-app"
+            "${CLIENT}-${APP}${ENV}-dagster-webserver"
+            "${CLIENT}-${APP}${ENV}-dagster-daemon"
+          )
+
+          for SERVICE in "${SERVICES[@]}"; do
+            echo "🔄 Restarting $SERVICE"
+
+            if [[ "$SERVICE" == *"dagster-daemon" ]]; then
+              aws ecs update-service \
+                --region "$AWS_REGION" \
+                --cluster "$ECS_CLUSTER" \
+                --service "$SERVICE" \
+                --force-new-deployment | jq "del(.[] | .events)"
+            else
+              aws ecs update-service \
+                --region "$AWS_REGION" \
+                --cluster "$ECS_CLUSTER" \
+                --service "$SERVICE" \
+                --force-new-deployment \
+                --health-check-grace-period-seconds 600 | jq "del(.[] | .events)"
+            fi
+          done
+
+          declare -A env_urls=(
+            ["dev"]="https://headev.fews.net/en/admin/"
+            ["tst"]="https://heastage.fews.net/en/admin/"
+          )
+
+          echo "✅ Deployment initiated! Admin URL: ${env_urls[$ENV]:-Unknown environment}"

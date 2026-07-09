@@ -32,8 +32,8 @@ from common.utils import get_month_from_day_number
 from metadata.models import (
     HazardCategory,
     LivelihoodActivityScenario,
-    LivelihoodCategory,
     LivelihoodStrategyType,
+    LivelihoodSystem,
     Market,
     Season,
     SeasonalActivityType,
@@ -263,11 +263,11 @@ class LivelihoodZoneBaseline(common_models.Model):
     )
     geography = models.MultiPolygonField(geography=True, dim=2, blank=True, null=True, verbose_name=_("geography"))
 
-    main_livelihood_category = models.ForeignKey(
-        LivelihoodCategory,
-        db_column="livelihood_category_code",
+    primary_livelihood_system = models.ForeignKey(
+        LivelihoodSystem,
+        db_column="livelihood_system_code",
         on_delete=models.RESTRICT,
-        verbose_name=_("Livelihood Zone Type"),
+        verbose_name=_("Primary Livelihood System"),
     )
     source_organization = models.ForeignKey(
         SourceOrganization, on_delete=models.RESTRICT, verbose_name=_("Source Organization")

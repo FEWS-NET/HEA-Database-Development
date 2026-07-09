@@ -8,7 +8,7 @@ from .models import (
     ActivityLabel,
     CharacteristicGroup,
     HazardCategory,
-    LivelihoodCategory,
+    LivelihoodSystem,
     Market,
     Season,
     SeasonalActivityType,
@@ -39,9 +39,9 @@ class ReferenceDataAdmin(admin.ModelAdmin):
     )
 
 
-class LivelihoodCategoryAdmin(ReferenceDataAdmin):
+class LivelihoodSystemAdmin(ReferenceDataAdmin):
     """
-    A concrete admin for LivelihoodCategory
+    A concrete admin for LivelihoodSystem
     """
 
     list_display = ("code", "name", "aliases", "description", "color_display")
@@ -249,7 +249,7 @@ class WealthCharacteristicLabelAdmin(admin.ModelAdmin):
         return super().get_queryset(request).select_related("wealth_characteristic", "product", "unit_of_measure")
 
 
-admin.site.register(LivelihoodCategory, LivelihoodCategoryAdmin)
+admin.site.register(LivelihoodSystem, LivelihoodSystemAdmin)
 admin.site.register(WealthGroupCategory, WealthGroupCategoryAdmin)
 admin.site.register(CharacteristicGroup, CharacteristicGroupAdmin)
 admin.site.register(SeasonalActivityType, SeasonalActivityTypeAdmin)

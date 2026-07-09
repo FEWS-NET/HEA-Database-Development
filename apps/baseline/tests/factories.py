@@ -55,7 +55,7 @@ from common.tests.factories import (
 from metadata.models import LivelihoodActivityScenario
 from metadata.tests.factories import (
     HazardCategoryFactory,
-    LivelihoodCategoryFactory,
+    LivelihoodSystemFactory,
     MarketFactory,
     SeasonalActivityTypeFactory,
     SeasonFactory,
@@ -112,7 +112,7 @@ class LivelihoodZoneBaselineFactory(factory.django.DjangoModelFactory):
     name_pt = factory.LazyAttribute(lambda lz: f"Baseline {lz.livelihood_zone}")
     name_ar = factory.LazyAttribute(lambda lz: f"Baseline {lz.livelihood_zone}")
     livelihood_zone = factory.SubFactory(LivelihoodZoneFactory)
-    main_livelihood_category = factory.SubFactory(LivelihoodCategoryFactory)
+    primary_livelihood_system = factory.SubFactory(LivelihoodSystemFactory)
     source_organization = factory.SubFactory(SourceOrganizationFactory)
     bss = factory.django.FileField(filename="bss.xlsx")
     bss_language = factory.Iterator(["en", "pt", "es", "ar", "fr"])

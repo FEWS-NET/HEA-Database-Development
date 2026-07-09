@@ -4,7 +4,7 @@ from common.utils import get_month_from_day_number
 
 from .models import (
     HazardCategory,
-    LivelihoodCategory,
+    LivelihoodSystem,
     ReferenceData,
     Season,
     SeasonalActivityType,
@@ -23,13 +23,13 @@ class ReferenceDataSerializer(serializers.ModelSerializer):
         fields = ["code", "name", "description", "ordering", "aliases"]
 
 
-class LivelihoodCategorySerializer(ReferenceDataSerializer):
+class LivelihoodSystemSerializer(ReferenceDataSerializer):
     """
-    Serializer class for the LivelihoodCategory model
+    Serializer class for the LivelihoodSystem model
     """
 
     class Meta(ReferenceDataSerializer.Meta):
-        model = LivelihoodCategory
+        model = LivelihoodSystem
         fields = ["code", "name", "description", "aliases", "color"]
 
 

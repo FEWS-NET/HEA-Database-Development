@@ -10,8 +10,8 @@ from common.models import Country
 from common.viewsets import BaseModelViewSet
 from metadata.models import (
     HazardCategory,
-    LivelihoodCategory,
     LivelihoodStrategyType,
+    LivelihoodSystem,
     ReferenceData,
     Season,
     SeasonalActivityType,
@@ -20,7 +20,7 @@ from metadata.models import (
 )
 from metadata.serializers import (
     HazardCategorySerializer,
-    LivelihoodCategorySerializer,
+    LivelihoodSystemSerializer,
     ReferenceDataSerializer,
     SeasonalActivityTypeSerializer,
     SeasonSerializer,
@@ -70,7 +70,7 @@ class ReferenceDataViewSet(BaseModelViewSet):
     )
 
 
-class LivelihoodCategoryFilter(ReferenceDataFilterSet):
+class LivelihoodSystemFilter(ReferenceDataFilterSet):
 
     has_wealthgroups = filters.BooleanFilter(method="filter_has_wealthgroups")
     country = CaseInsensitiveModelMultipleChoiceFilter(queryset=Country.objects.all(), method="filter_country")
@@ -80,7 +80,7 @@ class LivelihoodCategoryFilter(ReferenceDataFilterSet):
             return queryset
         WealthGroup = apps.get_model("baseline", "WealthGroup")
         wealth_group_exists = WealthGroup.objects.filter(
-            livelihood_zone_baseline__main_livelihood_category=OuterRef("pk")
+            livelihood_zone_baseline__primary_livelihood_system=OuterRef("pk")
         )
         if value:
             return queryset.filter(Exists(wealth_group_exists))
@@ -98,10 +98,10 @@ class LivelihoodCategoryFilter(ReferenceDataFilterSet):
         return queryset.filter(country_queries).distinct()
 
 
-class LivelihoodCategoryViewSet(ReferenceDataViewSet):
-    queryset = LivelihoodCategory.objects.all()
-    serializer_class = LivelihoodCategorySerializer
-    filterset_class = LivelihoodCategoryFilter
+class LivelihoodSystemViewSet(ReferenceDataViewSet):
+    queryset = LivelihoodSystem.objects.all()
+    serializer_class = LivelihoodSystemSerializer
+    filterset_class = LivelihoodSystemFilter
 
 
 class WealthGroupCategoryFilter(ReferenceDataFilterSet):

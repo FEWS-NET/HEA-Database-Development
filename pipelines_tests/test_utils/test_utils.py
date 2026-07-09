@@ -1,5 +1,6 @@
 import pandas as pd
 from django.test import TestCase
+
 from pipelines.utils import get_formula_references, prepare_lookup
 
 

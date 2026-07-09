@@ -16,6 +16,7 @@ from django.utils.timezone import now
 from rest_framework.test import APITestCase
 
 from baseline.models import (
+    KeyParameter,
     LivelihoodActivity,
     LivelihoodZoneBaseline,
 )
@@ -24,7 +25,7 @@ from common.tests.factories import ClassifiedProductFactory, CountryFactory
 from metadata.models import LivelihoodActivityScenario, LivelihoodStrategyType
 from metadata.tests.factories import (
     CharacteristicGroupFactory,
-    LivelihoodCategoryFactory,
+    LivelihoodSystemFactory,
     SeasonalActivityTypeFactory,
     WealthCharacteristicFactory,
     WealthGroupCategoryFactory,
@@ -46,6 +47,7 @@ from .factories import (
     FoodPurchaseFactory,
     HazardFactory,
     HuntingFactory,
+    KeyParameterFactory,
     LivelihoodActivityFactory,
     LivelihoodProductCategoryFactory,
     LivelihoodStrategyFactory,
@@ -371,7 +373,7 @@ class LivelihoodZoneBaselineViewSetTestCase(APITestCase):
             "livelihood_zone_name",
             "livelihood_zone_country",
             "livelihood_zone_country_name",
-            "main_livelihood_category",
+            "primary_livelihood_system",
             "bss",
             "bss_language",
             *translation_fields("profile_report"),
@@ -406,16 +408,16 @@ class LivelihoodZoneBaselineViewSetTestCase(APITestCase):
 
     def test_patch(self):
         self.client.force_login(self.user)
-        new_value = self.client.get(self.url_get(1)).json()["main_livelihood_category"]
+        new_value = self.client.get(self.url_get(1)).json()["primary_livelihood_system"]
         logging.disable(logging.CRITICAL)
-        response = self.client.patch(self.url_get(0), {"main_livelihood_category": new_value})
+        response = self.client.patch(self.url_get(0), {"primary_livelihood_system": new_value})
         logging.disable(logging.NOTSET)
         self.assertEqual(response.status_code, 200)
         response = self.client.get(self.url_get(0))
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.json(), dict)
-        self.assertIn("main_livelihood_category", response.json())
-        self.assertEqual(response.json()["main_livelihood_category"], new_value)
+        self.assertIn("primary_livelihood_system", response.json())
+        self.assertEqual(response.json()["primary_livelihood_system"], new_value)
 
     def test_list_returns_all_records(self):
         response = self.client.get(self.url)
@@ -724,9 +726,9 @@ class LivelihoodZoneBaselineViewSetTestCase(APITestCase):
 
 class LivelihoodZoneBaselineFacetedSearchViewTestCase(APITestCase):
     def setUp(self):
-        self.category1 = LivelihoodCategoryFactory()
-        self.baseline1 = LivelihoodZoneBaselineFactory(main_livelihood_category=self.category1)
-        self.baseline2 = LivelihoodZoneBaselineFactory(main_livelihood_category=self.category1)
+        self.livelihood_system1 = LivelihoodSystemFactory()
+        self.baseline1 = LivelihoodZoneBaselineFactory(primary_livelihood_system=self.livelihood_system1)
+        self.baseline2 = LivelihoodZoneBaselineFactory(primary_livelihood_system=self.livelihood_system1)
         self.baseline3 = LivelihoodZoneBaselineFactory()
         self.product1 = ClassifiedProductFactory(
             cpc="K0111",
@@ -760,7 +762,7 @@ class LivelihoodZoneBaselineFacetedSearchViewTestCase(APITestCase):
             livelihood_zone_baseline=self.baseline3,
             strategy_type=LivelihoodStrategyType.FOOD_PURCHASE,
         )
-        self.baseline = LivelihoodZoneBaselineFactory(main_livelihood_category=self.category1)
+        self.baseline = LivelihoodZoneBaselineFactory(primary_livelihood_system=self.livelihood_system1)
         self.url = reverse("livelihood-zone-baseline-faceted-search")
 
     def test_search_with_product(self):
@@ -1410,12 +1412,84 @@ class BaselineWealthGroupViewSetTestCase(APITestCase):
             "survival_threshold_as_cash",
             "livelihoods_protection_threshold_as_percentage_kcals",
             "livelihoods_protection_threshold_as_cash",
+            "population_source",
+            "percentage_of_population",
+            "population_estimate",
         )
         self.assertCountEqual(
             response.json().keys(),
             expected_fields,
             f"BaselineWealthGroup: Fields expected: {expected_fields}. Fields found: {response.json().keys()}.",
         )
+
+    def test_wealth_group_population_estimate(self):
+        response = self.client.get(self.url_get(0))
+        self.assertEqual(response.status_code, 200)
+        record = self.data[0]
+        data = response.json()
+        self.assertEqual(data["population_source"], record.livelihood_zone_baseline.population_source)
+        self.assertAlmostEqual(data["percentage_of_population"], record.percentage_of_households)
+        expected_population_estimate = round(
+            record.percentage_of_households * record.livelihood_zone_baseline.population_estimate
+        )
+        self.assertEqual(data["population_estimate"], expected_population_estimate)
+
+    def test_wealth_group_population_estimate_matches_lias_example(self):
+
+        population_estimate = 1000000
+        livelihood_zone_baseline = LivelihoodZoneBaselineFactory(population_estimate=population_estimate)
+        wealth_group_inputs = {
+            "VP": {"percentage_of_households": 0.37, "average_household_size": 8},
+            "P": {"percentage_of_households": 0.28, "average_household_size": 10},
+            "M": {"percentage_of_households": 0.20, "average_household_size": 20},
+            "BO": {"percentage_of_households": 0.15, "average_household_size": 30},
+        }
+        wealth_groups = {
+            code: BaselineWealthGroupFactory(
+                livelihood_zone_baseline=livelihood_zone_baseline,
+                wealth_group_category=WealthGroupCategoryFactory(code=code),
+                **inputs,
+            )
+            for code, inputs in wealth_group_inputs.items()
+        }
+        baseline_weighted_average_household_size = sum(
+            inputs["percentage_of_households"] * inputs["average_household_size"]
+            for inputs in wealth_group_inputs.values()
+        ) / sum(inputs["percentage_of_households"] for inputs in wealth_group_inputs.values())
+
+        for code, inputs in wealth_group_inputs.items():
+            expected_percentage_of_population = (
+                inputs["percentage_of_households"]
+                * inputs["average_household_size"]
+                / baseline_weighted_average_household_size
+            )
+            expected_population_estimate = round(population_estimate * expected_percentage_of_population)
+
+            response = self.client.get(reverse("baselinewealthgroup-detail", args=(wealth_groups[code].pk,)))
+            data = response.json()
+            self.assertAlmostEqual(
+                data["percentage_of_population"],
+                expected_percentage_of_population,
+                msg=(
+                    f"Wealth Group {code}: expected percentage_of_population "
+                    f"{expected_percentage_of_population}, got {data['percentage_of_population']}"
+                ),
+            )
+            self.assertEqual(
+                data["population_estimate"],
+                expected_population_estimate,
+                f"Wealth Group {code}: expected population_estimate {expected_population_estimate}, "
+                f"got {data['population_estimate']}",
+            )
+
+        # The percentages across all Wealth Groups for a Livelihood Zone Baseline must sum to 100% of the population.
+        total_percentage_of_population = sum(
+            self.client.get(reverse("baselinewealthgroup-detail", args=(wealth_group.pk,))).json()[
+                "percentage_of_population"
+            ]
+            for wealth_group in wealth_groups.values()
+        )
+        self.assertAlmostEqual(total_percentage_of_population, 1.0)
 
     def test_patch_requires_authentication(self):
         logging.disable(logging.CRITICAL)
@@ -2201,6 +2275,176 @@ class LivelihoodStrategyViewSetTestCase(APITestCase):
         response = self.client.get(self.url, {"cpc": "K01111"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 0)
+
+
+class KeyParameterViewSetTestCase(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.num_records = 5
+        cls.data = [
+            KeyParameterFactory(
+                livelihood_strategy=LivelihoodStrategyFactory(additional_identifier=f"alpha-{index}"),
+                monitor_quantity=index % 2 == 0,
+                monitor_price=index % 2 == 1,
+            )
+            for index in range(cls.num_records)
+        ]
+        cls.user = User.objects.create_superuser("test", "test@test.com", "password")
+
+    def setUp(self):
+        self.url = reverse("keyparameter-list")
+        self.url_get = lambda n: reverse("keyparameter-detail", args=(self.data[n].pk,))
+
+    def test_get_record(self):
+        response = self.client.get(self.url_get(0))
+        self.assertEqual(response.status_code, 200)
+        self.assertIsInstance(response.json(), dict)
+        expected_fields = (
+            "id",
+            "livelihood_strategy",
+            "source_organization",
+            "source_organization_name",
+            "livelihood_zone_baseline",
+            "livelihood_zone_baseline_label",
+            "livelihood_zone",
+            "livelihood_zone_name",
+            "livelihood_zone_country",
+            "livelihood_zone_country_name",
+            "strategy_type",
+            "strategy_type_label",
+            "season",
+            "season_name",
+            "season_description",
+            "season_type",
+            "season_type_label",
+            "product",
+            "product_common_name",
+            "product_description",
+            "unit_of_measure",
+            "unit_of_measure_description",
+            "currency",
+            "additional_identifier",
+            "monitor_quantity",
+            "monitor_price",
+        )
+        self.assertCountEqual(
+            response.json().keys(),
+            expected_fields,
+            f"KeyParameter: Fields expected: {expected_fields}. Fields found: {response.json().keys()}.",
+        )
+
+    def test_patch_requires_authentication(self):
+        logging.disable(logging.CRITICAL)
+        response = self.client.patch(self.url_get(0), {"monitor_quantity": False})
+        logging.disable(logging.NOTSET)
+        self.assertEqual(response.status_code, 403)
+
+    def test_delete_requires_authentication(self):
+        logging.disable(logging.CRITICAL)
+        response = self.client.delete(self.url_get(0))
+        logging.disable(logging.NOTSET)
+        self.assertEqual(response.status_code, 403)
+
+    def test_patch(self):
+        self.client.force_login(self.user)
+        response = self.client.patch(self.url_get(0), {"monitor_quantity": False})
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get(self.url_get(0))
+        self.assertEqual(response.status_code, 200)
+        self.assertIsInstance(response.json(), dict)
+        self.assertIn("monitor_quantity", response.json())
+        self.assertFalse(response.json()["monitor_quantity"])
+
+    def test_list_returns_all_records(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), self.num_records)
+
+    def test_list_returns_filtered_data(self):
+        response = self.client.get(
+            self.url,
+            {"monitor_quantity": self.data[0].monitor_quantity},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertGreater(len(response.json()), 0)
+        self.assertLess(len(response.json()), self.num_records)
+
+    def test_filter_by_livelihood_zone_baseline(self):
+        baseline = LivelihoodZoneBaselineFactory()
+        other_baseline = LivelihoodZoneBaselineFactory()
+        matching_key_parameter = KeyParameterFactory(
+            livelihood_strategy=LivelihoodStrategyFactory(livelihood_zone_baseline=baseline)
+        )
+        KeyParameterFactory(livelihood_strategy=LivelihoodStrategyFactory(livelihood_zone_baseline=other_baseline))
+
+        response = self.client.get(self.url, {"livelihood_zone_baseline": baseline.pk})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 1)
+        self.assertEqual(response.json()[0]["id"], matching_key_parameter.id)
+        self.assertEqual(response.json()[0]["livelihood_zone_baseline"], baseline.pk)
+
+    def test_filter_by_livelihood_zone(self):
+        zone = LivelihoodZoneFactory()
+        other_zone = LivelihoodZoneFactory()
+        baseline = LivelihoodZoneBaselineFactory(livelihood_zone=zone)
+        other_baseline = LivelihoodZoneBaselineFactory(livelihood_zone=other_zone)
+        matching_key_parameter = KeyParameterFactory(
+            livelihood_strategy=LivelihoodStrategyFactory(livelihood_zone_baseline=baseline)
+        )
+        KeyParameterFactory(livelihood_strategy=LivelihoodStrategyFactory(livelihood_zone_baseline=other_baseline))
+
+        response = self.client.get(self.url, {"livelihood_zone": zone.pk})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 1)
+        self.assertEqual(response.json()[0]["id"], matching_key_parameter.id)
+        self.assertEqual(response.json()[0]["livelihood_zone"], zone.pk)
+
+    def test_search(self):
+        response = self.client.get(
+            self.url,
+            {
+                "search": self.data[0].livelihood_strategy.additional_identifier,
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 1)
+        self.assertEqual(response.json()[0]["id"], self.data[0].id)
+
+    def test_post_create(self):
+        self.client.force_login(self.user)
+        strategy = LivelihoodStrategyFactory(additional_identifier="create-key-parameter")
+        payload = {
+            "livelihood_strategy": strategy.pk,
+            "monitor_quantity": True,
+            "monitor_price": False,
+        }
+
+        response = self.client.post(self.url, payload)
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json()["livelihood_strategy"], strategy.pk)
+        self.assertTrue(response.json()["monitor_quantity"])
+        self.assertFalse(response.json()["monitor_price"])
+        self.assertTrue(
+            KeyParameter.objects.filter(
+                livelihood_strategy=strategy,
+                monitor_quantity=True,
+                monitor_price=False,
+            ).exists()
+        )
+
+    def test_browsable_api_uses_input_for_livelihood_strategy(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(self.url, HTTP_ACCEPT="text/html")
+
+        self.assertEqual(response.status_code, 200)
+        soup = BeautifulSoup(response.content, "html.parser")
+        field = soup.find(attrs={"name": "livelihood_strategy"})
+        self.assertIsNotNone(field)
+        self.assertEqual(field.name, "input")
 
 
 class LivelihoodActivityViewSetTestCase(APITestCase):
@@ -5173,7 +5417,7 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
             "reference_year_end_date",
             "valid_from_date",
             "valid_to_date",
-            "main_livelihood_category",
+            "primary_livelihood_system",
             "livelihood_zone_baseline_description",
             "product",
             "product_common_name",

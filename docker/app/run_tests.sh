@@ -54,35 +54,45 @@ fi
 #     unresponsive. The issue is mitigated by introducing a limit on entity
 #     expansions and aborting parsing when the limit is exceeded.
 #  Vulnerability ID: 82915
-#    Affected spec: <3.12.1
-#    ADVISORY: Affected versions of the gdal package are vulnerable to
-#    path traversal due to insufficient path sanitization in multiple drivers.
+#     Affected spec: <3.12.1
+#     ADVISORY: Affected versions of the gdal package are vulnerable to
+#     path traversal due to insufficient path sanitization in multiple drivers.
 #  Vulnerability ID: SFTY-20260510-89962
-#    Affected spec: <3.13.0RC1
-#    ADVISORY: A flaw has been found in OSGeo gdal up to 3.13.0dev-4.
-#    Affected by this vulnerability is the function SWSDfldsrch of the file
-#   frmts/hdf4/hdf-eos/SWapi.c. Executing a manipulation can lead to heap-
-#   based buffer overflow. The attack requires local access. The exploit has
-#   been published and may be used.
+#     Affected spec: <3.13.0RC1
+#     ADVISORY: A flaw has been found in OSGeo gdal up to 3.13.0dev-4.
+#     Affected by this vulnerability is the function SWSDfldsrch of the file
+#     frmts/hdf4/hdf-eos/SWapi.c. Executing a manipulation can lead to heap-
+#     based buffer overflow. The attack requires local access. The exploit has
+#     been published and may be used.
 #   Vulnerability ID: 98069
-#   Affected spec: <3.13.0
-#   ADVISORY: Affected versions of the GDAL package are vulnerable to
-#   a Heap-based Buffer Overflow due to insufficient bounds checking in the
-#   GDnentries function within frmts/hdf4/hdf-eos/GDapi.c. Manipulating the
-#   DataFieldName argument supplied to this function can cause a write
-#   operation to exceed the allocated heap buffer boundaries. A local attacker
-#   with low-level privileges who can supply a malicious HDF-EOS file to a
-#   process using GDAL can trigger this overflow, potentially resulting in
-#   memory corruption, disclosure of sensitive data, or code execution.
+#     Affected spec: <3.13.0
+#     ADVISORY: Affected versions of the GDAL package are vulnerable to
+#     a Heap-based Buffer Overflow due to insufficient bounds checking in the
+#     GDnentries function within frmts/hdf4/hdf-eos/GDapi.c. Manipulating the
+#     DataFieldName argument supplied to this function can cause a write
+#     operation to exceed the allocated heap buffer boundaries. A local attacker
+#     with low-level privileges who can supply a malicious HDF-EOS file to a
+#     process using GDAL can trigger this overflow, potentially resulting in
+#     memory corruption, disclosure of sensitive data, or code execution.
 #   Vulnerability ID: 98070
-#   Affected spec: <3.13.0
-#   ADVISORY: Affected versions of the GDAL package are vulnerable to
-#   an Out-of-bounds Read due to insufficient validation in the GDfieldinfo
-#   function within frmts/hdf4/hdf-eos/GDapi.c. A manipulated input to this
-#   function can cause a read operation to access memory outside the intended
-#   buffer boundaries. A local attacker can supply a crafted HDF-EOS dataset
-#   to trigger this out-of-bounds read, resulting in a partial Denial of
-#   Service through abnormal process termination.
+#     Affected spec: <3.13.0
+#     ADVISORY: Affected versions of the GDAL package are vulnerable to
+#     an Out-of-bounds Read due to insufficient validation in the GDfieldinfo
+#     function within frmts/hdf4/hdf-eos/GDapi.c. A manipulated input to this
+#     function can cause a read operation to access memory outside the intended
+#     buffer boundaries. A local attacker can supply a crafted HDF-EOS dataset
+#     to trigger this out-of-bounds read, resulting in a partial Denial of
+#     Service through abnormal process termination.
+#   Vulnerability ID: SFTY-20260527-29918
+#     Affected spec: >=3.1.0,<3.13.1
+#     ADVISORY: In GDAL 3.1.0 through 3.13.0, scanForGeometryContainers
+#     in the netCDF driver allows code execution via a stack-based buffer
+#     overflow. It reads a geometry attribute into a fixed-size stack buffer
+#     without validating the attribute length. The attacker embeds the exploit
+#     as an oversized geometry attribute in a crafted NetCDF file. This achieves
+#     arbitrary code execution on the server running GDAL. This is in
+#     frmts/netcdf/netcdfsg.cpp.
+#     CVE-2026-49014
 
 # Ignore vulnerability found in jinja2 version 3.1.4
 # We do not allow any untrusted templates, and so are not affected.
@@ -113,7 +123,7 @@ fi
 #  Will ignore this and update once we got a fix
 
 echo Package Vulnerabilities:
-pip freeze | safety check --stdin --full-report -i 62283 -i 70612 -i 74054 -i 82915 -i 83150 -i SFTY-20260510-89962 -i 98069 -i 98070
+pip freeze | safety check --stdin --full-report -i 62283 -i 70612 -i 74054 -i 82915 -i 83150 -i SFTY-20260510-89962 -i 98069 -i 98070 -i SFTY-20260527-29918
 SAFETY_RESULT=$?
 
 # Suppress SAFETY_RESULT unless CHECK_SAFETY is set

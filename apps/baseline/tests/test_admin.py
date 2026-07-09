@@ -12,12 +12,14 @@ from django.utils.translation import activate
 from baseline.admin import (
     CommunityCropProductionAdmin,
     CommunityLivestockAdmin,
+    KeyParameterAdmin,
     LivelihoodActivityAdmin,
     WealthGroupAdmin,
 )
 from baseline.models import (
     CommunityCropProduction,
     CommunityLivestock,
+    KeyParameter,
     LivelihoodActivity,
     LivelihoodActivityScenario,
     LivelihoodZoneBaseline,
@@ -30,6 +32,7 @@ from baseline.tests.factories import (
     CommunityLivestockFactory,
     CropProductionFactory,
     FoodPurchaseFactory,
+    KeyParameterFactory,
     LivelihoodActivityFactory,
     LivelihoodStrategyFactory,
     LivelihoodZoneBaselineFactory,
@@ -49,7 +52,7 @@ from common.tests.factories import (
 )
 from metadata.models import LivelihoodStrategyType
 from metadata.tests.factories import (
-    LivelihoodCategoryFactory,
+    LivelihoodSystemFactory,
     SeasonFactory,
     WealthGroupCategoryFactory,
 )
@@ -208,7 +211,7 @@ class LivelihoodZoneBaselineAdminTestCase(TestCase):
             "name_en": f"{livelihood_zone.code} Baseline",
             "description": f"{livelihood_zone.code} Baseline description",
             "livelihood_zone": livelihood_zone.pk,
-            "main_livelihood_category": LivelihoodCategoryFactory().pk,
+            "primary_livelihood_system": LivelihoodSystemFactory().pk,
             "source_organization": SourceOrganizationFactory().pk,
             "bss": bss,
             "currency": currency,
@@ -286,6 +289,43 @@ class LivelihoodStrategyAdminTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.strategy2.product.cpc)
         self.assertNotContains(response, self.strategy1.product.cpc)
+
+
+class KeyParameterAdminTestCase(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        User.objects.create_superuser(username="admin", password="admin", email="admin@hea.org")
+        cls.key_parameter1 = KeyParameterFactory(
+            livelihood_strategy=LivelihoodStrategyFactory(additional_identifier="alpha"),
+            monitor_quantity=True,
+            monitor_price=False,
+        )
+        cls.key_parameter2 = KeyParameterFactory(
+            livelihood_strategy=LivelihoodStrategyFactory(additional_identifier="beta"),
+            monitor_quantity=False,
+            monitor_price=True,
+        )
+        activate("en")
+        cls.url = reverse("admin:baseline_keyparameter_changelist")
+        cls.site = AdminSite()
+
+    def setUp(self):
+        self.client.login(username="admin", password="admin")
+        self.admin = KeyParameterAdmin(model=KeyParameter, admin_site=self.site)
+
+    def test_keyparameter_changelists(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.key_parameter1.livelihood_strategy.product.cpc)
+
+    def test_keyparameter_search_fields(self):
+        response = self.client.get(self.url, {"q": self.key_parameter1.livelihood_strategy.additional_identifier})
+        self.assertEqual(response.status_code, 200)
+        soup = BeautifulSoup(response.content, "html.parser")
+        result_list = soup.find(id="result_list")
+        result_list_str = str(result_list)
+        self.assertIn(self.key_parameter1.livelihood_strategy.product.cpc, result_list_str)
+        self.assertNotIn(self.key_parameter2.livelihood_strategy.product.cpc, result_list_str)
 
 
 class WealthGroupAdminTest(TestCase):
