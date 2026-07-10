@@ -184,6 +184,43 @@ def summary_wealth_characteristic_labels_dataframe(
     return get_summary_bss_label_dataframe(config, all_wealth_characteristic_labels_dataframe, "WealthCharacteristic")
 
 
+def whole_number_percentage_in_columns(df: pd.DataFrame, row, columns, partition_key: str) -> bool:
+    """
+    A value is only ambiguous in isolation if it equals exactly 1 - it could be a
+    fraction meaning 100%, or a whole number meaning 1%. Every other value is unambiguous on its
+    own: anything > 1 can only be a whole-number percentage (a fraction can't exceed 1.0 = 100%),
+    and anything < 1 (e.g. 0.02, 0.97) can only already be a fraction - nobody enters "0.02"
+    intending the implausibly tiny "0.02%". So this only needs to detect whether the group has an
+    unambiguous (i.e. not exactly 1) whole-number sibling, to resolve any ambiguous "1"s in it.
+    """
+    for value_column in columns:
+        raw_value = df.loc[row, value_column]
+        if not str(raw_value).strip():
+            continue
+        try:
+            if float(raw_value) > 1:
+                return True
+        except (TypeError, ValueError) as e:
+            raise ValueError(
+                "Error in %s converting percentage value '%s' to float from 'WB'!%s%s"
+                % (partition_key, raw_value, value_column, row)
+            ) from e
+    return False
+
+
+def resolve_percentage(raw_value, group_is_whole_number_percentage: bool):
+    """
+    Only convert an ambiguous "1" using the group's scale, every other non-blank value converts
+    (or doesn't) based on its own magnitude, regardless of its group.
+    """
+    if not str(raw_value).strip():
+        return raw_value
+    raw_value = float(raw_value)
+    if raw_value == 1:
+        return raw_value / 100 if group_is_whole_number_percentage else raw_value
+    return raw_value / 100 if raw_value > 1 else raw_value
+
+
 @asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
 def wealth_characteristic_instances(
     context: AssetExecutionContext,
@@ -295,40 +332,8 @@ def wealth_characteristic_instances(
         if any(value for value in df.loc[row, "C":]):
             is_percentage = "percentage" in (attributes.get("wealth_characteristic_id") or "").lower()
 
-            def whole_number_percentage_in_columns(columns):
-                # A value is only ambiguous in isolation if it equals exactly 1 - it could be a
-                # fraction meaning 100%, or a whole number meaning 1%. Every other value is unambiguous on its
-                # own: anything > 1 can only be a whole-number percentage (a fraction can't exceed 1.0 = 100%),
-                # and anything < 1 (e.g. 0.02, 0.97) can only already be a fraction - nobody enters "0.02"
-                # intending the implausibly tiny "0.02%". So this only needs to detect whether the group has an
-                # unambiguous (i.e. not exactly 1) whole-number sibling, to resolve any ambiguous "1"s in it.
-                found = False
-                for value_column in columns:
-                    raw_value = df.loc[row, value_column]
-                    if not str(raw_value).strip():
-                        continue
-                    try:
-                        if float(raw_value) > 1:
-                            found = True
-                    except (TypeError, ValueError) as e:
-                        raise ValueError(
-                            "Error in %s converting percentage value '%s' to float from 'WB'!%s%s"
-                            % (partition_key, raw_value, value_column, row)
-                        ) from e
-                return found
-
-            def resolve_percentage(raw_value, group_is_whole_number_percentage):
-                # Only convert an ambiguous "1" using the group's scale, every other non-blank value converts
-                # (or doesn't) based on its own magnitude, regardless of its group.
-                if not str(raw_value).strip():
-                    return raw_value
-                raw_value = float(raw_value)
-                if raw_value == 1:
-                    return raw_value / 100 if group_is_whole_number_percentage else raw_value
-                return raw_value / 100 if raw_value > 1 else raw_value
-
             # The Community and Wealth Group values and the Summary value/min_value/max_value
-            # are checked as two independent groups
+            # are checked as two independent groups.
             # I think that is common for most BSSes to have the same scale within a group
             #  E.g. Burkina Faso BF01 'WB' row 9("percentage of households" for VP),
             # which has whole-number Community Interviews (15, 18, 9, ...) but a Summary that is already a
@@ -345,10 +350,10 @@ def wealth_characteristic_instances(
                 )
             ]
             community_group_is_whole_number_percentage = is_percentage and whole_number_percentage_in_columns(
-                community_columns
+                df, row, community_columns, partition_key
             )
             summary_group_is_whole_number_percentage = is_percentage and whole_number_percentage_in_columns(
-                df.columns[-3:]
+                df, row, df.columns[-3:], partition_key
             )
 
             # Iterate over the value columns, from Column C to the the Summary Column.
