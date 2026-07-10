@@ -184,6 +184,43 @@ def summary_wealth_characteristic_labels_dataframe(
     return get_summary_bss_label_dataframe(config, all_wealth_characteristic_labels_dataframe, "WealthCharacteristic")
 
 
+def whole_number_percentage_in_columns(df: pd.DataFrame, row, columns, partition_key: str) -> bool:
+    """
+    A value is only ambiguous in isolation if it equals exactly 1 - it could be a
+    fraction meaning 100%, or a whole number meaning 1%. Every other value is unambiguous on its
+    own: anything > 1 can only be a whole-number percentage (a fraction can't exceed 1.0 = 100%),
+    and anything < 1 (e.g. 0.02, 0.97) can only already be a fraction - nobody enters "0.02"
+    intending the implausibly tiny "0.02%". So this only needs to detect whether the group has an
+    unambiguous (i.e. not exactly 1) whole-number sibling, to resolve any ambiguous "1"s in it.
+    """
+    for value_column in columns:
+        raw_value = df.loc[row, value_column]
+        if not str(raw_value).strip():
+            continue
+        try:
+            if float(raw_value) > 1:
+                return True
+        except (TypeError, ValueError) as e:
+            raise ValueError(
+                "Error in %s converting percentage value '%s' to float from 'WB'!%s%s"
+                % (partition_key, raw_value, value_column, row)
+            ) from e
+    return False
+
+
+def resolve_percentage(raw_value, group_is_whole_number_percentage: bool):
+    """
+    Only convert an ambiguous "1" using the group's scale, every other non-blank value converts
+    (or doesn't) based on its own magnitude, regardless of its group.
+    """
+    if not str(raw_value).strip():
+        return raw_value
+    raw_value = float(raw_value)
+    if raw_value == 1:
+        return raw_value / 100 if group_is_whole_number_percentage else raw_value
+    return raw_value / 100 if raw_value > 1 else raw_value
+
+
 @asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
 def wealth_characteristic_instances(
     context: AssetExecutionContext,
@@ -293,6 +330,32 @@ def wealth_characteristic_instances(
 
         # Create the WealthGroupCharacteristic records
         if any(value for value in df.loc[row, "C":]):
+            is_percentage = "percentage" in (attributes.get("wealth_characteristic_id") or "").lower()
+
+            # The Community and Wealth Group values and the Summary value/min_value/max_value
+            # are checked as two independent groups.
+            # I think that is common for most BSSes to have the same scale within a group
+            #  E.g. Burkina Faso BF01 'WB' row 9("percentage of households" for VP),
+            # which has whole-number Community Interviews (15, 18, 9, ...) but a Summary that is already a
+            # fraction (0.22). Conversely, see Mali ML05 'WB' row 345 ("percentage of female-headed
+            # households" for VP), where a "1" among the Community Interview values (3, 3, 1, 2, 3, ...) is
+            # only recognizable as 1% because its siblings in that same group are all > 1.
+            community_columns = [
+                value_column
+                for value_column in df.columns[2:-3]
+                if wealth_group_df.loc[value_column, "full_name"]
+                and (
+                    not wealth_group_df.loc[value_column, "wealth_group_category"]
+                    or wealth_group_df.loc[value_column, "wealth_group_category"] == wealth_group_category
+                )
+            ]
+            community_group_is_whole_number_percentage = is_percentage and whole_number_percentage_in_columns(
+                df, row, community_columns, partition_key
+            )
+            summary_group_is_whole_number_percentage = is_percentage and whole_number_percentage_in_columns(
+                df, row, df.columns[-3:], partition_key
+            )
+
             # Iterate over the value columns, from Column C to the the Summary Column.
             # We don't iterate over the last two columns because they contain the min_value and max_value that are
             # part of the Summary Wealth Characteristic Value rather than a separate Wealth Characteristic Value.
@@ -352,51 +415,20 @@ def wealth_characteristic_instances(
 
                         wealth_group_characteristic_value["reference_type"] = reference_type
 
-                        # The percentage of households should be stored as a  decimal fraction between 0 and 1,
-                        # but some BSS store it as an integer between 1 and 100, so correct those values
-                        try:
-                            if (
-                                wealth_group_characteristic_value["wealth_characteristic_id"]
-                                == "percentage of households"
-                                and str(value).strip()
-                                and float(value) > 1
-                            ):
-                                value = float(value) / 100
-                        except Exception as e:
-                            raise ValueError(
-                                "Error in %s converting percentage of households value '%s' to float from 'WB'!%s%s"
-                                % (partition_key, value, column, row)
-                            ) from e
-
-                        wealth_group_characteristic_value["value"] = value
-
-                        # If this is the summary, then also save the min and max values
+                        # If this is the summary, then also save the min and max values.
                         if reference_type == WealthGroupCharacteristicValue.CharacteristicReference.SUMMARY:
                             min_value = df.loc[row, df.columns[-2]]
                             max_value = df.loc[row, df.columns[-1]]
-                            # Convert min/max percentage of households values from integers to decimal fractions
-                            if (
-                                wealth_group_characteristic_value["wealth_characteristic_id"]
-                                == "percentage of households"
-                            ):
-                                try:
-                                    if str(min_value).strip() and float(min_value) > 1:
-                                        min_value = float(min_value) / 100
-                                except Exception as e:
-                                    raise ValueError(
-                                        "Error in %s converting percentage of households value '%s' to float from 'WB'!%s%s"
-                                        % (partition_key, min_value, df.columns[-2], row)
-                                    ) from e
-                                try:
-                                    if str(max_value).strip() and float(max_value) > 1:
-                                        max_value = float(max_value) / 100
-                                except Exception as e:
-                                    raise ValueError(
-                                        "Error in %s converting percentage of households value '%s' to float from 'WB'!%s%s"
-                                        % (partition_key, max_value, df.columns[-1], row)
-                                    ) from e
+                            if is_percentage:
+                                value = resolve_percentage(value, summary_group_is_whole_number_percentage)
+                                min_value = resolve_percentage(min_value, summary_group_is_whole_number_percentage)
+                                max_value = resolve_percentage(max_value, summary_group_is_whole_number_percentage)
                             wealth_group_characteristic_value["min_value"] = min_value
                             wealth_group_characteristic_value["max_value"] = max_value
+                        elif is_percentage:
+                            value = resolve_percentage(value, community_group_is_whole_number_percentage)
+
+                        wealth_group_characteristic_value["value"] = value
 
                         # Save the column and row, to aid trouble-shooting
                         wealth_group_characteristic_value["bss_sheet"] = "WB"
