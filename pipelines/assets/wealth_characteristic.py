@@ -293,6 +293,64 @@ def wealth_characteristic_instances(
 
         # Create the WealthGroupCharacteristic records
         if any(value for value in df.loc[row, "C":]):
+            is_percentage = "percentage" in (attributes.get("wealth_characteristic_id") or "").lower()
+
+            def whole_number_percentage_in_columns(columns):
+                # A value is only ambiguous in isolation if it equals exactly 1 - it could be a
+                # fraction meaning 100%, or a whole number meaning 1%. Every other value is unambiguous on its
+                # own: anything > 1 can only be a whole-number percentage (a fraction can't exceed 1.0 = 100%),
+                # and anything < 1 (e.g. 0.02, 0.97) can only already be a fraction - nobody enters "0.02"
+                # intending the implausibly tiny "0.02%". So this only needs to detect whether the group has an
+                # unambiguous (i.e. not exactly 1) whole-number sibling, to resolve any ambiguous "1"s in it.
+                found = False
+                for value_column in columns:
+                    raw_value = df.loc[row, value_column]
+                    if not str(raw_value).strip():
+                        continue
+                    try:
+                        if float(raw_value) > 1:
+                            found = True
+                    except (TypeError, ValueError) as e:
+                        raise ValueError(
+                            "Error in %s converting percentage value '%s' to float from 'WB'!%s%s"
+                            % (partition_key, raw_value, value_column, row)
+                        ) from e
+                return found
+
+            def resolve_percentage(raw_value, group_is_whole_number_percentage):
+                # Only convert an ambiguous "1" using the group's scale, every other non-blank value converts
+                # (or doesn't) based on its own magnitude, regardless of its group.
+                if not str(raw_value).strip():
+                    return raw_value
+                raw_value = float(raw_value)
+                if raw_value == 1:
+                    return raw_value / 100 if group_is_whole_number_percentage else raw_value
+                return raw_value / 100 if raw_value > 1 else raw_value
+
+            # The Community and Wealth Group values and the Summary value/min_value/max_value
+            # are checked as two independent groups
+            # I think that is common for most BSSes to have the same scale within a group
+            #  E.g. Burkina Faso BF01 'WB' row 9("percentage of households" for VP),
+            # which has whole-number Community Interviews (15, 18, 9, ...) but a Summary that is already a
+            # fraction (0.22). Conversely, see Mali ML05 'WB' row 345 ("percentage of female-headed
+            # households" for VP), where a "1" among the Community Interview values (3, 3, 1, 2, 3, ...) is
+            # only recognizable as 1% because its siblings in that same group are all > 1.
+            community_columns = [
+                value_column
+                for value_column in df.columns[2:-3]
+                if wealth_group_df.loc[value_column, "full_name"]
+                and (
+                    not wealth_group_df.loc[value_column, "wealth_group_category"]
+                    or wealth_group_df.loc[value_column, "wealth_group_category"] == wealth_group_category
+                )
+            ]
+            community_group_is_whole_number_percentage = is_percentage and whole_number_percentage_in_columns(
+                community_columns
+            )
+            summary_group_is_whole_number_percentage = is_percentage and whole_number_percentage_in_columns(
+                df.columns[-3:]
+            )
+
             # Iterate over the value columns, from Column C to the the Summary Column.
             # We don't iterate over the last two columns because they contain the min_value and max_value that are
             # part of the Summary Wealth Characteristic Value rather than a separate Wealth Characteristic Value.
@@ -351,84 +409,19 @@ def wealth_characteristic_instances(
                         ]
 
                         wealth_group_characteristic_value["reference_type"] = reference_type
-                        is_percentage = (
-                            "percentage"
-                            in (wealth_group_characteristic_value["wealth_characteristic_id"] or "").lower()
-                        )
 
-                        # If this is the summary, then also save the min and max values
+                        # If this is the summary, then also save the min and max values.
                         if reference_type == WealthGroupCharacteristicValue.CharacteristicReference.SUMMARY:
                             min_value = df.loc[row, df.columns[-2]]
                             max_value = df.loc[row, df.columns[-1]]
-
-                            # Percentages should be stored as a decimal fraction between 0 and 1, but some BSS
-                            # store them as an integer between 1 and 100. The Summary value, min_value and
-                            # max_value are a self-contained group entered/computed together (independently of
-                            # the Community and Wealth Group Interview values in the row, which may be
-                            # on a different scale), so decide whether the whole group needs converting by
-                            # checking all three together. A single cell like "1" is ambiguous in isolation (it
-                            # could be a fraction meaning 100%, or a whole number meaning 1%), but if either of
-                            # its group members is unambiguously a whole number (i.e. greater than 1), then all
-                            # three must be interpreted on that same whole-number scale.
-                            # E.g. see ML09 'WB'!BL345:BN345 ("percentage of female-headed households" for VP),
-                            # where value=1 only makes sense as 1% once min=0/max=2 show the row is whole-number.
                             if is_percentage:
-                                summary_group_is_whole_number_percentage = False
-                                for raw_value, raw_value_column in (
-                                    (value, column),
-                                    (min_value, df.columns[-2]),
-                                    (max_value, df.columns[-1]),
-                                ):
-                                    if not str(raw_value).strip():
-                                        continue
-                                    try:
-                                        if float(raw_value) > 1:
-                                            summary_group_is_whole_number_percentage = True
-                                            break
-                                    except (TypeError, ValueError) as e:
-                                        raise ValueError(
-                                            "Error in %s converting percentage value '%s' to float from 'WB'!%s%s"
-                                            % (partition_key, raw_value, raw_value_column, row)
-                                        ) from e
-                                if summary_group_is_whole_number_percentage:
-                                    try:
-                                        if str(value).strip():
-                                            value = float(value) / 100
-                                    except Exception as e:
-                                        raise ValueError(
-                                            "Error in %s converting percentage value '%s' to float from 'WB'!%s%s"
-                                            % (partition_key, value, column, row)
-                                        ) from e
-                                    try:
-                                        if str(min_value).strip():
-                                            min_value = float(min_value) / 100
-                                    except Exception as e:
-                                        raise ValueError(
-                                            "Error in %s converting percentage value '%s' to float from 'WB'!%s%s"
-                                            % (partition_key, min_value, df.columns[-2], row)
-                                        ) from e
-                                    try:
-                                        if str(max_value).strip():
-                                            max_value = float(max_value) / 100
-                                    except Exception as e:
-                                        raise ValueError(
-                                            "Error in %s converting percentage value '%s' to float from 'WB'!%s%s"
-                                            % (partition_key, max_value, df.columns[-1], row)
-                                        ) from e
+                                value = resolve_percentage(value, summary_group_is_whole_number_percentage)
+                                min_value = resolve_percentage(min_value, summary_group_is_whole_number_percentage)
+                                max_value = resolve_percentage(max_value, summary_group_is_whole_number_percentage)
                             wealth_group_characteristic_value["min_value"] = min_value
                             wealth_group_characteristic_value["max_value"] = max_value
                         elif is_percentage:
-                            # Community and Wealth Group Interview values are standalone cells, so use the
-                            # simple per-cell rule: convert whole-number percentages (> 1) to decimal
-                            # fractions.
-                            try:
-                                if str(value).strip() and float(value) > 1:
-                                    value = float(value) / 100
-                            except Exception as e:
-                                raise ValueError(
-                                    "Error in %s converting percentage value '%s' to float from 'WB'!%s%s"
-                                    % (partition_key, value, column, row)
-                                ) from e
+                            value = resolve_percentage(value, community_group_is_whole_number_percentage)
 
                         wealth_group_characteristic_value["value"] = value
 
