@@ -24,7 +24,7 @@
         null
     ],
     [
-        "(?:relief, gifts and other|relief and gifts|aide, cadeaux, dons):?",
+        "(?:relief, gifts and other|relief and gifts|aide, cadeaux, dons|aide, dons):?",
         "ReliefGiftOther",
         true,
         null
