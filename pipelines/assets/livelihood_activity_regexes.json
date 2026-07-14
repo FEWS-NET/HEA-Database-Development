@@ -164,13 +164,13 @@
         "percentage_kcals"
     ],
     [
-        "kcals per (?P<unit_of_measure_id>kg|l)",
+        "kcals per {unit_of_measure_pattern}",
         null,
         false,
         "product__kcals_per_unit"
     ],
     [
-        "kcals/(?P<unit_of_measure_id>kg|l)",
+        "kcals/{unit_of_measure_pattern}",
         null,
         false,
         "product__kcals_per_unit"
@@ -182,7 +182,7 @@
         "quantity_produced_or_purchased"
     ],
     [
-        "(?:quantité|quantity)? ?\\(?(?P<unit_of_measure_id>kg|l)\\)?",
+        "(?:quantité|quantity)? ?\\(?{unit_of_measure_pattern}\\)?",
         null,
         false,
         "quantity_produced_or_purchased"
@@ -230,19 +230,19 @@
         "times_per_year"
     ],
     [
-        "(?P<unit_of_measure_id>kg|l) (?:produit(?:es?|s)?|produced)",
+        "{unit_of_measure_pattern} (?:produit(?:es?|s)?|produced)",
         null,
         false,
         "quantity_produced"
     ],
     [
-        "(?P<unit_of_measure_id>kg|l) {vendu_pattern}",
+        "{unit_of_measure_pattern} {quantity_sold_pattern}",
         null,
         false,
         "quantity_sold"
     ],
     [
-        "{vendu_pattern} ?/ ?(?:échangés?|echangés?) \\({unit_of_measure_pattern}\\)",
+        "{quantity_sold_pattern} ?/ ?(?:échangés?|echangés?) \\({unit_of_measure_pattern}\\)",
         null,
         false,
         "quantity_sold"
@@ -266,19 +266,19 @@
         "percentage_kcals"
     ],
     [
-        "kcals par (?P<unit_of_measure_id>kg|l)",
+        "kcals par {unit_of_measure_pattern}",
         null,
         false,
         "product__kcals_per_unit"
     ],
     [
-        "kcals/(?P<unit_of_measure_id>kg|l)",
+        "kcals/{unit_of_measure_pattern}",
         null,
         false,
         "product__kcals_per_unit"
     ],
     [
-        "(?P<unit_of_measure_id>kg|l)",
+        "{unit_of_measure_pattern}",
         null,
         false,
         "quantity_produced_or_purchased"
@@ -296,7 +296,7 @@
         "unit_multiple"
     ],
     [
-        "poids mesure \\((?P<unit_of_measure_id>kg|l)\\)",
+        "poids mesure \\({unit_of_measure_pattern}\\)",
         null,
         false,
         "unit_multiple"
@@ -422,7 +422,7 @@
         "quantity_produced"
     ],
     [
-        "ghee/butter production \\((?P<unit_of_measure_id>kg|l)\\)",
+        "ghee/butter production \\({unit_of_measure_pattern}\\)",
         "ButterProduction",
         false,
         "quantity_produced"
@@ -434,7 +434,7 @@
         "quantity_other_uses"
     ],
     [
-        "ghee/butter sales: (?P<unit_of_measure_id>kg|l) sold",
+        "ghee/butter sales: {unit_of_measure_pattern} sold",
         "ButterProduction",
         false,
         "quantity_sold"
@@ -494,19 +494,19 @@
         "quantity_sold"
     ],
     [
-        "vente (?:des? |d')?{product_pattern}{separator_pattern} {nbr_pattern} {vendu_pattern}",
+        "vente (?:des? |d')?{product_pattern}{separator_pattern} {nbr_pattern} {quantity_sold_pattern}",
         "LivestockSale",
         true,
         "quantity_sold"
     ],
     [
-        "{product_pattern} vente: {nbr_pattern} {vendu_pattern}",
+        "{product_pattern} vente: {nbr_pattern} {quantity_sold_pattern}",
         "LivestockSale",
         true,
         "quantity_sold"
     ],
     [
-        "{product_pattern}: {nbr_pattern} {vendu_pattern}",
+        "{product_pattern}: {nbr_pattern} {quantity_sold_pattern}",
         "LivestockSale",
         true,
         "quantity_sold"
@@ -566,13 +566,13 @@
         "activity_notes"
     ],
     [
-        "{product_pattern}: (?P<unit_of_measure_id>kg|l)? sold",
+        "{product_pattern}: {unit_of_measure_pattern}? sold",
         null,
         true,
         "quantity_sold"
     ],
     [
-        "{product_pattern}(: )?(?P<unit_of_measure_id>kg|l)? sold: quantity( sold)?",
+        "{product_pattern}(: )?{unit_of_measure_pattern}? sold: quantity( sold)?",
         null,
         true,
         "quantity_sold"
@@ -686,7 +686,7 @@
         "type_of_milk_sold_or_other_uses"
     ],
     [
-        "beurre/beurre clarifié: production \\((?P<unit_of_measure_id>kg|l)\\)",
+        "beurre/beurre clarifié: production \\({unit_of_measure_pattern}\\)",
         "ButterProduction",
         false,
         "quantity_produced"
@@ -698,7 +698,7 @@
         "quantity_other_uses"
     ],
     [
-        "beurre/beurre clarifié vendus: (?P<unit_of_measure_id>kg|l) vendus",
+        "beurre/beurre clarifié vendus: {unit_of_measure_pattern} vendus",
         "ButterProduction",
         false,
         "quantity_sold"
@@ -866,19 +866,19 @@
         "activity_notes"
     ],
     [
-        "(?:autre )?culture de rente(?: principale)?{separator_pattern} \\(?(?P<product_id>[a-z][a-z',/ \\>\\-\\(\\)]+?)\\)?{separator_pattern} ?(?P<unit_of_measure_id>kg|l)? {vendu_pattern}",
+        "(?:autre )?culture de rente(?: principale)?{separator_pattern} \\(?(?P<product_id>[a-z][a-z',/ \\>\\-\\(\\)]+?)\\)?{separator_pattern} ?{unit_of_measure_pattern}? {quantity_sold_pattern}",
         null,
         true,
         "quantity_sold"
     ],
     [
-        "(?:autre )?culture de rente(?: principale)?{separator_pattern} (?P<unit_of_measure_id>kg|l)? {vendu_pattern}{separator_pattern} ?\\(? ?(?P<product_id>[a-z][a-z',/ \\>\\-\\(\\)]+?) ?\\)?",
+        "(?:autre )?culture de rente(?: principale)?{separator_pattern} {unit_of_measure_pattern}? {quantity_sold_pattern}{separator_pattern} ?\\(? ?(?P<product_id>[a-z][a-z',/ \\>\\-\\(\\)]+?) ?\\)?",
         null,
         true,
         "quantity_sold"
     ],
     [
-        "(?:autre )?culture de rente(?: principale)?{separator_pattern} (?P<unit_of_measure_id>kg|l) \\(?(?P<product_id>[a-z][a-z',/ \\>\\-\\(\\)]+?)\\)?",
+        "(?:autre )?culture de rente(?: principale)?{separator_pattern} {unit_of_measure_pattern} \\(?(?P<product_id>[a-z][a-z',/ \\>\\-\\(\\)]+?)\\)?",
         null,
         true,
         "quantity_sold"
@@ -890,31 +890,31 @@
         null
     ],
     [
-        "(?:autre)?{separator_pattern} ?quantité {vendu_pattern}{separator_pattern} ?\\(?{product_pattern}?\\)?",
+        "(?:autre)?{separator_pattern} ?quantité {quantity_sold_pattern}{separator_pattern} ?\\(?{product_pattern}?\\)?",
         null,
         true,
         "quantity_sold"
     ],
     [
-        "{product_pattern} {vendu_pattern}{separator_pattern} quantité",
+        "{product_pattern} {quantity_sold_pattern}{separator_pattern} quantité",
         null,
         true,
         "quantity_sold"
     ],
     [
-        "(?:vente de |vente )?{product_pattern}{separator_pattern} (?P<unit_of_measure_id>kg|l)? {vendu_pattern}",
+        "(?:vente de |vente )?{product_pattern}{separator_pattern} {unit_of_measure_pattern}? {quantity_sold_pattern}",
         null,
         true,
         "quantity_sold"
     ],
     [
-        "{product_pattern}: (?P<unit_of_measure_id>kg|l)? sold",
+        "{product_pattern}{separator_pattern} {season_pattern}{separator_pattern} {unit_of_measure_pattern} {quantity_sold_pattern}",
         null,
         true,
         "quantity_sold"
     ],
     [
-        "{product_pattern}(: )?(?P<unit_of_measure_id>kg|l)? sold: quantity( sold)?",
+        "{product_pattern}(: )?{unit_of_measure_pattern}? sold: quantity( sold)?",
         null,
         true,
         "quantity_sold"
