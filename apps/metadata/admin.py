@@ -51,6 +51,7 @@ class LivelihoodSystemAdmin(ReferenceDataAdmin):
         "aliases",
         "color",
         *translation_fields("description"),
+        "ordering",
     )
 
     # Override only the 'color' field to use the html5 color input
@@ -79,6 +80,7 @@ class SeasonalActivityTypeAdmin(ReferenceDataAdmin):
         "is_key",
         "aliases",
         *translation_fields("description"),
+        "ordering",
     )
     list_display = ReferenceDataAdmin.list_display + ("activity_category", "has_product", "is_key")
     list_filter = ("activity_category", "has_product", "is_key")
@@ -108,6 +110,7 @@ class WealthCharacteristicAdmin(ReferenceDataAdmin):
         "aliases",
         *translation_fields("description"),
         "characteristic_group",
+        "ordering",
     )
     list_filter = ("variable_type", "characteristic_group")
 
