@@ -1120,7 +1120,14 @@
     "nbr envois par an": {
         "attribute": "times_per_year"
     },
+    "nbr d'envois par an": {
+        "attribute": "times_per_year"
+    },
     "Transferts: nbr envois par an": {
+        "product_id": "transferts",
+        "attribute": "times_per_year"
+    },
+    "Transferts: nbr d'envois par an": {
         "product_id": "transferts",
         "attribute": "times_per_year"
     },
