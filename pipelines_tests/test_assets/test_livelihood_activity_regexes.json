@@ -1117,6 +1117,13 @@
     "nb fois / an": {
         "attribute": "times_per_year"
     },
+    "nbr envois par an": {
+        "attribute": "times_per_year"
+    },
+    "Transferts: nbr envois par an": {
+        "product_id": "transferts",
+        "attribute": "times_per_year"
+    },
     "nb  personnes par ménage": {
         "attribute": "people_per_household"
     },
