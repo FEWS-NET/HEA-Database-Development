@@ -835,6 +835,27 @@
         "unit_of_measure_id": "kg",
         "attribute": "quantity_sold"
     },
+    "fruits - saison a: kg vendus": {
+        "is_start": true,
+        "product_id": "fruits",
+        "season": "saison a",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_sold"
+    },
+    "fruits saison a: kg vendus": {
+        "is_start": true,
+        "product_id": "fruits",
+        "season": "saison a",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_sold"
+    },
+    "fruits - orange/mandarine saison a: kg vendus": {
+        "is_start": true,
+        "product_id": "fruits - orange/mandarine",
+        "season": "saison a",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_sold"
+    },
     "ACHAT DE NOURRITURE:": {
         "strategy_type": "FoodPurchase",
         "is_start": true

@@ -902,13 +902,13 @@
         "quantity_sold"
     ],
     [
-        "(?:vente de |vente )?{product_pattern}{separator_pattern} {unit_of_measure_pattern}? {quantity_sold_pattern}",
+        "(?:vente de |vente )?{product_pattern}{separator_pattern} {season_pattern}{separator_pattern} {unit_of_measure_pattern} {quantity_sold_pattern}",
         null,
         true,
         "quantity_sold"
     ],
     [
-        "{product_pattern}{separator_pattern} {season_pattern}{separator_pattern} {unit_of_measure_pattern} {quantity_sold_pattern}",
+        "(?:vente de |vente )?{product_pattern}{separator_pattern} {unit_of_measure_pattern} {quantity_sold_pattern}",
         null,
         true,
         "quantity_sold"
