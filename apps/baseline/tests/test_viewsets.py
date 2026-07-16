@@ -1277,11 +1277,15 @@ class WealthGroupViewSetTestCase(APITestCase):
         self.url_get = lambda n: reverse("wealthgroup-detail", args=(self.data[n].pk,))
 
     def test_get_requires_authentication(self):
+        logging.disable(logging.CRITICAL)
         response = self.client.get(self.url_get(0))
+        logging.disable(logging.NOTSET)
         self.assertEqual(response.status_code, 403)
 
     def test_list_requires_authentication(self):
+        logging.disable(logging.CRITICAL)
         response = self.client.get(self.url)
+        logging.disable(logging.NOTSET)
         self.assertEqual(response.status_code, 403)
 
     def test_get_record(self):
