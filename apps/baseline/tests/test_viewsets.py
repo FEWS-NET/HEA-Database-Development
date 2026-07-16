@@ -1277,6 +1277,7 @@ class WealthGroupViewSetTestCase(APITestCase):
         self.url_get = lambda n: reverse("wealthgroup-detail", args=(self.data[n].pk,))
 
     def test_get_record(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url_get(0))
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.json(), dict)
@@ -1335,11 +1336,13 @@ class WealthGroupViewSetTestCase(APITestCase):
         self.assertEqual(response.json()["percentage_of_households"], new_value)
 
     def test_list_returns_all_records(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_list_returns_filtered_data(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -1352,11 +1355,13 @@ class WealthGroupViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 1)
 
     def test_json(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "json"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_csv(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "csv"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"][:8], "text/csv")
@@ -1368,6 +1373,7 @@ class WealthGroupViewSetTestCase(APITestCase):
         self.assertEqual(len(df), self.num_records)
 
     def test_html(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "html"})
         self.assertEqual(response.status_code, 200)
         try:
@@ -1588,6 +1594,7 @@ class CommunityWealthGroupViewSetTestCase(APITestCase):
         self.url_get = lambda n: reverse("communitywealthgroup-detail", args=(self.data[n].pk,))
 
     def test_get_record(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url_get(0))
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.json(), dict)
@@ -1648,11 +1655,13 @@ class CommunityWealthGroupViewSetTestCase(APITestCase):
         self.assertEqual(response.json()["percentage_of_households"], new_value)
 
     def test_list_returns_all_records(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_list_returns_filtered_data(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -1664,11 +1673,13 @@ class CommunityWealthGroupViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 1)
 
     def test_json(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "json"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_csv(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "csv"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"][:8], "text/csv")
@@ -1680,6 +1691,7 @@ class CommunityWealthGroupViewSetTestCase(APITestCase):
         self.assertEqual(len(df), self.num_records)
 
     def test_html(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "html"})
         self.assertEqual(response.status_code, 200)
         try:
@@ -1690,6 +1702,7 @@ class CommunityWealthGroupViewSetTestCase(APITestCase):
         self.assertEqual(len(df), self.num_records + 1)
 
     def test_filter_by_country(self):
+        self.client.force_login(self.user)
         country = CountryFactory(
             iso3166a2="AA",
             iso3166a3="AAA",
@@ -1719,6 +1732,7 @@ class WealthGroupCharacteristicValueViewSetTestCase(APITestCase):
         self.url_get = lambda n: reverse("wealthgroupcharacteristicvalue-detail", args=(self.data[n].pk,))
 
     def test_get_record(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url_get(0))
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.json(), dict)
@@ -1798,11 +1812,13 @@ class WealthGroupCharacteristicValueViewSetTestCase(APITestCase):
         self.assertEqual(response.json()["value"], new_value)
 
     def test_list_returns_all_records(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_list_returns_filtered_data(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -1814,11 +1830,13 @@ class WealthGroupCharacteristicValueViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 1)
 
     def test_json(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "json"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_csv(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "csv"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"][:8], "text/csv")
@@ -1830,6 +1848,7 @@ class WealthGroupCharacteristicValueViewSetTestCase(APITestCase):
         self.assertEqual(len(df), self.num_records)
 
     def test_html(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "html"})
         self.assertEqual(response.status_code, 200)
         try:
@@ -1840,6 +1859,7 @@ class WealthGroupCharacteristicValueViewSetTestCase(APITestCase):
         self.assertEqual(len(df), self.num_records + 1)
 
     def test_filter_by_country(self):
+        self.client.force_login(self.user)
         country = CountryFactory(
             iso3166a2="AA",
             iso3166a3="AAA",
@@ -1857,6 +1877,7 @@ class WealthGroupCharacteristicValueViewSetTestCase(APITestCase):
         self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
 
     def test_filter_by_product(self):
+        self.client.force_login(self.user)
         parent = ClassifiedProductFactory(cpc="K011")
         product = ClassifiedProductFactory(
             cpc="K0111",
@@ -2459,6 +2480,7 @@ class LivelihoodActivityViewSetTestCase(APITestCase):
         self.url_get = lambda n: reverse("livelihoodactivity-detail", args=(self.data[n].pk,))
 
     def test_get_record(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url_get(0))
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.json(), dict)
@@ -2547,11 +2569,13 @@ class LivelihoodActivityViewSetTestCase(APITestCase):
         self.assertEqual(response.json()["scenario"], new_value)
 
     def test_list_returns_all_records(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_list_returns_filtered_data(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -2571,6 +2595,7 @@ class LivelihoodActivityViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 1)
 
     def test_search(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -2590,11 +2615,13 @@ class LivelihoodActivityViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 0)
 
     def test_json(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "json"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_csv(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "csv"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"][:8], "text/csv")
@@ -2606,6 +2633,7 @@ class LivelihoodActivityViewSetTestCase(APITestCase):
         self.assertEqual(len(df), self.num_records)
 
     def test_html(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "html"})
         self.assertEqual(response.status_code, 200)
         try:
@@ -2616,6 +2644,7 @@ class LivelihoodActivityViewSetTestCase(APITestCase):
         self.assertEqual(len(df), self.num_records + 1)
 
     def test_search_by_zone_code_and_year(self):
+        self.client.force_login(self.user)
         baseline = LivelihoodZoneBaselineFactory()
         activity = LivelihoodActivityFactory(livelihood_zone_baseline=baseline)
         zone_code = baseline.livelihood_zone.code
@@ -2626,6 +2655,7 @@ class LivelihoodActivityViewSetTestCase(APITestCase):
         self.assertIn(activity.pk, ids)
 
     def test_filter_by_country(self):
+        self.client.force_login(self.user)
         country = CountryFactory(
             iso3166a2="AA",
             iso3166a3="AAA",
@@ -2643,6 +2673,7 @@ class LivelihoodActivityViewSetTestCase(APITestCase):
         self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
 
     def test_filter_by_product(self):
+        self.client.force_login(self.user)
         parent = ClassifiedProductFactory(cpc="K011")
         product = ClassifiedProductFactory(
             cpc="K0111",
@@ -2678,6 +2709,7 @@ class LivelihoodActivityViewSetTestCase(APITestCase):
         self.assertEqual(len(json.loads(response.content.decode("utf-8"))), 1)
 
     def test_filter_by_cpc(self):
+        self.client.force_login(self.user)
         parent = ClassifiedProductFactory(cpc="K011")
         product = ClassifiedProductFactory(
             cpc="K0111",
@@ -3085,6 +3117,7 @@ class MilkProductionViewSetTestCase(APITestCase):
         self.url_get = lambda n: reverse("milkproduction-detail", args=(self.data[n].pk,))
 
     def test_get_record(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url_get(0))
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.json(), dict)
@@ -3176,11 +3209,13 @@ class MilkProductionViewSetTestCase(APITestCase):
         self.assertEqual(response.json()["scenario"], new_value)
 
     def test_list_returns_all_records(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_list_returns_filtered_data(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -3201,6 +3236,7 @@ class MilkProductionViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 1)
 
     def test_search(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -3220,11 +3256,13 @@ class MilkProductionViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 0)
 
     def test_json(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "json"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_csv(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "csv"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"][:8], "text/csv")
@@ -3236,6 +3274,7 @@ class MilkProductionViewSetTestCase(APITestCase):
         self.assertEqual(len(df), self.num_records)
 
     def test_html(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "html"})
         self.assertEqual(response.status_code, 200)
         try:
@@ -3258,6 +3297,7 @@ class ButterProductionViewSetTestCase(APITestCase):
         self.url_get = lambda n: reverse("butterproduction-detail", args=(self.data[n].pk,))
 
     def test_get_record(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url_get(0))
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.json(), dict)
@@ -3345,11 +3385,13 @@ class ButterProductionViewSetTestCase(APITestCase):
         self.assertEqual(response.json()["scenario"], new_value)
 
     def test_list_returns_all_records(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_list_returns_filtered_data(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -3367,6 +3409,7 @@ class ButterProductionViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 1)
 
     def test_search(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -3386,11 +3429,13 @@ class ButterProductionViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 0)
 
     def test_json(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "json"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_csv(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "csv"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"][:8], "text/csv")
@@ -3402,6 +3447,7 @@ class ButterProductionViewSetTestCase(APITestCase):
         self.assertEqual(len(df), self.num_records)
 
     def test_html(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "html"})
         self.assertEqual(response.status_code, 200)
         try:
@@ -3424,6 +3470,7 @@ class MeatProductionViewSetTestCase(APITestCase):
         self.url_get = lambda n: reverse("meatproduction-detail", args=(self.data[n].pk,))
 
     def test_get_record(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url_get(0))
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.json(), dict)
@@ -3513,11 +3560,13 @@ class MeatProductionViewSetTestCase(APITestCase):
         self.assertEqual(response.json()["scenario"], new_value)
 
     def test_list_returns_all_records(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_list_returns_filtered_data(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -3536,6 +3585,7 @@ class MeatProductionViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 1)
 
     def test_search(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -3555,11 +3605,13 @@ class MeatProductionViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 0)
 
     def test_json(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "json"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_csv(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "csv"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"][:8], "text/csv")
@@ -3571,6 +3623,7 @@ class MeatProductionViewSetTestCase(APITestCase):
         self.assertEqual(len(df), self.num_records)
 
     def test_html(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "html"})
         self.assertEqual(response.status_code, 200)
         try:
@@ -3593,6 +3646,7 @@ class LivestockSalesViewSetTestCase(APITestCase):
         self.url_get = lambda n: reverse("livestocksale-detail", args=(self.data[n].pk,))
 
     def test_get_record(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url_get(0))
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.json(), dict)
@@ -3680,11 +3734,13 @@ class LivestockSalesViewSetTestCase(APITestCase):
         self.assertEqual(response.json()["scenario"], new_value)
 
     def test_list_returns_all_records(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_list_returns_filtered_data(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -3698,6 +3754,7 @@ class LivestockSalesViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 1)
 
     def test_search(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -3717,11 +3774,13 @@ class LivestockSalesViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 0)
 
     def test_json(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "json"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_csv(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "csv"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"][:8], "text/csv")
@@ -3733,6 +3792,7 @@ class LivestockSalesViewSetTestCase(APITestCase):
         self.assertEqual(len(df), self.num_records)
 
     def test_html(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "html"})
         self.assertEqual(response.status_code, 200)
         try:
@@ -3755,6 +3815,7 @@ class CropProductionViewSetTestCase(APITestCase):
         self.url_get = lambda n: reverse("cropproduction-detail", args=(self.data[n].pk,))
 
     def test_get_record(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url_get(0))
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.json(), dict)
@@ -3842,11 +3903,13 @@ class CropProductionViewSetTestCase(APITestCase):
         self.assertEqual(response.json()["scenario"], new_value)
 
     def test_list_returns_all_records(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_list_returns_filtered_data(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -3864,6 +3927,7 @@ class CropProductionViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 1)
 
     def test_search(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -3883,11 +3947,13 @@ class CropProductionViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 0)
 
     def test_json(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "json"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_csv(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "csv"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"][:8], "text/csv")
@@ -3899,6 +3965,7 @@ class CropProductionViewSetTestCase(APITestCase):
         self.assertEqual(len(df), self.num_records)
 
     def test_html(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "html"})
         self.assertEqual(response.status_code, 200)
         try:
@@ -3921,6 +3988,7 @@ class FoodPurchaseViewSetTestCase(APITestCase):
         self.url_get = lambda n: reverse("foodpurchase-detail", args=(self.data[n].pk,))
 
     def test_get_record(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url_get(0))
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.json(), dict)
@@ -4012,11 +4080,13 @@ class FoodPurchaseViewSetTestCase(APITestCase):
         self.assertEqual(response.json()["scenario"], new_value)
 
     def test_list_returns_all_records(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_list_returns_filtered_data(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -4036,6 +4106,7 @@ class FoodPurchaseViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 1)
 
     def test_search(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -4055,11 +4126,13 @@ class FoodPurchaseViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 0)
 
     def test_json(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "json"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_csv(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "csv"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"][:8], "text/csv")
@@ -4071,6 +4144,7 @@ class FoodPurchaseViewSetTestCase(APITestCase):
         self.assertEqual(len(df), self.num_records)
 
     def test_html(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "html"})
         self.assertEqual(response.status_code, 200)
         try:
@@ -4093,6 +4167,7 @@ class PaymentInKindViewSetTestCase(APITestCase):
         self.url_get = lambda n: reverse("paymentinkind-detail", args=(self.data[n].pk,))
 
     def test_get_record(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url_get(0))
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.json(), dict)
@@ -4187,11 +4262,13 @@ class PaymentInKindViewSetTestCase(APITestCase):
         self.assertEqual(response.json()["scenario"], new_value)
 
     def test_list_returns_all_records(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_list_returns_filtered_data(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -4213,6 +4290,7 @@ class PaymentInKindViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 1)
 
     def test_search(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -4232,11 +4310,13 @@ class PaymentInKindViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 0)
 
     def test_json(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "json"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_csv(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "csv"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"][:8], "text/csv")
@@ -4248,6 +4328,7 @@ class PaymentInKindViewSetTestCase(APITestCase):
         self.assertEqual(len(df), self.num_records)
 
     def test_html(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "html"})
         self.assertEqual(response.status_code, 200)
         try:
@@ -4258,6 +4339,7 @@ class PaymentInKindViewSetTestCase(APITestCase):
         self.assertEqual(len(df), self.num_records + 1)
 
     def test_filter_by_country(self):
+        self.client.force_login(self.user)
         country = CountryFactory(
             iso3166a2="AA",
             iso3166a3="AAA",
@@ -4275,6 +4357,7 @@ class PaymentInKindViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 1)
 
     def test_filter_by_livelihood_zone(self):
+        self.client.force_login(self.user)
         livelihood_zone = LivelihoodZoneFactory(code="MW01")
         PaymentInKindFactory(livelihood_zone_baseline__livelihood_zone=livelihood_zone)
         response = self.client.get(self.url, {"livelihood_zone": "MW01"})
@@ -4298,6 +4381,7 @@ class ReliefGiftsOtherViewSetTestCase(APITestCase):
         self.url_get = lambda n: reverse("reliefgiftother-detail", args=(self.data[n].pk,))
 
     def test_get_record(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url_get(0))
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.json(), dict)
@@ -4389,11 +4473,13 @@ class ReliefGiftsOtherViewSetTestCase(APITestCase):
         self.assertEqual(response.json()["scenario"], new_value)
 
     def test_list_returns_all_records(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_list_returns_filtered_data(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -4411,6 +4497,7 @@ class ReliefGiftsOtherViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 1)
 
     def test_search(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -4430,11 +4517,13 @@ class ReliefGiftsOtherViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 0)
 
     def test_json(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "json"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_csv(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "csv"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"][:8], "text/csv")
@@ -4446,6 +4535,7 @@ class ReliefGiftsOtherViewSetTestCase(APITestCase):
         self.assertEqual(len(df), self.num_records)
 
     def test_html(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "html"})
         self.assertEqual(response.status_code, 200)
         try:
@@ -4468,6 +4558,7 @@ class FishingViewSetTestCase(APITestCase):
         self.url_get = lambda n: reverse("fishing-detail", args=(self.data[n].pk,))
 
     def test_get_record(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url_get(0))
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.json(), dict)
@@ -4555,11 +4646,13 @@ class FishingViewSetTestCase(APITestCase):
         self.assertEqual(response.json()["scenario"], new_value)
 
     def test_list_returns_all_records(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_list_returns_filtered_data(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -4577,6 +4670,7 @@ class FishingViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 1)
 
     def test_search(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -4596,11 +4690,13 @@ class FishingViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 0)
 
     def test_json(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "json"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_csv(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "csv"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"][:8], "text/csv")
@@ -4612,6 +4708,7 @@ class FishingViewSetTestCase(APITestCase):
         self.assertEqual(len(df), self.num_records)
 
     def test_html(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "html"})
         self.assertEqual(response.status_code, 200)
         try:
@@ -4634,6 +4731,7 @@ class HuntingViewSetTestCase(APITestCase):
         self.url_get = lambda n: reverse("hunting-detail", args=(self.data[n].pk,))
 
     def test_get_record(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url_get(0))
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.json(), dict)
@@ -4721,11 +4819,13 @@ class HuntingViewSetTestCase(APITestCase):
         self.assertEqual(response.json()["scenario"], new_value)
 
     def test_list_returns_all_records(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_list_returns_filtered_data(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -4743,6 +4843,7 @@ class HuntingViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 1)
 
     def test_search(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -4762,11 +4863,13 @@ class HuntingViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 0)
 
     def test_json(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "json"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_csv(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "csv"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"][:8], "text/csv")
@@ -4778,6 +4881,7 @@ class HuntingViewSetTestCase(APITestCase):
         self.assertEqual(len(df), self.num_records)
 
     def test_html(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "html"})
         self.assertEqual(response.status_code, 200)
         try:
@@ -4800,6 +4904,7 @@ class WildFoodGatheringViewSetTestCase(APITestCase):
         self.url_get = lambda n: reverse("wildfoodgathering-detail", args=(self.data[n].pk,))
 
     def test_get_record(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url_get(0))
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.json(), dict)
@@ -4887,11 +4992,13 @@ class WildFoodGatheringViewSetTestCase(APITestCase):
         self.assertEqual(response.json()["scenario"], new_value)
 
     def test_list_returns_all_records(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_list_returns_filtered_data(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -4909,6 +5016,7 @@ class WildFoodGatheringViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 1)
 
     def test_search(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -4928,11 +5036,13 @@ class WildFoodGatheringViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 0)
 
     def test_json(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "json"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_csv(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "csv"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"][:8], "text/csv")
@@ -4944,6 +5054,7 @@ class WildFoodGatheringViewSetTestCase(APITestCase):
         self.assertEqual(len(df), self.num_records)
 
     def test_html(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "html"})
         self.assertEqual(response.status_code, 200)
         try:
@@ -4966,6 +5077,7 @@ class OtherCashIncomeViewSetTestCase(APITestCase):
         self.url_get = lambda n: reverse("othercashincome-detail", args=(self.data[n].pk,))
 
     def test_get_record(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url_get(0))
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.json(), dict)
@@ -5058,11 +5170,13 @@ class OtherCashIncomeViewSetTestCase(APITestCase):
         self.assertEqual(response.json()["scenario"], new_value)
 
     def test_list_returns_all_records(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_list_returns_filtered_data(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -5080,6 +5194,7 @@ class OtherCashIncomeViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 1)
 
     def test_search(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -5099,11 +5214,13 @@ class OtherCashIncomeViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 0)
 
     def test_json(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "json"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_csv(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "csv"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"][:8], "text/csv")
@@ -5115,6 +5232,7 @@ class OtherCashIncomeViewSetTestCase(APITestCase):
         self.assertEqual(len(df), self.num_records)
 
     def test_html(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "html"})
         self.assertEqual(response.status_code, 200)
         try:
@@ -5137,6 +5255,7 @@ class OtherPurchasesViewSetTestCase(APITestCase):
         self.url_get = lambda n: reverse("otherpurchase-detail", args=(self.data[n].pk,))
 
     def test_get_record(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url_get(0))
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.json(), dict)
@@ -5227,11 +5346,13 @@ class OtherPurchasesViewSetTestCase(APITestCase):
         self.assertEqual(response.json()["scenario"], new_value)
 
     def test_list_returns_all_records(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_list_returns_filtered_data(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -5247,6 +5368,7 @@ class OtherPurchasesViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 1)
 
     def test_search(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -5266,11 +5388,13 @@ class OtherPurchasesViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 0)
 
     def test_json(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "json"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_csv(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "csv"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"][:8], "text/csv")
@@ -5282,6 +5406,7 @@ class OtherPurchasesViewSetTestCase(APITestCase):
         self.assertEqual(len(df), self.num_records)
 
     def test_html(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "html"})
         self.assertEqual(response.status_code, 200)
         try:
@@ -6109,6 +6234,7 @@ class SeasonalActivityOccurrenceViewSetTestCase(APITestCase):
         self.url_get = lambda n: reverse("seasonalactivityoccurrence-detail", args=(self.data[n].pk,))
 
     def test_get_record(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url_get(0))
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.json(), dict)
@@ -6178,11 +6304,13 @@ class SeasonalActivityOccurrenceViewSetTestCase(APITestCase):
         self.assertEqual(response.json()["start"], new_value)
 
     def test_list_returns_all_records(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_list_returns_filtered_data(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -6195,6 +6323,7 @@ class SeasonalActivityOccurrenceViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 1)
 
     def test_filter_by_is_key(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"is_key": True})
         self.assertEqual(response.status_code, 200)
         self.assertEqual([result["id"] for result in response.json()], [self.data[0].id])
@@ -6204,11 +6333,13 @@ class SeasonalActivityOccurrenceViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), self.num_records - 1)
 
     def test_json(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "json"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_csv(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "csv"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"][:8], "text/csv")
@@ -6220,6 +6351,7 @@ class SeasonalActivityOccurrenceViewSetTestCase(APITestCase):
         self.assertEqual(len(df), self.num_records)
 
     def test_html(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "html"})
         self.assertEqual(response.status_code, 200)
         try:
@@ -6327,6 +6459,7 @@ class CommunityCropProductionViewSetTestCase(APITestCase):
         self.url_get = lambda n: reverse("communitycropproduction-detail", args=(self.data[n].pk,))
 
     def test_get_record(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url_get(0))
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.json(), dict)
@@ -6394,11 +6527,13 @@ class CommunityCropProductionViewSetTestCase(APITestCase):
         self.assertEqual(response.json()["crop_purpose"], new_value)
 
     def test_list_returns_all_records(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_list_returns_filtered_data(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -6412,6 +6547,7 @@ class CommunityCropProductionViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 1)
 
     def test_search(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -6431,11 +6567,13 @@ class CommunityCropProductionViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 0)
 
     def test_json(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "json"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_csv(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "csv"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"][:8], "text/csv")
@@ -6447,6 +6585,7 @@ class CommunityCropProductionViewSetTestCase(APITestCase):
         self.assertEqual(len(df), self.num_records)
 
     def test_html(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "html"})
         self.assertEqual(response.status_code, 200)
         try:
@@ -6469,6 +6608,7 @@ class CommunityLivestockViewSetTestCase(APITestCase):
         self.url_get = lambda n: reverse("communitylivestock-detail", args=(self.data[n].pk,))
 
     def test_get_record(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url_get(0))
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.json(), dict)
@@ -6527,11 +6667,13 @@ class CommunityLivestockViewSetTestCase(APITestCase):
         self.assertEqual(response.json()["birth_interval"], new_value)
 
     def test_list_returns_all_records(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_list_returns_filtered_data(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -6548,11 +6690,13 @@ class CommunityLivestockViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 1)
 
     def test_json(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "json"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_csv(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "csv"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"][:8], "text/csv")
@@ -6564,6 +6708,7 @@ class CommunityLivestockViewSetTestCase(APITestCase):
         self.assertEqual(len(df), self.num_records)
 
     def test_html(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "html"})
         self.assertEqual(response.status_code, 200)
         try:
@@ -6586,6 +6731,7 @@ class MarketPriceViewSetTestCase(APITestCase):
         self.url_get = lambda n: reverse("marketprice-detail", args=(self.data[n].pk,))
 
     def test_get_record(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url_get(0))
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.json(), dict)
@@ -6650,11 +6796,13 @@ class MarketPriceViewSetTestCase(APITestCase):
         self.assertEqual(response.json()["description"], new_value)
 
     def test_list_returns_all_records(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_list_returns_filtered_data(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -6672,6 +6820,7 @@ class MarketPriceViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 1)
 
     def test_search(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -6691,11 +6840,13 @@ class MarketPriceViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 0)
 
     def test_json(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "json"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_csv(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "csv"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"][:8], "text/csv")
@@ -6707,6 +6858,7 @@ class MarketPriceViewSetTestCase(APITestCase):
         self.assertEqual(len(df), self.num_records)
 
     def test_html(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "html"})
         self.assertEqual(response.status_code, 200)
         try:
@@ -6729,6 +6881,7 @@ class SeasonalProductionPerformanceViewSetTestCase(APITestCase):
         self.url_get = lambda n: reverse("seasonalproductionperformance-detail", args=(self.data[n].pk,))
 
     def test_get_record(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url_get(0))
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.json(), dict)
@@ -6783,11 +6936,13 @@ class SeasonalProductionPerformanceViewSetTestCase(APITestCase):
         self.assertEqual(response.json()["performance_year_start_date"], new_value)
 
     def test_list_returns_all_records(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_list_returns_filtered_data(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {"id": self.data[0].id, "seasonal_performance": self.data[0].seasonal_performance},
@@ -6796,6 +6951,7 @@ class SeasonalProductionPerformanceViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 1)
 
     def test_filter_by_seasonal_performance(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -6807,11 +6963,13 @@ class SeasonalProductionPerformanceViewSetTestCase(APITestCase):
         self.assertEqual(response.json()[0]["seasonal_performance"], int(self.data[0].seasonal_performance))
 
     def test_json(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "json"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_csv(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "csv"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"][:8], "text/csv")
@@ -6823,6 +6981,7 @@ class SeasonalProductionPerformanceViewSetTestCase(APITestCase):
         self.assertEqual(len(df), self.num_records)
 
     def test_html(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "html"})
         self.assertEqual(response.status_code, 200)
         try:
@@ -6845,6 +7004,7 @@ class HazardViewSetTestCase(APITestCase):
         self.url_get = lambda n: reverse("hazard-detail", args=(self.data[n].pk,))
 
     def test_get_record(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url_get(0))
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.json(), dict)
@@ -6901,11 +7061,13 @@ class HazardViewSetTestCase(APITestCase):
         self.assertEqual(response.json()["chronic_or_periodic"], new_value)
 
     def test_list_returns_all_records(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_list_returns_filtered_data(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -6917,6 +7079,7 @@ class HazardViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 1)
 
     def test_search(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -6936,11 +7099,13 @@ class HazardViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 0)
 
     def test_json(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "json"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_csv(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "csv"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"][:8], "text/csv")
@@ -6952,6 +7117,7 @@ class HazardViewSetTestCase(APITestCase):
         self.assertEqual(len(df), self.num_records)
 
     def test_html(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "html"})
         self.assertEqual(response.status_code, 200)
         try:
@@ -6974,6 +7140,7 @@ class EventViewSetTestCase(APITestCase):
         self.url_get = lambda n: reverse("event-detail", args=(self.data[n].pk,))
 
     def test_get_record(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url_get(0))
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.json(), dict)
@@ -7025,11 +7192,13 @@ class EventViewSetTestCase(APITestCase):
         self.assertEqual(response.json()["event_year_start_date"], new_value)
 
     def test_list_returns_all_records(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_list_returns_filtered_data(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -7041,6 +7210,7 @@ class EventViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 1)
 
     def test_search(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -7060,11 +7230,13 @@ class EventViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 0)
 
     def test_json(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "json"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_csv(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "csv"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"][:8], "text/csv")
@@ -7076,6 +7248,7 @@ class EventViewSetTestCase(APITestCase):
         self.assertEqual(len(df), self.num_records)
 
     def test_html(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "html"})
         self.assertEqual(response.status_code, 200)
         try:
@@ -7098,6 +7271,7 @@ class ExpandabilityFactorViewSetTestCase(APITestCase):
         self.url_get = lambda n: reverse("expandabilityfactor-detail", args=(self.data[n].pk,))
 
     def test_get_record(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url_get(0))
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.json(), dict)
@@ -7175,11 +7349,13 @@ class ExpandabilityFactorViewSetTestCase(APITestCase):
         self.assertEqual(response.json()["percentage_produced"], new_value)
 
     def test_list_returns_all_records(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_list_returns_filtered_data(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -7197,6 +7373,7 @@ class ExpandabilityFactorViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 1)
 
     def test_search(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -7216,11 +7393,13 @@ class ExpandabilityFactorViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 0)
 
     def test_json(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "json"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_csv(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "csv"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"][:8], "text/csv")
@@ -7232,6 +7411,7 @@ class ExpandabilityFactorViewSetTestCase(APITestCase):
         self.assertEqual(len(df), self.num_records)
 
     def test_html(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "html"})
         self.assertEqual(response.status_code, 200)
         try:
@@ -7254,6 +7434,7 @@ class CopingStrategyViewSetTestCase(APITestCase):
         self.url_get = lambda n: reverse("copingstrategy-detail", args=(self.data[n].pk,))
 
     def test_get_record(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url_get(0))
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.json(), dict)
@@ -7328,11 +7509,13 @@ class CopingStrategyViewSetTestCase(APITestCase):
         self.assertEqual(response.json()["leaders"], new_value)
 
     def test_list_returns_all_records(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_list_returns_filtered_data(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -7345,6 +7528,7 @@ class CopingStrategyViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 1)
 
     def test_search(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -7364,11 +7548,13 @@ class CopingStrategyViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 0)
 
     def test_json(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "json"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_csv(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "csv"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"][:8], "text/csv")
@@ -7380,6 +7566,7 @@ class CopingStrategyViewSetTestCase(APITestCase):
         self.assertEqual(len(df), self.num_records)
 
     def test_html(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "html"})
         self.assertEqual(response.status_code, 200)
         try:
