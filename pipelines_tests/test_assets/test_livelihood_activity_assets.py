@@ -4,6 +4,7 @@ from pathlib import Path
 import pandas as pd
 from django.test import TestCase
 
+from common.models import UnitOfMeasure
 from common.tests.factories import CountryFactory
 from metadata.models import ActivityLabel
 from metadata.tests.factories import SeasonFactory
@@ -21,6 +22,15 @@ class GetActivityLabelAttributesTestCase(TestCase):
 
     def test_livelihood_activity_regexes(self):
 
+        # Make sure that the necessary Units of Measure exist
+        UnitOfMeasure.objects.update_or_create(
+            abbreviation="L",
+            defaults={
+                "name": "litre",
+                "category": "Volume",
+                "aliases": ["l", "litre", "liter", "1 litre", "1 liter", "litres", "liters"],
+            },
+        )
         # Fetch the list of labels to test and the expected attributes
         with open(Path(__file__).parent / "test_livelihood_activity_regexes.json") as f:
             expected = json.load(f)
@@ -49,7 +59,7 @@ class GetActivityLabelAttributesTestCase(TestCase):
 
                 self.assertFalse(
                     any([bool(v) for k, v in unwanted_attributes.items()]),
-                    msg=f"Extra attributes {({k: v for k, v in unwanted_attributes.items() if v})} found for '{label}'",
+                    msg=f"Extra attributes {({k: v for k, v in unwanted_attributes.items() if v})} from {attributes['notes']} found for '{label}'",
                 )
 
     def test_activity_label_override(self):
