@@ -30,7 +30,7 @@ class LivelihoodSystemSerializer(ReferenceDataSerializer):
 
     class Meta(ReferenceDataSerializer.Meta):
         model = LivelihoodSystem
-        fields = ["code", "name", "description", "aliases", "color"]
+        fields = ReferenceDataSerializer.Meta.fields + ["color"]
 
 
 class WealthCharacteristicSerializer(ReferenceDataSerializer):
