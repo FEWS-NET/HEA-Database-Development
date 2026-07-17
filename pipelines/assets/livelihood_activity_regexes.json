@@ -350,13 +350,13 @@
         "expenditure"
     ],
     [
-        "{nbr_pattern} (?:de )?fois / an(?:née)?",
+        "{nbr_pattern} (?:de |d')?(?:fois|envois)(?: ?/ ?| par )an(?:née)?",
         null,
         false,
         "times_per_year"
     ],
     [
-        "{product_pattern}{separator_pattern} {nbr_pattern} (?:de )?fois / an(?:née)?",
+        "{product_pattern}{separator_pattern} {nbr_pattern} (?:de |d')?(?:fois|envois)(?: ?/ ?| par )an(?:née)?",
         null,
         false,
         "times_per_year"
