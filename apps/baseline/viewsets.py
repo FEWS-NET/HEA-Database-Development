@@ -27,9 +27,10 @@ from django.views.decorators.cache import cache_page
 from django.views.decorators.http import condition
 from django_filters import rest_framework as filters
 from django_filters.filters import CharFilter
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
+from rest_framework.settings import api_settings
 from rest_framework.views import APIView
 
 from common.fields import translation_fields
@@ -505,6 +506,7 @@ class WealthGroupViewSet(BaseModelViewSet):
     API endpoint that allows wealth groups to be viewed or edited.
     """
 
+    permission_classes = [IsAuthenticated]
     queryset = WealthGroup.objects.select_related(
         # Normally it would be better to join to livelihood_zone_baseline via community,
         # but baseline wealth groups don't have a community join.
@@ -653,6 +655,7 @@ class CommunityWealthGroupViewSet(BaseModelViewSet):
     API endpoint that allows community wealth groups to be viewed or edited.
     """
 
+    permission_classes = [IsAuthenticated]
     queryset = CommunityWealthGroup.objects.select_related(
         "community__livelihood_zone_baseline__livelihood_zone__country",
         "community__livelihood_zone_baseline__source_organization",
@@ -723,6 +726,7 @@ class WealthGroupCharacteristicValueViewSet(BaseModelViewSet):
     API endpoint that allows wealth characteristic values to be viewed or edited.
     """
 
+    permission_classes = [IsAuthenticated]
     queryset = WealthGroupCharacteristicValue.objects.select_related(
         # Rule of thumb: When there is a choice of routes, eg, here we could use
         # "wealth_group__community__livelihood_zone_baseline" or
@@ -938,6 +942,7 @@ class CommunityWealthGroupCharacteristicValueViewSet(BaseModelViewSet):
     API endpoint that allows wealth characteristic values for community wealth groups to be viewed or edited.
     """
 
+    permission_classes = [IsAuthenticated]
     queryset = CommunityWealthGroupCharacteristicValue.objects.select_related(
         # Rule of thumb: When there is a choice of routes, eg, here we could use
         # "wealth_group__community__livelihood_zone_baseline" or
@@ -1244,6 +1249,7 @@ class LivelihoodActivityViewSet(BaseModelViewSet):
     API endpoint that allows livelihood activities to be viewed or edited.
     """
 
+    permission_classes = [IsAuthenticated]
     queryset = LivelihoodActivity.objects.select_related(
         "livelihood_strategy__product",
         "livelihood_strategy__season",
@@ -1285,6 +1291,7 @@ class BaselineLivelihoodActivityViewSet(LivelihoodActivityViewSet):
     API endpoint that allows baseline livelihood activities to be viewed or edited.
     """
 
+    permission_classes = api_settings.DEFAULT_PERMISSION_CLASSES
     queryset = BaselineLivelihoodActivity.objects.select_related(
         "livelihood_strategy__product",
         "livelihood_strategy__season",
@@ -1307,6 +1314,7 @@ class ResponseLivelihoodActivityViewSet(LivelihoodActivityViewSet):
     API endpoint that allows response livelihood activities to be viewed or edited.
     """
 
+    permission_classes = api_settings.DEFAULT_PERMISSION_CLASSES
     queryset = ResponseLivelihoodActivity.objects.select_related(
         "livelihood_strategy__product",
         "livelihood_strategy__season",
@@ -1724,6 +1732,7 @@ class SeasonalActivityOccurrenceViewSet(BaseModelViewSet):
     API endpoint that allows seasonal activity occurrences to be viewed or edited.
     """
 
+    permission_classes = [IsAuthenticated]
     queryset = SeasonalActivityOccurrence.objects.select_related(
         "community",
         "livelihood_zone_baseline__livelihood_zone__country",
@@ -1790,6 +1799,7 @@ class CommunityCropProductionViewSet(BaseModelViewSet):
     API endpoint that allows community crop productions to be viewed or edited.
     """
 
+    permission_classes = [IsAuthenticated]
     queryset = CommunityCropProduction.objects.select_related(
         "community__livelihood_zone_baseline__livelihood_zone__country",
         "community__livelihood_zone_baseline__source_organization",
@@ -1832,6 +1842,7 @@ class CommunityLivestockViewSet(BaseModelViewSet):
     API endpoint that allows wealth group attributes to be viewed or edited.
     """
 
+    permission_classes = [IsAuthenticated]
     queryset = CommunityLivestock.objects.select_related(
         "community__livelihood_zone_baseline__livelihood_zone__country",
         "community__livelihood_zone_baseline__source_organization",
@@ -1865,6 +1876,7 @@ class MarketPriceViewSet(BaseModelViewSet):
     API endpoint that allows market prices to be viewed or edited.
     """
 
+    permission_classes = [IsAuthenticated]
     queryset = MarketPrice.objects.select_related(
         "community__livelihood_zone_baseline__livelihood_zone__country",
         "community__livelihood_zone_baseline__source_organization",
@@ -1895,6 +1907,7 @@ class SeasonalProductionPerformanceViewSet(BaseModelViewSet):
     API endpoint that allows seasonal production performance to be viewed or edited.
     """
 
+    permission_classes = [IsAuthenticated]
     queryset = SeasonalProductionPerformance.objects.select_related(
         "community__livelihood_zone_baseline__livelihood_zone__country",
         "community__livelihood_zone_baseline__source_organization",
@@ -1920,6 +1933,7 @@ class HazardViewSet(BaseModelViewSet):
     API endpoint that allows hazards to be viewed or edited.
     """
 
+    permission_classes = [IsAuthenticated]
     queryset = Hazard.objects.select_related(
         "community__livelihood_zone_baseline__livelihood_zone__country",
         "community__livelihood_zone_baseline__source_organization",
@@ -1949,6 +1963,7 @@ class EventViewSet(BaseModelViewSet):
     API endpoint that allows events to be viewed or edited.
     """
 
+    permission_classes = [IsAuthenticated]
     queryset = Event.objects.select_related(
         "community__livelihood_zone_baseline__livelihood_zone__country",
         "community__livelihood_zone_baseline__source_organization",
@@ -1981,6 +1996,7 @@ class ExpandabilityFactorViewSet(BaseModelViewSet):
     API endpoint that allows expandability factors to be viewed or edited.
     """
 
+    permission_classes = [IsAuthenticated]
     queryset = ExpandabilityFactor.objects.select_related(
         "livelihood_strategy__currency",
         "livelihood_strategy__product",
@@ -2016,6 +2032,7 @@ class CopingStrategyViewSet(BaseModelViewSet):
     API endpoint that allows coping strategies to be viewed or edited.
     """
 
+    permission_classes = [IsAuthenticated]
     queryset = CopingStrategy.objects.select_related(
         "community__livelihood_zone_baseline__livelihood_zone__country",
         "community__livelihood_zone_baseline__livelihood_zone__country",
