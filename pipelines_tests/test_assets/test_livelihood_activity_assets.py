@@ -13,6 +13,7 @@ from pipelines.assets.livelihood_activity import (
     get_all_label_attributes,
     get_label_attributes,
     get_livelihood_activity_label_map,
+    get_livelihood_activity_regexes,
 )
 
 LIVELIHOOD_ACTIVITY = ActivityLabel.LivelihoodActivityType.LIVELIHOOD_ACTIVITY
@@ -20,9 +21,9 @@ LIVELIHOOD_ACTIVITY = ActivityLabel.LivelihoodActivityType.LIVELIHOOD_ACTIVITY
 
 class GetActivityLabelAttributesTestCase(TestCase):
 
-    def test_livelihood_activity_regexes(self):
-
-        # Make sure that the necessary Units of Measure exist
+    @classmethod
+    def setUpTestData(cls):
+        # Make sure that Litre has the necessary aliases for the regular expression tests.
         UnitOfMeasure.objects.update_or_create(
             abbreviation="L",
             defaults={
@@ -31,6 +32,16 @@ class GetActivityLabelAttributesTestCase(TestCase):
                 "aliases": ["l", "litre", "liter", "1 litre", "1 liter", "litres", "liters"],
             },
         )
+
+    def setUp(self):
+        """
+        Clear cached label and regex lookups so test order does not affect unit matching.
+        """
+        get_label_attributes.cache_clear()
+        get_livelihood_activity_label_map.cache_clear()
+        get_livelihood_activity_regexes.cache_clear()
+
+    def test_livelihood_activity_regexes(self):
         # Fetch the list of labels to test and the expected attributes
         with open(Path(__file__).parent / "test_livelihood_activity_regexes.json") as f:
             expected = json.load(f)
