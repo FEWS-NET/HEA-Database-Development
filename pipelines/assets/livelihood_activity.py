@@ -457,7 +457,7 @@ def get_livelihood_activity_regexes() -> list:
         "product_pattern": r"(?P<product_id>[a-zà-ÿ][a-zà-ÿ1-9',/ \.\>\-\(\)]+?)",
         "payment_product_pattern": r"(?P<payment_product_id>[a-zà-ÿ][a-zà-ÿ1-9',/ \.\>\-\(\)]+?)",
         "labor_pattern": r"(?P<product_id>(?:labou?r|travail|main-d'œuvre|pre-harvest labou?r|labour:? pre-harvest|harvest labou?r|labour:? harvest|post-harvest labou?r|labour:? post-harvest|travail:? pre-r[eéè]colte) *[:-]? *[a-zà-ÿ][a-zà-ÿ1-9',/ \.\>\-\(\)]+?)",
-        "season_pattern": r"(?P<season>season [123abc]|saison [123abc]|[123][a-z] season||[123][a-zà-ÿ] saison|r[eé]colte principale|principale r[eé]colte|gu|deyr+?)",
+        "season_pattern": r"(?P<season>season [123abc]|saison [123abc]|[123][a-z] season|[123][a-zà-ÿ] saison|r[eé]colte principale|principale r[eé]colte|gu|deyr+?)",
         "age_gender_pattern": age_gender_pattern,
         "unit_of_measure_pattern": unit_of_measure_pattern,
         "nbr_pattern": r"(?:n[bo]?r?e?|no)\.?",
