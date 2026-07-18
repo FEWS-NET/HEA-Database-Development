@@ -125,7 +125,7 @@ class GetActivityLabelAttributesTestCase(TestCase):
             {k: v for k, v in regex_attributes.items() if k in expected_regex_attributes},
         )
         # Test that additional attributes set in the ActivityLabel instance are ignored when using the regex
-        self.assertEqual("", regex_attributes["season"])
+        self.assertEqual(None, regex_attributes["season"])
 
     def test_zone_specific_season_alias(self):
         country = CountryFactory()
