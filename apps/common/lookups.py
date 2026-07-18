@@ -440,7 +440,7 @@ class Lookup(ABC):
         by `-`, `:` or `/`, or with the suffix in parentheses.
 
 
-        require_match: raise an error if the lookup fails to match any rows, overriding the class-level require_match setting
+        require_match: when used with raise_errors=True, raise an error if the lookup fails to match any rows, overriding the class-level require_match setting
         raise_errors: propagate ValueErrors instead of returning None
         """
 
