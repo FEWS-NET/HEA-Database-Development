@@ -43,7 +43,7 @@ Some other BSSs have the product in column A and the seasonal_activity_type in c
     |  8 |                       | Semis                 |                  |     |     |     |     |     |     |     |   1 |     |     |     |               |     |     |     |     |     |
     |  9 |                       | Sarclage/labour       |                  |     |     |     |     |     |     |     |     |   1 |   1 |   1 |               |     |     |     |     |     |
     | 10 |                       | Récolte               | 1                |   1 |     |     |     |     |     |     |     |     |     |     | 1             |   1 |     |     |     |     |
-    | 11 | Sorgho                | Préparation du sol    |                  |     |     |     |     |     |   1 |   1 |     |     |     |     |               |     |     |     |     |     |
+    | 11 | Sorgho - irrigated    | Préparation du sol    |                  |     |     |     |     |     |   1 |   1 |     |     |     |     |               |     |     |     |     |     |
     | 12 |                       | Semis                 |                  |     |     |     |     |     |     |     |   1 |   1 |     |     |               |     |     |     |     |     |
     | 13 |                       | Sarclage/labour       |                  |     |     |     |     |     |     |     |     |   1 |   1 |   1 |               |     |     |     |     |     |
     | 14 |                       | Récolte               |                  |   1 |   1 |     |     |     |     |     |     |     |     |     |               |   1 |   1 |     |     |     |
@@ -321,6 +321,7 @@ def seasonal_activity_instances(
     unrecognized_labels = []
     errors = []
     product_id = ""
+    additional_identifier = ""
     for row in df.iloc[num_header_rows:].index:  # Ignore the header rows
         try:
             column = None
@@ -328,14 +329,24 @@ def seasonal_activity_instances(
             if not label:
                 # Ignore blank rows
                 continue
-            seasonal_activity_type = None
-            additional_identifier = ""
+            has_row_data = df.loc[row, first_data_column:].dropna().astype(str).str.strip().any()
             # Attempt to match the label to a Seasonal Activity Type.
-            seasonal_activity_type = seasonalactivitytypelookup.get_instance(label)
+            try:
+                seasonal_activity_type = seasonalactivitytypelookup.get_instance(
+                    label, require_match=False, raise_errors=True
+                )
+            except ValueError as e:
+                errors.append(
+                    f"Couldn't identify SeasonalActivityType matching label {label} from row {row}: {str(e)}"
+                )
+                continue
             if not seasonal_activity_type:
                 # We didn't match a Seasonal Activity Type for this label, so check if it's a product
-                product_id = classifiedproductlookup.get(label)
-                if not product_id and any(df.loc[row, first_data_column:].notna()):
+                # We use the get_prefix so that we split the label into a product_id and an additional_identifier.
+                # Note that the additional_identifer always comes from the product (or an additional label in column B).
+                # The Seasonal Activity Type must always match the label exactly.
+                product_id, additional_identifier = classifiedproductlookup.get_prefix(label)
+                if not product_id and has_row_data:
                     # If we don't recognize the label as either a Seasonal Activity Type or a product,
                     # and there is data in this row, then add it to the unrecognized labels list.
                     unrecognized_labels.append(label)
@@ -346,19 +357,29 @@ def seasonal_activity_instances(
                 if label_b:
                     if not seasonal_activity_type:
                         seasonal_activity_type = seasonalactivitytypelookup.get_instance(label_b)
-                        if not seasonal_activity_type and any(df.loc[row, first_data_column:].notna()):
-                            # If we don't recognize the label as either a Seasonal Activity Type,
+                        if not seasonal_activity_type and has_row_data:
+                            # If we don't recognize the label as a Seasonal Activity Type,
                             # and there is data in this row, then add it to the unrecognized labels list.
                             unrecognized_labels.append(label_b)
                             continue
+                    elif not additional_identifier:
+                        # If there is no additional identifier in the product, and we already have a
+                        # Seasonal Activity Type from column A, then we can use the label in column B
+                        # as the additional identifier. For example, some Seasonal Activity Types don't
+                        # require a product but do have an additional_identifier. For example, NE08(GAY)
+                        # has a Seasonal Activity for "Exode saisonier" with additional identifier labels
+                        # in columns B for "Départ" and "Retour".
+                        additional_identifier = label_b
                     else:
-                        additional_identifier = label
+                        unrecognized_labels.append(label_b)
 
             # If we have any occurrences for this row, then build the SeasonalActivity instance
-            if df.loc[row, first_data_column:].dropna().astype(str).str.strip().any():
+            if has_row_data:
                 label = (label, label_b) if first_data_column == "C" else label  # composite label for trouble-shooting
                 if not seasonal_activity_type:
-                    errors.append(f"Couldn't identify SeasonalActivity matching label {label} from row {row}")
+                    errors.append(
+                        f"Couldn't identify SeasonalActivity matching label {label} from row {row} containing values {df.loc[row, first_data_column:].replace('', pd.NA).dropna().to_dict()}"
+                    )
                     continue
                 elif seasonal_activity_type.has_product and not product_id:
                     errors.append(
@@ -369,11 +390,18 @@ def seasonal_activity_instances(
                     # This Seasonal Activity Type doesn't require a product, so clear the product_id to be prevent it
                     # from being inherited by a subsequent row.
                     product_id = ""
+                    additional_identifier = ""
+
+                # Get the product common name to aid trouble-shooting.
+                product_common_name_en = (
+                    classifiedproductlookup.get_instance(product_id).common_name_en if product_id else ""
+                )
 
                 seasonal_activity = {
                     "seasonal_activity_type_id": seasonal_activity_type.pk,
                     "product_id": product_id,
-                    "additional_identifier": additional_identifier,
+                    "product_common_name_en": product_common_name_en,
+                    "additional_identifier": additional_identifier or "",
                     "is_key": seasonal_activity_type.is_key,
                     # Save the bss row and the label to aid trouble-shooting
                     "bss_row": row,
@@ -385,7 +413,7 @@ def seasonal_activity_instances(
                         reference_year_end_date,
                         seasonal_activity_type.pk,
                         product_id,
-                        additional_identifier,
+                        additional_identifier or "",
                     ],
                 }
                 seasonal_activities.append(seasonal_activity)
@@ -434,7 +462,9 @@ def seasonal_activity_instances(
                 }
                 for column in df.loc[row, first_summary_column:].index:
                     try:
-                        if df.loc[row, column] >= (community_count * COMMUNITY_OCCURRENCE_THRESHOLD):
+                        if df.loc[row, column] and df.loc[row, column] >= (
+                            community_count * COMMUNITY_OCCURRENCE_THRESHOLD
+                        ):
                             months.append(int(df.loc[4, column]))
                     except TypeError:
                         errors.append(

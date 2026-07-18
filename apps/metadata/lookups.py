@@ -86,6 +86,7 @@ class SeasonLookup(Lookup):
         lookup_column: str = None,
         match_column: str = None,
         exact_match: bool = True,
+        require_match: bool | None = None,
         update: bool = False,
     ):
         # We need country_id to do the lookup.
@@ -106,6 +107,7 @@ class SeasonLookup(Lookup):
             lookup_column=lookup_column,
             match_column=match_column,
             exact_match=exact_match,
+            require_match=require_match,
             update=update,
         )
         if not purpose_provided:

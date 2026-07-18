@@ -5,7 +5,7 @@ import pandas as pd
 from django.test import TestCase
 
 from common.models import UnitOfMeasure
-from common.tests.factories import CountryFactory
+from common.tests.factories import ClassifiedProductFactory, CountryFactory
 from metadata.models import ActivityLabel
 from metadata.tests.factories import SeasonFactory
 from pipelines.assets.livelihood_activity import (
@@ -162,6 +162,44 @@ class GetActivityLabelAttributesTestCase(TestCase):
             livelihood_zone_id=livelihood_zone_id,
         )
         self.assertEqual(attributes_df.loc[0, "season"], general_season.name_en)
+
+    def test_get_all_label_attributes_includes_lookup_product_debug_fields(self):
+        product = ClassifiedProductFactory(
+            cpc="S86119HC",
+            common_name_en="Land preparation labor",
+            description_en="Land preparation labor",
+            aliases=["land prep/ploughing"],
+        )
+
+        attributes_df = get_all_label_attributes(
+            labels=pd.Series([product.common_name_en]),
+            activity_type=LIVELIHOOD_ACTIVITY,
+            country_code=None,
+            livelihood_zone_id=None,
+        )
+
+        self.assertEqual(attributes_df.loc[0, "product_id"], product.pk)
+        self.assertEqual(attributes_df.loc[0, "product_common_name_en"], product.common_name_en)
+
+    def test_get_all_label_attributes_matches_product_prefix_and_keeps_full_label(self):
+        product = ClassifiedProductFactory(
+            cpc="R0132",
+            common_name_en="Citrus fruits",
+            description_en="Citrus fruits",
+        )
+
+        full_label = "Citrus fruits - orange/mandarine"
+        attributes_df = get_all_label_attributes(
+            labels=pd.Series([full_label]),
+            activity_type=LIVELIHOOD_ACTIVITY,
+            country_code=None,
+            livelihood_zone_id=None,
+        )
+
+        self.assertEqual(attributes_df.loc[0, "product_id"], product.pk)
+        self.assertEqual(attributes_df.loc[0, "activity_label"], full_label)
+        self.assertEqual(attributes_df.loc[0, "additional_identifier"], full_label)
+        self.assertEqual(attributes_df.loc[0, "product_common_name_en"], product.common_name_en)
 
     def test_get_completeness_dataframe_with_no_rows(self):
         column = "income"

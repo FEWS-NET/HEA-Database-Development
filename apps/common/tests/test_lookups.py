@@ -92,3 +92,52 @@ class ClassifiedProductLookupTestCase(TestCase):
         self.assertTrue("cpc" in result_df.columns)
         self.assertEqual(len(result_df), 1)
         self.assertEqual(result_df["cpc"][0], product.pk)
+
+    def test_get_prefix(self):
+        fruit = ClassifiedProductFactory(
+            cpc="R0132",
+            description_en="Citrus fruits",
+            common_name_en="Citrus fruits",
+        )
+        # Specify the aliases after creating the product, so that if the product
+        # already exists, they are still set correctly.
+        fruit.aliases = [
+            "citrus fruits",
+            "fruits - citrus",
+            "fruits: citrus",
+            "fruits /citrus",
+            "fruits (citrus)",
+        ]
+        fruit.save()
+
+        lookup = ClassifiedProductLookup()
+
+        for alias in fruit.aliases:
+            with self.subTest(alias=alias):
+                self.assertEqual(
+                    lookup.get(alias),
+                    fruit.pk,
+                )
+        for alias in fruit.aliases:
+            with self.subTest(alias=alias):
+                self.assertEqual(
+                    lookup.get_prefix(alias),
+                    (fruit.pk, None),
+                )
+        for alias in fruit.aliases:
+            for separator1 in ["-", ":", "/"]:
+                for separator2 in [separator1, ":" if separator1 == "-" else "-"]:
+                    value = f"{alias} {separator1} orange{separator2}mandarine"
+                    with self.subTest(alias=alias, separator1=separator1, separator2=separator2):
+                        self.assertEqual(
+                            lookup.get_prefix(value),
+                            (fruit.pk, f"orange{separator2}mandarine"),
+                        )
+        self.assertEqual(
+            lookup.get_prefix("Citrus Fruits (orange-mandarine)"),
+            (fruit.pk, "orange-mandarine"),
+        )
+        self.assertEqual(
+            lookup.get_prefix("Citrus Fruits - other (orange-mandarine)"),
+            (fruit.pk, "other (orange-mandarine)"),
+        )

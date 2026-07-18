@@ -512,12 +512,6 @@
         "quantity_sold"
     ],
     [
-        "{product_pattern}{separator_pattern} {additional_identifier_pattern}: {unit_of_measure_pattern} produced",
-        null,
-        true,
-        "quantity_produced"
-    ],
-    [
         "{product_pattern}{separator_pattern} {unit_of_measure_pattern} produced",
         null,
         true,
@@ -525,12 +519,6 @@
     ],
     [
         "{product_pattern} (?P<season>season [0-9]): no of months",
-        null,
-        true,
-        "months_per_year"
-    ],
-    [
-        "{product_pattern}{separator_pattern} {additional_identifier_pattern}{separator_pattern} no of months",
         null,
         true,
         "months_per_year"
@@ -759,12 +747,6 @@
     ],
     [
         "autre (?:culture de rente|culture|cereale|céréale/légumineuse|céréale? principal|légumineuse)?{separator_pattern} {unit_of_measure_pattern} produit(?:es?|s)?{separator_pattern} ?\\(?{product_pattern}\\)?",
-        null,
-        true,
-        "quantity_produced"
-    ],
-    [
-        "{product_pattern}{separator_pattern} {additional_identifier_pattern}{separator_pattern} {unit_of_measure_pattern} produit(?:es?|s)?",
         null,
         true,
         "quantity_produced"
