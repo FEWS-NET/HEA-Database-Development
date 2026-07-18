@@ -3193,7 +3193,7 @@ class SeasonalActivityOccurrence(common_models.Model):
     """
 
     seasonal_activity = models.ForeignKey(
-        SeasonalActivity, on_delete=models.RESTRICT, verbose_name=_("Seasonal Activity")
+        SeasonalActivity, on_delete=models.CASCADE, verbose_name=_("Seasonal Activity")
     )
     # Inherited from the Seasonal Activity, the denormalization is necessary to
     # ensure that the Seasonal Activity and the Community belong to the

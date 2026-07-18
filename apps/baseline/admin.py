@@ -131,7 +131,7 @@ class LivelihoodZoneAdmin(admin.ModelAdmin):
 
 class LivelihoodZoneBaselineCorrectionAdmin(admin.ModelAdmin):
     list_display = ("worksheet_name", "cell_range", "previous_value", "value", "correction_date", "author")
-    list_filter = ("livelihood_zone_baseline", "worksheet_name", "correction_date", "author")
+    list_filter = ("worksheet_name", "correction_date", "author")
     search_fields = (
         "livelihood_zone_baseline__livelihood_zone__code",
         "livelihood_zone_baseline__livelihood_zone__alternate_code",
@@ -369,7 +369,6 @@ class LivelihoodStrategyAdmin(admin.ModelAdmin):
 
     list_filter = (
         "strategy_type",
-        "livelihood_zone_baseline__livelihood_zone",
         ("livelihood_zone_baseline__livelihood_zone__country", admin.RelatedOnlyFieldListFilter),
     )
 
@@ -597,7 +596,6 @@ class LivelihoodActivityAdmin(admin.ModelAdmin):
         WealthGroupSummaryValueListFilter,
         "strategy_type",
         "scenario",
-        ("livelihood_zone_baseline", admin.RelatedOnlyFieldListFilter),
         ("wealth_group__wealth_group_category", admin.RelatedOnlyFieldListFilter),
         ("livelihood_strategy__product", admin.RelatedOnlyFieldListFilter),
         ("livelihood_strategy__season", admin.RelatedOnlyFieldListFilter),
@@ -1123,12 +1121,10 @@ class WealthGroupAdmin(admin.ModelAdmin):
         *translation_fields("wealth_group_category__name"),
     )
     list_filter = (
-        ("livelihood_zone_baseline", admin.RelatedOnlyFieldListFilter),
-        "livelihood_zone_baseline__source_organization",
-        ("livelihood_zone_baseline__livelihood_zone__country", admin.RelatedOnlyFieldListFilter),
-        *translation_fields("livelihood_zone_baseline__livelihood_zone__name"),
         "wealth_group_category",
         SummaryValueListFilter,
+        "livelihood_zone_baseline__source_organization",
+        ("livelihood_zone_baseline__livelihood_zone__country", admin.RelatedOnlyFieldListFilter),
     )
     inlines = [
         WealthGroupCharacteristicValueInlineAdmin,
@@ -1197,7 +1193,6 @@ class SeasonalActivityAdmin(admin.ModelAdmin):
         "additional_identifier__icontains",
     )
     list_filter = (
-        "livelihood_zone_baseline__livelihood_zone",
         "seasonal_activity_type",
         ("season", admin.RelatedOnlyFieldListFilter),
         ("product", admin.RelatedOnlyFieldListFilter),

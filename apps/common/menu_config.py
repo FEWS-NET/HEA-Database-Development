@@ -410,16 +410,10 @@ ADMIN_MENU_CONFIG = [
                 "label": _("Seasonal Calendars"),
                 "icon": "bi-calendar3",
                 "perms_any": [
-                    "metadata.view_seasonalactivitytype",
                     "baseline.view_seasonalactivity",
                     "baseline.view_seasonalactivityoccurrence",
                 ],
                 "items": [
-                    {
-                        "label": _("Seasonal Activity Type"),
-                        "url_name": "admin:metadata_seasonalactivitytype_changelist",
-                        "perm": "metadata.view_seasonalactivitytype",
-                    },
                     {
                         "label": _("Seasonal Activities"),
                         "url_name": "admin:baseline_seasonalactivity_changelist",
@@ -527,6 +521,7 @@ ADMIN_MENU_CONFIG = [
                     "metadata.view_hazardcategory",
                     "metadata.view_livelihoodsystem",
                     "metadata.view_season",
+                    "metadata.view_seasonalactivitytype",
                     "metadata.view_wealthgroupcategory",
                     "metadata.view_characteristicgroup",
                     "metadata.view_wealthcharacteristic",
@@ -546,6 +541,11 @@ ADMIN_MENU_CONFIG = [
                         "label": _("Seasons"),
                         "url_name": "admin:metadata_season_changelist",
                         "perm": "metadata.view_season",
+                    },
+                    {
+                        "label": _("Seasonal Activity Types"),
+                        "url_name": "admin:metadata_seasonalactivitytype_changelist",
+                        "perm": "metadata.view_seasonalactivitytype",
                     },
                     {
                         "label": _("Wealth Categories"),
