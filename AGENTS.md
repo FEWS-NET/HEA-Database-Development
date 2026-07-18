@@ -84,13 +84,13 @@ These commands are expected during normal development and usually do not require
 - Use imports from the `apps` PYTHONPATH root, for example `from baseline.models import ExampleModel`.
 - Keep changes inside the repository root.
 - Avoid touching fixtures, locale files, and other large assets unless the task requires it.
-- Use `import datetime`: For consistency the project will import the datetime library directly, rather then performing absolute imports of the underlying components. This avoids confusion when some developers use `from datetime import datetime` and some use `import datetime`.
+- Use `import datetime`: For consistency the project will import the datetime library directly, rather than performing absolute imports of the underlying components. This avoids confusion when some developers use `from datetime import datetime` and some use `import datetime`.
 - Use standard library functions or common libraries rather than writing your own:
     - F-Strings
     - defaultdict
     - functools (for partial , reduce , lru_cache etc.)
     - logging rather than print
-    - operator.and , operator.or
+    - operator.and, operator.or
     - pandas
     - requests
 - Prefer timezone-aware DateTime objects: `datetime.datetime.now(datetime.timezone.utc)`

@@ -23,15 +23,15 @@ Task:
 Standard execution sequence:
 1. Run from repository root.
 2. Activate environment:
-	- `source .venv/bin/activate`
+  - `source .venv/bin/activate`
 3. Run formatting/lint checks in this order:
-	- `black --check .`
-	- `ruff check .`
-	- `isort --check-only .`
+  - `black --check .`
+  - `ruff check .`
+  - `isort --check-only .`
 4. Run tests with CI settings:
-	- `./manage.py test --settings hea.settings.ci --keepdb --noinput`
+  - `./manage.py test --settings hea.settings.ci --keepdb --noinput`
 5. If tests fail specifically due to stale test DB/migration mismatch, rerun once with:
-	- `./manage.py test --settings hea.settings.ci --noinput`
+  - `./manage.py test --settings hea.settings.ci --noinput`
 
 Execution rules:
 - Do not silently skip any step.
