@@ -711,6 +711,7 @@ def get_all_label_attributes(
     # Classified Product, e.g. Skilled Labor, without losing the specific text that was provided in the BSS.
     product_labels = labels[all_label_attributes["activity_label"] == ""].to_frame(name="label")
     if not product_labels.empty:
+        product_labels["product_id"] = None
         for row, label in product_labels["label"].items():
             # Use get_prefix so that we match a leading product followed by additional text.
             product_id, additional_identifier = classifiedproductlookup.get_prefix(label)
@@ -1858,7 +1859,7 @@ def get_instances_from_dataframe(
                         # inconsistency for that attribute (or possibly a failure to recognize the start of the next
                         # Livelihood Strategy
                         elif (
-                            attribute != "product_id"
+                            attribute not in ["product_id", "product_common_name_en"]
                             and livelihood_strategy[attribute] != value
                             and not attribute.endswith("_original")
                         ) or (
