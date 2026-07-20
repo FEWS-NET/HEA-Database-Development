@@ -4,7 +4,8 @@ from pathlib import Path
 import pandas as pd
 from django.test import TestCase
 
-from common.tests.factories import CountryFactory
+from common.models import UnitOfMeasure
+from common.tests.factories import ClassifiedProductFactory, CountryFactory
 from metadata.models import ActivityLabel
 from metadata.tests.factories import SeasonFactory
 from pipelines.assets.livelihood_activity import (
@@ -12,6 +13,7 @@ from pipelines.assets.livelihood_activity import (
     get_all_label_attributes,
     get_label_attributes,
     get_livelihood_activity_label_map,
+    get_livelihood_activity_regexes,
 )
 
 LIVELIHOOD_ACTIVITY = ActivityLabel.LivelihoodActivityType.LIVELIHOOD_ACTIVITY
@@ -19,8 +21,27 @@ LIVELIHOOD_ACTIVITY = ActivityLabel.LivelihoodActivityType.LIVELIHOOD_ACTIVITY
 
 class GetActivityLabelAttributesTestCase(TestCase):
 
-    def test_livelihood_activity_regexes(self):
+    @classmethod
+    def setUpTestData(cls):
+        # Make sure that Litre has the necessary aliases for the regular expression tests.
+        UnitOfMeasure.objects.update_or_create(
+            abbreviation="L",
+            defaults={
+                "name": "litre",
+                "category": "Volume",
+                "aliases": ["l", "litre", "liter", "1 litre", "1 liter", "litres", "liters"],
+            },
+        )
 
+    def setUp(self):
+        """
+        Clear cached label and regex lookups so test order does not affect unit matching.
+        """
+        get_label_attributes.cache_clear()
+        get_livelihood_activity_label_map.cache_clear()
+        get_livelihood_activity_regexes.cache_clear()
+
+    def test_livelihood_activity_regexes(self):
         # Fetch the list of labels to test and the expected attributes
         with open(Path(__file__).parent / "test_livelihood_activity_regexes.json") as f:
             expected = json.load(f)
@@ -49,7 +70,7 @@ class GetActivityLabelAttributesTestCase(TestCase):
 
                 self.assertFalse(
                     any([bool(v) for k, v in unwanted_attributes.items()]),
-                    msg=f"Extra attributes {({k: v for k, v in unwanted_attributes.items() if v})} found for '{label}'",
+                    msg=f"Extra attributes {({k: v for k, v in unwanted_attributes.items() if v})} from {attributes['notes']} found for '{label}'",
                 )
 
     def test_activity_label_override(self):
@@ -104,7 +125,7 @@ class GetActivityLabelAttributesTestCase(TestCase):
             {k: v for k, v in regex_attributes.items() if k in expected_regex_attributes},
         )
         # Test that additional attributes set in the ActivityLabel instance are ignored when using the regex
-        self.assertEqual("", regex_attributes["season"])
+        self.assertEqual(None, regex_attributes["season"])
 
     def test_zone_specific_season_alias(self):
         country = CountryFactory()
@@ -141,6 +162,44 @@ class GetActivityLabelAttributesTestCase(TestCase):
             livelihood_zone_id=livelihood_zone_id,
         )
         self.assertEqual(attributes_df.loc[0, "season"], general_season.name_en)
+
+    def test_get_all_label_attributes_includes_lookup_product_debug_fields(self):
+        product = ClassifiedProductFactory(
+            cpc="S86119HC",
+            common_name_en="Land preparation labor",
+            description_en="Land preparation labor",
+            aliases=["land prep/ploughing"],
+        )
+
+        attributes_df = get_all_label_attributes(
+            labels=pd.Series([product.common_name_en]),
+            activity_type=LIVELIHOOD_ACTIVITY,
+            country_code=None,
+            livelihood_zone_id=None,
+        )
+
+        self.assertEqual(attributes_df.loc[0, "product_id"], product.pk)
+        self.assertEqual(attributes_df.loc[0, "product_common_name_en"], product.common_name_en)
+
+    def test_get_all_label_attributes_matches_product_prefix_and_keeps_full_label(self):
+        product = ClassifiedProductFactory(
+            cpc="R0132",
+            common_name_en="Citrus fruits",
+            description_en="Citrus fruits",
+        )
+
+        full_label = "Citrus fruits - orange/mandarine"
+        attributes_df = get_all_label_attributes(
+            labels=pd.Series([full_label]),
+            activity_type=LIVELIHOOD_ACTIVITY,
+            country_code=None,
+            livelihood_zone_id=None,
+        )
+
+        self.assertEqual(attributes_df.loc[0, "product_id"], product.pk)
+        self.assertEqual(attributes_df.loc[0, "activity_label"], full_label)
+        self.assertEqual(attributes_df.loc[0, "additional_identifier"], full_label)
+        self.assertEqual(attributes_df.loc[0, "product_common_name_en"], product.common_name_en)
 
     def test_get_completeness_dataframe_with_no_rows(self):
         column = "income"

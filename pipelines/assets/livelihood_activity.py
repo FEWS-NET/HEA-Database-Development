@@ -448,17 +448,20 @@ def get_livelihood_activity_regexes() -> list:
     age_gender_labels_escaped = [re.escape(label) for label in age_gender_labels]
     age_gender_pattern = r"(?P<household_labor_provider>" + "|".join(age_gender_labels_escaped) + ")"
 
+    # Dynamically build unit_of_measure_pattern from UnitOfMeasure
+    unit_of_measure_labels = UnitOfMeasureLookup().prepare_lookup_df()["lookup_key"]
+    unit_of_measure_pattern = r"(?P<unit_of_measure_id>" + "|".join(unit_of_measure_labels.map(re.escape)) + ")"
+
     placeholder_patterns = {
         "label_pattern": r"[a-zà-ÿ][a-zà-ÿ1-9',/ \.\>\-\(\)]+?",
         "product_pattern": r"(?P<product_id>[a-zà-ÿ][a-zà-ÿ1-9',/ \.\>\-\(\)]+?)",
         "payment_product_pattern": r"(?P<payment_product_id>[a-zà-ÿ][a-zà-ÿ1-9',/ \.\>\-\(\)]+?)",
         "labor_pattern": r"(?P<product_id>(?:labou?r|travail|main-d'œuvre|pre-harvest labou?r|labour:? pre-harvest|harvest labou?r|labour:? harvest|post-harvest labou?r|labour:? post-harvest|travail:? pre-r[eéè]colte) *[:-]? *[a-zà-ÿ][a-zà-ÿ1-9',/ \.\>\-\(\)]+?)",
-        "season_pattern": r"(?P<season>season [12]|saison [12]|[12][a-z] season||[12][a-zà-ÿ] saison|r[eé]colte principale|principale r[eé]colte|gu|deyr+?)",
-        "additional_identifier_pattern": r"\(?(?P<additional_identifier>rainfed|irrigated|pluviale?|irriguée|submersion libre|submersion contrôlée|flottant)\)?",
+        "season_pattern": r"(?P<season>season [123abc]|saison [123abc]|[123][a-z] season|[123][a-zà-ÿ] saison|r[eé]colte principale|principale r[eé]colte|gu|deyr+?)",
         "age_gender_pattern": age_gender_pattern,
-        "unit_of_measure_pattern": r"(?P<unit_of_measure_id>[a-z]+)",
+        "unit_of_measure_pattern": unit_of_measure_pattern,
         "nbr_pattern": r"(?:n[bo]?r?e?|no)\.?",
-        "vendu_pattern": r"(?:(?:quantité )?vendu(?:e|s|ss|es|ses)?|sold)",
+        "quantity_sold_pattern": r"(?:(?:quantité )?vendu(?:e|s|ss|es|ses)?|sold)",
         "separator_pattern": r" *[:-]? *",
         "name_of_local_measure_pattern": r"(?:name of (?:local )?(?:meas(?:ure)?\.?)|nom(?: (?:de la mesure(?: locale?)?|de mesure locale?|du mesure|d'unité|mesure(?: locale?)?|unité de mesure))?)",
     }
@@ -627,6 +630,23 @@ def get_all_label_attributes(
     all_label_attributes = labels.apply(lambda x: get_label_attributes(x, activity_type)).fillna("")
     all_label_attributes = classifiedproductlookup.do_lookup(all_label_attributes, "product_id", "product_id")
     all_label_attributes["product_id"] = all_label_attributes["product_id"].replace(pd.NA, None)
+
+    # If the product_id wasn't recognized, then it may be a product followed by an additional identifier,
+    # e.g. "fruits - orange/mandarine".  For any failing product_id lookups, attempt to split the label into a product
+    # and an additional identifier and if we get a matching product and a non-null additional identifier, then accept
+    # the match and update the additional_identifier attribute.
+    unrecognized_product_mask = (
+        all_label_attributes["product_id"].isna()
+        & all_label_attributes["product_id_original"].fillna("").astype(str).str.strip().ne("")
+        & all_label_attributes["additional_identifier"].fillna("").astype(str).str.strip().eq("")
+    )
+    for row, product_label in all_label_attributes.loc[unrecognized_product_mask, "product_id_original"].items():
+        product_id, additional_identifier = classifiedproductlookup.get_prefix(product_label)
+        if product_id and additional_identifier:
+            all_label_attributes.at[row, "product_id"] = product_id
+            all_label_attributes.at[row, "additional_identifier"] = additional_identifier
+
+    # Note that we don't support additional identifiers in the payment_product_id.
     all_label_attributes = classifiedproductlookup.do_lookup(
         all_label_attributes, "payment_product_id", "payment_product_id"
     )
@@ -691,7 +711,11 @@ def get_all_label_attributes(
     # Classified Product, e.g. Skilled Labor, without losing the specific text that was provided in the BSS.
     product_labels = labels[all_label_attributes["activity_label"] == ""].to_frame(name="label")
     if not product_labels.empty:
-        product_labels = classifiedproductlookup.do_lookup(product_labels, "label", "product_id")
+        for row, label in product_labels["label"].items():
+            # Use get_prefix so that we match a leading product followed by additional text.
+            product_id, additional_identifier = classifiedproductlookup.get_prefix(label)
+            if product_id:
+                product_labels.at[row, "product_id"] = product_id
         # Set the activity_label so that get_instances_from_dataframe() doesn't treat these as unrecognized labels
         product_labels.loc[product_labels["product_id"].notna(), "activity_label"] = product_labels.loc[
             product_labels["product_id"].notna(), "label"
@@ -707,6 +731,14 @@ def get_all_label_attributes(
         product_labels.loc[product_labels["product_id"].notna(), "attribute"] = "income_or_expenditure"
         # Copy the product labels back into the main dataframe
         all_label_attributes.update(product_labels.drop(columns=["label"]))
+
+    # Store the common name to aid trouble-shooting.
+    all_label_attributes = classifiedproductlookup.get_attribute(
+        all_label_attributes,
+        "product_id",
+        "common_name_en",
+        "product_common_name_en",
+    ).replace(pd.NA, None)
 
     return all_label_attributes
 
@@ -1699,6 +1731,7 @@ def get_instances_from_dataframe(
             "strategy_type": strategy_type,
             "season": label_attributes.get("season", None),
             "product_id": label_attributes.get("product_id", None),
+            "product_common_name_en": label_attributes.get("product_common_name_en", None),
             "unit_of_measure_id": label_attributes.get("unit_of_measure_id", None),
             "currency_id": livelihood_zone_baseline.currency_id,
             "additional_identifier": label_attributes.get("additional_identifier", None),
@@ -1952,6 +1985,13 @@ def get_instances_from_dataframe(
                             elif product_name_df["product_id"].nunique() == 1:
                                 if not livelihood_strategy["product_id"]:
                                     livelihood_strategy["product_id"] = product_name_df["product_id"].dropna().iloc[0]
+                                    livelihood_strategy["product_common_name_en"] = (
+                                        classifiedproductlookup.get_attribute(
+                                            product_name_df, "product_id", "common_name_en", "product_common_name_en"
+                                        )["product_common_name_en"]
+                                        .dropna()
+                                        .iloc[0]
+                                    )
                                 elif (
                                     livelihood_strategy["product_id"]
                                     and livelihood_strategy["product_id"]

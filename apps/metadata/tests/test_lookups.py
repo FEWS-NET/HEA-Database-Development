@@ -125,6 +125,61 @@ class SeasonLookupTestCase(TestCase):
 
         self.assertIn("found multiple Season matches", str(context.exception))
 
+    def test_get_suppresses_duplicate_errors_by_default(self):
+        """Single-value lookups keep returning None for duplicate matches unless opted in to errors."""
+        SeasonFactory(
+            country=self.country,
+            name_en="Another Generic First Season",
+            aliases=["Season 1"],
+            purpose=None,
+        )
+
+        result = SeasonLookup().get("Season 1", country_id=self.country.iso3166a2)
+
+        self.assertIsNone(result)
+
+    def test_get_raises_duplicate_errors_when_requested(self):
+        """Single-value lookups can surface duplicate matches when requested."""
+        SeasonFactory(
+            country=self.country,
+            name_en="Another Generic First Season",
+            aliases=["Season 1"],
+            purpose=None,
+        )
+
+        with self.assertRaises(ValueError) as context:
+            SeasonLookup().get("Season 1", country_id=self.country.iso3166a2, raise_errors=True)
+
+        self.assertIn("found multiple Season matches", str(context.exception))
+
+    def test_get_prefix_raises_duplicate_errors_when_requested(self):
+        """Prefix lookups should not hide duplicate prefix matches when errors are enabled."""
+        SeasonFactory(
+            country=self.country,
+            name_en="Another Generic First Season",
+            aliases=["Season 1"],
+            purpose=None,
+        )
+
+        with self.assertRaises(ValueError) as context:
+            SeasonLookup().get_prefix("Season 1 - irrigated", country_id=self.country.iso3166a2, raise_errors=True)
+
+        self.assertIn("found multiple Season matches", str(context.exception))
+
+    def test_get_instance_raises_duplicate_errors_when_requested(self):
+        """Instance lookups should not hide duplicate matches when errors are enabled."""
+        SeasonFactory(
+            country=self.country,
+            name_en="Another Generic First Season",
+            aliases=["Season 1"],
+            purpose=None,
+        )
+
+        with self.assertRaises(ValueError) as context:
+            SeasonLookup().get_instance("Season 1", country_id=self.country.iso3166a2, raise_errors=True)
+
+        self.assertIn("found multiple Season matches", str(context.exception))
+
     def test_lookup_raises_error_with_duplicate_same_purpose(self):
         # test when multiple seasons have same purpose and same alias, should raise error
         SeasonFactory(

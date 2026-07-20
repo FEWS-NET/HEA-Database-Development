@@ -100,6 +100,7 @@ class Lookup(ABC):
         # Create instance level caches for key methods
         self.get_lookup_df = functools.cache(self.get_lookup_df)
         self.get = functools.cache(self.get)
+        self.get_prefix = functools.cache(self.get_prefix)
         self.get_instance = functools.cache(self.get_instance)
 
     def get_queryset_columns(self):
@@ -203,6 +204,7 @@ class Lookup(ABC):
         lookup_column: str = None,
         match_column: str = None,
         exact_match: bool = True,
+        require_match: bool | None = None,
         update: bool = False,
     ):
         """
@@ -216,9 +218,13 @@ class Lookup(ABC):
         lookup_column: the column in the dataframe that will be compared to the lookup columns to find a match
         match_column: the column in the dataframe that will contain the id of the matched object
         exact_match: the lookup value must match a single instance of the lookup model
+        require_match: raise an error if the lookup fails to match any rows, overriding the class-level require_match setting
         update: update the match column in the dataframe from the lookup matches, but leave existing rows unchanged
             if there isn't a match
         """
+
+        require_match = self.require_match if require_match is None else require_match
+
         # If the dataframe to match against is empty, then there is no point doing the lookup
         if df.empty:
             raise ValueError(f"{self.__class__.__qualname__} received empty source dataframe")
@@ -251,9 +257,7 @@ class Lookup(ABC):
 
         try:
             if lookup_column:
-                df["lookup_candidate"] = df[lookup_column]
-                df["lookup_candidate"] = self.prepare_column_for_lookup(df["lookup_candidate"])
-
+                df["lookup_candidate"] = self.prepare_column_for_lookup(df[lookup_column])
                 left_fields.append("lookup_candidate")
                 right_fields.append("lookup_key")
 
@@ -277,7 +281,7 @@ class Lookup(ABC):
                 raise ValueError("\n".join(errors)) from e
 
             # If we didn't match anything, then the set up is probably wrong
-            if self.require_match and merge_df["lookup_value"].isnull().values.all():
+            if require_match and merge_df["lookup_value"].isnull().values.all():
                 errors = []
                 errors.append(f"{self.__class__.__qualname__} didn't find any matches:")
                 errors.append("Source" if len(df) <= 10 else "Source (first 10 rows only)")
@@ -326,7 +330,7 @@ class Lookup(ABC):
             if lookup_column:
                 df.drop(["lookup_candidate"], axis="columns", inplace=True)
 
-    def get_instances(self, df, column, related_models=None):
+    def get_instances(self, df, column, related_models=None, output_column=None):
         """
         Replace the primary key value in a DataFrame column with a model instance
         """
@@ -335,23 +339,32 @@ class Lookup(ABC):
         if related_models:
             queryset = queryset.select_related(*related_models)
         model_map = {instance.pk: instance for instance in queryset.iterator()}
-        df[column] = df[column].map(model_map)
+        df[output_column or column] = df[column].map(model_map)
         return df
 
-    def get_attribute(self, df, column, attribute):
+    def get_attribute(self, df, column, attribute, output_column=None):
         """
         Replace the primary key value in a DataFrame column with a model attribute
         """
         queryset = self.model.objects.filter(pk__in=df[column].dropna().unique()).values("pk", attribute)
         model_map = {instance["pk"]: instance[attribute] for instance in queryset.iterator()}
-        df[column] = df[column].map(model_map)
+        df[output_column or column] = df[column].map(model_map)
         return df
 
-    def get(self, value: str, **parent_values) -> str | None:
+    def get(
+        self,
+        value: str,
+        require_match: bool | None = None,
+        raise_errors: bool = False,
+        **parent_values,
+    ) -> str | None:
         """
-        Return the lookup value for a single string, or None if there is no match.
+        Return the lookup value for a single string.
 
         Used to do a lookup for a single value instead of a dataframe.
+
+        require_match: raise an error if the lookup fails to match any rows, overriding the class-level require_match setting
+        raise_errors: propagate ValueErrors instead of returning None
 
         Unlike `do_lookup()` this is a cached method to avoid repeated database queries.
         Note that this cache is per-instance of the Lookup class, so the class should be instantiated outside a loop
@@ -366,17 +379,29 @@ class Lookup(ABC):
             if parent_field in parent_values:
                 df[parent_field] = [parent_values[parent_field]]
         try:
-            df = self.do_lookup(df, "value", "result")
+            require_match = raise_errors if require_match is None else require_match
+            df = self.do_lookup(df, "value", "result", require_match=require_match)
             result = df.iloc[0, -1]
             return result if pd.notna(result) else None
         except ValueError:
+            if raise_errors:
+                raise
             return None
 
-    def get_instance(self, value: str, **parent_values) -> Model | None:
+    def get_instance(
+        self,
+        value: str,
+        require_match: bool | None = None,
+        raise_errors: bool = False,
+        **parent_values,
+    ) -> Model | None:
         """
-        Return the Django model instance for a single string, or None if there is no match.
+        Return the Django model instance for a single string.
 
         Used to do a lookup for a single value instead of a dataframe.
+
+        require_match: raise an error if the lookup fails to match any rows, overriding the class-level require_match setting
+        raise_errors: propagate ValueErrors instead of returning None
 
         Unlike `do_lookup()` this is a cached method to avoid repeated database queries.
         Note that this cache is per-instance of the Lookup class, so the class should be instantiated outside a loop
@@ -391,12 +416,66 @@ class Lookup(ABC):
             if parent_field in parent_values:
                 df[parent_field] = [parent_values[parent_field]]
         try:
-            df = self.do_lookup(df, "value", "result")
+            require_match = raise_errors if require_match is None else require_match
+            df = self.do_lookup(df, "value", "result", require_match=require_match)
             df = self.get_instances(df, "result")
             result = df.iloc[0, -1]
             return result if isinstance(result, self.model) else None
         except ValueError:
+            if raise_errors:
+                raise
             return None
+
+    def get_prefix(
+        self,
+        value: str,
+        require_match: bool | None = None,
+        raise_errors: bool = False,
+        **parent_values,
+    ) -> tuple[str | None, str | None]:
+        """
+        Return the lookup value for the longest matching prefix of a string and the remaining suffix.
+
+        This is useful when the input contains a known lookup value followed by free text separated
+        by `-`, `:` or `/`, or with the suffix in parentheses.
+
+
+        require_match: when used with raise_errors=True, raise an error if the lookup fails to match any rows, overriding the class-level require_match setting
+        raise_errors: propagate ValueErrors instead of returning None
+        """
+
+        # Check the full value first
+        result = self.get(value, require_match=False, raise_errors=raise_errors, **parent_values)
+        if result:
+            return result, None
+
+        # Check for a parenthesized suffix, e.g. "Rice (irrigated)"
+        parenthesized_suffix_match = re.fullmatch(
+            r"(?P<prefix>.+?)\s*\(\s*(?P<suffix>[^()]*?[^()\s])\s*\)",
+            value,
+        )
+        if parenthesized_suffix_match:
+            prefix = parenthesized_suffix_match.group("prefix")
+            suffix = parenthesized_suffix_match.group("suffix")
+            result = self.get(prefix, require_match=False, raise_errors=raise_errors, **parent_values)
+            if result and suffix:
+                return result, suffix
+
+        # Check for a separator followed by a suffix, e.g. "Rice - irrigated"
+        for separator_match in reversed(list(re.finditer(r"\s*[-:/]\s*", value))):
+            prefix = value[: separator_match.start()].strip()
+            suffix = value[separator_match.end() :].strip()
+            if not prefix or not suffix:
+                continue
+
+            result = self.get(prefix, require_match=False, raise_errors=raise_errors, **parent_values)
+            if result:
+                return result, suffix
+
+        if require_match and raise_errors:
+            raise ValueError(f"{self.__class__.__qualname__} didn't find a matching prefix for '{value}'")
+
+        return None, None
 
 
 class CountryClassifiedProductAliasesLookup(Lookup):

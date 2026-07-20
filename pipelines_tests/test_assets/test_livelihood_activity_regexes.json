@@ -257,8 +257,7 @@
     },
     "Green cons - rainfed: no of months": {
         "is_start": true,
-        "product_id": "green cons",
-        "additional_identifier": "rainfed",
+        "product_id": "green cons - rainfed",
         "attribute": "months_per_year"
     },
     "Proportion of months green consumption": {
@@ -289,16 +288,14 @@
     },
     "Rice - rainfed: kg produced": {
         "is_start": true,
-        "product_id": "rice",
+        "product_id": "rice - rainfed",
         "unit_of_measure_id": "kg",
-        "additional_identifier": "rainfed",
         "attribute": "quantity_produced"
     },
     "Wheat - irrigated: kg produced": {
         "is_start": true,
-        "product_id": "wheat",
+        "product_id": "wheat - irrigated",
         "unit_of_measure_id": "kg",
-        "additional_identifier": "irrigated",
         "attribute": "quantity_produced"
     },
     "Sorghum: kg produced": {
@@ -754,10 +751,9 @@
     },
     "Riz (submersion libre) - kg produits": {
         "is_start": true,
-        "product_id": "riz",
+        "product_id": "riz (submersion libre)",
         "unit_of_measure_id": "kg",
-        "attribute": "quantity_produced",
-        "additional_identifier": "submersion libre"
+        "attribute": "quantity_produced"
     },
     "autre cereale (Sésame) - kg produit": {
         "is_start": true,
@@ -832,6 +828,27 @@
     "Autre culture de rente: kg Tomate": {
         "is_start": true,
         "product_id": "tomate",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_sold"
+    },
+    "fruits - saison a: kg vendus": {
+        "is_start": true,
+        "product_id": "fruits",
+        "season": "saison a",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_sold"
+    },
+    "fruits saison a: kg vendus": {
+        "is_start": true,
+        "product_id": "fruits",
+        "season": "saison a",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_sold"
+    },
+    "fruits - orange/mandarine saison a: kg vendus": {
+        "is_start": true,
+        "product_id": "fruits - orange/mandarine",
+        "season": "saison a",
         "unit_of_measure_id": "kg",
         "attribute": "quantity_sold"
     },
