@@ -220,6 +220,24 @@ def load_metadata_for_model(context: OpExecutionContext, sheet_name: str, model:
                     raise RuntimeError(
                         f"Failed to create/update {model_name} instance {i} {key} from:\n{json.dumps(instance, indent=4, ensure_ascii=False)}"
                     ) from e
+
+        # Report on redundant instances that are in the database but not in the worksheet
+        if model_name == "ActivityLabel":
+            activity_types = set(instance.activity_type for instance in instances if instance.activity_type)
+            if len(activity_types) > 1:
+                raise ValueError(
+                    f"Found multiple activity types in ActivityLabel instances: {activity_types} in worksheet '{sheet_name}'"
+                )
+            elif len(activity_types) == 0:
+                raise ValueError(f"Found no activity types in ActivityLabel instances in worksheet '{sheet_name}'")
+            queryset = model.objects.filter(activity_type=activity_types.pop())
+        else:
+            queryset = model.objects.all()
+        for instance in queryset.exclude(pk__in=[instance.pk for instance in instances if instance.pk]):
+            context.log.warning(
+                f"Redundant {model_name} instance {str(instance)} in database but not in worksheet '{sheet_name}'"
+            )
+
         context.log.info(f"Created or updated {len(instances)} {sheet_name} instances")
 
 
