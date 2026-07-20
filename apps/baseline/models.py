@@ -41,6 +41,9 @@ from metadata.models import (
     WealthGroupCategory,
 )
 
+# Sentinel for `cache.get(key, default)` so that a cached `None`/`0` result can be told apart from a cache miss.
+_CACHE_MISS = object()
+
 
 class AnnualKcalsCost(Func):
     """
@@ -826,8 +829,10 @@ class WealthGroup(common_models.Model):
     @cached_property
     def survival_threshold_as_percentage_kcals(self):
         key = f"wealth_group~{self.pk}~survival_kcals"
-        survival_threshold_as_percentage_kcals = cache.get(key)
-        if not survival_threshold_as_percentage_kcals:
+        # `None` is a valid result, so use a sentinel to distinguish "not cached" from "cached as None/0",
+        # otherwise those results are never actually cached and get recalculated on every access.
+        survival_threshold_as_percentage_kcals = cache.get(key, _CACHE_MISS)
+        if survival_threshold_as_percentage_kcals is _CACHE_MISS:
             survival_threshold_as_percentage_kcals = self._get_survival_threshold_as_percentage_kcals()
             cache.set(key, survival_threshold_as_percentage_kcals, 60 * 60 * 24)
         return survival_threshold_as_percentage_kcals
@@ -1001,8 +1006,10 @@ class WealthGroup(common_models.Model):
     @cached_property
     def livelihoods_protection_threshold_as_percentage_kcals(self):
         key = f"wealth_group~{self.pk}~livelihoods_protection_kcals"
-        livelihoods_protection_threshold_as_percentage_kcals = cache.get(key)
-        if not livelihoods_protection_threshold_as_percentage_kcals:
+        # `None` is a valid result, so use a sentinel to distinguish "not cached" from "cached as None/0",
+        # otherwise those results are never actually cached and get recalculated on every access.
+        livelihoods_protection_threshold_as_percentage_kcals = cache.get(key, _CACHE_MISS)
+        if livelihoods_protection_threshold_as_percentage_kcals is _CACHE_MISS:
             livelihoods_protection_threshold_as_percentage_kcals = (
                 self._get_livelihoods_protection_threshold_as_percentage_kcals()
             )

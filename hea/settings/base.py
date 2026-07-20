@@ -87,7 +87,8 @@ CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
         "OPTIONS": {
-            "MAX_ENTRIES": 1000,
+            # 1000 is small for thousands of Wealth Group threshold calculations cache one entry per Wealth Group per metric.
+            "MAX_ENTRIES": 100000,
         },
     },
 }

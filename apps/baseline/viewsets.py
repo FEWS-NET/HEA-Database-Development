@@ -561,6 +561,8 @@ class BaselineWealthGroupViewSet(BaseModelViewSet):
         "livelihood_zone_baseline__livelihood_zone__country",
         "livelihood_zone_baseline__source_organization",
         "wealth_group_category",
+    ).defer(
+        "livelihood_zone_baseline__geography",
     )
     serializer_class = BaselineWealthGroupSerializer
     filterset_class = BaselineWealthGroupFilterSet
