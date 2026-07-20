@@ -222,8 +222,10 @@ def baseline_instances(
     ]:
         metadata[column] = metadata[column] if pd.notna(metadata[column]) else ""
 
-    # Make sure the primary_livelihood_system_id is lowercase
-    metadata["primary_livelihood_system_id"] = metadata["primary_livelihood_system_id"].lower().strip()
+    # Make sure the primary_livelihood_system_id is lowercase to match the code
+    metadata["primary_livelihood_system_id"] = (
+        metadata["primary_livelihood_system_id"].lower().strip().replace(" ", "_")
+    )
 
     # Key in the result dict must match the name of the model class they will be imported to.
     # The value must be a list of instances to import into that model, where each instance
