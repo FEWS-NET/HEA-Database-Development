@@ -64,6 +64,12 @@ APP_INDEX_CONFIG = {
                 "perm": "baseline.view_livelihoodstrategy",
                 "icon": "bi-lightbulb",
             },
+            {
+                "label": _("Livelihood Product Categories"),
+                "url_name": "admin:baseline_livelihoodproductcategory_changelist",
+                "perm": "baseline.view_livelihoodproductcategory",
+                "icon": "bi-basket",
+            },
         ],
         # Group 2 – Baseline Correction
         [
@@ -318,6 +324,7 @@ ADMIN_MENU_CONFIG = [
                     "baseline.view_wealthgroupcharacteristicvalue",
                     "baseline.view_livelihoodstrategy",
                     "baseline.view_keyparameter",
+                    "baseline.view_livelihoodproductcategory",
                 ],
                 "items": [
                     {
@@ -334,6 +341,11 @@ ADMIN_MENU_CONFIG = [
                         "label": _("Livelihood Activity"),
                         "url_name": "admin:baseline_livelihoodactivity_changelist",
                         "perm": "baseline.view_livelihoodactivity",
+                    },
+                    {
+                        "label": _("Livelihood Product Category"),
+                        "url_name": "admin:baseline_livelihoodproductcategory_changelist",
+                        "perm": "baseline.view_livelihoodproductcategory",
                     },
                     {
                         "label": _("Key Parameter"),

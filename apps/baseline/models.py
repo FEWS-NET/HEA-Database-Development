@@ -2305,7 +2305,7 @@ class LivelihoodProductCategory(common_models.Model):
     # definition and so `basket` is still part of the natural key.
     baseline_livelihood_activity = models.OneToOneField(
         BaselineLivelihoodActivity,
-        on_delete=models.RESTRICT,
+        on_delete=models.CASCADE,
         verbose_name=_("Baseline Livelihood Activity"),
     )
     basket = models.PositiveSmallIntegerField(choices=ProductBasket.choices, verbose_name=_("Product Basket"))

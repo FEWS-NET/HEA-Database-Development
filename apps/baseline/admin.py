@@ -1161,9 +1161,17 @@ class LivelihoodProductCategoryAdmin(admin.ModelAdmin):
         "baseline_livelihood_activity__livelihood_strategy__product__cpc",
     )
     list_filter = (
+        ("baseline_livelihood_activity__livelihood_zone_baseline", admin.RelatedOnlyFieldListFilter),
         "baseline_livelihood_activity__wealth_group__wealth_group_category__code",
         "basket",
     )
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.select_related(
+            "baseline_livelihood_activity__livelihood_zone_baseline__livelihood_zone",
+            "baseline_livelihood_activity__wealth_group__wealth_group_category",
+        )
 
 
 class SeasonalActivityAdmin(admin.ModelAdmin):
