@@ -176,6 +176,7 @@ urlpatterns = [
     # Provides il8n/set_language to change Django language:
     path("i18n/", include("django.conf.urls.i18n")),
 ]
+
 urlpatterns += [
     path(
         "api/livelihoodzonebaselinefacetedsearch/",
@@ -219,3 +220,6 @@ urlpatterns += i18n_patterns(
     path("admin/doc/", include("django.contrib.admindocs.urls")),
     path("admin/", admin.site.urls),
 )
+
+if settings.DEBUG and "debug_toolbar" in settings.INSTALLED_APPS:
+    urlpatterns += [path("__debug__/", include("debug_toolbar.urls"))]

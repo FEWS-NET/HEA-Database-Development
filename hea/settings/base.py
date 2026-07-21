@@ -93,7 +93,7 @@ CACHES = {
     },
 }
 
-EXTERNAL_APPS = [
+EXTERNAL_APPS = (
     "dal",
     "dal_select2",
     "treebeard",
@@ -113,11 +113,15 @@ EXTERNAL_APPS = [
     "revproxy",
     "corsheaders",
     "channels",
-]
-PROJECT_APPS = ["common", "metadata", "baseline"]
+)
+PROJECT_APPS = (
+    "common",
+    "metadata",
+    "baseline",
+)
 INSTALLED_APPS = EXTERNAL_APPS + PROJECT_APPS
 
-MIDDLEWARE = [
+MIDDLEWARE = (
     "django.middleware.gzip.GZipMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
@@ -131,7 +135,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-]
+)
 
 REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly",),
