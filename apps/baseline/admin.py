@@ -1165,6 +1165,15 @@ class LivelihoodProductCategoryAdmin(admin.ModelAdmin):
         "basket",
     )
 
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.select_related(
+            "baseline_livelihood_activity__livelihood_zone_baseline__livelihood_zone",
+            "baseline_livelihood_activity__wealth_group__wealth_group_category",
+            "baseline_livelihood_activity__livelihood_strategy__season",
+            "baseline_livelihood_activity__livelihood_strategy__livelihood_zone_baseline",
+        )
+
 
 class SeasonalActivityAdmin(admin.ModelAdmin):
     fields = (
