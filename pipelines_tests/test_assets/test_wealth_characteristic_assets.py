@@ -34,7 +34,7 @@ class WealthCharacteristicInstancesTestCase(TestCase):
     def test_wealth_characteristic_instances_skips_ignored_rows_with_data(self, mock_get_wealth_group_dataframe):
         livelihood_zone_baseline = LivelihoodZoneBaselineFactory()
         WealthGroupCategoryFactory(code="VP", name_en="Very Poor", aliases=["vp"])
-        characteristic = WealthCharacteristicFactory(code="household size")
+        characteristic = WealthCharacteristicFactory(code="household size", has_product=False)
 
         WealthCharacteristicLabel.objects.create(
             wealth_characteristic_label="Ignore me",

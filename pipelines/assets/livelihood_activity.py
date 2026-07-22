@@ -95,6 +95,8 @@ from metadata.models import (  # NOQA: E402
     WealthGroupCategory,
 )
 
+pd.set_option("future.no_silent_downcasting", True)  # Avoid future warning about downcasting in pandas 3.0
+
 # Indexes of header rows in the Data3 dataframe (wealth_group_category, district, village, household size)
 # The household size is included in the header rows because it is used to calculate the kcals_consumed
 HEADER_ROWS = [3, 4, 5, 40]

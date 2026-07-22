@@ -287,7 +287,7 @@ def wealth_characteristic_instances(
             ~prepared_labels.iloc[num_header_rows:].isin(label_map) & (prepared_labels.iloc[num_header_rows:] != "")
         ]
         .groupby("A")
-        .apply(lambda x: ", ".join(x.index.astype(str)))
+        .apply(lambda x: ", ".join(x.index.astype(str)), include_groups=False)
     )
     if unrecognized_labels.empty:
         unrecognized_labels = pd.DataFrame(columns=["label", "rows"])
