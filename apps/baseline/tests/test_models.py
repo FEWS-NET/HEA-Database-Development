@@ -57,6 +57,15 @@ class LivelihoodZoneBaselineTestCase(TestCase):
             basket=LivelihoodProductCategory.ProductBasket.SURVIVAL_OTHER_FOOD,
             percentage_allocation_to_basket=0.25,
         )
+        cls.non_food_activity = FoodPurchaseFactory(
+            livelihood_zone_baseline=cls.baseline,
+            wealth_group=cls.poor_wealth_group,
+        )
+        cls.non_food_category = LivelihoodProductCategoryFactory(
+            baseline_livelihood_activity=cls.non_food_activity,
+            basket=LivelihoodProductCategory.ProductBasket.SURVIVAL_NON_FOOD,
+            percentage_allocation_to_basket=0.2,
+        )
         # Save the Baseline to force the calculation of annual_kcals_cost.
         cls.baseline.save()
 
@@ -91,6 +100,12 @@ class LivelihoodZoneBaselineTestCase(TestCase):
         self.assertAlmostEqual(self.baseline._annual_kcals_cost, expected_annual_kcals_cost)
         self.assertAlmostEqual(self.baseline._get_annual_kcals_cost(), expected_annual_kcals_cost)
         self.assertAlmostEqual(self.baseline._get_annual_kcals_cost_sql(), expected_annual_kcals_cost)
+
+    def test_poor_survival_non_food_expenditure(self):
+        expected_expenditure = (
+            self.non_food_activity.expenditure * self.non_food_category.percentage_allocation_to_basket
+        )
+        self.assertAlmostEqual(self.baseline.poor_survival_non_food_expenditure, expected_expenditure)
 
     def test_product_category_change_resaves_baseline_on_commit(self):
         with self.captureOnCommitCallbacks(execute=True):
