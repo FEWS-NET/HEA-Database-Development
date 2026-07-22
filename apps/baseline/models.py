@@ -473,7 +473,9 @@ class LivelihoodZoneBaseline(common_models.Model):
         if poor_main_staple_category is None:
             return None
 
-        poor_household_size = self.poor_household_size
+        poor_household_size = (
+            poor_main_staple_category.baseline_livelihood_activity.wealth_group.average_household_size
+        )
         if not poor_household_size:
             # Cannot calculate without household size
             return None
