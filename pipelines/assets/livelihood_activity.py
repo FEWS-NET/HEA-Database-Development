@@ -58,6 +58,7 @@ from pathlib import Path
 import django
 import pandas as pd
 from dagster import AssetExecutionContext, MetadataValue, Output, asset
+from django.db.models import Q
 from django.db.models.functions import Lower
 
 from ..configs import BSSMetadataConfig
@@ -547,7 +548,8 @@ def get_livelihood_activity_label_map(activity_type: str) -> dict[str, dict]:
     label_map = {
         re.sub(r"\s+", " ", instance["activity_label"].strip().lower()): instance
         for instance in ActivityLabel.objects.filter(
-            status=ActivityLabel.LabelStatus.OVERRIDE, activity_type=activity_type
+            Q(status=ActivityLabel.LabelStatus.OVERRIDE) | Q(status=ActivityLabel.LabelStatus.IGNORE),
+            activity_type=activity_type,
         ).values(
             "activity_label",
             "status",
@@ -577,7 +579,7 @@ def get_label_attributes(label: str, activity_type: str) -> pd.Series:
     individually in the ActivityLabel model.
 
     Before looking for a regex match, if the label has a corresponding instance in the ActivityLabel
-    model with status=OVERRIDE, then it returns the attributes from that instance. This allows us to
+    model with status=OVERRIDE or status=IGNORE, then it returns the attributes from that instance. This allows us to
     support labels that are too complex to match with a regex. For example, the ButterProduction
     labels often contain the name of the milk that the butter is derived from, and so we need to
     return a CPC code that is different to the one matched by the product in the label. This also
@@ -1785,6 +1787,9 @@ def get_instances_from_dataframe(
                 continue
             # Get the attributes
             label_attributes = all_label_attributes.loc[row]
+            if label_attributes["status"] == ActivityLabel.LabelStatus.IGNORE:
+                # Ignore any row explicitly marked as IGNORE, even if it contains values.
+                continue
             if (
                 not label_attributes[
                     [

@@ -1,9 +1,11 @@
 import json
 from pathlib import Path
+from unittest.mock import Mock, patch
 
 import pandas as pd
 from django.test import TestCase
 
+from baseline.tests.factories import LivelihoodZoneBaselineFactory
 from common.models import UnitOfMeasure
 from common.tests.factories import ClassifiedProductFactory, CountryFactory
 from metadata.models import ActivityLabel
@@ -11,6 +13,7 @@ from metadata.tests.factories import SeasonFactory
 from pipelines.assets.livelihood_activity import (
     _get_completeness_dataframe,
     get_all_label_attributes,
+    get_instances_from_dataframe,
     get_label_attributes,
     get_livelihood_activity_label_map,
     get_livelihood_activity_regexes,
@@ -126,6 +129,70 @@ class GetActivityLabelAttributesTestCase(TestCase):
         )
         # Test that additional attributes set in the ActivityLabel instance are ignored when using the regex
         self.assertEqual(None, regex_attributes["season"])
+
+    def test_activity_label_ignore_takes_priority_over_regex(self):
+        label = "riz - kg produits"
+        ActivityLabel.objects.create(
+            activity_label=label,
+            activity_type=LIVELIHOOD_ACTIVITY,
+            status=ActivityLabel.LabelStatus.IGNORE,
+        )
+
+        get_label_attributes.cache_clear()
+        get_livelihood_activity_label_map.cache_clear()
+
+        ignored_attributes = {k: v for k, v in get_label_attributes(label, LIVELIHOOD_ACTIVITY).items()}
+
+        self.assertEqual(ignored_attributes["activity_label"], label)
+        self.assertEqual(ignored_attributes["status"], ActivityLabel.LabelStatus.IGNORE)
+        self.assertEqual(ignored_attributes["strategy_type"], "")
+        self.assertIsNone(ignored_attributes["unit_of_measure_id"])
+
+    @patch("pipelines.assets.livelihood_activity.get_wealth_group_dataframe")
+    def test_get_instances_from_dataframe_skips_ignored_rows_with_data(self, mock_get_wealth_group_dataframe):
+        livelihood_zone_baseline = LivelihoodZoneBaselineFactory()
+        country = livelihood_zone_baseline.livelihood_zone.country
+        for purpose in ["MilkProduction", "ButterProduction"]:
+            SeasonFactory(
+                country=country,
+                purpose=purpose,
+                aliases=["season 2"],
+            )
+
+        label = "riz - kg produits"
+        ActivityLabel.objects.create(
+            activity_label=label,
+            activity_type=LIVELIHOOD_ACTIVITY,
+            status=ActivityLabel.LabelStatus.IGNORE,
+        )
+
+        mock_get_wealth_group_dataframe.return_value = pd.DataFrame(
+            [{"bss_column": "B", "wealth_group_category": "VP", "community": "Community 1"}]
+        )
+
+        dataframe = pd.DataFrame(
+            {
+                "A": ["", "", "", "", label],
+                "B": ["", "", "", "", 123],
+            }
+        )
+
+        output = get_instances_from_dataframe(
+            context=Mock(),
+            config=Mock(strict=False),
+            df=dataframe,
+            livelihood_zone_baseline=livelihood_zone_baseline,
+            activity_type=LIVELIHOOD_ACTIVITY,
+            num_header_rows=4,
+            partition_key="TEST001",
+        )
+
+        self.assertEqual(output.value["LivelihoodStrategy"], [])
+        self.assertEqual(output.value["LivelihoodActivity"], [])
+        self.assertEqual(output.metadata["num_livelihood_strategies"].value, 0)
+        self.assertEqual(output.metadata["num_livelihood_activities"].value, 0)
+        self.assertEqual(output.metadata["num_unrecognized_labels"].value, 0)
+        self.assertEqual(output.metadata["pct_rows_recognized"].value, 100.0)
 
     def test_zone_specific_season_alias(self):
         country = CountryFactory()
