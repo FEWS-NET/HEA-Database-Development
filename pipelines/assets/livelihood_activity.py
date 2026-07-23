@@ -716,7 +716,7 @@ def get_all_label_attributes(
     product_labels = labels[all_label_attributes["activity_label"] == ""].to_frame(name="label")
     if not product_labels.empty:
         product_labels["product_id"] = None
-        for row, label in product_labels["label"].items():
+        for row, label in product_labels["label"].fillna("").astype(str).items():
             # Use get_prefix so that we match a leading product followed by additional text.
             product_id, additional_identifier = classifiedproductlookup.get_prefix(label)
             if product_id:
