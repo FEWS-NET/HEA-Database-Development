@@ -7,7 +7,11 @@ from django.urls import include, path, re_path
 from django.views.decorators.cache import cache_page
 from django.views.decorators.http import etag
 from django.views.i18n import JavaScriptCatalog
-from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
+from drf_spectacular.views import (
+    SpectacularAPIView,
+    SpectacularRedocView,
+    SpectacularSwaggerView,
+)
 from rest_framework import routers
 
 from baseline.autocomplete import (
