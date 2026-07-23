@@ -381,6 +381,77 @@ class LivelihoodZoneBaseline(common_models.Model):
             .get()
         )
 
+    def _get_poor_main_staple_category(self):
+        """
+        Get the main staple food Product Category for the Poor Wealth Group for this Livelihood Zone Baseline.
+        """
+        poor_main_staple = LivelihoodProductCategory.objects.filter(
+            basket=LivelihoodProductCategory.ProductBasket.MAIN_STAPLE,
+            baseline_livelihood_activity__wealth_group__livelihood_zone_baseline=self,
+            baseline_livelihood_activity__wealth_group__wealth_group_category__code=WealthGroupCategory.POOR,
+        ).select_related(
+            "baseline_livelihood_activity__livelihood_strategy__product", "baseline_livelihood_activity__wealth_group"
+        )
+        if len(poor_main_staple) == 0:
+            # No main staple defined
+            return None
+        elif len(poor_main_staple) > 1:
+            raise ValueError(
+                "Livelihood Zone Baseline %s contains more than one Main Staple: %s"
+                % (
+                    str(self),
+                    ", ".join(x.baseline_livelihood_activity.livelihood_strategy.product_id for x in poor_main_staple),
+                )
+            )
+        return poor_main_staple[0]
+
+    @cached_property
+    def poor_main_staple(self):
+        poor_main_staple_category = self._get_poor_main_staple_category()
+        if poor_main_staple_category is None:
+            return None
+        return poor_main_staple_category.baseline_livelihood_activity.livelihood_strategy.product
+
+    def _get_poor_survival_non_food_summary(self):
+        """
+        Get the Survival Non-Food Basket for the Poor Wealth Group for this Livelihood Zone Baseline.
+        """
+        poor_survival_non_food = (
+            LivelihoodProductCategory.objects.filter(
+                basket=LivelihoodProductCategory.ProductBasket.SURVIVAL_NON_FOOD,
+                baseline_livelihood_activity__wealth_group__livelihood_zone_baseline=self,
+                baseline_livelihood_activity__wealth_group__wealth_group_category__code=WealthGroupCategory.POOR,
+            )
+            .values(
+                "baseline_livelihood_activity__wealth_group__id",
+                "baseline_livelihood_activity__wealth_group__average_household_size",
+            )
+            .annotate(
+                total_expenditure=Sum(
+                    F("baseline_livelihood_activity__expenditure") * F("percentage_allocation_to_basket")
+                ),
+            )
+        )
+        if not poor_survival_non_food:
+            return None
+        if len(poor_survival_non_food) > 1:
+            raise ValueError(f"Found multiple Poor Wealth Groups with Livelihood Product Categories for {self}")
+        return poor_survival_non_food[0]
+
+    @cached_property
+    def poor_survival_non_food_expenditure(self):
+        poor_survival_non_food_summary = self._get_poor_survival_non_food_summary()
+        if poor_survival_non_food_summary is None:
+            return None
+        return poor_survival_non_food_summary["total_expenditure"] or 0
+
+    @cached_property
+    def poor_household_size(self):
+        poor_main_staple_category = self._get_poor_main_staple_category()
+        if poor_main_staple_category is None:
+            return None
+        return poor_main_staple_category.baseline_livelihood_activity.wealth_group.average_household_size
+
     def _get_annual_kcals_cost(self):
         """
         Calculate the annual cost per person of 100% of recommended kcals.
@@ -397,29 +468,18 @@ class LivelihoodZoneBaseline(common_models.Model):
         """
         if not self.pk:
             return None
-        poor_main_staple = LivelihoodProductCategory.objects.filter(
-            basket=LivelihoodProductCategory.ProductBasket.MAIN_STAPLE,
-            baseline_livelihood_activity__wealth_group__livelihood_zone_baseline=self,
-            baseline_livelihood_activity__wealth_group__wealth_group_category__code=WealthGroupCategory.POOR,
-        ).select_related(
-            "baseline_livelihood_activity__livelihood_strategy", "baseline_livelihood_activity__wealth_group"
-        )
-        if len(poor_main_staple) == 0:
-            # No main staple defined
+
+        poor_main_staple_category = self._get_poor_main_staple_category()
+        if poor_main_staple_category is None:
             return None
-        elif len(poor_main_staple) > 1:
-            raise ValueError(
-                "Livelihood Zone Baseline %s contains more than one Main Staple: %s"
-                % (
-                    str(self),
-                    ", ".join(x.baseline_livelihood_activity.livelihood_strategy.product_id for x in poor_main_staple),
-                )
-            )
-        poor_main_staple = poor_main_staple[0]
-        poor_household_size = poor_main_staple.baseline_livelihood_activity.wealth_group.average_household_size
+
+        poor_household_size = (
+            poor_main_staple_category.baseline_livelihood_activity.wealth_group.average_household_size
+        )
         if not poor_household_size:
             # Cannot calculate without household size
             return None
+
         poor_other_food = LivelihoodProductCategory.objects.filter(
             basket=LivelihoodProductCategory.ProductBasket.SURVIVAL_OTHER_FOOD,
             baseline_livelihood_activity__wealth_group__livelihood_zone_baseline=self,
@@ -432,9 +492,9 @@ class LivelihoodZoneBaseline(common_models.Model):
                 F("baseline_livelihood_activity__expenditure") * F("percentage_allocation_to_basket")
             ),
         )
-        main_staple_kcals_per_unit = poor_main_staple.baseline_livelihood_activity.extra.get(
+        main_staple_kcals_per_unit = poor_main_staple_category.baseline_livelihood_activity.extra.get(
             "product__kcals_per_unit",
-            poor_main_staple.baseline_livelihood_activity.livelihood_strategy.product.kcals_per_unit,
+            poor_main_staple_category.baseline_livelihood_activity.livelihood_strategy.product.kcals_per_unit,
         )
         main_staple_percentage_kcals_required = 1 - (poor_other_food["total_percentage_kcals"] or 0)
         main_staple_cost = (
@@ -443,7 +503,7 @@ class LivelihoodZoneBaseline(common_models.Model):
             * poor_household_size
             * main_staple_percentage_kcals_required
             / main_staple_kcals_per_unit
-            * poor_main_staple.baseline_livelihood_activity.price
+            * poor_main_staple_category.baseline_livelihood_activity.price
         )
         total_cost = main_staple_cost + (poor_other_food["total_expenditure"] or 0)
         total_food_cost_per_person = total_cost / poor_household_size
@@ -793,33 +853,10 @@ class WealthGroup(common_models.Model):
         the same expenditure, scaled according to average household size.
         """
         annual_kcals_cost = self.livelihood_zone_baseline.annual_kcals_cost
-        poor_survival_non_food = (
-            LivelihoodProductCategory.objects.filter(
-                basket=LivelihoodProductCategory.ProductBasket.SURVIVAL_NON_FOOD,
-                baseline_livelihood_activity__wealth_group__livelihood_zone_baseline=self.livelihood_zone_baseline,
-                baseline_livelihood_activity__wealth_group__wealth_group_category__code=WealthGroupCategory.POOR,
-            )
-            .values(
-                "baseline_livelihood_activity__wealth_group__id",
-                "baseline_livelihood_activity__wealth_group__average_household_size",
-            )
-            .annotate(
-                total_expenditure=Sum(
-                    F("baseline_livelihood_activity__expenditure") * F("percentage_allocation_to_basket")
-                ),
-            )
-        )
-        if not poor_survival_non_food:
+        poor_non_food_expenditure = self.livelihood_zone_baseline.poor_survival_non_food_expenditure
+        if poor_non_food_expenditure is None:
             return None
-        # There should only be one Poor Wealth Group for the Baseline with Livelihood Product Categories defined.
-        elif len(poor_survival_non_food) > 1:
-            raise ValueError(
-                f"Found multiple Poor Wealth Groups with Livelihood Product Categories for {self.livelihood_zone_baseline}"
-            )
-        poor_non_food_expenditure = poor_survival_non_food[0]["total_expenditure"] or 0
-        poor_average_household_size = poor_survival_non_food[0][
-            "baseline_livelihood_activity__wealth_group__average_household_size"
-        ]
+        poor_average_household_size = self.livelihood_zone_baseline.poor_household_size
         # Survival threshold is 1 (i.e. 100% kcals) + non-food needs scaled according to average household size
         # Because the non-food expenditures are scaled according to the household size, they always
         # return the same percentage as for the Poor wealth group.
@@ -1056,7 +1093,7 @@ class WealthGroup(common_models.Model):
         return (
             self.livelihood_zone_baseline.livelihood_zone_id,
             self.livelihood_zone_baseline.reference_year_end_date.isoformat(),
-            self.wealth_group_category.code,
+            self.wealth_group_category_id,
             self.community.full_name if self.community else "",
         )
 
@@ -1333,7 +1370,7 @@ class WealthGroupCharacteristicValue(common_models.Model):
         return (
             self.wealth_group.livelihood_zone_baseline.livelihood_zone_id,
             self.wealth_group.livelihood_zone_baseline.reference_year_end_date.isoformat(),
-            self.wealth_group.wealth_group_category.code,
+            self.wealth_group.wealth_group_category_id,
             self.wealth_characteristic_id,
             self.reference_type,
             self.product_id if self.product_id else "",
@@ -2104,7 +2141,7 @@ class LivelihoodActivity(common_models.Model):
         return (
             self.livelihood_zone_baseline.livelihood_zone_id,
             self.livelihood_zone_baseline.reference_year_end_date.isoformat(),
-            self.wealth_group.wealth_group_category.code,
+            self.wealth_group.wealth_group_category_id,
             self.strategy_type,
             self.livelihood_strategy.product_id if self.livelihood_strategy.product_id else "",
             self.livelihood_strategy.season.name_en if self.livelihood_strategy.season else "",
@@ -2351,7 +2388,7 @@ class LivelihoodProductCategory(common_models.Model):
         return (
             self.baseline_livelihood_activity.livelihood_zone_baseline.livelihood_zone_id,
             self.baseline_livelihood_activity.livelihood_zone_baseline.reference_year_end_date.isoformat(),
-            self.baseline_livelihood_activity.wealth_group.wealth_group_category.code,
+            self.baseline_livelihood_activity.wealth_group.wealth_group_category_id,
             self.baseline_livelihood_activity.strategy_type,
             self.basket,
             # Livelihood Product Categories must have a Product

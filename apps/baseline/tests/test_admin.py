@@ -5,16 +5,27 @@ from bs4 import BeautifulSoup
 from django.contrib.admin.sites import AdminSite
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 from django.utils.translation import activate
 
 from baseline.admin import (
     CommunityCropProductionAdmin,
     CommunityLivestockAdmin,
+    CopingStrategyAdmin,
+    EventAdmin,
+    ExpandabilityFactorAdmin,
+    HazardAdmin,
     KeyParameterAdmin,
     LivelihoodActivityAdmin,
+    LivelihoodStrategyAdmin,
+    LivelihoodZoneBaselineAdmin,
+    MarketPriceAdmin,
+    SeasonalActivityAdmin,
+    SeasonalActivityOccurrenceAdmin,
+    SeasonalProductionPerformanceAdmin,
     WealthGroupAdmin,
+    WealthGroupCharacteristicValueAdmin,
 )
 from baseline.models import (
     CommunityCropProduction,
@@ -22,10 +33,12 @@ from baseline.models import (
     KeyParameter,
     LivelihoodActivity,
     LivelihoodActivityScenario,
+    LivelihoodProductCategory,
     LivelihoodZoneBaseline,
     WealthGroup,
 )
 from baseline.tests.factories import (
+    BaselineWealthGroupFactory,
     ButterProductionFactory,
     CommunityCropProductionFactory,
     CommunityFactory,
@@ -34,6 +47,7 @@ from baseline.tests.factories import (
     FoodPurchaseFactory,
     KeyParameterFactory,
     LivelihoodActivityFactory,
+    LivelihoodProductCategoryFactory,
     LivelihoodStrategyFactory,
     LivelihoodZoneBaselineFactory,
     LivelihoodZoneFactory,
@@ -50,7 +64,7 @@ from common.tests.factories import (
     CurrencyFactory,
     UnitOfMeasureFactory,
 )
-from metadata.models import LivelihoodStrategyType
+from metadata.models import LivelihoodStrategyType, WealthGroupCategory
 from metadata.tests.factories import (
     LivelihoodSystemFactory,
     SeasonFactory,
@@ -159,6 +173,41 @@ class LivelihoodZoneBaselineAdminTestCase(TestCase):
             reference_year_end_date=datetime(2016, 4, 30),
         )
         cls.livelihood_zone_baseline2 = LivelihoodZoneBaselineFactory()
+        cls.baseline_with_poor_main_staple = LivelihoodZoneBaselineFactory()
+        cls.poor_wealth_group = BaselineWealthGroupFactory(
+            livelihood_zone_baseline=cls.baseline_with_poor_main_staple,
+            wealth_group_category__code=WealthGroupCategory.POOR,
+            average_household_size=5,
+        )
+        cls.poor_main_staple_activity = FoodPurchaseFactory(
+            livelihood_zone_baseline=cls.baseline_with_poor_main_staple,
+            wealth_group=cls.poor_wealth_group,
+            extra={"product__kcals_per_unit": 100},
+        )
+        cls.poor_other_food_activity = FoodPurchaseFactory(
+            livelihood_zone_baseline=cls.baseline_with_poor_main_staple,
+            wealth_group=cls.poor_wealth_group,
+        )
+        LivelihoodProductCategoryFactory(
+            baseline_livelihood_activity=cls.poor_main_staple_activity,
+            basket=LivelihoodProductCategory.ProductBasket.MAIN_STAPLE,
+            percentage_allocation_to_basket=1,
+        )
+        LivelihoodProductCategoryFactory(
+            baseline_livelihood_activity=cls.poor_other_food_activity,
+            basket=LivelihoodProductCategory.ProductBasket.SURVIVAL_OTHER_FOOD,
+            percentage_allocation_to_basket=0.25,
+        )
+        cls.poor_non_food_activity = FoodPurchaseFactory(
+            livelihood_zone_baseline=cls.baseline_with_poor_main_staple,
+            wealth_group=cls.poor_wealth_group,
+        )
+        LivelihoodProductCategoryFactory(
+            baseline_livelihood_activity=cls.poor_non_food_activity,
+            basket=LivelihoodProductCategory.ProductBasket.SURVIVAL_NON_FOOD,
+            percentage_allocation_to_basket=0.2,
+        )
+        cls.baseline_with_poor_main_staple.save()
         activate("en")
         cls.url = reverse("admin:baseline_livelihoodzonebaseline_changelist")
 
@@ -173,19 +222,27 @@ class LivelihoodZoneBaselineAdminTestCase(TestCase):
     def test_search_livelihood_zone_baseline_fields(self):
         response = self.client.get(
             self.url,
-            {"q": self.livelihood_zone_baseline1.livelihood_zone.name_en},
+            {"q": self.livelihood_zone_baseline1.name_en},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.livelihood_zone_baseline1.name_en)
+        self.assertNotContains(response, self.livelihood_zone_baseline2.name_en)
+
+        response = self.client.get(
+            self.url,
+            {"q": self.livelihood_zone_baseline2.name_en},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.livelihood_zone_baseline2.name_en)
+        self.assertNotContains(response, self.livelihood_zone_baseline1.name_en)
+
+        response = self.client.get(
+            self.url,
+            {"q": self.livelihood_zone_baseline1.livelihood_zone.code},
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.livelihood_zone_baseline1.livelihood_zone)
         self.assertNotContains(response, self.livelihood_zone_baseline2.livelihood_zone)
-
-        response = self.client.get(
-            self.url,
-            {"q": self.livelihood_zone_baseline2.livelihood_zone.name},
-        )
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, self.livelihood_zone_baseline2.livelihood_zone)
-        self.assertNotContains(response, self.livelihood_zone_baseline1.livelihood_zone)
 
     def test_livelihood_zone_baseline_list_filter(self):
         response = self.client.get(
@@ -201,6 +258,35 @@ class LivelihoodZoneBaselineAdminTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.livelihood_zone_baseline1.reference_year_start_date.year)
         self.assertContains(response, self.livelihood_zone_baseline2.reference_year_start_date.year)
+
+    def test_livelihood_zone_baseline_displays_poor_baseline_summary_fields(self):
+        response = self.client.get(
+            reverse("admin:baseline_livelihoodzonebaseline_change", args=[self.baseline_with_poor_main_staple.pk])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        soup = BeautifulSoup(response.content, "html.parser")
+
+        poor_main_staple = soup.select_one(".field-poor_main_staple .readonly")
+        self.assertIsNotNone(poor_main_staple)
+        self.assertEqual(
+            poor_main_staple.get_text(strip=True),
+            str(self.baseline_with_poor_main_staple.poor_main_staple),
+        )
+
+        poor_household_size = soup.select_one(".field-poor_household_size .readonly")
+        self.assertIsNotNone(poor_household_size)
+        self.assertEqual(
+            float(poor_household_size.get_text(strip=True)),
+            self.baseline_with_poor_main_staple.poor_household_size,
+        )
+
+        poor_survival_non_food_expenditure = soup.select_one(".field-poor_survival_non_food_expenditure .readonly")
+        self.assertIsNotNone(poor_survival_non_food_expenditure)
+        self.assertEqual(
+            float(poor_survival_non_food_expenditure.get_text(strip=True)),
+            self.baseline_with_poor_main_staple.poor_survival_non_food_expenditure,
+        )
 
     def test_create_livelihood_zone_baseline(self):
         bss = SimpleUploadedFile("test_bss.xlsx", b"Baseline content placeholder, just to be used for testing ...")
@@ -259,7 +345,7 @@ class LivelihoodStrategyAdminTestCase(TestCase):
     def test_livelihoodstrategy_search_fields(self):
         response = self.client.get(
             self.url,
-            {"q": self.strategy1.livelihood_zone_baseline.livelihood_zone.name_en},
+            {"q": self.strategy1.livelihood_zone_baseline.name_en},
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.strategy1.product.cpc)
@@ -333,6 +419,20 @@ class WealthGroupAdminTest(TestCase):
     def setUpTestData(cls):
         User.objects.create_superuser(username="admin", password="admin", email="admin@hea.org")
         cls.wealth_group1 = WealthGroupFactory()
+        cls.population_baseline = LivelihoodZoneBaselineFactory(
+            population_source="Government statistics agency",
+            population_estimate=1000,
+        )
+        cls.baseline_wealth_group = BaselineWealthGroupFactory(
+            livelihood_zone_baseline=cls.population_baseline,
+            percentage_of_households=0.6,
+            average_household_size=4,
+        )
+        BaselineWealthGroupFactory(
+            livelihood_zone_baseline=cls.population_baseline,
+            percentage_of_households=0.4,
+            average_household_size=6,
+        )
         cls.url = "admin:baseline_wealthgroup_change"
         cls.site = AdminSite()
         activate("en")
@@ -383,6 +483,50 @@ class WealthGroupAdminTest(TestCase):
         self.assertEqual(WealthGroup.objects.filter(community=community).count(), 1)
         saved_wealth_group = WealthGroup.objects.get(community=community)
         self.assertEqual(saved_wealth_group.percentage_of_households, wealth_group.percentage_of_households)
+
+    def test_wealth_group_admin_displays_serializer_readonly_fields(self):
+        response = self.client.get(reverse(self.url, args=[self.baseline_wealth_group.pk]))
+
+        soup = BeautifulSoup(response.content, "html.parser")
+
+        for field_name in (
+            "household_annual_kcals_cost",
+            "survival_threshold_as_percentage_kcals",
+            "survival_threshold_as_cash",
+            "livelihoods_protection_threshold_as_percentage_kcals",
+            "livelihoods_protection_threshold_as_cash",
+            "population_source",
+            "percentage_of_population",
+            "population_estimate",
+        ):
+            self.assertIsNotNone(soup.select_one(f".field-{field_name}"), field_name)
+
+        population_source = soup.select_one(".field-population_source .readonly")
+        self.assertIsNotNone(population_source)
+        self.assertEqual(population_source.get_text(strip=True), self.population_baseline.population_source)
+
+        percentage_of_population = soup.select_one(".field-percentage_of_population .readonly")
+        self.assertIsNotNone(percentage_of_population)
+        self.assertAlmostEqual(float(percentage_of_population.get_text(strip=True)), 0.5)
+
+        population_estimate = soup.select_one(".field-population_estimate .readonly")
+        self.assertIsNotNone(population_estimate)
+        self.assertEqual(int(population_estimate.get_text(strip=True)), 500)
+
+    def test_wealth_group_search_by_livelihood_zone_code(self):
+        other_wealth_group = WealthGroupFactory()
+
+        response = self.client.get(
+            reverse("admin:baseline_wealthgroup_changelist"),
+            {"q": self.wealth_group1.livelihood_zone_baseline.livelihood_zone.code},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        soup = BeautifulSoup(response.content, "html.parser")
+        result_list = soup.find(id="result_list")
+        result_list_str = str(result_list)
+        self.assertIn(f"/admin/baseline/wealthgroup/{self.wealth_group1.pk}/change/", result_list_str)
+        self.assertNotIn(f"/admin/baseline/wealthgroup/{other_wealth_group.pk}/change/", result_list_str)
 
     def test_wealth_characteristic_inline_admin_display(self):
         wealth_group_characteristic_value = WealthGroupCharacteristicValueFactory(
@@ -588,17 +732,34 @@ class CommunityCropProductionAdminTestCase(TestCase):
     def test_search_fields(self):
         # Also confirms *translation_fields() is working correctly
         search_fields = (
+            "community__full_name",
+            "community__livelihood_zone_baseline__livelihood_zone__code",
+            "community__livelihood_zone_baseline__livelihood_zone__alternate_code",
+            "community__livelihood_zone_baseline__name_en",
+            "community__livelihood_zone_baseline__name_fr",
+            "community__livelihood_zone_baseline__name_ar",
+            "community__livelihood_zone_baseline__name_es",
+            "community__livelihood_zone_baseline__name_pt",
+            "community__livelihood_zone_baseline__reference_year_end_date",
             "crop__description_en",
             "crop__description_fr",
             "crop__description_ar",
             "crop__description_es",
             "crop__description_pt",
+            "crop__common_name_en",
+            "crop__common_name_fr",
+            "crop__common_name_ar",
+            "crop__common_name_es",
+            "crop__common_name_pt",
+            "crop__cpc__iexact",
+            "crop__aliases",
             "crop_purpose",
             "season__name_en",
             "season__name_fr",
             "season__name_ar",
             "season__name_es",
             "season__name_pt",
+            "season__aliases",
         )
         self.assertCountEqual(
             self.admin.search_fields,
@@ -664,6 +825,62 @@ class CommunityLivestockAdminTestCase(TestCase):
         self.assertContains(response, self.livestockproduction2.livestock)
         self.assertContains(response, self.livestockproduction2.wet_season_milk_production)
         self.assertContains(response, self.livestockproduction2.dry_season_milk_production)
+
+    def test_search_fields(self):
+        search_fields = (
+            "community__full_name",
+            "community__livelihood_zone_baseline__livelihood_zone__code",
+            "community__livelihood_zone_baseline__livelihood_zone__alternate_code",
+            "community__livelihood_zone_baseline__name_en",
+            "community__livelihood_zone_baseline__name_fr",
+            "community__livelihood_zone_baseline__name_ar",
+            "community__livelihood_zone_baseline__name_es",
+            "community__livelihood_zone_baseline__name_pt",
+            "community__livelihood_zone_baseline__reference_year_end_date",
+            "livestock__common_name_en",
+            "livestock__common_name_fr",
+            "livestock__common_name_ar",
+            "livestock__common_name_es",
+            "livestock__common_name_pt",
+            "livestock__description_en",
+            "livestock__description_fr",
+            "livestock__description_ar",
+            "livestock__description_es",
+            "livestock__description_pt",
+            "livestock__cpc__iexact",
+            "livestock__aliases",
+        )
+        self.assertCountEqual(self.admin.search_fields, search_fields)
+
+
+class BaselineRelatedAdminSearchFieldsTestCase(SimpleTestCase):
+    def test_search_fields_include_livelihood_zone_code_for_baseline_related_admins(self):
+        admin_search_fields = {
+            LivelihoodZoneBaselineAdmin: {"livelihood_zone__code"},
+            LivelihoodStrategyAdmin: {"livelihood_zone_baseline__livelihood_zone__code"},
+            KeyParameterAdmin: {"livelihood_strategy__livelihood_zone_baseline__livelihood_zone__code"},
+            LivelihoodActivityAdmin: {"livelihood_zone_baseline__livelihood_zone__code"},
+            WealthGroupCharacteristicValueAdmin: {"wealth_group__livelihood_zone_baseline__livelihood_zone__code"},
+            WealthGroupAdmin: {"livelihood_zone_baseline__livelihood_zone__code"},
+            SeasonalActivityAdmin: {"livelihood_zone_baseline__livelihood_zone__code"},
+            SeasonalActivityOccurrenceAdmin: {"seasonal_activity__livelihood_zone_baseline__livelihood_zone__code"},
+            CommunityCropProductionAdmin: {"community__livelihood_zone_baseline__livelihood_zone__code"},
+            CommunityLivestockAdmin: {"community__livelihood_zone_baseline__livelihood_zone__code"},
+            MarketPriceAdmin: {"community__livelihood_zone_baseline__livelihood_zone__code"},
+            HazardAdmin: {"community__livelihood_zone_baseline__livelihood_zone__code"},
+            SeasonalProductionPerformanceAdmin: {"community__livelihood_zone_baseline__livelihood_zone__code"},
+            EventAdmin: {"community__livelihood_zone_baseline__livelihood_zone__code"},
+            ExpandabilityFactorAdmin: {
+                "wealth_group__livelihood_zone_baseline__livelihood_zone__code",
+            },
+            CopingStrategyAdmin: {
+                "wealth_group__livelihood_zone_baseline__livelihood_zone__code",
+            },
+        }
+
+        for admin_class, expected_fields in admin_search_fields.items():
+            with self.subTest(admin_class=admin_class.__name__):
+                self.assertTrue(expected_fields.issubset(set(admin_class.search_fields)))
 
 
 class LivelihoodActivityAdminTestCase(TestCase):

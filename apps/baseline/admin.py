@@ -121,7 +121,7 @@ class LivelihoodZoneAdmin(admin.ModelAdmin):
         "alternate_code",
         *translation_fields("name"),
         *translation_fields("description"),
-        "country__iso_en_ro_name",
+        "country__name",
     ]
     list_filter = (("country", admin.RelatedOnlyFieldListFilter),)
 
@@ -135,7 +135,8 @@ class LivelihoodZoneBaselineCorrectionAdmin(admin.ModelAdmin):
     search_fields = (
         "livelihood_zone_baseline__livelihood_zone__code",
         "livelihood_zone_baseline__livelihood_zone__alternate_code",
-        *translation_fields("livelihood_zone_baseline__livelihood_zone__name"),
+        *translation_fields("livelihood_zone_baseline__name"),
+        "livelihood_zone_baseline__reference_year_end_date",
         *translation_fields("livelihood_zone_baseline__primary_livelihood_system__name"),
         "livelihood_zone_baseline__source_organization__name",
         "cell_range",
@@ -198,6 +199,10 @@ class LivelihoodZoneBaselineAdmin(GISModelAdminReadOnly):
                     "geography",
                     "population_source",
                     "population_estimate",
+                    "poor_main_staple",
+                    "poor_household_size",
+                    "poor_survival_non_food_expenditure",
+                    "annual_kcals_cost",
                 ],
             },
         ),
@@ -210,11 +215,20 @@ class LivelihoodZoneBaselineAdmin(GISModelAdminReadOnly):
         "reference_year_start_date",
         "reference_year_end_date",
     )
-    readonly_fields = ("livelihood_zone_alternate_code", "country", "bss_uploaded_date_time")
+    readonly_fields = (
+        "livelihood_zone_alternate_code",
+        "country",
+        "bss_uploaded_date_time",
+        "poor_main_staple",
+        "poor_household_size",
+        "poor_survival_non_food_expenditure",
+        "annual_kcals_cost",
+    )
     search_fields = (
         "livelihood_zone__code",
         "livelihood_zone__alternate_code",
-        *translation_fields("livelihood_zone__name"),
+        *translation_fields("name"),
+        "reference_year_end_date",
         *translation_fields("primary_livelihood_system__name"),
         "source_organization__name",
     )
@@ -259,6 +273,18 @@ class LivelihoodZoneBaselineAdmin(GISModelAdminReadOnly):
         except File.DoesNotExist:
             return ""
 
+    @admin.display(description=_("Poor Main Staple"))
+    def poor_main_staple(self, instance):
+        return instance.poor_main_staple
+
+    @admin.display(description=_("Poor Household Size"))
+    def poor_household_size(self, instance):
+        return instance.poor_household_size
+
+    @admin.display(description=_("Poor Survival Non-Food Expenditure"))
+    def poor_survival_non_food_expenditure(self, instance):
+        return instance.poor_survival_non_food_expenditure
+
     def get_fieldsets(self, request, obj=None):
         fieldsets = super().get_fieldsets(request, obj=obj)
         if obj and obj.geography:
@@ -298,10 +324,11 @@ class CommunityAdmin(GISModelAdminReadOnly):
     search_fields = (
         "name",
         "full_name",
-        *translation_fields("livelihood_zone_baseline__livelihood_zone__name__icontains"),
         "livelihood_zone_baseline__livelihood_zone__code",
         "livelihood_zone_baseline__livelihood_zone__alternate_code",
-        "aliases__icontains",
+        *translation_fields("livelihood_zone_baseline__name"),
+        "livelihood_zone_baseline__reference_year_end_date",
+        "aliases",
     )
     list_filter = (("livelihood_zone_baseline__livelihood_zone__country", admin.RelatedOnlyFieldListFilter),)
 
@@ -354,17 +381,19 @@ class LivelihoodStrategyAdmin(admin.ModelAdmin):
     )
 
     search_fields = (
-        "strategy_type__icontains",
+        "strategy_type",
         "livelihood_zone_baseline__livelihood_zone__code",
         "livelihood_zone_baseline__livelihood_zone__alternate_code",
-        "additional_identifier__icontains",
+        *translation_fields("livelihood_zone_baseline__name"),
+        "livelihood_zone_baseline__reference_year_end_date",
+        "additional_identifier",
         "product__cpc__iexact",
-        "product__aliases__icontains",
-        "season__aliases__icontains",
-        *translation_fields("livelihood_zone_baseline__livelihood_zone__name__icontains"),
-        *translation_fields("product__common_name__icontains"),
-        *translation_fields("season__name__icontains"),
-        "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name",
+        *translation_fields("product__description"),
+        *translation_fields("product__common_name"),
+        "product__aliases",
+        *translation_fields("season__name"),
+        "season__aliases",
+        "livelihood_zone_baseline__livelihood_zone__country__name",
     )
 
     list_filter = (
@@ -447,6 +476,17 @@ class WealthGroupCharacteristicValueInlineAdmin(admin.TabularInline):
     model = WealthGroupCharacteristicValue
     extra = 1
     classes = ["collapse"]
+
+    def get_queryset(self, request):
+        return (
+            super()
+            .get_queryset(request)
+            .select_related(
+                "wealth_characteristic",
+                "wealth_group__livelihood_zone_baseline",
+                "wealth_group__community",
+            )
+        )
 
     def get_extra(self, request, obj=None, **kwargs):
         extra = super().get_extra(request, obj, **kwargs)
@@ -606,19 +646,19 @@ class LivelihoodActivityAdmin(admin.ModelAdmin):
         *translation_fields("wealth_group__wealth_group_category__name"),
         "wealth_group__community__name",
         "wealth_group__community__full_name",
-        "strategy_type__icontains",
-        "livelihood_strategy__additional_identifier__icontains",
+        "strategy_type",
         "livelihood_zone_baseline__livelihood_zone__code",
         "livelihood_zone_baseline__livelihood_zone__alternate_code",
-        *translation_fields("livelihood_zone_baseline__livelihood_zone__name"),
+        *translation_fields("livelihood_zone_baseline__name"),
+        "livelihood_zone_baseline__reference_year_end_date",
         "livelihood_strategy__product__cpc__iexact",
-        "livelihood_strategy__product__aliases__icontains",
-        "livelihood_strategy__season__aliases__icontains",
+        *translation_fields("livelihood_strategy__product__description"),
+        *translation_fields("livelihood_strategy__product__common_name"),
+        "livelihood_strategy__product__aliases",
+        *translation_fields("livelihood_strategy__season__name"),
+        "livelihood_strategy__season__aliases",
         "livelihood_strategy__additional_identifier",
-        *translation_fields("livelihood_strategy__product__common_name__icontains"),
-        *translation_fields("livelihood_strategy__product__description__icontains"),
-        *translation_fields("livelihood_strategy__season__name__icontains"),
-        "livelihood_zone_baseline__livelihood_zone__country__iso_en_ro_name",
+        "livelihood_zone_baseline__livelihood_zone__country__name",
     )
 
     def get_search_results(self, request, queryset, search_term):
@@ -677,6 +717,7 @@ class LivelihoodActivityAdmin(admin.ModelAdmin):
             "wealth_group__community__livelihood_zone_baseline__livelihood_zone",
             "wealth_group__wealth_group_category",
             "wealth_group__livelihood_zone_baseline",
+            "livelihood_strategy__livelihood_zone_baseline__livelihood_zone",
             "livelihood_strategy__product",
             "livelihood_strategy__season",
             "livelihood_zone_baseline__livelihood_zone__country",
@@ -771,17 +812,18 @@ class WealthGroupCharacteristicValueAdmin(admin.ModelAdmin):
     search_fields = (
         "wealth_group__wealth_group_category__code__iexact",
         "wealth_group__wealth_group_category__aliases",
-        "wealth_group__community__name",
         "wealth_group__community__full_name",
         *translation_fields("wealth_characteristic__name"),
         "wealth_characteristic__aliases",
         *translation_fields("wealth_group__wealth_group_category__name"),
         "wealth_group__livelihood_zone_baseline__livelihood_zone__code",
         "wealth_group__livelihood_zone_baseline__livelihood_zone__alternate_code",
+        *translation_fields("wealth_group__livelihood_zone_baseline__name"),
+        "wealth_group__livelihood_zone_baseline__reference_year_end_date",
         "wealth_group__livelihood_zone_baseline__livelihood_zone__country__name",
-        *translation_fields("product__description__icontains"),
-        *translation_fields("product__common_name__icontains"),
         "product__cpc",
+        *translation_fields("product__description"),
+        *translation_fields("product__common_name"),
         "product__aliases",
     )
 
@@ -860,6 +902,34 @@ class LivelihoodActivityInlineAdmin(admin.StackedInline):
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
+
+    def get_formset(self, request, obj=None, **kwargs):
+        formset = super().get_formset(request, obj=obj, **kwargs)
+        base_form = formset.form
+
+        class ExistingLivelihoodActivityForm(base_form):
+            def __init__(self, *args, **inner_kwargs):
+                super().__init__(*args, **inner_kwargs)
+                if self.instance and self.instance.pk:
+                    if "livelihood_strategy" in self.fields:
+                        self.fields["livelihood_strategy"].disabled = True
+                    if "scenario" in self.fields:
+                        self.fields["scenario"].disabled = True
+
+        formset.form = ExistingLivelihoodActivityForm
+        return formset
+
+    def get_queryset(self, request):
+        return (
+            super()
+            .get_queryset(request)
+            .select_related(
+                "livelihood_strategy__livelihood_zone_baseline",
+                "livelihood_strategy__season",
+                "wealth_group__livelihood_zone_baseline",
+                "wealth_group__wealth_group_category",
+            )
+        )
 
 
 class MilkProductionInlineAdmin(LivelihoodActivityInlineAdmin):
@@ -969,6 +1039,7 @@ class FoodPurchaseProductionInlineAdmin(LivelihoodActivityInlineAdmin):
 
 class PaymentInKindInlineAdmin(LivelihoodActivityInlineAdmin):
     model = PaymentInKind
+    autocomplete_fields = ("payment_product",)
 
     def get_fieldsets(self, request, obj=None):
         fieldsets = deepcopy(super().get_fieldsets(request, obj))
@@ -1110,13 +1181,43 @@ class CommunityRelatedOnlyFieldListFilter(admin.RelatedOnlyFieldListFilter):
 
 class WealthGroupAdmin(admin.ModelAdmin):
     form = WealthGroupForm
+    fields = (
+        "livelihood_zone_baseline",
+        "community",
+        "wealth_group_category",
+        "average_household_size",
+        "percentage_of_households",
+        "percentage_of_population",
+        "population_source",
+        "population_estimate",
+        "household_annual_kcals_cost",
+        "survival_threshold_as_percentage_kcals",
+        "survival_threshold_as_cash",
+        "livelihoods_protection_threshold_as_percentage_kcals",
+        "livelihoods_protection_threshold_as_cash",
+    )
     list_display = (
+        "livelihood_zone_baseline",
         "community",
         "wealth_group_category",
         "percentage_of_households",
     )
+    readonly_fields = (
+        "household_annual_kcals_cost",
+        "survival_threshold_as_percentage_kcals",
+        "survival_threshold_as_cash",
+        "livelihoods_protection_threshold_as_percentage_kcals",
+        "livelihoods_protection_threshold_as_cash",
+        "population_source",
+        "percentage_of_population",
+        "population_estimate",
+    )
     search_fields = (
-        "community__name",
+        "community__full_name",
+        "livelihood_zone_baseline__livelihood_zone__code",
+        "livelihood_zone_baseline__livelihood_zone__alternate_code",
+        *translation_fields("livelihood_zone_baseline__name"),
+        "livelihood_zone_baseline__reference_year_end_date",
         "wealth_group_category__code__iexact",
         *translation_fields("wealth_group_category__name"),
     )
@@ -1141,6 +1242,51 @@ class WealthGroupAdmin(admin.ModelAdmin):
             )
             .prefetch_related("livelihoodactivity_set")
         )
+
+    @admin.display(description=_("Population source"))
+    def population_source(self, instance):
+        return instance.livelihood_zone_baseline.population_source
+
+    def _get_percentage_of_population(self, instance):
+        if instance.percentage_of_households is None or instance.average_household_size is None:
+            return None
+
+        baseline_wealth_groups = WealthGroup.objects.filter(
+            livelihood_zone_baseline=instance.livelihood_zone_baseline,
+            community__isnull=True,
+            percentage_of_households__isnull=False,
+            percentage_of_households__gt=0,
+            average_household_size__isnull=False,
+        )
+
+        total_percentage_of_households = 0
+        weighted_total_household_size = 0
+        for wealth_group in baseline_wealth_groups:
+            total_percentage_of_households += wealth_group.percentage_of_households
+            weighted_total_household_size += (
+                wealth_group.percentage_of_households * wealth_group.average_household_size
+            )
+
+        if not total_percentage_of_households or not weighted_total_household_size:
+            return None
+
+        baseline_weighted_average_household_size = weighted_total_household_size / total_percentage_of_households
+        return (
+            instance.percentage_of_households
+            * instance.average_household_size
+            / baseline_weighted_average_household_size
+        )
+
+    @admin.display(description=_("Percentage of population"))
+    def percentage_of_population(self, instance):
+        return self._get_percentage_of_population(instance)
+
+    @admin.display(description=_("Population estimate"))
+    def population_estimate(self, instance):
+        percentage_of_population = self._get_percentage_of_population(instance)
+        if instance.livelihood_zone_baseline.population_estimate is None or percentage_of_population is None:
+            return None
+        return round(instance.livelihood_zone_baseline.population_estimate * percentage_of_population)
 
 
 class LivelihoodProductCategoryAdmin(admin.ModelAdmin):
@@ -1193,13 +1339,17 @@ class SeasonalActivityAdmin(admin.ModelAdmin):
     search_fields = (
         "livelihood_zone_baseline__livelihood_zone__code",
         "livelihood_zone_baseline__livelihood_zone__alternate_code",
-        "seasonal_activity_type__code__icontains",
-        *translation_fields("seasonal_activity_type__name__icontains"),
-        *translation_fields("season__name__icontains"),
-        "season__aliases__icontains",
-        *translation_fields("product__common_name__icontains"),
+        *translation_fields("livelihood_zone_baseline__name"),
+        "livelihood_zone_baseline__reference_year_end_date",
+        "seasonal_activity_type__code",
+        *translation_fields("seasonal_activity_type__name"),
+        *translation_fields("season__name"),
+        "season__aliases",
         "product__cpc__iexact",
-        "additional_identifier__icontains",
+        *translation_fields("product__description"),
+        *translation_fields("product__common_name"),
+        "product__aliases",
+        "additional_identifier",
     )
     list_filter = (
         "seasonal_activity_type",
@@ -1233,15 +1383,19 @@ class SeasonalActivityOccurrenceAdmin(admin.ModelAdmin):
         "end_month",
     )
     search_fields = (
+        "community__full_name",
         "seasonal_activity__livelihood_zone_baseline__livelihood_zone__code",
         "seasonal_activity__livelihood_zone_baseline__livelihood_zone__alternate_code",
-        "seasonal_activity__seasonal_activity_type__code__icontains",
-        *translation_fields("seasonal_activity__seasonal_activity_type__name__icontains"),
-        *translation_fields("seasonal_activity__season__name__icontains"),
-        "seasonal_activity__season__aliases__icontains",
-        *translation_fields("seasonal_activity__product__common_name__icontains"),
+        *translation_fields("seasonal_activity__livelihood_zone_baseline__name"),
+        "seasonal_activity__livelihood_zone_baseline__reference_year_end_date",
+        "seasonal_activity__seasonal_activity_type__code",
+        *translation_fields("seasonal_activity__seasonal_activity_type__name"),
+        *translation_fields("seasonal_activity__season__name"),
         "seasonal_activity__product__cpc__iexact",
-        "seasonal_activity__additional_identifier__icontains",
+        *translation_fields("seasonal_activity__product__description"),
+        *translation_fields("seasonal_activity__product__common_name"),
+        "seasonal_activity__season__aliases",
+        "seasonal_activity__additional_identifier",
     )
     list_filter = (
         "seasonal_activity__seasonal_activity_type",
@@ -1294,9 +1448,18 @@ class CommunityCropProductionAdmin(admin.ModelAdmin):
         "land_unit_of_measure",
     )
     search_fields = (
+        "community__full_name",
+        "community__livelihood_zone_baseline__livelihood_zone__code",
+        "community__livelihood_zone_baseline__livelihood_zone__alternate_code",
+        *translation_fields("community__livelihood_zone_baseline__name"),
+        "community__livelihood_zone_baseline__reference_year_end_date",
+        "crop__cpc__iexact",
         *translation_fields("crop__description"),
+        *translation_fields("crop__common_name"),
+        "crop__aliases",
         "crop_purpose",
         *translation_fields("season__name"),
+        "season__aliases",
     )
 
     list_filter = (
@@ -1324,7 +1487,17 @@ class CommunityLivestockAdmin(admin.ModelAdmin):
         "wet_season_milk_production",
         "dry_season_milk_production",
     )
-    search_fields = (*translation_fields("livestock__common_name"),)
+    search_fields = (
+        "community__full_name",
+        "community__livelihood_zone_baseline__livelihood_zone__code",
+        "community__livelihood_zone_baseline__livelihood_zone__alternate_code",
+        *translation_fields("community__livelihood_zone_baseline__name"),
+        "community__livelihood_zone_baseline__reference_year_end_date",
+        "livestock__cpc__iexact",
+        *translation_fields("livestock__description"),
+        *translation_fields("livestock__common_name"),
+        "livestock__aliases",
+    )
     list_filter = (
         "community__livelihood_zone_baseline__livelihood_zone",
         "livestock",
@@ -1360,9 +1533,19 @@ class MarketPriceAdmin(admin.ModelAdmin):
         "currency",
     )
     search_fields = (
-        "community",
-        "product",
-        "market",
+        "community__full_name",
+        "community__livelihood_zone_baseline__livelihood_zone__code",
+        "community__livelihood_zone_baseline__livelihood_zone__alternate_code",
+        *translation_fields("community__livelihood_zone_baseline__name"),
+        "community__livelihood_zone_baseline__reference_year_end_date",
+        "product__cpc__iexact",
+        *translation_fields("product__description"),
+        *translation_fields("product__common_name"),
+        "product__aliases",
+        "market__code__iexact",
+        *translation_fields("market__full_name"),
+        "market__aliases",
+        "description",
     )
     list_filter = (
         "market",
@@ -1386,9 +1569,16 @@ class HazardAdmin(admin.ModelAdmin):
         "hazard_category",
     )
     search_fields = (
-        "community",
+        "community__full_name",
+        "community__livelihood_zone_baseline__livelihood_zone__code",
+        "community__livelihood_zone_baseline__livelihood_zone__alternate_code",
+        *translation_fields("community__livelihood_zone_baseline__name"),
+        "community__livelihood_zone_baseline__reference_year_end_date",
         "chronic_or_periodic",
-        "hazard_category",
+        "hazard_category__code__iexact",
+        *translation_fields("hazard_category__name"),
+        "hazard_category__aliases",
+        "description",
     )
     list_filter = (
         "hazard_category",
@@ -1411,7 +1601,11 @@ class SeasonalProductionPerformanceAdmin(admin.ModelAdmin):
         "seasonal_performance",
     )
     search_fields = (
-        "community",
+        "community__full_name",
+        "community__livelihood_zone_baseline__livelihood_zone__code",
+        "community__livelihood_zone_baseline__livelihood_zone__alternate_code",
+        *translation_fields("community__livelihood_zone_baseline__name"),
+        "community__livelihood_zone_baseline__reference_year_end_date",
         "performance_year_start_date",
         "performance_year_end_date",
         "seasonal_performance",
@@ -1434,7 +1628,11 @@ class EventAdmin(admin.ModelAdmin):
         "description",
     )
     search_fields = (
-        "community",
+        "community__full_name",
+        "community__livelihood_zone_baseline__livelihood_zone__code",
+        "community__livelihood_zone_baseline__livelihood_zone__alternate_code",
+        *translation_fields("community__livelihood_zone_baseline__name"),
+        "community__livelihood_zone_baseline__reference_year_end_date",
         "description",
     )
     list_filter = ("community__livelihood_zone_baseline__livelihood_zone",)
@@ -1463,8 +1661,21 @@ class ExpandabilityFactorAdmin(admin.ModelAdmin):
         "percentage_expenditure",
     )
     search_fields = (
-        "livelihood_strategy",
-        "wealth_group",
+        "livelihood_strategy__strategy_type",
+        "livelihood_strategy__additional_identifier",
+        "livelihood_strategy__product__cpc__iexact",
+        "livelihood_strategy__product__aliases",
+        *translation_fields("livelihood_strategy__product__common_name"),
+        *translation_fields("livelihood_strategy__product__description"),
+        "livelihood_strategy__season__aliases",
+        *translation_fields("livelihood_strategy__season__name"),
+        "wealth_group__wealth_group_category__code__iexact",
+        *translation_fields("wealth_group__wealth_group_category__name"),
+        "wealth_group__livelihood_zone_baseline__livelihood_zone__code",
+        "wealth_group__livelihood_zone_baseline__livelihood_zone__alternate_code",
+        *translation_fields("wealth_group__livelihood_zone_baseline__name"),
+        "wealth_group__livelihood_zone_baseline__reference_year_end_date",
+        "remark",
     )
     list_filter = (
         "livelihood_strategy",
@@ -1490,9 +1701,21 @@ class CopingStrategyAdmin(admin.ModelAdmin):
         "by_value",
     )
     search_fields = (
-        "community",
-        "livelihood_strategy",
-        "wealth_group",
+        "community__full_name",
+        "livelihood_strategy__strategy_type",
+        "livelihood_strategy__additional_identifier",
+        "livelihood_strategy__product__cpc__iexact",
+        *translation_fields("livelihood_strategy__product__description"),
+        *translation_fields("livelihood_strategy__product__common_name"),
+        "livelihood_strategy__product__aliases",
+        "livelihood_strategy__season__aliases",
+        *translation_fields("livelihood_strategy__season__name"),
+        "wealth_group__wealth_group_category__code__iexact",
+        *translation_fields("wealth_group__wealth_group_category__name"),
+        "wealth_group__livelihood_zone_baseline__livelihood_zone__code",
+        "wealth_group__livelihood_zone_baseline__livelihood_zone__alternate_code",
+        *translation_fields("wealth_group__livelihood_zone_baseline__name"),
+        "wealth_group__livelihood_zone_baseline__reference_year_end_date",
     )
     list_filter = (
         "livelihood_strategy",
