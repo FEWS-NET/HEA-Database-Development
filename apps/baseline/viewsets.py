@@ -27,6 +27,8 @@ from django.views.decorators.cache import cache_page
 from django.views.decorators.http import condition
 from django_filters import rest_framework as filters
 from django_filters.filters import CharFilter
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
@@ -311,7 +313,10 @@ class LivelihoodZoneBaselineViewSet(BaseModelViewSet):
     ordering = ["livelihood_zone__code", "reference_year_end_date"]
 
     def get_serializer_class(self):
-        if self.request.accepted_renderer.format == "geojson":
+        # accepted_renderer is only set once DRF content negotiation has run against a real request. During schema
+        # generation, drf-spectacular introspects this method against a synthetic request that has no renderer yet.
+        accepted_renderer = getattr(self.request, "accepted_renderer", None)
+        if accepted_renderer and accepted_renderer.format == "geojson":
             return LivelihoodZoneBaselineGeoSerializer  # Use GeoFeatureModelSerializer for GeoJSON
         return LivelihoodZoneBaselineSerializer
 
@@ -2436,6 +2441,30 @@ class LivelihoodZoneBaselineFacetedSearchView(APIView):
             "reference_year_end_date": baseline.reference_year_end_date,
         }
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name=api_settings.SEARCH_PARAM,
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description="Search term matched against Livelihood Zones, Countries, Products, Livelihood "
+                "Systems, Wealth Characteristics and Livelihood Strategy Types.",
+            ),
+            OpenApiParameter(
+                name="language",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description="Language code used to translate labels in the response, e.g. `pt`. Defaults to `en`.",
+                default="en",
+            ),
+        ],
+        responses=OpenApiResponse(
+            response=OpenApiTypes.OBJECT,
+            description="A dict keyed by filter category (e.g. `country`, `product`, `livelihood_strategy_types`). "
+            "Each value is a list of matching filters, each containing `filter`, `filter_label`, `value_label`, "
+            "`value`, `count` and the matching `livelihood_zone_baselines`.",
+        ),
+    )
     def get(self, request, format=None):
         """
         Return a faceted set of matching filters

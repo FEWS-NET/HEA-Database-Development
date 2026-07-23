@@ -16,6 +16,8 @@ from django.db.models.functions import Coalesce, NullIf
 from django.utils.text import format_lazy
 from django.utils.translation import gettext_lazy as _
 from django_filters import rest_framework as filters
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotAcceptable
@@ -560,6 +562,18 @@ class AggregatingViewSet(GenericViewSet):
 
     pagination_class = ApiOnlyPagination
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="fields",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description="Comma-delimited list of Meta.fields to group/drill down by. Determines the level of "
+                "aggregation. Defaults to all Meta.fields if omitted. See the viewset description for the full set "
+                "of dynamic `slice_by_[field]`, `min_[field]` and `max_[field]` parameters.",
+            ),
+        ],
+    )
     def list(self, request, *args, **kwargs):
         """
         Aggregates the values specified in the serializer.aggregates property, grouping and aggregating by any
