@@ -221,6 +221,35 @@ def resolve_percentage(raw_value, group_is_whole_number_percentage: bool):
     return raw_value / 100 if raw_value > 1 else raw_value
 
 
+def get_wealth_characteristic_label_map() -> dict[str, dict]:
+    """
+    Return recognized WB labels, including labels that are intentionally ignored.
+    """
+    return {
+        instance.pop("wealth_characteristic_label").lower(): instance
+        for instance in WealthCharacteristicLabel.objects.filter(
+            status__in=[
+                WealthCharacteristicLabel.LabelStatus.COMPLETE,
+                WealthCharacteristicLabel.LabelStatus.IGNORE,
+            ]
+        ).values(
+            "wealth_characteristic_label",
+            "status",
+            "wealth_characteristic_id",
+            "product_id",
+            "unit_of_measure_id",
+            "wealth_characteristic__has_product",
+        )
+    }
+
+
+def is_ignored_wealth_characteristic_label(attributes: dict) -> bool:
+    """
+    Return True when a recognized WB label is configured only to suppress matching rows.
+    """
+    return attributes.get("status") == WealthCharacteristicLabel.LabelStatus.IGNORE
+
+
 @asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
 def wealth_characteristic_instances(
     context: AssetExecutionContext,
@@ -240,18 +269,7 @@ def wealth_characteristic_instances(
 
     # Prepare the lookups, so they cache the individual results
     wealthgroupcategorylookup = WealthGroupCategoryLookup()
-    label_map = {
-        instance.pop("wealth_characteristic_label").lower(): instance
-        for instance in WealthCharacteristicLabel.objects.filter(
-            status=WealthCharacteristicLabel.LabelStatus.COMPLETE
-        ).values(
-            "wealth_characteristic_label",
-            "wealth_characteristic_id",
-            "product_id",
-            "unit_of_measure_id",
-            "wealth_characteristic__has_product",
-        )
-    }
+    label_map = get_wealth_characteristic_label_map()
     context.log.info("Loaded %d Wealth Characteristic Labels", len(label_map))
 
     # Get a dataframe of the Wealth Groups for each column
@@ -269,7 +287,7 @@ def wealth_characteristic_instances(
             ~prepared_labels.iloc[num_header_rows:].isin(label_map) & (prepared_labels.iloc[num_header_rows:] != "")
         ]
         .groupby("A")
-        .apply(lambda x: ", ".join(x.index.astype(str)))
+        .apply(lambda x: ", ".join(x.index.astype(str)), include_groups=False)
     )
     if unrecognized_labels.empty:
         unrecognized_labels = pd.DataFrame(columns=["label", "rows"])
@@ -302,7 +320,10 @@ def wealth_characteristic_instances(
             continue
         # Get the attributes, taking a copy so that we can pop() some of the attributes without altering the original
         attributes = label_map.get(label, {}).copy()
-        if not any(attributes.values()):
+        if is_ignored_wealth_characteristic_label(attributes):
+            # Ignore any row explicitly recognized only so that it can be skipped.
+            continue
+        if not attributes:
             # Ignore rows that don't contain any relevant data (or which aren't in the label_map)
             continue
         # Apply product inheritance

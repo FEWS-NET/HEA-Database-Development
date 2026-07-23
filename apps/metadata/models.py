@@ -552,14 +552,13 @@ class WealthCharacteristicLabel(common_models.Model):
         COMPLETE = "Complete", _("Complete")
         DISCUSSION = "Discussion", _("Under Discussion")
         CORRECT_BSS = "Correct BSS", _("Correct the BSS")
+        IGNORE = "Ignore", _("Ignore this label and associated data in the row")
 
     wealth_characteristic_label = common_models.NameField(
         max_length=200, unique=True, verbose_name=_("Wealth Characteristic Label")
     )
     status = models.CharField(blank=True, max_length=20, choices=LabelStatus.choices, verbose_name=_("Status"))
-    # wealth_characteristic has to be nullable because there are some labels that we want to recognize
-    # i.e. they need an entry in this table, but that we want to ignore completely. For example, sample text in blank
-    # rows, etc. Those labels will have an entry in this table, but no other metadata items.
+    # wealth_characteristic has to be nullable because IGNORE labels do not map to a characteristic.
     wealth_characteristic = models.ForeignKey(
         WealthCharacteristic,
         db_column="wealth_characteristic_code",
