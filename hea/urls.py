@@ -7,6 +7,7 @@ from django.urls import include, path, re_path
 from django.views.decorators.cache import cache_page
 from django.views.decorators.http import etag
 from django.views.i18n import JavaScriptCatalog
+from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 from rest_framework import routers
 
 from baseline.autocomplete import (
@@ -173,6 +174,11 @@ urlpatterns = [
     # API
     path("api/", include(router.urls)),
     path("api-auth/", include("rest_framework.urls", namespace="rest_framework")),
+    # OpenAPI 3.0 schema
+    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+    # Self-hosted API UI:
+    path("api/schema/swagger-ui/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
+    path("api/schema/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
     # Provides il8n/set_language to change Django language:
     path("i18n/", include("django.conf.urls.i18n")),
 ]

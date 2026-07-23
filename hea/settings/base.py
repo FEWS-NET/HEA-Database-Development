@@ -98,6 +98,8 @@ EXTERNAL_APPS = (
     "dal_select2",
     "treebeard",
     "rest_framework",
+    "drf_spectacular",
+    "drf_spectacular_sidecar",
     "django_filters",
     "django.contrib.admin",
     "django.contrib.auth",
@@ -161,7 +163,30 @@ REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "apps.common.exception_handlers.drf_exception_handler",
     "STRICT_JSON": True,
     "SEARCH_PARAM": "search",
+    "DEFAULT_SCHEMA_CLASS": "common.openapi.CustomDrfSpectacularSchema",
 }
+
+########## Start DRF-SPECTACULAR CONFIGURATION
+# See: https://drf-spectacular.readthedocs.io/en/latest/settings.html
+SPECTACULAR_SETTINGS = {
+    "TITLE": "HEA API",
+    "DESCRIPTION": "API for the Household Economy Analysis (HEA) Database, covering Livelihood Zone Baselines, "
+    "Wealth Groups, Livelihood Activities and related reference data.",
+    "VERSION": APP_VERSION,
+    "COMPONENT_SPLIT_REQUEST": True,
+    "SCHEMA_PATH_PREFIX": "^/api/",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "DISABLE_ERRORS_AND_WARNINGS": not DEBUG,
+    "SERVERS": [{"url": "/"}],
+    "PREPROCESSING_HOOKS": ["common.openapi.preprocessing_filter_spec"],
+    "POSTPROCESSING_HOOKS": ["drf_spectacular.hooks.postprocess_schema_enums"],
+    "ENABLE_DJANGO_DEPLOY_CHECK": False,  # prevent generation on Django runserver, as database etc not always available
+    # Self-host the Swagger UI / ReDoc assets instead of loading them from a CDN
+    "SWAGGER_UI_DIST": "SIDECAR",
+    "SWAGGER_UI_FAVICON_HREF": "SIDECAR",
+    "REDOC_DIST": "SIDECAR",
+}
+########## End DRF-SPECTACULAR CONFIGURATION
 
 ASGI_APPLICATION = "hea.asgi.application"
 CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}

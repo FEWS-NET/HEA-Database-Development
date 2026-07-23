@@ -22,6 +22,8 @@ djangorestframework==3.15.2
 djangorestframework-gis==1.1
 djangorestframework-xml==2.0.0
 docutils
+drf-spectacular==0.28.0
+drf-spectacular-sidecar==2025.4.1
 factory-boy==3.2.1
 git+https://github.com/American-Institutes-for-Research/gdrivefs.git@f4ec53446e6a27be2e368b24dadfa9081e1272f2
 googletrans-py==4.0.0
