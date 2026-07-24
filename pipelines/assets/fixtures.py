@@ -12,7 +12,7 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files import File
 from django.core.management import call_command
 from django.db import models
-from jsondiff import diff
+from jsondiff import JsonDiffer
 
 from ..configs import BSSMetadataConfig
 from ..partitions import bss_files_partitions_def, bss_instances_partitions_def
@@ -27,6 +27,9 @@ django.setup()
 from baseline.models import LivelihoodActivity, LivelihoodZoneBaseline  # NOQA: E402
 from common.management.commands import verbose_load_data  # NOQA: E402
 from common.models import ClassifiedProduct  # NOQA: E402
+
+# Create a differ to detect duplicate instances
+differ = JsonDiffer(marshal=True)  # marshal=True escapes the diff so that it can be printed as a JSON sting.
 
 
 def _get_instance_reference(instance: dict) -> dict[str, object]:
@@ -132,7 +135,9 @@ def validate_instances(
                 existing_reference = _get_instance_reference(
                     valid_instances[model_name][tuple(instance["natural_key"])]
                 )
-                changes = diff(instance_reference, existing_reference, marshal=True)
+                changes = differ.diff(
+                    instance_reference, existing_reference, exclude_paths=["instance.created", "instance.modified"]
+                )
                 ref = json.dumps({**instance_reference, "changes": changes}, indent=4, ensure_ascii=False)
                 if changes:
                     error = f"{model_name} {i} duplicates existing record with different values:\n{ref}"
@@ -406,6 +411,8 @@ def consolidated_fixture(
     other_cash_income_valid_instances,
     wild_foods_valid_instances,
     key_parameter_valid_instances,
+    livelihood_product_category_valid_instances,
+    seasonal_activity_valid_instances,
 ) -> Output[list[dict]]:
     """
     Consolidated Django fixture for a BSS, including Livelihood Activities and Wealth Group Characteristic Values.
@@ -421,7 +428,9 @@ def consolidated_fixture(
                 existing_reference = _get_instance_reference(
                     seen_instances[model_name][tuple(instance["natural_key"])]
                 )
-                changes = diff(instance_reference, existing_reference, marshal=True)
+                changes = differ.diff(
+                    instance_reference, existing_reference, exclude_paths=["instance.created", "instance.modified"]
+                )
                 ref = json.dumps({**instance_reference, "changes": changes}, indent=4, ensure_ascii=False)
                 if changes:
                     # Duplicate natural keys with different values are always an error.
@@ -439,26 +448,38 @@ def consolidated_fixture(
             raise RuntimeError("\n".join(errors))
 
     # Combine the Wealth Charactertistic fixture with the records from the
-    # Livelihood Activities fixtures, ignoring the duplicate Wealth Group
-    # records.
+    # Livelihood Activities fixtures, ignoring the duplicate Wealth Groups.
     for model_name, instances in wealth_characteristic_valid_instances.items():
         process_instances(model_name, instances)
     for model_name, instances in livelihood_activity_valid_instances.items():
-        if instances and model_name != "WealthGroup":
-            process_instances(model_name, instances)
+        process_instances(model_name, instances, allow_unchanged_duplicates=(model_name == "WealthGroup"))
 
     # Add the other cash income, wild foods and key parameter instances, if they are present
     for model_name, instances in other_cash_income_valid_instances.items():
-        if instances and model_name != "WealthGroup":
-            process_instances(model_name, instances, allow_unchanged_duplicates=False)
+        process_instances(model_name, instances, allow_unchanged_duplicates=(model_name == "WealthGroup"))
     for model_name, instances in wild_foods_valid_instances.items():
-        if instances and model_name != "WealthGroup":
-            process_instances(model_name, instances, allow_unchanged_duplicates=False)
+        process_instances(model_name, instances, allow_unchanged_duplicates=(model_name == "WealthGroup"))
     for model_name, instances in key_parameter_valid_instances.items():
         if instances:
             # Allow duplicate Livelihood Strategies because they will already have been
             # added from `livelihood_activity_valid_instances`, etc.
-            process_instances(model_name, instances, allow_unchanged_duplicates=(model_name == "LivelihoodStrategy"))
+            process_instances(
+                model_name, instances, allow_unchanged_duplicates=(model_name in ["WealthGroup", "LivelihoodStrategy"])
+            )
+    for model_name, instances in livelihood_product_category_valid_instances.items():
+        if instances:
+            # Allow duplicate Livelihood Strategies and Activities because they will already have been
+            # added from `livelihood_activity_valid_instances`, etc.
+            process_instances(
+                model_name,
+                instances,
+                allow_unchanged_duplicates=(
+                    model_name
+                    in ["WealthGroup", "LivelihoodStrategy", "LivelihoodActivity", "FoodPurchase", "OtherPurchase"]
+                ),
+            )
+    for model_name, instances in seasonal_activity_valid_instances.items():
+        process_instances(model_name, instances)
 
     consolidated_instances = {model_name: list(instances.values()) for model_name, instances in seen_instances.items()}
     return get_fixture_from_instances(consolidated_instances)
