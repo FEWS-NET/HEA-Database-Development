@@ -33,6 +33,11 @@ class LivelihoodActivityForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        if "livelihood_strategy" in self.fields:
+            self.fields["livelihood_strategy"].queryset = self.fields["livelihood_strategy"].queryset.select_related(
+                "livelihood_zone_baseline",
+                "season",
+            )
         if "quantity_produced" in self.fields:
             self.fields["quantity_produced"].label = _("Produced")
         if "quantity_purchased" in self.fields:
