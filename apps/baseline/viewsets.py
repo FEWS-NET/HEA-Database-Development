@@ -1701,13 +1701,19 @@ class SeasonalActivityViewSet(BaseModelViewSet):
     API endpoint that allows seasonal activities to be viewed or edited.
     """
 
-    queryset = SeasonalActivity.objects.select_related(
-        "seasonal_activity_type",
-        "livelihood_zone_baseline__livelihood_zone__country",
-        "livelihood_zone_baseline__source_organization",
-        "livelihood_zone_baseline__source_organization",
-        "product",
-    ).prefetch_related("season")
+    queryset = (
+        SeasonalActivity.objects.select_related(
+            "seasonal_activity_type",
+            "livelihood_zone_baseline__livelihood_zone__country",
+            "livelihood_zone_baseline__source_organization",
+            "livelihood_zone_baseline__source_organization",
+            "product",
+        )
+        .prefetch_related("season")
+        .defer(
+            "livelihood_zone_baseline__geography",
+        )
+    )
     serializer_class = SeasonalActivitySerializer
     filterset_class = SeasonalActivityFilterSet
     ordering = [
@@ -1721,6 +1727,13 @@ class SeasonalActivityViewSet(BaseModelViewSet):
 
 class SeasonalActivityOccurrenceFilterSet(filters.FilterSet):
     is_key = filters.BooleanFilter(field_name="seasonal_activity__is_key", label="Key seasonal activity")
+    # Community.__str__() dereferences community.livelihood_zone_baseline.livelihood_zone, so without
+    # select_related the browsable API's filter dropdown does 2 extra queries per Community choice rendered.
+    community = filters.ModelChoiceFilter(
+        queryset=Community.objects.select_related("livelihood_zone_baseline__livelihood_zone").defer(
+            "geography", "livelihood_zone_baseline__geography"
+        )
+    )
 
     class Meta:
         model = SeasonalActivityOccurrence
@@ -1740,12 +1753,20 @@ class SeasonalActivityOccurrenceViewSet(BaseModelViewSet):
     """
 
     permission_classes = [IsAuthenticated]
-    queryset = SeasonalActivityOccurrence.objects.select_related(
-        "community",
-        "livelihood_zone_baseline__livelihood_zone__country",
-        "livelihood_zone_baseline__source_organization",
-        "seasonal_activity__product",
-    ).prefetch_related("seasonal_activity__season")
+    queryset = (
+        SeasonalActivityOccurrence.objects.select_related(
+            "community",
+            "livelihood_zone_baseline__livelihood_zone__country",
+            "livelihood_zone_baseline__source_organization",
+            "seasonal_activity__product",
+            "seasonal_activity__seasonal_activity_type",
+        )
+        .prefetch_related("seasonal_activity__season")
+        .defer(
+            "livelihood_zone_baseline__geography",
+            "community__geography",
+        )
+    )
     serializer_class = SeasonalActivityOccurrenceSerializer
     filterset_class = SeasonalActivityOccurrenceFilterSet
     ordering = [
@@ -1769,11 +1790,18 @@ class BaselineSeasonalActivityOccurrenceViewSet(BaseModelViewSet):
     API endpoint that allows zone-level seasonal activity occurrences to be viewed or edited.
     """
 
-    queryset = BaselineSeasonalActivityOccurrence.objects.select_related(
-        "livelihood_zone_baseline__livelihood_zone__country",
-        "livelihood_zone_baseline__source_organization",
-        "seasonal_activity__product",
-    ).prefetch_related("seasonal_activity__season")
+    queryset = (
+        BaselineSeasonalActivityOccurrence.objects.select_related(
+            "livelihood_zone_baseline__livelihood_zone__country",
+            "livelihood_zone_baseline__source_organization",
+            "seasonal_activity__product",
+            "seasonal_activity__seasonal_activity_type",
+        )
+        .prefetch_related("seasonal_activity__season")
+        .defer(
+            "livelihood_zone_baseline__geography",
+        )
+    )
     serializer_class = BaselineSeasonalActivityOccurrenceSerializer
     filterset_class = BaselineSeasonalActivityOccurrenceFilterSet
     ordering = [
