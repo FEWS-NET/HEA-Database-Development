@@ -1,0 +1,43 @@
+{% extends "admin/change_form.html" %}
+{% load i18n %}
+
+{% block inline_field_sets %}
+  {{ block.super }}
+  {% if not add %}
+    <div class="inline-group" id="livelihood-product-categories-group">
+      <div class="tabular inline-related last-related">
+        <fieldset class="module collapse" aria-labelledby="livelihood-product-categories-heading">
+          <details>
+            <summary>
+              <h2 id="livelihood-product-categories-heading" class="inline-heading">
+                {% translate "Livelihood Product Categories" %}
+              </h2>
+            </summary>
+            <table>
+              <thead>
+                <tr>
+                  <th>{% translate "Baseline Livelihood Activity" %}</th>
+                  <th>{% translate "Product Basket" %}</th>
+                  <th>{% translate "Percentage allocation to basket" %}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for category in livelihood_product_categories %}
+                  <tr class="form-row">
+                    <td>{{ category.baseline_livelihood_activity }}</td>
+                    <td>{{ category.get_basket_display }}</td>
+                    <td>{{ category.percentage_allocation_to_basket }}</td>
+                  </tr>
+                {% empty %}
+                  <tr class="form-row">
+                    <td colspan="3">{% translate "No Livelihood Product Categories." %}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </details>
+        </fieldset>
+      </div>
+    </div>
+  {% endif %}
+{% endblock %}

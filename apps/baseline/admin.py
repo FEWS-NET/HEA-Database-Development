@@ -2,6 +2,7 @@ import re
 from copy import deepcopy
 
 from binary_database_files.models import File
+from django import forms
 from django.contrib import admin
 from django.contrib.gis.admin import GISModelAdmin
 from django.utils.translation import gettext_lazy as _
@@ -151,6 +152,7 @@ class LivelihoodZoneBaselineCorrectionInlineAdmin(admin.StackedInline):
     model = LivelihoodZoneBaselineCorrection
     list_display = ("worksheet_name", "cell_range", "previous_value", "value", "correction_date", "author")
     readonly_fields = ("correction_date",)
+    classes = ["collapse"]
     extra = 1
 
 
@@ -487,6 +489,29 @@ class WealthGroupCharacteristicValueInlineAdmin(admin.TabularInline):
                 "wealth_group__community",
             )
         )
+
+    def get_formset(self, request, obj=None, **kwargs):
+        """
+        Share the Wealth Characteristic choices across all forms in this inline.
+        """
+        formset = super().get_formset(request, obj=obj, **kwargs)
+        base_form = formset.form
+        wealth_characteristic_choices = None
+
+        class WealthGroupCharacteristicValueForm(base_form):
+            """
+            Reuse the evaluated Wealth Characteristic choices for this formset.
+            """
+
+            def __init__(self, *args, **inner_kwargs):
+                nonlocal wealth_characteristic_choices
+                super().__init__(*args, **inner_kwargs)
+                if wealth_characteristic_choices is None:
+                    wealth_characteristic_choices = list(self.fields["wealth_characteristic"].choices)
+                self.fields["wealth_characteristic"].choices = wealth_characteristic_choices
+
+        formset.form = WealthGroupCharacteristicValueForm
+        return formset
 
     def get_extra(self, request, obj=None, **kwargs):
         extra = super().get_extra(request, obj, **kwargs)
@@ -907,16 +932,25 @@ class LivelihoodActivityInlineAdmin(admin.StackedInline):
         formset = super().get_formset(request, obj=obj, **kwargs)
         base_form = formset.form
 
-        class ExistingLivelihoodActivityForm(base_form):
+        class LivelihoodActivityForm(base_form):
             def __init__(self, *args, **inner_kwargs):
                 super().__init__(*args, **inner_kwargs)
                 if self.instance and self.instance.pk:
                     if "livelihood_strategy" in self.fields:
-                        self.fields["livelihood_strategy"].disabled = True
+                        livelihood_strategy = self.fields["livelihood_strategy"]
+                        livelihood_strategy.disabled = True
+                        livelihood_strategy.widget = forms.Select(
+                            choices=[
+                                (
+                                    self.instance.livelihood_strategy_id,
+                                    str(self.instance.livelihood_strategy),
+                                )
+                            ]
+                        )
                     if "scenario" in self.fields:
                         self.fields["scenario"].disabled = True
 
-        formset.form = ExistingLivelihoodActivityForm
+        formset.form = LivelihoodActivityForm
         return formset
 
     def get_queryset(self, request):
@@ -924,10 +958,12 @@ class LivelihoodActivityInlineAdmin(admin.StackedInline):
             super()
             .get_queryset(request)
             .select_related(
+                "livelihood_zone_baseline",
                 "livelihood_strategy__livelihood_zone_baseline",
                 "livelihood_strategy__season",
                 "wealth_group__livelihood_zone_baseline",
                 "wealth_group__wealth_group_category",
+                "wealth_group__community__livelihood_zone_baseline__livelihood_zone",
             )
         )
 
@@ -1061,7 +1097,12 @@ class PaymentInKindInlineAdmin(LivelihoodActivityInlineAdmin):
         return fieldsets
 
     def get_queryset(self, request):
-        return super().get_queryset(request).filter(strategy_type=LivelihoodStrategyType.PAYMENT_IN_KIND)
+        return (
+            super()
+            .get_queryset(request)
+            .filter(strategy_type=LivelihoodStrategyType.PAYMENT_IN_KIND)
+            .select_related("payment_product")
+        )
 
 
 class ReliefGiftOtherInlineAdmin(LivelihoodActivityInlineAdmin):
@@ -1180,6 +1221,7 @@ class CommunityRelatedOnlyFieldListFilter(admin.RelatedOnlyFieldListFilter):
 
 
 class WealthGroupAdmin(admin.ModelAdmin):
+    change_form_template = "admin/baseline/wealthgroup/change_form.html"
     form = WealthGroupForm
     fields = (
         "livelihood_zone_baseline",
@@ -1242,6 +1284,32 @@ class WealthGroupAdmin(admin.ModelAdmin):
             )
             .prefetch_related("livelihoodactivity_set")
         )
+
+    def render_change_form(self, request, context, add=False, change=False, form_url="", obj=None):
+        """
+        Add the Wealth Group's indirectly related product categories to the change form.
+        """
+        context["livelihood_product_categories"] = (
+            LivelihoodProductCategory.objects.filter(
+                baseline_livelihood_activity__wealth_group=obj,
+            )
+            .select_related(
+                "baseline_livelihood_activity__livelihood_zone_baseline",
+                "baseline_livelihood_activity__livelihood_strategy__livelihood_zone_baseline",
+                "baseline_livelihood_activity__livelihood_strategy__product",
+                "baseline_livelihood_activity__livelihood_strategy__season",
+                "baseline_livelihood_activity__wealth_group__community__livelihood_zone_baseline__livelihood_zone",
+                "baseline_livelihood_activity__wealth_group__livelihood_zone_baseline",
+                "baseline_livelihood_activity__wealth_group__wealth_group_category",
+            )
+            .order_by(
+                "basket",
+                "baseline_livelihood_activity__livelihood_strategy__product__cpc",
+            )
+            if obj
+            else LivelihoodProductCategory.objects.none()
+        )
+        return super().render_change_form(request, context, add, change, form_url, obj)
 
     @admin.display(description=_("Population source"))
     def population_source(self, instance):
