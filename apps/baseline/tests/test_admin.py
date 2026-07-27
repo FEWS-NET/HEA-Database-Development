@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 from django.contrib.admin.sites import AdminSite
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import SimpleTestCase, TestCase
+from django.test import RequestFactory, SimpleTestCase, TestCase
 from django.urls import reverse
 from django.utils.translation import activate
 
@@ -20,6 +20,7 @@ from baseline.admin import (
     LivelihoodActivityAdmin,
     LivelihoodStrategyAdmin,
     LivelihoodZoneBaselineAdmin,
+    LivelihoodZoneBaselineCorrectionInlineAdmin,
     MarketPriceAdmin,
     SeasonalActivityAdmin,
     SeasonalActivityOccurrenceAdmin,
@@ -35,6 +36,7 @@ from baseline.models import (
     LivelihoodActivityScenario,
     LivelihoodProductCategory,
     LivelihoodZoneBaseline,
+    LivelihoodZoneBaselineCorrection,
     WealthGroup,
 )
 from baseline.tests.factories import (
@@ -210,6 +212,7 @@ class LivelihoodZoneBaselineAdminTestCase(TestCase):
         cls.baseline_with_poor_main_staple.save()
         activate("en")
         cls.url = reverse("admin:baseline_livelihoodzonebaseline_changelist")
+        cls.site = AdminSite()
 
     def setUp(self):
         self.client.login(username="admin", password="admin")
@@ -218,6 +221,77 @@ class LivelihoodZoneBaselineAdminTestCase(TestCase):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.livelihood_zone_baseline1.livelihood_zone.code)
+
+    def test_change_form_displays_bss_metadata_in_additional_section(self):
+        response = self.client.get(
+            reverse(
+                "admin:baseline_livelihoodzonebaseline_change",
+                args=[self.livelihood_zone_baseline1.pk],
+            )
+        )
+
+        self.assertEqual(response.status_code, 200)
+        soup = BeautifulSoup(response.content, "html.parser")
+        additional = soup.find("h2", string="Additional").find_parent("fieldset")
+        self.assertIsNotNone(additional.select_one(".field-bss_content_hash"))
+        self.assertIsNotNone(additional.select_one(".field-bss_uploaded_datetime"))
+        self.assertIsNotNone(additional.select_one(".field-bss_size"))
+        self.assertEqual(
+            additional.select_one(".field-bss_content_hash label").get_text(strip=True),
+            "BSS Content Hash:",
+        )
+        self.assertIn(
+            self.livelihood_zone_baseline1.bss_uploaded_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+            additional.select_one(".field-bss_uploaded_datetime").get_text(),
+        )
+        self.assertIn(
+            f"{self.livelihood_zone_baseline1.bss_size:,} bytes",
+            additional.select_one(".field-bss_size").get_text(),
+        )
+
+    def test_correction_inline_eager_loads_natural_key_relations(self):
+        correction = LivelihoodZoneBaselineCorrection.objects.create(
+            livelihood_zone_baseline=self.livelihood_zone_baseline1,
+            worksheet_name=LivelihoodZoneBaselineCorrection.WorksheetName.DATA,
+            cell_range="A1",
+            previous_value="old",
+            value="new",
+            author=User.objects.get(username="admin"),
+            comment="Corrected value",
+        )
+        request = RequestFactory().get("/")
+        request.user = User.objects.get(username="admin")
+        inline = LivelihoodZoneBaselineCorrectionInlineAdmin(LivelihoodZoneBaseline, self.site)
+        loaded_correction = inline.get_queryset(request).get(pk=correction.pk)
+
+        with self.assertNumQueries(0):
+            loaded_correction.natural_key()
+            str(loaded_correction)
+
+    def test_correction_inline_reuses_author_choices(self):
+        author = User.objects.get(username="admin")
+        for cell_range in ("A1", "A2"):
+            LivelihoodZoneBaselineCorrection.objects.create(
+                livelihood_zone_baseline=self.livelihood_zone_baseline1,
+                worksheet_name=LivelihoodZoneBaselineCorrection.WorksheetName.DATA,
+                cell_range=cell_range,
+                previous_value="old",
+                value="new",
+                author=author,
+                comment="Corrected value",
+            )
+        request = RequestFactory().get("/")
+        request.user = author
+        inline = LivelihoodZoneBaselineCorrectionInlineAdmin(LivelihoodZoneBaseline, self.site)
+        formset_class = inline.get_formset(request, obj=self.livelihood_zone_baseline1)
+        queryset = inline.get_queryset(request).filter(livelihood_zone_baseline=self.livelihood_zone_baseline1)
+        forms = formset_class(instance=self.livelihood_zone_baseline1, queryset=queryset).forms
+
+        choices = forms[0].fields["author"].choices
+        self.assertEqual(choices, forms[1].fields["author"].choices)
+        with self.assertNumQueries(0):
+            str(forms[0]["author"])
+            str(forms[1]["author"])
 
     def test_search_livelihood_zone_baseline_fields(self):
         response = self.client.get(

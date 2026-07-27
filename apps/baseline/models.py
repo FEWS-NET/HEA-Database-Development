@@ -7,6 +7,7 @@ import math
 import numbers
 
 import pandas as pd
+from binary_database_files.models import File
 from django.conf import settings
 from django.contrib.gis.db import models
 from django.core.cache import cache
@@ -287,6 +288,44 @@ class LivelihoodZoneBaseline(common_models.Model):
             verbose_name=_("Profile Report PDF file"),
         )
     )
+
+    @cached_property
+    def _bss_database_file(self):
+        """
+        Return the database file containing the BSS.
+        """
+        if not self.bss:
+            return None
+        try:
+            return File.objects.get(name=self.bss.name)
+        except File.DoesNotExist:
+            return None
+
+    @cached_property
+    def bss_content_hash(self):
+        """
+        Return the persisted SHA-512 hash of the BSS content.
+        """
+        return self._bss_database_file.content_hash if self._bss_database_file else None
+
+    @cached_property
+    def bss_uploaded_datetime(self):
+        """
+        Return the BSS database upload time rounded to the nearest second.
+        """
+        if not self._bss_database_file:
+            return None
+        return (self._bss_database_file.created_datetime + datetime.timedelta(microseconds=500_000)).replace(
+            microsecond=0
+        )
+
+    @cached_property
+    def bss_size(self):
+        """
+        Return the size of the BSS in bytes.
+        """
+        return self._bss_database_file.size if self._bss_database_file else None
+
     reference_year_start_date = models.DateField(
         verbose_name=_("Reference Year Start Date"),
         help_text=_("The first day of the month of the start month in the reference year"),
