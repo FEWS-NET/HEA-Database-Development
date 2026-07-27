@@ -22,6 +22,7 @@ from ..assets.livelihood_activity import (
     livelihood_activity_dataframe,
     livelihood_activity_instances,
     livelihood_activity_label_dataframe,
+    livelihood_activity_label_recognition_dataframe,
     livelihood_activity_valid_instances,
     livelihood_summary_dataframe,
     summary_livelihood_activity_labels_dataframe,
@@ -46,6 +47,7 @@ from ..assets.seasonal_calendar import (
     seasonal_activity_instances,
     seasonal_activity_valid_instances,
     seasonal_calendar_dataframe,
+    summary_seasonal_calendar_labels_dataframe,
 )
 from ..assets.wealth_characteristic import (
     all_wealth_characteristic_labels_dataframe,
@@ -88,6 +90,11 @@ create_consolidated_fixture = define_asset_job(
     partitions_def=bss_instances_partitions_def,
 )
 
+# imported_baseline runs in the django_loaddata concurrency pool
+# (with the limit set at /deployment/concurrency), so that we
+# can avoid duplicate primary key errors. Therefore we need to
+# run imported_baseline separately from other assets, otherwise
+# the limit applies to them too.
 import_baseline_from_fixture = define_asset_job(
     name="import_baseline_from_fixture",
     selection=(imported_baseline,),
@@ -138,6 +145,19 @@ extract_dataframes = define_asset_job(
         livelihood_activity_label_dataframe,
         other_cash_income_label_dataframe,
         wild_foods_label_dataframe,
+        seasonal_calendar_dataframe,
+    ),
+    partitions_def=bss_instances_partitions_def,
+)
+
+# The summary labels dataframe assets contain a call to Google Translate, which
+# is slow. We don't want to run them as part of the extract_dataframes job,
+# because it causes the creation of the all labels and summary dataframes and
+# the translation of each label to happen per partition, instead of only
+# once - after all the partition-level dataframes have been created.
+summarize_dataframes = define_asset_job(
+    name="summarize_dataframes",
+    selection=(
         all_wealth_characteristic_labels_dataframe,
         all_livelihood_activity_labels_dataframe,
         all_other_cash_income_labels_dataframe,
@@ -146,7 +166,8 @@ extract_dataframes = define_asset_job(
         summary_livelihood_activity_labels_dataframe,
         summary_other_cash_income_labels_dataframe,
         summary_wild_foods_labels_dataframe,
-        seasonal_calendar_dataframe,
+        summary_seasonal_calendar_labels_dataframe,
+        livelihood_activity_label_recognition_dataframe,
     ),
     partitions_def=bss_instances_partitions_def,
 )
