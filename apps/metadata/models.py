@@ -102,7 +102,7 @@ class LivelihoodSystem(ReferenceData):
 
     color = models.CharField(
         max_length=7,
-        default="#FFFFFF",
+        default="#9B9D80",
         verbose_name=_(
             "Color",
         ),
@@ -254,7 +254,7 @@ class SeasonalActivityType(ReferenceData):
     )
     color = models.CharField(
         max_length=7,
-        default="#FFFFFF",
+        default="#9B9D80",
         verbose_name=_("Color"),
         help_text=_("Color hex value code for the Seasonal Activity Type."),
     )
