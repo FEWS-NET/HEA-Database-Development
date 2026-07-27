@@ -375,6 +375,9 @@ class LivelihoodZoneBaselineViewSetTestCase(APITestCase):
             "livelihood_zone_country_name",
             "primary_livelihood_system",
             "bss",
+            "bss_content_hash",
+            "bss_uploaded_datetime",
+            "bss_size",
             "bss_language",
             *translation_fields("profile_report"),
             "reference_year_start_date",
@@ -393,6 +396,10 @@ class LivelihoodZoneBaselineViewSetTestCase(APITestCase):
             f"Fields expected: {expected_fields}. "
             f"Fields found: {response.json().keys()}.",
         )
+        self.assertEqual(response.json()["bss_content_hash"], self.data[0].bss_content_hash)
+        self.assertEqual(response.json()["bss_size"], self.data[0].bss_size)
+        self.assertIsNotNone(response.json()["bss_uploaded_datetime"])
+        self.assertNotIn(".", response.json()["bss_uploaded_datetime"])
 
     def test_patch_requires_authentication(self):
         logging.disable(logging.CRITICAL)

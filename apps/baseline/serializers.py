@@ -83,6 +83,9 @@ class LivelihoodZoneSerializer(serializers.ModelSerializer):
 
 class LivelihoodZoneBaselineSerializer(serializers.ModelSerializer):
     annual_kcals_cost = serializers.FloatField(read_only=True)
+    bss_content_hash = serializers.CharField(read_only=True)
+    bss_uploaded_datetime = serializers.DateTimeField(read_only=True)
+    bss_size = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = LivelihoodZoneBaseline
@@ -98,6 +101,9 @@ class LivelihoodZoneBaselineSerializer(serializers.ModelSerializer):
             "livelihood_zone_country_name",
             "primary_livelihood_system",
             "bss",
+            "bss_content_hash",
+            "bss_uploaded_datetime",
+            "bss_size",
             "bss_language",
             "currency",
             *translation_fields("profile_report"),
@@ -122,6 +128,9 @@ class LivelihoodZoneBaselineSerializer(serializers.ModelSerializer):
 
 class LivelihoodZoneBaselineGeoSerializer(GeoFeatureModelSerializer):
     annual_kcals_cost = serializers.FloatField(read_only=True)
+    bss_content_hash = serializers.CharField(read_only=True)
+    bss_uploaded_datetime = serializers.DateTimeField(read_only=True)
+    bss_size = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = LivelihoodZoneBaseline
@@ -138,6 +147,9 @@ class LivelihoodZoneBaselineGeoSerializer(GeoFeatureModelSerializer):
             "geography",
             "primary_livelihood_system",
             "bss",
+            "bss_content_hash",
+            "bss_uploaded_datetime",
+            "bss_size",
             "bss_language",
             "currency",
             *translation_fields("profile_report"),

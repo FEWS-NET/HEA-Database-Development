@@ -1,5 +1,6 @@
 import datetime
 
+from binary_database_files.models import File
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 
@@ -100,6 +101,22 @@ class LivelihoodZoneBaselineTestCase(TestCase):
         self.assertAlmostEqual(self.baseline._annual_kcals_cost, expected_annual_kcals_cost)
         self.assertAlmostEqual(self.baseline._get_annual_kcals_cost(), expected_annual_kcals_cost)
         self.assertAlmostEqual(self.baseline._get_annual_kcals_cost_sql(), expected_annual_kcals_cost)
+
+    def test_bss_metadata_uses_cached_database_file(self):
+        database_file = File.objects.get(name=self.baseline.bss.name)
+        expected_uploaded_datetime = (
+            database_file.created_datetime + datetime.timedelta(microseconds=500_000)
+        ).replace(microsecond=0)
+
+        with self.assertNumQueries(1):
+            self.assertEqual(self.baseline.bss_content_hash, database_file.content_hash)
+            self.assertEqual(self.baseline.bss_uploaded_datetime, expected_uploaded_datetime)
+            self.assertEqual(self.baseline.bss_size, database_file.size)
+
+        with self.assertNumQueries(0):
+            self.baseline.bss_content_hash
+            self.baseline.bss_uploaded_datetime
+            self.baseline.bss_size
 
     def test_poor_survival_non_food_expenditure(self):
         expected_expenditure = (

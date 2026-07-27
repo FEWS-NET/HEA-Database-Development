@@ -1,7 +1,6 @@
 import re
 from copy import deepcopy
 
-from binary_database_files.models import File
 from django import forms
 from django.contrib import admin
 from django.contrib.gis.admin import GISModelAdmin
@@ -155,6 +154,35 @@ class LivelihoodZoneBaselineCorrectionInlineAdmin(admin.StackedInline):
     classes = ["collapse"]
     extra = 1
 
+    def get_queryset(self, request):
+        """
+        Load the baseline used by the correction's natural key.
+        """
+        return super().get_queryset(request).select_related("livelihood_zone_baseline")
+
+    def get_formset(self, request, obj=None, **kwargs):
+        """
+        Share the Author choices across all forms in this inline.
+        """
+        formset = super().get_formset(request, obj=obj, **kwargs)
+        base_form = formset.form
+        author_choices = None
+
+        class LivelihoodZoneBaselineCorrectionForm(base_form):
+            """
+            Reuse the evaluated Author choices for this formset.
+            """
+
+            def __init__(self, *args, **inner_kwargs):
+                nonlocal author_choices
+                super().__init__(*args, **inner_kwargs)
+                if author_choices is None:
+                    author_choices = list(self.fields["author"].choices)
+                self.fields["author"].choices = author_choices
+
+        formset.form = LivelihoodZoneBaselineCorrectionForm
+        return formset
+
 
 class GISModelAdminReadOnly(GISModelAdmin):
     """
@@ -178,7 +206,6 @@ class LivelihoodZoneBaselineAdmin(GISModelAdminReadOnly):
                     "primary_livelihood_system",
                     "source_organization",
                     "bss",
-                    "bss_uploaded_date_time",
                     "bss_language",
                     *translation_fields("profile_report"),
                     "reference_year_start_date",
@@ -199,6 +226,9 @@ class LivelihoodZoneBaselineAdmin(GISModelAdminReadOnly):
                 "classes": ["collapse", "extrapretty"],
                 "fields": [
                     "geography",
+                    "bss_content_hash",
+                    "bss_uploaded_datetime",
+                    "bss_size",
                     "population_source",
                     "population_estimate",
                     "poor_main_staple",
@@ -220,7 +250,9 @@ class LivelihoodZoneBaselineAdmin(GISModelAdminReadOnly):
     readonly_fields = (
         "livelihood_zone_alternate_code",
         "country",
-        "bss_uploaded_date_time",
+        "bss_content_hash",
+        "bss_uploaded_datetime",
+        "bss_size",
         "poor_main_staple",
         "poor_household_size",
         "poor_survival_non_food_expenditure",
@@ -265,15 +297,30 @@ class LivelihoodZoneBaselineAdmin(GISModelAdminReadOnly):
         """
         return instance.livelihood_zone.country
 
+    @admin.display(description=_("BSS Content Hash"))
+    def bss_content_hash(self, instance):
+        """
+        Display the persisted hash of the BSS content.
+        """
+        return instance.bss_content_hash
+
     @admin.display(description=_("BSS Uploaded At"))
-    def bss_uploaded_date_time(self, instance):
+    def bss_uploaded_datetime(self, instance):
         """
-        Display the date and time that the BSS was uploaded.
+        Display the BSS upload time to the nearest second.
         """
-        try:
-            return File.objects.get(name=instance.bss).created_datetime.strftime("%Y-%m-%d %H:%M:%S")
-        except File.DoesNotExist:
+        if instance.bss_uploaded_datetime is None:
             return ""
+        return instance.bss_uploaded_datetime.strftime("%Y-%m-%d %H:%M:%S")
+
+    @admin.display(description=_("BSS Size"))
+    def bss_size(self, instance):
+        """
+        Display the BSS size as a comma-separated number of bytes.
+        """
+        if instance.bss_size is None:
+            return ""
+        return f"{instance.bss_size:,} bytes"
 
     @admin.display(description=_("Poor Main Staple"))
     def poor_main_staple(self, instance):
