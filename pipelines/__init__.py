@@ -85,6 +85,7 @@ from .assets.wild_foods import (
     wild_foods_valid_instances,
 )
 from .jobs.fixtures import (
+    create_consolidated_fixture,
     extract_dataframes,
     import_baseline_from_fixture,
     import_seas_cal_from_fixture,
@@ -176,6 +177,7 @@ defs = Definitions(
         update_external_assets,
         upload_baselines,
         extract_dataframes,
+        create_consolidated_fixture,
         import_baseline_from_fixture,
         load_all_geographies,
         import_seas_cal_from_fixture,

@@ -23,7 +23,14 @@ from ..assets.livelihood_activity import (
     livelihood_activity_instances,
     livelihood_activity_label_dataframe,
     livelihood_activity_valid_instances,
+    livelihood_summary_dataframe,
     summary_livelihood_activity_labels_dataframe,
+)
+from ..assets.livelihood_product_category import (
+    livelihood_product_category_dataframe,
+    livelihood_product_category_instances,
+    livelihood_product_category_valid_instances,
+    other_food_purchase_summ_dataframe,
 )
 from ..assets.other_cash_income import (
     all_other_cash_income_labels_dataframe,
@@ -38,6 +45,7 @@ from ..assets.seasonal_calendar import (
     seasonal_activity_fixture,
     seasonal_activity_instances,
     seasonal_activity_valid_instances,
+    seasonal_calendar_dataframe,
 )
 from ..assets.wealth_characteristic import (
     all_wealth_characteristic_labels_dataframe,
@@ -57,8 +65,8 @@ from ..assets.wild_foods import (
 )
 from ..partitions import bss_files_partitions_def, bss_instances_partitions_def
 
-import_baseline_from_fixture = define_asset_job(
-    name="import_baseline_from_fixture",
+create_consolidated_fixture = define_asset_job(
+    name="create_consolidated_fixture",
     selection=(
         wealth_characteristic_instances,
         livelihood_activity_instances,
@@ -66,14 +74,23 @@ import_baseline_from_fixture = define_asset_job(
         wild_foods_instances,
         livelihood_activity_groups,
         key_parameter_instances,
+        livelihood_product_category_instances,
+        seasonal_activity_instances,
         wealth_characteristic_valid_instances,
         livelihood_activity_valid_instances,
         other_cash_income_valid_instances,
         wild_foods_valid_instances,
         key_parameter_valid_instances,
+        livelihood_product_category_valid_instances,
+        seasonal_activity_valid_instances,
         consolidated_fixture,
-        imported_baseline,
     ),
+    partitions_def=bss_instances_partitions_def,
+)
+
+import_baseline_from_fixture = define_asset_job(
+    name="import_baseline_from_fixture",
+    selection=(imported_baseline,),
     partitions_def=bss_instances_partitions_def,
 )
 
@@ -113,7 +130,10 @@ extract_dataframes = define_asset_job(
         livelihood_activity_dataframe,
         other_cash_income_dataframe,
         wild_foods_dataframe,
+        livelihood_summary_dataframe,
         key_parameter_dataframe,
+        other_food_purchase_summ_dataframe,
+        livelihood_product_category_dataframe,
         wealth_characteristic_label_dataframe,
         livelihood_activity_label_dataframe,
         other_cash_income_label_dataframe,
@@ -126,6 +146,7 @@ extract_dataframes = define_asset_job(
         summary_livelihood_activity_labels_dataframe,
         summary_other_cash_income_labels_dataframe,
         summary_wild_foods_labels_dataframe,
+        seasonal_calendar_dataframe,
     ),
     partitions_def=bss_instances_partitions_def,
 )
