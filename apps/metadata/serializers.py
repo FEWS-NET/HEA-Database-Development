@@ -64,6 +64,7 @@ class SeasonalActivityTypeSerializer(ReferenceDataSerializer):
             "activity_category",
             "has_product",
             "is_key",
+            "color",
         ]
 
 

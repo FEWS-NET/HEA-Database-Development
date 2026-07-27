@@ -1075,6 +1075,7 @@ class SeasonalActivitySerializer(serializers.ModelSerializer):
             "seasonal_activity_type_name",
             "seasonal_activity_type_description",
             "seasonal_activity_type_ordering",
+            "seasonal_activity_type_color",
             "activity_category",
             "activity_category_label",
             "activity_category_ordering",
@@ -1104,6 +1105,7 @@ class SeasonalActivitySerializer(serializers.ModelSerializer):
     seasonal_activity_type_ordering = serializers.IntegerField(
         source="seasonal_activity_type.ordering", read_only=True
     )
+    seasonal_activity_type_color = serializers.CharField(source="seasonal_activity_type.color", read_only=True)
     activity_category = serializers.CharField(source="seasonal_activity_type.activity_category", read_only=True)
     activity_category_label = serializers.SerializerMethodField()
     activity_category_ordering = serializers.IntegerField(
@@ -1146,6 +1148,7 @@ class SeasonalActivityOccurrenceSerializer(serializers.ModelSerializer):
             "seasonal_activity_type_name",
             "seasonal_activity_type_description",
             "seasonal_activity_type_ordering",
+            "seasonal_activity_type_color",
             "activity_category",
             "activity_category_label",
             "activity_category_ordering",
@@ -1174,6 +1177,13 @@ class SeasonalActivityOccurrenceSerializer(serializers.ModelSerializer):
     )
     livelihood_zone_country_name = serializers.CharField(
         source="livelihood_zone_baseline.livelihood_zone.country.name", read_only=True
+    )
+    # Community.__str__() dereferences community.livelihood_zone_baseline.livelihood_zone, so without
+    # select_related the browsable API's write-form dropdown does 2 extra queries per Community choice rendered.
+    community = serializers.PrimaryKeyRelatedField(
+        queryset=Community.objects.select_related("livelihood_zone_baseline__livelihood_zone").defer(
+            "geography", "livelihood_zone_baseline__geography"
+        )
     )
     community_name = serializers.SerializerMethodField()
     community_full_name = serializers.SerializerMethodField()
@@ -1210,6 +1220,9 @@ class SeasonalActivityOccurrenceSerializer(serializers.ModelSerializer):
     )
     seasonal_activity_type_ordering = serializers.IntegerField(
         source="seasonal_activity.seasonal_activity_type.ordering", read_only=True
+    )
+    seasonal_activity_type_color = serializers.CharField(
+        source="seasonal_activity.seasonal_activity_type.color", read_only=True
     )
     activity_category = serializers.CharField(
         source="seasonal_activity.seasonal_activity_type.activity_category", read_only=True

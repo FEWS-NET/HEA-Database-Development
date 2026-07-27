@@ -252,6 +252,12 @@ class SeasonalActivityType(ReferenceData):
         verbose_name=_("Key Seasonal Activity?"),
         help_text=_("Are SeasonalActivity instances of this type key seasonal activities?"),
     )
+    color = models.CharField(
+        max_length=7,
+        default="#FFFFFF",
+        verbose_name=_("Color"),
+        help_text=_("Color hex value code for the Seasonal Activity Type."),
+    )
 
     @property
     def activity_category_ordering(self):

@@ -78,12 +78,30 @@ class SeasonalActivityTypeAdmin(ReferenceDataAdmin):
         "activity_category",
         "has_product",
         "is_key",
+        "color",
         "aliases",
         *translation_fields("description"),
         "ordering",
     )
-    list_display = ReferenceDataAdmin.list_display + ("activity_category", "has_product", "is_key")
+    list_display = ReferenceDataAdmin.list_display + (
+        "activity_category",
+        "has_product",
+        "is_key",
+        "color_display",
+    )
     list_filter = ("activity_category", "has_product", "is_key")
+
+    # Override only the 'color' field to use the html5 color input
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        if db_field.name == "color":
+            kwargs["widget"] = forms.TextInput(attrs={"type": "color"})
+        return super().formfield_for_dbfield(db_field, request, **kwargs)
+
+    # Display color as a colored block in the list page
+    def color_display(self, obj):
+        return format_html('<div style="width: 60px; height: 20px; background-color: {};"></div>', obj.color)
+
+    color_display.short_description = "Color"
 
 
 class WealthGroupCategoryAdmin(ReferenceDataAdmin):
