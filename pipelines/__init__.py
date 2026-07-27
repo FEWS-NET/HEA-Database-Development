@@ -89,6 +89,7 @@ from .jobs.fixtures import (
     extract_dataframes,
     import_baseline_from_fixture,
     import_seas_cal_from_fixture,
+    summarize_dataframes,
     update_external_assets,
     upload_baselines,
 )
@@ -177,6 +178,7 @@ defs = Definitions(
         update_external_assets,
         upload_baselines,
         extract_dataframes,
+        summarize_dataframes,
         create_consolidated_fixture,
         import_baseline_from_fixture,
         load_all_geographies,
