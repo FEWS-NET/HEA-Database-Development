@@ -1706,7 +1706,6 @@ class SeasonalActivityViewSet(BaseModelViewSet):
             "seasonal_activity_type",
             "livelihood_zone_baseline__livelihood_zone__country",
             "livelihood_zone_baseline__source_organization",
-            "livelihood_zone_baseline__source_organization",
             "product",
         )
         .prefetch_related("season")
