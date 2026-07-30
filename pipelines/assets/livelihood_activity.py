@@ -1482,11 +1482,23 @@ def get_instances_from_dataframe(
                         number_of_units = livelihood_activity.get("unit_multiple", None) or livelihood_activity.get(
                             "people_per_household", None
                         )
-                        livelihood_activity["times_per_year"] = (
-                            round(livelihood_activity["kcals_consumed"] / kcals_per_unit / number_of_units)
-                            if number_of_units and kcals_per_unit and livelihood_activity["kcals_consumed"] is not None
-                            else 0
-                        )
+                        if kcals_per_unit == 2100:
+                            # Labor Migration (see the `payment_per_time` handling below): the migrant obtains
+                            # their full daily kcals (2100) elsewhere for the whole time that they are away, so
+                            # dividing kcals_consumed by kcals_per_unit gives the number of days away, not the
+                            # number of times per year that the household is paid. Migrants are paid/remit once
+                            # per month that they are away, so times_per_year is months_per_year, not a kcal-based
+                            # calculation. This also keeps times_per_year consistent with the `income` field,
+                            # because income = payment_per_time * people_per_household * times_per_year.
+                            livelihood_activity["times_per_year"] = livelihood_activity.get("months_per_year") or 0
+                        else:
+                            livelihood_activity["times_per_year"] = (
+                                round(livelihood_activity["kcals_consumed"] / kcals_per_unit / number_of_units)
+                                if number_of_units
+                                and kcals_per_unit
+                                and livelihood_activity["kcals_consumed"] is not None
+                                else 0
+                            )
 
                 # Add the `quantity_purchased` to FoodPurchase and OtherPurchase, if it is missing.
                 if (
