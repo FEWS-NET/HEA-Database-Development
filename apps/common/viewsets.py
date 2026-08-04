@@ -445,6 +445,9 @@ class ClassifiedProductViewSet(BaseModelViewSet):
         *translation_fields("description"),
         *translation_fields("common_name"),
     )
+    ordering_fields = [
+        "cpc",
+    ]
 
 
 class CurrentUserOnly(BasePermission):

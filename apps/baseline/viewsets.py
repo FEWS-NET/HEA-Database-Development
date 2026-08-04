@@ -201,6 +201,7 @@ class LivelihoodZoneViewSet(BaseModelViewSet):
         *translation_fields("description"),
         *translation_fields("name"),
     )
+    ordering_fields = ["code", "alternate_code"]
 
 
 class LivelihoodZoneBaselineFilterSet(filters.FilterSet):
@@ -464,6 +465,7 @@ class CommunityViewSet(BaseModelViewSet):
         "code",
         "name",
     ]
+    ordering_fields = ["code", "name", "full_name"]
 
 
 class WealthGroupFilterSet(filters.FilterSet):
@@ -526,6 +528,7 @@ class WealthGroupViewSet(BaseModelViewSet):
         "wealth_group_category__ordering",
         "community",
     ]
+    ordering_fields = ordering
 
 
 class BaselineWealthGroupFilterSet(filters.FilterSet):
@@ -575,6 +578,7 @@ class BaselineWealthGroupViewSet(BaseModelViewSet):
         "livelihood_zone_baseline",
         "wealth_group_category__ordering",
     ]
+    ordering_fields = ordering
 
     def get_queryset(self):
         """
@@ -674,6 +678,7 @@ class CommunityWealthGroupViewSet(BaseModelViewSet):
         "wealth_group_category__ordering",
         "community",
     ]
+    ordering_fields = ordering
 
 
 class WealthGroupCharacteristicValueFilterSet(filters.FilterSet):
@@ -765,6 +770,7 @@ class WealthGroupCharacteristicValueViewSet(BaseModelViewSet):
         "product",
         "wealth_characteristic__code",
     ]
+    ordering_fields = ordering
 
 
 class BaselineWealthGroupCharacteristicValueFilterSet(filters.FilterSet):
@@ -870,6 +876,7 @@ class BaselineWealthGroupCharacteristicValueViewSet(BaseModelViewSet):
         "product",
         "wealth_characteristic__code",
     ]
+    ordering_fields = ordering
 
 
 class CommunityWealthGroupCharacteristicValueFilterSet(filters.FilterSet):
@@ -981,6 +988,7 @@ class CommunityWealthGroupCharacteristicValueViewSet(BaseModelViewSet):
         "product",
         "wealth_characteristic__code",
     ]
+    ordering_fields = ordering
 
 
 class LivelihoodStrategyFilterSet(filters.FilterSet):
@@ -1053,6 +1061,7 @@ class LivelihoodStrategyViewSet(BaseModelViewSet):
         "product",
         "additional_identifier",
     ]
+    ordering_fields = ordering
     search_fields = [
         "additional_identifier",
         "strategy_type",
@@ -1157,6 +1166,7 @@ class KeyParameterViewSet(BaseModelViewSet):
         "livelihood_strategy__product",
         "livelihood_strategy__additional_identifier",
     ]
+    ordering_fields = ordering
     search_fields = [
         "livelihood_strategy__additional_identifier",
         "livelihood_strategy__livelihood_zone_baseline__livelihood_zone__code",
@@ -1274,6 +1284,7 @@ class LivelihoodActivityViewSet(BaseModelViewSet):
         "livelihood_zone_baseline__livelihood_zone__alternate_code",
         "reference_year",
     ]
+    ordering_fields = LIVELIHOOD_ACTIVITY_ORDER_BY
 
     def get_queryset(self):
         return (
@@ -1722,6 +1733,7 @@ class SeasonalActivityViewSet(BaseModelViewSet):
         "product__cpc",
         "seasonal_activity_type__ordering",
     ]
+    ordering_fields = ordering
 
 
 class SeasonalActivityOccurrenceFilterSet(filters.FilterSet):
@@ -1776,6 +1788,7 @@ class SeasonalActivityOccurrenceViewSet(BaseModelViewSet):
         "seasonal_activity__product__cpc",
         "seasonal_activity__seasonal_activity_type__ordering",
     ]
+    ordering_fields = ordering
 
 
 class BaselineSeasonalActivityOccurrenceFilterSet(SeasonalActivityOccurrenceFilterSet):
@@ -1810,6 +1823,7 @@ class BaselineSeasonalActivityOccurrenceViewSet(BaseModelViewSet):
         "seasonal_activity__product__cpc",
         "seasonal_activity__seasonal_activity_type__ordering",
     ]
+    ordering_fields = ordering
 
 
 class CommunityCropProductionFilterSet(filters.FilterSet):

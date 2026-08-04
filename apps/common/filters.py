@@ -69,7 +69,14 @@ class CaseInsensitiveMultipleChoiceField(MultipleChoiceField):
 class RelatedOrderingFilter(OrderingFilter):
     """
     Extends OrderingFilter to support ordering by fields in related models
-    using the Django ORM __ notation
+    using the Django ORM __ notation.
+
+    Unlike the default OrderingFilter, valid fields are checked against the actual
+    model/ORM schema rather than inferred from serializer field names. This matters
+    because some serializer fields (e.g. TranslatedField properties like `name` or
+    `description`) resolve fine at the Python level for read serialization but aren't
+    real database columns, so passing them to `.order_by()` raises a FieldError. If a
+    view declares an explicit `ordering_fields` allow-list, that list is enforced too.
     """
 
     def is_valid_field(self, model, field):
@@ -88,9 +95,14 @@ class RelatedOrderingFilter(OrderingFilter):
 
     def remove_invalid_fields(self, queryset, fields, view, request):
         """
-        Remove any ordering fields that are not present in the model
+        Remove any ordering fields that are not present in the model, and — if the view
+        declares an explicit `ordering_fields` allow-list — that aren't in it.
         """
-        return [term for term in fields if self.is_valid_field(queryset.model, term.lstrip("-"))]
+        valid_terms = [term for term in fields if self.is_valid_field(queryset.model, term.lstrip("-"))]
+        allowed = getattr(view, "ordering_fields", None)
+        if allowed and allowed != "__all__":
+            valid_terms = [term for term in valid_terms if term.lstrip("-") in allowed]
+        return valid_terms
 
 
 class CharMultiple(TextInput):
