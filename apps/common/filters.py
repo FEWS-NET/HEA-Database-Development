@@ -95,10 +95,16 @@ class RelatedOrderingFilter(OrderingFilter):
 
     def remove_invalid_fields(self, queryset, fields, view, request):
         """
-        Remove any ordering fields that are not present in the model, and — if the view
-        declares an explicit `ordering_fields` allow-list — that aren't in it.
+        Remove any ordering fields that are not present in the model (or annotated on
+        the queryset), and — if the view declares an explicit `ordering_fields`
+        allow-list — that aren't in it.
         """
-        valid_terms = [term for term in fields if self.is_valid_field(queryset.model, term.lstrip("-"))]
+        annotations = getattr(getattr(queryset, "query", None), "annotations", {})
+        valid_terms = [
+            term
+            for term in fields
+            if term.lstrip("-") in annotations or self.is_valid_field(queryset.model, term.lstrip("-"))
+        ]
         allowed = getattr(view, "ordering_fields", None)
         if allowed and allowed != "__all__":
             valid_terms = [term for term in valid_terms if term.lstrip("-") in allowed]
