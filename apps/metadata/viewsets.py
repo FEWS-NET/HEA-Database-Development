@@ -68,6 +68,9 @@ class ReferenceDataViewSet(BaseModelViewSet):
         *translation_fields("description"),
         "aliases",
     )
+    ordering_fields = [
+        "code",
+    ]
 
 
 class LivelihoodSystemFilter(ReferenceDataFilterSet):
@@ -245,3 +248,4 @@ class SeasonViewSet(BaseModelViewSet):
         "purpose",
     )
     ordering = ("country", "order")
+    ordering_fields = ordering
