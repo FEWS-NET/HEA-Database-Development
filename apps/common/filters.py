@@ -106,7 +106,7 @@ class RelatedOrderingFilter(OrderingFilter):
             if term.lstrip("-") in annotations or self.is_valid_field(queryset.model, term.lstrip("-"))
         ]
         allowed = getattr(view, "ordering_fields", None)
-        if allowed and allowed != "__all__":
+        if allowed is not None and allowed != "__all__":
             valid_terms = [term for term in valid_terms if term.lstrip("-") in allowed]
         return valid_terms
 
