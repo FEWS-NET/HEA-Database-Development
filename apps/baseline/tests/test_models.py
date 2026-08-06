@@ -2,7 +2,9 @@ import datetime
 
 from binary_database_files.models import File
 from django.core.exceptions import ValidationError
+from django.db import connection
 from django.test import TestCase
+from django.test.utils import CaptureQueriesContext
 
 from baseline.models import (
     BaselineLivelihoodActivity,
@@ -102,8 +104,16 @@ class LivelihoodZoneBaselineTestCase(TestCase):
         self.assertAlmostEqual(self.baseline._get_annual_kcals_cost(), expected_annual_kcals_cost)
         self.assertAlmostEqual(self.baseline._get_annual_kcals_cost_sql(), expected_annual_kcals_cost)
 
+    def _precompute_bss_content_hash(self):
+        """
+        Factory-created test files are empty (no content to hash from), so tests
+        that care about the already-hashed steady state must set the column directly.
+        """
+        File.objects.filter(name=self.baseline.bss.name).update(_content_hash="a" * 128)
+        return File.objects.get(name=self.baseline.bss.name)
+
     def test_bss_metadata_uses_cached_database_file(self):
-        database_file = File.objects.get(name=self.baseline.bss.name)
+        database_file = self._precompute_bss_content_hash()
         expected_uploaded_datetime = (
             database_file.created_datetime + datetime.timedelta(microseconds=500_000)
         ).replace(microsecond=0)
@@ -117,6 +127,22 @@ class LivelihoodZoneBaselineTestCase(TestCase):
             self.baseline.bss_content_hash
             self.baseline.bss_uploaded_datetime
             self.baseline.bss_size
+
+    def test_bss_metadata_does_not_load_file_content(self):
+        """
+        The BSS file content can be multiple MB. Reading the hash/size/upload-time metadata
+        must not pull that content into memory, since these are read for every baseline row
+        whenever the API list/detail views serialize them.
+        """
+        self._precompute_bss_content_hash()
+
+        with CaptureQueriesContext(connection) as queries:
+            self.baseline.bss_content_hash
+            self.baseline.bss_uploaded_datetime
+            self.baseline.bss_size
+
+        self.assertEqual(len(queries.captured_queries), 1)
+        self.assertNotIn('"content"', queries.captured_queries[0]["sql"])
 
     def test_poor_survival_non_food_expenditure(self):
         expected_expenditure = (
