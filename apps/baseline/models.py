@@ -297,7 +297,7 @@ class LivelihoodZoneBaseline(common_models.Model):
         if not self.bss:
             return None
         try:
-            return File.objects.get(name=self.bss.name)
+            return File.objects.only("size", "created_datetime", "_content_hash").get(name=self.bss.name)
         except File.DoesNotExist:
             return None
 
