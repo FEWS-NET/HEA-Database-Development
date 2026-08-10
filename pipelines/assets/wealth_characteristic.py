@@ -127,7 +127,9 @@ WB_HEADING_LABELS = [
 # These should be treated as if the cell were blank.
 WB_NOISE_LABEL_PATTERNS = [re.escape(label) for label in WB_HEADING_LABELS] + [
     r"tss\s*ligne\s*\d+",  # References to a line number on the TSS, e.g. "TSS ligne 27"
+    r"tss\s*row\s*\d+",  # English equivalent, e.g. "TSS row 27" (Nigeria NG04)
     r"f\d\s*(?:pas|non)\s*f\d.*",  # References to another form, e.g. "F3 pas F4 (pas TSS)"
+    r"cl\s*only\s*\(?\s*not\s*in\s*tss\s*\)?",  # English equivalent, e.g. "CL only (not in TSS)" (Nigeria NG04)
 ]
 
 
