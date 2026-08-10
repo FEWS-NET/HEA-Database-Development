@@ -12,6 +12,7 @@ from django.conf import settings
 from django.contrib.gis.db import models
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
+from django.core.serializers.json import DjangoJSONEncoder
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db.models import F, Func, Q, Sum, Value
 from django.db.models.functions import Lower
@@ -651,8 +652,10 @@ class LivelihoodZoneBaselineCorrection(common_models.Model):
     )
     worksheet_name = models.CharField(max_length=20, choices=WorksheetName.choices, verbose_name=_("Worksheet name"))
     cell_range = models.CharField(max_length=20, verbose_name=_("Cell range"))
-    previous_value = models.JSONField(blank=True, verbose_name=_("Previous value before correction"))
-    value = models.JSONField(blank=True, verbose_name=_("Corrected value"))
+    previous_value = models.JSONField(
+        blank=True, encoder=DjangoJSONEncoder, verbose_name=_("Previous value before correction")
+    )
+    value = models.JSONField(blank=True, encoder=DjangoJSONEncoder, verbose_name=_("Corrected value"))
     correction_date = models.DateTimeField(auto_now_add=True, verbose_name=_("Correction date"))
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name=_("Correction author"))
     comment = models.TextField(
