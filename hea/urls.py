@@ -6,6 +6,7 @@ from django.contrib import admin
 from django.urls import include, path, re_path
 from django.views.decorators.cache import cache_page
 from django.views.decorators.http import etag
+from django.views.generic.base import TemplateView
 from django.views.i18n import JavaScriptCatalog
 from drf_spectacular.views import (
     SpectacularAPIView,
@@ -160,6 +161,11 @@ router.register(r"copingstrategy", CopingStrategyViewSet)
 
 urlpatterns = [
     ########## LOCALE INDEPENDENT PATHS go here. ##########
+    path(
+        "robots.txt",
+        TemplateView.as_view(template_name="robots.txt", content_type="text/plain"),
+        name="robots",
+    ),
     path("autocomplete/wealthgroup/", WealthGroupAutocomplete.as_view(), name="wealthgroup-autocomplete"),
     path("autocomplete/community/", CommunityAutocomplete.as_view(), name="community-autocomplete"),
     path("autocomplete/livelihoodzone/", LivelihoodZoneAutocomplete.as_view(), name="livelihoodzone-autocomplete"),
