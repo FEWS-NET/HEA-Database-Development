@@ -4,6 +4,7 @@ Base functions for performing operations on BSS spreadsheets.
 
 import numbers
 import os
+from datetime import date, datetime
 from io import BytesIO
 
 import django
@@ -213,7 +214,21 @@ def corrected_files(context: AssetExecutionContext, config: BSSMetadataConfig) -
         Inline function to validate the existing value of a cell is the expected one, prior to correcting it.
         """
         # "#N/A" is inconsistently loaded as nan, even when copied and pasted in Excel or GSheets
-        if not isinstance(previous_value, numbers.Number):
+        if isinstance(previous_value, (date, datetime)) or isinstance(expected_previous_value, (date, datetime)):
+            # Compare both using .isoformat() so datetime values match regardless of " " vs. "T" separators
+            # (native str() vs. DjangoJSONEncoder). e.g. MW14's corrections Google Sheet has "2015-05-06T00:00:00"
+            # for WB!K$183 but the source BSS has "2015-05-06 00:00:00".
+            previous_value = (
+                previous_value.isoformat()
+                if isinstance(previous_value, (date, datetime))
+                else str(previous_value).strip()
+            )
+            expected_previous_value = (
+                expected_previous_value.isoformat()
+                if isinstance(expected_previous_value, (date, datetime))
+                else str(expected_previous_value).strip()
+            )
+        elif not isinstance(previous_value, numbers.Number):
             previous_value = str(previous_value).strip()
             expected_previous_value = str(expected_previous_value).strip()
             if previous_value in ["None", "nan", "#N/A", "N/A"]:
