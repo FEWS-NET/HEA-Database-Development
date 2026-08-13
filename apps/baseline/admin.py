@@ -1405,22 +1405,7 @@ class WealthGroupAdmin(admin.ModelAdmin):
         return round(instance.livelihood_zone_baseline.population_estimate * percentage_of_population)
 
 
-class BaselineLivelihoodActivityAdmin(admin.ModelAdmin):
-
-    search_fields = LivelihoodActivityAdmin.search_fields
-
-    def get_queryset(self, request):
-        return (
-            super()
-            .get_queryset(request)
-            .select_related(
-                "wealth_group__wealth_group_category",
-                "wealth_group__community",
-                "livelihood_strategy__product",
-                "livelihood_strategy__season",
-                "livelihood_zone_baseline__livelihood_zone",
-            )
-        )
+class BaselineLivelihoodActivityAdmin(LivelihoodActivityAdmin):
 
     def has_module_permission(self, request):
         # Hide from the admin index; it exists only to back the autocomplete widget.
