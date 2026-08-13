@@ -79,6 +79,7 @@ An example of relevant rows from the worksheet:
     | 197 |                                                | B/O                 | Businesses                                 | crop sales                                 | Crop sales                                 | Fish sales                                 | Small business,  |
 """  # NOQA: E501
 
+import datetime
 import json
 import os
 import re
@@ -446,10 +447,19 @@ def wealth_characteristic_instances(
                                 value = resolve_percentage(value, summary_group_is_whole_number_percentage)
                                 min_value = resolve_percentage(min_value, summary_group_is_whole_number_percentage)
                                 max_value = resolve_percentage(max_value, summary_group_is_whole_number_percentage)
+                            # `value` is a JSONField that expects a float, str or list, not a date/datetime,
+                            # so serialize date/datetime cell values (e.g. from a BSS correction) to isoformat.
+                            if isinstance(min_value, (datetime.date, datetime.datetime)):
+                                min_value = min_value.isoformat()
+                            if isinstance(max_value, (datetime.date, datetime.datetime)):
+                                max_value = max_value.isoformat()
                             wealth_group_characteristic_value["min_value"] = min_value
                             wealth_group_characteristic_value["max_value"] = max_value
                         elif is_percentage:
                             value = resolve_percentage(value, community_group_is_whole_number_percentage)
+
+                        if isinstance(value, (datetime.date, datetime.datetime)):
+                            value = value.isoformat()
 
                         wealth_group_characteristic_value["value"] = value
 
@@ -624,7 +634,7 @@ def wealth_characteristic_instances(
             )
             * 100
         ),
-        "preview": MetadataValue.md(f"```json\n{json.dumps(result, indent=4, ensure_ascii=False)}\n```"),
+        "preview": MetadataValue.md(f"```json\n{json.dumps(result, indent=4, ensure_ascii=False, default=str)}\n```"),
     }
     if not unrecognized_labels.empty:
         metadata["unrecognized_labels"] = MetadataValue.md(unrecognized_labels.to_markdown(index=False))
