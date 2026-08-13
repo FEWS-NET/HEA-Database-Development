@@ -24,6 +24,7 @@ from .forms import (
     WealthGroupForm,
 )
 from .models import (
+    BaselineLivelihoodActivity,
     ButterProduction,
     Community,
     CommunityCropProduction,
@@ -1404,12 +1405,35 @@ class WealthGroupAdmin(admin.ModelAdmin):
         return round(instance.livelihood_zone_baseline.population_estimate * percentage_of_population)
 
 
+class BaselineLivelihoodActivityAdmin(admin.ModelAdmin):
+
+    search_fields = LivelihoodActivityAdmin.search_fields
+
+    def get_queryset(self, request):
+        return (
+            super()
+            .get_queryset(request)
+            .select_related(
+                "wealth_group__wealth_group_category",
+                "wealth_group__community",
+                "livelihood_strategy__product",
+                "livelihood_strategy__season",
+                "livelihood_zone_baseline__livelihood_zone",
+            )
+        )
+
+    def has_module_permission(self, request):
+        # Hide from the admin index; it exists only to back the autocomplete widget.
+        return False
+
+
 class LivelihoodProductCategoryAdmin(admin.ModelAdmin):
     fields = (
         "baseline_livelihood_activity",
         "basket",
         "percentage_allocation_to_basket",
     )
+    autocomplete_fields = ("baseline_livelihood_activity",)
     list_display = (
         "baseline_livelihood_activity",
         "basket",
@@ -1431,6 +1455,7 @@ class LivelihoodProductCategoryAdmin(admin.ModelAdmin):
         return qs.select_related(
             "baseline_livelihood_activity__livelihood_zone_baseline__livelihood_zone",
             "baseline_livelihood_activity__wealth_group__wealth_group_category",
+            "baseline_livelihood_activity__wealth_group__livelihood_zone_baseline",
             "baseline_livelihood_activity__livelihood_strategy__season",
             "baseline_livelihood_activity__livelihood_strategy__livelihood_zone_baseline",
         )
@@ -1856,6 +1881,7 @@ admin.site.register(Event, EventAdmin)
 admin.site.register(ExpandabilityFactor, ExpandabilityFactorAdmin)
 admin.site.register(CopingStrategy, CopingStrategyAdmin)
 
+admin.site.register(BaselineLivelihoodActivity, BaselineLivelihoodActivityAdmin)
 admin.site.register(LivelihoodProductCategory, LivelihoodProductCategoryAdmin)
 admin.site.register(SeasonalActivity, SeasonalActivityAdmin)
 admin.site.register(SeasonalActivityOccurrence, SeasonalActivityOccurrenceAdmin)
