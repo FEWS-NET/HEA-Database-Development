@@ -643,6 +643,7 @@ class LivelihoodZoneBaselineCorrection(common_models.Model):
         SUMM = "Summ", _("Summ")
         TIMELINE = "Timeline", _("Timeline")
         SEAS_CAL = "Seas Cal", _("Seas Cal")
+        EXP_FACTORS = "Exp factors", _("Exp factors")
 
     livelihood_zone_baseline = models.ForeignKey(
         LivelihoodZoneBaseline,
