@@ -5,7 +5,7 @@ services:
       context: ./docker/db
     shm_size: 2G
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - db_data:/var/lib/postgresql
     environment:
       CLIENT: ${CLIENT}
       APP: ${APP}
