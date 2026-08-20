@@ -824,13 +824,13 @@
         "percentage_monthly_kcals"
     ],
     [
-        "(?:autre culture)?{separator_pattern} ?{product_pattern}{separator_pattern} {nbr_pattern} (?:de mesures|mesures|d'unités|unités)(?: locales| loc\\.?)?",
+        "(?:autre culture)?{separator_pattern} ?{product_pattern}{separator_pattern} {nbr_pattern} (?:de mesures|mesures|d'unités|unités)(?: locales| loc\\.?)?\\.?",
         null,
         true,
         "number_of_local_measures"
     ],
     [
-        "{nbr_pattern} (?:de mesures|mesures|d'unités|unités)(?: locales| loc\\.?)?",
+        "{nbr_pattern} (?:de mesures|mesures|d'unités|unités)(?: locales| loc\\.?)?\\.?",
         null,
         false,
         "number_of_local_measures"
