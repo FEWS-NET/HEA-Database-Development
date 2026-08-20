@@ -1101,6 +1101,9 @@
     "nbr. personnes par ménage": {
         "attribute": "people_per_household"
     },
+    "nbr personnes para ménage": {
+        "attribute": "people_per_household"
+    },
     "nbr. personnes par mènage": {
         "attribute": "people_per_household"
     },
