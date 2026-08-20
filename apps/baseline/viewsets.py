@@ -461,6 +461,7 @@ class CommunityViewSet(BaseModelViewSet):
     )
     serializer_class = CommunitySerializer
     filterset_class = CommunityFilterSet
+    permission_classes = [IsAuthenticated]
     search_fields = [
         "code",
         "name",
