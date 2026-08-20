@@ -74,7 +74,7 @@
         "quantity_produced_or_purchased"
     ],
     [
-        "{age_gender_pattern}{separator_pattern} {product_pattern}{separator_pattern} {nbr_pattern} (?:de )?(?:pers|personnes|people)(?: ?/ ?| par | per )(?:ménage|mènage|hh)",
+        "{age_gender_pattern}{separator_pattern} {product_pattern}{separator_pattern} {nbr_pattern} (?:de )?(?:pers|personnes|people)(?: ?/ ?| par | para | per )(?:ménage|mènage|hh)",
         null,
         true,
         "people_per_household"
@@ -86,7 +86,7 @@
         "quantity_produced"
     ],
     [
-        "{product_pattern}{separator_pattern} {age_gender_pattern}{separator_pattern} {nbr_pattern} (?:de )?(?:pers|personnes|people)(?: ?/ ?| par | per )(?:ménage|mènage|hh)",
+        "{product_pattern}{separator_pattern} {age_gender_pattern}{separator_pattern} {nbr_pattern} (?:de )?(?:pers|personnes|people)(?: ?/ ?| par | para | per )(?:ménage|mènage|hh)",
         null,
         true,
         "people_per_household"
@@ -362,7 +362,7 @@
         "times_per_year"
     ],
     [
-        "{nbr_pattern} (?:de )?(?:pers|personnes|people)(?: ?/ ?| par | per )(?:ménage|mènage|hh)",
+        "{nbr_pattern} (?:de )?(?:pers|personnes|people)(?: ?/ ?| par | para | per )(?:ménage|mènage|hh)",
         null,
         false,
         "people_per_household"
@@ -944,7 +944,7 @@
         "unit_multiple"
     ],
     [
-        "{product_pattern}{separator_pattern} {nbr_pattern} (?:de )?(?:pers|personnes|people)(?: ?/ ?| par | per )(?:ménage|mènage|hh)",
+        "{product_pattern}{separator_pattern} {nbr_pattern} (?:de )?(?:pers|personnes|people)(?: ?/ ?| par | para | per )(?:ménage|mènage|hh)",
         null,
         true,
         "people_per_household"
