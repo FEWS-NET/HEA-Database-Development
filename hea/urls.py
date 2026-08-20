@@ -3,10 +3,11 @@ import os
 from django.conf import settings
 from django.conf.urls.i18n import i18n_patterns
 from django.contrib import admin
+from django.templatetags.static import static as template_static
 from django.urls import include, path, re_path
 from django.views.decorators.cache import cache_page
 from django.views.decorators.http import etag
-from django.views.generic.base import TemplateView
+from django.views.generic.base import RedirectView, TemplateView
 from django.views.i18n import JavaScriptCatalog
 from drf_spectacular.views import (
     SpectacularAPIView,
@@ -159,8 +160,22 @@ router.register(r"event", EventViewSet)
 router.register(r"expandabilityfactor", ExpandabilityFactorViewSet)
 router.register(r"copingstrategy", CopingStrategyViewSet)
 
+
+class FaviconView(RedirectView):
+    """
+    Serve favicon.ico at the site root.
+    Some tooling requests /favicon.ico directly at the root path rather than reading the <link> tag.
+    """
+
+    permanent = True
+
+    def get_redirect_url(self, *args, **kwargs):
+        return template_static(path=settings.HEA_FAVICON_PATH)
+
+
 urlpatterns = [
     ########## LOCALE INDEPENDENT PATHS go here. ##########
+    path("favicon.ico", FaviconView.as_view(), name="favicon"),
     path(
         "robots.txt",
         TemplateView.as_view(template_name="robots.txt", content_type="text/plain"),
