@@ -167,7 +167,7 @@ class FaviconView(RedirectView):
     Some tooling requests /favicon.ico directly at the root path rather than reading the <link> tag.
     """
 
-    permanent = True
+    permanent = False
 
     def get_redirect_url(self, *args, **kwargs):
         return template_static(path=settings.HEA_FAVICON_PATH)
