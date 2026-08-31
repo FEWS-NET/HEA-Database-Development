@@ -1204,7 +1204,8 @@ def get_instances_from_dataframe(
                     "Found Livelihood Activities from row %s, but there is no Livelihood Strategy defined." % row
                 )
                 if re.match(
-                    r"^.*(?:data ?[23]|prochaine feuille)$",
+                    # The optional trailing handles e.g. "Main d'ouvre -- voir Data2 (pre-récolte)".
+                    r"^.*(?:data ?[23]|prochaine feuille)(?: *\(.*\))?$",
                     livelihood_strategy["activity_label"],
                     re.IGNORECASE,
                 ):

@@ -42,7 +42,7 @@
         null
     ],
     [
-        ".*(?:data ?[23]|prochaine feuille)",
+        ".*(?:data ?[23]|prochaine feuille)(?: *\\(.*\\))?",
         null,
         true,
         {
@@ -486,6 +486,12 @@
         null,
         false,
         "percentage_sold_slaughtered"
+    ],
+    [
+        "(?:vente (?:des? |d')?)?(?P<product_id>cultures? verte?s?)(?: en [eé]pis)?{separator_pattern} (?:{nbr_pattern} )?(?:{quantity_sold_pattern}|quantity sold)",
+        null,
+        true,
+        "quantity_sold"
     ],
     [
         "{product_pattern}(?: sales)?{separator_pattern} {nbr_pattern} sold",
