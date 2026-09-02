@@ -1,9 +1,11 @@
 {% extends "admin/base.html" %}
 
-{% load static %}
+{% load static settings_value %}
 {% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
 {% block extrahead %}
 {{ block.super }}
+{% settings_value 'HEA_FAVICON_PATH' as hea_favicon_path %}
+<link rel="shortcut icon" href="{% static hea_favicon_path %}">
 {% if theme == 'hea_default' %}
     <link rel="stylesheet" type="text/css" href="{% static 'admin/css/hea_default.css' %}">
 {% endif %}
