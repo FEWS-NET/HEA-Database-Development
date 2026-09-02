@@ -6,7 +6,7 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-03-21 07:17+0000\n"
+"POT-Creation-Date: 2026-09-02 15:43+0000\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -17,31 +17,308 @@ msgstr ""
 msgid "common"
 msgstr "شائع"
 
-#: apps/common/fields.py:66
+#: apps/common/fields.py:67
 msgid "Code"
 msgstr "شفرة"
 
-#: apps/common/fields.py:78
+#: apps/common/fields.py:79
 msgid "Name"
 msgstr "اسم"
 
-#: apps/common/fields.py:92 apps/common/viewsets.py:228
-#: apps/common/viewsets.py:231 apps/common/viewsets.py:234
-#: apps/common/viewsets.py:237 apps/common/viewsets.py:240
+#: apps/common/fields.py:93 apps/common/viewsets.py:326
+#: apps/common/viewsets.py:329 apps/common/viewsets.py:332
+#: apps/common/viewsets.py:335 apps/common/viewsets.py:338
 msgid "Description"
 msgstr "وصف"
 
-#: apps/common/fields.py:94
+#: apps/common/fields.py:95
 msgid "Any extra information or detail that is relevant to the object."
 msgstr "أي معلومات أو تفاصيل إضافية ذات صلة بالكائن."
 
-#: apps/common/fields.py:108
+#: apps/common/fields.py:109
 msgid "Location"
 msgstr "موقع"
 
-#: apps/common/fields.py:125
+#: apps/common/fields.py:126
 msgid "Boundary"
 msgstr "الحدود"
+
+#: apps/common/menu_config.py:20 apps/common/menu_config.py:279
+msgid "Source Organizations"
+msgstr ""
+
+#: apps/common/menu_config.py:26 apps/common/menu_config.py:284
+msgid "Livelihood Zones"
+msgstr ""
+
+#: apps/common/menu_config.py:32 apps/common/menu_config.py:299
+#, fuzzy
+#| msgid "from unit"
+msgid "Communities"
+msgstr "من الوحدة"
+
+#: apps/common/menu_config.py:38 apps/common/menu_config.py:289
+msgid "Livelihood Zone Baselines"
+msgstr ""
+
+#: apps/common/menu_config.py:44
+msgid "Wealth Groups"
+msgstr ""
+
+#: apps/common/menu_config.py:50
+msgid "Wealth Group Characteristic Values"
+msgstr ""
+
+#: apps/common/menu_config.py:56
+msgid "Livelihood Activities"
+msgstr ""
+
+#: apps/common/menu_config.py:62
+msgid "Livelihood Strategies"
+msgstr ""
+
+#: apps/common/menu_config.py:68
+msgid "Livelihood Product Categories"
+msgstr ""
+
+#: apps/common/menu_config.py:77
+msgid "Livelihood Zone Baseline Corrections"
+msgstr ""
+
+#: apps/common/menu_config.py:86
+#, fuzzy
+#| msgid "Country Classified Product Alias"
+msgid "Community Crop Productions"
+msgstr "الاسم المستعار للمنتج المصنف للبلد"
+
+#: apps/common/menu_config.py:92
+msgid "Community Livestock"
+msgstr ""
+
+#: apps/common/menu_config.py:98 apps/common/menu_config.py:483
+msgid "Coping Strategies"
+msgstr ""
+
+#: apps/common/menu_config.py:104 apps/common/menu_config.py:462
+msgid "Events"
+msgstr ""
+
+#: apps/common/menu_config.py:110 apps/common/menu_config.py:478
+msgid "Expandability Factors"
+msgstr ""
+
+#: apps/common/menu_config.py:116 apps/common/menu_config.py:457
+msgid "Hazards"
+msgstr ""
+
+#: apps/common/menu_config.py:122 apps/common/menu_config.py:401
+#: apps/common/menu_config.py:414
+msgid "Market Prices"
+msgstr ""
+
+#: apps/common/menu_config.py:128 apps/common/menu_config.py:430
+msgid "Seasonal Activities"
+msgstr ""
+
+#: apps/common/menu_config.py:134
+msgid "Seasonal Activity Occurrences"
+msgstr ""
+
+#: apps/common/menu_config.py:140
+msgid "Seasonal Production Performance"
+msgstr ""
+
+#: apps/common/menu_config.py:150 apps/common/menu_config.py:507
+#: apps/common/models.py:576
+msgid "Countries"
+msgstr "بلدان"
+
+#: apps/common/menu_config.py:156 apps/common/menu_config.py:512
+#: apps/common/models.py:593
+msgid "Currencies"
+msgstr "العملات"
+
+#: apps/common/menu_config.py:162 apps/common/menu_config.py:517
+#: apps/common/models.py:956
+msgid "Products"
+msgstr "منتجات"
+
+#: apps/common/menu_config.py:168 apps/common/menu_config.py:522
+#: apps/common/models.py:709
+msgid "Units of Measure"
+msgstr "وحدات القياس"
+
+#: apps/common/menu_config.py:179 apps/common/menu_config.py:548
+msgid "Livelihood Systems"
+msgstr ""
+
+#: apps/common/menu_config.py:185
+msgid "Wealth Group Categories"
+msgstr ""
+
+#: apps/common/menu_config.py:191
+msgid "Characteristic Groups"
+msgstr ""
+
+#: apps/common/menu_config.py:197
+msgid "Wealth Characteristics"
+msgstr ""
+
+#: apps/common/menu_config.py:203 apps/common/menu_config.py:543
+msgid "Hazard Categories"
+msgstr ""
+
+#: apps/common/menu_config.py:209 apps/common/menu_config.py:553
+msgid "Seasons"
+msgstr ""
+
+#: apps/common/menu_config.py:215 apps/common/menu_config.py:558
+msgid "Seasonal Activity Types"
+msgstr ""
+
+#: apps/common/menu_config.py:221 apps/common/menu_config.py:409
+msgid "Markets"
+msgstr ""
+
+#: apps/common/menu_config.py:230
+msgid "Activity Labels"
+msgstr ""
+
+#: apps/common/menu_config.py:236
+msgid "Wealth Characteristic Labels"
+msgstr ""
+
+#: apps/common/menu_config.py:246 apps/common/menu_config.py:592
+msgid "Users"
+msgstr ""
+
+#: apps/common/menu_config.py:252 apps/common/menu_config.py:597
+msgid "Groups"
+msgstr ""
+
+#: apps/common/menu_config.py:264
+msgid "Core Data"
+msgstr ""
+
+#: apps/common/menu_config.py:268
+msgid "BSS Setup"
+msgstr ""
+
+#: apps/common/menu_config.py:294
+msgid "Baseline Corrections"
+msgstr ""
+
+#: apps/common/menu_config.py:307
+msgid "BSS WB, Data Sheets"
+msgstr ""
+
+#: apps/common/menu_config.py:312
+msgid "Wealth Group Data"
+msgstr ""
+
+#: apps/common/menu_config.py:320
+msgid "Wealth, Activity and Strategy"
+msgstr ""
+
+#: apps/common/menu_config.py:331
+msgid "Wealth Group Characteristic Value"
+msgstr ""
+
+#: apps/common/menu_config.py:336
+msgid "Livelihood Strategy"
+msgstr ""
+
+#: apps/common/menu_config.py:341
+msgid "Livelihood Activity"
+msgstr ""
+
+#: apps/common/menu_config.py:346
+msgid "Livelihood Product Category"
+msgstr ""
+
+#: apps/common/menu_config.py:351
+msgid "Key Parameter"
+msgstr ""
+
+#: apps/common/menu_config.py:359
+msgid "Labels"
+msgstr ""
+
+#: apps/common/menu_config.py:367
+msgid "Wealth Characteristic Label"
+msgstr ""
+
+#: apps/common/menu_config.py:372
+msgid "Activity Label"
+msgstr ""
+
+#: apps/common/menu_config.py:380
+msgid "BSS Production Data"
+msgstr ""
+
+#: apps/common/menu_config.py:388
+#, fuzzy
+#| msgid "Product"
+msgid "Crop Production"
+msgstr "منتج"
+
+#: apps/common/menu_config.py:393
+msgid "Livestock Production"
+msgstr ""
+
+#: apps/common/menu_config.py:422
+msgid "Seasonal Calendars"
+msgstr ""
+
+#: apps/common/menu_config.py:435
+msgid "Activity Occurrences"
+msgstr ""
+
+#: apps/common/menu_config.py:443
+msgid "Hazards and Events"
+msgstr ""
+
+#: apps/common/menu_config.py:452
+msgid "Annual Production Performances"
+msgstr ""
+
+#: apps/common/menu_config.py:470
+msgid "Expandability and Coping"
+msgstr ""
+
+#: apps/common/menu_config.py:493
+msgid "Reference Data"
+msgstr ""
+
+#: apps/common/menu_config.py:497
+#, fuzzy
+#| msgid "common"
+msgid "Common"
+msgstr "شائع"
+
+#: apps/common/menu_config.py:530
+msgid "Metadata"
+msgstr ""
+
+#: apps/common/menu_config.py:563
+msgid "Wealth Categories"
+msgstr ""
+
+#: apps/common/menu_config.py:568
+msgid "Characteristics Groups"
+msgstr ""
+
+#: apps/common/menu_config.py:573
+msgid "Wealth Group Characteristics"
+msgstr ""
+
+#: apps/common/menu_config.py:583
+msgid "System"
+msgstr ""
+
+#: apps/common/menu_config.py:587
+msgid "User Management"
+msgstr ""
 
 #: apps/common/middleware/language.py:31
 msgid ""
@@ -58,47 +335,15 @@ msgstr ""
 "تطلب معلمة URL اللغوية اللغة %(lang_code)s. رموز اللغة المدعومة هي "
 "%(lang_codes)s."
 
-#: apps/common/models.py:176
-msgid "Spanish name"
-msgstr "الاسم الإسباني"
+#: apps/common/models.py:43
+msgid "Value must be greater than 0."
+msgstr ""
 
-#: apps/common/models.py:177
-msgid "Spanish name if different from the English name"
-msgstr "الاسم الإسباني إذا كان مختلفًا عن الاسم الإنجليزي"
-
-#: apps/common/models.py:181
-msgid "French name"
-msgstr "الاسم الفرنسي"
-
-#: apps/common/models.py:182
-msgid "French name if different from the English name"
-msgstr "الاسم الفرنسي إذا كان مختلفًا عن الاسم الإنجليزي"
-
-#: apps/common/models.py:186
-msgid "Portuguese name"
-msgstr "الاسم البرتغالي"
-
-#: apps/common/models.py:187
-msgid "Portuguese name if different from the English name"
-msgstr "الاسم البرتغالي إذا كان مختلفًا عن الاسم الإنجليزي"
-
-#: apps/common/models.py:191
-msgid "Arabic name"
-msgstr "الاسم العربي"
-
-#: apps/common/models.py:192
-msgid "Arabic name if different from the English name"
-msgstr "الاسم العربي إذا كان مختلفًا عن الاسم الإنجليزي"
-
-#: apps/common/models.py:211
-msgid "local name"
-msgstr "الاسم المحلي"
-
-#: apps/common/models.py:370
+#: apps/common/models.py:330
 msgid "The End of the period must be on or after the Start"
 msgstr "يجب أن تكون نهاية الفترة في البداية أو بعدها"
 
-#: apps/common/models.py:423
+#: apps/common/models.py:383
 #, python-format
 msgid ""
 "%(class)s %(pk)s (%(instance)s) has the same %(non_overlapping_fields)s and "
@@ -107,34 +352,34 @@ msgstr ""
 "%(class)s %(pk)s (%(instance)s) نفس %(non_overlapping_fields)s ولديها فترة "
 "تتداخل %(end)s إلى %(start)s"
 
-#: apps/common/models.py:482 apps/common/models.py:516
+#: apps/common/models.py:444 apps/common/models.py:478
 msgid "Open Ended"
 msgstr "انتهى مفتوحة"
 
-#: apps/common/models.py:484 apps/common/models.py:518
+#: apps/common/models.py:446 apps/common/models.py:480
 #, python-format
 msgid "From %(start)s"
 msgstr "من %(start)s"
 
-#: apps/common/models.py:488 apps/common/models.py:522
+#: apps/common/models.py:450 apps/common/models.py:484
 #, python-format
 msgid "Until %(end)s"
 msgstr "حتى %(end)s"
 
-#: apps/common/models.py:490 apps/common/models.py:524
+#: apps/common/models.py:452 apps/common/models.py:486
 #, python-format
 msgid "%(start)s - %(end)s"
 msgstr "%(end)s - %(start)s"
 
-#: apps/common/models.py:505
+#: apps/common/models.py:467
 msgid "start"
 msgstr "يبدأ"
 
-#: apps/common/models.py:506
+#: apps/common/models.py:468
 msgid "end"
 msgstr "نهاية"
 
-#: apps/common/models.py:551
+#: apps/common/models.py:533
 msgid ""
 "The name of the Country approved by the ISO 3166 Maintenance Agency with "
 "accented characters replaced by their ASCII equivalents"
@@ -142,7 +387,7 @@ msgstr ""
 "اسم الدولة المعتمدة من قبل وكالة الصيانة ISO 3166 مع شخصيات محددة تحل محلها "
 "معادلات ASCII الخاصة بهم"
 
-#: apps/common/models.py:558
+#: apps/common/models.py:540
 msgid ""
 "The full formal name of the Country approved by the ISO 3166 Maintenance "
 "Agency with accented characters replaced by their ASCII equivalents"
@@ -150,30 +395,30 @@ msgstr ""
 "الاسم الرسمي الكامل للبلد المعتمدة من قبل وكالة الصيانة ISO 3166 مع شخصيات "
 "محددة تحل محلها معادلات ASCII الخاصة بهم"
 
-#: apps/common/models.py:565
+#: apps/common/models.py:547
 msgid "The name of the Country approved by the ISO 3166 Maintenance Agency"
 msgstr "اسم البلد المعتمد من قبل وكالة الصيانة ISO 3166"
 
-#: apps/common/models.py:570
+#: apps/common/models.py:552
 msgid ""
 "The full formal name of the Country approved by the ISO 3166 Maintenance "
 "Agency"
 msgstr "الاسم الرسمي الكامل للبلد المعتمدة من قبل وكالة الصيانة ISO 3166"
 
-#: apps/common/models.py:574
+#: apps/common/models.py:556
 msgid "ISO French name"
 msgstr "الاسم الفرنسي ISO"
 
-#: apps/common/models.py:575
+#: apps/common/models.py:557
 msgid ""
 "The name in French of the Country approved by the ISO 3166 Maintenance Agency"
 msgstr ""
 
-#: apps/common/models.py:579
+#: apps/common/models.py:561
 msgid "ISO French full name"
 msgstr "الاسم الكامل الفرنسي ISO"
 
-#: apps/common/models.py:580
+#: apps/common/models.py:562
 msgid ""
 "The full formal name in French of the Country approved by the ISO 3166 "
 "Maintenance Agency"
@@ -181,109 +426,99 @@ msgstr ""
 "الاسم الرسمي الكامل باللغة الفرنسية للبلاد المعتمدة من قبل وكالة الصيانة ISO "
 "3166"
 
-#: apps/common/models.py:584
+#: apps/common/models.py:566
 msgid "ISO Spanish name"
 msgstr "الاسم الإسباني ISO"
 
-#: apps/common/models.py:585
+#: apps/common/models.py:567
 msgid ""
 "The name in Spanish of the Country approved by the ISO 3166 Maintenance "
 "Agency"
 msgstr "الاسم باللغة الإسبانية للبلاد المعتمدة من قبل وكالة الصيانة ISO 3166"
 
-#: apps/common/models.py:592
+#: apps/common/models.py:575
 msgid "Country"
 msgstr "دولة"
 
-#: apps/common/models.py:593
-msgid "Countries"
-msgstr "بلدان"
-
-#: apps/common/models.py:607 apps/common/models.py:954
+#: apps/common/models.py:589 apps/common/models.py:936
 msgid "name"
 msgstr "اسم"
 
-#: apps/common/models.py:610
+#: apps/common/models.py:592
 msgid "Currency"
 msgstr "عملة"
 
-#: apps/common/models.py:611
-msgid "Currencies"
-msgstr "العملات"
-
-#: apps/common/models.py:696
+#: apps/common/models.py:678
 msgid "Weight"
 msgstr "وزن"
 
-#: apps/common/models.py:697
+#: apps/common/models.py:679
 msgid "Volume"
 msgstr "مقدار"
 
-#: apps/common/models.py:698
+#: apps/common/models.py:680
 msgid "Item"
 msgstr "غرض"
 
-#: apps/common/models.py:699
+#: apps/common/models.py:681
 msgid "Area"
 msgstr "منطقة"
 
-#: apps/common/models.py:700
+#: apps/common/models.py:682
 msgid "Yield"
 msgstr "أَثْمَر"
 
-#: apps/common/models.py:701
+#: apps/common/models.py:683
 msgid "Percentage"
 msgstr "نسبة مئوية"
 
-#: apps/common/models.py:702
+#: apps/common/models.py:684
 msgid "Length"
 msgstr "طول"
 
-#: apps/common/models.py:704
+#: apps/common/models.py:686
 msgid "abbreviation"
 msgstr "اختصار"
 
-#: apps/common/models.py:705
+#: apps/common/models.py:687
 msgid "unit type"
 msgstr "نوع الوحدة"
 
-#: apps/common/models.py:710 apps/common/models.py:906
+#: apps/common/models.py:692 apps/common/models.py:888
+#: apps/common/models.py:977
 msgid "aliases"
 msgstr "اسماء مستعارة"
 
-#: apps/common/models.py:711 apps/common/models.py:907
+#: apps/common/models.py:693 apps/common/models.py:889
+#: apps/common/models.py:978
 msgid "A list of alternate names for the product."
 msgstr "قائمة الأسماء البديلة للمنتج."
 
-#: apps/common/models.py:726 apps/common/models.py:937
+#: apps/common/models.py:708 apps/common/models.py:919
 msgid "Unit of Measure"
 msgstr "وحدة القياس"
 
-#: apps/common/models.py:727
-msgid "Units of Measure"
-msgstr "وحدات القياس"
-
-#: apps/common/models.py:831
+#: apps/common/models.py:813
 msgid "from unit"
 msgstr "من الوحدة"
 
-#: apps/common/models.py:838
+#: apps/common/models.py:820
 msgid "to unit"
 msgstr "إلى الوحدة"
 
-#: apps/common/models.py:843
+#: apps/common/models.py:825
 msgid "conversion factor"
 msgstr "عامل التحويل"
 
-#: apps/common/models.py:848
+#: apps/common/models.py:830
 msgid "Unit of Measure Conversion"
 msgstr "وحدة التحويل"
 
-#: apps/common/models.py:849
+#: apps/common/models.py:831
 msgid "Unit of Measure Conversions"
 msgstr "وحدة التحويلات قياس"
 
-#: apps/common/models.py:874
+#: apps/common/models.py:856
 #, python-format
 msgid ""
 "From unit and to unit must have the same unit type, expected unit is of type "
@@ -292,27 +527,27 @@ msgstr ""
 "من الوحدة والوحدة يجب أن يكون لها نفس نوع الوحدة ، تكون الوحدة المتوقعة من "
 "النوع %(from_unit_type)s"
 
-#: apps/common/models.py:896
+#: apps/common/models.py:878
 msgid "CPC v2.1"
 msgstr ""
 
-#: apps/common/models.py:901
+#: apps/common/models.py:883
 msgid "description"
 msgstr "وصف"
 
-#: apps/common/models.py:902
+#: apps/common/models.py:884
 msgid "common name"
 msgstr "اسم شائع"
 
-#: apps/common/models.py:913
+#: apps/common/models.py:895
 msgid "CPC v2"
 msgstr ""
 
-#: apps/common/models.py:923
+#: apps/common/models.py:905
 msgid "HS2012"
 msgstr "HS2012"
 
-#: apps/common/models.py:925
+#: apps/common/models.py:907
 msgid ""
 "The 6-digit codes for the Product in the Harmonized Commodity Description "
 "and Coding System (HS), stored as XXXX.YY "
@@ -320,59 +555,110 @@ msgstr ""
 "الرموز المكونة من 6 أرقام للمنتج في وصف السلع المنسقة ونظام الترميز (HS) ، "
 "المخزنة كـ xxxx.yy"
 
-#: apps/common/models.py:929
+#: apps/common/models.py:911
 msgid "scientific name"
 msgstr "الاسم العلمي"
 
-#: apps/common/models.py:939
+#: apps/common/models.py:921
 msgid "Kcals per Unit"
 msgstr "kcals لكل وحدة"
 
-#: apps/common/models.py:973 apps/common/models.py:990
+#: apps/common/models.py:955 apps/common/models.py:972
 msgid "Product"
 msgstr "منتج"
 
-#: apps/common/models.py:974
-msgid "Products"
-msgstr "منتجات"
-
-#: apps/common/models.py:986
+#: apps/common/models.py:968
 msgid "country"
 msgstr "دولة"
 
-#: apps/common/models.py:1000
+#: apps/common/models.py:982
 msgid "Country Classified Product Alias"
 msgstr "الاسم المستعار للمنتج المصنف للبلد"
 
-#: apps/common/models.py:1001
+#: apps/common/models.py:983
 msgid "Country Classified Product Aliases"
 msgstr "الاسم المستعار للمنتجات المصنفة بالبلد"
 
-#: apps/common/viewsets.py:228 apps/common/viewsets.py:243
+#: apps/common/models.py:1003
+msgid "user profile"
+msgstr ""
+
+#: apps/common/models.py:1004
+msgid "user profiles"
+msgstr ""
+
+#: apps/common/templates/admin/common/change_list.html:7
+msgid "Filter"
+msgstr ""
+
+#: apps/common/templates/admin/common/change_list.html:9
+msgid "Start typing to narrow filter..."
+msgstr ""
+
+#: apps/common/templates/admin/common/change_list.html:12
+msgid "Hide counts"
+msgstr ""
+
+#: apps/common/templates/admin/common/change_list.html:13
+msgid "Show counts"
+msgstr ""
+
+#: apps/common/templates/admin/common/change_list.html:16
+msgid "Clear all filters"
+msgstr ""
+
+#: apps/common/viewsets.py:326 apps/common/viewsets.py:341
 msgid "English"
 msgstr "الإنجليزيّة"
 
-#: apps/common/viewsets.py:231 apps/common/viewsets.py:246
+#: apps/common/viewsets.py:329 apps/common/viewsets.py:344
 msgid "French"
 msgstr "الفرنسيّة"
 
-#: apps/common/viewsets.py:234 apps/common/viewsets.py:249
+#: apps/common/viewsets.py:332 apps/common/viewsets.py:347
 msgid "Spanish"
 msgstr "الإسبانيّة"
 
-#: apps/common/viewsets.py:237 apps/common/viewsets.py:252
+#: apps/common/viewsets.py:335 apps/common/viewsets.py:350
 msgid "Arabic"
 msgstr "العربيّة"
 
-#: apps/common/viewsets.py:240 apps/common/viewsets.py:255
+#: apps/common/viewsets.py:338 apps/common/viewsets.py:353
 msgid "Portuguese"
 msgstr "البرتغاليّة"
 
-#: apps/common/viewsets.py:243 apps/common/viewsets.py:246
-#: apps/common/viewsets.py:249 apps/common/viewsets.py:252
-#: apps/common/viewsets.py:255
+#: apps/common/viewsets.py:341 apps/common/viewsets.py:344
+#: apps/common/viewsets.py:347 apps/common/viewsets.py:350
+#: apps/common/viewsets.py:353
 msgid "Common Name"
 msgstr "اسم شائع"
+
+#~ msgid "Spanish name"
+#~ msgstr "الاسم الإسباني"
+
+#~ msgid "Spanish name if different from the English name"
+#~ msgstr "الاسم الإسباني إذا كان مختلفًا عن الاسم الإنجليزي"
+
+#~ msgid "French name"
+#~ msgstr "الاسم الفرنسي"
+
+#~ msgid "French name if different from the English name"
+#~ msgstr "الاسم الفرنسي إذا كان مختلفًا عن الاسم الإنجليزي"
+
+#~ msgid "Portuguese name"
+#~ msgstr "الاسم البرتغالي"
+
+#~ msgid "Portuguese name if different from the English name"
+#~ msgstr "الاسم البرتغالي إذا كان مختلفًا عن الاسم الإنجليزي"
+
+#~ msgid "Arabic name"
+#~ msgstr "الاسم العربي"
+
+#~ msgid "Arabic name if different from the English name"
+#~ msgstr "الاسم العربي إذا كان مختلفًا عن الاسم الإنجليزي"
+
+#~ msgid "local name"
+#~ msgstr "الاسم المحلي"
 
 #~ msgid ""
 #~ "classification structure of products based on the UN’s Central Product "
