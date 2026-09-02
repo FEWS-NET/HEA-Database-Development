@@ -1152,6 +1152,7 @@ class CommunityViewSetTestCase(APITestCase):
         self.url_get = lambda n: reverse("community-detail", args=(self.data[n].pk,))
 
     def test_get_record(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url_get(0))
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.json(), dict)
@@ -1203,11 +1204,13 @@ class CommunityViewSetTestCase(APITestCase):
         self.assertEqual(response.json()["code"], new_value)
 
     def test_list_returns_all_records(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_list_returns_filtered_data(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -1219,6 +1222,7 @@ class CommunityViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 1)
 
     def test_search(self):
+        self.client.force_login(self.user)
         response = self.client.get(
             self.url,
             {
@@ -1238,11 +1242,13 @@ class CommunityViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 0)
 
     def test_json(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "json"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), self.num_records)
 
     def test_csv(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "csv"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"][:8], "text/csv")
@@ -1254,6 +1260,7 @@ class CommunityViewSetTestCase(APITestCase):
         self.assertEqual(len(df), self.num_records)
 
     def test_html(self):
+        self.client.force_login(self.user)
         response = self.client.get(self.url, {"format": "html"})
         self.assertEqual(response.status_code, 200)
         try:

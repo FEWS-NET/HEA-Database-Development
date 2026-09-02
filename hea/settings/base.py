@@ -51,6 +51,7 @@ ALLOWED_HOSTS = env.list(
     ],
 )
 THEME = env("THEME", default="HEA_DEFAULT").lower()
+HEA_FAVICON_PATH = "admin/img/favicons/{}/favicon.ico".format("prd" if env("ENV", default="") == "prd" else "dev")
 
 try:
     EC2_PRIVATE_IP = requests.get("http://169.254.169.254/2018-09-24/meta-data/local-ipv4", timeout=0.01).text

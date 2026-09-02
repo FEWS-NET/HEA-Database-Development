@@ -110,7 +110,7 @@ class LivelihoodZoneBaselineSerializer(serializers.ModelSerializer):
         )
 
     livelihood_zone_name = serializers.CharField(source="livelihood_zone.name", read_only=True)
-    source_organization_name = serializers.CharField(source="source_organization.pk", read_only=True)
+    source_organization_name = serializers.CharField(source="source_organization.full_name", read_only=True)
     livelihood_zone_country = serializers.CharField(source="livelihood_zone.country.pk", read_only=True)
     livelihood_zone_country_name = serializers.CharField(source="livelihood_zone.country.name", read_only=True)
     bss_language = serializers.SerializerMethodField()
@@ -151,7 +151,7 @@ class LivelihoodZoneBaselineGeoSerializer(GeoFeatureModelSerializer):
         auto_bbox = True
 
     livelihood_zone_name = serializers.CharField(source="livelihood_zone.name", read_only=True)
-    source_organization_name = serializers.CharField(source="source_organization.pk", read_only=True)
+    source_organization_name = serializers.CharField(source="source_organization.full_name", read_only=True)
     livelihood_zone_country = serializers.CharField(source="livelihood_zone.country.pk", read_only=True)
     livelihood_zone_country_name = serializers.CharField(source="livelihood_zone.country.name", read_only=True)
     bss_language = serializers.SerializerMethodField()
