@@ -1206,7 +1206,7 @@ def get_instances_from_dataframe(
                 if re.match(
                     # The optional trailing handles e.g. "Main d'ouvre -- voir Data2 (pre-récolte)".
                     r"^.*(?:data ?[23]|prochaine feuille)(?: *\(.*\))?$",
-                    livelihood_strategy["activity_label"],
+                    prepare_lookup(livelihood_strategy["activity_label"]),
                     re.IGNORECASE,
                 ):
                     non_empty_livelihood_activities = []

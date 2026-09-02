@@ -1200,6 +1200,12 @@
     "Ag.lab (harvest) -- see Data2": {
         "is_start": true
     },
+    "Main d'ouvre -- voir Data2 (pre-récolte)": {
+        "is_start": true
+    },
+    "Main d'ouvre -- voir Data2 (récolte)": {
+        "is_start": true
+    },
     "paiement en kg par fois (huile)": {
         "attribute": "payment_per_time",
         "payment_product_id": "huile",
