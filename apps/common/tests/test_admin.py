@@ -131,7 +131,7 @@ class ClassifiedProductAdminTestCase(TestCase):
             "es": (
                 "Descripción (Inglés):",
                 "Descripción (Portugués):",
-                "Descripción (Arábica):",
+                "Descripción (Árabe):",
                 "Descripción (Español):",
                 "Descripción (Francés):",
             ),
