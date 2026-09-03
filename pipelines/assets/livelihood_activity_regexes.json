@@ -31,13 +31,13 @@
     ],
     [
         "(?:fishing -- see worksheet data ?3):?",
-        "Fishing",
+        null,
         true,
         null
     ],
     [
         "(?:wild foods -- see worksheet data ?3|cueillette -- voir worksheet data3|ceuillette: fonio sauvage ou creb):?",
-        "WildFoodGathering",
+        null,
         true,
         null
     ],

@@ -110,6 +110,14 @@ WORKSHEET_MAP = {
 
 SUBTOTAL_PREFIXES = ("total", "sub-total", "subtotal", "sous-total", "revenu total", "kcal total")
 
+# Labels in the 'Data' worksheet that mark the start of a Livelihood Strategy whose detail is actually
+# captured on the 'Data2' or 'Data3' worksheet, e.g. 'WILD FOODS -- see worksheet Data 3'. 
+# A placeholder strategy is started for the heading, but its
+# Livelihood Activities are discarded in finalize_strategy(), and the summary rows that follow the
+# heading in the Data worksheet (e.g. 'quantity (kg)', 'kcals (%)') must be ignored rather than
+# matched to attributes, because the real data is ingested from the Data2/Data3 worksheet.
+SEE_OTHER_WORKSHEET_LABEL_PATTERN = re.compile(r"^.*(?:data ?[23]|prochaine feuille)$", re.IGNORECASE)
+
 
 def _is_section_header_label(label: str, row_values: pd.Series) -> bool:
     """
@@ -1203,11 +1211,7 @@ def get_instances_from_dataframe(
                 assert livelihood_strategy is not None, (
                     "Found Livelihood Activities from row %s, but there is no Livelihood Strategy defined." % row
                 )
-                if re.match(
-                    r"^.*(?:data ?[23]|prochaine feuille)$",
-                    livelihood_strategy["activity_label"],
-                    re.IGNORECASE,
-                ):
+                if SEE_OTHER_WORKSHEET_LABEL_PATTERN.match(livelihood_strategy["activity_label"]):
                     non_empty_livelihood_activities = []
 
             if non_empty_livelihood_activities:
@@ -1838,6 +1842,16 @@ def get_instances_from_dataframe(
                 initialize_strategy()
 
             else:
+
+                # Ignore the summary rows that follow a '-- see Data2'/'-- see Data3' heading in the
+                # Data worksheet (e.g. 'quantity (kg)', 'kcals per kg', 'kcals (%)'). The placeholder
+                # strategy is discarded in finalize_strategy() and the real data is ingested from the
+                # Data2/Data3 worksheet, so matching these rows to attributes here only produces
+                # spurious "Invalid strategy_type" / "values without an identified attribute" errors.
+                if livelihood_strategy and SEE_OTHER_WORKSHEET_LABEL_PATTERN.match(
+                    livelihood_strategy["activity_label"] or ""
+                ):
+                    continue
 
                 # We are not starting a new Livelihood Strategy, but there may be
                 # additional attributes that need to be added to the current one.
