@@ -119,6 +119,13 @@ SUBTOTAL_PREFIXES = ("total", "sub-total", "subtotal", "sous-total", "revenu tot
 SEE_OTHER_WORKSHEET_LABEL_PATTERN = re.compile(r"^.*(?:data ?[23]|prochaine feuille)$", re.IGNORECASE)
 
 
+def _is_see_other_worksheet_label(label: str | None) -> bool:
+    """
+    Return True if a Data-worksheet label points to detail that is captured on the Data2 or Data3 worksheet.
+    """
+    return bool(label) and bool(SEE_OTHER_WORKSHEET_LABEL_PATTERN.match(prepare_lookup(label)))
+
+
 def _is_section_header_label(label: str, row_values: pd.Series) -> bool:
     """
     Detect section header labels in the Data2 and Data3 worksheets.
@@ -1211,7 +1218,7 @@ def get_instances_from_dataframe(
                 assert livelihood_strategy is not None, (
                     "Found Livelihood Activities from row %s, but there is no Livelihood Strategy defined." % row
                 )
-                if SEE_OTHER_WORKSHEET_LABEL_PATTERN.match(livelihood_strategy["activity_label"]):
+                if _is_see_other_worksheet_label(livelihood_strategy["activity_label"]):
                     non_empty_livelihood_activities = []
 
             if non_empty_livelihood_activities:
@@ -1848,9 +1855,7 @@ def get_instances_from_dataframe(
                 # strategy is discarded in finalize_strategy() and the real data is ingested from the
                 # Data2/Data3 worksheet, so matching these rows to attributes here only produces
                 # spurious "Invalid strategy_type" / "values without an identified attribute" errors.
-                if livelihood_strategy and SEE_OTHER_WORKSHEET_LABEL_PATTERN.match(
-                    livelihood_strategy["activity_label"] or ""
-                ):
+                if livelihood_strategy and _is_see_other_worksheet_label(livelihood_strategy["activity_label"]):
                     continue
 
                 # We are not starting a new Livelihood Strategy, but there may be
