@@ -87,6 +87,17 @@ def load_metadata_for_model(context: OpExecutionContext, sheet_name: str, model:
     if "characteristic_group_id" in df:
         df["characteristic_group_id"] = df["characteristic_group_id"].astype(object).replace("", None)
 
+    # ReferenceData models have a required, translated `short_name` that currently defaults to `name`.
+    # bulk_create bypasses Model.save(), so populate missing/blank short_name from name column
+    for field_name in valid_field_names:
+        if field_name.startswith("short_name_"):
+            name_field = "name_" + field_name[len("short_name_") :]
+            if name_field in df:
+                if field_name in df:
+                    df[field_name] = df[field_name].where(df[field_name].astype(bool), df[name_field])
+                else:
+                    df[field_name] = df[name_field]
+
     if model_name == "ClassifiedProduct":
         existing_instances = {instance.pk: instance for instance in model.objects.filter(pk__in=df["cpc"])}
         for record in df.to_dict(orient="records"):

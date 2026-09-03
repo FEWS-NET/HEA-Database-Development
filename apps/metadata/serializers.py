@@ -20,7 +20,7 @@ class ReferenceDataSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ReferenceData
-        fields = ["code", "name", "description", "ordering", "aliases"]
+        fields = ["code", "name", "short_name", "description", "ordering", "aliases"]
 
 
 class LivelihoodSystemSerializer(ReferenceDataSerializer):
