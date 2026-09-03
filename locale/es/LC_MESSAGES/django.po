@@ -190,7 +190,6 @@ msgid "Filter sidebar menu"
 msgstr "Filtrar menú de la barra lateral"
 
 #: templates/admin/nav_sidebar.html:60
-#, fuzzy
 #| msgid "None available"
 msgid "No sections available"
 msgstr "Ninguno disponible"
