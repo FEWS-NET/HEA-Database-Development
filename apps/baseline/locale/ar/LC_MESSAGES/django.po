@@ -15,11 +15,11 @@ msgstr ""
 
 #: apps/baseline/admin.py:74
 msgid "record type"
-msgstr ""
+msgstr "نوع السجل"
 
 #: apps/baseline/admin.py:80
 msgid "Summary only"
-msgstr ""
+msgstr "ملخص فقط"
 
 #: apps/baseline/admin.py:81
 #, fuzzy
@@ -39,15 +39,15 @@ msgstr "دولة"
 
 #: apps/baseline/admin.py:300
 msgid "BSS SHA-512 Hash"
-msgstr ""
+msgstr "بصمة SHA-512 لـ BSS"
 
 #: apps/baseline/admin.py:307
 msgid "BSS Uploaded At"
-msgstr ""
+msgstr "تم تحميل BSS في"
 
 #: apps/baseline/admin.py:316
 msgid "BSS Size"
-msgstr ""
+msgstr "حجم BSS"
 
 #: apps/baseline/admin.py:325
 #, fuzzy
@@ -63,7 +63,7 @@ msgstr "متوسط ​​حجم الأسرة"
 
 #: apps/baseline/admin.py:333
 msgid "Poor Survival Non-Food Expenditure"
-msgstr ""
+msgstr "الانفاق غير الغذائي للبقاء لمجموعة الفقراء"
 
 #: apps/baseline/admin.py:1361
 #, fuzzy
@@ -199,7 +199,7 @@ msgstr "ملف BSS Excel"
 
 #: apps/baseline/models.py:316
 msgid "BSS Language"
-msgstr ""
+msgstr "لغة BSS"
 
 #: apps/baseline/models.py:323
 msgid "Profile Report PDF file"
@@ -278,7 +278,7 @@ msgstr "تقدير السكان"
 #: apps/baseline/models.py:431
 msgid ""
 "The estimated population of the Livelihood Zone during the reference year"
-msgstr ""
+msgstr "عدد السكان التقديري لمنطقة سبل العيش خلال سنة المرجع"
 
 #: apps/baseline/models.py:437 apps/baseline/models.py:1613
 #: apps/baseline/models.py:3624
@@ -300,10 +300,10 @@ msgid "Annual kcals cost"
 msgstr "إجمالي kcals المستهلكة"
 
 #: apps/baseline/models.py:445
-#, python-format
+#, no-python-format
 msgid ""
 "Annual cost per person of 100% of recommended kcals in the baseline currency."
-msgstr ""
+msgstr "التكلفة السنوية للفرد لمئة بالمئة من السعرات الحرارية الموصى بها بعملة خط الاساس."
 
 #: apps/baseline/models.py:626 apps/baseline/models.py:697
 #: apps/baseline/models.py:777 apps/baseline/models.py:884
@@ -318,23 +318,23 @@ msgstr "سبل العيش في منطقة الأساس"
 
 #: apps/baseline/models.py:685
 msgid "WB"
-msgstr ""
+msgstr "WB"
 
 #: apps/baseline/models.py:686
 msgid "Data"
-msgstr ""
+msgstr "بيانات"
 
 #: apps/baseline/models.py:687
 msgid "Data2"
-msgstr ""
+msgstr "بيانات2"
 
 #: apps/baseline/models.py:688
 msgid "Data3"
-msgstr ""
+msgstr "بيانات3"
 
 #: apps/baseline/models.py:689
 msgid "Summ"
-msgstr ""
+msgstr "ملخص"
 
 #: apps/baseline/models.py:690
 #, fuzzy
@@ -344,23 +344,23 @@ msgstr "هيا خط الأساس"
 
 #: apps/baseline/models.py:691
 msgid "Seas Cal"
-msgstr ""
+msgstr "التقويم الموسمي"
 
 #: apps/baseline/models.py:699
 msgid "Worksheet name"
-msgstr ""
+msgstr "اسم ورقة العمل"
 
 #: apps/baseline/models.py:700
 msgid "Cell range"
-msgstr ""
+msgstr "نطاق الخلايا"
 
 #: apps/baseline/models.py:702
 msgid "Previous value before correction"
-msgstr ""
+msgstr "القيمة السابقة قبل التصحيح"
 
 #: apps/baseline/models.py:704
 msgid "Corrected value"
-msgstr ""
+msgstr "القيمة المصححة"
 
 #: apps/baseline/models.py:705
 #, fuzzy
@@ -370,15 +370,15 @@ msgstr "تاريخ نهاية جمع البيانات"
 
 #: apps/baseline/models.py:706
 msgid "Correction author"
-msgstr ""
+msgstr "صاحب التصحيح"
 
 #: apps/baseline/models.py:709
 msgid "Correction comments"
-msgstr ""
+msgstr "ملاحظات التصحيح"
 
 #: apps/baseline/models.py:710
 msgid "Required comment about the correction suggested"
-msgstr ""
+msgstr "تعليق مطلوب على التصحيح المقترح"
 
 #: apps/baseline/models.py:723
 #, fuzzy
@@ -435,13 +435,13 @@ msgstr "تاريخ إجراء مقابلات مجموعة الثروة (النم
 
 #: apps/baseline/models.py:805
 msgid "aliases"
-msgstr ""
+msgstr "اسماء بديلة"
 
 #: apps/baseline/models.py:806
 msgid ""
 "A list of alternate names for the community name for differently spelled "
 "values."
-msgstr ""
+msgstr "قائمة بالاسماء البديلة لاسم المجتمع المحلي عند اختلاف التهجئة."
 
 #: apps/baseline/models.py:818 apps/baseline/models.py:891
 msgid "Community"
@@ -477,7 +477,7 @@ msgstr "متوسط ​​حجم الأسرة"
 
 #: apps/baseline/models.py:913
 msgid "Average number of people per household in this Wealth Group"
-msgstr ""
+msgstr "متوسط عدد الاشخاص لكل اسرة في مجموعة الثروة هذه"
 
 #: apps/baseline/models.py:1189 apps/baseline/models.py:1334
 #: apps/baseline/models.py:1866 apps/baseline/models.py:3551
@@ -750,7 +750,7 @@ msgstr "استراتيجيات رزق"
 
 #: apps/baseline/models.py:1757
 msgid "Monitor Quantity"
-msgstr ""
+msgstr "الكمية المراقبة"
 
 #: apps/baseline/models.py:1758
 #, fuzzy
@@ -760,15 +760,15 @@ msgstr "سعر السوق"
 
 #: apps/baseline/models.py:1765
 msgid "Key Parameters must be for a Strategy with a Product"
-msgstr ""
+msgstr "يجب ان تكون المعلمات الرئيسية لاستراتيجية تتضمن منتجا"
 
 #: apps/baseline/models.py:1780
 msgid "Key Parameter"
-msgstr ""
+msgstr "معلمة رئيسية"
 
 #: apps/baseline/models.py:1781
 msgid "Key Parameters"
-msgstr ""
+msgstr "معلمات رئيسية"
 
 #: apps/baseline/models.py:1863
 msgid "Scenario"
@@ -888,12 +888,12 @@ msgstr "سمات إضافية من BSS لنشاط سبل العيش هذا"
 
 #: apps/baseline/models.py:2006
 msgid "Sort Key"
-msgstr ""
+msgstr "مفتاح الفرز"
 
 #: apps/baseline/models.py:2132
 msgid ""
 "Income for a Livelihood Activity must be quantity sold multiplied by price"
-msgstr ""
+msgstr "يجب ان يكون دخل نشاط سبل العيش هو الكمية المباعة مضروبة في السعر"
 
 #: apps/baseline/models.py:2153
 #, fuzzy
@@ -910,7 +910,7 @@ msgstr "يجب أن يكون النفقات لنشاط رزق الكمية ال�
 msgid ""
 "No conversion factor found from unit %(from_unit)s for Livelihood Activity "
 "to unit %(to_unit)s for Product %(product)s for calculating kcals consumed."
-msgstr ""
+msgstr "لم يتم العثور على معامل تحويل من الوحدة %(from_unit)s لنشاط سبل العيش الى الوحدة %(to_unit)s للمنتج %(product)s لحساب السعرات الحرارية المستهلكة."
 
 #: apps/baseline/models.py:2181
 msgid ""
@@ -985,14 +985,14 @@ msgstr "سلة المنتج"
 #: apps/baseline/models.py:2457
 #: apps/baseline/templates/admin/baseline/wealthgroup/change_form.html:21
 msgid "Percentage allocation to basket"
-msgstr ""
+msgstr "نسبة التخصيص للسلة"
 
 #: apps/baseline/models.py:2459
 msgid ""
 "The percentage of expenditure or kcals from the Livelihood Activity that is "
 "allocated to this Basket. The remainder is implicitly part of the 'Other' "
 "basket"
-msgstr ""
+msgstr "النسبة المئوية للانفاق او السعرات الحرارية من نشاط سبل العيش المخصصة لهذه السلة. ويعد الباقي ضمنيا جزءا من سلة Other"
 
 #: apps/baseline/models.py:2471
 #, fuzzy
@@ -1115,7 +1115,7 @@ msgstr "عدد المرات في السنة التي يتم فيها الشرا�
 msgid ""
 "Times per year must be times per month * months per year. Expected: "
 "%(expected)s, Found: %(found)s"
-msgstr ""
+msgstr "يجب ان يساوي عدد المرات في السنة عدد المرات في الشهر * عدد الاشهر في السنة. المتوقع: %(expected)s، الموجود: %(found)s"
 
 #: apps/baseline/models.py:2760
 #, fuzzy
@@ -1153,7 +1153,7 @@ msgstr "الدفع لكل وقت"
 msgid ""
 "Product provided as payment, typically a staple food item in exchange for "
 "labor"
-msgstr ""
+msgstr "منتج يقدم كمدفوعات، وعادة ما يكون غذاء اساسيا مقابل العمل"
 
 #: apps/baseline/models.py:2809 apps/baseline/models.py:3009
 msgid "Payment per time"
@@ -1187,7 +1187,7 @@ msgstr "عدد المرات في السنة التي يتم فيها تنفيذ 
 msgid ""
 "Payment per time is required if people per household and times per month are "
 "provided"
-msgstr ""
+msgstr "يشترط تقديم قيمة الدفع لكل مرة اذا تم ادخال عدد الاشخاص لكل اسرة وعدد المرات في الشهر"
 
 #: apps/baseline/models.py:2878
 #, fuzzy
@@ -1675,23 +1675,23 @@ msgstr "استراتيجيات المواجهة"
 
 #: apps/baseline/templates/admin/baseline/change_list.html:7
 msgid "Filter"
-msgstr ""
+msgstr "تصفية"
 
 #: apps/baseline/templates/admin/baseline/change_list.html:9
 msgid "Start typing to narrow filter..."
-msgstr ""
+msgstr "ابدا الكتابة لتضييق التصفية..."
 
 #: apps/baseline/templates/admin/baseline/change_list.html:12
 msgid "Hide counts"
-msgstr ""
+msgstr "اخفاء الاعداد"
 
 #: apps/baseline/templates/admin/baseline/change_list.html:13
 msgid "Show counts"
-msgstr ""
+msgstr "اظهار الاعداد"
 
 #: apps/baseline/templates/admin/baseline/change_list.html:16
 msgid "Clear all filters"
-msgstr ""
+msgstr "مسح جميع عوامل التصفية"
 
 #: apps/baseline/templates/admin/baseline/wealthgroup/change_form.html:33
 #, fuzzy

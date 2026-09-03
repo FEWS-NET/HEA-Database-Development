@@ -43,11 +43,11 @@ msgstr "Uma lista de nomes alternativos para o objeto."
 
 #: apps/metadata/models.py:107 apps/metadata/models.py:258
 msgid "Color"
-msgstr ""
+msgstr "Cor"
 
 #: apps/metadata/models.py:109
 msgid "Color hex value code for the Livelihood System."
-msgstr ""
+msgstr "Codigo hexadecimal da cor para o sistema de subsistencia."
 
 #: apps/metadata/models.py:114
 #, fuzzy
@@ -117,7 +117,7 @@ msgstr "Se o campo é numérico, caráter, booleano etc."
 msgid ""
 "Optional grouping for characteristics, such as 'Population', 'Income', "
 "'Land', 'Livestock', 'Other assets'"
-msgstr ""
+msgstr "Agrupamento opcional para caracteristicas, como 'Population', 'Income', 'Land', 'Livestock' e 'Other assets'"
 
 #: apps/metadata/models.py:185 apps/metadata/models.py:575
 msgid "Wealth Characteristic"
@@ -195,11 +195,11 @@ msgstr "Resposta"
 
 #: apps/metadata/models.py:231
 msgid "Climatology"
-msgstr ""
+msgstr "Climatologia"
 
 #: apps/metadata/models.py:232
 msgid "Stress Periods"
-msgstr ""
+msgstr "Periodos de estresse"
 
 #: apps/metadata/models.py:233
 msgid "Crops"
@@ -211,11 +211,11 @@ msgstr "Gado"
 
 #: apps/metadata/models.py:236
 msgid "Employment and Other Income"
-msgstr ""
+msgstr "Emprego e outros rendimentos"
 
 #: apps/metadata/models.py:237
 msgid "Other"
-msgstr ""
+msgstr "Outro"
 
 #: apps/metadata/models.py:240
 msgid "Activity Category"
@@ -239,11 +239,11 @@ msgstr "Tipo de atividade sazonal"
 
 #: apps/metadata/models.py:253
 msgid "Are SeasonalActivity instances of this type key seasonal activities?"
-msgstr ""
+msgstr "As instancias de SeasonalActivity deste tipo sao atividades sazonais-chave?"
 
 #: apps/metadata/models.py:259
 msgid "Color hex value code for the Seasonal Activity Type."
-msgstr ""
+msgstr "Codigo hexadecimal da cor para o tipo de atividade sazonal."
 
 #: apps/metadata/models.py:267
 msgid "Seasonal Activity Type"
@@ -387,11 +387,11 @@ msgstr ""
 
 #: apps/metadata/models.py:401
 msgid "Purpose"
-msgstr ""
+msgstr "Finalidade"
 
 #: apps/metadata/models.py:402
 msgid "The Livelihood Strategy Type that this Season is relevant for."
-msgstr ""
+msgstr "O tipo de estrategia de subsistencia para o qual esta estacao e relevante."
 
 #: apps/metadata/models.py:409
 msgid "Start Day"
@@ -435,23 +435,23 @@ msgstr "Temporadas"
 
 #: apps/metadata/models.py:455
 msgid "Processed by Regular Expression"
-msgstr ""
+msgstr "Processado por expressao regular"
 
 #: apps/metadata/models.py:456
 msgid "Override automatically recognized metadata"
-msgstr ""
+msgstr "Substituir metadados reconhecidos automaticamente"
 
 #: apps/metadata/models.py:457 apps/metadata/models.py:559
 msgid "Under Discussion"
-msgstr ""
+msgstr "Em discussao"
 
 #: apps/metadata/models.py:458 apps/metadata/models.py:560
 msgid "Correct the BSS"
-msgstr ""
+msgstr "Corrigir o BSS"
 
 #: apps/metadata/models.py:459 apps/metadata/models.py:561
 msgid "Ignore this label and associated data in the row"
-msgstr ""
+msgstr "Ignorar este rotulo e os dados associados na linha"
 
 #: apps/metadata/models.py:462
 #, fuzzy
@@ -489,11 +489,11 @@ msgid ""
 "Livelihood Activity, or an Other Cash Income activity from the 'Data2' "
 "worksheet, or a Wild Foods, Fishing or Hunting activity from the 'Data3' "
 "worksheet, or a label from the 'Summary' section of the 'Data' worksheet."
-msgstr ""
+msgstr "O tipo de atividade de subsistencia ao qual o rotulo se refere: uma atividade geral de subsistencia, ou uma atividade de Other Cash Income da planilha 'Data2', ou uma atividade de Wild Foods, Fishing or Hunting da planilha 'Data3', ou um rotulo da secao 'Summary' da planilha 'Data'."
 
 #: apps/metadata/models.py:481 apps/metadata/models.py:566
 msgid "Status"
-msgstr ""
+msgstr "Estado"
 
 #: apps/metadata/models.py:484
 #, fuzzy
@@ -505,7 +505,7 @@ msgstr "Começar"
 msgid ""
 "Indicates whether this Activity Label marks the start of a new Livelihood "
 "Strategy"
-msgstr ""
+msgstr "Indica se este rotulo de atividade marca o inicio de uma nova estrategia de subsistencia"
 
 #: apps/metadata/models.py:493
 #, fuzzy
@@ -523,7 +523,7 @@ msgstr "Tipo variável"
 msgid ""
 "The type of livelihood strategy, such as crop production, or wild food "
 "gathering."
-msgstr ""
+msgstr "O tipo de estrategia de subsistencia, como producao agricola ou coleta de alimentos silvestres."
 
 #: apps/metadata/models.py:504 apps/metadata/models.py:584
 #, fuzzy
@@ -545,19 +545,19 @@ msgstr "Tem unidade de medida?"
 
 #: apps/metadata/models.py:530
 msgid "Currency"
-msgstr ""
+msgstr "Moeda"
 
 #: apps/metadata/models.py:533
 msgid "Additional Identifier"
-msgstr ""
+msgstr "Identificador adicional"
 
 #: apps/metadata/models.py:534
 msgid "Attribute"
-msgstr ""
+msgstr "Atributo"
 
 #: apps/metadata/models.py:535 apps/metadata/models.py:595
 msgid "Notes"
-msgstr ""
+msgstr "Notas"
 
 #: apps/metadata/models.py:542
 #, fuzzy
@@ -567,7 +567,7 @@ msgstr "Categoria de atividade"
 
 #: apps/metadata/models.py:558
 msgid "Complete"
-msgstr ""
+msgstr "Concluido"
 
 #: apps/metadata/models.py:564 apps/metadata/models.py:601
 #, fuzzy
@@ -583,23 +583,23 @@ msgstr "Características de riqueza"
 
 #: apps/metadata/templates/admin/metadata/change_list.html:7
 msgid "Filter"
-msgstr ""
+msgstr "Filtro"
 
 #: apps/metadata/templates/admin/metadata/change_list.html:9
 msgid "Start typing to narrow filter..."
-msgstr ""
+msgstr "Comece a digitar para restringir o filtro..."
 
 #: apps/metadata/templates/admin/metadata/change_list.html:12
 msgid "Hide counts"
-msgstr ""
+msgstr "Ocultar contagens"
 
 #: apps/metadata/templates/admin/metadata/change_list.html:13
 msgid "Show counts"
-msgstr ""
+msgstr "Mostrar contagens"
 
 #: apps/metadata/templates/admin/metadata/change_list.html:16
 msgid "Clear all filters"
-msgstr ""
+msgstr "Limpar todos os filtros"
 
 #: apps/metadata/viewsets.py:33 apps/metadata/viewsets.py:39
 #: apps/metadata/viewsets.py:210 apps/metadata/viewsets.py:216

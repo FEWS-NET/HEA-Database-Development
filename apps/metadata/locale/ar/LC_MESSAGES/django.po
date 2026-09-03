@@ -41,11 +41,11 @@ msgstr "قائمة الأسماء البديلة للكائن."
 
 #: apps/metadata/models.py:107 apps/metadata/models.py:258
 msgid "Color"
-msgstr ""
+msgstr "اللون"
 
 #: apps/metadata/models.py:109
 msgid "Color hex value code for the Livelihood System."
-msgstr ""
+msgstr "رمز لون سداسي عشري لنظام سبل العيش."
 
 #: apps/metadata/models.py:114
 #, fuzzy
@@ -115,7 +115,7 @@ msgstr "ما إذا كان الحقل رقميًا ، شخصية ، منطقية
 msgid ""
 "Optional grouping for characteristics, such as 'Population', 'Income', "
 "'Land', 'Livestock', 'Other assets'"
-msgstr ""
+msgstr "تجميع اختياري للخصائص، مثل Population وIncome وLand وLivestock وOther assets"
 
 #: apps/metadata/models.py:185 apps/metadata/models.py:575
 msgid "Wealth Characteristic"
@@ -193,11 +193,11 @@ msgstr "إجابة"
 
 #: apps/metadata/models.py:231
 msgid "Climatology"
-msgstr ""
+msgstr "علم المناخ"
 
 #: apps/metadata/models.py:232
 msgid "Stress Periods"
-msgstr ""
+msgstr "فترات الاجهاد"
 
 #: apps/metadata/models.py:233
 msgid "Crops"
@@ -209,11 +209,11 @@ msgstr "الماشية"
 
 #: apps/metadata/models.py:236
 msgid "Employment and Other Income"
-msgstr ""
+msgstr "العمالة والدخل الاخر"
 
 #: apps/metadata/models.py:237
 msgid "Other"
-msgstr ""
+msgstr "اخرى"
 
 #: apps/metadata/models.py:240
 msgid "Activity Category"
@@ -237,11 +237,11 @@ msgstr "نوع النشاط الموسمي"
 
 #: apps/metadata/models.py:253
 msgid "Are SeasonalActivity instances of this type key seasonal activities?"
-msgstr ""
+msgstr "هل تمثل مثيلات SeasonalActivity من هذا النوع انشطة موسمية رئيسية؟"
 
 #: apps/metadata/models.py:259
 msgid "Color hex value code for the Seasonal Activity Type."
-msgstr ""
+msgstr "رمز لون سداسي عشري لنوع النشاط الموسمي."
 
 #: apps/metadata/models.py:267
 msgid "Seasonal Activity Type"
@@ -385,11 +385,11 @@ msgstr ""
 
 #: apps/metadata/models.py:401
 msgid "Purpose"
-msgstr ""
+msgstr "الغرض"
 
 #: apps/metadata/models.py:402
 msgid "The Livelihood Strategy Type that this Season is relevant for."
-msgstr ""
+msgstr "نوع استراتيجية سبل العيش التي يرتبط بها هذا الموسم."
 
 #: apps/metadata/models.py:409
 msgid "Start Day"
@@ -433,23 +433,23 @@ msgstr "مواسم"
 
 #: apps/metadata/models.py:455
 msgid "Processed by Regular Expression"
-msgstr ""
+msgstr "تمت المعالجة بتعبير نمطي"
 
 #: apps/metadata/models.py:456
 msgid "Override automatically recognized metadata"
-msgstr ""
+msgstr "تجاوز البيانات الوصفية المتعرف عليها تلقائيا"
 
 #: apps/metadata/models.py:457 apps/metadata/models.py:559
 msgid "Under Discussion"
-msgstr ""
+msgstr "قيد المناقشة"
 
 #: apps/metadata/models.py:458 apps/metadata/models.py:560
 msgid "Correct the BSS"
-msgstr ""
+msgstr "تصحيح BSS"
 
 #: apps/metadata/models.py:459 apps/metadata/models.py:561
 msgid "Ignore this label and associated data in the row"
-msgstr ""
+msgstr "تجاهل هذه التسمية والبيانات المرتبطة بها في الصف"
 
 #: apps/metadata/models.py:462
 #, fuzzy
@@ -487,11 +487,11 @@ msgid ""
 "Livelihood Activity, or an Other Cash Income activity from the 'Data2' "
 "worksheet, or a Wild Foods, Fishing or Hunting activity from the 'Data3' "
 "worksheet, or a label from the 'Summary' section of the 'Data' worksheet."
-msgstr ""
+msgstr "نوع نشاط سبل العيش الذي تخصه هذه التسمية: اما نشاط سبل عيش عام، او نشاط دخل نقدي اخر من ورقة العمل Data2، او نشاط اغذية برية او صيد او قنص من ورقة العمل Data3، او تسمية من قسم Summary في ورقة العمل Data."
 
 #: apps/metadata/models.py:481 apps/metadata/models.py:566
 msgid "Status"
-msgstr ""
+msgstr "الحالة"
 
 #: apps/metadata/models.py:484
 #, fuzzy
@@ -503,7 +503,7 @@ msgstr "يبدأ"
 msgid ""
 "Indicates whether this Activity Label marks the start of a new Livelihood "
 "Strategy"
-msgstr ""
+msgstr "يحدد ما اذا كانت تسمية النشاط هذه تشير الى بداية استراتيجية سبل عيش جديدة"
 
 #: apps/metadata/models.py:493
 #, fuzzy
@@ -521,7 +521,7 @@ msgstr "نوع متغير"
 msgid ""
 "The type of livelihood strategy, such as crop production, or wild food "
 "gathering."
-msgstr ""
+msgstr "نوع استراتيجية سبل العيش، مثل انتاج المحاصيل او جمع الاغذية البرية."
 
 #: apps/metadata/models.py:504 apps/metadata/models.py:584
 #, fuzzy
@@ -543,19 +543,19 @@ msgstr "لديها وحدة القياس؟"
 
 #: apps/metadata/models.py:530
 msgid "Currency"
-msgstr ""
+msgstr "العملة"
 
 #: apps/metadata/models.py:533
 msgid "Additional Identifier"
-msgstr ""
+msgstr "معرف اضافي"
 
 #: apps/metadata/models.py:534
 msgid "Attribute"
-msgstr ""
+msgstr "سمة"
 
 #: apps/metadata/models.py:535 apps/metadata/models.py:595
 msgid "Notes"
-msgstr ""
+msgstr "ملاحظات"
 
 #: apps/metadata/models.py:542
 #, fuzzy
@@ -565,7 +565,7 @@ msgstr "فئة النشاط"
 
 #: apps/metadata/models.py:558
 msgid "Complete"
-msgstr ""
+msgstr "مكتمل"
 
 #: apps/metadata/models.py:564 apps/metadata/models.py:601
 #, fuzzy
@@ -581,23 +581,23 @@ msgstr "خصائص الثروة"
 
 #: apps/metadata/templates/admin/metadata/change_list.html:7
 msgid "Filter"
-msgstr ""
+msgstr "تصفية"
 
 #: apps/metadata/templates/admin/metadata/change_list.html:9
 msgid "Start typing to narrow filter..."
-msgstr ""
+msgstr "ابدا الكتابة لتضييق التصفية..."
 
 #: apps/metadata/templates/admin/metadata/change_list.html:12
 msgid "Hide counts"
-msgstr ""
+msgstr "اخفاء الاعداد"
 
 #: apps/metadata/templates/admin/metadata/change_list.html:13
 msgid "Show counts"
-msgstr ""
+msgstr "اظهار الاعداد"
 
 #: apps/metadata/templates/admin/metadata/change_list.html:16
 msgid "Clear all filters"
-msgstr ""
+msgstr "مسح جميع عوامل التصفية"
 
 #: apps/metadata/viewsets.py:33 apps/metadata/viewsets.py:39
 #: apps/metadata/viewsets.py:210 apps/metadata/viewsets.py:216

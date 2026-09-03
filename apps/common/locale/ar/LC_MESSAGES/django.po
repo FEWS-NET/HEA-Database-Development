@@ -45,11 +45,11 @@ msgstr "الحدود"
 
 #: apps/common/menu_config.py:20 apps/common/menu_config.py:279
 msgid "Source Organizations"
-msgstr ""
+msgstr "منظمات المصدر"
 
 #: apps/common/menu_config.py:26 apps/common/menu_config.py:284
 msgid "Livelihood Zones"
-msgstr ""
+msgstr "مناطق سبل العيش"
 
 #: apps/common/menu_config.py:32 apps/common/menu_config.py:299
 #, fuzzy
@@ -59,31 +59,31 @@ msgstr "من الوحدة"
 
 #: apps/common/menu_config.py:38 apps/common/menu_config.py:289
 msgid "Livelihood Zone Baselines"
-msgstr ""
+msgstr "خطوط اساس مناطق سبل العيش"
 
 #: apps/common/menu_config.py:44
 msgid "Wealth Groups"
-msgstr ""
+msgstr "مجموعات الثروة"
 
 #: apps/common/menu_config.py:50
 msgid "Wealth Group Characteristic Values"
-msgstr ""
+msgstr "قيم خصائص مجموعات الثروة"
 
 #: apps/common/menu_config.py:56
 msgid "Livelihood Activities"
-msgstr ""
+msgstr "انشطة سبل العيش"
 
 #: apps/common/menu_config.py:62
 msgid "Livelihood Strategies"
-msgstr ""
+msgstr "استراتيجيات سبل العيش"
 
 #: apps/common/menu_config.py:68
 msgid "Livelihood Product Categories"
-msgstr ""
+msgstr "فئات منتجات سبل العيش"
 
 #: apps/common/menu_config.py:77
 msgid "Livelihood Zone Baseline Corrections"
-msgstr ""
+msgstr "تصحيحات خطوط اساس مناطق سبل العيش"
 
 #: apps/common/menu_config.py:86
 #, fuzzy
@@ -93,40 +93,40 @@ msgstr "الاسم المستعار للمنتج المصنف للبلد"
 
 #: apps/common/menu_config.py:92
 msgid "Community Livestock"
-msgstr ""
+msgstr "الثروة الحيوانية المجتمعية"
 
 #: apps/common/menu_config.py:98 apps/common/menu_config.py:483
 msgid "Coping Strategies"
-msgstr ""
+msgstr "استراتيجيات التكيف"
 
 #: apps/common/menu_config.py:104 apps/common/menu_config.py:462
 msgid "Events"
-msgstr ""
+msgstr "الاحداث"
 
 #: apps/common/menu_config.py:110 apps/common/menu_config.py:478
 msgid "Expandability Factors"
-msgstr ""
+msgstr "عوامل التوسع"
 
 #: apps/common/menu_config.py:116 apps/common/menu_config.py:457
 msgid "Hazards"
-msgstr ""
+msgstr "المخاطر"
 
 #: apps/common/menu_config.py:122 apps/common/menu_config.py:401
 #: apps/common/menu_config.py:414
 msgid "Market Prices"
-msgstr ""
+msgstr "اسعار السوق"
 
 #: apps/common/menu_config.py:128 apps/common/menu_config.py:430
 msgid "Seasonal Activities"
-msgstr ""
+msgstr "الانشطة الموسمية"
 
 #: apps/common/menu_config.py:134
 msgid "Seasonal Activity Occurrences"
-msgstr ""
+msgstr "تكرارات الانشطة الموسمية"
 
 #: apps/common/menu_config.py:140
 msgid "Seasonal Production Performance"
-msgstr ""
+msgstr "الاداء الموسمي للانتاج"
 
 #: apps/common/menu_config.py:150 apps/common/menu_config.py:507
 #: apps/common/models.py:576
@@ -150,111 +150,111 @@ msgstr "وحدات القياس"
 
 #: apps/common/menu_config.py:179 apps/common/menu_config.py:548
 msgid "Livelihood Systems"
-msgstr ""
+msgstr "نظم سبل العيش"
 
 #: apps/common/menu_config.py:185
 msgid "Wealth Group Categories"
-msgstr ""
+msgstr "فئات مجموعات الثروة"
 
 #: apps/common/menu_config.py:191
 msgid "Characteristic Groups"
-msgstr ""
+msgstr "مجموعات الخصائص"
 
 #: apps/common/menu_config.py:197
 msgid "Wealth Characteristics"
-msgstr ""
+msgstr "خصائص الثروة"
 
 #: apps/common/menu_config.py:203 apps/common/menu_config.py:543
 msgid "Hazard Categories"
-msgstr ""
+msgstr "فئات المخاطر"
 
 #: apps/common/menu_config.py:209 apps/common/menu_config.py:553
 msgid "Seasons"
-msgstr ""
+msgstr "المواسم"
 
 #: apps/common/menu_config.py:215 apps/common/menu_config.py:558
 msgid "Seasonal Activity Types"
-msgstr ""
+msgstr "انواع الانشطة الموسمية"
 
 #: apps/common/menu_config.py:221 apps/common/menu_config.py:409
 msgid "Markets"
-msgstr ""
+msgstr "الاسواق"
 
 #: apps/common/menu_config.py:230
 msgid "Activity Labels"
-msgstr ""
+msgstr "تسميات الانشطة"
 
 #: apps/common/menu_config.py:236
 msgid "Wealth Characteristic Labels"
-msgstr ""
+msgstr "تسميات خصائص الثروة"
 
 #: apps/common/menu_config.py:246 apps/common/menu_config.py:592
 msgid "Users"
-msgstr ""
+msgstr "المستخدمون"
 
 #: apps/common/menu_config.py:252 apps/common/menu_config.py:597
 msgid "Groups"
-msgstr ""
+msgstr "المجموعات"
 
 #: apps/common/menu_config.py:264
 msgid "Core Data"
-msgstr ""
+msgstr "البيانات الاساسية"
 
 #: apps/common/menu_config.py:268
 msgid "BSS Setup"
-msgstr ""
+msgstr "اعداد BSS"
 
 #: apps/common/menu_config.py:294
 msgid "Baseline Corrections"
-msgstr ""
+msgstr "تصحيحات خطوط الاساس"
 
 #: apps/common/menu_config.py:307
 msgid "BSS WB, Data Sheets"
-msgstr ""
+msgstr "BSS WB، اوراق البيانات"
 
 #: apps/common/menu_config.py:312
 msgid "Wealth Group Data"
-msgstr ""
+msgstr "بيانات مجموعات الثروة"
 
 #: apps/common/menu_config.py:320
 msgid "Wealth, Activity and Strategy"
-msgstr ""
+msgstr "الثروة والنشاط والاستراتيجية"
 
 #: apps/common/menu_config.py:331
 msgid "Wealth Group Characteristic Value"
-msgstr ""
+msgstr "قيمة خاصية مجموعة الثروة"
 
 #: apps/common/menu_config.py:336
 msgid "Livelihood Strategy"
-msgstr ""
+msgstr "استراتيجية سبل العيش"
 
 #: apps/common/menu_config.py:341
 msgid "Livelihood Activity"
-msgstr ""
+msgstr "نشاط سبل العيش"
 
 #: apps/common/menu_config.py:346
 msgid "Livelihood Product Category"
-msgstr ""
+msgstr "فئة منتج سبل العيش"
 
 #: apps/common/menu_config.py:351
 msgid "Key Parameter"
-msgstr ""
+msgstr "معلمة رئيسية"
 
 #: apps/common/menu_config.py:359
 msgid "Labels"
-msgstr ""
+msgstr "تسميات"
 
 #: apps/common/menu_config.py:367
 msgid "Wealth Characteristic Label"
-msgstr ""
+msgstr "تسمية خاصية الثروة"
 
 #: apps/common/menu_config.py:372
 msgid "Activity Label"
-msgstr ""
+msgstr "تسمية النشاط"
 
 #: apps/common/menu_config.py:380
 msgid "BSS Production Data"
-msgstr ""
+msgstr "بيانات انتاج BSS"
 
 #: apps/common/menu_config.py:388
 #, fuzzy
@@ -264,31 +264,31 @@ msgstr "منتج"
 
 #: apps/common/menu_config.py:393
 msgid "Livestock Production"
-msgstr ""
+msgstr "الانتاج الحيواني"
 
 #: apps/common/menu_config.py:422
 msgid "Seasonal Calendars"
-msgstr ""
+msgstr "التقاويم الموسمية"
 
 #: apps/common/menu_config.py:435
 msgid "Activity Occurrences"
-msgstr ""
+msgstr "تكرارات النشاط"
 
 #: apps/common/menu_config.py:443
 msgid "Hazards and Events"
-msgstr ""
+msgstr "المخاطر والاحداث"
 
 #: apps/common/menu_config.py:452
 msgid "Annual Production Performances"
-msgstr ""
+msgstr "الاداء السنوي للانتاج"
 
 #: apps/common/menu_config.py:470
 msgid "Expandability and Coping"
-msgstr ""
+msgstr "التوسع والتكيف"
 
 #: apps/common/menu_config.py:493
 msgid "Reference Data"
-msgstr ""
+msgstr "البيانات المرجعية"
 
 #: apps/common/menu_config.py:497
 #, fuzzy
@@ -298,27 +298,27 @@ msgstr "شائع"
 
 #: apps/common/menu_config.py:530
 msgid "Metadata"
-msgstr ""
+msgstr "البيانات الوصفية"
 
 #: apps/common/menu_config.py:563
 msgid "Wealth Categories"
-msgstr ""
+msgstr "فئات الثروة"
 
 #: apps/common/menu_config.py:568
 msgid "Characteristics Groups"
-msgstr ""
+msgstr "مجموعات الخصائص"
 
 #: apps/common/menu_config.py:573
 msgid "Wealth Group Characteristics"
-msgstr ""
+msgstr "خصائص مجموعات الثروة"
 
 #: apps/common/menu_config.py:583
 msgid "System"
-msgstr ""
+msgstr "النظام"
 
 #: apps/common/menu_config.py:587
 msgid "User Management"
-msgstr ""
+msgstr "ادارة المستخدمين"
 
 #: apps/common/middleware/language.py:31
 msgid ""
@@ -337,7 +337,7 @@ msgstr ""
 
 #: apps/common/models.py:43
 msgid "Value must be greater than 0."
-msgstr ""
+msgstr "يجب ان تكون القيمة اكبر من 0."
 
 #: apps/common/models.py:330
 msgid "The End of the period must be on or after the Start"
@@ -412,7 +412,7 @@ msgstr "الاسم الفرنسي ISO"
 #: apps/common/models.py:557
 msgid ""
 "The name in French of the Country approved by the ISO 3166 Maintenance Agency"
-msgstr ""
+msgstr "الاسم الفرنسي للبلد المعتمد من وكالة صيانة ISO 3166"
 
 #: apps/common/models.py:561
 msgid "ISO French full name"
@@ -529,7 +529,7 @@ msgstr ""
 
 #: apps/common/models.py:878
 msgid "CPC v2.1"
-msgstr ""
+msgstr "CPC v2.1"
 
 #: apps/common/models.py:883
 msgid "description"
@@ -541,7 +541,7 @@ msgstr "اسم شائع"
 
 #: apps/common/models.py:895
 msgid "CPC v2"
-msgstr ""
+msgstr "CPC v2"
 
 #: apps/common/models.py:905
 msgid "HS2012"
@@ -581,31 +581,31 @@ msgstr "الاسم المستعار للمنتجات المصنفة بالبلد
 
 #: apps/common/models.py:1003
 msgid "user profile"
-msgstr ""
+msgstr "ملف المستخدم"
 
 #: apps/common/models.py:1004
 msgid "user profiles"
-msgstr ""
+msgstr "ملفات المستخدمين"
 
 #: apps/common/templates/admin/common/change_list.html:7
 msgid "Filter"
-msgstr ""
+msgstr "تصفية"
 
 #: apps/common/templates/admin/common/change_list.html:9
 msgid "Start typing to narrow filter..."
-msgstr ""
+msgstr "ابدا الكتابة لتضييق التصفية..."
 
 #: apps/common/templates/admin/common/change_list.html:12
 msgid "Hide counts"
-msgstr ""
+msgstr "اخفاء الاعداد"
 
 #: apps/common/templates/admin/common/change_list.html:13
 msgid "Show counts"
-msgstr ""
+msgstr "اظهار الاعداد"
 
 #: apps/common/templates/admin/common/change_list.html:16
 msgid "Clear all filters"
-msgstr ""
+msgstr "مسح جميع عوامل التصفية"
 
 #: apps/common/viewsets.py:326 apps/common/viewsets.py:341
 msgid "English"

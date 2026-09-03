@@ -40,12 +40,12 @@ msgstr "Lar"
 #: templates/admin/app_index.html:42 templates/admin/app_index.html:73
 #, python-format
 msgid "Add %(name)s"
-msgstr ""
+msgstr "Adicionar %(name)s"
 
 #: templates/admin/app_index.html:47 templates/admin/app_index.html:79
 #, python-format
 msgid "View %(name)s"
-msgstr ""
+msgstr "Ver %(name)s"
 
 #: templates/admin/app_index.html:95
 #, fuzzy
@@ -55,7 +55,7 @@ msgstr "Você não tem permissão para visualizar ou editar nada."
 
 #: templates/admin/base.html:53
 msgid "HEA Baseline Database Administration"
-msgstr ""
+msgstr "Administração da base de dados de linhas de base do HEA"
 
 #: templates/admin/base.html:62 templates/rest_framework/api.html:51
 msgid "Welcome,"
@@ -114,7 +114,7 @@ msgstr ""
 
 #: templates/admin/index.html:32
 msgid "Baselines"
-msgstr ""
+msgstr "Linhas de base"
 
 #: templates/admin/index.html:36
 #, fuzzy
@@ -136,7 +136,7 @@ msgstr "Atividades sazonais"
 
 #: templates/admin/index.html:86
 msgid "Open"
-msgstr ""
+msgstr "Abrir"
 
 #: templates/admin/index.html:91
 msgid "Documentation"
@@ -174,11 +174,11 @@ msgstr "Alternar de navegação"
 
 #: templates/admin/nav_sidebar.html:18
 msgid "Search…"
-msgstr ""
+msgstr "Pesquisar…"
 
 #: templates/admin/nav_sidebar.html:19
 msgid "Filter sidebar menu"
-msgstr ""
+msgstr "Filtrar menu da barra lateral"
 
 #: templates/admin/nav_sidebar.html:60
 #, fuzzy
@@ -192,31 +192,31 @@ msgstr "Alternar de navegação"
 
 #: templates/admin/search_form.html:5
 msgid "SEARCH:  "
-msgstr ""
+msgstr "PESQUISAR:  "
 
 #: templates/admin/search_form.html:11
 #, python-format
 msgid "%(counter)s result"
 msgid_plural "%(counter)s results"
-msgstr[0] ""
-msgstr[1] ""
-msgstr[2] ""
-msgstr[3] ""
-msgstr[4] ""
-msgstr[5] ""
+msgstr[0] "%(counter)s resultados"
+msgstr[1] "%(counter)s resultado"
+msgstr[2] "%(counter)s resultados"
+msgstr[3] "%(counter)s resultados"
+msgstr[4] "%(counter)s resultados"
+msgstr[5] "%(counter)s resultados"
 
 #: templates/admin/search_form.html:11
 #, python-format
 msgid "%(full_result_count)s total"
-msgstr ""
+msgstr "%(full_result_count)s no total"
 
 #: templates/admin/search_form.html:11
 msgid "Show all"
-msgstr ""
+msgstr "Mostrar tudo"
 
 #: templates/rest_framework/api.html:33
 msgid "navbar"
-msgstr ""
+msgstr "barra de navegação"
 
 #: templates/rest_framework/api.html:91
 #, fuzzy
@@ -226,7 +226,7 @@ msgstr "Conteúdo desconhecido"
 
 #: templates/rest_framework/api.html:94
 msgid "request form"
-msgstr ""
+msgstr "formulário de solicitação"
 
 #: templates/rest_framework/api.html:174
 #, fuzzy
@@ -236,7 +236,7 @@ msgstr "Minhas ações"
 
 #: templates/rest_framework/api.html:189
 msgid "Filters"
-msgstr ""
+msgstr "Filtros"
 
 #: templates/rest_framework/api.html:197
 #, fuzzy
@@ -246,11 +246,11 @@ msgstr "Ir para o conteúdo principal"
 
 #: templates/rest_framework/api.html:212
 msgid "request info"
-msgstr ""
+msgstr "informações da solicitação"
 
 #: templates/rest_framework/api.html:215
 msgid "response info"
-msgstr ""
+msgstr "informações da resposta"
 
 #~ msgid "BSS Setup"
 #~ msgstr "Configuração do BSS"

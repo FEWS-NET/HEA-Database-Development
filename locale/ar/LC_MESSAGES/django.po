@@ -40,12 +40,12 @@ msgstr "بيت"
 #: templates/admin/app_index.html:42 templates/admin/app_index.html:73
 #, python-format
 msgid "Add %(name)s"
-msgstr ""
+msgstr "إضافة %(name)s"
 
 #: templates/admin/app_index.html:47 templates/admin/app_index.html:79
 #, python-format
 msgid "View %(name)s"
-msgstr ""
+msgstr "عرض %(name)s"
 
 #: templates/admin/app_index.html:95
 #, fuzzy
@@ -55,7 +55,7 @@ msgstr "ليس لديك إذن لعرض أو تحرير أي شيء."
 
 #: templates/admin/base.html:53
 msgid "HEA Baseline Database Administration"
-msgstr ""
+msgstr "إدارة قاعدة بيانات خطوط الأساس في HEA"
 
 #: templates/admin/base.html:62 templates/rest_framework/api.html:51
 msgid "Welcome,"
@@ -112,7 +112,7 @@ msgstr ""
 
 #: templates/admin/index.html:32
 msgid "Baselines"
-msgstr ""
+msgstr "خطوط الأساس"
 
 #: templates/admin/index.html:36
 #, fuzzy
@@ -134,7 +134,7 @@ msgstr "الأنشطة الموسمية"
 
 #: templates/admin/index.html:86
 msgid "Open"
-msgstr ""
+msgstr "فتح"
 
 #: templates/admin/index.html:91
 msgid "Documentation"
@@ -172,11 +172,11 @@ msgstr "تبديل الملاحة"
 
 #: templates/admin/nav_sidebar.html:18
 msgid "Search…"
-msgstr ""
+msgstr "بحث…"
 
 #: templates/admin/nav_sidebar.html:19
 msgid "Filter sidebar menu"
-msgstr ""
+msgstr "تصفية قائمة الشريط الجانبي"
 
 #: templates/admin/nav_sidebar.html:60
 #, fuzzy
@@ -190,31 +190,31 @@ msgstr "تبديل الملاحة"
 
 #: templates/admin/search_form.html:5
 msgid "SEARCH:  "
-msgstr ""
+msgstr "بحث:  "
 
 #: templates/admin/search_form.html:11
 #, python-format
 msgid "%(counter)s result"
 msgid_plural "%(counter)s results"
-msgstr[0] ""
-msgstr[1] ""
-msgstr[2] ""
-msgstr[3] ""
-msgstr[4] ""
-msgstr[5] ""
+msgstr[0] "%(counter)s نتائج"
+msgstr[1] "%(counter)s نتيجة"
+msgstr[2] "%(counter)s نتيجتان"
+msgstr[3] "%(counter)s نتائج"
+msgstr[4] "%(counter)s نتيجة"
+msgstr[5] "%(counter)s نتيجة"
 
 #: templates/admin/search_form.html:11
 #, python-format
 msgid "%(full_result_count)s total"
-msgstr ""
+msgstr "%(full_result_count)s إجمالاً"
 
 #: templates/admin/search_form.html:11
 msgid "Show all"
-msgstr ""
+msgstr "عرض الكل"
 
 #: templates/rest_framework/api.html:33
 msgid "navbar"
-msgstr ""
+msgstr "شريط التنقل"
 
 #: templates/rest_framework/api.html:91
 #, fuzzy
@@ -224,7 +224,7 @@ msgstr "محتوى غير معروف"
 
 #: templates/rest_framework/api.html:94
 msgid "request form"
-msgstr ""
+msgstr "نموذج الطلب"
 
 #: templates/rest_framework/api.html:174
 #, fuzzy
@@ -234,7 +234,7 @@ msgstr "أفعالي"
 
 #: templates/rest_framework/api.html:189
 msgid "Filters"
-msgstr ""
+msgstr "عوامل التصفية"
 
 #: templates/rest_framework/api.html:197
 #, fuzzy
@@ -244,11 +244,11 @@ msgstr "تخطي إلى المحتوى الرئيسي"
 
 #: templates/rest_framework/api.html:212
 msgid "request info"
-msgstr ""
+msgstr "معلومات الطلب"
 
 #: templates/rest_framework/api.html:215
 msgid "response info"
-msgstr ""
+msgstr "معلومات الاستجابة"
 
 #~ msgid "BSS Setup"
 #~ msgstr "إعداد BSS"

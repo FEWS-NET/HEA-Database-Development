@@ -45,11 +45,11 @@ msgstr "Limite"
 
 #: apps/common/menu_config.py:20 apps/common/menu_config.py:279
 msgid "Source Organizations"
-msgstr ""
+msgstr "Organizacoes de origem"
 
 #: apps/common/menu_config.py:26 apps/common/menu_config.py:284
 msgid "Livelihood Zones"
-msgstr ""
+msgstr "Zonas de subsistencia"
 
 #: apps/common/menu_config.py:32 apps/common/menu_config.py:299
 #, fuzzy
@@ -59,31 +59,31 @@ msgstr "da unidade"
 
 #: apps/common/menu_config.py:38 apps/common/menu_config.py:289
 msgid "Livelihood Zone Baselines"
-msgstr ""
+msgstr "Linhas de base das zonas de subsistencia"
 
 #: apps/common/menu_config.py:44
 msgid "Wealth Groups"
-msgstr ""
+msgstr "Grupos de riqueza"
 
 #: apps/common/menu_config.py:50
 msgid "Wealth Group Characteristic Values"
-msgstr ""
+msgstr "Valores das caracteristicas dos grupos de riqueza"
 
 #: apps/common/menu_config.py:56
 msgid "Livelihood Activities"
-msgstr ""
+msgstr "Atividades de subsistencia"
 
 #: apps/common/menu_config.py:62
 msgid "Livelihood Strategies"
-msgstr ""
+msgstr "Estrategias de subsistencia"
 
 #: apps/common/menu_config.py:68
 msgid "Livelihood Product Categories"
-msgstr ""
+msgstr "Categorias de produtos de subsistencia"
 
 #: apps/common/menu_config.py:77
 msgid "Livelihood Zone Baseline Corrections"
-msgstr ""
+msgstr "Correcoes de linhas de base das zonas de subsistencia"
 
 #: apps/common/menu_config.py:86
 #, fuzzy
@@ -93,40 +93,40 @@ msgstr "Alias ​​de produto classificado por país"
 
 #: apps/common/menu_config.py:92
 msgid "Community Livestock"
-msgstr ""
+msgstr "Gado comunitario"
 
 #: apps/common/menu_config.py:98 apps/common/menu_config.py:483
 msgid "Coping Strategies"
-msgstr ""
+msgstr "Estrategias de enfrentamento"
 
 #: apps/common/menu_config.py:104 apps/common/menu_config.py:462
 msgid "Events"
-msgstr ""
+msgstr "Eventos"
 
 #: apps/common/menu_config.py:110 apps/common/menu_config.py:478
 msgid "Expandability Factors"
-msgstr ""
+msgstr "Fatores de expansibilidade"
 
 #: apps/common/menu_config.py:116 apps/common/menu_config.py:457
 msgid "Hazards"
-msgstr ""
+msgstr "Perigos"
 
 #: apps/common/menu_config.py:122 apps/common/menu_config.py:401
 #: apps/common/menu_config.py:414
 msgid "Market Prices"
-msgstr ""
+msgstr "Precos de mercado"
 
 #: apps/common/menu_config.py:128 apps/common/menu_config.py:430
 msgid "Seasonal Activities"
-msgstr ""
+msgstr "Atividades sazonais"
 
 #: apps/common/menu_config.py:134
 msgid "Seasonal Activity Occurrences"
-msgstr ""
+msgstr "Ocorrencias de atividades sazonais"
 
 #: apps/common/menu_config.py:140
 msgid "Seasonal Production Performance"
-msgstr ""
+msgstr "Desempenho sazonal da producao"
 
 #: apps/common/menu_config.py:150 apps/common/menu_config.py:507
 #: apps/common/models.py:576
@@ -150,111 +150,111 @@ msgstr "Unidades de medida"
 
 #: apps/common/menu_config.py:179 apps/common/menu_config.py:548
 msgid "Livelihood Systems"
-msgstr ""
+msgstr "Sistemas de subsistencia"
 
 #: apps/common/menu_config.py:185
 msgid "Wealth Group Categories"
-msgstr ""
+msgstr "Categorias de grupos de riqueza"
 
 #: apps/common/menu_config.py:191
 msgid "Characteristic Groups"
-msgstr ""
+msgstr "Grupos de caracteristicas"
 
 #: apps/common/menu_config.py:197
 msgid "Wealth Characteristics"
-msgstr ""
+msgstr "Caracteristicas de riqueza"
 
 #: apps/common/menu_config.py:203 apps/common/menu_config.py:543
 msgid "Hazard Categories"
-msgstr ""
+msgstr "Categorias de perigos"
 
 #: apps/common/menu_config.py:209 apps/common/menu_config.py:553
 msgid "Seasons"
-msgstr ""
+msgstr "Estacoes"
 
 #: apps/common/menu_config.py:215 apps/common/menu_config.py:558
 msgid "Seasonal Activity Types"
-msgstr ""
+msgstr "Tipos de atividades sazonais"
 
 #: apps/common/menu_config.py:221 apps/common/menu_config.py:409
 msgid "Markets"
-msgstr ""
+msgstr "Mercados"
 
 #: apps/common/menu_config.py:230
 msgid "Activity Labels"
-msgstr ""
+msgstr "Rotulos de atividade"
 
 #: apps/common/menu_config.py:236
 msgid "Wealth Characteristic Labels"
-msgstr ""
+msgstr "Rotulos de caracteristicas de riqueza"
 
 #: apps/common/menu_config.py:246 apps/common/menu_config.py:592
 msgid "Users"
-msgstr ""
+msgstr "Usuarios"
 
 #: apps/common/menu_config.py:252 apps/common/menu_config.py:597
 msgid "Groups"
-msgstr ""
+msgstr "Grupos"
 
 #: apps/common/menu_config.py:264
 msgid "Core Data"
-msgstr ""
+msgstr "Dados principais"
 
 #: apps/common/menu_config.py:268
 msgid "BSS Setup"
-msgstr ""
+msgstr "Configuracao do BSS"
 
 #: apps/common/menu_config.py:294
 msgid "Baseline Corrections"
-msgstr ""
+msgstr "Correcoes de linhas de base"
 
 #: apps/common/menu_config.py:307
 msgid "BSS WB, Data Sheets"
-msgstr ""
+msgstr "BSS WB, planilhas de dados"
 
 #: apps/common/menu_config.py:312
 msgid "Wealth Group Data"
-msgstr ""
+msgstr "Dados de grupos de riqueza"
 
 #: apps/common/menu_config.py:320
 msgid "Wealth, Activity and Strategy"
-msgstr ""
+msgstr "Riqueza, atividade e estrategia"
 
 #: apps/common/menu_config.py:331
 msgid "Wealth Group Characteristic Value"
-msgstr ""
+msgstr "Valor de caracteristica de grupo de riqueza"
 
 #: apps/common/menu_config.py:336
 msgid "Livelihood Strategy"
-msgstr ""
+msgstr "Estrategia de subsistencia"
 
 #: apps/common/menu_config.py:341
 msgid "Livelihood Activity"
-msgstr ""
+msgstr "Atividade de subsistencia"
 
 #: apps/common/menu_config.py:346
 msgid "Livelihood Product Category"
-msgstr ""
+msgstr "Categoria de produto de subsistencia"
 
 #: apps/common/menu_config.py:351
 msgid "Key Parameter"
-msgstr ""
+msgstr "Parametro-chave"
 
 #: apps/common/menu_config.py:359
 msgid "Labels"
-msgstr ""
+msgstr "Rotulos"
 
 #: apps/common/menu_config.py:367
 msgid "Wealth Characteristic Label"
-msgstr ""
+msgstr "Rotulo de caracteristica de riqueza"
 
 #: apps/common/menu_config.py:372
 msgid "Activity Label"
-msgstr ""
+msgstr "Rotulo de atividade"
 
 #: apps/common/menu_config.py:380
 msgid "BSS Production Data"
-msgstr ""
+msgstr "Dados de producao do BSS"
 
 #: apps/common/menu_config.py:388
 #, fuzzy
@@ -264,31 +264,31 @@ msgstr "produtos"
 
 #: apps/common/menu_config.py:393
 msgid "Livestock Production"
-msgstr ""
+msgstr "Producao pecuaria"
 
 #: apps/common/menu_config.py:422
 msgid "Seasonal Calendars"
-msgstr ""
+msgstr "Calendarios sazonais"
 
 #: apps/common/menu_config.py:435
 msgid "Activity Occurrences"
-msgstr ""
+msgstr "Ocorrencias de atividade"
 
 #: apps/common/menu_config.py:443
 msgid "Hazards and Events"
-msgstr ""
+msgstr "Perigos e eventos"
 
 #: apps/common/menu_config.py:452
 msgid "Annual Production Performances"
-msgstr ""
+msgstr "Desempenhos anuais de producao"
 
 #: apps/common/menu_config.py:470
 msgid "Expandability and Coping"
-msgstr ""
+msgstr "Expansibilidade e enfrentamento"
 
 #: apps/common/menu_config.py:493
 msgid "Reference Data"
-msgstr ""
+msgstr "Dados de referencia"
 
 #: apps/common/menu_config.py:497
 #, fuzzy
@@ -298,27 +298,27 @@ msgstr "comum"
 
 #: apps/common/menu_config.py:530
 msgid "Metadata"
-msgstr ""
+msgstr "Metadados"
 
 #: apps/common/menu_config.py:563
 msgid "Wealth Categories"
-msgstr ""
+msgstr "Categorias de riqueza"
 
 #: apps/common/menu_config.py:568
 msgid "Characteristics Groups"
-msgstr ""
+msgstr "Grupos de caracteristicas"
 
 #: apps/common/menu_config.py:573
 msgid "Wealth Group Characteristics"
-msgstr ""
+msgstr "Caracteristicas de grupos de riqueza"
 
 #: apps/common/menu_config.py:583
 msgid "System"
-msgstr ""
+msgstr "Sistema"
 
 #: apps/common/menu_config.py:587
 msgid "User Management"
-msgstr ""
+msgstr "Gestao de usuarios"
 
 #: apps/common/middleware/language.py:31
 msgid ""
@@ -342,7 +342,7 @@ msgstr ""
 
 #: apps/common/models.py:43
 msgid "Value must be greater than 0."
-msgstr ""
+msgstr "O valor deve ser maior que 0."
 
 #: apps/common/models.py:330
 msgid "The End of the period must be on or after the Start"
@@ -418,7 +418,7 @@ msgstr "Nome francês ISO"
 #: apps/common/models.py:557
 msgid ""
 "The name in French of the Country approved by the ISO 3166 Maintenance Agency"
-msgstr ""
+msgstr "O nome em frances do pais aprovado pela Agencia de Manutencao ISO 3166"
 
 #: apps/common/models.py:561
 msgid "ISO French full name"
@@ -536,7 +536,7 @@ msgstr ""
 
 #: apps/common/models.py:878
 msgid "CPC v2.1"
-msgstr ""
+msgstr "CPC v2.1"
 
 #: apps/common/models.py:883
 msgid "description"
@@ -548,7 +548,7 @@ msgstr "nome comum"
 
 #: apps/common/models.py:895
 msgid "CPC v2"
-msgstr ""
+msgstr "CPC v2"
 
 #: apps/common/models.py:905
 msgid "HS2012"
@@ -588,31 +588,31 @@ msgstr "Aliases de produto classificados por país"
 
 #: apps/common/models.py:1003
 msgid "user profile"
-msgstr ""
+msgstr "perfil de usuario"
 
 #: apps/common/models.py:1004
 msgid "user profiles"
-msgstr ""
+msgstr "perfis de usuario"
 
 #: apps/common/templates/admin/common/change_list.html:7
 msgid "Filter"
-msgstr ""
+msgstr "Filtro"
 
 #: apps/common/templates/admin/common/change_list.html:9
 msgid "Start typing to narrow filter..."
-msgstr ""
+msgstr "Comece a digitar para restringir o filtro..."
 
 #: apps/common/templates/admin/common/change_list.html:12
 msgid "Hide counts"
-msgstr ""
+msgstr "Ocultar contagens"
 
 #: apps/common/templates/admin/common/change_list.html:13
 msgid "Show counts"
-msgstr ""
+msgstr "Mostrar contagens"
 
 #: apps/common/templates/admin/common/change_list.html:16
 msgid "Clear all filters"
-msgstr ""
+msgstr "Limpar todos os filtros"
 
 #: apps/common/viewsets.py:326 apps/common/viewsets.py:341
 msgid "English"

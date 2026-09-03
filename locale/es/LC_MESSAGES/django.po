@@ -13,25 +13,30 @@ msgstr ""
 "Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 "
 "&& n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5;\n"
 
+#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po, apps/common/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: hea/settings/base.py:243
 msgid "English"
 msgstr "Inglés"
 
+#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po, apps/common/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: hea/settings/base.py:244
 msgid "French"
 msgstr "Francés"
 
+#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po, apps/common/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: hea/settings/base.py:245
 msgid "Spanish"
 msgstr "Español"
 
+#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po, apps/common/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: hea/settings/base.py:246
 msgid "Portuguese"
 msgstr "Portugués"
 
+#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po, apps/common/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: hea/settings/base.py:247
 msgid "Arabic"
-msgstr "Arábica"
+msgstr "Árabe"
 
 #: templates/admin/app_index.html:11 templates/admin/base.html:100
 msgid "Home"
@@ -40,12 +45,12 @@ msgstr "Hogar"
 #: templates/admin/app_index.html:42 templates/admin/app_index.html:73
 #, python-format
 msgid "Add %(name)s"
-msgstr ""
+msgstr "Añadir %(name)s"
 
 #: templates/admin/app_index.html:47 templates/admin/app_index.html:79
 #, python-format
 msgid "View %(name)s"
-msgstr ""
+msgstr "Ver %(name)s"
 
 #: templates/admin/app_index.html:95
 #, fuzzy
@@ -55,7 +60,7 @@ msgstr "No tiene permiso para ver ni editar nada."
 
 #: templates/admin/base.html:53
 msgid "HEA Baseline Database Administration"
-msgstr ""
+msgstr "Administración de la base de datos de líneas de base HEA"
 
 #: templates/admin/base.html:62 templates/rest_framework/api.html:51
 msgid "Welcome,"
@@ -114,15 +119,17 @@ msgstr ""
 "sirve como una representación de Un grupo de patrimonio dentro de una "
 "comunidad en una zona de medios de vida dada."
 
+#. Shared msgid. Also in locale/es/LC_MESSAGES/djangojs.po; keep translations synchronized across files.
 #: templates/admin/index.html:32
 msgid "Baselines"
-msgstr ""
+msgstr "Líneas de base"
 
+#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: templates/admin/index.html:36
 #, fuzzy
 #| msgid "Wealth Group Characteristic Value"
 msgid "Wealth Characteristic Values"
-msgstr "Características del grupo de riqueza"
+msgstr "Valores característicos de riqueza"
 
 #: templates/admin/index.html:40
 #, fuzzy
@@ -138,7 +145,7 @@ msgstr "Actividades estacionales"
 
 #: templates/admin/index.html:86
 msgid "Open"
-msgstr ""
+msgstr "Abrir"
 
 #: templates/admin/index.html:91
 msgid "Documentation"
@@ -176,11 +183,11 @@ msgstr "Navegación de palanca"
 
 #: templates/admin/nav_sidebar.html:18
 msgid "Search…"
-msgstr ""
+msgstr "Buscar…"
 
 #: templates/admin/nav_sidebar.html:19
 msgid "Filter sidebar menu"
-msgstr ""
+msgstr "Filtrar menú de la barra lateral"
 
 #: templates/admin/nav_sidebar.html:60
 #, fuzzy
@@ -194,31 +201,31 @@ msgstr "Navegación de palanca"
 
 #: templates/admin/search_form.html:5
 msgid "SEARCH:  "
-msgstr ""
+msgstr "BUSCAR:  "
 
 #: templates/admin/search_form.html:11
 #, python-format
 msgid "%(counter)s result"
 msgid_plural "%(counter)s results"
-msgstr[0] ""
-msgstr[1] ""
-msgstr[2] ""
-msgstr[3] ""
-msgstr[4] ""
-msgstr[5] ""
+msgstr[0] "%(counter)s resultados"
+msgstr[1] "%(counter)s resultado"
+msgstr[2] "%(counter)s resultados"
+msgstr[3] "%(counter)s resultados"
+msgstr[4] "%(counter)s resultados"
+msgstr[5] "%(counter)s resultados"
 
 #: templates/admin/search_form.html:11
 #, python-format
 msgid "%(full_result_count)s total"
-msgstr ""
+msgstr "%(full_result_count)s en total"
 
 #: templates/admin/search_form.html:11
 msgid "Show all"
-msgstr ""
+msgstr "Mostrar todo"
 
 #: templates/rest_framework/api.html:33
 msgid "navbar"
-msgstr ""
+msgstr "barra de navegación"
 
 #: templates/rest_framework/api.html:91
 #, fuzzy
@@ -228,7 +235,7 @@ msgstr "Contenido desconocido"
 
 #: templates/rest_framework/api.html:94
 msgid "request form"
-msgstr ""
+msgstr "formulario de solicitud"
 
 #: templates/rest_framework/api.html:174
 #, fuzzy
@@ -236,9 +243,10 @@ msgstr ""
 msgid "Extra Actions"
 msgstr "Mis acciones"
 
+#. Shared msgid. Also in locale/es/LC_MESSAGES/djangojs.po; keep translations synchronized across files.
 #: templates/rest_framework/api.html:189
 msgid "Filters"
-msgstr ""
+msgstr "Filtros"
 
 #: templates/rest_framework/api.html:197
 #, fuzzy
@@ -248,11 +256,11 @@ msgstr "Saltar al contenido principal"
 
 #: templates/rest_framework/api.html:212
 msgid "request info"
-msgstr ""
+msgstr "información de la solicitud"
 
 #: templates/rest_framework/api.html:215
 msgid "response info"
-msgstr ""
+msgstr "información de la respuesta"
 
 #~ msgid "BSS Setup"
 #~ msgstr "Configuración de BSS"

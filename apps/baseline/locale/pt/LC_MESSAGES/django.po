@@ -15,11 +15,11 @@ msgstr ""
 
 #: apps/baseline/admin.py:74
 msgid "record type"
-msgstr ""
+msgstr "tipo de registro"
 
 #: apps/baseline/admin.py:80
 msgid "Summary only"
-msgstr ""
+msgstr "Apenas resumo"
 
 #: apps/baseline/admin.py:81
 #, fuzzy
@@ -39,15 +39,15 @@ msgstr "País"
 
 #: apps/baseline/admin.py:300
 msgid "BSS SHA-512 Hash"
-msgstr ""
+msgstr "Hash SHA-512 do BSS"
 
 #: apps/baseline/admin.py:307
 msgid "BSS Uploaded At"
-msgstr ""
+msgstr "BSS carregado em"
 
 #: apps/baseline/admin.py:316
 msgid "BSS Size"
-msgstr ""
+msgstr "Tamanho do BSS"
 
 #: apps/baseline/admin.py:325
 #, fuzzy
@@ -63,7 +63,7 @@ msgstr "Tamanho médio da família"
 
 #: apps/baseline/admin.py:333
 msgid "Poor Survival Non-Food Expenditure"
-msgstr ""
+msgstr "Despesa nao alimentar de sobrevivencia do grupo pobre"
 
 #: apps/baseline/admin.py:1361
 #, fuzzy
@@ -199,7 +199,7 @@ msgstr "Arquivo BSS Excel"
 
 #: apps/baseline/models.py:316
 msgid "BSS Language"
-msgstr ""
+msgstr "Idioma do BSS"
 
 #: apps/baseline/models.py:323
 msgid "Profile Report PDF file"
@@ -280,7 +280,7 @@ msgstr "Estimativa populacional"
 #: apps/baseline/models.py:431
 msgid ""
 "The estimated population of the Livelihood Zone during the reference year"
-msgstr ""
+msgstr "A populacao estimada da zona de subsistencia durante o ano de referencia"
 
 #: apps/baseline/models.py:437 apps/baseline/models.py:1613
 #: apps/baseline/models.py:3624
@@ -305,7 +305,7 @@ msgstr "Kcals totais consumidos"
 #, python-format
 msgid ""
 "Annual cost per person of 100% of recommended kcals in the baseline currency."
-msgstr ""
+msgstr "Custo anual por pessoa de 100% das kcal recomendadas na moeda da linha de base."
 
 #: apps/baseline/models.py:626 apps/baseline/models.py:697
 #: apps/baseline/models.py:777 apps/baseline/models.py:884
@@ -320,23 +320,23 @@ msgstr "Linhas de base da zona de subsistência"
 
 #: apps/baseline/models.py:685
 msgid "WB"
-msgstr ""
+msgstr "WB"
 
 #: apps/baseline/models.py:686
 msgid "Data"
-msgstr ""
+msgstr "Dados"
 
 #: apps/baseline/models.py:687
 msgid "Data2"
-msgstr ""
+msgstr "Dados2"
 
 #: apps/baseline/models.py:688
 msgid "Data3"
-msgstr ""
+msgstr "Dados3"
 
 #: apps/baseline/models.py:689
 msgid "Summ"
-msgstr ""
+msgstr "Resumo"
 
 #: apps/baseline/models.py:690
 #, fuzzy
@@ -346,23 +346,23 @@ msgstr "Linha de base"
 
 #: apps/baseline/models.py:691
 msgid "Seas Cal"
-msgstr ""
+msgstr "Calendario sazonal"
 
 #: apps/baseline/models.py:699
 msgid "Worksheet name"
-msgstr ""
+msgstr "Nome da planilha"
 
 #: apps/baseline/models.py:700
 msgid "Cell range"
-msgstr ""
+msgstr "Intervalo de celulas"
 
 #: apps/baseline/models.py:702
 msgid "Previous value before correction"
-msgstr ""
+msgstr "Valor anterior a correcao"
 
 #: apps/baseline/models.py:704
 msgid "Corrected value"
-msgstr ""
+msgstr "Valor corrigido"
 
 #: apps/baseline/models.py:705
 #, fuzzy
@@ -372,15 +372,15 @@ msgstr "Data de coleta de dados"
 
 #: apps/baseline/models.py:706
 msgid "Correction author"
-msgstr ""
+msgstr "Autor da correcao"
 
 #: apps/baseline/models.py:709
 msgid "Correction comments"
-msgstr ""
+msgstr "Comentarios da correcao"
 
 #: apps/baseline/models.py:710
 msgid "Required comment about the correction suggested"
-msgstr ""
+msgstr "Comentario obrigatorio sobre a correcao sugerida"
 
 #: apps/baseline/models.py:723
 #, fuzzy
@@ -441,13 +441,13 @@ msgstr ""
 
 #: apps/baseline/models.py:805
 msgid "aliases"
-msgstr ""
+msgstr "nomes alternativos"
 
 #: apps/baseline/models.py:806
 msgid ""
 "A list of alternate names for the community name for differently spelled "
 "values."
-msgstr ""
+msgstr "Uma lista de nomes alternativos para o nome da comunidade com grafias diferentes."
 
 #: apps/baseline/models.py:818 apps/baseline/models.py:891
 msgid "Community"
@@ -483,7 +483,7 @@ msgstr "Tamanho médio da família"
 
 #: apps/baseline/models.py:913
 msgid "Average number of people per household in this Wealth Group"
-msgstr ""
+msgstr "Numero medio de pessoas por agregado familiar neste grupo de riqueza"
 
 #: apps/baseline/models.py:1189 apps/baseline/models.py:1334
 #: apps/baseline/models.py:1866 apps/baseline/models.py:3551
@@ -773,7 +773,7 @@ msgstr "Estratégias de subsistência"
 
 #: apps/baseline/models.py:1757
 msgid "Monitor Quantity"
-msgstr ""
+msgstr "Quantidade monitorada"
 
 #: apps/baseline/models.py:1758
 #, fuzzy
@@ -783,15 +783,15 @@ msgstr "Preço de mercado"
 
 #: apps/baseline/models.py:1765
 msgid "Key Parameters must be for a Strategy with a Product"
-msgstr ""
+msgstr "Os parametros-chave devem ser para uma estrategia com um produto"
 
 #: apps/baseline/models.py:1780
 msgid "Key Parameter"
-msgstr ""
+msgstr "Parametro-chave"
 
 #: apps/baseline/models.py:1781
 msgid "Key Parameters"
-msgstr ""
+msgstr "Parametros-chave"
 
 #: apps/baseline/models.py:1863
 msgid "Scenario"
@@ -913,12 +913,12 @@ msgstr "Atributos adicionais da BSS para esta Actividade de Subsistência"
 
 #: apps/baseline/models.py:2006
 msgid "Sort Key"
-msgstr ""
+msgstr "Chave de ordenacao"
 
 #: apps/baseline/models.py:2132
 msgid ""
 "Income for a Livelihood Activity must be quantity sold multiplied by price"
-msgstr ""
+msgstr "A renda de uma atividade de subsistencia deve ser a quantidade vendida multiplicada pelo preco"
 
 #: apps/baseline/models.py:2153
 #, fuzzy
@@ -937,7 +937,7 @@ msgstr ""
 msgid ""
 "No conversion factor found from unit %(from_unit)s for Livelihood Activity "
 "to unit %(to_unit)s for Product %(product)s for calculating kcals consumed."
-msgstr ""
+msgstr "Nenhum fator de conversao encontrado da unidade %(from_unit)s da atividade de subsistencia para a unidade %(to_unit)s do produto %(product)s para calcular as kcal consumidas."
 
 #: apps/baseline/models.py:2181
 msgid ""
@@ -1015,14 +1015,14 @@ msgstr "Cesta de produtos"
 #: apps/baseline/models.py:2457
 #: apps/baseline/templates/admin/baseline/wealthgroup/change_form.html:21
 msgid "Percentage allocation to basket"
-msgstr ""
+msgstr "Percentagem alocada a cesta"
 
 #: apps/baseline/models.py:2459
 msgid ""
 "The percentage of expenditure or kcals from the Livelihood Activity that is "
 "allocated to this Basket. The remainder is implicitly part of the 'Other' "
 "basket"
-msgstr ""
+msgstr "A percentagem da despesa ou das kcal da atividade de subsistencia que e alocada a esta cesta. O restante faz implicitamente parte da cesta 'Other'"
 
 #: apps/baseline/models.py:2471
 #, fuzzy
@@ -1145,7 +1145,7 @@ msgstr "Número de vezes em um ano em que a compra é feita"
 msgid ""
 "Times per year must be times per month * months per year. Expected: "
 "%(expected)s, Found: %(found)s"
-msgstr ""
+msgstr "O numero de vezes por ano deve ser o numero de vezes por mes * meses por ano. Esperado: %(expected)s, encontrado: %(found)s"
 
 #: apps/baseline/models.py:2760
 #, fuzzy
@@ -1185,7 +1185,7 @@ msgstr "Pagamento por tempo"
 msgid ""
 "Product provided as payment, typically a staple food item in exchange for "
 "labor"
-msgstr ""
+msgstr "Produto fornecido como pagamento, geralmente um alimento basico em troca de trabalho"
 
 #: apps/baseline/models.py:2809 apps/baseline/models.py:3009
 msgid "Payment per time"
@@ -1219,7 +1219,7 @@ msgstr "Número de vezes em um ano em que o trabalho é realizado"
 msgid ""
 "Payment per time is required if people per household and times per month are "
 "provided"
-msgstr ""
+msgstr "O pagamento por periodo e obrigatorio se forem fornecidos pessoas por agregado familiar e vezes por mes"
 
 #: apps/baseline/models.py:2878
 #, fuzzy
@@ -1712,23 +1712,23 @@ msgstr "Estratégias de enfrentamento"
 
 #: apps/baseline/templates/admin/baseline/change_list.html:7
 msgid "Filter"
-msgstr ""
+msgstr "Filtro"
 
 #: apps/baseline/templates/admin/baseline/change_list.html:9
 msgid "Start typing to narrow filter..."
-msgstr ""
+msgstr "Comece a digitar para restringir o filtro..."
 
 #: apps/baseline/templates/admin/baseline/change_list.html:12
 msgid "Hide counts"
-msgstr ""
+msgstr "Ocultar contagens"
 
 #: apps/baseline/templates/admin/baseline/change_list.html:13
 msgid "Show counts"
-msgstr ""
+msgstr "Mostrar contagens"
 
 #: apps/baseline/templates/admin/baseline/change_list.html:16
 msgid "Clear all filters"
-msgstr ""
+msgstr "Limpar todos os filtros"
 
 #: apps/baseline/templates/admin/baseline/wealthgroup/change_form.html:33
 #, fuzzy
