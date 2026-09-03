@@ -572,7 +572,7 @@ msgstr "Kcals por unidade"
 
 #: apps/common/models.py:955 apps/common/models.py:972
 msgid "Product"
-msgstr "produtos"
+msgstr "Produto"
 
 #: apps/common/models.py:968
 msgid "country"

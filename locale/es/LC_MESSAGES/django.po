@@ -10,8 +10,8 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 "
-"&& n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5;\n"
+"Plural-Forms: nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? "
+"1 : 2;\n"
 
 #. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po, apps/common/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: hea/settings/base.py:243
@@ -207,12 +207,9 @@ msgstr "BUSCAR:  "
 #, python-format
 msgid "%(counter)s result"
 msgid_plural "%(counter)s results"
-msgstr[0] "%(counter)s resultados"
-msgstr[1] "%(counter)s resultado"
+msgstr[0] "%(counter)s resultado"
+msgstr[1] "%(counter)s resultados"
 msgstr[2] "%(counter)s resultados"
-msgstr[3] "%(counter)s resultados"
-msgstr[4] "%(counter)s resultados"
-msgstr[5] "%(counter)s resultados"
 
 #: templates/admin/search_form.html:11
 #, python-format
