@@ -6,237 +6,60 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-03-21 07:17+0000\n"
+"POT-Creation-Date: 2026-09-02 15:43+0000\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 "
 "&& n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5;\n"
 
-#: hea/settings/base.py:183
+#: hea/settings/base.py:243
 msgid "English"
 msgstr "إنجليزي"
 
-#: hea/settings/base.py:184
+#: hea/settings/base.py:244
 msgid "French"
 msgstr "فرنسي"
 
-#: hea/settings/base.py:185
+#: hea/settings/base.py:245
 msgid "Spanish"
 msgstr "الأسبانية"
 
-#: hea/settings/base.py:186
+#: hea/settings/base.py:246
 msgid "Portuguese"
 msgstr "البرتغالية"
 
-#: hea/settings/base.py:187
+#: hea/settings/base.py:247
 msgid "Arabic"
 msgstr "عربي"
 
-#: templates/admin/app_list.html:4
-msgid ""
-"\n"
-"        A HEA baseline is a data collection conducted for a country during a "
-"specific reference year.\n"
-"        A typical baseline includes data collected from representative "
-"average households,\n"
-"        serving as a representation of a wealth group within a community in "
-"a given Livelihood zone.\n"
-"\n"
-"        The primary components of common baseline data include wealth "
-"characteristics, asset profiles,\n"
-"        household economy, and numerous other relevant metrics\n"
-"    "
-msgstr ""
-"\n"
-"خط الأساس HEA هو جمع بيانات يتم إجراؤه لبلد ما خلال خط الأساس HEA مجموعة "
-"ثروة داخل مجتمع في منطقة سبل العيش معينة."
+#: templates/admin/app_index.html:11 templates/admin/base.html:100
+msgid "Home"
+msgstr "بيت"
 
-#: templates/admin/app_list.html:18 templates/admin/nav_sidebar.html:18
-msgid "BSS Setup"
-msgstr "إعداد BSS"
+#: templates/admin/app_index.html:42 templates/admin/app_index.html:73
+#, python-format
+msgid "Add %(name)s"
+msgstr "إضافة %(name)s"
 
-#: templates/admin/app_list.html:25 templates/admin/nav_sidebar.html:24
-msgid "Source Organizations"
-msgstr "منظمات المصدر"
+#: templates/admin/app_index.html:47 templates/admin/app_index.html:79
+#, python-format
+msgid "View %(name)s"
+msgstr "عرض %(name)s"
 
-#: templates/admin/app_list.html:34 templates/admin/nav_sidebar.html:29
-msgid "Livelihood Zones"
-msgstr "مناطق الرزق"
-
-#: templates/admin/app_list.html:43 templates/admin/nav_sidebar.html:34
-msgid "Livelihood Zone Baselines"
-msgstr "سبل العيش في منطقة الأساس"
-
-#: templates/admin/app_list.html:52 templates/admin/nav_sidebar.html:39
-msgid "Communities"
-msgstr "مجتمعات"
-
-#: templates/admin/app_list.html:64
-msgid "BSS WB,Data,.. Sheets"
-msgstr "BSS WB ، البيانات ، .. الأوراق"
-
-#: templates/admin/app_list.html:70 templates/admin/nav_sidebar.html:83
-msgid "Wealth Group Data"
-msgstr "بيانات مجموعة الثروة"
-
-#: templates/admin/app_list.html:81 templates/admin/nav_sidebar.html:50
-msgid "Wealth, Activity and Strategy Insights"
-msgstr "رؤى الثروة والنشاط والاستراتيجية"
-
-#: templates/admin/app_list.html:87 templates/admin/nav_sidebar.html:56
-msgid "Wealth Group Characteristic Value"
-msgstr "خصائص مجموعة الثروة"
-
-#: templates/admin/app_list.html:98 templates/admin/nav_sidebar.html:66
-#: templates/admin/nav_sidebar.html:88
-msgid "Livelihood Strategy"
-msgstr "استراتيجية سبل العيش"
-
-#: templates/admin/app_list.html:109 templates/admin/nav_sidebar.html:61
-msgid "Livelihood Activity"
-msgstr "استراتيجية سبل العيش"
-
-#: templates/admin/app_list.html:119
-msgid "BSS Production Sheet"
-msgstr "ورقة إنتاج BSS"
-
-#: templates/admin/app_list.html:126 templates/admin/nav_sidebar.html:106
-msgid "Crop Production"
-msgstr "إنتاجات المحاصيل"
-
-#: templates/admin/app_list.html:136 templates/admin/nav_sidebar.html:111
-msgid "Livestock Production"
-msgstr "إنتاج الثروة الحيوانية"
-
-#: templates/admin/app_list.html:147 templates/admin/app_list.html:164
-#: templates/admin/nav_sidebar.html:122 templates/admin/nav_sidebar.html:133
-msgid "Market Prices"
-msgstr "أسعار السوق"
-
-#: templates/admin/app_list.html:154
-msgid "Market"
-msgstr "سوق"
-
-#: templates/admin/app_list.html:175 templates/admin/nav_sidebar.html:145
-msgid "Seasonal Calendars"
-msgstr "التقويمات الموسمية"
-
-#: templates/admin/app_list.html:182 templates/admin/nav_sidebar.html:151
-msgid "Seasonal Activity Type"
-msgstr "نوع النشاط الموسمي"
-
-#: templates/admin/app_list.html:192 templates/admin/nav_sidebar.html:156
-msgid "Seasonal Activities"
-msgstr "الأنشطة الموسمية"
-
-#: templates/admin/app_list.html:202 templates/admin/nav_sidebar.html:161
-msgid "Activity Occurrences"
-msgstr "حوادث النشاط"
-
-#: templates/admin/app_list.html:213 templates/admin/nav_sidebar.html:172
-msgid "Hazards and Events"
-msgstr "المخاطر والأحداث"
-
-#: templates/admin/app_list.html:220 templates/admin/nav_sidebar.html:178
-msgid "Annual Production Performances"
-msgstr "عروض الإنتاج السنوية"
-
-#: templates/admin/app_list.html:230 templates/admin/nav_sidebar.html:183
-msgid "Hazards"
-msgstr "المخاطر"
-
-#: templates/admin/app_list.html:240 templates/admin/nav_sidebar.html:188
-msgid "Events"
-msgstr "الأحداث"
-
-#: templates/admin/app_list.html:252 templates/admin/nav_sidebar.html:201
-msgid "Expandability and Coping"
-msgstr "التوسع والتعامل"
-
-#: templates/admin/app_list.html:259 templates/admin/nav_sidebar.html:207
-msgid "Expandability Factors"
-msgstr "عوامل التوسع"
-
-#: templates/admin/app_list.html:269 templates/admin/nav_sidebar.html:212
-msgid "Coping Strategies"
-msgstr "استراتيجيات المواجهة"
-
-#: templates/admin/app_list.html:281 templates/admin/nav_sidebar.html:225
-msgid "Common"
-msgstr "شائع"
-
-#: templates/admin/app_list.html:286 templates/admin/nav_sidebar.html:230
-msgid "Countries"
-msgstr "بلدان"
-
-#: templates/admin/app_list.html:293 templates/admin/nav_sidebar.html:233
-msgid "Currencies"
-msgstr "العملات"
-
-#: templates/admin/app_list.html:300 templates/admin/nav_sidebar.html:236
-msgid "Products"
-msgstr "منتجات"
-
-#: templates/admin/app_list.html:307 templates/admin/nav_sidebar.html:239
-msgid "Units of Measure"
-msgstr "وحدات القياس"
-
-#: templates/admin/app_list.html:316 templates/admin/nav_sidebar.html:251
-msgid "Metadata"
-msgstr "البيانات الوصفية"
-
-#: templates/admin/app_list.html:321 templates/admin/nav_sidebar.html:256
-msgid "Hazard Categories"
-msgstr "فئات الخطر"
-
-#: templates/admin/app_list.html:328 templates/admin/nav_sidebar.html:259
-msgid "Livelihood Categories"
-msgstr "فئات رزق"
-
-#: templates/admin/app_list.html:335 templates/admin/nav_sidebar.html:262
-msgid "Seasons"
-msgstr "مواسم"
-
-#: templates/admin/app_list.html:342 templates/admin/nav_sidebar.html:265
-msgid "Wealth Categories"
-msgstr "فئات الثروة"
-
-#: templates/admin/app_list.html:350 templates/admin/nav_sidebar.html:268
-msgid "Wealth Group Characteristics"
-msgstr "خصائص مجموعة الثروة"
-
-#: templates/admin/app_list.html:360 templates/admin/nav_sidebar.html:281
-msgid "User management"
-msgstr "إدارةالمستخدم"
-
-#: templates/admin/app_list.html:365 templates/admin/nav_sidebar.html:286
-msgid "Users"
-msgstr "المستخدمون"
-
-#: templates/admin/app_list.html:372 templates/admin/nav_sidebar.html:288
-msgid "Groups"
-msgstr "مجموعات"
-
-#: templates/admin/app_list.html:379
-msgid "You don’t have permission to view or edit anything."
+#: templates/admin/app_index.html:95
+#, fuzzy
+#| msgid "You don’t have permission to view or edit anything."
+msgid "You don't have permission to view or edit anything."
 msgstr "ليس لديك إذن لعرض أو تحرير أي شيء."
 
-#: templates/admin/base.html:39
-msgid "Skip to main content"
-msgstr "تخطي إلى المحتوى الرئيسي"
+#: templates/admin/base.html:53
+msgid "HEA Baseline Database Administration"
+msgstr "إدارة قاعدة بيانات خطوط الأساس في HEA"
 
-#: templates/admin/base.html:55
+#: templates/admin/base.html:62 templates/rest_framework/api.html:51
 msgid "Welcome,"
 msgstr "مرحباً،"
-
-#: templates/admin/base.html:60
-msgid "View site"
-msgstr "عرض الموقع"
-
-#: templates/admin/base.html:65
-msgid "Documentation"
-msgstr "توثيق"
 
 #: templates/admin/base.html:69
 msgid "Change password"
@@ -250,50 +73,302 @@ msgstr "تسجيل خروج"
 msgid "Breadcrumbs"
 msgstr "فتات الخبز"
 
-#: templates/admin/base.html:100 templates/admin/nav_sidebar.html:10
-msgid "Home"
-msgstr "بيت"
-
-#: templates/admin/base_site.html:3
+#: templates/admin/base_site.html:4
 msgid "Django site admin"
 msgstr "Django موقع المسؤول"
 
-#: templates/admin/base_site.html:8
+#: templates/admin/base_site.html:13
 msgid "Django administration"
 msgstr "إدارة Django"
 
-#: templates/admin/index.html:23
-msgid "Recent actions"
+#: templates/admin/index.html:19
+#, fuzzy
+#| msgid ""
+#| "\n"
+#| "        A HEA baseline is a data collection conducted for a country "
+#| "during a specific reference year.\n"
+#| "        A typical baseline includes data collected from representative "
+#| "average households,\n"
+#| "        serving as a representation of a wealth group within a community "
+#| "in a given Livelihood zone.\n"
+#| "\n"
+#| "        The primary components of common baseline data include wealth "
+#| "characteristics, asset profiles,\n"
+#| "        household economy, and numerous other relevant metrics\n"
+#| "    "
+msgid ""
+"\n"
+"            A HEA baseline is a data collection conducted for a country "
+"during a specific reference year.\n"
+"            A typical baseline includes data collected from representative "
+"average households,\n"
+"            serving as a representation of a wealth group within a community "
+"in a given Livelihood Zone.\n"
+"        "
+msgstr ""
+"\n"
+"خط الأساس HEA هو جمع بيانات يتم إجراؤه لبلد ما خلال خط الأساس HEA مجموعة "
+"ثروة داخل مجتمع في منطقة سبل العيش معينة."
+
+#: templates/admin/index.html:32
+msgid "Baselines"
+msgstr "خطوط الأساس"
+
+#: templates/admin/index.html:36
+#, fuzzy
+#| msgid "Wealth Group Characteristic Value"
+msgid "Wealth Characteristic Values"
+msgstr "خصائص مجموعة الثروة"
+
+#: templates/admin/index.html:40
+#, fuzzy
+#| msgid "Communities"
+msgid "Community Activities"
+msgstr "مجتمعات"
+
+#: templates/admin/index.html:44
+#, fuzzy
+#| msgid "Seasonal Activities"
+msgid "Baseline Activities"
+msgstr "الأنشطة الموسمية"
+
+#: templates/admin/index.html:86
+msgid "Open"
+msgstr "فتح"
+
+#: templates/admin/index.html:91
+msgid "Documentation"
+msgstr "توثيق"
+
+#: templates/admin/index.html:95
+#, fuzzy
+#| msgid "Livelihood Zones"
+msgid "Livelihood Explorer"
+msgstr "مناطق الرزق"
+
+#: templates/admin/index.html:106
+#, fuzzy
+#| msgid "Recent actions"
+msgid "My Recent Actions"
 msgstr "الإجراءات الأخيرة"
 
-#: templates/admin/index.html:24
-msgid "My actions"
-msgstr "أفعالي"
-
-#: templates/admin/index.html:28
+#: templates/admin/index.html:110
 msgid "None available"
 msgstr "لا شيء متاح"
 
-#: templates/admin/index.html:42
+#: templates/admin/index.html:131
 msgid "Unknown content"
 msgstr "محتوى غير معروف"
 
-#: templates/admin/nav_sidebar.html:3
+#: templates/admin/nav_sidebar.html:2
 msgid "Sidebar"
 msgstr "الشريط الجانبي"
 
-#: templates/admin/nav_sidebar.html:77
-msgid "BSS WB, Data,.. Sheets"
-msgstr "BSS WB ، البيانات ، .. الأوراق"
+#: templates/admin/nav_sidebar.html:8
+#, fuzzy
+#| msgid "Toggle navigation"
+msgid "Navigation"
+msgstr "تبديل الملاحة"
 
-#: templates/admin/nav_sidebar.html:100
-msgid "BSS Production Data"
-msgstr "بيانات إنتاج BSS"
+#: templates/admin/nav_sidebar.html:18
+msgid "Search…"
+msgstr "بحث…"
 
-#: templates/admin/nav_sidebar.html:128
-msgid "Markets"
-msgstr "الأسواق"
+#: templates/admin/nav_sidebar.html:19
+msgid "Filter sidebar menu"
+msgstr "تصفية قائمة الشريط الجانبي"
 
-#: templates/admin/nav_sidebar.html:299
+#: templates/admin/nav_sidebar.html:60
+#, fuzzy
+#| msgid "None available"
+msgid "No sections available"
+msgstr "لا شيء متاح"
+
+#: templates/admin/nav_sidebar.html:68
 msgid "Toggle navigation"
 msgstr "تبديل الملاحة"
+
+#: templates/admin/search_form.html:5
+msgid "SEARCH:  "
+msgstr "بحث:  "
+
+#: templates/admin/search_form.html:11
+#, python-format
+msgid "%(counter)s result"
+msgid_plural "%(counter)s results"
+msgstr[0] "%(counter)s نتائج"
+msgstr[1] "%(counter)s نتيجة"
+msgstr[2] "%(counter)s نتيجتان"
+msgstr[3] "%(counter)s نتائج"
+msgstr[4] "%(counter)s نتيجة"
+msgstr[5] "%(counter)s نتيجة"
+
+#: templates/admin/search_form.html:11
+#, python-format
+msgid "%(full_result_count)s total"
+msgstr "%(full_result_count)s إجمالاً"
+
+#: templates/admin/search_form.html:11
+msgid "Show all"
+msgstr "عرض الكل"
+
+#: templates/rest_framework/api.html:33
+msgid "navbar"
+msgstr "شريط التنقل"
+
+#: templates/rest_framework/api.html:91
+#, fuzzy
+#| msgid "Unknown content"
+msgid "content"
+msgstr "محتوى غير معروف"
+
+#: templates/rest_framework/api.html:94
+msgid "request form"
+msgstr "نموذج الطلب"
+
+#: templates/rest_framework/api.html:174
+#, fuzzy
+#| msgid "My actions"
+msgid "Extra Actions"
+msgstr "أفعالي"
+
+#: templates/rest_framework/api.html:189
+msgid "Filters"
+msgstr "عوامل التصفية"
+
+#: templates/rest_framework/api.html:197
+#, fuzzy
+#| msgid "Skip to main content"
+msgid "main content"
+msgstr "تخطي إلى المحتوى الرئيسي"
+
+#: templates/rest_framework/api.html:212
+msgid "request info"
+msgstr "معلومات الطلب"
+
+#: templates/rest_framework/api.html:215
+msgid "response info"
+msgstr "معلومات الاستجابة"
+
+#~ msgid "BSS Setup"
+#~ msgstr "إعداد BSS"
+
+#~ msgid "Source Organizations"
+#~ msgstr "منظمات المصدر"
+
+#~ msgid "Livelihood Zone Baselines"
+#~ msgstr "سبل العيش في منطقة الأساس"
+
+#~ msgid "BSS WB,Data,.. Sheets"
+#~ msgstr "BSS WB ، البيانات ، .. الأوراق"
+
+#~ msgid "Wealth Group Data"
+#~ msgstr "بيانات مجموعة الثروة"
+
+#~ msgid "Wealth, Activity and Strategy Insights"
+#~ msgstr "رؤى الثروة والنشاط والاستراتيجية"
+
+#~ msgid "Livelihood Strategy"
+#~ msgstr "استراتيجية سبل العيش"
+
+#~ msgid "Livelihood Activity"
+#~ msgstr "استراتيجية سبل العيش"
+
+#~ msgid "BSS Production Sheet"
+#~ msgstr "ورقة إنتاج BSS"
+
+#~ msgid "Crop Production"
+#~ msgstr "إنتاجات المحاصيل"
+
+#~ msgid "Livestock Production"
+#~ msgstr "إنتاج الثروة الحيوانية"
+
+#~ msgid "Market Prices"
+#~ msgstr "أسعار السوق"
+
+#~ msgid "Market"
+#~ msgstr "سوق"
+
+#~ msgid "Seasonal Calendars"
+#~ msgstr "التقويمات الموسمية"
+
+#~ msgid "Seasonal Activity Type"
+#~ msgstr "نوع النشاط الموسمي"
+
+#~ msgid "Activity Occurrences"
+#~ msgstr "حوادث النشاط"
+
+#~ msgid "Hazards and Events"
+#~ msgstr "المخاطر والأحداث"
+
+#~ msgid "Annual Production Performances"
+#~ msgstr "عروض الإنتاج السنوية"
+
+#~ msgid "Hazards"
+#~ msgstr "المخاطر"
+
+#~ msgid "Events"
+#~ msgstr "الأحداث"
+
+#~ msgid "Expandability and Coping"
+#~ msgstr "التوسع والتعامل"
+
+#~ msgid "Expandability Factors"
+#~ msgstr "عوامل التوسع"
+
+#~ msgid "Coping Strategies"
+#~ msgstr "استراتيجيات المواجهة"
+
+#~ msgid "Common"
+#~ msgstr "شائع"
+
+#~ msgid "Countries"
+#~ msgstr "بلدان"
+
+#~ msgid "Currencies"
+#~ msgstr "العملات"
+
+#~ msgid "Products"
+#~ msgstr "منتجات"
+
+#~ msgid "Units of Measure"
+#~ msgstr "وحدات القياس"
+
+#~ msgid "Metadata"
+#~ msgstr "البيانات الوصفية"
+
+#~ msgid "Hazard Categories"
+#~ msgstr "فئات الخطر"
+
+#~ msgid "Livelihood Categories"
+#~ msgstr "فئات رزق"
+
+#~ msgid "Seasons"
+#~ msgstr "مواسم"
+
+#~ msgid "Wealth Categories"
+#~ msgstr "فئات الثروة"
+
+#~ msgid "Wealth Group Characteristics"
+#~ msgstr "خصائص مجموعة الثروة"
+
+#~ msgid "User management"
+#~ msgstr "إدارةالمستخدم"
+
+#~ msgid "Users"
+#~ msgstr "المستخدمون"
+
+#~ msgid "Groups"
+#~ msgstr "مجموعات"
+
+#~ msgid "View site"
+#~ msgstr "عرض الموقع"
+
+#~ msgid "BSS WB, Data,.. Sheets"
+#~ msgstr "BSS WB ، البيانات ، .. الأوراق"
+
+#~ msgid "BSS Production Data"
+#~ msgstr "بيانات إنتاج BSS"
+
+#~ msgid "Markets"
+#~ msgstr "الأسواق"

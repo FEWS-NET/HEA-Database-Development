@@ -6,78 +6,155 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-03-21 07:17+0000\n"
+"POT-Creation-Date: 2026-09-02 15:43+0000\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 "
 "&& n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5;\n"
 
+#: apps/baseline/admin.py:74
+msgid "record type"
+msgstr "tipo de registro"
+
+#: apps/baseline/admin.py:80
+msgid "Summary only"
+msgstr "Solo resumen"
+
+#: apps/baseline/admin.py:81
+#, fuzzy
+#| msgid "Community"
+msgid "Community only"
+msgstr "Comunidad"
+
+#: apps/baseline/admin.py:286 apps/baseline/admin.py:384
+#, fuzzy
+#| msgid "Livelihood Zone Baseline"
+msgid "Livelihood Zone Alternate Code"
+msgstr "Línea de base de la zona de medios de vida"
+
+#. Shared msgid. Also in apps/common/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/admin.py:293 apps/baseline/models.py:160
+msgid "Country"
+msgstr "País"
+
+#: apps/baseline/admin.py:300
+msgid "BSS SHA-512 Hash"
+msgstr "Hash SHA-512 de BSS"
+
+#: apps/baseline/admin.py:307
+msgid "BSS Uploaded At"
+msgstr "BSS cargado el"
+
+#: apps/baseline/admin.py:316
+msgid "BSS Size"
+msgstr "Tamano de BSS"
+
+#: apps/baseline/admin.py:325
+#, fuzzy
+#| msgid "Main Staple"
+msgid "Poor Main Staple"
+msgstr "Alimento básico"
+
+#: apps/baseline/admin.py:329
+#, fuzzy
+#| msgid "Average household size"
+msgid "Poor Household Size"
+msgstr "Tamaño promedio del hogar"
+
+#: apps/baseline/admin.py:333
+msgid "Poor Survival Non-Food Expenditure"
+msgstr "Gasto no alimentario de supervivencia del grupo pobre"
+
+#: apps/baseline/admin.py:1361
+#, fuzzy
+#| msgid "Population Source"
+msgid "Population source"
+msgstr "Fuente de población"
+
+#: apps/baseline/admin.py:1395
+#, fuzzy
+#| msgid "Percentage of households"
+msgid "Percentage of population"
+msgstr "Porcentaje de hogares"
+
+#: apps/baseline/admin.py:1399
+#, fuzzy
+#| msgid "Population Estimate"
+msgid "Population estimate"
+msgstr "Estimación de la población"
+
+#. Shared msgid. Also in locale/es/LC_MESSAGES/djangojs.po; keep translations synchronized across files.
 #: apps/baseline/apps.py:8
 msgid "baseline"
 msgstr "Línea de base"
 
-#: apps/baseline/forms.py:24
+#: apps/baseline/forms.py:42
 msgid "Produced"
 msgstr "Producido"
 
-#: apps/baseline/forms.py:25
+#: apps/baseline/forms.py:44
 msgid "Purchased"
 msgstr "Comprado"
 
-#: apps/baseline/forms.py:26
+#: apps/baseline/forms.py:46
 msgid "Sold"
 msgstr "Vendido"
 
-#: apps/baseline/forms.py:27
+#: apps/baseline/forms.py:48
 msgid "Consumed"
 msgstr "Consumado"
 
-#: apps/baseline/forms.py:28
+#: apps/baseline/forms.py:50
 msgid "Other uses"
 msgstr "Otros usos"
 
-#: apps/baseline/forms.py:29
+#. Shared msgid. Also in apps/common/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/forms.py:52
 msgid "Percentage"
 msgstr "Porcentaje"
 
-#: apps/baseline/forms.py:43
+#. Shared msgid. Also in apps/metadata/locale/es/LC_MESSAGES/django.po, locale/es/LC_MESSAGES/djangojs.po; keep translations synchronized across files.
+#: apps/baseline/forms.py:70
 msgid "Butter Production"
 msgstr "Producción de mantequilla"
 
-#: apps/baseline/forms.py:57 apps/baseline/forms.py:85
+#: apps/baseline/forms.py:88 apps/baseline/forms.py:124
 msgid "Purchase size"
 msgstr "Tamaño de compra"
 
-#: apps/baseline/forms.py:71
+#: apps/baseline/forms.py:106
 msgid "Relief size"
 msgstr "Tamaño de alivio"
 
-#: apps/baseline/models.py:48
+#. Shared msgid. Also in apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/models.py:87
 msgid "full name"
 msgstr "nombre completo"
 
-#: apps/baseline/models.py:57 apps/baseline/models.py:150
+#: apps/baseline/models.py:96 apps/baseline/models.py:312
 msgid "Source Organization"
 msgstr "Organización de origen"
 
-#: apps/baseline/models.py:58
+#. Shared msgid. Also in apps/common/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/models.py:97
 msgid "Source Organizations"
 msgstr "Organizaciones de origen"
 
-#: apps/baseline/models.py:86
+#. Shared msgid. Also in apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/models.py:147
 msgid "code"
 msgstr "código"
 
-#: apps/baseline/models.py:87
+#: apps/baseline/models.py:148
 msgid "Primary identifier for the Livelihood Zone"
 msgstr "Identificador primario para la zona de medios de vida"
 
-#: apps/baseline/models.py:92
+#: apps/baseline/models.py:153
 msgid "alternate code"
 msgstr "código alternativo"
 
-#: apps/baseline/models.py:94
+#: apps/baseline/models.py:155
 msgid ""
 "Alternate identifier for the Livelihood Zone, typically a meaningful code "
 "based on the name of the Zone."
@@ -85,95 +162,125 @@ msgstr ""
 "Identificador alternativo para la Zona de Medios de Vida, normalmente un "
 "código significativo basado en el nombre de la Zona."
 
-#: apps/baseline/models.py:99
-msgid "Country"
-msgstr "País"
-
-#: apps/baseline/models.py:102 apps/baseline/models.py:139
+#: apps/baseline/models.py:164 apps/baseline/models.py:301
 msgid "Livelihood Zone"
 msgstr "Zona de medios de vida"
 
-#: apps/baseline/models.py:103
+#. Shared msgid. Also in apps/common/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/models.py:165
 msgid "Livelihood Zones"
 msgstr "Zonas de medios de vida"
 
-#: apps/baseline/models.py:141 apps/baseline/models.py:307
+#. Shared msgid. Also in apps/common/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po, locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/models.py:292
+msgid "English"
+msgstr "Inglés"
+
+#. Shared msgid. Also in apps/common/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po, locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/models.py:293
+msgid "French"
+msgstr "Francés"
+
+#. Shared msgid. Also in apps/common/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po, locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/models.py:294
+msgid "Spanish"
+msgstr "Español"
+
+#. Shared msgid. Also in apps/common/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po, locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/models.py:295
+msgid "Portuguese"
+msgstr "Portugués"
+
+#. Shared msgid. Also in apps/common/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po, locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/models.py:296
+msgid "Arabic"
+msgstr "Árabe"
+
+#. Shared msgid. Also in apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/models.py:303 apps/baseline/models.py:779
 msgid "geography"
 msgstr "geografía"
 
-#: apps/baseline/models.py:147
-msgid "Livelihood Zone Type"
-msgstr "Tipo de zona de medios de vida"
+#. Shared msgid. Also in locale/es/LC_MESSAGES/djangojs.po; keep translations synchronized across files.
+#: apps/baseline/models.py:309
+#, fuzzy
+#| msgid "Livelihood Strategy"
+msgid "Primary Livelihood System"
+msgstr "Estrategia de medios de vida"
 
-#: apps/baseline/models.py:152
+#: apps/baseline/models.py:314
 msgid "BSS Excel file"
 msgstr "Archivo bss Excel"
 
-#: apps/baseline/models.py:157
+#: apps/baseline/models.py:316
+msgid "BSS Language"
+msgstr "Idioma de BSS"
+
+#: apps/baseline/models.py:323
 msgid "Profile Report PDF file"
 msgstr "Archivo PDF de informe de perfil"
 
-#: apps/baseline/models.py:160
+#: apps/baseline/models.py:377
 msgid "Reference Year Start Date"
 msgstr "Fecha de inicio del año de referencia"
 
-#: apps/baseline/models.py:161
+#: apps/baseline/models.py:378
 msgid "The first day of the month of the start month in the reference year"
 msgstr "El primer día del mes del mes de inicio en el año de referencia"
 
-#: apps/baseline/models.py:164
+#: apps/baseline/models.py:381
 msgid "Reference Year End Date"
 msgstr "Fecha de finalización del año de referencia"
 
-#: apps/baseline/models.py:165
+#: apps/baseline/models.py:382
 msgid "The last day of the month of the end month in the reference year"
 msgstr "El último día del mes del mes final en el año de referencia"
 
-#: apps/baseline/models.py:170
+#: apps/baseline/models.py:387
 msgid "Valid From Date"
 msgstr "Válido desde la fecha"
 
-#: apps/baseline/models.py:171
+#: apps/baseline/models.py:388
 msgid "The first day of the month that this baseline is valid from"
 msgstr "El primer día del mes que esta línea de base es válida de"
 
-#: apps/baseline/models.py:176
+#: apps/baseline/models.py:393
 msgid "Valid To Date"
 msgstr "Válido hasta la fecha"
 
-#: apps/baseline/models.py:177
+#: apps/baseline/models.py:394
 msgid "The last day of the month that this baseline is valid until"
 msgstr "El último día del mes que esta línea de base es válida hasta"
 
-#: apps/baseline/models.py:182
+#: apps/baseline/models.py:399
 msgid "Data Collection Start Date"
 msgstr "Fecha de inicio de recopilación de datos"
 
-#: apps/baseline/models.py:183
+#: apps/baseline/models.py:400
 msgid "The first day of data collection period"
 msgstr "El primer día del período de recopilación de datos"
 
-#: apps/baseline/models.py:188
+#: apps/baseline/models.py:405
 msgid "Data Collection End Date"
 msgstr "Fecha de finalización de recopilación de datos"
 
-#: apps/baseline/models.py:189
+#: apps/baseline/models.py:406
 msgid "The last day of the data collection period"
 msgstr "El último día del período de recopilación de datos"
 
-#: apps/baseline/models.py:194
+#: apps/baseline/models.py:411
 msgid "Publication Date"
 msgstr "Fecha de publicación"
 
-#: apps/baseline/models.py:195
+#: apps/baseline/models.py:412
 msgid "The day that the baseline was published"
 msgstr "El día en que se publicó la línea de base"
 
-#: apps/baseline/models.py:207
+#: apps/baseline/models.py:424
 msgid "Population Source"
 msgstr "Fuente de población"
 
-#: apps/baseline/models.py:208
+#: apps/baseline/models.py:425
 msgid ""
 "The data source for the Population Estimate, e.g. National Bureau of "
 "Statistics"
@@ -181,127 +288,212 @@ msgstr ""
 "La fuente de datos para la estimación de la población, p. Oficina Nacional "
 "de Estadísticas"
 
-#: apps/baseline/models.py:213
+#: apps/baseline/models.py:430
 msgid "Population Estimate"
 msgstr "Estimación de la población"
 
-#: apps/baseline/models.py:214
+#: apps/baseline/models.py:431
 msgid ""
 "The estimated population of the Livelihood Zone during the reference year"
-msgstr ""
+msgstr "La poblacion estimada de la zona de medios de vida durante el ano de referencia"
 
-#: apps/baseline/models.py:227 apps/baseline/models.py:253
-#: apps/baseline/models.py:305 apps/baseline/models.py:398
-#: apps/baseline/models.py:782 apps/baseline/models.py:953
-#: apps/baseline/models.py:1711 apps/baseline/models.py:1778
+#. Shared msgid. Also in apps/common/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po, locale/es/LC_MESSAGES/djangojs.po; keep translations synchronized across files.
+#: apps/baseline/models.py:437 apps/baseline/models.py:1613
+#: apps/baseline/models.py:3624
+msgid "Currency"
+msgstr "Moneda"
+
+#: apps/baseline/models.py:438
+#, fuzzy
+#| msgid "Currency of income or expenditure from this Livelihood Strategy"
+msgid ""
+"Default currency for income or expenditure from Livelihood Activities within "
+"this Baseline."
+msgstr "Moneda de ingresos o gastos de esta estrategia de medios de vida"
+
+#: apps/baseline/models.py:444
+#, fuzzy
+#| msgid "Total kcals consumed"
+msgid "Annual kcals cost"
+msgstr "Total de Kcals consumidos"
+
+#: apps/baseline/models.py:445
+#, python-format
+msgid ""
+"Annual cost per person of 100% of recommended kcals in the baseline currency."
+msgstr "Costo anual por persona del 100% de las kcal recomendadas en la moneda de la linea de base."
+
+#: apps/baseline/models.py:626 apps/baseline/models.py:697
+#: apps/baseline/models.py:777 apps/baseline/models.py:884
+#: apps/baseline/models.py:1574 apps/baseline/models.py:1850
+#: apps/baseline/models.py:3209 apps/baseline/models.py:3347
 msgid "Livelihood Zone Baseline"
 msgstr "Línea de base de la zona de medios de vida"
 
-#: apps/baseline/models.py:228
+#. Shared msgid. Also in apps/common/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/models.py:627
 msgid "Livelihood Zone Baselines"
-msgstr "Líneas de base de la zona de medios de vida"
+msgstr "Líneas de base de zonas de medios de vida"
 
-#: apps/baseline/models.py:244
-msgid "Main Staple"
-msgstr "Alimento básico"
+#: apps/baseline/models.py:685
+msgid "WB"
+msgstr "WB"
 
-#: apps/baseline/models.py:245
-msgid "Other Staple"
-msgstr "Otro elemento básico"
+#: apps/baseline/models.py:686
+msgid "Data"
+msgstr "Datos"
 
-#: apps/baseline/models.py:246
-msgid "Non-food survival"
-msgstr "Supervivencia no alimentaria"
+#: apps/baseline/models.py:687
+msgid "Data2"
+msgstr "Datos2"
 
-#: apps/baseline/models.py:247
-msgid "Livelihoods Protection"
-msgstr "Protección de medios de vida"
+#: apps/baseline/models.py:688
+msgid "Data3"
+msgstr "Datos3"
 
-#: apps/baseline/models.py:260 apps/baseline/models.py:613
-#: apps/baseline/models.py:804 apps/baseline/models.py:1733
-#: apps/baseline/models.py:1995
-msgid "Product"
-msgstr "Producto"
+#: apps/baseline/models.py:689
+msgid "Summ"
+msgstr "Resumen"
 
-#: apps/baseline/models.py:262
-msgid "Product Basket"
-msgstr "Cesta de producto"
+#: apps/baseline/models.py:690
+#, fuzzy
+#| msgid "baseline"
+msgid "Timeline"
+msgstr "Línea de base"
 
-#: apps/baseline/models.py:265
-msgid "Livelihood Product Category"
-msgstr "Categoría de productos de medios de vida"
+#: apps/baseline/models.py:691
+msgid "Seas Cal"
+msgstr "Calendario estacional"
 
-#: apps/baseline/models.py:266
-msgid "Livelihood Product Categories"
-msgstr "Categorías de productos de medios de vida"
+#: apps/baseline/models.py:699
+msgid "Worksheet name"
+msgstr "Nombre de la hoja"
 
-#: apps/baseline/models.py:292
+#: apps/baseline/models.py:700
+msgid "Cell range"
+msgstr "Rango de celdas"
+
+#: apps/baseline/models.py:702
+msgid "Previous value before correction"
+msgstr "Valor anterior a la correccion"
+
+#: apps/baseline/models.py:704
+msgid "Corrected value"
+msgstr "Valor corregido"
+
+#: apps/baseline/models.py:705
+#, fuzzy
+#| msgid "Data Collection End Date"
+msgid "Correction date"
+msgstr "Fecha de finalización de recopilación de datos"
+
+#: apps/baseline/models.py:706
+msgid "Correction author"
+msgstr "Autor de la correccion"
+
+#: apps/baseline/models.py:709
+msgid "Correction comments"
+msgstr "Comentarios de la correccion"
+
+#: apps/baseline/models.py:710
+msgid "Required comment about the correction suggested"
+msgstr "Comentario obligatorio sobre la correccion sugerida"
+
+#: apps/baseline/models.py:723
+#, fuzzy
+#| msgid "Livelihood Zone Baseline"
+msgid "Livelihood Zone Baseline Correction"
+msgstr "Línea de base de la zona de medios de vida"
+
+#. Shared msgid. Also in apps/common/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/models.py:724
+#, fuzzy
+#| msgid "Livelihood Zone Baselines"
+msgid "Livelihood Zone Baseline Corrections"
+msgstr "Correcciones de líneas de base de zonas de medios de vida"
+
+#. Shared msgid. Also in apps/common/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/models.py:764
 msgid "Code"
 msgstr "Código"
 
-#: apps/baseline/models.py:293
+#: apps/baseline/models.py:765
 msgid "A short identifier for the Community"
 msgstr "Un identificador corto para la comunidad"
 
-#: apps/baseline/models.py:298
+#: apps/baseline/models.py:770
 msgid "Full Name"
 msgstr "Nombre completo"
 
-#: apps/baseline/models.py:299
+#: apps/baseline/models.py:771
 msgid ""
 "The full name of the Community, including the parent administrative units."
 msgstr ""
 "El nombre completo de la comunidad, incluidas las unidades administrativas "
 "de los padres."
 
-#: apps/baseline/models.py:315
+#: apps/baseline/models.py:787
 msgid "Interview Number"
 msgstr "Número de entrevista"
 
-#: apps/baseline/models.py:316
+#: apps/baseline/models.py:788
 msgid "The interview number or interview code assigned to the Community"
 msgstr ""
 "El número de entrevista o el código de la entrevista asignado a la comunidad"
 
-#: apps/baseline/models.py:321
+#: apps/baseline/models.py:793
 msgid "Community Interview Date"
 msgstr "Fecha de entrevista comunitaria"
 
-#: apps/baseline/models.py:322
+#: apps/baseline/models.py:794
 msgid "The date that the Community Interview (Form 3) was conducted."
 msgstr "La fecha en que se realizó la entrevista comunitaria (Formulario 3)."
 
-#: apps/baseline/models.py:327
+#: apps/baseline/models.py:799
 msgid "Wealth Group Interview Date"
 msgstr "Fecha de entrevista del grupo patrimonial"
 
-#: apps/baseline/models.py:328
+#: apps/baseline/models.py:800
 msgid "The date that the Wealth Group Interviews (Form 4) were conducted."
 msgstr ""
 "La fecha en que se realizaron las entrevistas del grupo de patrimonio "
 "(Formulario 4)."
 
-#: apps/baseline/models.py:340 apps/baseline/models.py:413
+#. Shared msgid. Also in apps/common/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/models.py:805
+msgid "aliases"
+msgstr "alias"
+
+#: apps/baseline/models.py:806
+msgid ""
+"A list of alternate names for the community name for differently spelled "
+"values."
+msgstr "Una lista de nombres alternativos para el nombre de la comunidad con grafias diferentes."
+
+#: apps/baseline/models.py:818 apps/baseline/models.py:891
 msgid "Community"
 msgstr "Comunidad"
 
-#: apps/baseline/models.py:341
+#. Shared msgid. Also in apps/common/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/models.py:819
 msgid "Communities"
 msgstr "Comunidades"
 
-#: apps/baseline/models.py:419
+#. Shared msgid. Also in apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/models.py:898
 msgid "Wealth Group Category"
 msgstr "Categoría de grupo de patrimonio"
 
-#: apps/baseline/models.py:420
+#: apps/baseline/models.py:899
 msgid "Wealth Group Category, e.g. Poor or Better Off"
 msgstr "Categoría de grupo de patrimonio, p. Pobre o mejor"
 
-#: apps/baseline/models.py:425
+#. Shared msgid. Also in locale/es/LC_MESSAGES/djangojs.po; keep translations synchronized across files.
+#: apps/baseline/models.py:905
 msgid "Percentage of households"
 msgstr "Porcentaje de hogares"
 
-#: apps/baseline/models.py:426
+#: apps/baseline/models.py:906
 msgid ""
 "Percentage of households in the Community or Livelihood Zone that are in "
 "this Wealth Group"
@@ -309,65 +501,72 @@ msgstr ""
 "Porcentaje de hogares en la comunidad o en la zona de medios de vida que se "
 "encuentran en este grupo de riqueza"
 
-#: apps/baseline/models.py:429
+#: apps/baseline/models.py:912
 msgid "Average household size"
 msgstr "Tamaño promedio del hogar"
 
-#: apps/baseline/models.py:463 apps/baseline/models.py:590
-#: apps/baseline/models.py:969 apps/baseline/models.py:1931
-#: apps/baseline/models.py:2188 apps/baseline/models.py:2243
+#: apps/baseline/models.py:913
+msgid "Average number of people per household in this Wealth Group"
+msgstr "Numero promedio de personas por hogar en este grupo de riqueza"
+
+#. Shared msgid. Also in locale/es/LC_MESSAGES/djangojs.po; keep translations synchronized across files.
+#: apps/baseline/models.py:1189 apps/baseline/models.py:1334
+#: apps/baseline/models.py:1866 apps/baseline/models.py:3551
+#: apps/baseline/models.py:3805 apps/baseline/models.py:3873
 msgid "Wealth Group"
 msgstr "Grupo de riqueza"
 
-#: apps/baseline/models.py:464
+#. Shared msgid. Also in apps/common/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/models.py:1190
 msgid "Wealth Groups"
 msgstr "Grupos de riqueza"
 
-#: apps/baseline/models.py:494
+#: apps/baseline/models.py:1232
 msgid "A Baseline Wealth Group cannot have a Community"
 msgstr "Un grupo de riqueza basal no puede tener una comunidad"
 
-#: apps/baseline/models.py:498
+#: apps/baseline/models.py:1236
 msgid "Baseline Wealth Group"
 msgstr "Grupo de riqueza de línea de base"
 
-#: apps/baseline/models.py:499
+#: apps/baseline/models.py:1237
 msgid "Baseline Wealth Groups"
 msgstr "Grupos de riqueza de línea de base"
 
-#: apps/baseline/models.py:517
+#: apps/baseline/models.py:1255
 msgid "A Community Wealth Group must have a Community"
 msgstr "Un grupo de patrimonio comunitario debe tener una comunidad"
 
-#: apps/baseline/models.py:521
+#: apps/baseline/models.py:1259
 msgid "Community Wealth Group"
 msgstr "Grupo de riqueza comunitaria"
 
-#: apps/baseline/models.py:522
+#: apps/baseline/models.py:1260
 msgid "Community Wealth Groups"
 msgstr "Grupos de riqueza comunitaria"
 
-#: apps/baseline/models.py:586
+#: apps/baseline/models.py:1330
 msgid "Community Interview (Form 3)"
 msgstr "Entrevista comunitaria (Formulario 3)"
 
-#: apps/baseline/models.py:587
+#: apps/baseline/models.py:1331
 msgid "Wealth Group Interview (Form 4)"
 msgstr "Entrevista grupal de patrimonio (Formulario 4)"
 
-#: apps/baseline/models.py:588
+#: apps/baseline/models.py:1332
 msgid "Baseline Summary"
 msgstr "Resumen de línea de base"
 
-#: apps/baseline/models.py:595
+#. Shared msgid. Also in apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/models.py:1339
 msgid "Wealth Characteristic"
 msgstr "Riqueza característica"
 
-#: apps/baseline/models.py:601
+#: apps/baseline/models.py:1345
 msgid "Reference Type"
 msgstr "Tipo de referencia"
 
-#: apps/baseline/models.py:603
+#: apps/baseline/models.py:1347
 msgid ""
 "The reference type of this Wealth Group Characteristic Value, such as a "
 "Community Interview (Form 3), Wealth Group Interview (Form 4) or the "
@@ -377,42 +576,49 @@ msgstr ""
 "patrimonio, como una entrevista comunitaria (Formulario 3), entrevista "
 "grupal de patrimonio (Formulario 4) o el resumen de línea de base"
 
-#: apps/baseline/models.py:614
+#. Shared msgid. Also in apps/common/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po, locale/es/LC_MESSAGES/djangojs.po; keep translations synchronized across files.
+#: apps/baseline/models.py:1357 apps/baseline/models.py:1596
+#: apps/baseline/models.py:3231 apps/baseline/models.py:3615
+msgid "Product"
+msgstr "Producto"
+
+#: apps/baseline/models.py:1358
 msgid "Product, e.g. Cattle"
 msgstr "Producto, p. Ganado"
 
-#: apps/baseline/models.py:623 apps/baseline/models.py:814
-#: apps/baseline/models.py:2008
+#. Shared msgid. Also in apps/common/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/models.py:1367 apps/baseline/models.py:1606
+#: apps/baseline/models.py:3627
 msgid "Unit of Measure"
 msgstr "Unidad de medida"
 
-#: apps/baseline/models.py:635
+#: apps/baseline/models.py:1377
 msgid "value"
 msgstr "valor"
 
-#: apps/baseline/models.py:635
+#: apps/baseline/models.py:1377
 msgid "A single property value, eg, a float, str or list, not a dict of props."
 msgstr ""
 "Un solo valor de propiedad, por ejemplo, un flotador, str o lista, no un "
 "dictado de accesorios."
 
-#: apps/baseline/models.py:640
+#: apps/baseline/models.py:1382
 msgid "min_value"
 msgstr "Min_value"
 
-#: apps/baseline/models.py:643
+#: apps/baseline/models.py:1385
 msgid "The minimum value of the possible range for this value."
 msgstr "El valor mínimo del rango posible para este valor."
 
-#: apps/baseline/models.py:646
+#: apps/baseline/models.py:1388
 msgid "max_value"
 msgstr "valor máximo"
 
-#: apps/baseline/models.py:649
+#: apps/baseline/models.py:1391
 msgid "The maximum value of the possible range for this value."
 msgstr "El valor máximo del rango posible para este valor."
 
-#: apps/baseline/models.py:660
+#: apps/baseline/models.py:1402
 msgid ""
 "A Wealth Group Characteristic Value from a Baseline Summary must be for a "
 "Baseline Wealth Group"
@@ -420,7 +626,7 @@ msgstr ""
 "Un valor característico de un grupo de riqueza de un resumen de línea de "
 "base debe ser para un grupo de riqueza de línea de base"
 
-#: apps/baseline/models.py:665
+#: apps/baseline/models.py:1407
 #, python-format
 msgid ""
 "A Wealth Group Characteristic Value from a %(ref)s must be for a Community "
@@ -429,14 +635,14 @@ msgstr ""
 "Un valor característico de un grupo de patrimonio de un %(ref)s debe ser "
 "para un grupo de patrimonio comunitario"
 
-#: apps/baseline/models.py:672
+#: apps/baseline/models.py:1414
 #, python-format
 msgid "A Wealth Group Characteristic Value for %(charac)s must have a product"
 msgstr ""
 "Un valor característico de grupo de patrimonio para %(charac)s debe tener un "
 "producto"
 
-#: apps/baseline/models.py:677
+#: apps/baseline/models.py:1419
 #, python-format
 msgid ""
 "A Wealth Group Characteristic Value for %(charac)s must not have a product"
@@ -444,7 +650,7 @@ msgstr ""
 "Un valor característico del grupo de patrimonio para %(charac)s no debe "
 "tener un producto"
 
-#: apps/baseline/models.py:684
+#: apps/baseline/models.py:1426
 #, python-format
 msgid ""
 "A Wealth Group Characteristic Value for %(charac)s must have a unit of "
@@ -453,7 +659,7 @@ msgstr ""
 "Un valor característico de grupo de patrimonio para %(charac)s debe tener un "
 "producto"
 
-#: apps/baseline/models.py:689
+#: apps/baseline/models.py:1431
 #, python-format
 msgid ""
 "A Wealth Group Characteristic Value for %(charac)s must not have a unit of "
@@ -462,27 +668,77 @@ msgstr ""
 "Un valor característico del grupo de patrimonio para %(charac)s no debe "
 "tener un producto"
 
-#: apps/baseline/models.py:698
+#: apps/baseline/models.py:1440
 msgid "Value must be higher than min_value."
 msgstr "El valor debe ser más alto que Min_Value."
 
-#: apps/baseline/models.py:704
+#: apps/baseline/models.py:1446
 msgid "Value must be lower than max_value."
 msgstr "El valor debe ser más bajo que Max_Value."
 
-#: apps/baseline/models.py:727
+#: apps/baseline/models.py:1469
 msgid "Wealth Characteristic Value"
 msgstr "Valor característico de la riqueza"
 
-#: apps/baseline/models.py:728
+#. Shared msgid. Also in locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/models.py:1470
 msgid "Wealth Characteristic Values"
 msgstr "Valores característicos de riqueza"
 
-#: apps/baseline/models.py:789 apps/baseline/models.py:960
+#: apps/baseline/models.py:1497
+#, fuzzy
+#| msgid ""
+#| "A Wealth Group Characteristic Value from a %(ref)s must be for a "
+#| "Community Wealth Group"
+msgid ""
+"A Baseline Wealth Group Characteristic Value cannot be for a Community "
+"Wealth Group"
+msgstr ""
+"Un valor característico de un grupo de patrimonio de un %(ref)s debe ser "
+"para un grupo de patrimonio comunitario"
+
+#: apps/baseline/models.py:1502
+#, fuzzy
+#| msgid "Wealth Characteristic Value"
+msgid "Baseline Wealth Group Characteristic Value"
+msgstr "Valor característico de la riqueza"
+
+#: apps/baseline/models.py:1503
+#, fuzzy
+#| msgid "Wealth Characteristic Values"
+msgid "Baseline Wealth Group Characteristic Values"
+msgstr "Valores característicos de riqueza"
+
+#: apps/baseline/models.py:1522
+#, fuzzy
+#| msgid ""
+#| "A Wealth Group Characteristic Value from a %(ref)s must be for a "
+#| "Community Wealth Group"
+msgid ""
+"A Community Wealth Group Characteristic Value must be for a Community Wealth "
+"Group"
+msgstr ""
+"Un valor característico de un grupo de patrimonio de un %(ref)s debe ser "
+"para un grupo de patrimonio comunitario"
+
+#: apps/baseline/models.py:1527
+#, fuzzy
+#| msgid "Wealth Characteristic Value"
+msgid "Community Wealth Group Characteristic Value"
+msgstr "Valor característico de la riqueza"
+
+#: apps/baseline/models.py:1528
+#, fuzzy
+#| msgid "Wealth Characteristic Values"
+msgid "Community Wealth Group Characteristic Values"
+msgstr "Valores característicos de riqueza"
+
+#. Shared msgid. Also in apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/models.py:1581 apps/baseline/models.py:1857
 msgid "Strategy Type"
 msgstr "Tipo de estrategia"
 
-#: apps/baseline/models.py:790 apps/baseline/models.py:961
+#: apps/baseline/models.py:1582 apps/baseline/models.py:1858
 msgid ""
 "The type of livelihood strategy, such as crop production, or wild food "
 "gathering."
@@ -490,45 +746,42 @@ msgstr ""
 "El tipo de estrategia de medios de vida, como la producción de cultivos o la "
 "recolección de alimentos salvajes."
 
-#: apps/baseline/models.py:794 apps/baseline/models.py:1726
-#: apps/baseline/models.py:1862 apps/baseline/models.py:2066
+#. Shared msgid. Also in apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/models.py:1586 apps/baseline/models.py:3224
+#: apps/baseline/models.py:3491 apps/baseline/models.py:3684
 msgid "Season"
 msgstr "Estación"
 
-#: apps/baseline/models.py:805 apps/baseline/models.py:1734
-#: apps/baseline/models.py:1996
+#: apps/baseline/models.py:1597 apps/baseline/models.py:3232
+#: apps/baseline/models.py:3616
 msgid "Product, e.g. full fat milk"
 msgstr "Producto, p. leche entera"
 
-#: apps/baseline/models.py:815
+#: apps/baseline/models.py:1607
 msgid "Unit used to measure production from this Livelihood Strategy"
 msgstr ""
 "Unidad utilizada para medir la producción de esta estrategia de medios de "
 "vida"
 
-#: apps/baseline/models.py:821 apps/baseline/models.py:2005
-msgid "Currency"
-msgstr "Divisa"
-
-#: apps/baseline/models.py:822
+#: apps/baseline/models.py:1614
 msgid "Currency of income or expenditure from this Livelihood Strategy"
 msgstr "Moneda de ingresos o gastos de esta estrategia de medios de vida"
 
-#: apps/baseline/models.py:831
+#: apps/baseline/models.py:1620
 msgid "Additional Identifer"
 msgstr "Identificador adicional"
 
-#: apps/baseline/models.py:832
+#: apps/baseline/models.py:1621
 msgid "Additional text identifying the livelihood strategy"
 msgstr "Texto adicional que identifica la estrategia de medios de vida"
 
-#: apps/baseline/models.py:846
+#: apps/baseline/models.py:1650
 #, fuzzy, python-format
 #| msgid "A %s Livelihood Strategy must have a Product"
 msgid "A %s Livelihood Strategy must have a Product"
 msgstr "Estrategia de medios de vida"
 
-#: apps/baseline/models.py:848
+#: apps/baseline/models.py:1652
 #, fuzzy, python-format
 #| msgid "A %s Livelihood Strategy must have a Season"
 msgid "A %s Livelihood Strategy must have a Season"
@@ -536,20 +789,54 @@ msgstr ""
 "Una actividad de medios de vida de referencia debe usar el escenario de "
 "referencia"
 
-#: apps/baseline/models.py:870 apps/baseline/models.py:944
-#: apps/baseline/models.py:2186 apps/baseline/models.py:2245
+#: apps/baseline/models.py:1655
+#, fuzzy
+#| msgid "A %s Livelihood Strategy must have a Product"
+msgid ""
+"A Livelihood Strategy must have either a Product or an Additional Identifier"
+msgstr "Estrategia de medios de vida"
+
+#. Shared msgid. Also in apps/common/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/models.py:1678 apps/baseline/models.py:1755
+#: apps/baseline/models.py:1841 apps/baseline/models.py:3803
+#: apps/baseline/models.py:3875
 msgid "Livelihood Strategy"
 msgstr "Estrategia de medios de vida"
 
-#: apps/baseline/models.py:871
+#. Shared msgid. Also in apps/common/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/models.py:1679
 msgid "Livelihood Strategies"
 msgstr "Estrategias de medios de vida"
 
-#: apps/baseline/models.py:966
+#: apps/baseline/models.py:1757
+msgid "Monitor Quantity"
+msgstr "Cantidad de seguimiento"
+
+#: apps/baseline/models.py:1758
+#, fuzzy
+#| msgid "Market Price"
+msgid "Monitor Price"
+msgstr "Precio de mercado"
+
+#: apps/baseline/models.py:1765
+msgid "Key Parameters must be for a Strategy with a Product"
+msgstr "Los parametros clave deben corresponder a una estrategia con un producto"
+
+#. Shared msgid. Also in apps/common/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/models.py:1780
+msgid "Key Parameter"
+msgstr "Parametro clave"
+
+#. Shared msgid. Also in locale/es/LC_MESSAGES/djangojs.po; keep translations synchronized across files.
+#: apps/baseline/models.py:1781
+msgid "Key Parameters"
+msgstr "Parametros clave"
+
+#: apps/baseline/models.py:1863
 msgid "Scenario"
 msgstr "Guión"
 
-#: apps/baseline/models.py:967
+#: apps/baseline/models.py:1864
 msgid ""
 "The scenario in which the outputs of this Livelihood Activity apply, e.g. "
 "baseline or response."
@@ -557,47 +844,48 @@ msgstr ""
 "El escenario en el que se aplican las salidas de esta actividad de medios de "
 "vida, p. línea de base o respuesta."
 
-#: apps/baseline/models.py:971 apps/baseline/models.py:2191
+#: apps/baseline/models.py:1869 apps/baseline/models.py:3810
 msgid "Quantity Produced"
 msgstr "Cantidad producida"
 
-#: apps/baseline/models.py:972
+#: apps/baseline/models.py:1870
 msgid "Quantity Purchased"
 msgstr "Cantidad comprada"
 
-#: apps/baseline/models.py:973 apps/baseline/models.py:2192
+#: apps/baseline/models.py:1871 apps/baseline/models.py:3813
 msgid "Quantity Sold/Exchanged"
 msgstr "Cantidad vendida/intercambiada"
 
-#: apps/baseline/models.py:974 apps/baseline/models.py:2193
+#: apps/baseline/models.py:1872 apps/baseline/models.py:3816
 msgid "Quantity Other Uses"
 msgstr "Cantidad Otros usos"
 
-#: apps/baseline/models.py:977 apps/baseline/models.py:2195
+#: apps/baseline/models.py:1875 apps/baseline/models.py:3820
 msgid "Quantity Consumed"
 msgstr "Cantidad consumida"
 
-#: apps/baseline/models.py:979
+#. Shared msgid. Also in locale/es/LC_MESSAGES/djangojs.po; keep translations synchronized across files.
+#: apps/baseline/models.py:1881
 msgid "Price"
 msgstr "Precio"
 
-#: apps/baseline/models.py:979
+#: apps/baseline/models.py:1882
 msgid "Price per unit"
 msgstr "Precio por unidad"
 
-#: apps/baseline/models.py:982 apps/baseline/models.py:2199
+#: apps/baseline/models.py:1886 apps/baseline/models.py:3826
 msgid "Income"
 msgstr "Ingreso"
 
-#: apps/baseline/models.py:985 apps/baseline/models.py:2202
+#: apps/baseline/models.py:1889 apps/baseline/models.py:3831
 msgid "Expenditure"
 msgstr "Gasto"
 
-#: apps/baseline/models.py:991
+#: apps/baseline/models.py:1895
 msgid "Total kcals consumed"
 msgstr "Total de Kcals consumidos"
 
-#: apps/baseline/models.py:992
+#: apps/baseline/models.py:1896
 msgid ""
 "Total kcals consumed by a household in the reference year from this "
 "livelihood strategy"
@@ -605,11 +893,11 @@ msgstr ""
 "Kcals totales consumidos por un hogar en el año de referencia de esta "
 "estrategia de medios de vida"
 
-#: apps/baseline/models.py:1002
+#: apps/baseline/models.py:1909
 msgid "Percentage of required kcals"
 msgstr "Porcentaje de kcals requeridos"
 
-#: apps/baseline/models.py:1003
+#: apps/baseline/models.py:1910
 msgid ""
 "Percentage of annual household kcal requirement provided by this livelihood "
 "strategy"
@@ -617,56 +905,81 @@ msgstr ""
 "Porcentaje de requisitos anuales de KCAL doméstico proporcionado por esta "
 "estrategia de medios de vida"
 
-#: apps/baseline/models.py:1020
+#: apps/baseline/models.py:1927
 msgid "Mainly Men"
 msgstr "Principalmente hombres"
 
-#: apps/baseline/models.py:1021
+#: apps/baseline/models.py:1928
 msgid "Mainly Women"
 msgstr "Principalmente mujeres"
 
-#: apps/baseline/models.py:1022
+#: apps/baseline/models.py:1929
 msgid "Mainly Children"
 msgstr "Principalmente niños"
 
-#: apps/baseline/models.py:1023
+#: apps/baseline/models.py:1930
+#, fuzzy
+#| msgid "Mainly Women"
+msgid "Mainly Boys"
+msgstr "Principalmente mujeres"
+
+#: apps/baseline/models.py:1931
+#, fuzzy
+#| msgid "Mainly Children"
+msgid "Mainly Girls"
+msgstr "Principalmente niños"
+
+#: apps/baseline/models.py:1932
+#, fuzzy
+#| msgid "Mainly Men"
+msgid "Mainly Adults"
+msgstr "Principalmente hombres"
+
+#: apps/baseline/models.py:1933
 msgid "All Together"
 msgstr "Todos juntos"
 
-#: apps/baseline/models.py:1026
+#: apps/baseline/models.py:1992
 msgid "Activity done by"
 msgstr "Actividad realizada por"
 
-#: apps/baseline/models.py:1032
+#: apps/baseline/models.py:1998
 msgid "Extra attributes"
 msgstr "Atributos adicionales"
 
-#: apps/baseline/models.py:1033
+#: apps/baseline/models.py:1999
 msgid "Additional attributes from the BSS for this Livelihood Activity"
 msgstr "Atributos adicionales de las BSS para esta Actividad de Medios de Vida"
 
-#: apps/baseline/models.py:1078
-msgid ""
-"Quantity consumed for a Livelihood Activity must be quantity produced - "
-"quantity sold - quantity used for other things"
-msgstr ""
-"Cantidad consumida para una actividad de medios de vida debe producirse la "
-"cantidad - Cantidad vendida - Cantidad utilizada para otras cosas"
+#: apps/baseline/models.py:2006
+msgid "Sort Key"
+msgstr "Clave de ordenacion"
 
-#: apps/baseline/models.py:1087
+#: apps/baseline/models.py:2132
 msgid ""
 "Income for a Livelihood Activity must be quantity sold multiplied by price"
-msgstr ""
+msgstr "El ingreso de una actividad de medios de vida debe ser la cantidad vendida multiplicada por el precio"
 
-#: apps/baseline/models.py:1107
+#: apps/baseline/models.py:2153
+#, fuzzy
+#| msgid ""
+#| "Expenditure for a Livelihood Activity must be quantity produced "
+#| "multiplied by price"
 msgid ""
-"Expenditure for a Livelihood Activity must be quantity produced multiplied "
-"by price"
+"Expenditure for a Livelihood Activity must be quantity produced or quantity "
+"purchased multiplied by price"
 msgstr ""
 "El gasto para una actividad de medios de vida debe producirse la cantidad "
 "multiplicada por el precio"
 
-#: apps/baseline/models.py:1120
+#: apps/baseline/models.py:2167
+#, python-format
+msgid ""
+"No conversion factor found from unit %(from_unit)s for Livelihood Activity "
+"to unit %(to_unit)s for Product %(product)s for calculating kcals consumed."
+msgstr "No se encontro ningun factor de conversion desde la unidad %(from_unit)s para la actividad de medios de vida hasta la unidad %(to_unit)s del producto %(product)s para calcular las kcal consumidas."
+
+#: apps/baseline/models.py:2181
 msgid ""
 "Kcals consumed for a Livelihood Activity must be quantity consumed "
 "multiplied by kcals per unit"
@@ -674,16 +987,7 @@ msgstr ""
 "Los kcals consumidos para una actividad de medios de vida deben ser "
 "consumidas por la cantidad multiplicada por kcals por unidad"
 
-#: apps/baseline/models.py:1130
-#, python-brace-format
-msgid ""
-"Incorrect Livelihood Activity strategy type. Found {self.strategy_type}. "
-"Expected {self._meta.object_name}."
-msgstr ""
-"Tipo de estrategia de actividad de medios de vida incorrecto. Encontrado "
-"{self.strategy_type}. Esperado {self._meta.object_name}."
-
-#: apps/baseline/models.py:1142
+#: apps/baseline/models.py:2204
 msgid ""
 "Wealth Group and Livelihood Strategy for a Livelihood Activity must belong "
 "to the same Livelihood Zone Baseline"
@@ -692,91 +996,152 @@ msgstr ""
 "de medios de vida deben pertenecer a la misma línea de base de la zona de "
 "medios de vida"
 
-#: apps/baseline/models.py:1180
+#. Shared msgid. Also in apps/common/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/models.py:2241
 msgid "Livelihood Activity"
 msgstr "Actividad de medios de vida"
 
-#: apps/baseline/models.py:1181
+#. Shared msgid. Also in apps/common/locale/es/LC_MESSAGES/django.po, locale/es/LC_MESSAGES/djangojs.po; keep translations synchronized across files.
+#: apps/baseline/models.py:2242
 msgid "Livelihood Activities"
 msgstr "Actividades de medios de vida"
 
-#: apps/baseline/models.py:1211
+#: apps/baseline/models.py:2291
 msgid "A Baseline Livelihood Activity must use the Baseline Scenario"
 msgstr ""
 "Una actividad de medios de vida de referencia debe usar el escenario de "
 "referencia"
 
-#: apps/baseline/models.py:1215
+#: apps/baseline/models.py:2295 apps/baseline/models.py:2451
+#: apps/baseline/templates/admin/baseline/wealthgroup/change_form.html:19
 msgid "Baseline Livelihood Activity"
 msgstr "Actividad de subsistencia basal"
 
-#: apps/baseline/models.py:1216
+#: apps/baseline/models.py:2296
 msgid "Baseline Livelihood Activities"
 msgstr "Actividades de medios de vida basales"
 
-#: apps/baseline/models.py:1244
+#: apps/baseline/models.py:2346
 msgid "A Response Livelihood Activity must use the Response Scenario"
 msgstr ""
 "Una respuesta de la actividad de los medios de vida de respuesta debe usar "
 "el escenario de respuesta"
 
-#: apps/baseline/models.py:1248
+#: apps/baseline/models.py:2350
 msgid "Response Livelihood Activity"
 msgstr "Respuesta de actividad de medios de vida"
 
-#: apps/baseline/models.py:1249
+#: apps/baseline/models.py:2351
 msgid "Response Livelihood Activities"
 msgstr "Respuesta de actividades de medios de vida"
 
-#: apps/baseline/models.py:1261
+#: apps/baseline/models.py:2426
+msgid "Main Staple"
+msgstr "Alimento básico"
+
+#: apps/baseline/models.py:2427
+#, fuzzy
+#| msgid "Non-food survival"
+msgid "Other food survival"
+msgstr "Supervivencia no alimentaria"
+
+#: apps/baseline/models.py:2431
+msgid "Non-food survival"
+msgstr "Supervivencia no alimentaria"
+
+#: apps/baseline/models.py:2435
+msgid "Livelihoods Protection"
+msgstr "Protección de medios de vida"
+
+#: apps/baseline/models.py:2453
+#: apps/baseline/templates/admin/baseline/wealthgroup/change_form.html:20
+msgid "Product Basket"
+msgstr "Cesta de producto"
+
+#: apps/baseline/models.py:2457
+#: apps/baseline/templates/admin/baseline/wealthgroup/change_form.html:21
+msgid "Percentage allocation to basket"
+msgstr "Porcentaje asignado a la canasta"
+
+#: apps/baseline/models.py:2459
+msgid ""
+"The percentage of expenditure or kcals from the Livelihood Activity that is "
+"allocated to this Basket. The remainder is implicitly part of the 'Other' "
+"basket"
+msgstr "El porcentaje del gasto o de las kcal de la actividad de medios de vida que se asigna a esta canasta. El resto forma parte implicitamente de la canasta 'Other'"
+
+#: apps/baseline/models.py:2471
+#, fuzzy
+#| msgid "A %s Livelihood Strategy must have a Product"
+msgid "Livelihood Product Categories must be for a Strategy with a Product"
+msgstr "Estrategia de medios de vida"
+
+#. Shared msgid. Also in apps/common/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/models.py:2503
+msgid "Livelihood Product Category"
+msgstr "Categoría de productos de medios de vida"
+
+#. Shared msgid. Also in apps/common/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/models.py:2504
+#: apps/baseline/templates/admin/baseline/wealthgroup/change_form.html:13
+msgid "Livelihood Product Categories"
+msgstr "Categorías de productos de medios de vida"
+
+#: apps/baseline/models.py:2515
 msgid "Skim"
 msgstr "Desnatar"
 
-#: apps/baseline/models.py:1262
+#: apps/baseline/models.py:2516
 msgid "whole"
 msgstr "entero"
 
-#: apps/baseline/models.py:1265
+#: apps/baseline/models.py:2523
 msgid "Number of milking animals"
 msgstr "Número de animales de ordeño"
 
-#: apps/baseline/models.py:1267
+#: apps/baseline/models.py:2526
 msgid "Average number of days of lactation"
 msgstr "Número promedio de días de lactancia"
 
-#: apps/baseline/models.py:1270
+#: apps/baseline/models.py:2529
 msgid "Average daily milk production per animal"
 msgstr "Producción promedio de leche diaria por animal"
 
-#: apps/baseline/models.py:1294
+#: apps/baseline/models.py:2552
 msgid "Quantity used for Butter Production"
 msgstr "Cantidad utilizada para la producción de mantequilla"
 
-#: apps/baseline/models.py:1297
+#: apps/baseline/models.py:2555
 msgid "Skim or whole milk consumed"
 msgstr "Leche descremada o entera consumida"
 
-#: apps/baseline/models.py:1300
+#: apps/baseline/models.py:2558
 msgid "Skim or whole milk sold or used for other purposes"
 msgstr "Leche descremada o entera vendida o usada para otros fines"
 
-#: apps/baseline/models.py:1319
+#: apps/baseline/models.py:2575
 msgid "Lactation days must be provided if there are milking animals"
 msgstr "Se deben proporcionar días de lactancia si hay animales en ordeño."
 
-#: apps/baseline/models.py:1321
+#: apps/baseline/models.py:2577
 msgid "Daily production must be provided if there are milking animals"
 msgstr "Se debe proporcionar producción diaria si hay animales en ordeño."
 
-#: apps/baseline/models.py:1383
+#: apps/baseline/models.py:2638
 msgid "Number of animals slaughtered"
 msgstr "Número de animales sacrificados"
 
-#: apps/baseline/models.py:1384
+#: apps/baseline/models.py:2640
 msgid "Carcass weight per animal"
 msgstr "Peso de la carcasa por animal"
 
-#: apps/baseline/models.py:1389
+#: apps/baseline/models.py:2646
+#, fuzzy
+#| msgid "Carcass weight per animal"
+msgid "Carcass weight is required when animals slaughtered"
+msgstr "Peso de la carcasa por animal"
+
+#: apps/baseline/models.py:2653
 msgid ""
 "Quantity Produced for a Meat Production must be animals slaughtered "
 "multiplied by carcass weight"
@@ -784,112 +1149,160 @@ msgstr ""
 "Cantidad producida para una producción de carne debe ser animales "
 "sacrificados multiplicados por peso de cadáver"
 
-#: apps/baseline/models.py:1408
+#: apps/baseline/models.py:2671
 msgid "Livestock Sales"
 msgstr "Ventas de ganado"
 
-#: apps/baseline/models.py:1439 apps/baseline/models.py:1517
-#: apps/baseline/models.py:1662
+#: apps/baseline/models.py:2719 apps/baseline/models.py:2900
+#: apps/baseline/models.py:3100
 msgid "Unit Multiple"
 msgstr "Unidad múltiple"
 
-#: apps/baseline/models.py:1439 apps/baseline/models.py:1663
+#: apps/baseline/models.py:2720 apps/baseline/models.py:3101
 msgid "Multiple of the unit of measure in a single purchase"
 msgstr "Múltiples de la unidad de medida en una sola compra"
 
-#: apps/baseline/models.py:1443 apps/baseline/models.py:1667
+#: apps/baseline/models.py:2724 apps/baseline/models.py:3105
 msgid "Purchases per month"
 msgstr "Compras por mes"
 
-#: apps/baseline/models.py:1445 apps/baseline/models.py:1483
-#: apps/baseline/models.py:1527 apps/baseline/models.py:1614
-#: apps/baseline/models.py:1671
+#: apps/baseline/models.py:2729 apps/baseline/models.py:2824
+#: apps/baseline/models.py:2911 apps/baseline/models.py:3025
+#: apps/baseline/models.py:3110
 msgid "Months per year"
 msgstr "Meses al año"
 
-#: apps/baseline/models.py:1445 apps/baseline/models.py:1672
+#: apps/baseline/models.py:2730 apps/baseline/models.py:3111
 msgid "Number of months in a year that the product is purchased"
 msgstr "Número de meses en un año que se compra el producto"
 
-#: apps/baseline/models.py:1448 apps/baseline/models.py:1486
-#: apps/baseline/models.py:1531 apps/baseline/models.py:1618
-#: apps/baseline/models.py:1675
+#: apps/baseline/models.py:2736 apps/baseline/models.py:2832
+#: apps/baseline/models.py:2919 apps/baseline/models.py:3033
+#: apps/baseline/models.py:3117
 msgid "Times per year"
 msgstr "Veces por año"
 
-#: apps/baseline/models.py:1449
+#: apps/baseline/models.py:2737
 msgid "Number of times in a year that the purchase is made"
 msgstr "Número de veces en un año que se realiza la compra"
 
-#: apps/baseline/models.py:1456
+#: apps/baseline/models.py:2753 apps/baseline/models.py:2862
+#: apps/baseline/models.py:2936 apps/baseline/models.py:3051
+#: apps/baseline/models.py:3140
+#, python-format
 msgid ""
-"Quantity produced for a Food Purchase must be purchase amount * purchases "
-"per month * months per year"
+"Times per year must be times per month * months per year. Expected: "
+"%(expected)s, Found: %(found)s"
+msgstr "Las veces por ano deben ser iguales a las veces por mes * meses por ano. Esperado: %(expected)s, Encontrado: %(found)s"
+
+#: apps/baseline/models.py:2760
+#, fuzzy
+#| msgid ""
+#| "Quantity produced for a Food Purchase must be purchase amount * purchases "
+#| "per month * months per year"
+msgid ""
+"Quantity purchased for a Food Purchase must be purchase amount * purchases "
+"per year"
 msgstr ""
 "Cantidad producida para una compra de alimentos debe ser el monto de la "
 "compra * Compras por mes * meses por año"
 
-#: apps/baseline/models.py:1462
+#: apps/baseline/models.py:2769
+#, fuzzy
+#| msgid ""
+#| "Expenditure for a Livelihood Activity must be quantity produced "
+#| "multiplied by price"
+msgid ""
+"Expenditure for a Food Purchase must be quantity purchased multiplied by "
+"price"
+msgstr ""
+"El gasto para una actividad de medios de vida debe producirse la cantidad "
+"multiplicada por el precio"
+
+#: apps/baseline/models.py:2773
 msgid "Food Purchases"
 msgstr "Compras de alimentos"
 
-#: apps/baseline/models.py:1474 apps/baseline/models.py:1600
+#. Shared msgid. Also in apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/models.py:2800
+#, fuzzy
+#| msgid "Payment per time"
+msgid "Payment Product"
+msgstr "Producto de pago"
+
+#: apps/baseline/models.py:2801
+msgid ""
+"Product provided as payment, typically a staple food item in exchange for "
+"labor"
+msgstr "Producto proporcionado como pago, normalmente un alimento basico a cambio de trabajo"
+
+#: apps/baseline/models.py:2809 apps/baseline/models.py:3009
 msgid "Payment per time"
 msgstr "Pago por tiempo"
 
-#: apps/baseline/models.py:1474
+#: apps/baseline/models.py:2810
 msgid "Amount of item received each time the labor is performed"
 msgstr "Cantidad del artículo recibido cada vez que se realiza la mano de obra"
 
-#: apps/baseline/models.py:1477 apps/baseline/models.py:1603
+#: apps/baseline/models.py:2815 apps/baseline/models.py:3014
 msgid "People per household"
 msgstr "Personas por hogar"
 
-#: apps/baseline/models.py:1477 apps/baseline/models.py:1606
+#: apps/baseline/models.py:2816 apps/baseline/models.py:3017
 msgid "Number of household members who perform the labor"
 msgstr "Número de miembros del hogar que realizan el trabajo"
 
-#: apps/baseline/models.py:1481 apps/baseline/models.py:1610
+#: apps/baseline/models.py:2820 apps/baseline/models.py:3021
 msgid "Labor per month"
 msgstr "Trabajo por mes"
 
-#: apps/baseline/models.py:1483 apps/baseline/models.py:1615
+#: apps/baseline/models.py:2825 apps/baseline/models.py:3026
 msgid "Number of months in a year that the labor is performed"
 msgstr "Número de meses en un año que se realiza la mano de obra"
 
-#: apps/baseline/models.py:1487
+#: apps/baseline/models.py:2833
 msgid "Number of times in a year that the labor is performed"
 msgstr "Número de veces en un año que se realiza la mano de obra"
 
-#: apps/baseline/models.py:1498
+#: apps/baseline/models.py:2840 apps/baseline/models.py:3041
+msgid ""
+"Payment per time is required if people per household and times per month are "
+"provided"
+msgstr "Se requiere el pago por periodo si se proporcionan personas por hogar y veces por mes"
+
+#: apps/baseline/models.py:2878
+#, fuzzy
+#| msgid ""
+#| "Quantity produced for Payment In Kind must be payment per time * number "
+#| "of people * labor per month * months per year"
 msgid ""
 "Quantity produced for Payment In Kind must be payment per time * number of "
-"people * labor per month * months per year"
+"people * times per year"
 msgstr ""
 "Cantidad producida para el pago en especie debe ser el pago por tiempo * "
 "Número de personas * Trabajo por mes * meses por año"
 
-#: apps/baseline/models.py:1504
+#: apps/baseline/models.py:2884
 msgid "Payments in Kind"
 msgstr "Pagos en especie"
 
-#: apps/baseline/models.py:1517
+#: apps/baseline/models.py:2901
 msgid "Multiple of the unit of measure received each time"
 msgstr "Múltiples de la unidad de medida recibida cada vez"
 
-#: apps/baseline/models.py:1522
+#: apps/baseline/models.py:2906
 msgid "Number of times per month the item is received"
 msgstr "Número de veces al mes se recibe el artículo"
 
-#: apps/baseline/models.py:1528
+#: apps/baseline/models.py:2912
 msgid "Number of months in a year that the item is received"
 msgstr "Número de meses en un año que se recibe el artículo"
 
-#: apps/baseline/models.py:1531
+#: apps/baseline/models.py:2920
 msgid "Number of times in a year that the item is received"
 msgstr "Número de veces en un año que se recibe el artículo"
 
-#: apps/baseline/models.py:1537
+#: apps/baseline/models.py:2943
 msgid ""
 "Quantity produced for Relief, Gifts, Other must be amount received * times "
 "per year"
@@ -897,86 +1310,111 @@ msgstr ""
 "Cantidad producida para alivio, regalos, otro debe ser recibido * veces por "
 "año"
 
-#: apps/baseline/models.py:1542
+#: apps/baseline/models.py:2948
 msgid "Relief, Gifts and Other Food"
 msgstr "Alivio, regalos y otros alimentos"
 
-#: apps/baseline/models.py:1600
+#: apps/baseline/models.py:3010
 msgid "Amount of money received each time the labor is performed"
 msgstr "Cantidad de dinero recibido cada vez que se realiza la mano de obra"
 
-#: apps/baseline/models.py:1619
+#: apps/baseline/models.py:3034
 msgid "Number of times in a year that the income is received"
 msgstr "Número de veces en un año que se recibe los ingresos"
 
-#: apps/baseline/models.py:1630
+#: apps/baseline/models.py:3064
+#, fuzzy
+#| msgid ""
+#| "Quantity produced for Other Cash Income must be payment per time * times "
+#| "per year"
 msgid ""
-"Quantity produced for Other Cash Income must be payment per time * number of "
-"people * labor per month * months per year"
-msgstr ""
-"Cantidad producida para otros ingresos en efectivo debe ser el pago por "
-"tiempo * Número de personas * Trabajo por mes * meses por año"
-
-#: apps/baseline/models.py:1635
-msgid ""
-"Quantity produced for Other Cash Income must be payment per time * times per "
-"year"
+"Income for 'Other Cash Income' must be payment per time * people per "
+"household * times per year"
 msgstr ""
 "La cantidad producida para otros ingresos en efectivo debe ser el pago por "
 "tiempo * veces por año"
 
-#: apps/baseline/models.py:1676
+#: apps/baseline/models.py:3118
 msgid "Number of times in a year that the product is purchased"
 msgstr "Número de veces en un año que se compra el producto"
 
-#: apps/baseline/models.py:1683
+#: apps/baseline/models.py:3152
+#, fuzzy, python-format
+#| msgid ""
+#| "Expenditure for Other Purchases must be price * unit multiple * purchases "
+#| "per month * months per year"
 msgid ""
 "Expenditure for Other Purchases must be price * unit multiple * purchases "
-"per month * months per year"
+"per year. Expected: %(expected)s, Found: %(found)s"
 msgstr ""
 "El gasto para otras compras debe ser precio * Unidad múltiple * compras por "
 "mes * meses por año"
 
-#: apps/baseline/models.py:1689
+#: apps/baseline/models.py:3164
 msgid "Other Purchases"
 msgstr "Otras compras"
 
-#: apps/baseline/models.py:1717
+#. Shared msgid. Also in apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/models.py:3215
 msgid "Seasonal Activity Type"
 msgstr "Tipo de actividad estacional"
 
-#: apps/baseline/models.py:1740
+#. Shared msgid. Also in apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/models.py:3238
 msgid "Additional Identifier"
 msgstr "Identificador adicional"
 
-#: apps/baseline/models.py:1741
+#: apps/baseline/models.py:3239
 msgid "Additional text identifying the seasonal activity"
 msgstr "Texto adicional que identifica la estrategia de medios de vida"
 
-#: apps/baseline/models.py:1745 apps/baseline/models.py:1769
+#. Shared msgid. Also in apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/models.py:3242
+#, fuzzy
+#| msgid "Seasonal Activity"
+msgid "Key Seasonal Activity?"
+msgstr "¿Actividad estacional clave?"
+
+#: apps/baseline/models.py:3243
+#, fuzzy
+#| msgid ""
+#| "Community and Seasonal Activity for a Seasonal Activity Occurrence must "
+#| "belong to the same Livelihood Zone Baseline"
+msgid ""
+"Whether this seasonal activity is a key seasonal activity for the livelihood "
+"zone baseline"
+msgstr ""
+"La actividad comunitaria y estacional para una ocurrencia de actividad "
+"estacional debe pertenecer a la misma línea de base de la zona de medios de "
+"vida"
+
+#: apps/baseline/models.py:3269 apps/baseline/models.py:3338
 msgid "Seasonal Activity"
 msgstr "Actividad estacional"
 
-#: apps/baseline/models.py:1746
+#. Shared msgid. Also in apps/common/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/models.py:3270
 msgid "Seasonal Activities"
 msgstr "Actividades estacionales"
 
-#: apps/baseline/models.py:1786 apps/baseline/models.py:1854
-#: apps/baseline/models.py:1989 apps/baseline/models.py:2065
-#: apps/baseline/models.py:2110 apps/baseline/models.py:2155
-#: apps/baseline/models.py:2241
+#: apps/baseline/models.py:3355 apps/baseline/models.py:3483
+#: apps/baseline/models.py:3609 apps/baseline/models.py:3683
+#: apps/baseline/models.py:3728 apps/baseline/models.py:3772
+#: apps/baseline/models.py:3871
 msgid "Community or Village"
 msgstr "Comunidad o pueblo"
 
-#: apps/baseline/models.py:1794
+#. Shared msgid. Also in apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/models.py:3363
 msgid "Start Day"
 msgstr "Inicio Día"
 
-#: apps/baseline/models.py:1797
+#. Shared msgid. Also in apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/models.py:3366
 msgid "End Day"
 msgstr "Día final"
 
-#: apps/baseline/models.py:1816
+#: apps/baseline/models.py:3387
 msgid ""
 "Community and Seasonal Activity for a Seasonal Activity Occurrence must "
 "belong to the same Livelihood Zone Baseline"
@@ -985,63 +1423,82 @@ msgstr ""
 "estacional debe pertenecer a la misma línea de base de la zona de medios de "
 "vida"
 
-#: apps/baseline/models.py:1831
+#: apps/baseline/models.py:3414
 msgid "Seasonal Activity Occurrence"
 msgstr "Ocurrencia de actividad estacional"
 
-#: apps/baseline/models.py:1832
+#. Shared msgid. Also in apps/common/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/models.py:3415
 msgid "Seasonal Activity Occurrences"
+msgstr "Ocurrencias de actividades estacionales"
+
+#: apps/baseline/models.py:3458
+#, fuzzy
+#| msgid "A Baseline Wealth Group cannot have a Community"
+msgid "A Baseline Seasonal Activity Occurrence cannot be for a Community"
+msgstr "Un grupo de riqueza basal no puede tener una comunidad"
+
+#: apps/baseline/models.py:3462
+#, fuzzy
+#| msgid "Seasonal Activity Occurrence"
+msgid "Baseline Seasonal Activity Occurrence"
+msgstr "Ocurrencia de actividad estacional"
+
+#: apps/baseline/models.py:3463
+#, fuzzy
+#| msgid "Seasonal Activity Occurrences"
+msgid "Baseline Seasonal Activity Occurrences"
 msgstr "Ocurrencias de actividad estacional"
 
-#: apps/baseline/models.py:1851
+#: apps/baseline/models.py:3480
 msgid "Main Food Crop"
 msgstr "Principal cultivo alimentario"
 
-#: apps/baseline/models.py:1852
+#: apps/baseline/models.py:3481
 msgid "Cash Crop"
 msgstr "Cultivo comercial"
 
-#: apps/baseline/models.py:1856
+#: apps/baseline/models.py:3485
 msgid "Crop Type"
 msgstr "Tipo de cultivo"
 
-#: apps/baseline/models.py:1858
+#: apps/baseline/models.py:3487
 msgid "Crop purpose"
 msgstr "Propósito de la cosecha"
 
-#: apps/baseline/models.py:1864
+#: apps/baseline/models.py:3493
 msgid "Yield with inputs"
 msgstr "Rendimiento con entradas"
 
-#: apps/baseline/models.py:1865
+#: apps/baseline/models.py:3494
 msgid "Yield in reference period with inputs (seeds and fertilizer)"
 msgstr ""
 "Rendimiento en el período de referencia con entradas (semillas y "
 "fertilizantes)"
 
-#: apps/baseline/models.py:1868
+#: apps/baseline/models.py:3497
 msgid "Yield without inputs"
 msgstr "Rendimiento sin insumos"
 
-#: apps/baseline/models.py:1869
+#: apps/baseline/models.py:3498
 msgid "Yield in reference period without inputs (seeds and fertilizer)"
 msgstr ""
 "Rendimiento en el período de referencia sin entradas (semillas y "
 "fertilizantes)"
 
-#: apps/baseline/models.py:1871
+#: apps/baseline/models.py:3500
 msgid "Seed requirement"
 msgstr "Requisito de semillas"
 
-#: apps/baseline/models.py:1877
+#: apps/baseline/models.py:3506
 msgid "Crop Unit of Measure"
 msgstr "Unidad de medida de cultivo"
 
-#: apps/baseline/models.py:1884
+#: apps/baseline/models.py:3513
 msgid "Land Unit of Measure"
 msgstr "Unidad de medida de tierra"
 
-#: apps/baseline/models.py:1896
+#: apps/baseline/models.py:3520
 msgid ""
 "Crop type for Community Crop Production must have a CPC code code beginning "
 "R01 (Agriculture Products)"
@@ -1049,71 +1506,72 @@ msgstr ""
 "El tipo de cultivo para la producción de cultivos comunitarios debe tener un "
 "código CPC que comienza R01 (productos agrícolas)"
 
-#: apps/baseline/models.py:1913
+#: apps/baseline/models.py:3537
 msgid "Community Crop Production"
 msgstr "Producción de cultivos comunitarios"
 
-#: apps/baseline/models.py:1914
+#. Shared msgid. Also in apps/common/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/models.py:3538
 msgid "Community Crop Productions"
 msgstr "Producciones de cultivos comunitarios"
 
-#: apps/baseline/models.py:1933
+#: apps/baseline/models.py:3553
 msgid "Livestock Type"
 msgstr "Tipo de ganado"
 
-#: apps/baseline/models.py:1936
+#: apps/baseline/models.py:3556
 msgid "Birth Interval"
 msgstr "Intervalo de nacimiento"
 
-#: apps/baseline/models.py:1936
+#: apps/baseline/models.py:3556
 msgid "Number of months between Births"
 msgstr "Número de meses entre nacimientos"
 
-#: apps/baseline/models.py:1939
+#: apps/baseline/models.py:3559
 msgid "Wet Season Lactation Period"
 msgstr "Período de lactancia de la estación húmeda"
 
-#: apps/baseline/models.py:1939
+#: apps/baseline/models.py:3559
 msgid "Number of days of lactation during the wet season"
 msgstr "Número de días de lactancia durante la estación húmeda"
 
-#: apps/baseline/models.py:1942
+#: apps/baseline/models.py:3562
 msgid "Wet Season Milk Production"
 msgstr "Producción de leche de estación húmeda"
 
-#: apps/baseline/models.py:1943
+#: apps/baseline/models.py:3563
 msgid "Number of litres produced each day during the wet season"
 msgstr "Número de litros producidos cada día durante la estación húmeda"
 
-#: apps/baseline/models.py:1946
+#: apps/baseline/models.py:3566
 msgid "Dry Season Lactation Period"
 msgstr "Período de lactancia de estación seca"
 
-#: apps/baseline/models.py:1946
+#: apps/baseline/models.py:3566
 msgid "Number of days of lactation during the dry season"
 msgstr "Número de días de lactancia durante la estación seca"
 
-#: apps/baseline/models.py:1949
+#: apps/baseline/models.py:3569
 msgid "Dry Season Milk Production"
 msgstr "Producción de leche de estación seca"
 
-#: apps/baseline/models.py:1950
+#: apps/baseline/models.py:3570
 msgid "Number of litres produced each day during the dry season"
 msgstr "Número de litros producidos cada día durante la estación seca"
 
-#: apps/baseline/models.py:1953
+#: apps/baseline/models.py:3573
 msgid "Age at Sale"
 msgstr "Edad en la venta"
 
-#: apps/baseline/models.py:1953
+#: apps/baseline/models.py:3573
 msgid "Age in months at which the animal is typically sold/exchanged"
 msgstr "Edad en meses en los que el animal se vende/intercambia típicamente"
 
-#: apps/baseline/models.py:1957
+#: apps/baseline/models.py:3575
 msgid "Additional Attributes"
 msgstr "Atributos adicionales"
 
-#: apps/baseline/models.py:1962
+#: apps/baseline/models.py:3580
 msgid ""
 "Livestock type for Community Livestock must have a CPC code code beginning "
 "L021 (Live animals)"
@@ -1121,87 +1579,89 @@ msgstr ""
 "Tipo de ganado para la comunidad El ganado debe tener un código CPC que "
 "comienza L021 (animales vivos)"
 
-#: apps/baseline/models.py:1978
+#. Shared msgid. Also in apps/common/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/models.py:3596
 msgid "Community Livestock"
-msgstr "Comunidades"
+msgstr "Ganado comunitario"
 
-#: apps/baseline/models.py:1979
+#: apps/baseline/models.py:3597
 msgid "Community livestock"
 msgstr "Comunidades"
 
-#: apps/baseline/models.py:2015
+#: apps/baseline/models.py:3634
 msgid "Low Price Start Day"
 msgstr "Día de inicio de bajo precio"
 
-#: apps/baseline/models.py:2018
+#: apps/baseline/models.py:3637
 msgid "Low Price End Day"
 msgstr "Día de fin de precio bajo"
 
-#: apps/baseline/models.py:2020
+#: apps/baseline/models.py:3639
 msgid "Low price"
 msgstr "Precio bajo"
 
-#: apps/baseline/models.py:2022
+#: apps/baseline/models.py:3641
 msgid "High Price Start Day"
 msgstr "Día de inicio de alto precio"
 
-#: apps/baseline/models.py:2025
+#: apps/baseline/models.py:3644
 msgid "High Price End Day"
 msgstr "Día de fin de precio alto"
 
-#: apps/baseline/models.py:2027
+#: apps/baseline/models.py:3646
 msgid "High price"
 msgstr "Precio alto"
 
-#: apps/baseline/models.py:2042
+#: apps/baseline/models.py:3661
 msgid "Market Price"
 msgstr "Precio de mercado"
 
-#: apps/baseline/models.py:2043
+#. Shared msgid. Also in apps/common/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/models.py:3662
 msgid "Market Prices"
 msgstr "Precios de mercado"
 
-#: apps/baseline/models.py:2059
+#: apps/baseline/models.py:3677
 msgid "Very Poor"
 msgstr "Muy pobre"
 
-#: apps/baseline/models.py:2060
+#: apps/baseline/models.py:3678
 msgid "Poor"
 msgstr "Pobre"
 
-#: apps/baseline/models.py:2061
+#: apps/baseline/models.py:3679
 msgid "Medium"
 msgstr "Medio"
 
-#: apps/baseline/models.py:2062
+#: apps/baseline/models.py:3680
 msgid "Good"
 msgstr "Bien"
 
-#: apps/baseline/models.py:2063
+#: apps/baseline/models.py:3681
 msgid "Very Good"
 msgstr "Muy bien"
 
-#: apps/baseline/models.py:2068
+#: apps/baseline/models.py:3686
 msgid "Performance Year Start Date"
 msgstr "Fecha de inicio del año de rendimiento"
 
-#: apps/baseline/models.py:2069
+#: apps/baseline/models.py:3687
 msgid "The first day of the month of the start month in the performance year"
 msgstr "El primer día del mes del mes de inicio en el año de rendimiento"
 
-#: apps/baseline/models.py:2072
+#: apps/baseline/models.py:3690
 msgid "Performance Year End Date"
 msgstr "Fecha de finalización del año de rendimiento"
 
-#: apps/baseline/models.py:2073
+#: apps/baseline/models.py:3691
 msgid "The last day of the month of the end month in the performance year"
 msgstr "El último día del mes del mes final en el año de rendimiento"
 
-#: apps/baseline/models.py:2081
+#: apps/baseline/models.py:3699
 msgid "Seasonal Performance"
 msgstr "Rendimiento estacional"
 
-#: apps/baseline/models.py:2082
+#: apps/baseline/models.py:3700
 msgid ""
 "Rating of the seasonal production performance from Very Poor (1) to Very "
 "Good (5)"
@@ -1209,109 +1669,174 @@ msgstr ""
 "Calificación del rendimiento de producción estacional de muy pobre (1) a muy "
 "bueno (5)"
 
-#: apps/baseline/models.py:2086 apps/baseline/models.py:2087
+#. Shared msgid. Also in apps/common/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/models.py:3704 apps/baseline/models.py:3705
 msgid "Seasonal Production Performance"
 msgstr "Rendimiento de producción estacional"
 
-#: apps/baseline/models.py:2101
+#: apps/baseline/models.py:3719
 msgid "Chronic"
 msgstr "Crónico"
 
-#: apps/baseline/models.py:2102
+#: apps/baseline/models.py:3720
 msgid "Periodic"
 msgstr "Periódico"
 
-#: apps/baseline/models.py:2106
+#: apps/baseline/models.py:3724
 msgid "Most Important"
 msgstr "Lo más importante"
 
-#: apps/baseline/models.py:2107
+#: apps/baseline/models.py:3725
 msgid "Important"
 msgstr "Importante"
 
-#: apps/baseline/models.py:2108
+#: apps/baseline/models.py:3726
 msgid "Less Important"
 msgstr "Menos importante"
 
-#: apps/baseline/models.py:2112
+#: apps/baseline/models.py:3730
 msgid "Chronic or Periodic"
 msgstr "Crónico o periódico"
 
-#: apps/baseline/models.py:2120
+#: apps/baseline/models.py:3738
 msgid "Ranking"
 msgstr "Clasificación"
 
-#: apps/baseline/models.py:2123
+#. Shared msgid. Also in apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/models.py:3741
 msgid "Hazard Category"
 msgstr "Categoría de peligro"
 
-#: apps/baseline/models.py:2128 apps/baseline/models.py:2169
+#: apps/baseline/models.py:3744 apps/baseline/models.py:3786
 msgid "Description of Event(s) and/or Response(s)"
 msgstr "Descripción de eventos y/o respuesta (s)"
 
-#: apps/baseline/models.py:2132
+#: apps/baseline/models.py:3748
 msgid "Hazard"
 msgstr "Peligro"
 
-#: apps/baseline/models.py:2133
+#. Shared msgid. Also in apps/common/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/models.py:3749
 msgid "Hazards"
 msgstr "Peligros"
 
-#: apps/baseline/models.py:2161
+#: apps/baseline/models.py:3778
 msgid "Event Year Start Date"
 msgstr "Fecha de inicio del año en el evento"
 
-#: apps/baseline/models.py:2162
+#: apps/baseline/models.py:3779
 msgid "The first day of the month of the start month in the event year"
 msgstr "El primer día del mes del mes de inicio en el año del evento"
 
-#: apps/baseline/models.py:2165
+#: apps/baseline/models.py:3782
 msgid "Event Year End Date"
 msgstr "Evento Fecha de finalización del año"
 
-#: apps/baseline/models.py:2166
+#: apps/baseline/models.py:3783
 msgid "The last day of the month of the end month in the event year"
 msgstr "El último día del mes del mes final en el año del evento"
 
-#: apps/baseline/models.py:2173
+#: apps/baseline/models.py:3790
 msgid "Event"
 msgstr "Evento"
 
-#: apps/baseline/models.py:2174
+#. Shared msgid. Also in apps/common/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/models.py:3791
 msgid "Events"
 msgstr "Eventos"
 
-#: apps/baseline/models.py:2205
+#: apps/baseline/models.py:3835
 msgid "Remark"
 msgstr "Observación"
 
-#: apps/baseline/models.py:2208 apps/baseline/models.py:2209
+#: apps/baseline/models.py:3838 apps/baseline/models.py:3839
 msgid "Expandability Factor"
 msgstr "Factor de expansión"
 
-#: apps/baseline/models.py:2238
+#: apps/baseline/models.py:3868
 msgid "Reduce"
 msgstr "Reducir"
 
-#: apps/baseline/models.py:2239
+#: apps/baseline/models.py:3869
 msgid "Increase"
 msgstr "Aumentar"
 
-#: apps/baseline/models.py:2247
+#. Shared msgid. Also in locale/es/LC_MESSAGES/djangojs.po; keep translations synchronized across files.
+#: apps/baseline/models.py:3877
 msgid "Strategy"
 msgstr "Estrategia"
 
-#: apps/baseline/models.py:2249
+#: apps/baseline/models.py:3879
 msgid "Reduce or increase by"
 msgstr "Reducir o aumentar por"
 
-#: apps/baseline/models.py:2253
+#: apps/baseline/models.py:3883
 msgid "Coping Strategy"
 msgstr "Estrategia de afrontamiento"
 
-#: apps/baseline/models.py:2254
+#. Shared msgid. Also in apps/common/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/models.py:3884
 msgid "Coping Strategies"
 msgstr "Estrategias de afrontamiento"
+
+#. Shared msgid. Also in apps/common/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/templates/admin/baseline/change_list.html:7
+msgid "Filter"
+msgstr "Filtro"
+
+#. Shared msgid. Also in apps/common/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/templates/admin/baseline/change_list.html:9
+msgid "Start typing to narrow filter..."
+msgstr "Empiece a escribir para acotar el filtro..."
+
+#. Shared msgid. Also in apps/common/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/templates/admin/baseline/change_list.html:12
+msgid "Hide counts"
+msgstr "Ocultar conteos"
+
+#. Shared msgid. Also in apps/common/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/templates/admin/baseline/change_list.html:13
+msgid "Show counts"
+msgstr "Mostrar conteos"
+
+#. Shared msgid. Also in apps/common/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: apps/baseline/templates/admin/baseline/change_list.html:16
+msgid "Clear all filters"
+msgstr "Borrar todos los filtros"
+
+#: apps/baseline/templates/admin/baseline/wealthgroup/change_form.html:33
+#, fuzzy
+#| msgid "Livelihood Product Categories"
+msgid "No Livelihood Product Categories."
+msgstr "Categorías de productos de medios de vida"
+
+#~ msgid "Livelihood Zone Type"
+#~ msgstr "Tipo de zona de medios de vida"
+
+#~ msgid "Other Staple"
+#~ msgstr "Otro elemento básico"
+
+#~ msgid ""
+#~ "Quantity consumed for a Livelihood Activity must be quantity produced - "
+#~ "quantity sold - quantity used for other things"
+#~ msgstr ""
+#~ "Cantidad consumida para una actividad de medios de vida debe producirse "
+#~ "la cantidad - Cantidad vendida - Cantidad utilizada para otras cosas"
+
+#, python-brace-format
+#~ msgid ""
+#~ "Incorrect Livelihood Activity strategy type. Found {self.strategy_type}. "
+#~ "Expected {self._meta.object_name}."
+#~ msgstr ""
+#~ "Tipo de estrategia de actividad de medios de vida incorrecto. Encontrado "
+#~ "{self.strategy_type}. Esperado {self._meta.object_name}."
+
+#~ msgid ""
+#~ "Quantity produced for Other Cash Income must be payment per time * number "
+#~ "of people * labor per month * months per year"
+#~ msgstr ""
+#~ "Cantidad producida para otros ingresos en efectivo debe ser el pago por "
+#~ "tiempo * Número de personas * Trabajo por mes * meses por año"
 
 #~ msgid "HEA Baseline Database Administration"
 #~ msgstr "Administración de la base de datos de referencia de HEA"

@@ -6,241 +6,65 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-03-21 07:17+0000\n"
+"POT-Creation-Date: 2026-09-02 15:43+0000\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 "
-"&& n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5;\n"
+"Plural-Forms: nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? "
+"1 : 2;\n"
 
-#: hea/settings/base.py:183
+#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po, apps/common/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: hea/settings/base.py:243
 msgid "English"
 msgstr "Inglés"
 
-#: hea/settings/base.py:184
+#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po, apps/common/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: hea/settings/base.py:244
 msgid "French"
 msgstr "Francés"
 
-#: hea/settings/base.py:185
+#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po, apps/common/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: hea/settings/base.py:245
 msgid "Spanish"
 msgstr "Español"
 
-#: hea/settings/base.py:186
+#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po, apps/common/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: hea/settings/base.py:246
 msgid "Portuguese"
 msgstr "Portugués"
 
-#: hea/settings/base.py:187
+#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po, apps/common/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: hea/settings/base.py:247
 msgid "Arabic"
-msgstr "Arábica"
+msgstr "Árabe"
 
-#: templates/admin/app_list.html:4
-msgid ""
-"\n"
-"        A HEA baseline is a data collection conducted for a country during a "
-"specific reference year.\n"
-"        A typical baseline includes data collected from representative "
-"average households,\n"
-"        serving as a representation of a wealth group within a community in "
-"a given Livelihood zone.\n"
-"\n"
-"        The primary components of common baseline data include wealth "
-"characteristics, asset profiles,\n"
-"        household economy, and numerous other relevant metrics\n"
-"    "
-msgstr ""
-"\n"
-"Una línea de base de HEA es una recopilación de datos realizada para un país "
-"durante una línea de base de A Heal es una recopilación de datos realizada "
-"para un país durante un año de referencia específico. Una línea de base "
-"típica incluye datos recopilados de hogares promedio representativos, que "
-"sirve como una representación de Un grupo de patrimonio dentro de una "
-"comunidad en una zona de medios de vida dada."
+#: templates/admin/app_index.html:11 templates/admin/base.html:100
+msgid "Home"
+msgstr "Hogar"
 
-#: templates/admin/app_list.html:18 templates/admin/nav_sidebar.html:18
-msgid "BSS Setup"
-msgstr "Configuración de BSS"
+#: templates/admin/app_index.html:42 templates/admin/app_index.html:73
+#, python-format
+msgid "Add %(name)s"
+msgstr "Añadir %(name)s"
 
-#: templates/admin/app_list.html:25 templates/admin/nav_sidebar.html:24
-msgid "Source Organizations"
-msgstr "Organizaciones de origen"
+#: templates/admin/app_index.html:47 templates/admin/app_index.html:79
+#, python-format
+msgid "View %(name)s"
+msgstr "Ver %(name)s"
 
-#: templates/admin/app_list.html:34 templates/admin/nav_sidebar.html:29
-msgid "Livelihood Zones"
-msgstr "Zonas de medios de vida"
-
-#: templates/admin/app_list.html:43 templates/admin/nav_sidebar.html:34
-msgid "Livelihood Zone Baselines"
-msgstr "Líneas de base de la zona de medios de vida"
-
-#: templates/admin/app_list.html:52 templates/admin/nav_sidebar.html:39
-msgid "Communities"
-msgstr "Comunidades"
-
-#: templates/admin/app_list.html:64
-msgid "BSS WB,Data,.. Sheets"
-msgstr "BSS WB, Datos, .. Hojas"
-
-#: templates/admin/app_list.html:70 templates/admin/nav_sidebar.html:83
-msgid "Wealth Group Data"
-msgstr "Datos del grupo de patrimonio"
-
-#: templates/admin/app_list.html:81 templates/admin/nav_sidebar.html:50
-msgid "Wealth, Activity and Strategy Insights"
-msgstr "Información sobre riqueza, actividad y estrategia"
-
-#: templates/admin/app_list.html:87 templates/admin/nav_sidebar.html:56
-msgid "Wealth Group Characteristic Value"
-msgstr "Características del grupo de riqueza"
-
-#: templates/admin/app_list.html:98 templates/admin/nav_sidebar.html:66
-#: templates/admin/nav_sidebar.html:88
-msgid "Livelihood Strategy"
-msgstr "Estrategia de medios de vida"
-
-#: templates/admin/app_list.html:109 templates/admin/nav_sidebar.html:61
-msgid "Livelihood Activity"
-msgstr "Estrategia de medios de vida"
-
-#: templates/admin/app_list.html:119
-msgid "BSS Production Sheet"
-msgstr "Hoja de producción de BSS"
-
-#: templates/admin/app_list.html:126 templates/admin/nav_sidebar.html:106
-msgid "Crop Production"
-msgstr "Producciones de cultivos"
-
-#: templates/admin/app_list.html:136 templates/admin/nav_sidebar.html:111
-msgid "Livestock Production"
-msgstr "Producciones ganaderas"
-
-#: templates/admin/app_list.html:147 templates/admin/app_list.html:164
-#: templates/admin/nav_sidebar.html:122 templates/admin/nav_sidebar.html:133
-msgid "Market Prices"
-msgstr "Precios de mercado"
-
-#: templates/admin/app_list.html:154
-msgid "Market"
-msgstr "Mercado"
-
-#: templates/admin/app_list.html:175 templates/admin/nav_sidebar.html:145
-msgid "Seasonal Calendars"
-msgstr "Calendarios estacionales"
-
-#: templates/admin/app_list.html:182 templates/admin/nav_sidebar.html:151
-msgid "Seasonal Activity Type"
-msgstr "Tipo de actividad estacional"
-
-#: templates/admin/app_list.html:192 templates/admin/nav_sidebar.html:156
-msgid "Seasonal Activities"
-msgstr "Actividades estacionales"
-
-#: templates/admin/app_list.html:202 templates/admin/nav_sidebar.html:161
-msgid "Activity Occurrences"
-msgstr "Ocurrencias de actividad"
-
-#: templates/admin/app_list.html:213 templates/admin/nav_sidebar.html:172
-msgid "Hazards and Events"
-msgstr "Peligros y eventos"
-
-#: templates/admin/app_list.html:220 templates/admin/nav_sidebar.html:178
-msgid "Annual Production Performances"
-msgstr "Actuaciones de producción anuales"
-
-#: templates/admin/app_list.html:230 templates/admin/nav_sidebar.html:183
-msgid "Hazards"
-msgstr "Peligros"
-
-#: templates/admin/app_list.html:240 templates/admin/nav_sidebar.html:188
-msgid "Events"
-msgstr "Eventos"
-
-#: templates/admin/app_list.html:252 templates/admin/nav_sidebar.html:201
-msgid "Expandability and Coping"
-msgstr "Expandido y afrontamiento"
-
-#: templates/admin/app_list.html:259 templates/admin/nav_sidebar.html:207
-msgid "Expandability Factors"
-msgstr "Factores de expansión"
-
-#: templates/admin/app_list.html:269 templates/admin/nav_sidebar.html:212
-msgid "Coping Strategies"
-msgstr "Estrategias de afrontamiento"
-
-#: templates/admin/app_list.html:281 templates/admin/nav_sidebar.html:225
-msgid "Common"
-msgstr "Común"
-
-#: templates/admin/app_list.html:286 templates/admin/nav_sidebar.html:230
-msgid "Countries"
-msgstr "Países"
-
-#: templates/admin/app_list.html:293 templates/admin/nav_sidebar.html:233
-msgid "Currencies"
-msgstr "Monedas"
-
-#: templates/admin/app_list.html:300 templates/admin/nav_sidebar.html:236
-msgid "Products"
-msgstr "Productos"
-
-#: templates/admin/app_list.html:307 templates/admin/nav_sidebar.html:239
-msgid "Units of Measure"
-msgstr "Unidades de medida"
-
-#: templates/admin/app_list.html:316 templates/admin/nav_sidebar.html:251
-msgid "Metadata"
-msgstr "Metadatos"
-
-#: templates/admin/app_list.html:321 templates/admin/nav_sidebar.html:256
-msgid "Hazard Categories"
-msgstr "Categorías de peligro"
-
-#: templates/admin/app_list.html:328 templates/admin/nav_sidebar.html:259
-msgid "Livelihood Categories"
-msgstr "Categorías de medios de vida"
-
-#: templates/admin/app_list.html:335 templates/admin/nav_sidebar.html:262
-msgid "Seasons"
-msgstr "Estaciones"
-
-#: templates/admin/app_list.html:342 templates/admin/nav_sidebar.html:265
-msgid "Wealth Categories"
-msgstr "Categorías de riqueza"
-
-#: templates/admin/app_list.html:350 templates/admin/nav_sidebar.html:268
-msgid "Wealth Group Characteristics"
-msgstr "Características del grupo de riqueza"
-
-#: templates/admin/app_list.html:360 templates/admin/nav_sidebar.html:281
-msgid "User management"
-msgstr "Gestión de usuarios"
-
-#: templates/admin/app_list.html:365 templates/admin/nav_sidebar.html:286
-msgid "Users"
-msgstr "Usuarios"
-
-#: templates/admin/app_list.html:372 templates/admin/nav_sidebar.html:288
-msgid "Groups"
-msgstr "Grupos"
-
-#: templates/admin/app_list.html:379
-msgid "You don’t have permission to view or edit anything."
+#: templates/admin/app_index.html:95
+#, fuzzy
+#| msgid "You don’t have permission to view or edit anything."
+msgid "You don't have permission to view or edit anything."
 msgstr "No tiene permiso para ver ni editar nada."
 
-#: templates/admin/base.html:39
-msgid "Skip to main content"
-msgstr "Saltar al contenido principal"
+#: templates/admin/base.html:53
+msgid "HEA Baseline Database Administration"
+msgstr "Administración de la base de datos de líneas de base HEA"
 
-#: templates/admin/base.html:55
+#: templates/admin/base.html:62 templates/rest_framework/api.html:51
 msgid "Welcome,"
 msgstr "Bienvenido,"
-
-#: templates/admin/base.html:60
-msgid "View site"
-msgstr "Ver sitio"
-
-#: templates/admin/base.html:65
-msgid "Documentation"
-msgstr "Documentación"
 
 #: templates/admin/base.html:69
 msgid "Change password"
@@ -254,50 +78,305 @@ msgstr "Cerrar sesión"
 msgid "Breadcrumbs"
 msgstr "Migas de pan"
 
-#: templates/admin/base.html:100 templates/admin/nav_sidebar.html:10
-msgid "Home"
-msgstr "Hogar"
-
-#: templates/admin/base_site.html:3
+#: templates/admin/base_site.html:4
 msgid "Django site admin"
 msgstr "Administrador del sitio de Django"
 
-#: templates/admin/base_site.html:8
+#: templates/admin/base_site.html:13
 msgid "Django administration"
 msgstr "Administración de Django"
 
-#: templates/admin/index.html:23
-msgid "Recent actions"
+#: templates/admin/index.html:19
+#, fuzzy
+#| msgid ""
+#| "\n"
+#| "        A HEA baseline is a data collection conducted for a country "
+#| "during a specific reference year.\n"
+#| "        A typical baseline includes data collected from representative "
+#| "average households,\n"
+#| "        serving as a representation of a wealth group within a community "
+#| "in a given Livelihood zone.\n"
+#| "\n"
+#| "        The primary components of common baseline data include wealth "
+#| "characteristics, asset profiles,\n"
+#| "        household economy, and numerous other relevant metrics\n"
+#| "    "
+msgid ""
+"\n"
+"            A HEA baseline is a data collection conducted for a country "
+"during a specific reference year.\n"
+"            A typical baseline includes data collected from representative "
+"average households,\n"
+"            serving as a representation of a wealth group within a community "
+"in a given Livelihood Zone.\n"
+"        "
+msgstr ""
+"\n"
+"Una línea de base de HEA es una recopilación de datos realizada para un país "
+"durante una línea de base de A Heal es una recopilación de datos realizada "
+"para un país durante un año de referencia específico. Una línea de base "
+"típica incluye datos recopilados de hogares promedio representativos, que "
+"sirve como una representación de Un grupo de patrimonio dentro de una "
+"comunidad en una zona de medios de vida dada."
+
+#. Shared msgid. Also in locale/es/LC_MESSAGES/djangojs.po; keep translations synchronized across files.
+#: templates/admin/index.html:32
+msgid "Baselines"
+msgstr "Líneas de base"
+
+#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: templates/admin/index.html:36
+#, fuzzy
+#| msgid "Wealth Group Characteristic Value"
+msgid "Wealth Characteristic Values"
+msgstr "Valores característicos de riqueza"
+
+#: templates/admin/index.html:40
+#, fuzzy
+#| msgid "Communities"
+msgid "Community Activities"
+msgstr "Comunidades"
+
+#: templates/admin/index.html:44
+#, fuzzy
+#| msgid "Seasonal Activities"
+msgid "Baseline Activities"
+msgstr "Actividades estacionales"
+
+#: templates/admin/index.html:86
+msgid "Open"
+msgstr "Abrir"
+
+#: templates/admin/index.html:91
+msgid "Documentation"
+msgstr "Documentación"
+
+#: templates/admin/index.html:95
+#, fuzzy
+#| msgid "Livelihood Zones"
+msgid "Livelihood Explorer"
+msgstr "Zonas de medios de vida"
+
+#: templates/admin/index.html:106
+#, fuzzy
+#| msgid "Recent actions"
+msgid "My Recent Actions"
 msgstr "Acciones recientes"
 
-#: templates/admin/index.html:24
-msgid "My actions"
-msgstr "Mis acciones"
-
-#: templates/admin/index.html:28
+#: templates/admin/index.html:110
 msgid "None available"
 msgstr "Ninguno disponible"
 
-#: templates/admin/index.html:42
+#: templates/admin/index.html:131
 msgid "Unknown content"
 msgstr "Contenido desconocido"
 
-#: templates/admin/nav_sidebar.html:3
+#: templates/admin/nav_sidebar.html:2
 msgid "Sidebar"
 msgstr "Barra lateral"
 
-#: templates/admin/nav_sidebar.html:77
-msgid "BSS WB, Data,.. Sheets"
-msgstr "BSS WB, Datos, .. Hojas"
+#: templates/admin/nav_sidebar.html:8
+#, fuzzy
+#| msgid "Toggle navigation"
+msgid "Navigation"
+msgstr "Navegación de palanca"
 
-#: templates/admin/nav_sidebar.html:100
-msgid "BSS Production Data"
-msgstr "Datos de producción de BSS"
+#: templates/admin/nav_sidebar.html:18
+msgid "Search…"
+msgstr "Buscar…"
 
-#: templates/admin/nav_sidebar.html:128
-msgid "Markets"
-msgstr "Mercados"
+#: templates/admin/nav_sidebar.html:19
+msgid "Filter sidebar menu"
+msgstr "Filtrar menú de la barra lateral"
 
-#: templates/admin/nav_sidebar.html:299
+#: templates/admin/nav_sidebar.html:60
+#| msgid "None available"
+msgid "No sections available"
+msgstr "Ninguno disponible"
+
+#: templates/admin/nav_sidebar.html:68
 msgid "Toggle navigation"
 msgstr "Navegación de palanca"
+
+#: templates/admin/search_form.html:5
+msgid "SEARCH:  "
+msgstr "BUSCAR:  "
+
+#: templates/admin/search_form.html:11
+#, python-format
+msgid "%(counter)s result"
+msgid_plural "%(counter)s results"
+msgstr[0] "%(counter)s resultado"
+msgstr[1] "%(counter)s resultados"
+msgstr[2] "%(counter)s resultados"
+
+#: templates/admin/search_form.html:11
+#, python-format
+msgid "%(full_result_count)s total"
+msgstr "%(full_result_count)s en total"
+
+#: templates/admin/search_form.html:11
+msgid "Show all"
+msgstr "Mostrar todo"
+
+#: templates/rest_framework/api.html:33
+msgid "navbar"
+msgstr "barra de navegación"
+
+#: templates/rest_framework/api.html:91
+#, fuzzy
+#| msgid "Unknown content"
+msgid "content"
+msgstr "Contenido desconocido"
+
+#: templates/rest_framework/api.html:94
+msgid "request form"
+msgstr "formulario de solicitud"
+
+#: templates/rest_framework/api.html:174
+#, fuzzy
+#| msgid "My actions"
+msgid "Extra Actions"
+msgstr "Mis acciones"
+
+#. Shared msgid. Also in locale/es/LC_MESSAGES/djangojs.po; keep translations synchronized across files.
+#: templates/rest_framework/api.html:189
+msgid "Filters"
+msgstr "Filtros"
+
+#: templates/rest_framework/api.html:197
+#, fuzzy
+#| msgid "Skip to main content"
+msgid "main content"
+msgstr "Saltar al contenido principal"
+
+#: templates/rest_framework/api.html:212
+msgid "request info"
+msgstr "información de la solicitud"
+
+#: templates/rest_framework/api.html:215
+msgid "response info"
+msgstr "información de la respuesta"
+
+#~ msgid "BSS Setup"
+#~ msgstr "Configuración de BSS"
+
+#~ msgid "Source Organizations"
+#~ msgstr "Organizaciones de origen"
+
+#~ msgid "Livelihood Zone Baselines"
+#~ msgstr "Líneas de base de la zona de medios de vida"
+
+#~ msgid "BSS WB,Data,.. Sheets"
+#~ msgstr "BSS WB, Datos, .. Hojas"
+
+#~ msgid "Wealth Group Data"
+#~ msgstr "Datos del grupo de patrimonio"
+
+#~ msgid "Wealth, Activity and Strategy Insights"
+#~ msgstr "Información sobre riqueza, actividad y estrategia"
+
+#~ msgid "Livelihood Strategy"
+#~ msgstr "Estrategia de medios de vida"
+
+#~ msgid "Livelihood Activity"
+#~ msgstr "Estrategia de medios de vida"
+
+#~ msgid "BSS Production Sheet"
+#~ msgstr "Hoja de producción de BSS"
+
+#~ msgid "Crop Production"
+#~ msgstr "Producciones de cultivos"
+
+#~ msgid "Livestock Production"
+#~ msgstr "Producciones ganaderas"
+
+#~ msgid "Market Prices"
+#~ msgstr "Precios de mercado"
+
+#~ msgid "Market"
+#~ msgstr "Mercado"
+
+#~ msgid "Seasonal Calendars"
+#~ msgstr "Calendarios estacionales"
+
+#~ msgid "Seasonal Activity Type"
+#~ msgstr "Tipo de actividad estacional"
+
+#~ msgid "Activity Occurrences"
+#~ msgstr "Ocurrencias de actividad"
+
+#~ msgid "Hazards and Events"
+#~ msgstr "Peligros y eventos"
+
+#~ msgid "Annual Production Performances"
+#~ msgstr "Actuaciones de producción anuales"
+
+#~ msgid "Hazards"
+#~ msgstr "Peligros"
+
+#~ msgid "Events"
+#~ msgstr "Eventos"
+
+#~ msgid "Expandability and Coping"
+#~ msgstr "Expandido y afrontamiento"
+
+#~ msgid "Expandability Factors"
+#~ msgstr "Factores de expansión"
+
+#~ msgid "Coping Strategies"
+#~ msgstr "Estrategias de afrontamiento"
+
+#~ msgid "Common"
+#~ msgstr "Común"
+
+#~ msgid "Countries"
+#~ msgstr "Países"
+
+#~ msgid "Currencies"
+#~ msgstr "Monedas"
+
+#~ msgid "Products"
+#~ msgstr "Productos"
+
+#~ msgid "Units of Measure"
+#~ msgstr "Unidades de medida"
+
+#~ msgid "Metadata"
+#~ msgstr "Metadatos"
+
+#~ msgid "Hazard Categories"
+#~ msgstr "Categorías de peligro"
+
+#~ msgid "Livelihood Categories"
+#~ msgstr "Categorías de medios de vida"
+
+#~ msgid "Seasons"
+#~ msgstr "Estaciones"
+
+#~ msgid "Wealth Categories"
+#~ msgstr "Categorías de riqueza"
+
+#~ msgid "Wealth Group Characteristics"
+#~ msgstr "Características del grupo de riqueza"
+
+#~ msgid "User management"
+#~ msgstr "Gestión de usuarios"
+
+#~ msgid "Users"
+#~ msgstr "Usuarios"
+
+#~ msgid "Groups"
+#~ msgstr "Grupos"
+
+#~ msgid "View site"
+#~ msgstr "Ver sitio"
+
+#~ msgid "BSS WB, Data,.. Sheets"
+#~ msgstr "BSS WB, Datos, .. Hojas"
+
+#~ msgid "BSS Production Data"
+#~ msgstr "Datos de producción de BSS"
+
+#~ msgid "Markets"
+#~ msgstr "Mercados"

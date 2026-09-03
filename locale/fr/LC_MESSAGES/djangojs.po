@@ -1,0 +1,922 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-02 21:56+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+#: tmp_frontend_source/src/App.tsx:15
+msgid "About the Livelihoods Explorer"
+msgstr "À propos du Livelihoods Explorer"
+
+#: tmp_frontend_source/src/App.tsx:16
+msgid ""
+"This page will hold the Livelihoods Explorer help and documentation content."
+msgstr "Cette page contiendra le contenu d’aide et de documentation du Livelihoods Explorer."
+
+#: tmp_frontend_source/src/Views/Layouts/BrowseViews/BrowseViews.jsx:62
+msgid "Browse views"
+msgstr "Parcourir les vues"
+
+#: tmp_frontend_source/src/Views/Layouts/BrowseViews/BrowseViews.jsx:66
+msgid "+ Create new view"
+msgstr "+ Créer une nouvelle vue"
+
+#: tmp_frontend_source/src/Views/Layouts/BrowseViews/BrowseViews.jsx:73
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:514
+#: tmp_frontend_source/src/Views/Layouts/Header/Header.tsx:41
+#: tmp_frontend_source/src/Views/Layouts/SelectedView/SelectedView.tsx:29
+msgid "Search"
+msgstr "Rechercher"
+
+#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:32
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/WealthGroup/WealthGroup.jsx:39
+msgid "Very Poor (VP)"
+msgstr "Très pauvre (VP)"
+
+#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:33
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/WealthGroup/WealthGroup.jsx:40
+msgid "Poor (P)"
+msgstr "Pauvre (P)"
+
+#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:34
+msgid "Medium (M)"
+msgstr "Moyen (M)"
+
+#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:35
+msgid "Better Off (BO)"
+msgstr "Mieux nanti (BO)"
+
+#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1291
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/WealthGroup/WealthGroup.jsx:20
+msgid "Wealth group"
+msgstr "Groupe de richesse"
+
+#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1300
+msgid "Click to learn more about comparing Baselines (opens in new tab)"
+msgstr "Cliquez pour en savoir plus sur la comparaison des Baselines (s’ouvre dans un nouvel onglet)"
+
+#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1306
+msgid "Learn more about comparing Baselines"
+msgstr "En savoir plus sur la comparaison des Baselines"
+
+#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1309
+#: tmp_frontend_source/src/Views/Layouts/Header/Header.tsx:58
+#: tmp_frontend_source/src/Views/Layouts/Header/Header.tsx:60
+msgid "Help"
+msgstr "Aide"
+
+#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1316
+msgid "No baselines selected. Use Search to add baselines to compare."
+msgstr "Aucune Baseline sélectionnée. Utilisez Rechercher pour ajouter des Baselines à comparer."
+
+#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1332
+msgid "View on map"
+msgstr "Voir sur la carte"
+
+#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1343
+#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1396
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:109
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:130
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:670
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1182
+msgid "Population"
+msgstr "Population"
+
+#. Shared msgid. Also in apps/baseline/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1348
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:128
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:676
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1188
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1196
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:147
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:148
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:644
+msgid "Primary Livelihood System"
+msgstr "Stratégie de subsistance"
+
+#. Shared msgid. Also in apps/baseline/locale/fr/LC_MESSAGES/django.po, apps/common/locale/fr/LC_MESSAGES/django.po, apps/metadata/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1353
+msgid "Currency"
+msgstr "Devise"
+
+#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1360
+#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1365
+msgid "Remove baseline from compare view"
+msgstr "Retirer la Baseline de la vue de comparaison"
+
+#. Shared msgid. Also in apps/baseline/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1382
+msgid "Wealth Group"
+msgstr "Groupe de richesse"
+
+#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1402
+msgid "Percentage of total population"
+msgstr "Pourcentage de la population totale"
+
+#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1408
+msgid "Household size"
+msgstr "Taille du ménage"
+
+#. Shared msgid. Also in apps/baseline/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1414
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1259
+msgid "Percentage of households"
+msgstr "Pourcentage de ménages"
+
+#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1420
+msgid "Household annual kcals cost"
+msgstr "Coût annuel en kcals du ménage"
+
+#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1426
+msgid "Survival threshold (% kcals)"
+msgstr "Seuil de survie (% kcals)"
+
+#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1433
+msgid "Livelihoods protection threshold (% kcals)"
+msgstr "Seuil de protection des moyens d’existence (% kcals)"
+
+#. Shared msgid. Also in apps/baseline/locale/fr/LC_MESSAGES/django.po, apps/common/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1446
+msgid "Livelihood Activities"
+msgstr "Activités de subsistance"
+
+#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1462
+msgid "Food consumption"
+msgstr "Consommation alimentaire"
+
+#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1480
+msgid "No food data"
+msgstr "Aucune donnée alimentaire"
+
+#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1491
+msgid "Cash income"
+msgstr "Revenus monétaires"
+
+#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1508
+msgid "No cash income data"
+msgstr "Aucune donnée sur les revenus monétaires"
+
+#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1520
+msgid "Cash expenditures"
+msgstr "Dépenses monétaires"
+
+#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1537
+msgid "No expenditure data"
+msgstr "Aucune donnée sur les dépenses"
+
+#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1551
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1374
+msgid "Characteristics"
+msgstr "Caractéristiques"
+
+#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1561
+msgid "Loading…"
+msgstr "Chargement…"
+
+#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1609
+msgid "No characteristics data"
+msgstr "Aucune donnée sur les caractéristiques"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/ExportMapModal/ExportMapModal.jsx:12
+msgid "Global"
+msgstr "Global"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/ExportMapModal/ExportMapModal.jsx:13
+msgid "None"
+msgstr "Aucun"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/ExportMapModal/ExportMapModal.jsx:68
+msgid "Download .png image"
+msgstr "Télécharger l’image .png"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/ExportMapModal/ExportMapModal.jsx:92
+msgid "Map export preview"
+msgstr "Aperçu de l’exportation de la carte"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/ExportMapModal/ExportMapModal.jsx:103
+msgid "Livelihood Zone code labels"
+msgstr "Étiquettes des codes de Zone de moyens d’existence"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/ExportMapModal/ExportMapModal.jsx:117
+msgid "Title"
+msgstr "Titre"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/ExportMapModal/ExportMapModal.jsx:120
+msgid "Percentage of food consumption from own crops for very poor households"
+msgstr "Pourcentage de la consommation alimentaire provenant des cultures propres pour les ménages très pauvres"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/ExportMapModal/ExportMapModal.jsx:131
+msgid "Subtitle (optional)"
+msgstr "Sous-titre (facultatif)"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/ExportMapModal/ExportMapModal.jsx:135
+msgid "Latest Reference Year"
+msgstr "Dernière année de référence"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/ExportMapModal/ExportMapModal.jsx:140
+msgid "Disclaimer (optional)"
+msgstr "Avertissement (facultatif)"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/ExportMapModal/ExportMapModal.jsx:144
+msgid "Some disclaimer"
+msgstr "Un avertissement"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/BasicFilter/BasicFilter.jsx:34
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:110
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:145
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:665
+msgid "Filter baselines by population for one or all wealth groups"
+msgstr "Filtrer les Baselines par population pour un ou tous les groupes de richesse"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/BasicFilter/BasicFilter.jsx:82
+msgid "Select a location"
+msgstr "Sélectionnez un emplacement"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/BasicFilter/BasicFilter.jsx:111
+msgid "Select"
+msgstr "Sélectionner"
+
+#. Shared msgid. Also in apps/baseline/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:94
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:126
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:875
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:879
+msgid "Strategy"
+msgstr "Stratégie"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:95
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:141
+msgid "Filter baselines by a strategy’s contribution to livelihoods"
+msgstr "Filtrer les Baselines selon la contribution d’une stratégie aux moyens d’existence"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:103
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:143
+msgid "Filter baselines by Primary Livelihood System"
+msgstr "Filtrer les Baselines par Système principal de moyens d’existence"
+
+#. Shared msgid. Also in apps/common/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:116
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:132
+msgid "Location"
+msgstr "Emplacement"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:117
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:147
+msgid "Filter baselines by country"
+msgstr "Filtrer les Baselines par pays"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:605
+msgid "Custom Filter Overlay"
+msgstr "Superposition de filtre personnalisé"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:606
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:666
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:650
+msgid "Custom filter overlay"
+msgstr "Superposition de filtre personnalisé"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:654
+msgid "any amount"
+msgstr "n’importe quel montant"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:657
+msgid "at least"
+msgstr "au moins"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:658
+msgid "up to"
+msgstr "jusqu’à"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:661
+msgid "total income"
+msgstr "revenu total"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:662
+msgid "contributes"
+msgstr "contribue"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:662
+msgid "to"
+msgstr "à"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:675
+msgid "Click to learn more about filter options (opens in new tab)"
+msgstr "Cliquez pour en savoir plus sur les options de filtre (s’ouvre dans un nouvel onglet)"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:683
+msgid "Learn more about filter options"
+msgstr "En savoir plus sur les options de filtre"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:695
+msgid "Edit filter"
+msgstr "Modifier le filtre"
+
+#. Shared msgid. Also in locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:695
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:705
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:531
+msgid "Filters"
+msgstr "Filtres"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:708
+msgid "Add Filter"
+msgstr "Ajouter un filtre"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:747
+msgid "Already added. Edit or delete it from the main filter list."
+msgstr "Déjà ajouté. Modifiez-le ou supprimez-le de la liste principale des filtres."
+
+#. Shared msgid. Also in apps/metadata/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:95
+msgid "Milk Production"
+msgstr "Production de lait"
+
+#. Shared msgid. Also in apps/baseline/locale/fr/LC_MESSAGES/django.po, apps/metadata/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:96
+msgid "Butter Production"
+msgstr "Production de beurre"
+
+#. Shared msgid. Also in apps/metadata/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:97
+msgid "Meat Production"
+msgstr "Production de viande"
+
+#. Shared msgid. Also in apps/metadata/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:98
+msgid "Livestock Sale"
+msgstr "Vente de bétail"
+
+#. Shared msgid. Also in apps/common/locale/fr/LC_MESSAGES/django.po, apps/metadata/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:99
+msgid "Crop Production"
+msgstr "Production de cultures"
+
+#. Shared msgid. Also in apps/metadata/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:100
+msgid "Food Purchase"
+msgstr "Achat de nourriture"
+
+#. Shared msgid. Also in apps/metadata/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:101
+msgid "Payment in Kind"
+msgstr "Paiement en nature"
+
+#. Shared msgid. Also in apps/metadata/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:102
+msgid "Relief, Gift or Other Food"
+msgstr "Aide, cadeau ou autre nourriture "
+
+#. Shared msgid. Also in apps/metadata/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:103
+msgid "Hunting"
+msgstr "Chasse"
+
+#. Shared msgid. Also in apps/metadata/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:104
+msgid "Fishing"
+msgstr "Pêche"
+
+#. Shared msgid. Also in apps/metadata/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:105
+msgid "Wild Food Gathering"
+msgstr "Cueillette des aliments sauvages"
+
+#. Shared msgid. Also in apps/metadata/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:106
+msgid "Other Cash Income"
+msgstr "Autre revenu en espèces"
+
+#. Shared msgid. Also in apps/metadata/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:107
+msgid "Other Purchase"
+msgstr "Autre achat"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:172
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:179
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:622
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:645
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/WealthGroup/WealthGroup.jsx:38
+msgid "All"
+msgstr "Tous"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:577
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:579
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:682
+msgid "Any"
+msgstr "N’importe lequel"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:591
+msgid "Livelihood strategy filter"
+msgstr "Filtre de stratégie de moyens d’existence"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:600
+msgid "Save"
+msgstr "Enregistrer"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:605
+msgid "Strategy type"
+msgstr "Type de stratégie"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:627
+msgid "Of products"
+msgstr "De produits"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:650
+msgid "Contributes to"
+msgstr "Contribue à"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:669
+msgid "No contribution indicators with data for this selection."
+msgstr "Aucun indicateur de contribution avec des données pour cette sélection."
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:673
+msgid "Contribution amount"
+msgstr "Montant de la contribution"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:688
+msgid "Custom range"
+msgstr "Plage personnalisée"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:694
+msgid "Min contribution (%)"
+msgstr "Contribution minimale (%)"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:705
+msgid "Max contribution (%)"
+msgstr "Contribution maximale (%)"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:516
+msgid "Search by product or baseline"
+msgstr "Rechercher par produit ou Baseline"
+
+#. Shared msgid. Also in locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:554
+msgid "Baselines"
+msgstr "Profils de référence"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:572
+msgid "Livelihood zone"
+msgstr "Zone de moyens d’existence"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:585
+msgid "Removed from Compare view"
+msgstr "Retiré de la vue Comparaison"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:587
+msgid "Remove baseline from Compare view"
+msgstr "Retirer la Baseline de la vue Comparaison"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:589
+msgid "Added to Compare view"
+msgstr "Ajouté à la vue Comparaison"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:590
+msgid "Add baseline to Compare view"
+msgstr "Ajouter la Baseline à la vue Comparaison"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:613
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1165
+msgid "Select baseline"
+msgstr "Sélectionner une Baseline"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:690
+msgid "Population by wealth group"
+msgstr "Population par groupe de richesse"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:744
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1347
+msgid "Livelihood Protection Threshold"
+msgstr "Seuil de protection des moyens d’existence"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/AllBaselines/AllBaselines.jsx:9
+msgid "Baseline name"
+msgstr "Nom de la Baseline"
+
+#. Shared msgid. Also in apps/metadata/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/AllBaselines/AllBaselines.jsx:18
+msgid "Baseline"
+msgstr "profil de référence"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/AllBaselines/AllBaselines.jsx:23
+msgid "Organization"
+msgstr "Organisation"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/AllBaselines/AllBaselines.jsx:28
+msgid "File download"
+msgstr "Téléchargement du fichier"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/AllBaselines/AllBaselines.jsx:31
+msgid "Download .xlsx"
+msgstr "Télécharger .xlsx"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/AllBaselines/AllBaselines.jsx:31
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Calendar/Calendar.jsx:532
+msgid "N/A"
+msgstr "N/D"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/AllBaselines/AllBaselines.jsx:37
+msgid "baselines available"
+msgstr "Baselines disponibles"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Calendar/Calendar.jsx:527
+msgid "Current month"
+msgstr "Mois en cours"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Calendar/Calendar.jsx:531
+msgid "Reference year start month"
+msgstr "Mois de début de l’année de référence"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Calendar/Calendar.jsx:537
+msgid "Crop Activities"
+msgstr "Activités agricoles"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Calendar/Calendar.jsx:537
+msgid "Livestock Activities"
+msgstr "Activités d’élevage"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Calendar/Calendar.jsx:718
+msgid "Loading calendar data…"
+msgstr "Chargement des données du calendrier…"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Calendar/Calendar.jsx:720
+msgid "No calendar data for this baseline."
+msgstr "Aucune donnée de calendrier pour cette Baseline."
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/KeyParameters/KeyParameters.jsx:19
+msgid "Unspecified activity"
+msgstr "Activité non spécifiée"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/KeyParameters/KeyParameters.jsx:240
+msgid "Quantity"
+msgstr "Quantité"
+
+#. Shared msgid. Also in apps/baseline/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/KeyParameters/KeyParameters.jsx:241
+msgid "Price"
+msgstr "Prix"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/KeyParameters/KeyParameters.jsx:277
+msgid "No key parameters were returned for this baseline."
+msgstr "Aucun paramètre clé n’a été renvoyé pour cette Baseline."
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:68
+msgid "(Latest)"
+msgstr "(Plus récent)"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:146
+msgid "Food + Cash"
+msgstr "Alimentation + Argent"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:147
+msgid "Food"
+msgstr "Alimentation"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:148
+msgid "Cash"
+msgstr "Argent"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:149
+msgid "Expenditures"
+msgstr "Dépenses"
+
+#. Shared msgid. Also in apps/baseline/locale/fr/LC_MESSAGES/django.po, apps/common/locale/fr/LC_MESSAGES/django.po, apps/metadata/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:854
+msgid "Product"
+msgstr "Produit"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:854
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:877
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:883
+msgid "Total"
+msgstr "Total"
+
+#. Shared msgid. Also in apps/common/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:871
+msgid "Item"
+msgstr "Article"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1020
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1024
+msgid "No description available"
+msgstr "Aucune description disponible"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1054
+msgid "Collapse"
+msgstr "Réduire"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1054
+msgid "Expand"
+msgstr "Développer"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1062
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1091
+msgid "Detail View"
+msgstr "Vue détaillée"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1064
+msgid "Click to learn more about the Detail View (opens in new tab)"
+msgstr "Cliquez pour en savoir plus sur la Vue détaillée (s’ouvre dans un nouvel onglet)"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1073
+msgid "Learn more about the Detail View (opens in new tab)"
+msgstr "En savoir plus sur la Vue détaillée (s’ouvre dans un nouvel onglet)"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1097
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:701
+msgid "Close"
+msgstr "Fermer"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1102
+msgid "Close Detail View"
+msgstr "Fermer la vue détaillée"
+
+#. Shared msgid. Also in apps/baseline/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1157
+msgid "baseline"
+msgstr "Profil de Référence"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1157
+msgid "baselines"
+msgstr "Baselines"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1158
+msgid "No baselines"
+msgstr "Aucune Baseline"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1214
+msgid "Less"
+msgstr "Moins"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1214
+msgid "More"
+msgstr "Plus"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1258
+msgid "Activities"
+msgstr "Activités"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1298
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:458
+#, javascript-format
+msgid "Total annual food and cash income (% of 2100 kcal/person/day)"
+msgstr "Revenu annuel total en alimentation et en argent (% de 2100 kcal/person/day)"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1301
+msgid "Reset chart"
+msgstr "Réinitialiser le graphique"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1326
+msgid "Total income chart is not available for this Baseline."
+msgstr "Le graphique du revenu total n’est pas disponible pour cette Baseline."
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1356
+msgid "Survival Threshold"
+msgstr "Seuil de survie"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1365
+msgid "Baseline completed by %(organization)s."
+msgstr "Baseline réalisée par %(organization)s."
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1370
+msgid "Request file"
+msgstr "Demander le fichier"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1381
+msgid "Calendar"
+msgstr "Calendrier"
+
+#. Shared msgid. Also in apps/baseline/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1384
+msgid "Key Parameters"
+msgstr "Parametres cles"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:58
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:59
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:645
+msgid "Percentage of food consumption from own crops"
+msgstr "Pourcentage de la consommation alimentaire provenant des cultures propres"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:68
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:69
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:646
+msgid "Percentage of food consumption from purchase"
+msgstr "Pourcentage de la consommation alimentaire provenant des achats"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:78
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:79
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:647
+msgid "Percentage of cash income from crop sales"
+msgstr "Pourcentage des revenus monétaires provenant des ventes de cultures"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:88
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:89
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:648
+msgid "Percentage of cash income from livestock sales"
+msgstr "Pourcentage des revenus monétaires provenant des ventes de bétail"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:98
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:99
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:649
+msgid "Percentage of cash income from labor"
+msgstr "Pourcentage des revenus monétaires provenant du travail"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:673
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:652
+msgid "Map overlay"
+msgstr "Superposition de la carte"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:677
+msgid "Click to learn more about map views (opens in new tab)"
+msgstr "Cliquez pour en savoir plus sur les vues de carte (s’ouvre dans un nouvel onglet)"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:683
+msgid "Learn more about map views"
+msgstr "En savoir plus sur les vues de carte"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/WealthGroup/WealthGroup.jsx:23
+msgid "Click to learn more about wealth groups (opens in new tab)"
+msgstr "Cliquez pour en savoir plus sur les groupes de richesse (s’ouvre dans un nouvel onglet)"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/WealthGroup/WealthGroup.jsx:29
+msgid "Learn more about wealth groups"
+msgstr "En savoir plus sur les groupes de richesse"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/WealthGroup/WealthGroup.jsx:41
+msgid "Middle (M)"
+msgstr "Moyen (M)"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/WealthGroup/WealthGroup.jsx:42
+msgid "Better Off (B/O)"
+msgstr "Mieux nanti (B/O)"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:683
+msgid "total"
+msgstr "total"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:684
+msgid "of"
+msgstr "de"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:684
+msgid "from"
+msgstr "de"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:684
+msgid "custom strategies"
+msgstr "stratégies personnalisées"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:688
+msgid "of food from<br />own crops"
+msgstr "d’alimentation provenant de<br />cultures propres"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:689
+msgid "of food from<br />purchase"
+msgstr "d’alimentation provenant de<br />achats"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:690
+msgid "of cash from<br />crop sales"
+msgstr "d’argent provenant de<br />ventes de cultures"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:691
+msgid "of cash from<br />livestock sales"
+msgstr "d’argent provenant de<br />ventes de bétail"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:692
+msgid "of cash from<br />labor"
+msgstr "d’argent provenant du<br />travail"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:709
+msgid "of total from custom strategies"
+msgstr "du total provenant de stratégies personnalisées"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:713
+msgid "of food from own crops"
+msgstr "d’alimentation provenant de cultures propres"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:714
+msgid "of food from purchase"
+msgstr "d’alimentation provenant des achats"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:715
+msgid "of cash from crop sales"
+msgstr "d’argent provenant des ventes de cultures"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:716
+msgid "of cash from livestock sales"
+msgstr "d’argent provenant des ventes de bétail"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:717
+msgid "of cash from labor"
+msgstr "d’argent provenant du travail"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:455
+#, javascript-format
+msgid "Annual sources of food (% of 2100 kcal/person/day)"
+msgstr "Sources annuelles d’alimentation (% de 2100 kcal/person/day)"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:456
+msgid "Annual sources of cash income ([currency]/household)"
+msgstr "Sources annuelles de revenus monétaires ([currency]/household)"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:457
+msgid "Annual cash expenditures ([currency]/household)"
+msgstr "Dépenses monétaires annuelles ([currency]/household)"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:463
+msgid "currency"
+msgstr "devise"
+
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:464
+msgid "Annual sources"
+msgstr "Sources annuelles"
+
+#: tmp_frontend_source/src/Views/Layouts/Header/Header.tsx:28
+msgid "FEWS NET logo"
+msgstr "Logo FEWS NET"
+
+#: tmp_frontend_source/src/Views/Layouts/Header/Header.tsx:50
+#: tmp_frontend_source/src/Views/Layouts/SelectedView/SelectedView.tsx:29
+#: tmp_frontend_source/src/Views/Layouts/SelectedView/SelectedView.tsx:38
+msgid "Updating"
+msgstr "Mise à jour"
+
+#: tmp_frontend_source/src/Views/Layouts/Header/Header.tsx:50
+#: tmp_frontend_source/src/Views/Layouts/SelectedView/SelectedView.tsx:38
+msgid "Compare"
+msgstr "Comparer"
+
+#: tmp_frontend_source/src/Views/Layouts/Header/Header.tsx:63
+msgid "FEWS NET Website"
+msgstr "Site web de FEWS NET"
+
+#: tmp_frontend_source/src/Views/Layouts/Header/Header.tsx:66
+msgid "Select language"
+msgstr "Sélectionner la langue"
+
+#: tmp_frontend_source/src/auth/Components/Auth/Login.jsx:19
+msgid "Error"
+msgstr "Erreur"
+
+#: tmp_frontend_source/src/auth/Components/Auth/Login.jsx:22
+msgid ""
+"Unable to login. Username or Password are either not correct or the account "
+"does not exist. Please try again. If issues persist, please contact our help "
+"desk."
+msgstr "Impossible de se connecter. Le nom d’utilisateur ou le mot de passe est incorrect, ou le compte n’existe pas. Veuillez réessayer. Si le problème persiste, veuillez contacter notre service d’assistance."
+
+#: tmp_frontend_source/src/auth/Components/Auth/Login.jsx:47
+msgid "Sign In"
+msgstr "Se connecter"
+
+#: tmp_frontend_source/src/auth/Components/Auth/Login.jsx:52
+msgid "Sign in with Google"
+msgstr "Se connecter avec Google"
+
+#: tmp_frontend_source/src/auth/Components/Auth/Login.jsx:56
+msgid "Includes"
+msgstr "Inclut"
+
+#: tmp_frontend_source/src/auth/Components/Auth/Login.jsx:56
+msgid "accounts."
+msgstr "comptes."
+
+#: tmp_frontend_source/src/auth/Components/Auth/Login.jsx:62
+msgid "or"
+msgstr "ou"
+
+#: tmp_frontend_source/src/auth/Components/Auth/Login.jsx:66
+msgid "Username"
+msgstr "Nom d’utilisateur"
+
+#: tmp_frontend_source/src/auth/Components/Auth/Login.jsx:67
+msgid "e.g. dataexplorer3"
+msgstr "p. ex. dataexplorer3"
+
+#: tmp_frontend_source/src/auth/Components/Auth/Login.jsx:69
+msgid "NOTE: This is separate from your email address."
+msgstr "REMARQUE : Ceci est distinct de votre adresse e-mail."
+
+#: tmp_frontend_source/src/auth/Components/Auth/Login.jsx:73
+msgid "Password"
+msgstr "Mot de passe"
+
+#: tmp_frontend_source/src/auth/Components/Auth/Login.jsx:74
+msgid "Enter your password"
+msgstr "Saisissez votre mot de passe"
+
+#: tmp_frontend_source/src/auth/Components/Auth/Login.jsx:78
+msgid "Sign in"
+msgstr "Se connecter"
