@@ -111,7 +111,7 @@ WORKSHEET_MAP = {
 SUBTOTAL_PREFIXES = ("total", "sub-total", "subtotal", "sous-total", "revenu total", "kcal total")
 
 # Labels in the 'Data' worksheet that mark the start of a Livelihood Strategy whose detail is actually
-# captured on the 'Data2' or 'Data3' worksheet, e.g. 'WILD FOODS -- see worksheet Data 3'. 
+# captured on the 'Data2' or 'Data3' worksheet, e.g. 'WILD FOODS -- see worksheet Data 3'.
 # A placeholder strategy is started for the heading, but its
 # Livelihood Activities are discarded in finalize_strategy(), and the summary rows that follow the
 # heading in the Data worksheet (e.g. 'quantity (kg)', 'kcals (%)') must be ignored rather than
