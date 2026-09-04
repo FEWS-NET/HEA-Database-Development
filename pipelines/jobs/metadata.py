@@ -94,7 +94,10 @@ def load_metadata_for_model(context: OpExecutionContext, sheet_name: str, model:
             name_field = "name_" + field_name[len("short_name_") :]
             if name_field in df:
                 if field_name in df:
-                    df[field_name] = df[field_name].where(df[field_name].astype(bool), df[name_field])
+                    # Treat NaN/None and whitespace-only cells as blank (astype(bool) would keep NaN)
+                    short_name_values = df[field_name].astype(object)
+                    is_blank = short_name_values.isna() | (short_name_values.astype(str).str.strip() == "")
+                    df[field_name] = short_name_values.where(~is_blank, df[name_field])
                 else:
                     df[field_name] = df[name_field]
 

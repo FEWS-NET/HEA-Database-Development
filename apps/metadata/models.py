@@ -82,10 +82,11 @@ class ReferenceData(common_models.Model):
         # Ensure that aliases are lowercase and don't contain duplicates
         if self.aliases:
             self.aliases = list(sorted(set([alias.strip().lower() for alias in self.aliases if alias.strip()])))
-        # Default the short_name to the name in each language when it hasn't been provided
+        # Default the short_name to the name in each language when it hasn't been provided.
+        # short_name_* are non-nullable CharFields, so fall back to "" (not None) for languages with no name.
         for language_code, _language_name in settings.LANGUAGES:
             if not getattr(self, f"short_name_{language_code}", None):
-                setattr(self, f"short_name_{language_code}", getattr(self, f"name_{language_code}", None) or None)
+                setattr(self, f"short_name_{language_code}", getattr(self, f"name_{language_code}", "") or "")
 
     def save(self, *args, **kwargs):
         self.calculate_fields()
@@ -342,9 +343,10 @@ class Market(common_models.Model):
         if self.aliases:
             self.aliases = list(sorted(set([alias.strip().lower() for alias in self.aliases if alias.strip()])))
         # Default the short_name to the name in each language when it hasn't been provided.
+        # short_name_* are non-nullable CharFields, so fall back to "" (not None) for languages with no name.
         for language_code, _language_name in settings.LANGUAGES:
             if not getattr(self, f"short_name_{language_code}", None):
-                setattr(self, f"short_name_{language_code}", getattr(self, f"name_{language_code}", None) or None)
+                setattr(self, f"short_name_{language_code}", getattr(self, f"name_{language_code}", "") or "")
 
     def save(self, *args, **kwargs):
         self.calculate_fields()
