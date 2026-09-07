@@ -189,15 +189,27 @@ class SeasonAdmin(admin.ModelAdmin):
         return super().get_queryset(request).select_related("country")
 
 
-class MarketAdmin(ReferenceDataAdmin):
+class MarketAdmin(admin.ModelAdmin):
     fields = (
         "code",
         *translation_fields("name"),
+        *translation_fields("full_name"),
         "aliases",
         "country",
         *translation_fields("description"),
     )
-
+    list_display = (
+        "code",
+        "name",
+        "aliases",
+        "description",
+    )
+    search_fields = (
+        *translation_fields("name"),
+        *translation_fields("full_name"),
+        *translation_fields("description"),
+        "aliases",
+    )
     list_filter = (("country", admin.RelatedOnlyFieldListFilter),)
 
 

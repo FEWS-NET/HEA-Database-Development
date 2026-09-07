@@ -1,4 +1,5 @@
 import logging
+import textwrap
 
 from django.conf import settings
 from django.contrib.gis.db import models
@@ -20,6 +21,16 @@ from common.models import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def shorten_to_short_name(value, max_length=40):
+    """
+    Return `value` shortened to fit a `short_name`
+    """
+    value = (value or "").strip()
+    if len(value) <= max_length:
+        return value
+    return textwrap.shorten(value, width=max_length, placeholder="") or value[:max_length].rstrip()
 
 
 class ReferenceDataQuerySet(SearchQueryMixin, models.QuerySet):
@@ -60,7 +71,7 @@ class ReferenceData(common_models.Model):
     code = common_models.CodeField(primary_key=True, verbose_name=_("Code"))
     name = TranslatedField(common_models.NameField())
     # A shorter version of the name, for use where space is limited (e.g. the frontend).
-    short_name = TranslatedField(common_models.NameField(verbose_name=_("Short Name")))
+    short_name = TranslatedField(common_models.NameField(max_length=40, verbose_name=_("Short Name")))
     description = TranslatedField(common_models.DescriptionField())
     # Some reference data needs to be sorted in a custom (i.e. non-alphabetic) order.
     # For example, WealthGroupCategory needs to be VP, P, M, BO in most cases.
@@ -86,7 +97,11 @@ class ReferenceData(common_models.Model):
         # short_name_* are non-nullable CharFields, so fall back to "" (not None) for languages with no name.
         for language_code, _language_name in settings.LANGUAGES:
             if not getattr(self, f"short_name_{language_code}", None):
-                setattr(self, f"short_name_{language_code}", getattr(self, f"name_{language_code}", "") or "")
+                setattr(
+                    self,
+                    f"short_name_{language_code}",
+                    shorten_to_short_name(getattr(self, f"name_{language_code}", "") or ""),
+                )
 
     def save(self, *args, **kwargs):
         self.calculate_fields()
@@ -312,9 +327,6 @@ class Market(common_models.Model):
         Country, db_column="country_code", blank=True, null=True, verbose_name=_("country"), on_delete=models.CASCADE
     )
     name = TranslatedField(common_models.NameField(max_length=250))
-    # A shorter version of the name, for use where space is limited (e.g. the frontend).
-    # Required, but defaults to `name` in each language (see `calculate_fields`) for now.
-    short_name = TranslatedField(common_models.NameField(max_length=250, verbose_name=_("Short Name")))
     code = models.CharField(
         max_length=25,
         blank=True,
@@ -342,11 +354,6 @@ class Market(common_models.Model):
         # Ensure that aliases are lowercase and don't contain duplicates
         if self.aliases:
             self.aliases = list(sorted(set([alias.strip().lower() for alias in self.aliases if alias.strip()])))
-        # Default the short_name to the name in each language when it hasn't been provided.
-        # short_name_* are non-nullable CharFields, so fall back to "" (not None) for languages with no name.
-        for language_code, _language_name in settings.LANGUAGES:
-            if not getattr(self, f"short_name_{language_code}", None):
-                setattr(self, f"short_name_{language_code}", getattr(self, f"name_{language_code}", "") or "")
 
     def save(self, *args, **kwargs):
         self.calculate_fields()
