@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Excel Dependency Viewer - Home{% endblock %}
+
+{% block body %}
+<h1>Excel Dependency Viewer</h1>
+<p>Enter the path to an Excel workbook and continue:</p>
+
+<form id="go-form" onsubmit="return goViewer(event);">
+  <label for="path">Workbook path:</label>
+  <input
+    type="text"
+    id="path"
+    name="path"
+    placeholder="e.g., sample_data/demo.xlsx"
+    style="width: 420px;"
+    value="{{ default_path }}"
+  />
+  <button type="submit">Open Viewer</button>
+</form>
+
+<script>
+function goViewer(e) {
+  e.preventDefault();
+  const path = document.getElementById('path').value.trim();
+  // If empty, viewer will fall back to server default
+  const url = path ? ("/viewer?path=" + encodeURIComponent(path)) : "/viewer";
+  window.location = url;
+  return false;
+}
+</script>
+{% endblock %}

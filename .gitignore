@@ -54,7 +54,6 @@ reports/
 # Compiled Assets and Media
 assets/
 media/
-notebooks/
 static/dojo/
 
 # any node or bower installation folders
@@ -97,9 +96,6 @@ vagrant_ansible_inventory*
 
 # PyCharm Settings
 .idea/
-
-# Jupyter Notebooks
-*.ipynb
 
 # Jupyter Notebook Checkpoints
 .ipynb_checkpoints/
