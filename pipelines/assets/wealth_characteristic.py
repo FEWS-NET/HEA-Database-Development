@@ -495,8 +495,11 @@ def wealth_characteristic_instances(
     # the Community interviews and the summary values.
     wealth_group_df = wealth_group_df[wealth_group_df["wealth_group_category"].notnull()]
     # We also need to add an extra row for each Wealth Group Category with a null Community, to create the
-    # Baseline Wealth Groups.
-    baseline_wealth_group_df = wealth_group_df[wealth_group_df["community"] == wealth_group_df.iloc[0]["community"]][
+    # Baseline Wealth Groups. Take the distinct Wealth Group Categories from across all of the columns
+    # as there are cases where a Community's Wealth Group interview columns don't necessarily cover
+    # every Wealth Group Category (e.g. HT04 BSS has a missing entry for the first B/O interview for the
+    # Bas-coussin community that silently dropped any category missing from that Community.
+    baseline_wealth_group_df = wealth_group_df.drop_duplicates(subset="wealth_group_category")[
         [
             "wealth_group_category_original",
             "wealth_group_category",
