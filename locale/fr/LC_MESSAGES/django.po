@@ -55,11 +55,11 @@ msgstr "Voir %(name)s"
 #, fuzzy
 #| msgid "You don’t have permission to view or edit anything."
 msgid "You don't have permission to view or edit anything."
-msgstr "Vous n'êtes pas autorisé à afficher ou modifier quoi que ce soit"
+msgstr "Vous n'êtes pas autorisé à afficher ou modifier quoi que ce soit."
 
 #: templates/admin/base.html:53
 msgid "HEA Baseline Database Administration"
-msgstr "Administration de la base de données des profils de référence HEA"
+msgstr "Administration de la base de données des Lignes de base HEA"
 
 #: templates/admin/base.html:62 templates/rest_framework/api.html:51
 msgid "Welcome,"
@@ -75,11 +75,11 @@ msgstr "Se déconnecter"
 
 #: templates/admin/base.html:97
 msgid "Breadcrumbs"
-msgstr "Chapelure"
+msgstr "Fil d'Ariane"
 
 #: templates/admin/base_site.html:4
 msgid "Django site admin"
-msgstr "Django Site Admin"
+msgstr "Admin du site Django"
 
 #: templates/admin/base_site.html:13
 msgid "Django administration"
@@ -111,28 +111,25 @@ msgid ""
 "        "
 msgstr ""
 "\n"
-"Un profil de référence  est une collecte de données réalisée pour un pays "
-"lors d'un profil de référence  Hea est une collecte de données réalisée pour "
-"un pays au cours d'une année de référence spécifique. Un profil de référence "
-"typique comprend les données collectées auprès des ménages moyens "
-"représentatifs, servant de représentation d' un groupe de richesse au sein "
-"d'une communauté dans une zone de subsistance donnée. Les principales "
-"composantes des données de base commune comprennent les caractéristiques de "
-"richesse, les profils d'actifs, économie des ménages et de nombreuses autres "
-"mésures pertinentes.\n"
-"    "
+"Une ligne de base HEA (HEA baseline) est une collecte de données menée pour "
+"un pays pour une année de référence spécifiée. Une ligne de base"
+"comprend des données collectées auprès de ménages typiques, servant de "représentation d'un groupe de richesse au sein d'une communauté" 
+"dans une Zone de moyens d'existence donnée. Les composantes principales "
+"des données de ligne de base communes comprennent les caractéristiques de "
+"richesse, les profils d'actifs, l'économie des ménages et de nombreux autres indicateurs pertinents."
+\n"
 
 #. Shared msgid. Also in locale/fr/LC_MESSAGES/djangojs.po; keep translations synchronized across files.
 #: templates/admin/index.html:32
 msgid "Baselines"
-msgstr "Profils de référence"
+msgstr "Lignes de base"
 
 #. Shared msgid. Also in apps/baseline/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: templates/admin/index.html:36
 #, fuzzy
 #| msgid "Wealth Group Characteristic Value"
 msgid "Wealth Characteristic Values"
-msgstr "Valeurs caractéristiques de la richesse"
+msgstr "Valeurs de caractéristiques de richesse"
 
 #: templates/admin/index.html:40
 #, fuzzy
@@ -158,7 +155,7 @@ msgstr "Documentation"
 #, fuzzy
 #| msgid "Livelihood Zones"
 msgid "Livelihood Explorer"
-msgstr "Zones de subsistance"
+msgstr "Zones de moyens d'existence"
 
 #: templates/admin/index.html:106
 #, fuzzy
@@ -211,7 +208,7 @@ msgstr "RECHERCHE :  "
 msgid "%(counter)s result"
 msgid_plural "%(counter)s results"
 msgstr[0] "%(counter)s résultats"
-msgstr[1] "%(counter)s résultat"
+msgstr[1] "%(counter)s résultats"
 msgstr[2] "%(counter)s résultats"
 msgstr[3] "%(counter)s résultats"
 msgstr[4] "%(counter)s résultats"
@@ -220,7 +217,7 @@ msgstr[5] "%(counter)s résultats"
 #: templates/admin/search_form.html:11
 #, python-format
 msgid "%(full_result_count)s total"
-msgstr "%(full_result_count)s au total"
+msgstr "%(full_result_count)s total"
 
 #: templates/admin/search_form.html:11
 msgid "Show all"
@@ -238,7 +235,7 @@ msgstr "Contenu inconnu"
 
 #: templates/rest_framework/api.html:94
 msgid "request form"
-msgstr "formulaire de requête"
+msgstr "formulaire de demande"
 
 #: templates/rest_framework/api.html:174
 #, fuzzy
@@ -259,7 +256,7 @@ msgstr "Passez au contenu principal"
 
 #: templates/rest_framework/api.html:212
 msgid "request info"
-msgstr "informations sur la requête"
+msgstr "demander des informations"
 
 #: templates/rest_framework/api.html:215
 msgid "response info"
@@ -272,28 +269,28 @@ msgstr "informations sur la réponse"
 #~ msgstr "Organisations source"
 
 #~ msgid "Livelihood Zone Baselines"
-#~ msgstr "Profil de référence de la zone de moyens de subsistance"
+#~ msgstr "Ligne de base de zone de moyens d'existence"
 
 #~ msgid "BSS WB,Data,.. Sheets"
-#~ msgstr "BSS WB, données, .. feuilles"
+#~ msgstr "Feuilles BSS WB, Data, .. "
 
 #~ msgid "Wealth Group Data"
 #~ msgstr "Données de groupe de richesse"
 
 #~ msgid "Wealth, Activity and Strategy Insights"
-#~ msgstr "Informations sur la richesse, l'activité et la stratégie"
+#~ msgstr "Perspectives sur la richesse, l'activité et la stratégie"
 
 #~ msgid "Livelihood Strategy"
-#~ msgstr "Stratégie de subsistance"
+#~ msgstr "Stratégie de moyens d'existence"
 
 #~ msgid "Livelihood Activity"
-#~ msgstr "Stratégie de subsistance"
+#~ msgstr "Activité de moyens d'existence"
 
 #~ msgid "BSS Production Sheet"
 #~ msgstr "Fiche de production BSS"
 
 #~ msgid "Crop Production"
-#~ msgstr "Productions agricoles"
+#~ msgstr "Productions végétales"
 
 #~ msgid "Livestock Production"
 #~ msgstr "Productions d'élevage"
@@ -314,13 +311,13 @@ msgstr "informations sur la réponse"
 #~ msgstr "Occurrences d'activité"
 
 #~ msgid "Hazards and Events"
-#~ msgstr "Dangers et événements"
+#~ msgstr "Aléas et événements"
 
 #~ msgid "Annual Production Performances"
-#~ msgstr "Performances de production annuelles"
+#~ msgstr "Rendements totaux annuels"
 
 #~ msgid "Hazards"
-#~ msgstr "Dangers"
+#~ msgstr "Aléas"
 
 #~ msgid "Events"
 #~ msgstr "Événements"
@@ -332,7 +329,7 @@ msgstr "informations sur la réponse"
 #~ msgstr "Facteurs d'extensibilité"
 
 #~ msgid "Coping Strategies"
-#~ msgstr "Les stratégies d'adaptation"
+#~ msgstr "Stratégies d'adaptation"
 
 #~ msgid "Common"
 #~ msgstr "Commun"
@@ -344,7 +341,7 @@ msgstr "informations sur la réponse"
 #~ msgstr "Devises"
 
 #~ msgid "Products"
-#~ msgstr "Des produits"
+#~ msgstr "Produits"
 
 #~ msgid "Units of Measure"
 #~ msgstr "Unités de mesure"
@@ -353,10 +350,10 @@ msgstr "informations sur la réponse"
 #~ msgstr "Métadonnées"
 
 #~ msgid "Hazard Categories"
-#~ msgstr "Catégories de danger"
+#~ msgstr "Catégories d'aléas"
 
 #~ msgid "Livelihood Categories"
-#~ msgstr "Catégories de moyens de subsistance"
+#~ msgstr "Catégories de moyens d'existence"
 
 #~ msgid "Seasons"
 #~ msgstr "Saisons"
@@ -365,7 +362,7 @@ msgstr "informations sur la réponse"
 #~ msgstr "Catégories de richesse"
 
 #~ msgid "Wealth Group Characteristics"
-#~ msgstr "Caractéristiques du groupe de richesse"
+#~ msgstr "Caractéristiques des groupes de richesse"
 
 #~ msgid "User management"
 #~ msgstr "Gestion des utilisateurs"
@@ -380,7 +377,7 @@ msgstr "informations sur la réponse"
 #~ msgstr "Afficher le site"
 
 #~ msgid "BSS WB, Data,.. Sheets"
-#~ msgstr "BSS WB, données, .. feuilles"
+#~ msgstr "Feuilles BSS WB, Data, .. "
 
 #~ msgid "BSS Production Data"
 #~ msgstr "Données de production BSS"
