@@ -156,6 +156,28 @@ class ReferenceDataViewSetTestCase(APITestCase):
         result = json.loads(response.content.decode("utf-8"))
         self.assertEqual([item["code"] for item in result], [self.seasonalactivitytype1.code])
 
+    def test_short_name_defaults_to_name_and_is_serialized(self):
+        # short_name is a required translated field that defaults to name until it is curated.
+        instance = LivelihoodSystemFactory(name_en="A Very Long Livelihood System Name")
+        self.assertEqual(instance.short_name_en, instance.name_en)
+
+        response = self.client.get(f"{self.livelihoodsystem_url}{instance.code}/")
+        self.assertEqual(response.status_code, 200)
+        result = response.json()
+        self.assertEqual(result["short_name"], instance.name_en)
+
+        instance = HazardCategoryFactory()
+        instance.short_name_en = "ZzzUniqueShortName"
+        instance.save()
+
+        response = self.client.get(self.hazardcategory_url, {"search": "ZzzUniqueShortName"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([item["code"] for item in response.json()], [instance.code])
+
+        response = self.client.get(self.hazardcategory_url, {"short_name_en": "zzzuniqueshortname"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([item["code"] for item in response.json()], [instance.code])
+
     def test_wealthcharacteristic_filter_by_variable_type(self):
         response = self.client.get(
             self.wealthcharacteristic_url, {"variable_type": self.wealthcharacteristic1.variable_type}

@@ -1,5 +1,7 @@
 import logging
+import textwrap
 
+from django.conf import settings
 from django.contrib.gis.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db.models import Q
@@ -21,6 +23,16 @@ from common.models import (
 logger = logging.getLogger(__name__)
 
 
+def shorten_to_short_name(value, max_length=40):
+    """
+    Return `value` shortened to fit a `short_name`
+    """
+    value = (value or "").strip()
+    if len(value) <= max_length:
+        return value
+    return textwrap.shorten(value, width=max_length, placeholder="") or value[:max_length].rstrip()
+
+
 class ReferenceDataQuerySet(SearchQueryMixin, models.QuerySet):
     """
     Extends ReferenceData QuerySet with custom search method
@@ -34,6 +46,11 @@ class ReferenceDataQuerySet(SearchQueryMixin, models.QuerySet):
             | Q(name_es__icontains=search_term)
             | Q(name_fr__icontains=search_term)
             | Q(name_ar__icontains=search_term)
+            | Q(short_name_en__icontains=search_term)
+            | Q(short_name_pt__icontains=search_term)
+            | Q(short_name_es__icontains=search_term)
+            | Q(short_name_fr__icontains=search_term)
+            | Q(short_name_ar__icontains=search_term)
             | Q(description_en__icontains=search_term)
             | Q(description_pt__icontains=search_term)
             | Q(description_es__icontains=search_term)
@@ -53,6 +70,8 @@ class ReferenceData(common_models.Model):
 
     code = common_models.CodeField(primary_key=True, verbose_name=_("Code"))
     name = TranslatedField(common_models.NameField())
+    # A shorter version of the name, for use where space is limited (e.g. the frontend).
+    short_name = TranslatedField(common_models.NameField(max_length=40, verbose_name=_("Short Name")))
     description = TranslatedField(common_models.DescriptionField())
     # Some reference data needs to be sorted in a custom (i.e. non-alphabetic) order.
     # For example, WealthGroupCategory needs to be VP, P, M, BO in most cases.
@@ -74,6 +93,15 @@ class ReferenceData(common_models.Model):
         # Ensure that aliases are lowercase and don't contain duplicates
         if self.aliases:
             self.aliases = list(sorted(set([alias.strip().lower() for alias in self.aliases if alias.strip()])))
+        # Default the short_name to the name in each language when it hasn't been provided.
+        # short_name_* are non-nullable CharFields, so fall back to "" (not None) for languages with no name.
+        for language_code, _language_name in settings.LANGUAGES:
+            if not getattr(self, f"short_name_{language_code}", None):
+                setattr(
+                    self,
+                    f"short_name_{language_code}",
+                    shorten_to_short_name(getattr(self, f"name_{language_code}", "") or ""),
+                )
 
     def save(self, *args, **kwargs):
         self.calculate_fields()

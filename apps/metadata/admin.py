@@ -22,6 +22,7 @@ class ReferenceDataAdmin(admin.ModelAdmin):
     fields = (
         "code",
         *translation_fields("name"),
+        *translation_fields("short_name"),
         "aliases",
         *translation_fields("description"),
         "ordering",
@@ -29,11 +30,13 @@ class ReferenceDataAdmin(admin.ModelAdmin):
     list_display = (
         "code",
         "name",
+        "short_name",
         "aliases",
         "description",
     )
     search_fields = (
         *translation_fields("name"),
+        *translation_fields("short_name"),
         *translation_fields("description"),
         "aliases",
     )
@@ -44,10 +47,11 @@ class LivelihoodSystemAdmin(ReferenceDataAdmin):
     A concrete admin for LivelihoodSystem
     """
 
-    list_display = ("code", "name", "aliases", "description", "color_display")
+    list_display = ("code", "name", "short_name", "aliases", "description", "color_display")
     fields = (
         "code",
         *translation_fields("name"),
+        *translation_fields("short_name"),
         "aliases",
         "color",
         *translation_fields("description"),
@@ -75,6 +79,7 @@ class SeasonalActivityTypeAdmin(ReferenceDataAdmin):
     fields = (
         "code",
         *translation_fields("name"),
+        *translation_fields("short_name"),
         "activity_category",
         "has_product",
         "is_key",
@@ -125,6 +130,7 @@ class WealthCharacteristicAdmin(ReferenceDataAdmin):
         "code",
         "variable_type",
         *translation_fields("name"),
+        *translation_fields("short_name"),
         "aliases",
         *translation_fields("description"),
         "characteristic_group",
@@ -183,15 +189,27 @@ class SeasonAdmin(admin.ModelAdmin):
         return super().get_queryset(request).select_related("country")
 
 
-class MarketAdmin(ReferenceDataAdmin):
+class MarketAdmin(admin.ModelAdmin):
     fields = (
         "code",
         *translation_fields("name"),
+        *translation_fields("full_name"),
         "aliases",
         "country",
         *translation_fields("description"),
     )
-
+    list_display = (
+        "code",
+        "name",
+        "aliases",
+        "description",
+    )
+    search_fields = (
+        *translation_fields("name"),
+        *translation_fields("full_name"),
+        *translation_fields("description"),
+        "aliases",
+    )
     list_filter = (("country", admin.RelatedOnlyFieldListFilter),)
 
 
