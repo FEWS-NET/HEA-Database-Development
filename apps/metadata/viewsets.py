@@ -50,11 +50,27 @@ class ReferenceDataFilterSet(filters.FilterSet):
     description_pt = filters.CharFilter(
         lookup_expr="icontains", label=format_lazy("{} ({})", _("Description"), _("Portuguese"))
     )
+    short_name_en = filters.CharFilter(
+        lookup_expr="icontains", label=format_lazy("{} ({})", _("Short Name"), _("English"))
+    )
+    short_name_fr = filters.CharFilter(
+        lookup_expr="icontains", label=format_lazy("{} ({})", _("Short Name"), _("French"))
+    )
+    short_name_es = filters.CharFilter(
+        lookup_expr="icontains", label=format_lazy("{} ({})", _("Short Name"), _("Spanish"))
+    )
+    short_name_ar = filters.CharFilter(
+        lookup_expr="icontains", label=format_lazy("{} ({})", _("Short Name"), _("Arabic"))
+    )
+    short_name_pt = filters.CharFilter(
+        lookup_expr="icontains", label=format_lazy("{} ({})", _("Short Name"), _("Portuguese"))
+    )
 
     class Meta:
         model = ReferenceData
         fields = (
             *translation_fields("name"),
+            *translation_fields("short_name"),
             *translation_fields("description"),
         )
 
@@ -65,6 +81,7 @@ class ReferenceDataViewSet(BaseModelViewSet):
     search_fields = (
         "code",
         *translation_fields("name"),
+        *translation_fields("short_name"),
         *translation_fields("description"),
         "aliases",
     )
@@ -132,6 +149,7 @@ class WealthCharacteristicFilterSet(ReferenceDataFilterSet):
         model = ReferenceData
         fields = (
             *translation_fields("name"),
+            *translation_fields("short_name"),
             *translation_fields("description"),
             "variable_type",
         )
@@ -144,6 +162,7 @@ class WealthCharacteristicViewSet(ReferenceDataViewSet):
     search_fields = (
         "code",
         *translation_fields("name"),
+        *translation_fields("short_name"),
         *translation_fields("description"),
         "variable_type",
         "aliases",
@@ -161,6 +180,7 @@ class SeasonalActivityTypeFilterSet(ReferenceDataFilterSet):
         model = SeasonalActivityType
         fields = (
             *translation_fields("name"),
+            *translation_fields("short_name"),
             *translation_fields("description"),
             "activity_category",
             "has_product",
@@ -175,6 +195,7 @@ class SeasonalActivityTypeViewSet(ReferenceDataViewSet):
     search_fields = (
         "code",
         *translation_fields("name"),
+        *translation_fields("short_name"),
         *translation_fields("description"),
         "activity_category",
         "has_product",
