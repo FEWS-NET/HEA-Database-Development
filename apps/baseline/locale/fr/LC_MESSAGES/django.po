@@ -54,13 +54,13 @@ msgstr "Taille du BSS"
 #, fuzzy
 #| msgid "Main Staple"
 msgid "Poor Main Staple"
-msgstr "Aliment de base"
+msgstr "Aliment de base des Pauvres"
 
 #: apps/baseline/admin.py:329
 #, fuzzy
 #| msgid "Average household size"
 msgid "Poor Household Size"
-msgstr "Taille moyenne de ménages"
+msgstr "Taille des ménages Pauvres"
 
 #: apps/baseline/admin.py:333
 msgid "Poor Survival Non-Food Expenditure"
@@ -218,7 +218,7 @@ msgstr "Langue du BSS"
 
 #: apps/baseline/models.py:323
 msgid "Profile Report PDF file"
-msgstr "Fichier PDF du profil"
+msgstr "Fichier PDF du rapport profil"
 
 #: apps/baseline/models.py:377
 msgid "Reference Year Start Date"
@@ -311,13 +311,13 @@ msgstr "Devise"
 msgid ""
 "Default currency for income or expenditure from Livelihood Activities within "
 "this Baseline."
-msgstr "Devise par défaut de revenu ou de dépenses de cette Stratégie"
+msgstr "Devise par défaut de revenu ou de dépenses de cette Ligne de base"
 
 #: apps/baseline/models.py:444
 #, fuzzy
 #| msgid "Total kcals consumed"
 msgid "Annual kcals cost"
-msgstr "Total des kcals consommés"
+msgstr "Coût des kcals annuels"
 
 #: apps/baseline/models.py:445
 #, python-format
@@ -330,12 +330,12 @@ msgstr "Coût annuel par personne de 100% des kcal recommandées dans la devise 
 #: apps/baseline/models.py:1574 apps/baseline/models.py:1850
 #: apps/baseline/models.py:3209 apps/baseline/models.py:3347
 msgid "Livelihood Zone Baseline"
-msgstr "Ligne de base de la zone de moyens d'existence"
+msgstr "Ligne de base de zone de moyens d'existence"
 
 #. Shared msgid. Also in apps/common/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/baseline/models.py:627
 msgid "Livelihood Zone Baselines"
-msgstr "Lignes de base de zone de moyens d'existence"
+msgstr "Lignes de base des zones de moyens d'existence"
 
 #: apps/baseline/models.py:685
 msgid "WB"
@@ -361,7 +361,7 @@ msgstr "Summ"
 #, fuzzy
 #| msgid "baseline"
 msgid "Timeline"
-msgstr "Ligne de base"
+msgstr "Chronologie"
 
 #: apps/baseline/models.py:691
 msgid "Seas Cal"
@@ -387,7 +387,7 @@ msgstr "Valeur corrigée"
 #, fuzzy
 #| msgid "Data Collection End Date"
 msgid "Correction date"
-msgstr "Date de fin de collecte des données"
+msgstr "Date de correction"
 
 #: apps/baseline/models.py:706
 msgid "Correction author"
@@ -405,14 +405,14 @@ msgstr "Commentaire obligatoire sur la correction proposée"
 #, fuzzy
 #| msgid "Livelihood Zone Baseline"
 msgid "Livelihood Zone Baseline Correction"
-msgstr "Ligne de base de la zone de moyens d'existence"
+msgstr "Correction de Ligne de base de zone de moyens d'existence"
 
 #. Shared msgid. Also in apps/common/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/baseline/models.py:724
 #, fuzzy
 #| msgid "Livelihood Zone Baselines"
 msgid "Livelihood Zone Baseline Corrections"
-msgstr "Corrections de ligne de base de la zone de moyens d'existence"
+msgstr "Corrections des Lignes de base des zones de moyens d'existence"
 
 #. Shared msgid. Also in apps/common/locale/fr/LC_MESSAGES/django.po, apps/metadata/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/baseline/models.py:764
@@ -553,7 +553,7 @@ msgstr "Entretien communautaire (fiche 3)"
 
 #: apps/baseline/models.py:1331
 msgid "Wealth Group Interview (Form 4)"
-msgstr "Entretien de Groupe de richesse (fiche 4)"
+msgstr "Entretien de groupe de richesse (fiche 4)"
 
 #: apps/baseline/models.py:1332
 msgid "Baseline Summary"
@@ -696,7 +696,7 @@ msgid ""
 "A Baseline Wealth Group Characteristic Value cannot be for a Community "
 "Wealth Group"
 msgstr ""
-"Une Valeur de caractéristique de groupe de richesse d'un %(ref)s doit être pour "
+"Une Valeur de caractéristique de groupe de richesse ne peut pas être pour"
 "un Groupe de richesse communautaire"
 
 #: apps/baseline/models.py:1502
@@ -709,7 +709,7 @@ msgstr "Valeur de caractéristique de groupe de richesse de référence"
 #, fuzzy
 #| msgid "Wealth Characteristic Values"
 msgid "Baseline Wealth Group Characteristic Values"
-msgstr "Valeurs des caractéristiques de groupes de richesse de référence"
+msgstr "Valeurs des caractéristiques des groupes de richesse de référence"
 
 #: apps/baseline/models.py:1522
 #, fuzzy
@@ -720,20 +720,20 @@ msgid ""
 "A Community Wealth Group Characteristic Value must be for a Community Wealth "
 "Group"
 msgstr ""
-"Une valeur de caractéristique de groupe de richesse d'un %(ref)s doit être pour "
-"un Groupe de richesse communautaire"
+"Une valeur de caractéristique de groupe de richesse doit être pour "
+"un Groupe de richesse Communautaire."
 
 #: apps/baseline/models.py:1527
 #, fuzzy
 #| msgid "Wealth Characteristic Value"
 msgid "Community Wealth Group Characteristic Value"
-msgstr "Valeur de caractéristique de richesse"
+msgstr "Valeur de caractéristique de richesse communautaire"
 
 #: apps/baseline/models.py:1528
 #, fuzzy
 #| msgid "Wealth Characteristic Values"
 msgid "Community Wealth Group Characteristic Values"
-msgstr "Valeurs de caractéristiques de la richesse"
+msgstr "Valeurs de caractéristiques de richesse communautaires"
 
 #. Shared msgid. Also in apps/metadata/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/baseline/models.py:1581 apps/baseline/models.py:1857
@@ -793,8 +793,8 @@ msgstr "Une %s Stratégie de moyens d'existence doit avoir une Saison"
 #, fuzzy
 #| msgid "A %s Livelihood Strategy must have a Product"
 msgid ""
-"Une %s Stratégie de moyens d'existence doit avoir un Produit"
-msgstr "Stratégie de moyens d'existence"
+"A Livelihood Strategy must have either a Product or an Additional Identifier"
+msgstr "Une Stratégie de moyens d'existence doit comporter soit un Produit, soit un Identificateur additionnel"
 
 #. Shared msgid. Also in apps/common/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/baseline/models.py:1678 apps/baseline/models.py:1755
@@ -820,7 +820,7 @@ msgstr "Suivre prix"
 
 #: apps/baseline/models.py:1765
 msgid "Key Parameters must be for a Strategy with a Product"
-msgstr "Les paramètres clés doivent doivent correspondre à une Stratégie incluant un Produit"
+msgstr "Les Paramètres clés doivent correspondre à une Stratégie incluant un Produit"
 
 #. Shared msgid. Also in apps/common/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/baseline/models.py:1780
@@ -927,13 +927,13 @@ msgstr "Principalement les garçons"
 #, fuzzy
 #| msgid "Mainly Children"
 msgid "Mainly Girls"
-msgstr "Principalement les enfants"
+msgstr "Principalement les filles"
 
 #: apps/baseline/models.py:1932
 #, fuzzy
 #| msgid "Mainly Men"
 msgid "Mainly Adults"
-msgstr "Principalement les hommes"
+msgstr "Principalement les adultes"
 
 #: apps/baseline/models.py:1933
 msgid "All Together"
@@ -941,7 +941,7 @@ msgstr "Tous ensemble"
 
 #: apps/baseline/models.py:1992
 msgid "Activity done by"
-msgstr "Activité faite par"
+msgstr "Activité menée par"
 
 #: apps/baseline/models.py:1998
 msgid "Extra attributes"
@@ -958,7 +958,7 @@ msgstr "Clé de tri"
 #: apps/baseline/models.py:2132
 msgid ""
 "Income for a Livelihood Activity must be quantity sold multiplied by price"
-msgstr "Le revenu d'une Activité de moyens d'existence doit être égal à la quantité vendue multipliée par le prix."
+msgstr "Le revenu d'une Activité de moyens d'existence doit être égal à la " "quantité vendue multipliée par le prix."
 
 #: apps/baseline/models.py:2153
 #, fuzzy
@@ -969,8 +969,8 @@ msgid ""
 "Expenditure for a Livelihood Activity must be quantity produced or quantity "
 "purchased multiplied by price"
 msgstr ""
-"Les dépenses pour une Activité de moyens d'existence doivent être égal à la quantité produite ou la quantité "
-"achetée multipliée par le prix"
+"Les dépenses pour une Activité de moyens d'existence doivent être la quantité produite " 
+"ou la quantité achetée multipliée par le prix."
 
 #: apps/baseline/models.py:2167
 #, python-format
@@ -985,7 +985,7 @@ msgid ""
 "multiplied by kcals per unit"
 msgstr ""
 "Les kcals consommés pour une Activité de moyens d'existence doivent être la "
-"quantité consommée multipliée par le nombre de kcals par unité"
+"quantité consommée multipliée par le nombre de kcals par unite."
 
 #: apps/baseline/models.py:2204
 msgid ""
@@ -1071,7 +1071,7 @@ msgstr "Pourcentage de dépenses ou de kcals provenant de l'Activité de moyens 
 #, fuzzy
 #| msgid "A %s Livelihood Strategy must have a Product"
 msgid "Livelihood Product Categories must be for a Strategy with a Product"
-msgstr "Catégories de produits de moyens d'existence doivent être pour une Stratégie avec un Produit"
+msgstr "Les Catégories des produits de moyens d'existence doivent être pour une Stratégie avec un Produit."
 
 #. Shared msgid. Also in apps/common/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/baseline/models.py:2503
@@ -1203,8 +1203,8 @@ msgid ""
 "Quantity purchased for a Food Purchase must be purchase amount * purchases "
 "per year"
 msgstr ""
-"La quantité produite pour un Achat de nourriture doit être le montant de "
-"l'achat * achats par mois * mois par an."
+"La quantité achetée pour un Achat de nourriture doit être le montant de "
+"l'achat * achats par an."
 
 #: apps/baseline/models.py:2769
 #, fuzzy
@@ -1215,8 +1215,8 @@ msgid ""
 "Expenditure for a Food Purchase must be quantity purchased multiplied by "
 "price"
 msgstr ""
-"La dépense pour une Activité de moyens d'existence dot être la quantité "
-"produite multipliée par le prix."
+"La dépense pour un Achat de nourriture doit être la quantité achetée "
+"multipliée par le prix."
 
 #: apps/baseline/models.py:2773
 msgid "Food Purchases"
@@ -1281,7 +1281,7 @@ msgid ""
 "people * times per year"
 msgstr ""
 "La quantité produite pour le Paiement en nature doit être le paiement par "
-"temps * nombre de personnes * main-d'œuvre par mois * mois par an"
+"temps * nombre de personnes * fois par an"
 
 #: apps/baseline/models.py:2884
 msgid "Payments in Kind"
@@ -1332,8 +1332,8 @@ msgid ""
 "Income for 'Other Cash Income' must be payment per time * people per "
 "household * times per year"
 msgstr ""
-"La quantité produite pour Autres revenus en espèces doit être le paiement "
-"par temps * fois par an"
+"Le revenue pour Autres revenus en espèces doit être le paiement par temps *"
+"personnes par ménage * fois par an."
 
 #: apps/baseline/models.py:3118
 msgid "Number of times in a year that the product is purchased"
@@ -1348,8 +1348,8 @@ msgid ""
 "Expenditure for Other Purchases must be price * unit multiple * purchases "
 "per year. Expected: %(expected)s, Found: %(found)s"
 msgstr ""
-"Les dépenses pour Autres achats doivent être le prix * unité multiple * "
-"achats par mois * mois par an"
+"La dépense pour Autres achats doit être le prix * unité multiple * "
+"achats par an. Attendu: %(expected)s, Trouvé: %(found)s"
 
 #: apps/baseline/models.py:3164
 msgid "Other Purchases"
@@ -1385,8 +1385,8 @@ msgid ""
 "Whether this seasonal activity is a key seasonal activity for the livelihood "
 "zone baseline"
 msgstr ""
-"La Communauté et l'Activité saisonnière pour une Occurance d'activité saisonnière "
-"doivent appartenir à la même Ligne de base de zone de moyens d'existence."
+"Si cette Activité saisonnière est une Activité saisonnière clé pour la "
+"Ligne de base de zone de moyens d'existence."
 
 #: apps/baseline/models.py:3269 apps/baseline/models.py:3338
 msgid "Seasonal Activity"
@@ -1436,7 +1436,8 @@ msgstr "Occurrences d'activités saisonnières"
 #| msgid "A Baseline Wealth Group cannot have a Community"
 msgid "A Baseline Seasonal Activity Occurrence cannot be for a Community"
 msgstr ""
-"Un Groupe de richesse de référence ne peut pas avoir de communauté"
+"Une Occurrence d'activité saisonnière de référence ne peut pas s'appliquer "
+"à une communauté."
 
 #: apps/baseline/models.py:3462
 #, fuzzy
@@ -1448,7 +1449,7 @@ msgstr "Occurrence d'activité saisonnière de référence"
 #, fuzzy
 #| msgid "Seasonal Activity Occurrences"
 msgid "Baseline Seasonal Activity Occurrences"
-msgstr "Occurrences d'activités saisonnières de référence"
+msgstr "Occurrences des activités saisonnières de référence"
 
 #: apps/baseline/models.py:3480
 msgid "Main Food Crop"
@@ -1500,17 +1501,17 @@ msgid ""
 "Crop type for Community Crop Production must have a CPC code code beginning "
 "R01 (Agriculture Products)"
 msgstr ""
-"Le type de culture pour la production végétale communauté doit avoir "
+"Le type de culture pour la Production végétale communautaire doit avoir "
 "un code CPC commençant R01 (produits végétales)"
 
 #: apps/baseline/models.py:3537
 msgid "Community Crop Production"
-msgstr "Production végétale communauté"
+msgstr "Production végétale communautaire"
 
 #. Shared msgid. Also in apps/common/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/baseline/models.py:3538
 msgid "Community Crop Productions"
-msgstr "Productions végétales communauté"
+msgstr "Productions végétales communautaires"
 
 #: apps/baseline/models.py:3553
 msgid "Livestock Type"
@@ -1526,7 +1527,7 @@ msgstr "Nombre de mois entre les naissances"
 
 #: apps/baseline/models.py:3559
 msgid "Wet Season Lactation Period"
-msgstr "Période de lactation de la saison des pluies"
+msgstr "Période de lactation de saison des pluies"
 
 #: apps/baseline/models.py:3559
 msgid "Number of days of lactation during the wet season"
@@ -1542,7 +1543,7 @@ msgstr "Nombre de litres produits chaque jour pendant la saison des pluies"
 
 #: apps/baseline/models.py:3566
 msgid "Dry Season Lactation Period"
-msgstr "Période de lactation de la saison sèche"
+msgstr "Période de lactation de saison sèche"
 
 #: apps/baseline/models.py:3566
 msgid "Number of days of lactation during the dry season"
@@ -1579,11 +1580,11 @@ msgstr ""
 #. Shared msgid. Also in apps/common/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/baseline/models.py:3596
 msgid "Community Livestock"
-msgstr "Bétail communauté"
+msgstr "Bétail communautaire"
 
 #: apps/baseline/models.py:3597
 msgid "Community livestock"
-msgstr "Bétail communauté"
+msgstr "Bétail communautaire"
 
 #: apps/baseline/models.py:3634
 msgid "Low Price Start Day"
@@ -1644,7 +1645,7 @@ msgstr "Jour de début de l'année de performance"
 
 #: apps/baseline/models.py:3687
 msgid "The first day of the month of the start month in the performance year"
-msgstr "Le premier jour du mois de début dans l'année de performance"
+msgstr "Le premier jour du mois de début de l'année de performance"
 
 #: apps/baseline/models.py:3690
 msgid "Performance Year End Date"
@@ -1652,24 +1653,24 @@ msgstr "Jour de fin de l'année de performance"
 
 #: apps/baseline/models.py:3691
 msgid "The last day of the month of the end month in the performance year"
-msgstr "Le dernier jour du mois de la fin de l'année de performance"
+msgstr "Le dernier jour du mois de fin de l'année de performance"
 
 #: apps/baseline/models.py:3699
 msgid "Seasonal Performance"
-msgstr "Performance saisonnière"
+msgstr "Volume saisonnière"
 
 #: apps/baseline/models.py:3700
 msgid ""
 "Rating of the seasonal production performance from Very Poor (1) to Very "
 "Good (5)"
 msgstr ""
-"Classement des performances des rendements saisonnières de très mauvaise (1) à "
+"Classement de la volume de production saisonnière de très mauvaise (1) à "
 "très bonne (5)"
 
 #. Shared msgid. Also in apps/common/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/baseline/models.py:3704 apps/baseline/models.py:3705
 msgid "Seasonal Production Performance"
-msgstr "Performance saisonnière de rendements"
+msgstr "Volume de production saisonnière"
 
 #: apps/baseline/models.py:3719
 msgid "Chronic"
@@ -1805,7 +1806,7 @@ msgstr "Effacer tous les filtres"
 #, fuzzy
 #| msgid "Livelihood Product Categories"
 msgid "No Livelihood Product Categories."
-msgstr "Catégories des produits de moyens d'existence"
+msgstr "Pas de Catégories des produits de moyens d'existence"
 
 #~ msgid "Livelihood Zone Type"
 #~ msgstr "Type de zone de moyens d'existence"
@@ -1833,7 +1834,7 @@ msgstr "Catégories des produits de moyens d'existence"
 #~ "Quantity produced for Other Cash Income must be payment per time * number "
 #~ "of people * labor per month * months per year"
 #~ msgstr ""
-#~ "La quantité produite pour d'autres revenus en espèces doit être le "
+#~ "La quantité produite pour d'Autres revenus en espèces doit être le "
 #~ "paiement par temps * nombre de personnes * main-d'œuvre par mois * mois par an."
 
 #~ msgid "HEA Baseline Database Administration"

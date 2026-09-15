@@ -55,23 +55,23 @@ msgstr "Code de valeur hexadécimale de couleur pour le système de moyens d'exi
 #, fuzzy
 #| msgid "Livelihood Summary"
 msgid "Livelihood System"
-msgstr "Synthèse de moyens d'existence"
+msgstr "Système de moyens d'existence"
 
 #. Shared msgid. Also in apps/common/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/metadata/models.py:115
 #, fuzzy
 #| msgid "Livelihood Summary"
 msgid "Livelihood Systems"
-msgstr "Système de moyens d'existence"
+msgstr "Systèmes de moyens d'existence"
 
 #: apps/metadata/models.py:127 apps/metadata/models.py:176
 msgid "Characteristic Group"
-msgstr "Groupe caractéristique"
+msgstr "Groupe de caractéristique"
 
 #. Shared msgid. Also in apps/common/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/metadata/models.py:128
 msgid "Characteristic Groups"
-msgstr "Groupes caractéristiques"
+msgstr "Groupes des caractéristiques"
 
 #: apps/metadata/models.py:140
 msgid "Numeric"
@@ -250,8 +250,8 @@ msgid ""
 "Does a Seasonal Activity of this type require a product? If True, then "
 "aliases may contain a <product> placeholder."
 msgstr ""
-""Une valeur pour cette caractéristique nécessite-t-elle également une "
-"produit ? Si TRUE, les alias peuvent inclure un paramètre générique <produit>."
+"Une Activité saisonnière de ce type necessite-t-elle un produit ? Si TRUE, "
+"les alias peuvent inclure un paramètre générique <produit>."
 
 
 #. Shared msgid. Also in apps/baseline/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
@@ -460,7 +460,7 @@ msgstr "Tri"
 
 #: apps/metadata/models.py:427
 msgid "The order of the Season within the Season Year"
-msgstr "Ordre de la Saison dans l'Année saisonnière"
+msgstr "Ordre de la Saison dans l'Année de Saison"
 
 #: apps/metadata/models.py:433
 msgid "A list of alternate names for the Season."
@@ -609,7 +609,7 @@ msgstr "Libellé de caractéristique de richesse"
 
 #: apps/metadata/models.py:602
 msgid "Wealth Characteristics Labels"
-msgstr "Libellés de caractéristiques de richesse"
+msgstr "Libellés des caractéristiques de richesse"
 
 #. Shared msgid. Also in apps/baseline/locale/fr/LC_MESSAGES/django.po, apps/common/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/metadata/templates/admin/metadata/change_list.html:7
@@ -670,7 +670,7 @@ msgstr "Portugais"
 #~ msgstr "Catégorie de moyens d'existence"
 
 #~ msgid "Livelihood Categories"
-#~ msgstr "Catégories de moyens d'existence"
+#~ msgstr "Catégories des moyens d'existence"
 
 #~ msgid "Gardening"
 #~ msgstr "Jardinage"

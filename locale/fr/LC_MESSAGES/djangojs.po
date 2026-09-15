@@ -56,6 +56,7 @@ msgid "Medium (M)"
 msgstr "Moyen (M)"
 
 #: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:35
+#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/WealthGroup/WealthGroup.jsx:42
 msgid "Better Off (BO)"
 msgstr "Aisé (BO)"
 
@@ -138,7 +139,7 @@ msgstr "Pourcentage de ménages"
 
 #: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1420
 msgid "Household annual kcals cost"
-msgstr "Coût annuel en kcals du ménage"
+msgstr "Coût de kcals annuels du ménage"
 
 #: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1426
 msgid "Survival threshold (% kcals)"
@@ -444,7 +445,7 @@ msgstr "Aucun indicateur de contribution avec des données pour cette sélection
 
 #: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:673
 msgid "Contribution amount"
-msgstr "Montant de la contribution"
+msgstr "Montant de contribution"
 
 #: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:688
 msgid "Custom range"
@@ -758,10 +759,6 @@ msgstr "En savoir plus sur les groupes de richesse"
 msgid "Middle (M)"
 msgstr "Moyen (M)"
 
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/WealthGroup/WealthGroup.jsx:42
-msgid "Better Off (BO)"
-msgstr "Aisé (BO)"
-
 #: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:683
 msgid "total"
 msgstr "total"
@@ -796,7 +793,7 @@ msgstr "des revenus issus des<br />ventes de bétail"
 
 #: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:692
 msgid "of cash from<br />labor"
-msgstr "de revenus issus de la<br />main d'oevre"
+msgstr "de revenus issus de la<br />main-d'œuvre"
 
 #: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:709
 msgid "of total from custom strategies"

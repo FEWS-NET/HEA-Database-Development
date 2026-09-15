@@ -59,7 +59,7 @@ msgstr "Vous n'êtes pas autorisé à afficher ou modifier quoi que ce soit."
 
 #: templates/admin/base.html:53
 msgid "HEA Baseline Database Administration"
-msgstr "Administration de la base de données des Lignes de base HEA"
+msgstr "Administration de base de données des lignes de base HEA"
 
 #: templates/admin/base.html:62 templates/rest_framework/api.html:51
 msgid "Welcome,"
@@ -111,13 +111,11 @@ msgid ""
 "        "
 msgstr ""
 "\n"
-"Une ligne de base HEA (HEA baseline) est une collecte de données menée pour "
+"Une ligne de base HEA (HEA baseline) est une exercise de collecte de données menée pour "
 "un pays pour une année de référence spécifiée. Une ligne de base"
-"comprend des données collectées auprès de ménages typiques, servant de "représentation d'un groupe de richesse au sein d'une communauté" 
-"dans une Zone de moyens d'existence donnée. Les composantes principales "
-"des données de ligne de base communes comprennent les caractéristiques de "
-"richesse, les profils d'actifs, l'économie des ménages et de nombreux autres indicateurs pertinents."
-\n"
+"comprend des données collectées auprès de ménages typiques, servant de représentation d'un groupe de richesse au sein d'une communauté" 
+"dans une Zone de moyens d'existence donnée."
+"\n"
 
 #. Shared msgid. Also in locale/fr/LC_MESSAGES/djangojs.po; keep translations synchronized across files.
 #: templates/admin/index.html:32
@@ -135,13 +133,13 @@ msgstr "Valeurs de caractéristiques de richesse"
 #, fuzzy
 #| msgid "Communities"
 msgid "Community Activities"
-msgstr "Communautés"
+msgstr "Activités communautaires"
 
 #: templates/admin/index.html:44
 #, fuzzy
 #| msgid "Seasonal Activities"
 msgid "Baseline Activities"
-msgstr "Activités saisonnières"
+msgstr "Activités de référence"
 
 #: templates/admin/index.html:86
 msgid "Open"
@@ -155,13 +153,13 @@ msgstr "Documentation"
 #, fuzzy
 #| msgid "Livelihood Zones"
 msgid "Livelihood Explorer"
-msgstr "Zones de moyens d'existence"
+msgstr "Livelihood Explorer"
 
 #: templates/admin/index.html:106
 #, fuzzy
 #| msgid "Recent actions"
 msgid "My Recent Actions"
-msgstr "Actions récentes"
+msgstr "Mes actions récentes"
 
 #: templates/admin/index.html:110
 msgid "None available"
@@ -179,7 +177,7 @@ msgstr "Barre latérale"
 #, fuzzy
 #| msgid "Toggle navigation"
 msgid "Navigation"
-msgstr "Basculer la navigation"
+msgstr "Navigation"
 
 #: templates/admin/nav_sidebar.html:18
 msgid "Search…"
@@ -193,7 +191,7 @@ msgstr "Filtrer le menu latéral"
 #, fuzzy
 #| msgid "None available"
 msgid "No sections available"
-msgstr "Aucun disponible"
+msgstr "Pas de sections disponibles"
 
 #: templates/admin/nav_sidebar.html:68
 msgid "Toggle navigation"
@@ -231,7 +229,7 @@ msgstr "barre de navigation"
 #, fuzzy
 #| msgid "Unknown content"
 msgid "content"
-msgstr "Contenu inconnu"
+msgstr "contenu"
 
 #: templates/rest_framework/api.html:94
 msgid "request form"
@@ -241,7 +239,7 @@ msgstr "formulaire de demande"
 #, fuzzy
 #| msgid "My actions"
 msgid "Extra Actions"
-msgstr "Mes actions"
+msgstr "Actions additionnelles"
 
 #. Shared msgid. Also in locale/fr/LC_MESSAGES/djangojs.po; keep translations synchronized across files.
 #: templates/rest_framework/api.html:189
@@ -252,7 +250,7 @@ msgstr "Filtres"
 #, fuzzy
 #| msgid "Skip to main content"
 msgid "main content"
-msgstr "Passez au contenu principal"
+msgstr "contenu principal"
 
 #: templates/rest_framework/api.html:212
 msgid "request info"
@@ -266,7 +264,7 @@ msgstr "informations sur la réponse"
 #~ msgstr "Configuration BSS"
 
 #~ msgid "Source Organizations"
-#~ msgstr "Organisations source"
+#~ msgstr "Organisations sources"
 
 #~ msgid "Livelihood Zone Baselines"
 #~ msgstr "Ligne de base de zone de moyens d'existence"
@@ -290,10 +288,10 @@ msgstr "informations sur la réponse"
 #~ msgstr "Fiche de production BSS"
 
 #~ msgid "Crop Production"
-#~ msgstr "Productions végétales"
+#~ msgstr "Production végétales"
 
 #~ msgid "Livestock Production"
-#~ msgstr "Productions d'élevage"
+#~ msgstr "Production d'élevage"
 
 #~ msgid "Market Prices"
 #~ msgstr "Prix ​​du marché"
@@ -308,13 +306,13 @@ msgstr "informations sur la réponse"
 #~ msgstr "Type d'activité saisonnière"
 
 #~ msgid "Activity Occurrences"
-#~ msgstr "Occurrences d'activité"
+#~ msgstr "Occurrences des activités"
 
 #~ msgid "Hazards and Events"
 #~ msgstr "Aléas et événements"
 
 #~ msgid "Annual Production Performances"
-#~ msgstr "Rendements totaux annuels"
+#~ msgstr "Volumes des productions annuelles"
 
 #~ msgid "Hazards"
 #~ msgstr "Aléas"
