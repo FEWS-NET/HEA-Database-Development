@@ -5,7 +5,9 @@ from bs4 import BeautifulSoup
 from django.contrib.admin.sites import AdminSite
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import connection
 from django.test import RequestFactory, SimpleTestCase, TestCase
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils.translation import activate
 
@@ -222,6 +224,23 @@ class LivelihoodZoneBaselineAdminTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.livelihood_zone_baseline1.livelihood_zone.code)
 
+    def test_changelist_queryset_eager_loads_bss_metadata(self):
+        admin_instance = LivelihoodZoneBaselineAdmin(LivelihoodZoneBaseline, self.site)
+        request = RequestFactory().get(self.url)
+
+        with CaptureQueriesContext(connection) as queries:
+            baselines = list(
+                admin_instance.get_queryset(request).filter(
+                    pk__in=[self.livelihood_zone_baseline1.pk, self.livelihood_zone_baseline2.pk]
+                )
+            )
+            for baseline in baselines:
+                baseline.bss_content_hash
+                baseline.bss_uploaded_datetime
+                baseline.bss_size
+
+        self.assertEqual(len(queries), 1)
+
     def test_change_form_displays_bss_metadata_in_additional_section(self):
         response = self.client.get(
             reverse(
@@ -238,7 +257,7 @@ class LivelihoodZoneBaselineAdminTestCase(TestCase):
         self.assertIsNotNone(additional.select_one(".field-bss_size"))
         self.assertEqual(
             additional.select_one(".field-bss_content_hash label").get_text(strip=True),
-            "BSS Content Hash:",
+            "BSS SHA-512 Hash:",
         )
         self.assertIn(
             self.livelihood_zone_baseline1.bss_uploaded_datetime.strftime("%Y-%m-%d %H:%M:%S"),

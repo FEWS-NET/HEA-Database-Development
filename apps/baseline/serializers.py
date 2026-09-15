@@ -83,6 +83,14 @@ class LivelihoodZoneSerializer(serializers.ModelSerializer):
 
 class LivelihoodZoneBaselineSerializer(serializers.ModelSerializer):
     annual_kcals_cost = serializers.FloatField(read_only=True)
+    livelihood_zone_name = serializers.CharField(source="livelihood_zone.name", read_only=True)
+    source_organization_name = serializers.CharField(source="source_organization.full_name", read_only=True)
+    livelihood_zone_country = serializers.CharField(source="livelihood_zone.country.pk", read_only=True)
+    livelihood_zone_country_name = serializers.CharField(source="livelihood_zone.country.name", read_only=True)
+    bss_language = serializers.SerializerMethodField()
+
+    def get_bss_language(self, obj):
+        return obj.get_bss_language_display()
 
     class Meta:
         model = LivelihoodZoneBaseline
@@ -98,6 +106,8 @@ class LivelihoodZoneBaselineSerializer(serializers.ModelSerializer):
             "livelihood_zone_country_name",
             "primary_livelihood_system",
             "bss_language",
+            "bss_content_hash",
+            "bss_uploaded_datetime",
             "currency",
             *translation_fields("profile_report"),
             "reference_year_start_date",
@@ -109,6 +119,9 @@ class LivelihoodZoneBaselineSerializer(serializers.ModelSerializer):
             "annual_kcals_cost",
         )
 
+
+class LivelihoodZoneBaselineGeoSerializer(GeoFeatureModelSerializer):
+    annual_kcals_cost = serializers.FloatField(read_only=True)
     livelihood_zone_name = serializers.CharField(source="livelihood_zone.name", read_only=True)
     source_organization_name = serializers.CharField(source="source_organization.full_name", read_only=True)
     livelihood_zone_country = serializers.CharField(source="livelihood_zone.country.pk", read_only=True)
@@ -117,10 +130,6 @@ class LivelihoodZoneBaselineSerializer(serializers.ModelSerializer):
 
     def get_bss_language(self, obj):
         return obj.get_bss_language_display()
-
-
-class LivelihoodZoneBaselineGeoSerializer(GeoFeatureModelSerializer):
-    annual_kcals_cost = serializers.FloatField(read_only=True)
 
     class Meta:
         model = LivelihoodZoneBaseline
@@ -137,6 +146,8 @@ class LivelihoodZoneBaselineGeoSerializer(GeoFeatureModelSerializer):
             "geography",
             "primary_livelihood_system",
             "bss_language",
+            "bss_content_hash",
+            "bss_uploaded_datetime",
             "currency",
             *translation_fields("profile_report"),
             "reference_year_start_date",
@@ -149,15 +160,6 @@ class LivelihoodZoneBaselineGeoSerializer(GeoFeatureModelSerializer):
         )
         geo_field = "geography"
         auto_bbox = True
-
-    livelihood_zone_name = serializers.CharField(source="livelihood_zone.name", read_only=True)
-    source_organization_name = serializers.CharField(source="source_organization.full_name", read_only=True)
-    livelihood_zone_country = serializers.CharField(source="livelihood_zone.country.pk", read_only=True)
-    livelihood_zone_country_name = serializers.CharField(source="livelihood_zone.country.name", read_only=True)
-    bss_language = serializers.SerializerMethodField()
-
-    def get_bss_language(self, obj):
-        return obj.get_bss_language_display()
 
 
 class LivelihoodProductCategorySerializer(serializers.ModelSerializer):
