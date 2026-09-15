@@ -208,6 +208,21 @@ class LivelihoodZoneBaselineQuerySet(models.QuerySet):
     QuerySet for LivelihoodZoneBaseline that provides temporal filtering methods.
     """
 
+    def with_bss_file_metadata(self):
+        """
+        Annotate BSS metadata from the corresponding database file.
+        """
+        bss_files = File.objects.filter(name=models.OuterRef("bss"))
+        return self.annotate(
+            _bss_file_content_hash=models.Subquery(
+                bss_files.values("_content_hash")[:1], output_field=models.CharField()
+            ),
+            _bss_file_created_datetime=models.Subquery(
+                bss_files.values("created_datetime")[:1], output_field=models.DateTimeField()
+            ),
+            _bss_file_size=models.Subquery(bss_files.values("size")[:1], output_field=models.PositiveIntegerField()),
+        )
+
     def filter_current(self, as_of_date=None):
         """
         Return a queryset filtered to the baselines that are valid as of the date specified.
@@ -307,6 +322,8 @@ class LivelihoodZoneBaseline(common_models.Model):
         """
         Return the persisted SHA-512 hash of the BSS content.
         """
+        if hasattr(self, "_bss_file_content_hash"):
+            return self._bss_file_content_hash
         return self._bss_database_file.content_hash if self._bss_database_file else None
 
     @cached_property
@@ -314,6 +331,10 @@ class LivelihoodZoneBaseline(common_models.Model):
         """
         Return the BSS database upload time rounded to the nearest second.
         """
+        if hasattr(self, "_bss_file_created_datetime"):
+            if not self._bss_file_created_datetime:
+                return None
+            return (self._bss_file_created_datetime + datetime.timedelta(microseconds=500_000)).replace(microsecond=0)
         if not self._bss_database_file:
             return None
         return (self._bss_database_file.created_datetime + datetime.timedelta(microseconds=500_000)).replace(
@@ -325,6 +346,8 @@ class LivelihoodZoneBaseline(common_models.Model):
         """
         Return the size of the BSS in bytes.
         """
+        if hasattr(self, "_bss_file_size"):
+            return self._bss_file_size
         return self._bss_database_file.size if self._bss_database_file else None
 
     reference_year_start_date = models.DateField(

@@ -247,6 +247,8 @@ class LivelihoodZoneBaselineAdmin(GISModelAdminReadOnly):
         "source_organization",
         "reference_year_start_date",
         "reference_year_end_date",
+        "bss_content_hash",
+        "bss_uploaded_datetime",
     )
     readonly_fields = (
         "livelihood_zone_alternate_code",
@@ -282,6 +284,7 @@ class LivelihoodZoneBaselineAdmin(GISModelAdminReadOnly):
                 "primary_livelihood_system",
                 "source_organization",
             )
+            .with_bss_file_metadata()
         )
 
     @admin.display(description=_("Livelihood Zone Alternate Code"))
@@ -298,12 +301,12 @@ class LivelihoodZoneBaselineAdmin(GISModelAdminReadOnly):
         """
         return instance.livelihood_zone.country
 
-    @admin.display(description=_("BSS Content Hash"))
+    @admin.display(description=_("BSS SHA-512 Hash"))
     def bss_content_hash(self, instance):
         """
         Display the persisted hash of the BSS content.
         """
-        return instance.bss_content_hash
+        return instance.bss_content_hash[:8] if instance.bss_content_hash else ""
 
     @admin.display(description=_("BSS Uploaded At"))
     def bss_uploaded_datetime(self, instance):
