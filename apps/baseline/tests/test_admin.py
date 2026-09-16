@@ -239,7 +239,7 @@ class LivelihoodZoneBaselineAdminTestCase(TestCase):
                 baseline.bss_uploaded_datetime
                 baseline.bss_size
 
-self.assertEqual(len(queries.captured_queries), 1)
+        self.assertEqual(len(queries.captured_queries), 1)
 
     def test_change_form_displays_bss_metadata_in_additional_section(self):
         response = self.client.get(
