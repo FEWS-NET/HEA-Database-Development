@@ -33,7 +33,7 @@ from baseline.models import (  # NOQA: E402
     LivelihoodZoneBaselineCorrection,
 )
 from common.lookups import ClassifiedProductLookup, UserLookup  # NOQA: E402
-from metadata.models import ActivityLabel  # NOQA: E402
+from metadata.models import ActivityLabel, shorten_to_short_name  # NOQA: E402
 
 
 def load_metadata_for_model(context: OpExecutionContext, sheet_name: str, model: models.Model, df: pd.DataFrame):
@@ -99,7 +99,7 @@ def load_metadata_for_model(context: OpExecutionContext, sheet_name: str, model:
                     is_blank = short_name_values.isna() | (short_name_values.astype(str).str.strip() == "")
                     df[field_name] = short_name_values.where(~is_blank, df[name_field])
                 else:
-                    df[field_name] = df[name_field]
+                    df[field_name] = df[name_field].apply(shorten_to_short_name)
 
     if model_name == "ClassifiedProduct":
         existing_instances = {instance.pk: instance for instance in model.objects.filter(pk__in=df["cpc"])}
