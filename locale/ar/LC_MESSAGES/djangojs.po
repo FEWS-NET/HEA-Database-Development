@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
-#, fuzzy
+# , fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
@@ -16,880 +16,1278 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 "
-"&& n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5;\n"
-#: tmp_frontend_source/src/App.tsx:15
-msgid "About the Livelihoods Explorer"
-msgstr "حول مستكشف سبل العيش"
+"Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5;\n"
 
-#: tmp_frontend_source/src/App.tsx:16
-msgid ""
-"This page will hold the Livelihoods Explorer help and documentation content."
-msgstr "ستحتوي هذه الصفحة على محتوى المساعدة والتوثيق الخاص بمستكشف سبل العيش."
+#: src/Views/Layouts/Compare/Compare.jsx:1467
+msgid "(% 2100 kcal/person/day)"
+msgstr ""
 
-#: tmp_frontend_source/src/Views/Layouts/BrowseViews/BrowseViews.jsx:62
-msgid "Browse views"
-msgstr "استعراض العروض"
+#: src/Views/Layouts/Compare/Compare.jsx:1451
+msgid "(annual)"
+msgstr ""
 
-#: tmp_frontend_source/src/Views/Layouts/BrowseViews/BrowseViews.jsx:66
-msgid "+ Create new view"
-msgstr "+ إنشاء عرض جديد"
-
-#: tmp_frontend_source/src/Views/Layouts/BrowseViews/BrowseViews.jsx:73
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:514
-#: tmp_frontend_source/src/Views/Layouts/Header/Header.tsx:41
-#: tmp_frontend_source/src/Views/Layouts/SelectedView/SelectedView.tsx:29
-msgid "Search"
-msgstr "بحث"
-
-#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:32
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/WealthGroup/WealthGroup.jsx:39
-msgid "Very Poor (VP)"
-msgstr "فقير جدًا (VP)"
-
-#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:33
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/WealthGroup/WealthGroup.jsx:40
-msgid "Poor (P)"
-msgstr "فقير (P)"
-
-#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:34
-msgid "Medium (M)"
-msgstr "متوسط (M)"
-
-#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:35
-msgid "Better Off (BO)"
-msgstr "ميسور الحال (BO)"
-
-#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1291
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/WealthGroup/WealthGroup.jsx:20
-msgid "Wealth group"
-msgstr "فئة الثروة"
-
-#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1300
-msgid "Click to learn more about comparing Baselines (opens in new tab)"
-msgstr "انقر لمعرفة المزيد حول مقارنة خطوط الأساس (يفتح في علامة تبويب جديدة)"
-
-#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1306
-msgid "Learn more about comparing Baselines"
-msgstr "معرفة المزيد حول مقارنة خطوط الأساس"
-
-#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1309
-#: tmp_frontend_source/src/Views/Layouts/Header/Header.tsx:58
-#: tmp_frontend_source/src/Views/Layouts/Header/Header.tsx:60
-msgid "Help"
-msgstr "مساعدة"
-
-#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1316
-msgid "No baselines selected. Use Search to add baselines to compare."
-msgstr "لم يتم تحديد أي خطوط أساس. استخدم البحث لإضافة خطوط أساس للمقارنة."
-
-#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1332
-msgid "View on map"
-msgstr "عرض على الخريطة"
-
-#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1343
-#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1396
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:109
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:130
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:670
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1182
-msgid "Population"
-msgstr "السكان"
-
-#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1348
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:128
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:676
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1188
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1196
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:147
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:148
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:644
-msgid "Primary Livelihood System"
-msgstr "استراتيجية سبل العيش"
-
-#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1353
-msgid "Currency"
-msgstr "العملة"
-
-#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1360
-#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1365
-msgid "Remove baseline from compare view"
-msgstr "إزالة خط الأساس من عرض المقارنة"
-
-#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1382
-msgid "Wealth Group"
-msgstr "مجموعة الثروة"
-
-#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1402
-msgid "Percentage of total population"
-msgstr "النسبة المئوية من إجمالي السكان"
-
-#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1408
-msgid "Household size"
-msgstr "حجم الأسرة"
-
-#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1414
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1259
-msgid "Percentage of households"
-msgstr "نسبة الأسر"
-
-#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1420
-msgid "Household annual kcals cost"
-msgstr "التكلفة السنوية للسعرات الحرارية للأسرة"
-
-#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1426
-msgid "Survival threshold (% kcals)"
-msgstr "عتبة البقاء (% kcals)"
-
-#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1433
-msgid "Livelihoods protection threshold (% kcals)"
-msgstr "عتبة حماية سبل العيش (% kcals)"
-
-#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1446
-msgid "Livelihood Activities"
-msgstr "انشطة سبل العيش"
-
-#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1462
-msgid "Food consumption"
-msgstr "استهلاك الغذاء"
-
-#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1480
-msgid "No food data"
-msgstr "لا توجد بيانات غذائية"
-
-#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1491
-msgid "Cash income"
-msgstr "الدخل النقدي"
-
-#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1508
-msgid "No cash income data"
-msgstr "لا توجد بيانات عن الدخل النقدي"
-
-#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1520
-msgid "Cash expenditures"
-msgstr "النفقات النقدية"
-
-#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1537
-msgid "No expenditure data"
-msgstr "لا توجد بيانات عن النفقات"
-
-#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1551
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1374
-msgid "Characteristics"
-msgstr "الخصائص"
-
-#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1561
-msgid "Loading…"
-msgstr "جارٍ التحميل…"
-
-#: tmp_frontend_source/src/Views/Layouts/Compare/Compare.jsx:1609
-msgid "No characteristics data"
-msgstr "لا توجد بيانات عن الخصائص"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/ExportMapModal/ExportMapModal.jsx:12
-msgid "Global"
-msgstr "عالمي"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/ExportMapModal/ExportMapModal.jsx:13
-msgid "None"
-msgstr "لا شيء"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/ExportMapModal/ExportMapModal.jsx:68
-msgid "Download .png image"
-msgstr "تنزيل صورة .png"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/ExportMapModal/ExportMapModal.jsx:92
-msgid "Map export preview"
-msgstr "معاينة تصدير الخريطة"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/ExportMapModal/ExportMapModal.jsx:103
-msgid "Livelihood Zone code labels"
-msgstr "تسميات رموز منطقة سبل العيش"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/ExportMapModal/ExportMapModal.jsx:117
-msgid "Title"
-msgstr "العنوان"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/ExportMapModal/ExportMapModal.jsx:120
-msgid "Percentage of food consumption from own crops for very poor households"
-msgstr "النسبة المئوية لاستهلاك الغذاء من المحاصيل الخاصة للأسر الفقيرة جدًا"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/ExportMapModal/ExportMapModal.jsx:131
-msgid "Subtitle (optional)"
-msgstr "العنوان الفرعي (اختياري)"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/ExportMapModal/ExportMapModal.jsx:135
-msgid "Latest Reference Year"
-msgstr "أحدث سنة مرجعية"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/ExportMapModal/ExportMapModal.jsx:140
-msgid "Disclaimer (optional)"
-msgstr "إخلاء المسؤولية (اختياري)"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/ExportMapModal/ExportMapModal.jsx:144
-msgid "Some disclaimer"
-msgstr "بعض إخلاء المسؤولية"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/BasicFilter/BasicFilter.jsx:34
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:110
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:145
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:665
-msgid "Filter baselines by population for one or all wealth groups"
-msgstr "تصفية خطوط الأساس حسب السكان لفئة ثروة واحدة أو جميع فئات الثروة"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/BasicFilter/BasicFilter.jsx:82
-msgid "Select a location"
-msgstr "حدد موقعًا"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/BasicFilter/BasicFilter.jsx:111
-msgid "Select"
-msgstr "تحديد"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:94
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:126
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:875
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:879
-msgid "Strategy"
-msgstr "إستراتيجية"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:95
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:141
-msgid "Filter baselines by a strategy’s contribution to livelihoods"
-msgstr "تصفية خطوط الأساس حسب مساهمة استراتيجية في سبل العيش"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:103
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:143
-msgid "Filter baselines by Primary Livelihood System"
-msgstr "تصفية خطوط الأساس حسب نظام سبل العيش الرئيسي"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:116
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:132
-msgid "Location"
-msgstr "موقع"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:117
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:147
-msgid "Filter baselines by country"
-msgstr "تصفية خطوط الأساس حسب البلد"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:605
-msgid "Custom Filter Overlay"
-msgstr "تراكب تصفية مخصص"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:606
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:666
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:650
-msgid "Custom filter overlay"
-msgstr "تراكب تصفية مخصص"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:654
-msgid "any amount"
-msgstr "أي كمية"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:657
-msgid "at least"
-msgstr "على الأقل"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:658
-msgid "up to"
-msgstr "حتى"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:661
-msgid "total income"
-msgstr "إجمالي الدخل"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:662
-msgid "contributes"
-msgstr "يساهم"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:662
-msgid "to"
-msgstr "إلى"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:675
-msgid "Click to learn more about filter options (opens in new tab)"
-msgstr "انقر لمعرفة المزيد حول خيارات التصفية (يفتح في علامة تبويب جديدة)"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:683
-msgid "Learn more about filter options"
-msgstr "معرفة المزيد حول خيارات التصفية"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:695
-msgid "Edit filter"
-msgstr "تعديل التصفية"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:695
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:705
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:531
-msgid "Filters"
-msgstr "عوامل التصفية"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:708
-msgid "Add Filter"
-msgstr "إضافة تصفية"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:747
-msgid "Already added. Edit or delete it from the main filter list."
-msgstr "تمت إضافته بالفعل. عدّله أو احذفه من قائمة التصفية الرئيسية."
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:95
-msgid "Milk Production"
-msgstr "إنتاج الحليب"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:96
-msgid "Butter Production"
-msgstr "إنتاج الزبدة"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:97
-msgid "Meat Production"
-msgstr "إنتاج اللحوم"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:98
-msgid "Livestock Sale"
-msgstr "بيع الماشية"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:99
-msgid "Crop Production"
-msgstr "إنتاج المحاصيل"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:100
-msgid "Food Purchase"
-msgstr "شراء الطعام"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:101
-msgid "Payment in Kind"
-msgstr "دفع عيني"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:102
-msgid "Relief, Gift or Other Food"
-msgstr "الإغاثة أو الهدية أو أي طعام آخر"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:103
-msgid "Hunting"
-msgstr "الصيد"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:104
-msgid "Fishing"
-msgstr "صيد السمك"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:105
-msgid "Wild Food Gathering"
-msgstr "جمع الطعام البري"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:106
-msgid "Other Cash Income"
-msgstr "دخل نقدي آخر"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:107
-msgid "Other Purchase"
-msgstr "شراء آخر"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:172
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:179
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:622
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:645
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/WealthGroup/WealthGroup.jsx:38
-msgid "All"
-msgstr "الكل"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:577
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:579
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:682
-msgid "Any"
-msgstr "أي"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:591
-msgid "Livelihood strategy filter"
-msgstr "تصفية استراتيجية سبل العيش"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:600
-msgid "Save"
-msgstr "حفظ"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:605
-msgid "Strategy type"
-msgstr "نوع الاستراتيجية"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:627
-msgid "Of products"
-msgstr "من المنتجات"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:650
-msgid "Contributes to"
-msgstr "يساهم في"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:669
-msgid "No contribution indicators with data for this selection."
-msgstr "لا توجد مؤشرات مساهمة تحتوي على بيانات لهذا التحديد."
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:673
-msgid "Contribution amount"
-msgstr "قيمة المساهمة"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:688
-msgid "Custom range"
-msgstr "نطاق مخصص"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:694
-msgid "Min contribution (%)"
-msgstr "الحد الأدنى للمساهمة (%)"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:705
-msgid "Max contribution (%)"
-msgstr "الحد الأقصى للمساهمة (%)"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:516
-msgid "Search by product or baseline"
-msgstr "البحث حسب المنتج أو خط الأساس"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:554
-msgid "Baselines"
-msgstr "خطوط الأساس"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:572
-msgid "Livelihood zone"
-msgstr "منطقة سبل العيش"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:585
-msgid "Removed from Compare view"
-msgstr "أزيل من عرض المقارنة"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:587
-msgid "Remove baseline from Compare view"
-msgstr "إزالة خط الأساس من عرض المقارنة"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:589
-msgid "Added to Compare view"
-msgstr "أضيف إلى عرض المقارنة"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:590
-msgid "Add baseline to Compare view"
-msgstr "إضافة خط الأساس إلى عرض المقارنة"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:613
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1165
-msgid "Select baseline"
-msgstr "حدد خط الأساس"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:690
-msgid "Population by wealth group"
-msgstr "السكان حسب فئة الثروة"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:744
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1347
-msgid "Livelihood Protection Threshold"
-msgstr "عتبة حماية سبل العيش"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/AllBaselines/AllBaselines.jsx:9
-msgid "Baseline name"
-msgstr "اسم خط الأساس"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/AllBaselines/AllBaselines.jsx:18
-msgid "Baseline"
-msgstr "حدود"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/AllBaselines/AllBaselines.jsx:23
-msgid "Organization"
-msgstr "المنظمة"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/AllBaselines/AllBaselines.jsx:28
-msgid "File download"
-msgstr "تنزيل الملف"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/AllBaselines/AllBaselines.jsx:31
-msgid "Download .xlsx"
-msgstr "تنزيل .xlsx"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/AllBaselines/AllBaselines.jsx:31
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Calendar/Calendar.jsx:532
-msgid "N/A"
-msgstr "غير متاح"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/AllBaselines/AllBaselines.jsx:37
-msgid "baselines available"
-msgstr "خطوط أساس متاحة"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Calendar/Calendar.jsx:527
-msgid "Current month"
-msgstr "الشهر الحالي"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Calendar/Calendar.jsx:531
-msgid "Reference year start month"
-msgstr "شهر بدء السنة المرجعية"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Calendar/Calendar.jsx:537
-msgid "Crop Activities"
-msgstr "أنشطة المحاصيل"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Calendar/Calendar.jsx:537
-msgid "Livestock Activities"
-msgstr "أنشطة الثروة الحيوانية"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Calendar/Calendar.jsx:718
-msgid "Loading calendar data…"
-msgstr "جارٍ تحميل بيانات التقويم…"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Calendar/Calendar.jsx:720
-msgid "No calendar data for this baseline."
-msgstr "لا توجد بيانات تقويم لخط الأساس هذا."
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/KeyParameters/KeyParameters.jsx:19
-msgid "Unspecified activity"
-msgstr "نشاط غير محدد"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/KeyParameters/KeyParameters.jsx:240
-msgid "Quantity"
-msgstr "الكمية"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/KeyParameters/KeyParameters.jsx:241
-msgid "Price"
-msgstr "سعر"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/KeyParameters/KeyParameters.jsx:277
-msgid "No key parameters were returned for this baseline."
-msgstr "لم تُرجع أي معلمات رئيسية لخط الأساس هذا."
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:68
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:68
 msgid "(Latest)"
 msgstr "(الأحدث)"
 
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:146
-msgid "Food + Cash"
-msgstr "غذاء + نقد"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:147
-msgid "Food"
-msgstr "غذاء"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:148
-msgid "Cash"
-msgstr "نقد"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:149
-msgid "Expenditures"
-msgstr "النفقات"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:854
-msgid "Product"
-msgstr "منتج"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:854
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:877
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:883
-msgid "Total"
-msgstr "الإجمالي"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:871
-msgid "Item"
-msgstr "غرض"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1020
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1024
-msgid "No description available"
-msgstr "لا يوجد وصف متاح"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1054
-msgid "Collapse"
-msgstr "طي"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1054
-msgid "Expand"
-msgstr "توسيع"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1062
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1091
-msgid "Detail View"
-msgstr "العرض التفصيلي"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1064
-msgid "Click to learn more about the Detail View (opens in new tab)"
-msgstr "انقر لمعرفة المزيد حول العرض التفصيلي (يفتح في علامة تبويب جديدة)"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1073
-msgid "Learn more about the Detail View (opens in new tab)"
-msgstr "معرفة المزيد حول العرض التفصيلي (يفتح في علامة تبويب جديدة)"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1097
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:701
-msgid "Close"
-msgstr "إغلاق"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1102
-msgid "Close Detail View"
-msgstr "إغلاق العرض التفصيلي"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1157
-msgid "baseline"
-msgstr "هيا خط الأساس"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1157
-msgid "baselines"
-msgstr "خطوط الأساس"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1158
-msgid "No baselines"
-msgstr "لا توجد خطوط أساس"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1214
-msgid "Less"
-msgstr "أقل"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1214
-msgid "More"
-msgstr "المزيد"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1258
-msgid "Activities"
-msgstr "الأنشطة"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1298
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:458
-#, no-javascript-format
-msgid "Total annual food and cash income (% of 2100 kcal/person/day)"
-msgstr "إجمالي الدخل السنوي من الغذاء والنقد (%% من 2100 kcal/person/day)"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1301
-msgid "Reset chart"
-msgstr "إعادة تعيين الرسم البياني"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1326
-msgid "Total income chart is not available for this Baseline."
-msgstr "مخطط إجمالي الدخل غير متاح لخط الأساس هذا."
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1356
-msgid "Survival Threshold"
-msgstr "عتبة البقاء"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1365
-msgid "Baseline completed by %(organization)s."
-msgstr "أكملت %(organization)s خط الأساس."
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1370
-msgid "Request file"
-msgstr "طلب الملف"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1381
-msgid "Calendar"
-msgstr "التقويم"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1384
-msgid "Key Parameters"
-msgstr "معلمات رئيسية"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:58
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:59
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:645
-msgid "Percentage of food consumption from own crops"
-msgstr "النسبة المئوية لاستهلاك الغذاء من المحاصيل الخاصة"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:68
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:69
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:646
-msgid "Percentage of food consumption from purchase"
-msgstr "النسبة المئوية لاستهلاك الغذاء من الشراء"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:78
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:79
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:647
-msgid "Percentage of cash income from crop sales"
-msgstr "النسبة المئوية للدخل النقدي من مبيعات المحاصيل"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:88
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:89
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:648
-msgid "Percentage of cash income from livestock sales"
-msgstr "النسبة المئوية للدخل النقدي من مبيعات الثروة الحيوانية"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:98
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:99
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:649
-msgid "Percentage of cash income from labor"
-msgstr "النسبة المئوية للدخل النقدي من العمل"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:673
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:652
-msgid "Map overlay"
-msgstr "تراكب الخريطة"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:677
-msgid "Click to learn more about map views (opens in new tab)"
-msgstr "انقر لمعرفة المزيد حول عروض الخريطة (يفتح في علامة تبويب جديدة)"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:683
-msgid "Learn more about map views"
-msgstr "معرفة المزيد حول عروض الخريطة"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/WealthGroup/WealthGroup.jsx:23
-msgid "Click to learn more about wealth groups (opens in new tab)"
-msgstr "انقر لمعرفة المزيد حول فئات الثروة (يفتح في علامة تبويب جديدة)"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/WealthGroup/WealthGroup.jsx:29
-msgid "Learn more about wealth groups"
-msgstr "معرفة المزيد حول فئات الثروة"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/WealthGroup/WealthGroup.jsx:41
-msgid "Middle (M)"
-msgstr "متوسط (M)"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/Components/WealthGroup/WealthGroup.jsx:42
-msgid "Better Off (B/O)"
-msgstr "ميسور الحال (B/O)"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:683
-msgid "total"
-msgstr "إجمالي"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:684
-msgid "of"
-msgstr "من"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:684
-msgid "from"
-msgstr "من"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:684
-msgid "custom strategies"
-msgstr "استراتيجيات مخصصة"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:688
-msgid "of food from<br />own crops"
-msgstr "من الغذاء من<br />المحاصيل الخاصة"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:689
-msgid "of food from<br />purchase"
-msgstr "من الغذاء من<br />الشراء"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:690
-msgid "of cash from<br />crop sales"
-msgstr "من النقد من<br />مبيعات المحاصيل"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:691
-msgid "of cash from<br />livestock sales"
-msgstr "من النقد من<br />مبيعات الثروة الحيوانية"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:692
-msgid "of cash from<br />labor"
-msgstr "من النقد من<br />العمل"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:709
-msgid "of total from custom strategies"
-msgstr "من الإجمالي من الاستراتيجيات المخصصة"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:713
-msgid "of food from own crops"
-msgstr "من الغذاء من المحاصيل الخاصة"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:714
-msgid "of food from purchase"
-msgstr "من الغذاء من الشراء"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:715
-msgid "of cash from crop sales"
-msgstr "من النقد من مبيعات المحاصيل"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:716
-msgid "of cash from livestock sales"
-msgstr "من النقد من مبيعات الثروة الحيوانية"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/GlobalMap.jsx:717
-msgid "of cash from labor"
-msgstr "من النقد من العمل"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:455
-#, no-javascript-format
-msgid "Annual sources of food (% of 2100 kcal/person/day)"
-msgstr "المصادر السنوية للغذاء (%% من 2100 kcal/person/day)"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:456
-msgid "Annual sources of cash income ([currency]/household)"
-msgstr "المصادر السنوية للدخل النقدي ([currency]/household)"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:457
-msgid "Annual cash expenditures ([currency]/household)"
-msgstr "النفقات النقدية السنوية ([currency]/household)"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:463
-msgid "currency"
-msgstr "العملة"
-
-#: tmp_frontend_source/src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:464
-msgid "Annual sources"
-msgstr "المصادر السنوية"
-
-#: tmp_frontend_source/src/Views/Layouts/Header/Header.tsx:28
-msgid "FEWS NET logo"
-msgstr "شعار FEWS NET"
-
-#: tmp_frontend_source/src/Views/Layouts/Header/Header.tsx:50
-#: tmp_frontend_source/src/Views/Layouts/SelectedView/SelectedView.tsx:29
-#: tmp_frontend_source/src/Views/Layouts/SelectedView/SelectedView.tsx:38
-msgid "Updating"
-msgstr "جارٍ التحديث"
-
-#: tmp_frontend_source/src/Views/Layouts/Header/Header.tsx:50
-#: tmp_frontend_source/src/Views/Layouts/SelectedView/SelectedView.tsx:38
-msgid "Compare"
-msgstr "مقارنة"
-
-#: tmp_frontend_source/src/Views/Layouts/Header/Header.tsx:63
-msgid "FEWS NET Website"
-msgstr "موقع FEWS NET"
-
-#: tmp_frontend_source/src/Views/Layouts/Header/Header.tsx:66
-msgid "Select language"
-msgstr "اختر اللغة"
-
-#: tmp_frontend_source/src/auth/Components/Auth/Login.jsx:19
-msgid "Error"
-msgstr "خطأ"
-
-#: tmp_frontend_source/src/auth/Components/Auth/Login.jsx:22
-msgid ""
-"Unable to login. Username or Password are either not correct or the account "
-"does not exist. Please try again. If issues persist, please contact our help "
-"desk."
-msgstr "تعذر تسجيل الدخول. اسم المستخدم أو كلمة المرور غير صحيحين أو أن الحساب غير موجود. يُرجى المحاولة مرة أخرى. إذا استمرت المشكلات، يُرجى الاتصال بمكتب المساعدة."
-
-#: tmp_frontend_source/src/auth/Components/Auth/Login.jsx:47
-msgid "Sign In"
-msgstr "تسجيل الدخول"
-
-#: tmp_frontend_source/src/auth/Components/Auth/Login.jsx:52
-msgid "Sign in with Google"
-msgstr "تسجيل الدخول باستخدام Google"
-
-#: tmp_frontend_source/src/auth/Components/Auth/Login.jsx:56
-msgid "Includes"
-msgstr "يتضمن"
-
-#: tmp_frontend_source/src/auth/Components/Auth/Login.jsx:56
+#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:480
+#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:497
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:255
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:174
+msgid "% of 2100 kcal/person/day"
+msgstr ""
+
+#: src/Views/Layouts/BrowseViews/BrowseViews.jsx:66
+msgid "+ Create new view"
+msgstr "+ إنشاء عرض جديد"
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/KeyParameters/KeyParameters.jsx:217
+msgid "A key parameter is a major food or income source in a livelihood zone, meaning the activity contributes over 5% of 2,100 kcal/person/day for at least two wealth groups or over 10% for one group. A livelihood activity may also be considered key if it is the only food or income source during the lean season."
+msgstr ""
+
+#: src/App.tsx:15
+msgid "About the Livelihoods Explorer"
+msgstr "حول مستكشف سبل العيش"
+
+#: src/auth/Components/Auth/Login.jsx:56
 msgid "accounts."
 msgstr "حسابات."
 
-#: tmp_frontend_source/src/auth/Components/Auth/Login.jsx:62
-msgid "or"
-msgstr "أو"
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1317
+msgid "Activities"
+msgstr "الأنشطة"
 
-#: tmp_frontend_source/src/auth/Components/Auth/Login.jsx:66
-msgid "Username"
-msgstr "اسم المستخدم"
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Calendar/Calendar.jsx:265
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Calendar/Calendar.jsx:610
+msgid "Activity"
+msgstr ""
 
-#: tmp_frontend_source/src/auth/Components/Auth/Login.jsx:67
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:590
+msgid "Add baseline to Compare view"
+msgstr "إضافة خط الأساس إلى عرض المقارنة"
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:708
+msgid "Add filter"
+msgstr "إضافة تصفية"
+
+#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:656
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1103
+msgid "Add this Baseline to Compare view"
+msgstr ""
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:589
+#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:655
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1102
+msgid "Added to Compare view"
+msgstr "أضيف إلى عرض المقارنة"
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:172
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:179
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:622
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:645
+#: src/Views/Layouts/GlobalMap/Components/WealthGroup/WealthGroup.jsx:38
+msgid "All"
+msgstr "الكل"
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:747
+msgid "Already added. Edit or delete it from the main filter list."
+msgstr "تمت إضافته بالفعل. عدّله أو احذفه من قائمة التصفية الرئيسية."
+
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:492
+msgid "Annual cash expenditures ([currency]/household)"
+msgstr "النفقات النقدية السنوية ([currency]/household)"
+
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:499
+msgid "Annual sources"
+msgstr "المصادر السنوية"
+
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:491
+msgid "Annual sources of cash income ([currency]/household)"
+msgstr "المصادر السنوية للدخل النقدي ([currency]/household)"
+
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:490
+msgid "Annual sources of food (% of 2100 kcal/person/day)"
+msgstr "المصادر السنوية للغذاء (%% من 2100 kcal/person/day)"
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:577
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:579
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:682
+msgid "Any"
+msgstr "أي"
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:654
+msgid "any amount"
+msgstr "أي كمية"
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:657
+msgid "at least"
+msgstr "على الأقل"
+
+#: src/Views/Layouts/Compare/Compare.jsx:1033
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:115
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:240
+#: src/Views/Layouts/GlobalMap/Components/LHZLabel/LHZLabel.tsx:47
+#: src/Views/Layouts/GlobalMap/Components/LHZLabel/LHZLabel.tsx:69
+#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:669
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/AllBaselines/AllBaselines.jsx:18
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1216
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:276
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:1091
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:1094
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:507
+msgid "Baseline"
+msgstr "حدود"
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1425
+msgid "Baseline completed by %(organization)s."
+msgstr "أكملت %(organization)s خط الأساس."
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/AllBaselines/AllBaselines.jsx:9
+msgid "Baseline name"
+msgstr "اسم خط الأساس"
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:554
+#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:669
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1216
+msgid "Baselines"
+msgstr "خطوط الأساس"
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/AllBaselines/AllBaselines.jsx:37
+msgid "baselines available"
+msgstr "خطوط أساس متاحة"
+
+#: src/Views/Layouts/GlobalMap/Components/WealthGroup/WealthGroup.jsx:42
+msgid "Better off (B/O)"
+msgstr "ميسور الحال (B/O)"
+
+#: src/Views/Layouts/Compare/Compare.jsx:35
+msgid "Better off (BO)"
+msgstr "ميسور الحال (BO)"
+
+#: src/Views/Layouts/BrowseViews/BrowseViews.jsx:62
+msgid "Browse views"
+msgstr "استعراض العروض"
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:45
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:96
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:29
+msgid "Butter production"
+msgstr "إنتاج الزبدة"
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1444
+msgid "Calendar"
+msgstr "التقويم"
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Calendar/Calendar.jsx:628
+msgid "Calendar data could not be loaded for this baseline."
+msgstr ""
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Characteristics/Characteristics.jsx:23
+msgid "Capital"
+msgstr ""
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:148
+msgid "Cash"
+msgstr "نقد"
+
+#: src/Views/Layouts/Compare/Compare.jsx:1524
+msgid "Cash expenditures"
+msgstr "النفقات النقدية"
+
+#: src/Views/Layouts/Compare/Compare.jsx:1495
+msgid "Cash income"
+msgstr "الدخل النقدي"
+
+#: src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:738
+msgid "Change"
+msgstr ""
+
+#: src/Views/Layouts/Compare/Compare.jsx:1555
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1437
+msgid "Characteristics"
+msgstr "الخصائص"
+
+#: src/Views/Layouts/Compare/Compare.jsx:1304
+msgid "Click to learn more about comparing Baselines (opens in new tab)"
+msgstr "انقر لمعرفة المزيد حول مقارنة خطوط الأساس (يفتح في علامة تبويب جديدة)"
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:675
+msgid "Click to learn more about filter options (opens in new tab)"
+msgstr "انقر لمعرفة المزيد حول خيارات التصفية (يفتح في علامة تبويب جديدة)"
+
+#: src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:679
+msgid "Click to learn more about map views (opens in new tab)"
+msgstr "انقر لمعرفة المزيد حول عروض الخريطة (يفتح في علامة تبويب جديدة)"
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1123
+msgid "Click to learn more about the Detail view (opens in new tab)"
+msgstr "انقر لمعرفة المزيد حول العرض التفصيلي (يفتح في علامة تبويب جديدة)"
+
+#: src/Views/Layouts/GlobalMap/Components/WealthGroup/WealthGroup.jsx:23
+msgid "Click to learn more about wealth groups (opens in new tab)"
+msgstr "انقر لمعرفة المزيد حول فئات الثروة (يفتح في علامة تبويب جديدة)"
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1156
+#: src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:703
+msgid "Close"
+msgstr "إغلاق"
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1161
+msgid "Close Detail view"
+msgstr "إغلاق العرض التفصيلي"
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1113
+msgid "Collapse"
+msgstr "طي"
+
+#: src/Views/Layouts/Header/Header.tsx:108
+#: src/Views/Layouts/SelectedView/SelectedView.tsx:38
+msgid "Compare"
+msgstr "مقارنة"
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:662
+msgid "contributes"
+msgstr "يساهم"
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:650
+msgid "Contributes to"
+msgstr "يساهم في"
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:673
+msgid "Contribution amount"
+msgstr "قيمة المساهمة"
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Calendar/Calendar.jsx:543
+msgid "Crop Activities"
+msgstr "أنشطة المحاصيل"
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:57
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:99
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:93
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:32
+msgid "Crop production"
+msgstr "إنتاج المحاصيل"
+
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:498
+msgid "currency"
+msgstr "العملة"
+
+#: src/Views/Layouts/Compare/Compare.jsx:1357
+msgid "Currency"
+msgstr "العملة"
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Calendar/Calendar.jsx:533
+msgid "Current month"
+msgstr "الشهر الحالي"
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:605
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:606
+#: src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:668
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:665
+msgid "Custom filter overlay"
+msgstr "تراكب تصفية مخصص"
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:688
+msgid "Custom range"
+msgstr "نطاق مخصص"
+
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:699
+msgid "custom strategies"
+msgstr "استراتيجيات مخصصة"
+
+#: src/Views/Layouts/BrowseViews/BrowseViews.jsx:18
+msgid "Demo: West Africa own-produced staple crop consumption"
+msgstr ""
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Characteristics/Characteristics.jsx:24
+msgid "Demographics"
+msgstr ""
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1121
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1150
+msgid "Detail view"
+msgstr "العرض التفصيلي"
+
+#: src/Views/Layouts/GlobalMap/Components/ExportMapModal/ExportMapModal.jsx:140
+msgid "Disclaimer (optional)"
+msgstr "إخلاء المسؤولية (اختياري)"
+
+#: src/Views/Layouts/GlobalMap/Components/ExportMapModal/ExportMapModal.jsx:68
+msgid "Download .png image"
+msgstr "تنزيل صورة .png"
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/AllBaselines/AllBaselines.jsx:31
+msgid "Download .xlsx"
+msgstr "تنزيل .xlsx"
+
+#: src/auth/Components/Auth/Login.jsx:67
 msgid "e.g. dataexplorer3"
 msgstr "مثال: dataexplorer3"
 
-#: tmp_frontend_source/src/auth/Components/Auth/Login.jsx:69
-msgid "NOTE: This is separate from your email address."
-msgstr "ملاحظة: هذا منفصل عن عنوان بريدك الإلكتروني."
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:695
+msgid "Edit filter"
+msgstr "تعديل التصفية"
 
-#: tmp_frontend_source/src/auth/Components/Auth/Login.jsx:73
-msgid "Password"
-msgstr "كلمة المرور"
-
-#: tmp_frontend_source/src/auth/Components/Auth/Login.jsx:74
+#: src/auth/Components/Auth/Login.jsx:74
 msgid "Enter your password"
 msgstr "أدخل كلمة المرور"
 
-#: tmp_frontend_source/src/auth/Components/Auth/Login.jsx:78
+#: src/auth/Components/Auth/Login.jsx:19
+msgid "Error"
+msgstr "خطأ"
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1113
+msgid "Expand"
+msgstr "توسيع"
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:149
+msgid "Expenditures"
+msgstr "النفقات"
+
+#: src/Views/Layouts/Header/Header.tsx:117
+msgid "FEWS NET"
+msgstr ""
+
+#: src/Views/Layouts/Header/Header.tsx:116
+msgid "FEWS NET Website"
+msgstr "موقع FEWS NET"
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/AllBaselines/AllBaselines.jsx:28
+msgid "File download"
+msgstr "تنزيل الملف"
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/BasicFilter/BasicFilter.jsx:466
+msgid "filter"
+msgstr ""
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:141
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:95
+msgid "Filter Baselines by a Strategy’s contribution to livelihoods"
+msgstr "تصفية خطوط الأساس حسب مساهمة استراتيجية في سبل العيش"
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:117
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:147
+msgid "Filter Baselines by country"
+msgstr "تصفية خطوط الأساس حسب البلد"
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/BasicFilter/BasicFilter.jsx:34
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:110
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:145
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:665
+msgid "Filter Baselines by population for one or all Wealth Groups"
+msgstr "تصفية خطوط الأساس حسب السكان لفئة ثروة واحدة أو جميع فئات الثروة"
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:103
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:143
+msgid "Filter Baselines by Primary Livelihood System"
+msgstr "تصفية خطوط الأساس حسب نظام سبل العيش الرئيسي"
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:444
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:401
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:423
+msgid "Filter zones by a strategy’s contribution to livelihoods"
+msgstr ""
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/BasicFilter/BasicFilter.jsx:296
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:384
+msgid "Filter zones by country or region"
+msgstr ""
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:452
+msgid "Filter zones by type"
+msgstr ""
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:695
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:705
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:531
+msgid "Filters"
+msgstr "عوامل التصفية"
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:104
+msgid "Fishing"
+msgstr "صيد السمك"
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:147
+msgid "Food"
+msgstr "غذاء"
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:146
+msgid "Food + Cash"
+msgstr "غذاء + نقد"
+
+#: src/Views/Layouts/Compare/Compare.jsx:1466
+msgid "Food consumption"
+msgstr "استهلاك الغذاء"
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:100
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:61
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:99
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:33
+msgid "Food purchase"
+msgstr "شراء الطعام"
+
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:699
+msgid "from"
+msgstr "من"
+
+#: src/Views/Layouts/GlobalMap/Components/ExportMapModal/ExportMapModal.jsx:12
+msgid "Global"
+msgstr "عالمي"
+
+#: src/Views/Layouts/Compare/Compare.jsx:1313
+#: src/Views/Layouts/Header/Header.tsx:72
+#: src/Views/Layouts/Header/Header.tsx:74
+msgid "Help"
+msgstr "مساعدة"
+
+#: src/Views/Layouts/Compare/Compare.jsx:1424
+msgid "Household annual kcals cost"
+msgstr "التكلفة السنوية للسعرات الحرارية للأسرة"
+
+#: src/Views/Layouts/Compare/Compare.jsx:1412
+msgid "Household size"
+msgstr "حجم الأسرة"
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:103
+msgid "Hunting"
+msgstr "الصيد"
+
+#: src/auth/Components/Auth/Login.jsx:56
+msgid "Includes"
+msgstr "يتضمن"
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:625
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:930
+msgid "Item"
+msgstr "غرض"
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1447
+msgid "Key parameters"
+msgstr "معلمات رئيسية"
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/KeyParameters/KeyParameters.jsx:148
+msgid "Key parameters could not be loaded right now."
+msgstr ""
+
+#: src/Views/Layouts/Header/Header.tsx:42
+msgid "Knowledge Base"
+msgstr ""
+
+#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:420
+msgid "Latest"
+msgstr ""
+
+#: src/Views/Layouts/GlobalMap/Components/ExportMapModal/ExportMapModal.jsx:135
+msgid "Latest Reference Year"
+msgstr "أحدث سنة مرجعية"
+
+#: src/Views/Layouts/Compare/Compare.jsx:1310
+msgid "Learn more about comparing Baselines"
+msgstr "معرفة المزيد حول مقارنة خطوط الأساس"
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:683
+msgid "Learn more about filter options"
+msgstr "معرفة المزيد حول خيارات التصفية"
+
+#: src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:685
+msgid "Learn more about map views"
+msgstr "معرفة المزيد حول عروض الخريطة"
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1132
+msgid "Learn more about the Detail view (opens in new tab)"
+msgstr "معرفة المزيد حول العرض التفصيلي (يفتح في علامة تبويب جديدة)"
+
+#: src/Views/Layouts/GlobalMap/Components/WealthGroup/WealthGroup.jsx:29
+msgid "Learn more about wealth groups"
+msgstr "معرفة المزيد حول فئات الثروة"
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1273
+msgid "Less"
+msgstr "أقل"
+
+#: src/Views/Layouts/Compare/Compare.jsx:1450
+msgid "Livelihood Activities"
+msgstr "انشطة سبل العيش"
+
+#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:809
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1406
+msgid "Livelihood Protection Threshold"
+msgstr "عتبة حماية سبل العيش"
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:591
+msgid "Livelihood Strategy filter"
+msgstr "تصفية استراتيجية سبل العيش"
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:572
+msgid "Livelihood Zone"
+msgstr "منطقة سبل العيش"
+
+#: src/Views/Layouts/GlobalMap/Components/ExportMapModal/ExportMapModal.jsx:103
+msgid "Livelihood Zone code labels"
+msgstr "تسميات رموز منطقة سبل العيش"
+
+#: src/Views/Layouts/Header/Header.tsx:59
+msgid "Livelihoods Explorer"
+msgstr ""
+
+#: src/Views/Layouts/Header/Header.tsx:133
+msgid "Livelihoods Explorer video tour"
+msgstr ""
+
+#: src/Views/Layouts/Compare/Compare.jsx:1437
+msgid "Livelihoods Protection Threshold (%kcals)"
+msgstr ""
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Characteristics/Characteristics.jsx:22
+msgid "Livestock"
+msgstr ""
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Calendar/Calendar.jsx:543
+msgid "Livestock Activities"
+msgstr "أنشطة الثروة الحيوانية"
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:53
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:98
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:105
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:31
+msgid "Livestock sale"
+msgstr "بيع الماشية"
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Calendar/Calendar.jsx:726
+msgid "Loading calendar data…"
+msgstr "جارٍ تحميل بيانات التقويم…"
+
+#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:764
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1373
+msgid "Loading total income chart..."
+msgstr ""
+
+#: src/Views/Layouts/Compare/Compare.jsx:1565
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Characteristics/Characteristics.jsx:142
+msgid "Loading…"
+msgstr "جارٍ التحميل…"
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:116
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:132
+msgid "Location"
+msgstr "موقع"
+
+#: src/Views/Layouts/GlobalMap/Components/ExportMapModal/ExportMapModal.jsx:92
+msgid "Map export preview"
+msgstr "معاينة تصدير الخريطة"
+
+#: src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:675
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:667
+msgid "Map overlay"
+msgstr "تراكب الخريطة"
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:705
+msgid "Max contribution (%)"
+msgstr "الحد الأقصى للمساهمة (%)"
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:49
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:97
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:30
+msgid "Meat production"
+msgstr "إنتاج اللحوم"
+
+#: src/Views/Layouts/Compare/Compare.jsx:34
+msgid "Medium (M)"
+msgstr "متوسط (M)"
+
+#: src/Views/Layouts/GlobalMap/Components/WealthGroup/WealthGroup.jsx:41
+msgid "Middle (M)"
+msgstr "متوسط (M)"
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:41
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:95
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:28
+msgid "Milk production"
+msgstr "إنتاج الحليب"
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:694
+msgid "Min contribution (%)"
+msgstr "الحد الأدنى للمساهمة (%)"
+
+#: src/Views/Layouts/BrowseViews/BrowseViews.jsx:40
+msgid "ML01 Wealth Group comparison"
+msgstr ""
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1273
+msgid "More"
+msgstr "المزيد"
+
+#: src/Views/Layouts/Compare/Compare.jsx:1020
+#: src/Views/Layouts/Compare/Compare.jsx:1021
+#: src/Views/Layouts/Compare/Compare.jsx:1022
+#: src/Views/Layouts/Compare/Compare.jsx:1053
+#: src/Views/Layouts/Compare/Compare.jsx:1054
+#: src/Views/Layouts/Compare/Compare.jsx:1064
+#: src/Views/Layouts/Compare/Compare.jsx:1066
+#: src/Views/Layouts/Compare/Compare.jsx:1075
+#: src/Views/Layouts/Compare/Compare.jsx:1076
+#: src/Views/Layouts/Compare/Compare.jsx:1091
+#: src/Views/Layouts/Compare/Compare.jsx:1092
+#: src/Views/Layouts/Compare/Compare.jsx:1093
+#: src/Views/Layouts/Compare/Compare.jsx:242
+#: src/Views/Layouts/Compare/Compare.jsx:331
+#: src/Views/Layouts/Compare/Compare.jsx:39
+#: src/Views/Layouts/Compare/Compare.jsx:474
+#: src/Views/Layouts/Compare/Compare.jsx:480
+#: src/Views/Layouts/Compare/Compare.jsx:486
+#: src/Views/Layouts/Compare/Compare.jsx:494
+#: src/Views/Layouts/Compare/Compare.jsx:522
+#: src/Views/Layouts/Compare/Compare.jsx:524
+#: src/Views/Layouts/Compare/Compare.jsx:527
+#: src/Views/Layouts/Compare/Compare.jsx:530
+#: src/Views/Layouts/Compare/Compare.jsx:560
+#: src/Views/Layouts/Compare/Compare.jsx:562
+#: src/Views/Layouts/Compare/Compare.jsx:563
+#: src/Views/Layouts/Compare/Compare.jsx:637
+#: src/Views/Layouts/Compare/Compare.jsx:650
+#: src/Views/Layouts/Compare/Compare.jsx:866
+#: src/Views/Layouts/Compare/Compare.jsx:894
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:109
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/AllBaselines/AllBaselines.jsx:31
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Calendar/Calendar.jsx:538
+msgid "N/A"
+msgstr "غير متاح"
+
+#: src/Views/Layouts/BrowseViews/BrowseViews.jsx:33
+msgid "Nigeria all livelihood zones comparison"
+msgstr ""
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1021
+msgid "No active Baseline"
+msgstr ""
+
+#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:670
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1217
+msgid "No Baselines"
+msgstr "لا توجد خطوط أساس"
+
+#: src/Views/Layouts/Compare/Compare.jsx:1320
+msgid "No Baselines selected. Use Search to add Baselines to Compare."
+msgstr "لم يتم تحديد أي خطوط أساس. استخدم البحث لإضافة خطوط أساس للمقارنة."
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Calendar/Calendar.jsx:728
+msgid "No calendar data for this baseline."
+msgstr "لا توجد بيانات تقويم لخط الأساس هذا."
+
+#: src/Views/Layouts/Compare/Compare.jsx:1512
+msgid "No cash income data"
+msgstr "لا توجد بيانات عن الدخل النقدي"
+
+#: src/Views/Layouts/Compare/Compare.jsx:1613
+msgid "No Characteristics data"
+msgstr "لا توجد بيانات عن الخصائص"
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:669
+msgid "No contribution indicators with data for this selection."
+msgstr "لا توجد مؤشرات مساهمة تحتوي على بيانات لهذا التحديد."
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1079
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1083
+msgid "No description available"
+msgstr "لا يوجد وصف متاح"
+
+#: src/Views/Layouts/Compare/Compare.jsx:1541
+msgid "No expenditure data"
+msgstr "لا توجد بيانات عن النفقات"
+
+#: src/Views/Layouts/Compare/Compare.jsx:1484
+msgid "No food data"
+msgstr "لا توجد بيانات غذائية"
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/KeyParameters/KeyParameters.jsx:277
+msgid "No key parameters were returned for this baseline."
+msgstr "لم تُرجع أي معلمات رئيسية لخط الأساس هذا."
+
+#: src/Views/Layouts/GlobalMap/Components/ExportMapModal/ExportMapModal.jsx:13
+msgid "None"
+msgstr "لا شيء"
+
+#: src/auth/Components/Auth/Login.jsx:69
+msgid "NOTE: This is separate from your email address."
+msgstr "ملاحظة: هذا منفصل عن عنوان بريدك الإلكتروني."
+
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:699
+msgid "of"
+msgstr "من"
+
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:730
+msgid "of cash from crop sales"
+msgstr "من النقد من مبيعات المحاصيل"
+
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:732
+msgid "of cash from labor"
+msgstr "من النقد من العمل"
+
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:731
+msgid "of cash from livestock sales"
+msgstr "من النقد من مبيعات الثروة الحيوانية"
+
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:705
+msgid "of cash from<br />crop sales"
+msgstr "من النقد من<br />مبيعات المحاصيل"
+
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:707
+msgid "of cash from<br />labor"
+msgstr "من النقد من<br />العمل"
+
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:706
+msgid "of cash from<br />livestock sales"
+msgstr "من النقد من<br />مبيعات الثروة الحيوانية"
+
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:728
+msgid "of food from own crops"
+msgstr "من الغذاء من المحاصيل الخاصة"
+
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:729
+msgid "of food from purchase"
+msgstr "من الغذاء من الشراء"
+
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:703
+msgid "of food from<br />own crops"
+msgstr "من الغذاء من<br />المحاصيل الخاصة"
+
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:704
+msgid "of food from<br />purchase"
+msgstr "من الغذاء من<br />الشراء"
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:627
+msgid "Of products"
+msgstr "من المنتجات"
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1429
+msgid "Opens in a new tab"
+msgstr ""
+
+#: src/auth/Components/Auth/Login.jsx:62
+msgid "or"
+msgstr "أو"
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/AllBaselines/AllBaselines.jsx:23
+msgid "Organization"
+msgstr "المنظمة"
+
+#: src/Views/Layouts/Compare/Compare.jsx:570
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:95
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:318
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:395
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:442
+msgid "Other"
+msgstr ""
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:106
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:85
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:37
+msgid "Other cash income"
+msgstr "دخل نقدي آخر"
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:107
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:89
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:38
+msgid "Other purchase"
+msgstr "شراء آخر"
+
+#: src/Views/Layouts/BrowseViews/BrowseViews.jsx:26
+msgid "Own crop consumption in Sahel map"
+msgstr ""
+
+#: src/auth/Components/Auth/Login.jsx:73
+msgid "Password"
+msgstr "كلمة المرور"
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:101
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:65
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:34
+msgid "Payment in kind"
+msgstr "دفع عيني"
+
+#: src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:78
+#: src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:79
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:662
+msgid "Percentage of cash income from crop sales"
+msgstr "النسبة المئوية للدخل النقدي من مبيعات المحاصيل"
+
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:664
+msgid "Percentage of cash income from labor"
+msgstr "النسبة المئوية للدخل النقدي من العمل"
+
+#: src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:98
+#: src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:99
+msgid "Percentage of cash income from labor, trade, and self-employment"
+msgstr ""
+
+#: src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:88
+#: src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:89
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:663
+msgid "Percentage of cash income from livestock sales"
+msgstr "النسبة المئوية للدخل النقدي من مبيعات الثروة الحيوانية"
+
+#: src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:58
+#: src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:59
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:660
+msgid "Percentage of food consumption from own crops"
+msgstr "النسبة المئوية لاستهلاك الغذاء من المحاصيل الخاصة"
+
+#: src/Views/Layouts/GlobalMap/Components/ExportMapModal/ExportMapModal.jsx:120
+msgid "Percentage of food consumption from own crops for very poor households"
+msgstr "النسبة المئوية لاستهلاك الغذاء من المحاصيل الخاصة للأسر الفقيرة جدًا"
+
+#: src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:68
+#: src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:69
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:661
+msgid "Percentage of food consumption from purchase"
+msgstr "النسبة المئوية لاستهلاك الغذاء من الشراء"
+
+#: src/Views/Layouts/Compare/Compare.jsx:1418
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1318
+msgid "Percentage of households"
+msgstr "نسبة الأسر"
+
+#: src/Views/Layouts/Compare/Compare.jsx:1406
+msgid "Percentage of total population"
+msgstr "النسبة المئوية من إجمالي السكان"
+
+#: src/Views/Layouts/Compare/Compare.jsx:33
+#: src/Views/Layouts/GlobalMap/Components/WealthGroup/WealthGroup.jsx:40
+msgid "Poor (P)"
+msgstr "فقير (P)"
+
+#: src/Views/Layouts/Compare/Compare.jsx:1347
+#: src/Views/Layouts/Compare/Compare.jsx:1400
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:109
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:130
+#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:735
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Characteristics/Characteristics.jsx:25
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1241
+msgid "Population"
+msgstr "السكان"
+
+#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:755
+msgid "Population by wealth group"
+msgstr "السكان حسب فئة الثروة"
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/KeyParameters/KeyParameters.jsx:241
+msgid "Price"
+msgstr "سعر"
+
+#: src/Views/Layouts/Compare/Compare.jsx:1352
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/BasicFilter/BasicFilter.jsx:335
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:128
+#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:741
+#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:749
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1247
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1255
+#: src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:147
+#: src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:148
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:659
+msgid "Primary Livelihood System"
+msgstr "استراتيجية سبل العيش"
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:913
+msgid "Product"
+msgstr "منتج"
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/KeyParameters/KeyParameters.jsx:240
+msgid "Quantity"
+msgstr "الكمية"
+
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:506
+msgid "Reference year ending"
+msgstr ""
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Calendar/Calendar.jsx:537
+msgid "Reference Year start month"
+msgstr "شهر بدء السنة المرجعية"
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:102
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:69
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:35
+msgid "Relief, gift, or other food"
+msgstr ""
+
+#: src/Views/Layouts/Compare/Compare.jsx:571
+msgid "Relief, gifts, other"
+msgstr ""
+
+#: src/Views/Layouts/Compare/Compare.jsx:1364
+#: src/Views/Layouts/Compare/Compare.jsx:1369
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:587
+msgid "Remove Baseline from Compare view."
+msgstr ""
+
+#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:653
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1100
+msgid "Remove this Baseline from Compare view"
+msgstr ""
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:585
+#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:651
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1098
+msgid "Removed from Compare view"
+msgstr "أزيل من عرض المقارنة"
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1431
+msgid "Request file"
+msgstr "طلب الملف"
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1360
+msgid "Reset chart"
+msgstr "إعادة تعيين الرسم البياني"
+
+#: src/Views/Layouts/Header/Header.tsx:31
+msgid "Review the basics of using the platform"
+msgstr ""
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/BasicFilter/BasicFilter.jsx:482
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:600
+msgid "Save"
+msgstr "حفظ"
+
+#: src/Views/Layouts/BrowseViews/BrowseViews.jsx:73
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:514
+#: src/Views/Layouts/Header/Header.tsx:99
+#: src/Views/Layouts/SelectedView/SelectedView.tsx:29
+msgid "Search"
+msgstr "بحث"
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:516
+msgid "Search by product or Baseline"
+msgstr "البحث حسب المنتج أو خط الأساس"
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/BasicFilter/BasicFilter.jsx:111
+msgid "Select"
+msgstr "تحديد"
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1022
+msgid "Select a Baseline from View all to add it to Compare."
+msgstr ""
+
+#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:649
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1096
+msgid "Select a Baseline to add to Compare view"
+msgstr ""
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/BasicFilter/BasicFilter.jsx:82
+msgid "Select a location"
+msgstr "حدد موقعًا"
+
+#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:678
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1224
+msgid "Select Baseline"
+msgstr "حدد خط الأساس"
+
+#: src/Views/Layouts/Header/Header.tsx:83
+msgid "Select language"
+msgstr "اختر اللغة"
+
+#: src/auth/Components/Auth/Login.jsx:47 src/auth/Components/Auth/Login.jsx:78
 msgid "Sign in"
 msgstr "تسجيل الدخول"
+
+#: src/auth/Components/Auth/Login.jsx:52
+msgid "Sign in with Google"
+msgstr "تسجيل الدخول باستخدام Google"
+
+#: src/Views/Layouts/GlobalMap/Components/ExportMapModal/ExportMapModal.jsx:144
+msgid "Some disclaimer"
+msgstr "بعض إخلاء المسؤولية"
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:126
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:94
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:934
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:938
+msgid "Strategy"
+msgstr "إستراتيجية"
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:605
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:103
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:91
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:97
+msgid "Strategy Type"
+msgstr "نوع الاستراتيجية"
+
+#: src/Views/Layouts/GlobalMap/Components/ExportMapModal/ExportMapModal.jsx:131
+msgid "Subtitle (optional)"
+msgstr "العنوان الفرعي (اختياري)"
+
+#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:820
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1415
+msgid "Survival Threshold"
+msgstr "عتبة البقاء"
+
+#: src/Views/Layouts/Compare/Compare.jsx:1430
+msgid "Survival Threshold (%kcals)"
+msgstr ""
+
+#: src/Views/Layouts/BrowseViews/BrowseViews.jsx:22
+msgid "This demo view includes filters for each type of staple crop produced in Livelihood Zones in West Africa. Open each filter to see a map of..."
+msgstr ""
+
+#: src/App.tsx:16
+msgid "This page will hold the Livelihoods Explorer help and documentation content."
+msgstr "ستحتوي هذه الصفحة على محتوى المساعدة والتوثيق الخاص بمستكشف سبل العيش."
+
+#: src/Views/Layouts/GlobalMap/Components/ExportMapModal/ExportMapModal.jsx:117
+msgid "Title"
+msgstr "العنوان"
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:662
+msgid "to"
+msgstr "إلى"
+
+#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:183
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:628
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:913
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:936
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:942
+msgid "Total"
+msgstr "الإجمالي"
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1357
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:493
+msgid "Total annual food and cash income (% of 2100 kcal/person/day)"
+msgstr "إجمالي الدخل السنوي من الغذاء والنقد (%% من 2100 kcal/person/day)"
+
+#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:768
+#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:780
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1385
+msgid "Total income chart is not available for this Baseline."
+msgstr "مخطط إجمالي الدخل غير متاح لخط الأساس هذا."
+
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:234
+msgid "Unable to load activity summary data."
+msgstr ""
+
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:205
+msgid "Unable to load baseline data."
+msgstr ""
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Characteristics/Characteristics.jsx:109
+msgid "Unable to load characteristics."
+msgstr ""
+
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:530
+msgid "Unable to load livelihood data."
+msgstr ""
+
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:237
+msgid "Unable to load wealth group data."
+msgstr ""
+
+#: src/auth/Components/Auth/Login.jsx:22
+msgid "Unable to login. Username or Password are either not correct or the account does not exist. Please try again. If issues persist, please contact our help desk."
+msgstr "تعذر تسجيل الدخول. اسم المستخدم أو كلمة المرور غير صحيحين أو أن الحساب غير موجود. يُرجى المحاولة مرة أخرى. إذا استمرت المشكلات، يُرجى الاتصال بمكتب المساعدة."
+
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:369
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:430
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:60
+msgid "Unknown Product"
+msgstr ""
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/KeyParameters/KeyParameters.jsx:19
+msgid "Unspecified activity"
+msgstr "نشاط غير محدد"
+
+#: src/Views/Layouts/Compare/Compare.jsx:694
+msgid "Unspecified product"
+msgstr ""
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:658
+msgid "up to"
+msgstr "حتى"
+
+#: src/Views/Layouts/Header/Header.tsx:108
+#: src/Views/Layouts/SelectedView/SelectedView.tsx:29
+#: src/Views/Layouts/SelectedView/SelectedView.tsx:38
+msgid "Updating"
+msgstr "جارٍ التحديث"
+
+#: src/Views/Layouts/BrowseViews/BrowseViews.jsx:36
+msgid "Use this to check Mali data when preparing reports"
+msgstr ""
+
+#: src/Views/Layouts/BrowseViews/BrowseViews.jsx:29
+#: src/Views/Layouts/BrowseViews/BrowseViews.jsx:43
+#: src/Views/Layouts/BrowseViews/BrowseViews.jsx:50
+msgid "Used for presentations to stakeholders August 2025"
+msgstr ""
+
+#: src/auth/Components/Auth/Login.jsx:66
+msgid "Username"
+msgstr "اسم المستخدم"
+
+#: src/Views/Layouts/Compare/Compare.jsx:32
+#: src/Views/Layouts/GlobalMap/Components/WealthGroup/WealthGroup.jsx:39
+msgid "Very poor (VP)"
+msgstr "فقير جدًا (VP)"
+
+#: src/Views/Layouts/Header/Header.tsx:123
+#: src/Views/Layouts/Header/Header.tsx:30
+msgid "Video tour"
+msgstr ""
+
+#: src/Views/Layouts/Compare/Compare.jsx:1336
+msgid "View on map"
+msgstr "عرض على الخريطة"
+
+#: src/Views/Layouts/Header/Header.tsx:43
+msgid "Visit our user-friendly help center"
+msgstr ""
+
+#: src/Views/Layouts/Compare/Compare.jsx:1295
+#: src/Views/Layouts/Compare/Compare.jsx:1386
+#: src/Views/Layouts/GlobalMap/Components/WealthGroup/WealthGroup.jsx:20
+msgid "Wealth Group"
+msgstr "مجموعة الثروة"
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:105
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:81
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:36
+msgid "Wild food gathering"
+msgstr "جمع الطعام البري"
+
+#: src/Views/Layouts/BrowseViews/BrowseViews.jsx:47
+msgid "Zones with high livestock contrib. to total income"
+msgstr ""
+
+#~ msgid "Very Poor (VP)"
+#~ msgstr "فقير جدًا (VP)"
+
+#~ msgid "Better Off (BO)"
+#~ msgstr "ميسور الحال (BO)"
+
+#~ msgid "Wealth group"
+#~ msgstr "فئة الثروة"
+
+#~ msgid "No baselines selected. Use Search to add baselines to compare."
+#~ msgstr "لم يتم تحديد أي خطوط أساس. استخدم البحث لإضافة خطوط أساس للمقارنة."
+
+#~ msgid "Remove baseline from compare view"
+#~ msgstr "إزالة خط الأساس من عرض المقارنة"
+
+#~ msgid "Survival threshold (% kcals)"
+#~ msgstr "عتبة البقاء (% kcals)"
+
+#~ msgid "Livelihoods protection threshold (% kcals)"
+#~ msgstr "عتبة حماية سبل العيش (% kcals)"
+
+#~ msgid "No characteristics data"
+#~ msgstr "لا توجد بيانات عن الخصائص"
+
+#~ msgid "Filter baselines by population for one or all wealth groups"
+#~ msgstr "تصفية خطوط الأساس حسب السكان لفئة ثروة واحدة أو جميع فئات الثروة"
+
+#~ msgid "Filter baselines by a strategy’s contribution to livelihoods"
+#~ msgstr "تصفية خطوط الأساس حسب مساهمة استراتيجية في سبل العيش"
+
+#~ msgid "Filter baselines by Primary Livelihood System"
+#~ msgstr "تصفية خطوط الأساس حسب نظام سبل العيش الرئيسي"
+
+#~ msgid "Filter baselines by country"
+#~ msgstr "تصفية خطوط الأساس حسب البلد"
+
+#~ msgid "Custom Filter Overlay"
+#~ msgstr "تراكب تصفية مخصص"
+
+#~ msgid "total income"
+#~ msgstr "إجمالي الدخل"
+
+#~ msgid "Add Filter"
+#~ msgstr "إضافة تصفية"
+
+#~ msgid "Milk Production"
+#~ msgstr "إنتاج الحليب"
+
+#~ msgid "Butter Production"
+#~ msgstr "إنتاج الزبدة"
+
+#~ msgid "Meat Production"
+#~ msgstr "إنتاج اللحوم"
+
+#~ msgid "Livestock Sale"
+#~ msgstr "بيع الماشية"
+
+#~ msgid "Crop Production"
+#~ msgstr "إنتاج المحاصيل"
+
+#~ msgid "Food Purchase"
+#~ msgstr "شراء الطعام"
+
+#~ msgid "Payment in Kind"
+#~ msgstr "دفع عيني"
+
+#~ msgid "Relief, Gift or Other Food"
+#~ msgstr "الإغاثة أو الهدية أو أي طعام آخر"
+
+#~ msgid "Wild Food Gathering"
+#~ msgstr "جمع الطعام البري"
+
+#~ msgid "Other Cash Income"
+#~ msgstr "دخل نقدي آخر"
+
+#~ msgid "Other Purchase"
+#~ msgstr "شراء آخر"
+
+#~ msgid "Livelihood strategy filter"
+#~ msgstr "تصفية استراتيجية سبل العيش"
+
+#~ msgid "Strategy type"
+#~ msgstr "نوع الاستراتيجية"
+
+#~ msgid "Search by product or baseline"
+#~ msgstr "البحث حسب المنتج أو خط الأساس"
+
+#~ msgid "Livelihood zone"
+#~ msgstr "منطقة سبل العيش"
+
+#~ msgid "Remove baseline from Compare view"
+#~ msgstr "إزالة خط الأساس من عرض المقارنة"
+
+#~ msgid "Select baseline"
+#~ msgstr "حدد خط الأساس"
+
+#~ msgid "Reference year start month"
+#~ msgstr "شهر بدء السنة المرجعية"
+
+#~ msgid "Detail View"
+#~ msgstr "العرض التفصيلي"
+
+#~ msgid "Click to learn more about the Detail View (opens in new tab)"
+#~ msgstr "انقر لمعرفة المزيد حول العرض التفصيلي (يفتح في علامة تبويب جديدة)"
+
+#~ msgid "Learn more about the Detail View (opens in new tab)"
+#~ msgstr "معرفة المزيد حول العرض التفصيلي (يفتح في علامة تبويب جديدة)"
+
+#~ msgid "Close Detail View"
+#~ msgstr "إغلاق العرض التفصيلي"
+
+#~ msgid "baseline"
+#~ msgstr "هيا خط الأساس"
+
+#~ msgid "baselines"
+#~ msgstr "خطوط الأساس"
+
+#~ msgid "No baselines"
+#~ msgstr "لا توجد خطوط أساس"
+
+#~ msgid "Key Parameters"
+#~ msgstr "معلمات رئيسية"
+
+#~ msgid "Better Off (B/O)"
+#~ msgstr "ميسور الحال (B/O)"
+
+#~ msgid "total"
+#~ msgstr "إجمالي"
+
+#~ msgid "of total from custom strategies"
+#~ msgstr "من الإجمالي من الاستراتيجيات المخصصة"
+
+#~ msgid "FEWS NET logo"
+#~ msgstr "شعار FEWS NET"
+
+#~ msgid "Sign In"
+#~ msgstr "تسجيل الدخول"
