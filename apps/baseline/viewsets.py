@@ -299,7 +299,7 @@ class LivelihoodZoneBaselineViewSet(BaseModelViewSet):
     API endpoint that allows livelihood zone baselines to be viewed or edited.
     """
 
-    queryset = LivelihoodZoneBaseline.objects.select_related(
+    queryset = LivelihoodZoneBaseline.objects.with_bss_file_metadata().select_related(
         "livelihood_zone__country",
         "source_organization",
     )
