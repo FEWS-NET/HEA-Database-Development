@@ -107,7 +107,7 @@ msgid ""
 "True, then aliases may contain a <unit_of_measure> placeholder."
 msgstr ""
 "Une valeur pour cette caractéristique nécessite-t-elle également une "
-"unite de mesure ? Si TRUE, les alias peuvent inclure un paramètre générique <unit_of_measure>."
+"unité de mesure ? Si TRUE, les alias peuvent inclure un paramètre générique <unit_of_measure>."
 
 #: apps/metadata/models.py:192
 msgid "Variable Type"
@@ -121,7 +121,7 @@ msgstr "Si le champ est numérique, caractère, booléen, etc."
 msgid ""
 "Optional grouping for characteristics, such as 'Population', 'Income', "
 "'Land', 'Livestock', 'Other assets'"
-msgstr "Regroupement facultatif des caractéristiques, comme 'Population', 'Revenu', 'Supérficie', 'Bétail' et 'Autres actifs'"
+msgstr "Regroupement facultatif des caractéristiques, comme 'Population', 'Revenu', 'Superficie', 'Bétail' et 'Autres actifs'"
 
 #. Shared msgid. Also in apps/baseline/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/metadata/models.py:213 apps/metadata/models.py:603
@@ -251,7 +251,7 @@ msgid ""
 "aliases may contain a <product> placeholder."
 msgstr ""
 "Une Activité saisonnière de ce type necessite-t-elle un produit ? Si TRUE, "
-"les alias peuvent inclure un paramètre générique <produit>."
+"les alias peuvent inclure un paramètre générique <product>."
 
 
 #. Shared msgid. Also in apps/baseline/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
@@ -558,7 +558,7 @@ msgstr "Type de stratégie"
 msgid ""
 "The type of livelihood strategy, such as crop production, or wild food "
 "gathering."
-msgstr "Le type de strategie de moyens d'existence, comme la production agricole ou la collecte d'aliments sauvages."
+msgstr "Le type de stratégie de moyens d'existence, comme la production agricole ou la collecte d'aliments sauvages."
 
 #. Shared msgid. Also in apps/baseline/locale/fr/LC_MESSAGES/django.po, apps/common/locale/fr/LC_MESSAGES/django.po, locale/fr/LC_MESSAGES/djangojs.po; keep translations synchronized across files.
 #: apps/metadata/models.py:532 apps/metadata/models.py:612
