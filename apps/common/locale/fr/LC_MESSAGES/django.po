@@ -104,12 +104,12 @@ msgstr "Corrections des lignes de base des zones de moyens d'existence"
 #, fuzzy
 #| msgid "Country Classified Product Alias"
 msgid "Community Crop Productions"
-msgstr "Productions végétales communtautaires"
+msgstr "Productions végétales communautaires"
 
 #. Shared msgid. Also in apps/baseline/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/menu_config.py:92
 msgid "Community Livestock"
-msgstr "Bétail communtautaire"
+msgstr "Bétail communautaire"
 
 #. Shared msgid. Also in apps/baseline/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/menu_config.py:98 apps/common/menu_config.py:483
@@ -204,7 +204,7 @@ msgstr "Saisons"
 #. Shared msgid. Also in apps/metadata/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/menu_config.py:215 apps/common/menu_config.py:558
 msgid "Seasonal Activity Types"
-msgstr "Types d'activités saisonnière"
+msgstr "Types d'activités saisonnières"
 
 #. Shared msgid. Also in apps/metadata/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/menu_config.py:221 apps/common/menu_config.py:409
@@ -604,7 +604,7 @@ msgid ""
 "The 6-digit codes for the Product in the Harmonized Commodity Description "
 "and Coding System (HS), stored as XXXX.YY "
 msgstr ""
-"Les codes à 6 chiffres du Produit dans le Système harmonisé de désignation"
+"Les codes à 6 chiffres du Produit dans le Système harmonisé de désignation "
 "et de codification des marchandises (HS), stocké sous XXXX.YY "
 
 #: apps/common/models.py:911
