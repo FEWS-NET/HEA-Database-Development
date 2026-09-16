@@ -14,27 +14,27 @@ msgstr ""
 "1 : 2;\n"
 
 #. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po, apps/common/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
-#: hea/settings/base.py:243
+#: hea/settings/base.py:244
 msgid "English"
 msgstr "Inglés"
 
 #. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po, apps/common/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
-#: hea/settings/base.py:244
+#: hea/settings/base.py:245
 msgid "French"
 msgstr "Francés"
 
 #. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po, apps/common/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
-#: hea/settings/base.py:245
+#: hea/settings/base.py:246
 msgid "Spanish"
 msgstr "Español"
 
 #. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po, apps/common/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
-#: hea/settings/base.py:246
+#: hea/settings/base.py:247
 msgid "Portuguese"
 msgstr "Portugués"
 
 #. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po, apps/common/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
-#: hea/settings/base.py:247
+#: hea/settings/base.py:248
 msgid "Arabic"
 msgstr "Árabe"
 
@@ -82,7 +82,7 @@ msgstr "Migas de pan"
 msgid "Django site admin"
 msgstr "Administrador del sitio de Django"
 
-#: templates/admin/base_site.html:13
+#: templates/admin/base_site.html:15
 msgid "Django administration"
 msgstr "Administración de Django"
 

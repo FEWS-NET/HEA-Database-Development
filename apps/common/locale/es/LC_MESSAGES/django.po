@@ -28,9 +28,9 @@ msgid "Name"
 msgstr "Nombre"
 
 #. Shared msgid. Also in apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
-#: apps/common/fields.py:93 apps/common/viewsets.py:326
-#: apps/common/viewsets.py:329 apps/common/viewsets.py:332
-#: apps/common/viewsets.py:335 apps/common/viewsets.py:338
+#: apps/common/fields.py:93 apps/common/viewsets.py:325
+#: apps/common/viewsets.py:328 apps/common/viewsets.py:331
+#: apps/common/viewsets.py:334 apps/common/viewsets.py:337
 msgid "Description"
 msgstr "Descripción"
 
@@ -670,33 +670,33 @@ msgid "Clear all filters"
 msgstr "Borrar todos los filtros"
 
 #. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po, locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
-#: apps/common/viewsets.py:326 apps/common/viewsets.py:341
+#: apps/common/viewsets.py:325 apps/common/viewsets.py:340
 msgid "English"
 msgstr "Inglés"
 
 #. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po, locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
-#: apps/common/viewsets.py:329 apps/common/viewsets.py:344
+#: apps/common/viewsets.py:328 apps/common/viewsets.py:343
 msgid "French"
 msgstr "Francés"
 
 #. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po, locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
-#: apps/common/viewsets.py:332 apps/common/viewsets.py:347
+#: apps/common/viewsets.py:331 apps/common/viewsets.py:346
 msgid "Spanish"
 msgstr "Español"
 
 #. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po, locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
-#: apps/common/viewsets.py:335 apps/common/viewsets.py:350
+#: apps/common/viewsets.py:334 apps/common/viewsets.py:349
 msgid "Arabic"
 msgstr "Árabe"
 
 #. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po, locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
-#: apps/common/viewsets.py:338 apps/common/viewsets.py:353
+#: apps/common/viewsets.py:337 apps/common/viewsets.py:352
 msgid "Portuguese"
 msgstr "Portugués"
 
-#: apps/common/viewsets.py:341 apps/common/viewsets.py:344
-#: apps/common/viewsets.py:347 apps/common/viewsets.py:350
-#: apps/common/viewsets.py:353
+#: apps/common/viewsets.py:340 apps/common/viewsets.py:343
+#: apps/common/viewsets.py:346 apps/common/viewsets.py:349
+#: apps/common/viewsets.py:352
 msgid "Common Name"
 msgstr "nombre común"
 
