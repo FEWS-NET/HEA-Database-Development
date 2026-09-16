@@ -659,7 +659,7 @@ msgid ""
 "measure"
 msgstr ""
 "Une Valeur de caractéristique de groupe de richesse pour %(charac)s doit avoir "
-"un unité de mesure."
+"une unité de mesure."
 
 #: apps/baseline/models.py:1409
 #, python-format
@@ -696,7 +696,7 @@ msgid ""
 "A Baseline Wealth Group Characteristic Value cannot be for a Community "
 "Wealth Group"
 msgstr ""
-"Une Valeur de caractéristique de groupe de richesse ne peut pas être pour"
+"Une Valeur de caractéristique de groupe de richesse ne peut pas être pour "
 "un Groupe de richesse communautaire"
 
 #: apps/baseline/models.py:1480
@@ -958,7 +958,9 @@ msgstr "Clé de tri"
 #: apps/baseline/models.py:2110
 msgid ""
 "Income for a Livelihood Activity must be quantity sold multiplied by price"
-msgstr "Le revenu d'une Activité de moyens d'existence doit être égal à la " "quantité vendue multipliée par le prix."
+msgstr ""
+"Le revenu d'une Activité de moyens d'existence doit être égal à la "
+"quantité vendue multipliée par le prix."
 
 #: apps/baseline/models.py:2131
 #, fuzzy
@@ -977,7 +979,7 @@ msgstr ""
 msgid ""
 "No conversion factor found from unit %(from_unit)s for Livelihood Activity "
 "to unit %(to_unit)s for Product %(product)s for calculating kcals consumed."
-msgstr "Aucun facteur de conversion se trouve de l'unité %(from_unit)s pour l'Activite de moyens d'existence à l'unité %(to_unit)s pour le Produit %(product)s afin de calculer les kcal consommées."
+msgstr "Aucun facteur de conversion se trouve de l'unité %(from_unit)s pour l'Activité de moyens d'existence à l'unité %(to_unit)s pour le Produit %(product)s afin de calculer les kcal consommées."
 
 #: apps/baseline/models.py:2159
 msgid ""
@@ -985,7 +987,7 @@ msgid ""
 "multiplied by kcals per unit"
 msgstr ""
 "Les kcals consommés pour une Activité de moyens d'existence doivent être la "
-"quantité consommée multipliée par le nombre de kcals par unite."
+"quantité consommée multipliée par le nombre de kcals par unité."
 
 #: apps/baseline/models.py:2182
 msgid ""
@@ -1138,7 +1140,7 @@ msgstr "Poids de carcasse par animal"
 #, fuzzy
 #| msgid "Carcass weight per animal"
 msgid "Carcass weight is required when animals slaughtered"
-msgstr "Poids de carcasse par animal doit être indiqué en présence d'animaux abatus."
+msgstr "Le poids de carcasse par animal doit être indiqué en présence d'animaux abattus."
 
 #: apps/baseline/models.py:2621
 msgid ""
@@ -1332,7 +1334,7 @@ msgid ""
 "Income for 'Other Cash Income' must be payment per time * people per "
 "household * times per year"
 msgstr ""
-"Le revenue pour Autres revenus en espèces doit être le paiement par temps *"
+"Le revenu pour Autres revenus en espèces doit être le paiement par temps * "
 "personnes par ménage * fois par an."
 
 #: apps/baseline/models.py:3086
@@ -1419,7 +1421,7 @@ msgid ""
 "Community and Seasonal Activity for a Seasonal Activity Occurrence must "
 "belong to the same Livelihood Zone Baseline"
 msgstr ""
-"La Communauté et l'Activité saisonnière pour une Occurance d'activité saisonnière "
+"La Communauté et l'Activité saisonnière pour une Occurrence d'activité saisonnière "
 "doivent appartenir à la même Ligne de base de zone de moyens d'existence"
 
 #: apps/baseline/models.py:3382
@@ -1596,7 +1598,7 @@ msgstr "Jour de fin des prix bas"
 
 #: apps/baseline/models.py:3597
 msgid "Low price"
-msgstr "Prix bax"
+msgstr "Prix bas"
 
 #: apps/baseline/models.py:3599
 msgid "High Price Start Day"
@@ -1657,7 +1659,7 @@ msgstr "Le dernier jour du mois de fin de l'année de performance"
 
 #: apps/baseline/models.py:3657
 msgid "Seasonal Performance"
-msgstr "Volume saisonnière"
+msgstr "Performance saisonnière"
 
 #: apps/baseline/models.py:3658
 msgid ""
