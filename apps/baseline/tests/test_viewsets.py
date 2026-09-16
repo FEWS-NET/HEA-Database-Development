@@ -375,6 +375,8 @@ class LivelihoodZoneBaselineViewSetTestCase(APITestCase):
             "livelihood_zone_country_name",
             "primary_livelihood_system",
             "bss_language",
+            "bss_content_hash",
+            "bss_uploaded_datetime",
             *translation_fields("profile_report"),
             "reference_year_start_date",
             "reference_year_end_date",
