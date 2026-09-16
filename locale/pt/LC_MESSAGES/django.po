@@ -12,23 +12,23 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: hea/settings/base.py:243
+#: hea/settings/base.py:244
 msgid "English"
 msgstr "Inglês"
 
-#: hea/settings/base.py:244
+#: hea/settings/base.py:245
 msgid "French"
 msgstr "Francês"
 
-#: hea/settings/base.py:245
+#: hea/settings/base.py:246
 msgid "Spanish"
 msgstr "Espanhol"
 
-#: hea/settings/base.py:246
+#: hea/settings/base.py:247
 msgid "Portuguese"
 msgstr "Português"
 
-#: hea/settings/base.py:247
+#: hea/settings/base.py:248
 msgid "Arabic"
 msgstr "Árabe"
 
@@ -76,7 +76,7 @@ msgstr "Migalhas de pão"
 msgid "Django site admin"
 msgstr "Admin do site Django"
 
-#: templates/admin/base_site.html:13
+#: templates/admin/base_site.html:15
 msgid "Django administration"
 msgstr "Administração de Django"
 
