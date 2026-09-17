@@ -303,6 +303,7 @@ class WealthGroupSerializer(serializers.ModelSerializer):
             "community_full_name",
             "wealth_group_category",
             "wealth_group_category_name",
+            "wealth_group_category_short_name",
             "percentage_of_households",
             "average_household_size",
             "household_annual_kcals_cost",
@@ -336,6 +337,7 @@ class WealthGroupSerializer(serializers.ModelSerializer):
         source="livelihood_zone_baseline.source_organization.name", read_only=True
     )
     wealth_group_category_name = serializers.CharField(source="wealth_group_category.name", read_only=True)
+    wealth_group_category_short_name = serializers.CharField(source="wealth_group_category.short_name", read_only=True)
 
 
 class BaselineWealthGroupSerializer(WealthGroupSerializer):
@@ -406,6 +408,7 @@ class WealthGroupCharacteristicValueSerializer(serializers.ModelSerializer):
             "community_full_name",
             "wealth_group_category",
             "wealth_group_category_name",
+            "wealth_group_category_short_name",
             "wealth_group_category_description",
             "wealth_group_category_ordering",
             "wealth_characteristic",
@@ -441,6 +444,9 @@ class WealthGroupCharacteristicValueSerializer(serializers.ModelSerializer):
     wealth_group_category = serializers.CharField(source="wealth_group.wealth_group_category.pk", read_only=True)
     wealth_group_category_name = serializers.CharField(
         source="wealth_group.wealth_group_category.name", read_only=True
+    )
+    wealth_group_category_short_name = serializers.CharField(
+        source="wealth_group.wealth_group_category.short_name", read_only=True
     )
     wealth_group_category_description = serializers.CharField(
         source="wealth_group.wealth_group_category.description", read_only=True
@@ -521,6 +527,7 @@ class BaselineWealthGroupCharacteristicValueSerializer(serializers.ModelSerializ
             "livelihood_zone_country_name",
             "wealth_group_category",
             "wealth_group_category_name",
+            "wealth_group_category_short_name",
             "wealth_group_category_description",
             "wealth_group_category_ordering",
             "wealth_characteristic",
@@ -556,6 +563,9 @@ class BaselineWealthGroupCharacteristicValueSerializer(serializers.ModelSerializ
     wealth_group_category = serializers.CharField(source="wealth_group.wealth_group_category.pk", read_only=True)
     wealth_group_category_name = serializers.CharField(
         source="wealth_group.wealth_group_category.name", read_only=True
+    )
+    wealth_group_category_short_name = serializers.CharField(
+        source="wealth_group.wealth_group_category.short_name", read_only=True
     )
     wealth_group_category_description = serializers.CharField(
         source="wealth_group.wealth_group_category.description", read_only=True
@@ -818,6 +828,7 @@ class LivelihoodActivitySerializer(serializers.ModelSerializer):
             "community_full_name",
             "wealth_group_category",
             "wealth_group_category_name",
+            "wealth_group_category_short_name",
             "wealth_group_category_description",
             "wealth_group_percentage_of_households",
             "wealth_group_average_household_size",
@@ -882,6 +893,9 @@ class LivelihoodActivitySerializer(serializers.ModelSerializer):
     wealth_group_category = serializers.CharField(source="wealth_group.wealth_group_category.pk", read_only=True)
     wealth_group_category_name = serializers.CharField(
         source="wealth_group.wealth_group_category.name", read_only=True
+    )
+    wealth_group_category_short_name = serializers.CharField(
+        source="wealth_group.wealth_group_category.short_name", read_only=True
     )
     wealth_group_category_description = serializers.CharField(
         source="wealth_group.wealth_group_category.description", read_only=True
@@ -1683,6 +1697,7 @@ class ExpandabilityFactorSerializer(serializers.ModelSerializer):
             "wealth_group_label",
             "wealth_group_category",
             "wealth_group_category_name",
+            "wealth_group_category_short_name",
             "wealth_group_category_description",
             "wealth_group_percentage_of_households",
             "wealth_group_average_household_size",
@@ -1749,6 +1764,9 @@ class ExpandabilityFactorSerializer(serializers.ModelSerializer):
     wealth_group_category_name = serializers.CharField(
         source="wealth_group.wealth_group_category.name", read_only=True
     )
+    wealth_group_category_short_name = serializers.CharField(
+        source="wealth_group.wealth_group_category.short_name", read_only=True
+    )
     wealth_group_category_description = serializers.CharField(
         source="wealth_group.wealth_group_category.description", read_only=True
     )
@@ -1781,6 +1799,7 @@ class CopingStrategySerializer(serializers.ModelSerializer):
             "wealth_group_label",
             "wealth_group_category",
             "wealth_group_category_name",
+            "wealth_group_category_short_name",
             "wealth_group_category_description",
             "wealth_group_percentage_of_households",
             "wealth_group_average_household_size",
@@ -1863,6 +1882,9 @@ class CopingStrategySerializer(serializers.ModelSerializer):
     wealth_group_category_name = serializers.CharField(
         source="wealth_group.wealth_group_category.name", read_only=True
     )
+    wealth_group_category_short_name = serializers.CharField(
+        source="wealth_group.wealth_group_category.short_name", read_only=True
+    )
     wealth_group_category_description = serializers.CharField(
         source="wealth_group.wealth_group_category.description", read_only=True
     )
@@ -1908,6 +1930,7 @@ class LivelihoodActivitySummarySerializer(AggregatingSerializer):
             "livelihood_zone_baseline_description",
             "wealth_group_category",  # E.g. VP, P, M, B/O
             "wealth_group_category_name",
+            "wealth_group_category_short_name",
             "wealth_group_category_ordering",
             "percentage_of_households",
             "average_household_size",
