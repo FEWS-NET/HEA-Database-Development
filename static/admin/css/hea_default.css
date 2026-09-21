@@ -934,10 +934,7 @@ table#change-history tbody th {
 }
 
 /*
- * The gray frame is drawn as an inset shadow, so it must never be thicker than
- * the padding of #content. Django's responsive.css shrinks that padding on
- * smaller windows, so the frame thickness follows it; otherwise the white panels
- * (heading, toolbar, table) overlap the frame and the edge looks stepped.
+ * The gray frame is drawn as an inset shadow, so it must never be thicker than.
  */
 .content_with_background {
     --content-frame: 30px;
@@ -1365,11 +1362,7 @@ input, textarea, select, .form-row p, form .button {
 }
 
 /*
- * Keep the changelist search box usable on narrow windows. Django's stock
- * changelist.css sizes #searchbar with `width: 0` plus flex-grow inside a
- * shrink-to-fit wrapper, which collapses the box to nothing when space is tight.
- * Let the form fill the toolbar, wrap the result count below, and reserve a
- * minimum width so the typed text is always visible.
+ * Keep the changelist search box usable on narrow windows.
  */
 #changelist #toolbar form {
     flex: 1 1 auto;
