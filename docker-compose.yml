@@ -80,7 +80,7 @@ services:
       - redis-server
       # Keep maxmemory at or below 75% of the container memory limit set in the environment override
       - --maxmemory
-      - 2000mb
+      - 600mb
       - --maxmemory-policy
       - allkeys-lru
       - --tcp-backlog
@@ -125,6 +125,7 @@ services:
       PGPASSWORD: ${PGPASSWORD}
       REDIS_HOST: ${REDIS_HOST:-redis}
       REDIS_PORT: 6379
+      CACHE_REDIS_DB: ${CACHE_REDIS_DB:-1}
       DATABASE_URL: postgis://${CLIENT}${APP}${ENV}:${PGPASSWORD}@db:5432/${CLIENT}${APP}${ENV}
       DAGSTER_PGUSER: ${CLIENT}hdg${ENV}
       DAGSTER_PGPASSWORD: ${PGPASSWORD}
