@@ -22,6 +22,7 @@ RUN curl -s https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor |
         pkg-config \
         postgresql-client-15 \
         python3-dev \
+        redis-tools \
         vim && \
     apt-get -y autoremove && \
     apt-get clean && \

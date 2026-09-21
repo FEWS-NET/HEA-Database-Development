@@ -70,6 +70,34 @@ services:
       - ":9010"
       - /data
 
+  # Redis is the shared Django cache
+  redis:
+    restart: unless-stopped
+    image: redis:8.2.2
+    volumes:
+      - redis_data:/data
+    command:
+      - redis-server
+      # Keep maxmemory at or below 75% of the container memory limit set in the environment override
+      - --maxmemory
+      - 2000mb
+      - --maxmemory-policy
+      - allkeys-lru
+      - --tcp-backlog
+      - "128"
+      - --maxclients
+      - "150"
+      - --save
+      - "900"
+      - "1"
+      - --appendonly
+      - "no"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   app:
     restart: unless-stopped
     build:
@@ -81,6 +109,7 @@ services:
         - PIP_INDEX_URL
     depends_on:
       - db
+      - redis
     environment: &base_env
       CLIENT: ${CLIENT}
       APP: ${APP}
@@ -94,6 +123,8 @@ services:
       PGUSER: ${CLIENT}${APP}${ENV}
       PGDATABASE: ${CLIENT}${APP}${ENV}
       PGPASSWORD: ${PGPASSWORD}
+      REDIS_HOST: ${REDIS_HOST:-redis}
+      REDIS_PORT: 6379
       DATABASE_URL: postgis://${CLIENT}${APP}${ENV}:${PGPASSWORD}@db:5432/${CLIENT}${APP}${ENV}
       DAGSTER_PGUSER: ${CLIENT}hdg${ENV}
       DAGSTER_PGPASSWORD: ${PGPASSWORD}
@@ -188,4 +219,6 @@ volumes:
   db_data:
     external: false
   minio_data:
+    external: false
+  redis_data:
     external: false
