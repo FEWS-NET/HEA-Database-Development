@@ -1486,11 +1486,29 @@ def get_instances_from_dataframe(
                             # Labor Migration (see the `payment_per_time` handling below): the migrant obtains
                             # their full daily kcals (2100) elsewhere for the whole time that they are away, so
                             # dividing kcals_consumed by kcals_per_unit gives the number of days away, not the
-                            # number of times per year that the household is paid. Migrants are paid/remit once
-                            # per month that they are away, so times_per_year is months_per_year, not a kcal-based
-                            # calculation. This also keeps times_per_year consistent with the `income` field,
-                            # because income = payment_per_time * people_per_household * times_per_year.
-                            livelihood_activity["times_per_year"] = livelihood_activity.get("months_per_year") or 0
+                            # number of times per year that the household is paid.
+                            # The BSS doesn't record the number of times that the migrant is paid/remits. It only
+                            # records the `payment_per_time` (e.g. "savings/remittance each time (per person)") and
+                            # the total `income`, which are both entered directly. Therefore, for
+                            # OtherCashIncome we derive times_per_year from those values, so that
+                            # income = payment_per_time * people_per_household * times_per_year always holds.
+                            # For example, NG04 'Data'!Q632 has 1 person away for 1 month, with 15000 each time
+                            # and 30000 income, i.e. 2 payments; and 'Data'!H632 has 1 person away for 2 months,
+                            # with 7000 each time and 7000 income, i.e. 1 payment.
+                            # If the income or payment_per_time are not available (e.g. for PaymentInKind), then
+                            # assume that migrants are paid/remit once per month that they are away, so
+                            # times_per_year is months_per_year, not a kcal-based calculation.
+                            income = livelihood_activity.get("income")
+                            payment_per_time = livelihood_activity.get("payment_per_time")
+                            if (
+                                livelihood_strategy["strategy_type"] == "OtherCashIncome"
+                                and income
+                                and payment_per_time
+                                and number_of_units
+                            ):
+                                livelihood_activity["times_per_year"] = income / (payment_per_time * number_of_units)
+                            else:
+                                livelihood_activity["times_per_year"] = livelihood_activity.get("months_per_year") or 0
                         else:
                             livelihood_activity["times_per_year"] = (
                                 round(livelihood_activity["kcals_consumed"] / kcals_per_unit / number_of_units)
