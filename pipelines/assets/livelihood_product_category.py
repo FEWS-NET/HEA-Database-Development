@@ -165,6 +165,28 @@ def livelihood_product_category_instances(
         if not wealth_group_category:
             raise ValueError(f"Unrecognized wealth_group_category '{x}'")
         wealth_group_categories.append(wealth_group_category)
+
+    # A header can be a recognized alias for a Wealth Group Category that isn't used anywhere else in this BSS. For
+    # example, NG04 has 'LM' and 'UM' (M-L and M-U) in 'Exp factors', but 'M' and 'B/O' in the 'WB' and 'Data'
+    # worksheets.
+    bss_wealth_group_categories = {
+        livelihood_activity["wealth_group"][2]
+        for livelihood_activity in livelihood_activity_instances.get("LivelihoodActivity", [])
+        if livelihood_activity["wealth_group"][2] and livelihood_activity["wealth_group"][3] == ""
+    }
+    if bss_wealth_group_categories:
+        unused_wealth_group_categories = [
+            f"'{header}' (Wealth Group Category '{wealth_group_category}')"
+            for header, wealth_group_category in zip(df.iloc[0, 2:6], wealth_group_categories)
+            if wealth_group_category not in bss_wealth_group_categories
+        ]
+        if unused_wealth_group_categories:
+            raise ValueError(
+                f"'{WORKSHEET_NAME}' worksheet row {df.index[0]} has Wealth Group column header(s) "
+                f"{', '.join(unused_wealth_group_categories)} that are not used in the 'Data' worksheets "
+                f"of this BSS, which use Wealth Group Categories {sorted(bss_wealth_group_categories)}. "
+                f"Correct the '{WORKSHEET_NAME}' headers so they match the Wealth Groups used in the rest of the BSS."
+            )
     df.columns = ["label", "description"] + wealth_group_categories + ["basket"]
 
     # Drop the old header row and the start row used to identify the range
