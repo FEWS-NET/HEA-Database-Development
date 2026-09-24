@@ -10,10 +10,57 @@ from metadata.tests.factories import (
     WealthGroupCategoryFactory,
 )
 from pipelines.assets.wealth_characteristic import (
+    WB_NOISE_LABEL_PATTERNS,
     get_wealth_characteristic_label_map,
     is_ignored_wealth_characteristic_label,
     wealth_characteristic_instances,
 )
+
+
+class WBNoiseLabelPatternsTestCase(TestCase):
+    """
+    Tests for the explanatory notes in Column A of the WB worksheet that are treated as blank cells.
+    """
+
+    def is_noise(self, labels: list[str]) -> list[bool]:
+        """
+        Apply WB_NOISE_LABEL_PATTERNS to the labels in the same way as get_bss_dataframe.
+        """
+        noise_pattern = "|".join(f"(?:{pattern})" for pattern in WB_NOISE_LABEL_PATTERNS)
+        return pd.Series(labels).str.strip().str.fullmatch(noise_pattern, case=False, na=False).tolist()
+
+    def test_noise_labels_are_ignored(self):
+        """
+        Explanatory notes referring to the TSS or to other forms are recognized as noise.
+        """
+        labels = [
+            "TSS ligne 27",
+            'TSS ligne 3=""',
+            'TSS ligne 4=""',
+            "tss ligne",
+            "Voir TSS ligne 12 et 13",
+            "TSS line 5",
+            "TSS row 27",
+            "F3 pas F4 (pas TSS)",
+            "F3 seulement (pas sur TSS)",
+            " F3 seulement (pas sur TSS) ",
+            "CL only (not in TSS)",
+            "Wealth characteristics",
+        ]
+        self.assertEqual(self.is_noise(labels), [True] * len(labels))
+
+    def test_real_labels_are_not_ignored(self):
+        """
+        Genuine wealth characteristic labels are not treated as noise.
+        """
+        labels = [
+            "Taille du ménage",
+            "Superficie cultivée (ha)",
+            "Vaches: nombre possédé au début de l'année",
+            "HH size",
+            "F3 seulement",
+        ]
+        self.assertEqual(self.is_noise(labels), [False] * len(labels))
 
 
 class WealthCharacteristicInstancesTestCase(TestCase):
