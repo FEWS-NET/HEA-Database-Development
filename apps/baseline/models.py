@@ -208,6 +208,34 @@ class LivelihoodZoneBaselineQuerySet(models.QuerySet):
     QuerySet for LivelihoodZoneBaseline that provides temporal filtering methods.
     """
 
+    def with_baseline_average_household_size(self):
+        """
+        Annotate the average household size for the Baseline.
+
+        Calculated as the mean of the average_household_size for the Baseline Wealth Groups,
+        weighted by the percentage_of_population for each Baseline Wealth Group.
+        """
+        baseline_wealth_groups = WealthGroup.objects.filter(
+            livelihood_zone_baseline=models.OuterRef("pk"),
+            community__isnull=True,
+            percentage_of_households__isnull=False,
+            percentage_of_households__gt=0,
+            average_household_size__isnull=False,
+        )
+        return self.annotate(
+            baseline_average_household_size=models.Subquery(
+                baseline_wealth_groups.values("livelihood_zone_baseline")
+                .annotate(
+                    weighted_average_household_size=models.Sum(
+                        models.F("percentage_of_households") * models.F("average_household_size")
+                    )
+                    / models.Sum("percentage_of_households")
+                )
+                .values("weighted_average_household_size"),
+                output_field=models.FloatField(),
+            )
+        )
+
     def with_bss_file_metadata(self):
         """
         Annotate BSS metadata from the corresponding database file.
@@ -509,7 +537,7 @@ class LivelihoodZoneBaseline(common_models.Model):
         return poor_survival_non_food_summary["total_expenditure"] or 0
 
     @cached_property
-    def poor_household_size(self):
+    def poor_average_household_size(self):
         poor_main_staple_category = self._get_poor_main_staple_category()
         if poor_main_staple_category is None:
             return None
@@ -536,10 +564,10 @@ class LivelihoodZoneBaseline(common_models.Model):
         if poor_main_staple_category is None:
             return None
 
-        poor_household_size = (
+        poor_average_household_size = (
             poor_main_staple_category.baseline_livelihood_activity.wealth_group.average_household_size
         )
-        if not poor_household_size:
+        if not poor_average_household_size:
             # Cannot calculate without household size
             return None
 
@@ -563,13 +591,13 @@ class LivelihoodZoneBaseline(common_models.Model):
         main_staple_cost = (
             2100  # kcals per person per day
             * 365  # days per year
-            * poor_household_size
+            * poor_average_household_size
             * main_staple_percentage_kcals_required
             / main_staple_kcals_per_unit
             * poor_main_staple_category.baseline_livelihood_activity.price
         )
         total_cost = main_staple_cost + (poor_other_food["total_expenditure"] or 0)
-        total_food_cost_per_person = total_cost / poor_household_size
+        total_food_cost_per_person = total_cost / poor_average_household_size
         return total_food_cost_per_person
 
     @property
@@ -813,7 +841,38 @@ class Community(common_models.Model):
         ]
 
 
-class WealthGroupManager(common_models.IdentifierManager):
+class WealthGroupQuerySet(models.QuerySet):
+    """
+    QuerySet methods for WealthGroup.
+    """
+
+    def with_percentage_of_population(self):
+        """
+        Annotate each wealth group with its share of the baseline population.
+
+        This copies the approach from the '% Population' section in the 'P' worksheet in the LIAS, weighting
+        `percentage_of_households` by `average_household_size` because household size can vary by Wealth Group.
+        """
+
+        baseline_average_household_size = (
+            LivelihoodZoneBaseline.objects.with_baseline_average_household_size()
+            .filter(pk=models.OuterRef("livelihood_zone_baseline"))
+            .values("baseline_average_household_size")
+        )
+        # The percentage of population is the percentage of households multiplied by the ratio of the
+        # average household size for this Wealth Group relative to the weighted average household size across
+        # all Baseline Wealth Groups for the Livelihood Zone Baseline.
+        return self.annotate(
+            percentage_of_population=models.ExpressionWrapper(
+                models.F("percentage_of_households")
+                * models.F("average_household_size")
+                / models.Subquery(baseline_average_household_size, output_field=models.FloatField()),
+                output_field=models.FloatField(),
+            )
+        )
+
+
+class WealthGroupManager(common_models.IdentifierManager.from_queryset(WealthGroupQuerySet)):
     def get_by_natural_key(self, code: str, reference_year_end_date: str, wealth_group_category: str, full_name: str):
         if full_name:
             try:
@@ -922,7 +981,7 @@ class WealthGroup(common_models.Model):
         poor_non_food_expenditure = self.livelihood_zone_baseline.poor_survival_non_food_expenditure
         if poor_non_food_expenditure is None:
             return None
-        poor_average_household_size = self.livelihood_zone_baseline.poor_household_size
+        poor_average_household_size = self.livelihood_zone_baseline.poor_average_household_size
         # Survival threshold is 1 (i.e. 100% kcals) + non-food needs scaled according to average household size
         # Because the non-food expenditures are scaled according to the household size, they always
         # return the same percentage as for the Poor wealth group.

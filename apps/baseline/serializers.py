@@ -83,6 +83,7 @@ class LivelihoodZoneSerializer(serializers.ModelSerializer):
 
 class LivelihoodZoneBaselineSerializer(serializers.ModelSerializer):
     annual_kcals_cost = serializers.FloatField(read_only=True)
+    baseline_average_household_size = serializers.FloatField(read_only=True)
     livelihood_zone_name = serializers.CharField(source="livelihood_zone.name", read_only=True)
     source_organization_name = serializers.CharField(source="source_organization.full_name", read_only=True)
     livelihood_zone_country = serializers.CharField(source="livelihood_zone.country.pk", read_only=True)
@@ -116,12 +117,14 @@ class LivelihoodZoneBaselineSerializer(serializers.ModelSerializer):
             "valid_to_date",
             "population_source",
             "population_estimate",
+            "baseline_average_household_size",
             "annual_kcals_cost",
         )
 
 
 class LivelihoodZoneBaselineGeoSerializer(GeoFeatureModelSerializer):
     annual_kcals_cost = serializers.FloatField(read_only=True)
+    baseline_average_household_size = serializers.FloatField(read_only=True)
     livelihood_zone_name = serializers.CharField(source="livelihood_zone.name", read_only=True)
     source_organization_name = serializers.CharField(source="source_organization.full_name", read_only=True)
     livelihood_zone_country = serializers.CharField(source="livelihood_zone.country.pk", read_only=True)
@@ -156,6 +159,7 @@ class LivelihoodZoneBaselineGeoSerializer(GeoFeatureModelSerializer):
             "valid_to_date",
             "population_source",
             "population_estimate",
+            "baseline_average_household_size",
             "annual_kcals_cost",
         )
         geo_field = "geography"

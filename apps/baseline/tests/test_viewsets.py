@@ -19,6 +19,7 @@ from baseline.models import (
     KeyParameter,
     LivelihoodActivity,
     LivelihoodZoneBaseline,
+    WealthGroup,
 )
 from common.fields import translation_fields
 from common.tests.factories import ClassifiedProductFactory, CountryFactory
@@ -384,6 +385,7 @@ class LivelihoodZoneBaselineViewSetTestCase(APITestCase):
             "valid_to_date",
             "population_source",
             "population_estimate",
+            "baseline_average_household_size",
             "currency",
             "annual_kcals_cost",
         )
@@ -1478,16 +1480,14 @@ class BaselineWealthGroupViewSetTestCase(APITestCase):
             )
             for code, inputs in wealth_group_inputs.items()
         }
-        baseline_weighted_average_household_size = sum(
+        baseline_average_household_size = sum(
             inputs["percentage_of_households"] * inputs["average_household_size"]
             for inputs in wealth_group_inputs.values()
         ) / sum(inputs["percentage_of_households"] for inputs in wealth_group_inputs.values())
 
         for code, inputs in wealth_group_inputs.items():
             expected_percentage_of_population = (
-                inputs["percentage_of_households"]
-                * inputs["average_household_size"]
-                / baseline_weighted_average_household_size
+                inputs["percentage_of_households"] * inputs["average_household_size"] / baseline_average_household_size
             )
             expected_population_estimate = round(population_estimate * expected_percentage_of_population)
 
@@ -1516,6 +1516,32 @@ class BaselineWealthGroupViewSetTestCase(APITestCase):
             for wealth_group in wealth_groups.values()
         )
         self.assertAlmostEqual(total_percentage_of_population, 1.0)
+
+        annotated_wealth_groups = WealthGroup.objects.with_percentage_of_population().filter(
+            livelihood_zone_baseline=livelihood_zone_baseline,
+            community__isnull=True,
+        )
+        for code, expected_percentage_of_population in (
+            (
+                code,
+                inputs["percentage_of_households"]
+                * inputs["average_household_size"]
+                / baseline_average_household_size,
+            )
+            for code, inputs in wealth_group_inputs.items()
+        ):
+            self.assertAlmostEqual(
+                annotated_wealth_groups.get(pk=wealth_groups[code].pk).percentage_of_population,
+                expected_percentage_of_population,
+            )
+
+        annotated_baseline = LivelihoodZoneBaseline.objects.with_baseline_average_household_size().get(
+            pk=livelihood_zone_baseline.pk
+        )
+        self.assertAlmostEqual(
+            annotated_baseline.baseline_average_household_size,
+            baseline_average_household_size,
+        )
 
     def test_patch_requires_authentication(self):
         logging.disable(logging.CRITICAL)

@@ -232,8 +232,9 @@ class LivelihoodZoneBaselineAdmin(GISModelAdminReadOnly):
                     "bss_size",
                     "population_source",
                     "population_estimate",
+                    "baseline_average_household_size",
+                    "poor_average_household_size",
                     "poor_main_staple",
-                    "poor_household_size",
                     "poor_survival_non_food_expenditure",
                     "annual_kcals_cost",
                 ],
@@ -256,8 +257,9 @@ class LivelihoodZoneBaselineAdmin(GISModelAdminReadOnly):
         "bss_content_hash",
         "bss_uploaded_datetime",
         "bss_size",
+        "baseline_average_household_size",
+        "poor_average_household_size",
         "poor_main_staple",
-        "poor_household_size",
         "poor_survival_non_food_expenditure",
         "annual_kcals_cost",
     )
@@ -285,6 +287,7 @@ class LivelihoodZoneBaselineAdmin(GISModelAdminReadOnly):
                 "source_organization",
             )
             .with_bss_file_metadata()
+            .with_baseline_average_household_size()
         )
 
     @admin.display(description=_("Livelihood Zone Alternate Code"))
@@ -326,13 +329,17 @@ class LivelihoodZoneBaselineAdmin(GISModelAdminReadOnly):
             return ""
         return f"{instance.bss_size:,} bytes"
 
+    @admin.display(description=_("Baseline Average Household Size"))
+    def baseline_average_household_size(self, instance):
+        return instance.baseline_average_household_size
+
+    @admin.display(description=_("Poor Average Household Size"))
+    def poor_average_household_size(self, instance):
+        return instance.poor_average_household_size
+
     @admin.display(description=_("Poor Main Staple"))
     def poor_main_staple(self, instance):
         return instance.poor_main_staple
-
-    @admin.display(description=_("Poor Household Size"))
-    def poor_household_size(self, instance):
-        return instance.poor_household_size
 
     @admin.display(description=_("Poor Survival Non-Food Expenditure"))
     def poor_survival_non_food_expenditure(self, instance):
@@ -1328,6 +1335,7 @@ class WealthGroupAdmin(admin.ModelAdmin):
         return (
             super()
             .get_queryset(request)
+            .with_percentage_of_population()
             .select_related(
                 "community__livelihood_zone_baseline__livelihood_zone",
                 "wealth_group_category",
@@ -1366,46 +1374,15 @@ class WealthGroupAdmin(admin.ModelAdmin):
     def population_source(self, instance):
         return instance.livelihood_zone_baseline.population_source
 
-    def _get_percentage_of_population(self, instance):
-        if instance.percentage_of_households is None or instance.average_household_size is None:
-            return None
-
-        baseline_wealth_groups = WealthGroup.objects.filter(
-            livelihood_zone_baseline=instance.livelihood_zone_baseline,
-            community__isnull=True,
-            percentage_of_households__isnull=False,
-            percentage_of_households__gt=0,
-            average_household_size__isnull=False,
-        )
-
-        total_percentage_of_households = 0
-        weighted_total_household_size = 0
-        for wealth_group in baseline_wealth_groups:
-            total_percentage_of_households += wealth_group.percentage_of_households
-            weighted_total_household_size += (
-                wealth_group.percentage_of_households * wealth_group.average_household_size
-            )
-
-        if not total_percentage_of_households or not weighted_total_household_size:
-            return None
-
-        baseline_weighted_average_household_size = weighted_total_household_size / total_percentage_of_households
-        return (
-            instance.percentage_of_households
-            * instance.average_household_size
-            / baseline_weighted_average_household_size
-        )
-
     @admin.display(description=_("Percentage of population"))
     def percentage_of_population(self, instance):
-        return self._get_percentage_of_population(instance)
+        return instance.percentage_of_population
 
     @admin.display(description=_("Population estimate"))
     def population_estimate(self, instance):
-        percentage_of_population = self._get_percentage_of_population(instance)
-        if instance.livelihood_zone_baseline.population_estimate is None or percentage_of_population is None:
+        if instance.livelihood_zone_baseline.population_estimate is None or instance.percentage_of_population is None:
             return None
-        return round(instance.livelihood_zone_baseline.population_estimate * percentage_of_population)
+        return round(instance.livelihood_zone_baseline.population_estimate * instance.percentage_of_population)
 
 
 class BaselineLivelihoodActivityAdmin(LivelihoodActivityAdmin):
