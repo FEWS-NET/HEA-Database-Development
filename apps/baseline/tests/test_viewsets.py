@@ -9,7 +9,17 @@ import pandas as pd
 from bs4 import BeautifulSoup
 from django.contrib.auth.models import User
 from django.core.cache import cache
-from django.db.models import F
+from django.db.models import (
+    Case,
+    ExpressionWrapper,
+    F,
+    FloatField,
+    OuterRef,
+    Subquery,
+    Value,
+    When,
+)
+from django.db.models.functions import Coalesce
 from django.urls import reverse
 from django.utils.http import http_date
 from django.utils.timezone import now
@@ -1319,6 +1329,7 @@ class WealthGroupViewSetTestCase(APITestCase):
             "wealth_group_category",
             "wealth_group_category_name",
             "percentage_of_households",
+            "percentage_of_population",
             "average_household_size",
             "household_annual_kcals_cost",
             "survival_threshold_as_percentage_kcals",
@@ -5478,6 +5489,7 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
 
     @classmethod
     def setUpTestData(cls):
+        cls.wealth_group = None
         for cpc, description_en, common_name_en in cls.PRODUCT_DEFINITIONS:
             product = ClassifiedProductFactory(
                 cpc=cpc,
@@ -5512,6 +5524,19 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
                             wealth_group_category__ordering=wealth_group_category_ordering,
                         )
                         cls._create_livelihood_activities(wealth_group, product)
+                        # Save the first wealth group for further use in test cases.
+                        if not cls.wealth_group:
+                            cls.wealth_group = wealth_group
+        percentage_of_population = (
+            WealthGroup.objects.with_percentage_of_population()
+            .filter(pk=OuterRef("wealth_group_id"))
+            .values("percentage_of_population")
+        )
+        baseline_average_household_size = (
+            LivelihoodZoneBaseline.objects.with_baseline_average_household_size()
+            .filter(pk=OuterRef("livelihood_zone_baseline_id"))
+            .values("baseline_average_household_size")
+        )
         activity_df = pd.DataFrame(
             LivelihoodActivity.objects.filter(
                 livelihood_zone_baseline__livelihood_zone__code__in=["ML01", "ML02"],
@@ -5525,13 +5550,50 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
                 product=F("livelihood_strategy__product__cpc"),
                 wealth_group_category=F("wealth_group__wealth_group_category__code"),
                 wealth_group_category_ordering=F("wealth_group__wealth_group_category__ordering"),
+                percentage_of_households=F("wealth_group__percentage_of_households"),
+                average_household_size=F("wealth_group__average_household_size"),
+                percentage_of_population=Subquery(percentage_of_population, output_field=FloatField()),
+                baseline_average_household_size=Subquery(baseline_average_household_size, output_field=FloatField()),
+                total_income_as_percentage_kcals=ExpressionWrapper(
+                    # Calories from Food Purchase aren't included in total income.
+                    # Cash Income is included and is counted as the percentage of
+                    # the cost of 100% kcals that it could buy. If we also
+                    # included the Food Purchase kcals we would be double-counting.
+                    Case(
+                        When(strategy_type=Value(LivelihoodStrategyType.FOOD_PURCHASE), then=0.0),
+                        default=Coalesce(F("percentage_kcals"), 0.0),
+                    )
+                    + (
+                        Coalesce(F("income"), 0.0)
+                        / (
+                            F("wealth_group__average_household_size")
+                            * F("wealth_group__livelihood_zone_baseline___annual_kcals_cost")
+                        )
+                    ),
+                    output_field=FloatField(),
+                ),
+                total_income_as_cash=ExpressionWrapper(
+                    # Calories from Food Purchase aren't included in total income.
+                    # Cash Income is included and is counted as the percentage of
+                    # the cost of 100% kcals that it could buy. If we also
+                    # included the Food Purchase kcals we would be double-counting.
+                    (
+                        Case(
+                            When(strategy_type=Value(LivelihoodStrategyType.FOOD_PURCHASE), then=0.0),
+                            default=Coalesce(F("percentage_kcals"), 0.0),
+                        )
+                        * F("wealth_group__average_household_size")
+                        * F("wealth_group__livelihood_zone_baseline___annual_kcals_cost")
+                    )
+                    + Coalesce(F("income"), 0.0),
+                    output_field=FloatField(),
+                ),
             )
             .values()
         )
         activity_df["livelihood_zone_baseline"] = activity_df["livelihood_zone_baseline_id"]
         activity_df["reference_year_end_date"] = activity_df["reference_year_end_date"].apply(lambda x: x.isoformat())
         cls.activity_df = activity_df
-        cls.wealth_group = wealth_group  # Save the last wealth group for further use in test cases.
         cls.url = reverse("livelihoodactivitysummary-list")
 
     @classmethod
@@ -5570,6 +5632,129 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
                     scenario=scenario,
                 )
 
+    @classmethod
+    def _get_expected(cls, df: pd.DataFrame, fields: list) -> pd.DataFrame:
+        # If the response is summarizing across multiple wealth groups then simply summing the indicators is not
+        # correct because it doesn't account for differences in the `percentage_of_households` in each wealth group.
+        # For example, the BO Wealth Group may receive income from Livestock Production while other Wealth Groups do
+        # not. But assuming that the average household receives 25% of the BO Livestock Produiction income is not
+        # accurate if the BO wealth group only make up a small percentage of the total households.
+        if (
+            "wealth_group_category" not in fields
+            and df.groupby(fields + ["wealth_group_category"]).ngroups > df.groupby(fields).ngroups
+        ):
+            # Exclude P-FHH households from the baseline-level summary because their data is a subset of the data for
+            # the P wealth group and we don't want to double-count.
+            df = df[df["wealth_group_category"] != "P-FHH"].copy()
+            # Weight income, expenditure and kcals_consumed by the percentage of households.
+            df["income"] = df["income"] * df["percentage_of_households"]
+            df["expenditure"] = df["expenditure"] * df["percentage_of_households"]
+            df["kcals_consumed"] = df["kcals_consumed"] * df["percentage_of_households"]
+            df["total_income_as_cash"] = df["total_income_as_cash"] * df["percentage_of_households"]
+            # percentage_kcals and total_income_as_percentage_kcals also need to account for average_household_size.
+            df["percentage_kcals"] = (
+                df["percentage_kcals"]
+                * df["percentage_of_households"]
+                * df["average_household_size"]
+                / df["baseline_average_household_size"]
+            )
+            df["total_income_as_percentage_kcals"] = (
+                df["total_income_as_percentage_kcals"]
+                * df["percentage_of_households"]
+                * df["average_household_size"]
+                / df["baseline_average_household_size"]
+            )
+
+        expected = df.groupby(fields).agg(
+            kcals_consumed=("kcals_consumed", "sum"),
+            income=("income", "sum"),
+            expenditure=("expenditure", "sum"),
+            percentage_kcals=("percentage_kcals", "sum"),
+            total_income_as_percentage_kcals=("total_income_as_percentage_kcals", "sum"),
+            total_income_as_cash=("total_income_as_cash", "sum"),
+        )
+        return expected
+
+    def _check_row_against_expected_slices(self, row, fields, expected, expected_slice):
+        expected_row = expected.loc[*[row[field] for field in fields]]
+        try:
+            expected_slice_row = expected_slice.loc[*[row[field] for field in fields]]
+        except KeyError:
+            expected_slice_row = {
+                "kcals_consumed": 0,
+                "income": 0,
+                "expenditure": 0,
+                "percentage_kcals": 0,
+                "total_income_as_percentage_kcals": 0,
+                "total_income_as_cash": 0,
+            }
+        self.assertAlmostEqual(
+            row["kcals_consumed_sum_row"], expected_row["kcals_consumed"], msg="Mismatch in kcals_consumed_sum_row"
+        )
+        self.assertAlmostEqual(row["income_sum_row"], expected_row["income"], msg="Mismatch in income_sum_row")
+        self.assertAlmostEqual(
+            row["expenditure_sum_row"], expected_row["expenditure"], msg="Mismatch in expenditure_sum_row"
+        )
+        self.assertAlmostEqual(
+            row["percentage_kcals_sum_row"],
+            expected_row["percentage_kcals"],
+            msg="Mismatch in percentage_kcals_sum_row",
+        )
+        self.assertAlmostEqual(
+            row["total_income_as_percentage_kcals_row"],
+            expected_row["total_income_as_percentage_kcals"],
+            msg="Mismatch in total_income_as_percentage_kcals_row",
+        )
+        self.assertAlmostEqual(
+            row["total_income_as_cash_row"],
+            expected_row["total_income_as_cash"],
+            msg="Mismatch in total_income_as_cash_row",
+        )
+        self.assertAlmostEqual(
+            row["kcals_consumed_sum_slice"],
+            expected_slice_row["kcals_consumed"],
+            msg="Mismatch in kcals_consumed_sum_slice",
+        )
+        self.assertAlmostEqual(
+            row["income_sum_slice"], expected_slice_row["income"], msg="Mismatch in income_sum_slice"
+        )
+        self.assertAlmostEqual(
+            row["expenditure_sum_slice"],
+            expected_slice_row["expenditure"],
+            msg="Mismatch in expenditure_sum_slice",
+        )
+        self.assertAlmostEqual(
+            row["total_income_as_percentage_kcals_slice"],
+            expected_slice_row["total_income_as_percentage_kcals"],
+            msg="Mismatch in total_income_as_percentage_kcals_slice",
+        )
+        self.assertAlmostEqual(
+            row["total_income_as_cash_slice"],
+            expected_slice_row["total_income_as_cash"],
+            msg="Mismatch in total_income_as_cash_slice",
+        )
+        if expected_row["kcals_consumed"] == 0:
+            self.assertEqual(row["kcals_consumed_sum_slice_percentage_of_row"], 0)
+        else:
+            self.assertAlmostEqual(
+                row["kcals_consumed_sum_slice_percentage_of_row"],
+                (expected_slice_row["kcals_consumed"] / expected_row["kcals_consumed"]) * 100,
+            )
+        if expected_row["income"] == 0:
+            self.assertEqual(row["income_sum_slice_percentage_of_row"], 0)
+        else:
+            self.assertAlmostEqual(
+                row["income_sum_slice_percentage_of_row"],
+                (expected_slice_row["income"] / expected_row["income"]) * 100,
+            )
+        if expected_row["expenditure"] == 0:
+            self.assertEqual(row["expenditure_sum_slice_percentage_of_row"], 0)
+        else:
+            self.assertAlmostEqual(
+                row["expenditure_sum_slice_percentage_of_row"],
+                (expected_slice_row["expenditure"] / expected_row["expenditure"]) * 100,
+            )
+
     def test_summary_contains_all_rows(self):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
@@ -5600,6 +5785,7 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
             "wealth_group_category_name",
             "wealth_group_category_ordering",
             "percentage_of_households",
+            "percentage_of_population",
             "average_household_size",
             "currency",
             "population_source",
@@ -5637,23 +5823,45 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
             len(self.activity_df[self.activity_df["scenario"] == LivelihoodActivityScenario.BASELINE]),
         )
 
-    def test_summary_returns_row_aggregates_per_baseline_and_scenario(self):
-        fields = ["livelihood_zone", "reference_year_end_date", "scenario"]
-        expected = self.activity_df.groupby(fields).agg(
-            kcals_consumed=("kcals_consumed", "sum"),
-            income=("income", "sum"),
-            expenditure=("expenditure", "sum"),
-            percentage_kcals=("percentage_kcals", "sum"),
-        )
+    def test_summary_returns_actual_percentage_kcals_for_wealth_groups(self):
+        fields = ["livelihood_zone", "reference_year_end_date", "scenario", "wealth_group_category"]
+        expected = self._get_expected(self.activity_df, fields)
         response = self.client.get(self.url, {"fields": ",".join(fields)})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), len(expected))
         for row in response.json():
             expected_row = expected.loc[*[row[field] for field in fields]]
-            self.assertEqual(row["kcals_consumed_sum_row"], expected_row["kcals_consumed"])
-            self.assertEqual(row["income_sum_row"], expected_row["income"])
-            self.assertEqual(row["expenditure_sum_row"], expected_row["expenditure"])
+            self.assertAlmostEqual(row["kcals_consumed_sum_row"], expected_row["kcals_consumed"])
+            self.assertAlmostEqual(row["income_sum_row"], expected_row["income"])
+            self.assertAlmostEqual(row["expenditure_sum_row"], expected_row["expenditure"])
             self.assertAlmostEqual(row["percentage_kcals_sum_row"], expected_row["percentage_kcals"])
+            self.assertAlmostEqual(
+                row["total_income_as_percentage_kcals_row"], expected_row["total_income_as_percentage_kcals"]
+            )
+            self.assertAlmostEqual(row["total_income_as_cash_row"], expected_row["total_income_as_cash"])
+            self.assertNotIn("kcals_consumed_sum_slice", row)
+            self.assertNotIn("income_sum_slice", row)
+            self.assertNotIn("expenditure_sum_slice", row)
+            self.assertNotIn("kcals_consumed_sum_slice_percentage_of_row", row)
+            self.assertNotIn("income_sum_slice_percentage_of_row", row)
+            self.assertNotIn("expenditure_sum_slice_percentage_of_row", row)
+
+    def test_summary_returns_row_aggregates_per_baseline_and_scenario(self):
+        fields = ["livelihood_zone", "reference_year_end_date", "scenario"]
+        expected = self._get_expected(self.activity_df, fields)
+        response = self.client.get(self.url, {"fields": ",".join(fields)})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), len(expected))
+        for row in response.json():
+            expected_row = expected.loc[*[row[field] for field in fields]]
+            self.assertAlmostEqual(row["kcals_consumed_sum_row"], expected_row["kcals_consumed"])
+            self.assertAlmostEqual(row["income_sum_row"], expected_row["income"])
+            self.assertAlmostEqual(row["expenditure_sum_row"], expected_row["expenditure"])
+            self.assertAlmostEqual(row["percentage_kcals_sum_row"], expected_row["percentage_kcals"])
+            self.assertAlmostEqual(
+                row["total_income_as_percentage_kcals_row"], expected_row["total_income_as_percentage_kcals"]
+            )
+            self.assertAlmostEqual(row["total_income_as_cash_row"], expected_row["total_income_as_cash"])
             self.assertNotIn("kcals_consumed_sum_slice", row)
             self.assertNotIn("income_sum_slice", row)
             self.assertNotIn("expenditure_sum_slice", row)
@@ -5686,152 +5894,48 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
         self.assertEqual(row["total_income_as_cash_row"], 0, row)
         self.assertEqual(row["total_income_as_percentage_kcals_row"], 0, row)
 
-    def check_row_against_expected_slices(self, row, fields, expected, expected_slice):
-        expected_row = expected.loc[*[row[field] for field in fields]]
-        try:
-            expected_slice_row = expected_slice.loc[*[row[field] for field in fields]]
-        except KeyError:
-            expected_slice_row = {
-                "kcals_consumed": 0,
-                "income": 0,
-                "expenditure": 0,
-                "percentage_kcals": 0,
-            }
-        self.assertEqual(
-            row["kcals_consumed_sum_row"], expected_row["kcals_consumed"], "Mismatch in kcals_consumed_sum_row"
-        )
-        self.assertEqual(row["income_sum_row"], expected_row["income"], "Mismatch in income_sum_row")
-        self.assertEqual(row["expenditure_sum_row"], expected_row["expenditure"], "Mismatch in expenditure_sum_row")
-        self.assertAlmostEqual(
-            row["percentage_kcals_sum_row"],
-            expected_row["percentage_kcals"],
-            msg="Mismatch in percentage_kcals_sum_row",
-        )
-        self.assertEqual(
-            row["kcals_consumed_sum_slice"],
-            expected_slice_row["kcals_consumed"],
-            "Mismatch in kcals_consumed_sum_slice",
-        )
-        self.assertEqual(row["income_sum_slice"], expected_slice_row["income"], "Mismatch in income_sum_slice")
-        self.assertEqual(
-            row["expenditure_sum_slice"],
-            expected_slice_row["expenditure"],
-            "Mismatch in expenditure_sum_slice",
-        )
-        if expected_row["kcals_consumed"] == 0:
-            self.assertEqual(row["kcals_consumed_sum_slice_percentage_of_row"], 0)
-        else:
-            self.assertAlmostEqual(
-                row["kcals_consumed_sum_slice_percentage_of_row"],
-                (expected_slice_row["kcals_consumed"] / expected_row["kcals_consumed"]) * 100,
-            )
-        if expected_row["income"] == 0:
-            self.assertEqual(row["income_sum_slice_percentage_of_row"], 0)
-        else:
-            self.assertAlmostEqual(
-                row["income_sum_slice_percentage_of_row"],
-                (expected_slice_row["income"] / expected_row["income"]) * 100,
-            )
-        if expected_row["expenditure"] == 0:
-            self.assertEqual(row["expenditure_sum_slice_percentage_of_row"], 0)
-        else:
-            self.assertAlmostEqual(
-                row["expenditure_sum_slice_percentage_of_row"],
-                (expected_slice_row["expenditure"] / expected_row["expenditure"]) * 100,
-            )
-
     def test_summary_supports_product_slices(self):
         fields = ["livelihood_zone_baseline", "scenario"]
-        expected = self.activity_df.groupby(fields).agg(
-            kcals_consumed=("kcals_consumed", "sum"),
-            income=("income", "sum"),
-            expenditure=("expenditure", "sum"),
-            percentage_kcals=("percentage_kcals", "sum"),
-        )
-        expected_slice = (
-            self.activity_df[self.activity_df["product"] == "R01122"]
-            .groupby(fields)
-            .agg(
-                kcals_consumed=("kcals_consumed", "sum"),
-                income=("income", "sum"),
-                expenditure=("expenditure", "sum"),
-                percentage_kcals=("percentage_kcals", "sum"),
-            )
-        )
+        expected = self._get_expected(self.activity_df, fields)
+        expected_slice = self._get_expected(self.activity_df[self.activity_df["product"] == "R01122"], fields)
         response = self.client.get(self.url, {"fields": ",".join(fields), "slice_by_product": "R01122"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), len(expected))
         for row in response.json():
             with self.subTest(row=row):
-                self.check_row_against_expected_slices(row, fields, expected, expected_slice)
+                self._check_row_against_expected_slices(row, fields, expected, expected_slice)
 
     def test_summary_supports_multiple_product_slices(self):
         fields = ["livelihood_zone_baseline", "scenario"]
-        expected = self.activity_df.groupby(fields).agg(
-            kcals_consumed=("kcals_consumed", "sum"),
-            income=("income", "sum"),
-            expenditure=("expenditure", "sum"),
-            percentage_kcals=("percentage_kcals", "sum"),
-        )
-        expected_slice = (
-            self.activity_df[self.activity_df["product"].isin(["R01122", "R01520"])]
-            .groupby(fields)
-            .agg(
-                kcals_consumed=("kcals_consumed", "sum"),
-                income=("income", "sum"),
-                expenditure=("expenditure", "sum"),
-                percentage_kcals=("percentage_kcals", "sum"),
-            )
+        expected = self._get_expected(self.activity_df, fields)
+        expected_slice = self._get_expected(
+            self.activity_df[self.activity_df["product"].isin(["R01122", "R01520"])], fields
         )
         response = self.client.get(self.url, {"fields": ",".join(fields), "slice_by_product": ["R01122", "R01520"]})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), len(expected))
         for row in response.json():
             with self.subTest(row=row):
-                self.check_row_against_expected_slices(row, fields, expected, expected_slice)
+                self._check_row_against_expected_slices(row, fields, expected, expected_slice)
 
     def test_summary_supports_strategy_type_slices(self):
         fields = ["livelihood_zone_baseline", "scenario"]
-        expected = self.activity_df.groupby(fields).agg(
-            kcals_consumed=("kcals_consumed", "sum"),
-            income=("income", "sum"),
-            expenditure=("expenditure", "sum"),
-            percentage_kcals=("percentage_kcals", "sum"),
-        )
-        expected_slice = (
-            self.activity_df[self.activity_df["strategy_type"] == "CropProduction"]
-            .groupby(fields)
-            .agg(
-                kcals_consumed=("kcals_consumed", "sum"),
-                income=("income", "sum"),
-                expenditure=("expenditure", "sum"),
-                percentage_kcals=("percentage_kcals", "sum"),
-            )
+        expected = self._get_expected(self.activity_df, fields)
+        expected_slice = self._get_expected(
+            self.activity_df[self.activity_df["strategy_type"] == "CropProduction"], fields
         )
         response = self.client.get(self.url, {"fields": ",".join(fields), "slice_by_strategy_type": "CropProduction"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), len(expected))
         for row in response.json():
             with self.subTest(row=row):
-                self.check_row_against_expected_slices(row, fields, expected, expected_slice)
+                self._check_row_against_expected_slices(row, fields, expected, expected_slice)
 
     def test_summary_supports_multiple_strategy_type_slices(self):
         fields = ["livelihood_zone_baseline", "scenario"]
-        expected = self.activity_df.groupby(fields).agg(
-            kcals_consumed=("kcals_consumed", "sum"),
-            income=("income", "sum"),
-            expenditure=("expenditure", "sum"),
-            percentage_kcals=("percentage_kcals", "sum"),
-        )
-        expected_slice = (
-            self.activity_df[self.activity_df["strategy_type"].isin(["CropProduction", "OtherCashIncome"])]
-            .groupby(fields)
-            .agg(
-                kcals_consumed=("kcals_consumed", "sum"),
-                income=("income", "sum"),
-                expenditure=("expenditure", "sum"),
-                percentage_kcals=("percentage_kcals", "sum"),
-            )
+        expected = self._get_expected(self.activity_df, fields)
+        expected_slice = self._get_expected(
+            self.activity_df[self.activity_df["strategy_type"].isin(["CropProduction", "OtherCashIncome"])], fields
         )
         response = self.client.get(
             self.url, {"fields": ",".join(fields), "slice_by_strategy_type": ["CropProduction", "OtherCashIncome"]}
@@ -5840,7 +5944,7 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), len(expected))
         for row in response.json():
             with self.subTest(row=row):
-                self.check_row_against_expected_slices(row, fields, expected, expected_slice)
+                self._check_row_against_expected_slices(row, fields, expected, expected_slice)
 
     def test_ordering(self):
         fields = ["wealth_group_category_ordering", "strategy_type", "reference_year_end_date"]
@@ -5867,23 +5971,12 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
 
     def test_summary_supports_combined_product_and_strategy_type_slices(self):
         fields = ["livelihood_zone_baseline", "scenario"]
-        expected = self.activity_df.groupby(fields).agg(
-            kcals_consumed=("kcals_consumed", "sum"),
-            income=("income", "sum"),
-            expenditure=("expenditure", "sum"),
-            percentage_kcals=("percentage_kcals", "sum"),
-        )
-        expected_slice = (
+        expected = self._get_expected(self.activity_df, fields)
+        expected_slice = self._get_expected(
             self.activity_df[
                 (self.activity_df["product"] == "R01122") & (self.activity_df["strategy_type"] == "CropProduction")
-            ]
-            .groupby(fields)
-            .agg(
-                kcals_consumed=("kcals_consumed", "sum"),
-                income=("income", "sum"),
-                expenditure=("expenditure", "sum"),
-                percentage_kcals=("percentage_kcals", "sum"),
-            )
+            ],
+            fields,
         )
         response = self.client.get(
             self.url,
@@ -5893,28 +5986,17 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), len(expected))
         for row in response.json():
             with self.subTest(row=row):
-                self.check_row_against_expected_slices(row, fields, expected, expected_slice)
+                self._check_row_against_expected_slices(row, fields, expected, expected_slice)
 
     def test_summary_supports_multiple_combined_product_and_strategy_type_slices(self):
         fields = ["livelihood_zone_baseline", "scenario"]
-        expected = self.activity_df.groupby(fields).agg(
-            kcals_consumed=("kcals_consumed", "sum"),
-            income=("income", "sum"),
-            expenditure=("expenditure", "sum"),
-            percentage_kcals=("percentage_kcals", "sum"),
-        )
-        expected_slice = (
+        expected = self._get_expected(self.activity_df, fields)
+        expected_slice = self._get_expected(
             self.activity_df[
                 (self.activity_df["product"].isin(["R01122", "L02111"]))
                 & (self.activity_df["strategy_type"].isin(["CropProduction", "LivestockSale"]))
-            ]
-            .groupby(fields)
-            .agg(
-                kcals_consumed=("kcals_consumed", "sum"),
-                income=("income", "sum"),
-                expenditure=("expenditure", "sum"),
-                percentage_kcals=("percentage_kcals", "sum"),
-            )
+            ],
+            fields,
         )
         response = self.client.get(
             self.url,
@@ -5928,16 +6010,11 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), len(expected))
         for row in response.json():
             with self.subTest(row=row):
-                self.check_row_against_expected_slices(row, fields, expected, expected_slice)
+                self._check_row_against_expected_slices(row, fields, expected, expected_slice)
 
     def test_min_max_row_filter(self):
         fields = ["livelihood_zone_baseline", "scenario", "wealth_group_category"]
-        expected = self.activity_df.groupby(fields).agg(
-            kcals_consumed=("kcals_consumed", "sum"),
-            income=("income", "sum"),
-            expenditure=("expenditure", "sum"),
-            percentage_kcals=("percentage_kcals", "sum"),
-        )
+        expected = self._get_expected(self.activity_df, fields)
         target_row = expected[expected["kcals_consumed"] > 0].sample(n=1).iloc[0]
         min_value = target_row["kcals_consumed"] - 1
         max_value = target_row["kcals_consumed"] + 1
@@ -5961,17 +6038,11 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
 
     def test_min_max_slice_filter(self):
         fields = ["livelihood_zone_baseline", "scenario", "wealth_group_category"]
-        expected_slice = (
+        expected_slice = self._get_expected(
             self.activity_df[
                 (self.activity_df["product"] == "R01122") & (self.activity_df["strategy_type"] == "CropProduction")
-            ]
-            .groupby(fields)
-            .agg(
-                kcals_consumed=("kcals_consumed", "sum"),
-                income=("income", "sum"),
-                expenditure=("expenditure", "sum"),
-                percentage_kcals=("percentage_kcals", "sum"),
-            )
+            ],
+            fields,
         )
         target_row = expected_slice[expected_slice["income"] > 0].sample(n=1).iloc[0]
         min_value = target_row["income"] - 1
@@ -5998,17 +6069,11 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
 
     def test_min_only_slice_filter(self):
         fields = ["livelihood_zone_baseline", "scenario", "wealth_group_category"]
-        expected_slice = (
+        expected_slice = self._get_expected(
             self.activity_df[
                 (self.activity_df["product"] == "R01122") & (self.activity_df["strategy_type"] == "CropProduction")
-            ]
-            .groupby(fields)
-            .agg(
-                kcals_consumed=("kcals_consumed", "sum"),
-                income=("income", "sum"),
-                expenditure=("expenditure", "sum"),
-                percentage_kcals=("percentage_kcals", "sum"),
-            )
+            ],
+            fields,
         )
         target_row = expected_slice[expected_slice["income"] > 0].sample(n=1).iloc[0]
         min_value = target_row["income"] - 1
@@ -6031,23 +6096,12 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
 
     def test_min_max_percentage_filter(self):
         fields = ["livelihood_zone_baseline", "scenario", "wealth_group_category"]
-        expected = self.activity_df.groupby(fields).agg(
-            kcals_consumed=("kcals_consumed", "sum"),
-            income=("income", "sum"),
-            expenditure=("expenditure", "sum"),
-            percentage_kcals=("percentage_kcals", "sum"),
-        )
-        expected_slice = (
+        expected = self._get_expected(self.activity_df, fields)
+        expected_slice = self._get_expected(
             self.activity_df[
                 (self.activity_df["product"] == "R01122") & (self.activity_df["strategy_type"] == "CropProduction")
-            ]
-            .groupby(fields)
-            .agg(
-                kcals_consumed=("kcals_consumed", "sum"),
-                income=("income", "sum"),
-                expenditure=("expenditure", "sum"),
-                percentage_kcals=("percentage_kcals", "sum"),
-            )
+            ],
+            fields,
         )
         expected_slice["total_income"] = expected.loc[expected_slice.index]["income"]
         expected_slice["percentage_income"] = (

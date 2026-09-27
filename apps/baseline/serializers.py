@@ -1988,7 +1988,71 @@ class LivelihoodActivitySummarySerializer(AggregatingSerializer):
         ),
     }
 
+    # If the summary is aggregating multiple wealth groups, then we need to apply weights to the aggregates
+    # to account for the percentage of households or percentage of population for each wealth group. This
+    # makes the result represent an "average household" across all the selected Livelihood Activities.
+    weighted_aggregates = {
+        "kcals_consumed": Sum(F("kcals_consumed") * F("percentage_of_households")),
+        "income": Sum(F("income") * F("percentage_of_households")),
+        "expenditure": Sum(F("expenditure") * F("percentage_of_households")),
+        "percentage_kcals": Sum(F("percentage_kcals") * F("percentage_of_population")),
+        "kcal_income_sum": Sum(
+            (F("quantity_purchased") + F("quantity_produced")) * F("livelihood_strategy__product__kcals_per_unit"),
+            output_field=FloatField(),
+        ),
+        "total_income_as_percentage_kcals": Sum(
+            (
+                (
+                    # Calories from Food Purchase aren't included in total income.
+                    # Cash Income is included and is counted as the percentage of
+                    # the cost of 100% kcals that it could buy. If we also
+                    # included the Food Purchase kcals we would be double-counting.
+                    Case(
+                        When(strategy_type=Value(LivelihoodStrategyType.FOOD_PURCHASE), then=0.0),
+                        default=Coalesce(F("percentage_kcals"), 0.0),
+                    )
+                    + (
+                        Coalesce(F("income"), 0.0)
+                        / (
+                            F("wealth_group__average_household_size")
+                            * F("wealth_group__livelihood_zone_baseline___annual_kcals_cost")
+                        )
+                    )
+                )
+                * F("percentage_of_population")
+            ),
+            output_field=FloatField(),
+        ),
+        "total_income_as_cash": Sum(
+            (
+                (
+                    (
+                        # Calories from Food Purchase aren't included in total income.
+                        # Cash Income is included and is counted as the percentage of
+                        # the cost of 100% kcals that it could buy. If we also
+                        # included the Food Purchase kcals we would be double-counting.
+                        Case(
+                            When(strategy_type=Value(LivelihoodStrategyType.FOOD_PURCHASE), then=0.0),
+                            default=Coalesce(F("percentage_kcals"), 0.0),
+                        )
+                        * F("wealth_group__average_household_size")
+                        * F("wealth_group__livelihood_zone_baseline___annual_kcals_cost")
+                    )
+                    + Coalesce(F("income"), 0.0)
+                )
+                * F("percentage_of_households")
+            ),
+            output_field=FloatField(),
+        ),
+    }
+
     slice_fields = {
         "product": "livelihood_strategy__product__cpc__istartswith",
         "strategy_type": "strategy_type__iexact",
     }
+
+    def get_aggregates(self):
+        """Weight indicators when the request rolls up multiple wealth groups."""
+        if self.context["view"].is_aggregating_wealth_groups:
+            return self.weighted_aggregates
+        return self.aggregates

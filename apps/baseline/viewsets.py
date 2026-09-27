@@ -13,6 +13,7 @@ from django.db.models import (
     IntegerField,
     OuterRef,
     Q,
+    QuerySet,
     Subquery,
     TextField,
     Value,
@@ -2185,6 +2186,8 @@ class LivelihoodActivitySummaryViewSet(AggregatingViewSet):
     serializer_class = LivelihoodActivitySummarySerializer
     filterset_class = LivelihoodActivityFilterSet
 
+    is_aggregating_wealth_groups: bool = False
+
     def get_queryset(self):
         """
         Annotate each activity with its wealth group's percentage of the baseline population.
@@ -2192,11 +2195,28 @@ class LivelihoodActivitySummaryViewSet(AggregatingViewSet):
         percentage_of_population = WealthGroupQuerySet.with_percentage_of_population(
             WealthGroup.objects.filter(pk=OuterRef("wealth_group_id"))
         ).values("percentage_of_population")
-        return (
+        queryset = (
             super()
             .get_queryset()
             .annotate(percentage_of_population=Subquery(percentage_of_population, output_field=models.FloatField()))
         )
+        return queryset
+
+    def get_grouped_queryset(self, queryset) -> QuerySet:
+        """Configure weighted aggregation when a request combines wealth groups."""
+
+        # Check whether this request is aggregating wealth groups
+        group_by_fields = super().get_group_by_fields(queryset)
+        if "wealth_group_category" not in group_by_fields:
+            row_count = queryset.values(*group_by_fields).distinct().count()
+            wealth_group_count = queryset.values(*group_by_fields, "wealth_group_category").distinct().count()
+            self.is_aggregating_wealth_groups = wealth_group_count > row_count
+            if self.is_aggregating_wealth_groups:
+                # Exclude P-FHH households from the baseline-level summaries because their data is a subset of the data
+                # for the P wealth group and we don't want to double-count.
+                queryset = queryset.exclude(wealth_group__wealth_group_category__code="P-FHH")
+
+        return super().get_grouped_queryset(queryset)
 
     def get_queryset_annotations(self) -> dict[str, F | Expression]:
         """

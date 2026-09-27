@@ -224,13 +224,14 @@ class LivelihoodZoneBaselineQuerySet(models.QuerySet):
         Calculated as the mean of the average_household_size for the Baseline Wealth Groups,
         weighted by the percentage_of_households for each Baseline Wealth Group.
         """
+        # Exclude P-FHH households from the baseline wealth groups because they are a subset of the P wealth group.
         baseline_wealth_groups = WealthGroup.objects.filter(
             livelihood_zone_baseline=OuterRef("pk"),
             community__isnull=True,
             percentage_of_households__isnull=False,
             percentage_of_households__gt=0,
             average_household_size__isnull=False,
-        )
+        ).exclude(wealth_group_category__code="P-FHH")
         return self.annotate(
             baseline_average_household_size=Subquery(
                 baseline_wealth_groups.values("livelihood_zone_baseline")
