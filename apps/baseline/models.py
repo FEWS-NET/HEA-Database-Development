@@ -222,7 +222,7 @@ class LivelihoodZoneBaselineQuerySet(models.QuerySet):
         Annotate the average household size for the Baseline.
 
         Calculated as the mean of the average_household_size for the Baseline Wealth Groups,
-        weighted by the percentage_of_population for each Baseline Wealth Group.
+        weighted by the percentage_of_households for each Baseline Wealth Group.
         """
         baseline_wealth_groups = WealthGroup.objects.filter(
             livelihood_zone_baseline=OuterRef("pk"),
