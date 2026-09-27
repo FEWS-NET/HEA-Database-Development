@@ -1944,10 +1944,6 @@ class LivelihoodActivitySummarySerializer(AggregatingSerializer):
         "income": Sum,
         "expenditure": Sum,
         "percentage_kcals": Sum,
-        "kcal_income_sum": Sum(
-            (F("quantity_purchased") + F("quantity_produced")) * F("livelihood_strategy__product__kcals_per_unit"),
-            output_field=FloatField(),
-        ),
         "total_income_as_percentage_kcals": Sum(
             (
                 # Calories from Food Purchase aren't included in total income.
@@ -1996,10 +1992,6 @@ class LivelihoodActivitySummarySerializer(AggregatingSerializer):
         "income": Sum(F("income") * F("percentage_of_households")),
         "expenditure": Sum(F("expenditure") * F("percentage_of_households")),
         "percentage_kcals": Sum(F("percentage_kcals") * F("percentage_of_population")),
-        "kcal_income_sum": Sum(
-            (F("quantity_purchased") + F("quantity_produced")) * F("livelihood_strategy__product__kcals_per_unit"),
-            output_field=FloatField(),
-        ),
         "total_income_as_percentage_kcals": Sum(
             (
                 (
