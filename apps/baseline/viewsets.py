@@ -11,6 +11,7 @@ from django.db.models import (
     ExpressionWrapper,
     F,
     IntegerField,
+    OuterRef,
     Q,
     Subquery,
     TextField,
@@ -517,7 +518,7 @@ class WealthGroupViewSet(BaseModelViewSet):
     """
 
     permission_classes = [IsAuthenticated]
-    queryset = WealthGroup.objects.select_related(
+    queryset = WealthGroup.objects.with_percentage_of_population().select_related(
         # Normally it would be better to join to livelihood_zone_baseline via community,
         # but baseline wealth groups don't have a community join.
         "community",
@@ -2183,6 +2184,19 @@ class LivelihoodActivitySummaryViewSet(AggregatingViewSet):
     )
     serializer_class = LivelihoodActivitySummarySerializer
     filterset_class = LivelihoodActivityFilterSet
+
+    def get_queryset(self):
+        """
+        Annotate each activity with its wealth group's percentage of the baseline population.
+        """
+        percentage_of_population = WealthGroupQuerySet.with_percentage_of_population(
+            WealthGroup.objects.filter(pk=OuterRef("wealth_group_id"))
+        ).values("percentage_of_population")
+        return (
+            super()
+            .get_queryset()
+            .annotate(percentage_of_population=Subquery(percentage_of_population, output_field=models.FloatField()))
+        )
 
     def get_queryset_annotations(self) -> dict[str, F | Expression]:
         """

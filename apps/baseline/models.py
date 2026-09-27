@@ -14,7 +14,16 @@ from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.serializers.json import DjangoJSONEncoder
 from django.core.validators import MaxValueValidator, MinValueValidator
-from django.db.models import F, Func, Q, Sum, Value
+from django.db.models import (
+    ExpressionWrapper,
+    F,
+    Func,
+    OuterRef,
+    Q,
+    Subquery,
+    Sum,
+    Value,
+)
 from django.db.models.functions import Lower
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
@@ -216,20 +225,18 @@ class LivelihoodZoneBaselineQuerySet(models.QuerySet):
         weighted by the percentage_of_population for each Baseline Wealth Group.
         """
         baseline_wealth_groups = WealthGroup.objects.filter(
-            livelihood_zone_baseline=models.OuterRef("pk"),
+            livelihood_zone_baseline=OuterRef("pk"),
             community__isnull=True,
             percentage_of_households__isnull=False,
             percentage_of_households__gt=0,
             average_household_size__isnull=False,
         )
         return self.annotate(
-            baseline_average_household_size=models.Subquery(
+            baseline_average_household_size=Subquery(
                 baseline_wealth_groups.values("livelihood_zone_baseline")
                 .annotate(
-                    weighted_average_household_size=models.Sum(
-                        models.F("percentage_of_households") * models.F("average_household_size")
-                    )
-                    / models.Sum("percentage_of_households")
+                    weighted_average_household_size=Sum(F("percentage_of_households") * F("average_household_size"))
+                    / Sum("percentage_of_households")
                 )
                 .values("weighted_average_household_size"),
                 output_field=models.FloatField(),
@@ -240,15 +247,13 @@ class LivelihoodZoneBaselineQuerySet(models.QuerySet):
         """
         Annotate BSS metadata from the corresponding database file.
         """
-        bss_files = File.objects.filter(name=models.OuterRef("bss"))
+        bss_files = File.objects.filter(name=OuterRef("bss"))
         return self.annotate(
-            _bss_file_content_hash=models.Subquery(
-                bss_files.values("_content_hash")[:1], output_field=models.CharField()
-            ),
-            _bss_file_created_datetime=models.Subquery(
+            _bss_file_content_hash=Subquery(bss_files.values("_content_hash")[:1], output_field=models.CharField()),
+            _bss_file_created_datetime=Subquery(
                 bss_files.values("created_datetime")[:1], output_field=models.DateTimeField()
             ),
-            _bss_file_size=models.Subquery(bss_files.values("size")[:1], output_field=models.PositiveIntegerField()),
+            _bss_file_size=Subquery(bss_files.values("size")[:1], output_field=models.PositiveIntegerField()),
         )
 
     def filter_current(self, as_of_date=None):
@@ -258,8 +263,8 @@ class LivelihoodZoneBaselineQuerySet(models.QuerySet):
         if not as_of_date:
             as_of_date = datetime.date.today()
         return self.filter(
-            (models.Q(valid_from_date__lte=as_of_date) | models.Q(valid_from_date__isnull=True))
-            & (models.Q(valid_to_date__gte=as_of_date) | models.Q(valid_to_date__isnull=True))
+            (Q(valid_from_date__lte=as_of_date) | Q(valid_from_date__isnull=True))
+            & (Q(valid_to_date__gte=as_of_date) | Q(valid_to_date__isnull=True))
         )
 
     def current_all(self, as_of_date=None):
@@ -856,17 +861,17 @@ class WealthGroupQuerySet(models.QuerySet):
 
         baseline_average_household_size = (
             LivelihoodZoneBaseline.objects.with_baseline_average_household_size()
-            .filter(pk=models.OuterRef("livelihood_zone_baseline"))
+            .filter(pk=OuterRef("livelihood_zone_baseline"))
             .values("baseline_average_household_size")
         )
         # The percentage of population is the percentage of households multiplied by the ratio of the
         # average household size for this Wealth Group relative to the weighted average household size across
         # all Baseline Wealth Groups for the Livelihood Zone Baseline.
         return self.annotate(
-            percentage_of_population=models.ExpressionWrapper(
-                models.F("percentage_of_households")
-                * models.F("average_household_size")
-                / models.Subquery(baseline_average_household_size, output_field=models.FloatField()),
+            percentage_of_population=ExpressionWrapper(
+                F("percentage_of_households")
+                * F("average_household_size")
+                / Subquery(baseline_average_household_size, output_field=models.FloatField()),
                 output_field=models.FloatField(),
             )
         )
