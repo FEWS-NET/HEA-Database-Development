@@ -1329,7 +1329,6 @@ class WealthGroupViewSetTestCase(APITestCase):
             "wealth_group_category",
             "wealth_group_category_name",
             "percentage_of_households",
-            "percentage_of_population",
             "average_household_size",
             "household_annual_kcals_cost",
             "survival_threshold_as_percentage_kcals",
@@ -5637,7 +5636,7 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
         # If the response is summarizing across multiple wealth groups then simply summing the indicators is not
         # correct because it doesn't account for differences in the `percentage_of_households` in each wealth group.
         # For example, the BO Wealth Group may receive income from Livestock Production while other Wealth Groups do
-        # not. But assuming that the average household receives 25% of the BO Livestock Produiction income is not
+        # not. But assuming that the average household receives 25% of the BO Livestock Production income is not
         # accurate if the BO wealth group only make up a small percentage of the total households.
         if (
             "wealth_group_category" not in fields

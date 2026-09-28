@@ -519,7 +519,7 @@ class WealthGroupViewSet(BaseModelViewSet):
     """
 
     permission_classes = [IsAuthenticated]
-    queryset = WealthGroup.objects.with_percentage_of_population().select_related(
+    queryset = WealthGroup.objects.select_related(
         # Normally it would be better to join to livelihood_zone_baseline via community,
         # but baseline wealth groups don't have a community join.
         "community",

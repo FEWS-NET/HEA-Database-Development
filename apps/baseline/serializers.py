@@ -310,7 +310,6 @@ class WealthGroupSerializer(serializers.ModelSerializer):
             "wealth_group_category",
             "wealth_group_category_name",
             "percentage_of_households",
-            "percentage_of_population",
             "average_household_size",
             "household_annual_kcals_cost",
             "survival_threshold_as_percentage_kcals",
@@ -343,7 +342,6 @@ class WealthGroupSerializer(serializers.ModelSerializer):
         source="livelihood_zone_baseline.source_organization.name", read_only=True
     )
     wealth_group_category_name = serializers.CharField(source="wealth_group_category.name", read_only=True)
-    percentage_of_population = serializers.FloatField(read_only=True)
 
 
 class BaselineWealthGroupSerializer(WealthGroupSerializer):
