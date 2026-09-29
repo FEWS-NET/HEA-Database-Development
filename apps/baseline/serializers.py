@@ -2,7 +2,7 @@ import calendar
 import datetime
 
 from django.db.models import Case, F, FloatField, Sum, Value, When
-from django.db.models.functions import Coalesce, NullIf
+from django.db.models.functions import Coalesce
 from rest_framework import serializers
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
 
@@ -53,11 +53,6 @@ from .models import (
     WealthGroupCharacteristicValue,
     WildFoodGathering,
 )
-
-
-def safe_division(numerator, denominator):
-    """Return a zero-safe division expression."""
-    return Coalesce(numerator / NullIf(denominator, 0.0), 0.0, output_field=FloatField())
 
 
 class SourceOrganizationSerializer(serializers.ModelSerializer):
@@ -1987,85 +1982,7 @@ class LivelihoodActivitySummarySerializer(AggregatingSerializer):
         ),
     }
 
-    # If the summary is aggregating multiple wealth groups, then we need to apply weights to the aggregates
-    # to account for the percentage of households or percentage of population for each wealth group. This
-    # makes the result represent an "average household" across all the selected Livelihood Activities.
-    weighted_aggregates = {
-        "kcals_consumed": safe_division(
-            Sum(F("kcals_consumed") * F("percentage_of_households")),
-            Sum("percentage_of_households"),
-        ),
-        "income": safe_division(
-            Sum(F("income") * F("percentage_of_households")),
-            Sum("percentage_of_households"),
-        ),
-        "expenditure": safe_division(
-            Sum(F("expenditure") * F("percentage_of_households")),
-            Sum("percentage_of_households"),
-        ),
-        "percentage_kcals": safe_division(
-            Sum(F("percentage_kcals") * F("percentage_of_population")),
-            Sum("percentage_of_population"),
-        ),
-        "total_income_as_percentage_kcals": safe_division(
-            Sum(
-                (
-                    (
-                        # Calories from Food Purchase aren't included in total income.
-                        # Cash Income is included and is counted as the percentage of
-                        # the cost of 100% kcals that it could buy. If we also
-                        # included the Food Purchase kcals we would be double-counting.
-                        Case(
-                            When(strategy_type=Value(LivelihoodStrategyType.FOOD_PURCHASE), then=0.0),
-                            default=Coalesce(F("percentage_kcals"), 0.0),
-                        )
-                        + (
-                            Coalesce(F("income"), 0.0)
-                            / (
-                                F("wealth_group__average_household_size")
-                                * F("wealth_group__livelihood_zone_baseline___annual_kcals_cost")
-                            )
-                        )
-                    )
-                    * F("percentage_of_population")
-                ),
-                output_field=FloatField(),
-            ),
-            Sum("percentage_of_population"),
-        ),
-        "total_income_as_cash": safe_division(
-            Sum(
-                (
-                    (
-                        (
-                            # Calories from Food Purchase aren't included in total income.
-                            # Cash Income is included and is counted as the percentage of
-                            # the cost of 100% kcals that it could buy. If we also
-                            # included the Food Purchase kcals we would be double-counting.
-                            Case(
-                                When(strategy_type=Value(LivelihoodStrategyType.FOOD_PURCHASE), then=0.0),
-                                default=Coalesce(F("percentage_kcals"), 0.0),
-                            )
-                            * F("wealth_group__average_household_size")
-                            * F("wealth_group__livelihood_zone_baseline___annual_kcals_cost")
-                        )
-                        + Coalesce(F("income"), 0.0)
-                    )
-                    * F("percentage_of_households")
-                ),
-                output_field=FloatField(),
-            ),
-            Sum("percentage_of_households"),
-        ),
-    }
-
     slice_fields = {
         "product": "livelihood_strategy__product__cpc__istartswith",
         "strategy_type": "strategy_type__iexact",
     }
-
-    def get_aggregates(self):
-        """Weight indicators when the request rolls up multiple wealth groups."""
-        if self.context["view"].is_aggregating_wealth_groups:
-            return self.weighted_aggregates
-        return self.aggregates

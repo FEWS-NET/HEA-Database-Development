@@ -7,14 +7,19 @@ from django.conf import settings
 from django.db import models
 from django.db.models import (
     CharField,
+    Count,
     Expression,
     ExpressionWrapper,
     F,
+    FloatField,
     IntegerField,
+    Max,
+    Min,
     OuterRef,
     Q,
     QuerySet,
     Subquery,
+    Sum,
     TextField,
     Value,
 )
@@ -24,6 +29,7 @@ from django.utils.decorators import method_decorator
 from django.utils.translation import override
 from django.views.decorators.cache import cache_page
 from django.views.decorators.http import condition
+from django_cte import CTE, with_cte
 from django_filters import rest_framework as filters
 from django_filters.filters import CharFilter
 from drf_spectacular.types import OpenApiTypes
@@ -34,6 +40,7 @@ from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rest_framework.views import APIView
 
+from common.enums import AggregationScope
 from common.fields import translation_fields
 from common.filters import DefaultingDateFilter, MultiFieldFilter, UpperCaseFilter
 from common.models import ClassifiedProduct
@@ -2202,23 +2209,121 @@ class LivelihoodActivitySummaryViewSet(AggregatingViewSet):
         )
         return queryset
 
-    def get_grouped_queryset(self, queryset) -> QuerySet:
-        """Configure weighted aggregation when a request combines wealth groups."""
-
-        # Check whether this request is aggregating wealth groups
+    def get_aggregated_queryset(self, queryset: QuerySet) -> tuple[QuerySet, dict[str, Expression]]:
+        """Use a CTE to weight per-wealth-group totals when a request rolls up wealth groups."""
         group_by_fields = super().get_group_by_fields(queryset)
-        if "wealth_group_category" not in group_by_fields:
-            row_count = queryset.values(*group_by_fields).distinct().count()
-            wealth_group_count = queryset.values(*group_by_fields, "wealth_group_category").distinct().count()
-            if wealth_group_count > row_count:
-                # Exclude P-FHH households from the baseline-level summaries because their data is a subset of the data
-                # for the P wealth group and we don't want to double-count.
-                queryset = queryset.exclude(wealth_group__wealth_group_category__code="P-FHH")
-            # Check if we still have more than one wealth group and therefore need to use the weighted aggregations
-            wealth_group_count = queryset.values(*group_by_fields, "wealth_group_category").distinct().count()
-            self.is_aggregating_wealth_groups = wealth_group_count > row_count
+        self.is_aggregating_wealth_groups = False
+        if "wealth_group_category" in group_by_fields:
+            return super().get_aggregated_queryset(queryset)
 
-        return super().get_grouped_queryset(queryset)
+        row_count = queryset.values(*group_by_fields).distinct().count()
+        wealth_group_count = queryset.values(*group_by_fields, "wealth_group_category").distinct().count()
+        if row_count == wealth_group_count:
+            return super().get_aggregated_queryset(queryset)
+
+        # We are aggregating wealth groups, and have more than one wealth group category in the queryset.
+
+        # P-FHH is a subset of P, so it must not be included in rolled-up baseline summaries.
+        queryset = queryset.exclude(wealth_group__wealth_group_category__code="P-FHH")
+        row_count = queryset.values(*group_by_fields).distinct().count()
+        wealth_group_count = queryset.values(*group_by_fields, "wealth_group_category").distinct().count()
+        if row_count == wealth_group_count:
+            # After excluding P-FHH, only one wealth group category remains, so unweighted aggregation is sufficient.
+            return super().get_aggregated_queryset(queryset)
+
+        # There are multiple wealth group categories remaining, so we need to perform weighted aggregation.
+        self.is_aggregating_wealth_groups = True
+        return self._get_weighted_aggregated_queryset(queryset, group_by_fields)
+
+    def _get_weighted_aggregated_queryset(
+        self, queryset: QuerySet, group_by_fields: list[str]
+    ) -> tuple[QuerySet, dict[str, Expression]]:
+        """Aggregate activities per wealth group, then weight those totals in an outer CTE query."""
+        serializer = self.get_serializer()
+
+        # Create an inner aggregation by wealth group.
+        inner_group_by_fields = list(dict.fromkeys([*group_by_fields, "wealth_group"]))
+        row_aggregates = self.get_aggregates(AggregationScope.ROW)
+        slice_aggregates = self.get_aggregates(AggregationScope.SLICE)
+        inner_annotations = {
+            # django-cte returns a relation rather than the original model. Retain one activity primary key per inner
+            # group so the outer query can join back to the annotated activity queryset for response field grouping.
+            "_activity_id": Min("pk"),
+            # Each group share is constant across its activities. Preserve it once alongside the group totals.
+            "_household_weight": Max("percentage_of_households", output_field=FloatField()),
+            "_population_weight": Max("percentage_of_population", output_field=FloatField()),
+            **row_aggregates,
+            **slice_aggregates,
+        }
+        if slice_aggregates:
+            # A slice denominator includes only wealth groups that contributed an activity to that slice. This keeps
+            # a no-match slice at zero rather than diluting it with unrelated wealth-group shares.
+            inner_annotations["_slice_activity_count"] = Count("pk", filter=self.get_slice_filters())
+
+        # Clear the endpoint's default ordering: PostgreSQL otherwise includes order columns in GROUP BY and can split
+        # a wealth group's activities into multiple CTE rows.
+        wealth_group_totals = CTE(
+            queryset.order_by().values(*inner_group_by_fields).annotate(**inner_annotations),
+            name="wealth_group_totals",
+        )
+
+        # Join each CTE group back to its representative activity. This preserves the original queryset annotations
+        # and field names needed by dynamic `fields`, serializer output, calculated filters, and ordering.
+        weighted_queryset = wealth_group_totals.join(
+            queryset.order_by(),
+            pk=wealth_group_totals.col._activity_id,
+        )
+        if slice_aggregates:
+            # Promote the CTE-only count so it can be used as an aggregate filter in the outer query.
+            weighted_queryset = weighted_queryset.annotate(
+                _slice_activity_count=wealth_group_totals.col._slice_activity_count
+            )
+        weighted_queryset = weighted_queryset.values(*group_by_fields)
+        weighted_aggregates = {}
+        for field_name, aggregate in serializer.aggregates.items():
+            row_field_name = serializer.get_aggregate_field_name(field_name, aggregate, AggregationScope.ROW)
+
+            # Household-level values are weighted by household share. Percentage-of-kcal indicators represent people,
+            # so they use the population share instead.
+            weight_name = (
+                "_population_weight"
+                if field_name
+                in {
+                    "percentage_kcals",
+                    "total_income_as_percentage_kcals",
+                }
+                else "_household_weight"
+            )
+            weighted_aggregates[row_field_name] = self._get_weighted_average(
+                getattr(wealth_group_totals.col, row_field_name),
+                getattr(wealth_group_totals.col, weight_name),
+            )
+            if slice_aggregates:
+                slice_field_name = serializer.get_aggregate_field_name(field_name, aggregate, AggregationScope.SLICE)
+                # Weight the per-group slice totals only where that group has a matching activity. The same filter on
+                # the denominator normalizes the slice result by the shares represented in the slice.
+                weighted_aggregates[slice_field_name] = self._get_weighted_average(
+                    getattr(wealth_group_totals.col, slice_field_name),
+                    getattr(wealth_group_totals.col, weight_name),
+                    Q(_slice_activity_count__gt=0),
+                )
+
+        weighted_queryset = weighted_queryset.annotate(**weighted_aggregates)
+        if slice_aggregates:
+            # Reuse the generic percentage calculation after the weighted row and slice totals have been produced.
+            weighted_queryset = weighted_queryset.annotate(**self.get_percentage_expressions())
+        return with_cte(wealth_group_totals, select=weighted_queryset), slice_aggregates
+
+    @staticmethod
+    def _get_weighted_average(value: Expression, weight: Expression, filter_expression: Q | None = None) -> Expression:
+        """Return a zero-safe average of wealth-group totals weighted by a group-level share."""
+        numerator = Sum(value * weight, default=0.0, output_field=FloatField())
+        denominator = Sum(weight, filter=filter_expression, default=0.0, output_field=FloatField())
+        return Coalesce(
+            ExpressionWrapper(numerator / NullIf(denominator, 0.0), output_field=FloatField()),
+            0.0,
+            output_field=FloatField(),
+        )
 
     def get_queryset_annotations(self) -> dict[str, F | Expression]:
         """

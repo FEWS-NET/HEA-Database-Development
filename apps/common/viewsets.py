@@ -589,22 +589,7 @@ class AggregatingViewSet(GenericViewSet):
         queryset = self.get_queryset()
         queryset = self.filter_queryset(queryset)
 
-        # Add the GROUP BY
-        queryset = self.get_grouped_queryset(queryset)
-
-        # Add the row aggregations, eg, total consumption filtered by wealth group and row but not prd/strtgy slice:
-        row_aggregates = self.get_aggregates(AggregationScope.ROW)
-        queryset = queryset.annotate(**row_aggregates)
-
-        # Add the slice aggregates, eg, slice_sum_kcals_consumed for product/strategy slice:
-        slice_aggregates = self.get_aggregates(AggregationScope.SLICE)
-        if slice_aggregates:
-            queryset = queryset.annotate(**slice_aggregates)
-
-            # Add the calculations on aggregates, eg,
-            #   kcals_consumed_sum_slice_percentage_of_row = slice_sum_kcals_consumed * 100 / sum_kcals_consumed
-            percentage_expressions = self.get_percentage_expressions()
-            queryset = queryset.annotate(**percentage_expressions)
+        queryset, slice_aggregates = self.get_aggregated_queryset(queryset)
 
         # Add the filters on aggregates, eg, kcals_consumed_percent > 50%
         queryset = queryset.filter(self.get_filters_by_calculated_fields(slice_aggregates))
@@ -632,6 +617,33 @@ class AggregatingViewSet(GenericViewSet):
 
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+
+    def get_aggregated_queryset(self, queryset: QuerySet) -> tuple[QuerySet, dict[str, Expression]]:
+        """
+        Apply the row and slice aggregation stages to a filtered queryset.
+
+        Subclasses can override this hook when they need a different aggregation strategy, such as a CTE-backed
+        two-stage aggregation. The returned slice aggregate map controls the shared calculated-field filtering and
+        default ordering stages in ``list``.
+        """
+        # Add the GROUP BY
+        queryset = self.get_grouped_queryset(queryset)
+
+        # Add the row aggregations, eg, total consumption filtered by wealth group and row but not prd/strtgy slice:
+        row_aggregates = self.get_aggregates(AggregationScope.ROW)
+        queryset = queryset.annotate(**row_aggregates)
+
+        # Add the slice aggregates, eg, slice_sum_kcals_consumed for product/strategy slice:
+        slice_aggregates = self.get_aggregates(AggregationScope.SLICE)
+        if slice_aggregates:
+            queryset = queryset.annotate(**slice_aggregates)
+
+            # Add the calculations on aggregates, eg,
+            #   kcals_consumed_sum_slice_percentage_of_row = slice_sum_kcals_consumed * 100 / sum_kcals_consumed
+            percentage_expressions = self.get_percentage_expressions()
+            queryset = queryset.annotate(**percentage_expressions)
+
+        return queryset, slice_aggregates
 
     def get_queryset(self) -> QuerySet:
         """

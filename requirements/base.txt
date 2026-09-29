@@ -10,6 +10,7 @@ dagster-webserver==1.13.3
 Django==5.2.16
 django-binary-database-files==1.0.18
 django-cors-headers==4.9.0
+django-cte==4.0.0
 django-environ==0.11.2
 django-extensions==3.2.3
 django-autocomplete-light==3.11.0

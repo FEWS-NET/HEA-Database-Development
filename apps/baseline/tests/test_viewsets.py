@@ -15,6 +15,7 @@ from django.db.models import (
     F,
     FloatField,
     OuterRef,
+    QuerySet,
     Subquery,
     Value,
     When,
@@ -5552,6 +5553,51 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
                         # Save the first wealth group for further use in test cases.
                         if not cls.wealth_group:
                             cls.wealth_group = wealth_group
+        cls.activity_df = cls._get_activity_df(
+            LivelihoodActivity.objects.filter(
+                livelihood_zone_baseline__livelihood_zone__code__in=["ML01", "ML02"],
+            )
+        )
+        cls.url = reverse("livelihoodactivitysummary-list")
+
+    @classmethod
+    def _create_livelihood_activities(cls, wealth_group, product):
+        # Response Livelihood Activities are always Baseline-level
+        scenarios = (
+            LivelihoodActivityScenario.values if not wealth_group.community else [LivelihoodActivityScenario.BASELINE]
+        )
+        for scenario in scenarios:
+            if product.cpc in ["R01122", "R01142", "R01520"]:
+                CropProductionFactory(
+                    livelihood_zone_baseline=wealth_group.livelihood_zone_baseline,
+                    wealth_group=wealth_group,
+                    livelihood_strategy__product=product,
+                    scenario=scenario,
+                )
+            elif product.cpc in ["L02111"]:
+                LivestockSaleFactory(
+                    livelihood_zone_baseline=wealth_group.livelihood_zone_baseline,
+                    wealth_group=wealth_group,
+                    livelihood_strategy__product=product,
+                    scenario=scenario,
+                )
+            elif product.cpc in ["S86119", "S86121"]:
+                OtherPurchaseFactory(
+                    livelihood_zone_baseline=wealth_group.livelihood_zone_baseline,
+                    wealth_group=wealth_group,
+                    livelihood_strategy__product=product,
+                    scenario=scenario,
+                )
+            elif product.cpc in ["S88537", "P34510"]:
+                OtherCashIncomeFactory(
+                    livelihood_zone_baseline=wealth_group.livelihood_zone_baseline,
+                    wealth_group=wealth_group,
+                    livelihood_strategy__product=product,
+                    scenario=scenario,
+                )
+
+    @classmethod
+    def _get_activity_df(cls, queryset: QuerySet) -> pd.DataFrame:
         percentage_of_population = (
             WealthGroup.objects.with_percentage_of_population()
             .filter(pk=OuterRef("wealth_group_id"))
@@ -5563,8 +5609,7 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
             .values("baseline_average_household_size")
         )
         activity_df = pd.DataFrame(
-            LivelihoodActivity.objects.filter(
-                livelihood_zone_baseline__livelihood_zone__code__in=["ML01", "ML02"],
+            queryset.filter(
                 # The LivelihoodActivitySummaryViewSet only aggregates Baseline-level LivelihoodActivities.
                 wealth_group__community__isnull=True,
             )
@@ -5618,44 +5663,7 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
         )
         activity_df["livelihood_zone_baseline"] = activity_df["livelihood_zone_baseline_id"]
         activity_df["reference_year_end_date"] = activity_df["reference_year_end_date"].apply(lambda x: x.isoformat())
-        cls.activity_df = activity_df
-        cls.url = reverse("livelihoodactivitysummary-list")
-
-    @classmethod
-    def _create_livelihood_activities(cls, wealth_group, product):
-        # Response Livelihood Activities are always Baseline-level
-        scenarios = (
-            LivelihoodActivityScenario.values if not wealth_group.community else [LivelihoodActivityScenario.BASELINE]
-        )
-        for scenario in scenarios:
-            if product.cpc in ["R01122", "R01142", "R01520"]:
-                CropProductionFactory(
-                    livelihood_zone_baseline=wealth_group.livelihood_zone_baseline,
-                    wealth_group=wealth_group,
-                    livelihood_strategy__product=product,
-                    scenario=scenario,
-                )
-            elif product.cpc in ["L02111"]:
-                LivestockSaleFactory(
-                    livelihood_zone_baseline=wealth_group.livelihood_zone_baseline,
-                    wealth_group=wealth_group,
-                    livelihood_strategy__product=product,
-                    scenario=scenario,
-                )
-            elif product.cpc in ["S86119", "S86121"]:
-                OtherPurchaseFactory(
-                    livelihood_zone_baseline=wealth_group.livelihood_zone_baseline,
-                    wealth_group=wealth_group,
-                    livelihood_strategy__product=product,
-                    scenario=scenario,
-                )
-            elif product.cpc in ["S88537", "P34510"]:
-                OtherCashIncomeFactory(
-                    livelihood_zone_baseline=wealth_group.livelihood_zone_baseline,
-                    wealth_group=wealth_group,
-                    livelihood_strategy__product=product,
-                    scenario=scenario,
-                )
+        return activity_df
 
     @classmethod
     def _get_expected(cls, df: pd.DataFrame, fields: list) -> pd.DataFrame:
@@ -5671,30 +5679,27 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
             # Exclude P-FHH households from the baseline-level summary because their data is a subset of the data for
             # the P wealth group and we don't want to double-count.
             df = df[df["wealth_group_category"] != "P-FHH"].copy()
+            wealth_group_fields = fields + ["wealth_group_category"]
+            df = (
+                df.groupby(wealth_group_fields)
+                .agg(
+                    kcals_consumed=("kcals_consumed", "sum"),
+                    income=("income", "sum"),
+                    expenditure=("expenditure", "sum"),
+                    percentage_kcals=("percentage_kcals", "sum"),
+                    total_income_as_percentage_kcals=("total_income_as_percentage_kcals", "sum"),
+                    total_income_as_cash=("total_income_as_cash", "sum"),
+                    percentage_of_households=("percentage_of_households", "first"),
+                    percentage_of_population=("percentage_of_population", "first"),
+                )
+                .reset_index()
+            )
             percentage_of_households = df.groupby(fields)["percentage_of_households"].transform("sum")
             percentage_of_population = df.groupby(fields)["percentage_of_population"].transform("sum")
-            # Weight income, expenditure and kcals_consumed by the percentage of households.
-            df["income"] = df["income"] * df["percentage_of_households"] / percentage_of_households
-            df["expenditure"] = df["expenditure"] * df["percentage_of_households"] / percentage_of_households
-            df["kcals_consumed"] = df["kcals_consumed"] * df["percentage_of_households"] / percentage_of_households
-            df["total_income_as_cash"] = (
-                df["total_income_as_cash"] * df["percentage_of_households"] / percentage_of_households
-            )
-            # percentage_kcals and total_income_as_percentage_kcals also need to account for average_household_size.
-            df["percentage_kcals"] = (
-                df["percentage_kcals"]
-                * df["percentage_of_households"]
-                * df["average_household_size"]
-                / df["baseline_average_household_size"]
-                / percentage_of_population
-            )
-            df["total_income_as_percentage_kcals"] = (
-                df["total_income_as_percentage_kcals"]
-                * df["percentage_of_households"]
-                * df["average_household_size"]
-                / df["baseline_average_household_size"]
-                / percentage_of_population
-            )
+            for indicator in ("kcals_consumed", "income", "expenditure", "total_income_as_cash"):
+                df[indicator] = df[indicator] * df["percentage_of_households"] / percentage_of_households
+            for indicator in ("percentage_kcals", "total_income_as_percentage_kcals"):
+                df[indicator] = df[indicator] * df["percentage_of_population"] / percentage_of_population
 
         expected = df.groupby(fields).agg(
             kcals_consumed=("kcals_consumed", "sum"),
@@ -5903,6 +5908,76 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
             self.assertNotIn("kcals_consumed_sum_slice_percentage_of_row", row)
             self.assertNotIn("income_sum_slice_percentage_of_row", row)
             self.assertNotIn("expenditure_sum_slice_percentage_of_row", row)
+
+    def test_weighted_average_for_different_activity_counts(self):
+        fields = ["livelihood_zone", "reference_year_end_date", "scenario"]
+        baseline = LivelihoodZoneBaselineFactory()
+        vp_wealth_group = BaselineWealthGroupFactory(
+            livelihood_zone_baseline=baseline,
+            wealth_group_category__code="VP",
+            wealth_group_category__name_en="Very poor",
+            percentage_of_households=0.25,
+            average_household_size=5,
+        )
+        p_wealth_group = BaselineWealthGroupFactory(
+            livelihood_zone_baseline=baseline,
+            wealth_group_category__code="P",
+            wealth_group_category__name_en="Poor",
+            percentage_of_households=0.25,
+            average_household_size=5,
+        )
+        CropProductionFactory(
+            livelihood_zone_baseline=baseline,
+            wealth_group=vp_wealth_group,
+            scenario=LivelihoodActivityScenario.BASELINE,
+            quantity_sold=10,
+            price=10,
+            livelihood_strategy__additional_identifier="VP activity",
+        )
+        for identifier in ("P activity one", "P activity two"):
+            CropProductionFactory(
+                livelihood_zone_baseline=baseline,
+                wealth_group=p_wealth_group,
+                scenario=LivelihoodActivityScenario.BASELINE,
+                quantity_sold=10,
+                price=10,
+                livelihood_strategy__additional_identifier=identifier,
+            )
+
+        fields = ["livelihood_zone_baseline", "scenario"]
+        expected = self._get_expected(
+            self._get_activity_df(LivelihoodActivity.objects.filter(livelihood_zone_baseline=baseline)), fields
+        )
+        # Confirm that _get_expected accounts for the different activity counts correctly
+        # (100 * 0.25) + (100 * 0.25 + 100 * 0.25) / (0.25 + 0.25)
+        self.assertEqual(expected.iloc[0]["income"], 150)
+        response = self.client.get(
+            self.url,
+            {
+                "fields": ",".join(fields),
+                "livelihood_zone_baseline": baseline.pk,
+                "scenario": LivelihoodActivityScenario.BASELINE,
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 1)
+        row = response.json()[0]
+        expected_row = expected.iloc[0]
+        self.assertAlmostEqual(row["income_sum_row"], expected_row["income"])
+        self.assertAlmostEqual(row["expenditure_sum_row"], expected_row["expenditure"])
+        self.assertAlmostEqual(row["kcals_consumed_sum_row"], expected_row["kcals_consumed"])
+        self.assertAlmostEqual(row["percentage_kcals_sum_row"], expected_row["percentage_kcals"])
+        self.assertAlmostEqual(
+            row["total_income_as_percentage_kcals_row"], expected_row["total_income_as_percentage_kcals"]
+        )
+        self.assertAlmostEqual(row["total_income_as_cash_row"], expected_row["total_income_as_cash"])
+        self.assertNotIn("income_sum_slice", row)
+        self.assertNotIn("expenditure_sum_slice", row)
+        self.assertNotIn("kcals_consumed_sum_slice", row)
+        self.assertNotIn("income_sum_slice_percentage_of_row", row)
+        self.assertNotIn("expenditure_sum_slice_percentage_of_row", row)
+        self.assertNotIn("kcals_consumed_sum_slice_percentage_of_row", row)
 
     def test_summary_excludes_p_fhh(self):
         baseline = LivelihoodZoneBaselineFactory()
