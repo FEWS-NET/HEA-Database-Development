@@ -1178,7 +1178,7 @@ class LivelihoodActivityFilterSet(filters.FilterSet):
         widget=autocomplete.ModelSelect2(url="wealthgroup-autocomplete"),
         label="Wealth Group",
     )
-    wealth_group_category = django_filters.ModelChoiceFilter(
+    wealth_group_category = django_filters.ModelMultipleChoiceFilter(
         field_name="wealth_group__wealth_group_category",
         queryset=WealthGroupCategory.objects.all(),
         label="Wealth Group Category",
@@ -2210,11 +2210,13 @@ class LivelihoodActivitySummaryViewSet(AggregatingViewSet):
         if "wealth_group_category" not in group_by_fields:
             row_count = queryset.values(*group_by_fields).distinct().count()
             wealth_group_count = queryset.values(*group_by_fields, "wealth_group_category").distinct().count()
-            self.is_aggregating_wealth_groups = wealth_group_count > row_count
-            if self.is_aggregating_wealth_groups:
+            if wealth_group_count > row_count:
                 # Exclude P-FHH households from the baseline-level summaries because their data is a subset of the data
                 # for the P wealth group and we don't want to double-count.
                 queryset = queryset.exclude(wealth_group__wealth_group_category__code="P-FHH")
+            # Check if we still have more than one wealth group and therefore need to use the weighted aggregations
+            wealth_group_count = queryset.values(*group_by_fields, "wealth_group_category").distinct().count()
+            self.is_aggregating_wealth_groups = wealth_group_count > row_count
 
         return super().get_grouped_queryset(queryset)
 

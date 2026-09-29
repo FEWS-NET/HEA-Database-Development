@@ -13,6 +13,7 @@ from django.db.models import (
     Q,
     QuerySet,
 )
+from django.db.models.aggregates import Aggregate
 from django.db.models.functions import Coalesce, NullIf
 from django.utils.text import format_lazy
 from django.utils.translation import gettext_lazy as _
@@ -660,6 +661,23 @@ class AggregatingViewSet(GenericViewSet):
         # Get them from the query. The ORM converts this qs.values() call into a SQL `GROUP BY *field_paths` clause.
         return queryset.values(*group_by_fields)
 
+    def get_scoped_aggregate(self, aggregate, slice_filters=None):
+        """Return an aggregate expression with defaults and optional slice filters on nested aggregates."""
+        aggregate = aggregate.copy()
+        if isinstance(aggregate, Aggregate):
+            aggregate.default = 0
+            if slice_filters is not None:
+                aggregate.filter = slice_filters
+            return aggregate
+
+        aggregate.set_source_expressions(
+            [
+                self.get_scoped_aggregate(expression, slice_filters) if expression is not None else None
+                for expression in aggregate.get_source_expressions()
+            ]
+        )
+        return aggregate
+
     def get_aggregates(self, scope):
         """
         Produces aggregate expressions for scopes row or slice.
@@ -690,10 +708,10 @@ class AggregatingViewSet(GenericViewSet):
                 scoped_aggregate = aggregate(field_name, **aggregate_args)
 
             else:
-                scoped_aggregate = aggregate.copy()
-                scoped_aggregate.default = 0
-                if scope == AggregationScope.SLICE:
-                    scoped_aggregate.filter = slice_filters
+                scoped_aggregate = self.get_scoped_aggregate(
+                    aggregate,
+                    slice_filters if scope == AggregationScope.SLICE else None,
+                )
 
             aggregates[aggregate_field_name] = scoped_aggregate
         return aggregates
