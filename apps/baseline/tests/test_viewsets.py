@@ -1477,15 +1477,34 @@ class BaselineWealthGroupViewSetTestCase(APITestCase):
         population_estimate = 1000000
         livelihood_zone_baseline = LivelihoodZoneBaselineFactory(population_estimate=population_estimate)
         wealth_group_inputs = {
-            "VP": {"percentage_of_households": 0.37, "average_household_size": 8},
-            "P": {"percentage_of_households": 0.28, "average_household_size": 10},
-            "M": {"percentage_of_households": 0.20, "average_household_size": 20},
-            "BO": {"percentage_of_households": 0.15, "average_household_size": 30},
+            "VP": {
+                "wealth_group_category__code": "VP",
+                "wealth_group_category__name_en": "Very poor",
+                "percentage_of_households": 0.37,
+                "average_household_size": 8,
+            },
+            "P": {
+                "wealth_group_category__code": "P",
+                "wealth_group_category__name_en": "Poor",
+                "percentage_of_households": 0.28,
+                "average_household_size": 10,
+            },
+            "M": {
+                "wealth_group_category__code": "M",
+                "wealth_group_category__name_en": "Middle",
+                "percentage_of_households": 0.20,
+                "average_household_size": 20,
+            },
+            "BO": {
+                "wealth_group_category__code": "BO",
+                "wealth_group_category__name_en": "Better off",
+                "percentage_of_households": 0.15,
+                "average_household_size": 30,
+            },
         }
         wealth_groups = {
             code: BaselineWealthGroupFactory(
                 livelihood_zone_baseline=livelihood_zone_baseline,
-                wealth_group_category=WealthGroupCategoryFactory(code=code),
                 **inputs,
             )
             for code, inputs in wealth_group_inputs.items()
@@ -5484,7 +5503,18 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
         ("S88537", "Stone cutting, shaping and finishing services", "Stone cutting"),
         ("P34510", "Wood charcoal", "Charcoal Sales"),
     )
-    WEALTH_GROUP_CATEGORIES = {"VP": 1, "P": 2}
+    WEALTH_GROUP_CATEGORIES = [
+        {
+            "wealth_group_category__code": "VP",
+            "wealth_group_category__name_en": "Very poor",
+            "wealth_group_category__ordering": 1,
+        },
+        {
+            "wealth_group_category__code": "P",
+            "wealth_group_category__name_en": "Poor",
+            "wealth_group_category__ordering": 2,
+        },
+    ]
 
     @classmethod
     def setUpTestData(cls):
@@ -5507,20 +5537,16 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
                             livelihood_zone_baseline=baseline, name=f"Community {community_code}"
                         )
                         # Create community wealth groups and activities
-                        for wealth_category, wealth_group_category_ordering in cls.WEALTH_GROUP_CATEGORIES.items():
+                        for wealth_group_category in cls.WEALTH_GROUP_CATEGORIES:
                             wealth_group = CommunityWealthGroupFactory(
-                                livelihood_zone_baseline=baseline,
-                                wealth_group_category__code=wealth_category,
-                                wealth_group_category__ordering=wealth_group_category_ordering,
-                                community=community,
+                                livelihood_zone_baseline=baseline, community=community, **wealth_group_category
                             )
                             cls._create_livelihood_activities(wealth_group, product)
                     # Create baseline wealth groups and activities
-                    for wealth_category, wealth_group_category_ordering in cls.WEALTH_GROUP_CATEGORIES.items():
+                    for wealth_group_category in cls.WEALTH_GROUP_CATEGORIES:
                         wealth_group = BaselineWealthGroupFactory(
                             livelihood_zone_baseline=baseline,
-                            wealth_group_category__code=wealth_category,
-                            wealth_group_category__ordering=wealth_group_category_ordering,
+                            **wealth_group_category,
                         )
                         cls._create_livelihood_activities(wealth_group, product)
                         # Save the first wealth group for further use in test cases.
@@ -5895,7 +5921,7 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
         p_fhh_wealth_group = BaselineWealthGroupFactory(
             livelihood_zone_baseline=baseline,
             wealth_group_category__code="P-FHH",
-            wealth_group_category__name_en="Poor female-headed en",
+            wealth_group_category__name_en="Poor female-headed",
             wealth_group_category__ordering=3,
             percentage_of_households=0.1,
             average_household_size=6,
@@ -5903,7 +5929,7 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
         m_wealth_group = BaselineWealthGroupFactory(
             livelihood_zone_baseline=baseline,
             wealth_group_category__code="M",
-            wealth_group_category__name_en="Middle en",
+            wealth_group_category__name_en="Middle",
             wealth_group_category__ordering=4,
             percentage_of_households=0.3,
             average_household_size=8,
@@ -5967,10 +5993,10 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), 4)
         data = {item["wealth_group_category_name"]: item for item in response.json()}
-        self.assertEqual(data["Very Poor en"]["income_sum_row"], 40)
-        self.assertEqual(data["Poor en"]["income_sum_row"], 100)
-        self.assertEqual(data["Poor female-headed en"]["income_sum_row"], 72)
-        self.assertEqual(data["Middle en"]["income_sum_row"], 150)
+        self.assertEqual(data["Very poor"]["income_sum_row"], 40)
+        self.assertEqual(data["Poor"]["income_sum_row"], 100)
+        self.assertEqual(data["Poor female-headed"]["income_sum_row"], 72)
+        self.assertEqual(data["Middle"]["income_sum_row"], 150)
 
         # Filtered Wealth group-level summary includes requested wealth groups
         response = self.client.get(
