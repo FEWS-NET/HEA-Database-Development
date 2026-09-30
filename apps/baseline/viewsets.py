@@ -2216,8 +2216,8 @@ class LivelihoodActivitySummaryViewSet(AggregatingViewSet):
         if "wealth_group_category" in group_by_fields:
             return super().get_aggregated_queryset(queryset)
 
-        row_count = queryset.values(*group_by_fields).distinct().count()
-        wealth_group_count = queryset.values(*group_by_fields, "wealth_group_category").distinct().count()
+        row_count = queryset.order_by().values(*group_by_fields).distinct().count()
+        wealth_group_count = queryset.order_by().values(*group_by_fields, "wealth_group_category").distinct().count()
         if row_count == wealth_group_count:
             return super().get_aggregated_queryset(queryset)
 
