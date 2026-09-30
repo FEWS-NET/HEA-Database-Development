@@ -214,7 +214,7 @@
                             </div>
                             <div class="response-info" aria-label="{% trans "response info" %}">
 <pre class=""><p class=""><b>HTTP {{ response.status_code }} {{ response.status_text }}</b></p>{% for key, val in response_headers|items %}<p class="lit"><b>{{ key }}:</b> <span
-                class="lit-val"> {{ val|break_long_headers|urlize }}</span></p>{% endfor %}
+                class="lit-val"> {{ val|urlize }}</span></p>{% endfor %}
     {% if request.path|slice:"-5:" == "/api/" and request.method == "GET" %}
          {% include "rest_framework/drf-table.html" %}
     {% else %}<pre class="content-holder" style="color: #2B6CB0; border: none;">{{ content|urlize }} </pre></pre>
