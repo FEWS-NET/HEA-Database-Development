@@ -331,7 +331,7 @@ class LivelihoodZoneBaselineAdmin(GISModelAdminReadOnly):
 
     @admin.display(description=_("Baseline Average Household Size"))
     def baseline_average_household_size(self, instance):
-        return instance.baseline_average_household_size
+        return getattr(instance, "baseline_average_household_size", None)
 
     @admin.display(description=_("Poor Average Household Size"))
     def poor_average_household_size(self, instance):
