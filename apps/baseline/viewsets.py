@@ -2268,6 +2268,9 @@ class LivelihoodActivitySummaryViewSet(AggregatingViewSet):
             "wealth_group_category_name": translated_field(
                 "wealth_group__wealth_group_category__name",
             ),
+            "wealth_group_category_short_name": translated_field(
+                "wealth_group__wealth_group_category__short_name",
+            ),
             "wealth_group_category_ordering": F("wealth_group__wealth_group_category__ordering"),
             "percentage_of_households": F("wealth_group__percentage_of_households"),
             "average_household_size": F("wealth_group__average_household_size"),
