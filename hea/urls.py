@@ -94,7 +94,7 @@ class APIHomeView(routers.APIRootView):
 
     name = "API Home"
     description = (
-        "This REST API can be used to access data stored in the Livelihoods Explorer, "
+        "This REST API can be used to access data stored in the Livelihoods Database, "
         "according to the user’s permissions."
     )
 
