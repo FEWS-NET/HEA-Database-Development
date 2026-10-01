@@ -110,7 +110,10 @@ from baseline.models import (  # NOQA: E402
     LivelihoodZoneBaseline,
     WealthGroupCharacteristicValue,
 )
-from metadata.lookups import WealthGroupCategoryLookup  # NOQA: E402
+from metadata.lookups import (  # NOQA: E402
+    WealthCharacteristicLookup,
+    WealthGroupCategoryLookup,
+)
 from metadata.models import WealthCharacteristicLabel  # NOQA: E402
 
 # Indexes of header rows in the Data3 dataframe (wealth_group_category, district, village)
@@ -254,6 +257,33 @@ def is_ignored_wealth_characteristic_label(attributes: dict) -> bool:
     return attributes.get("status") == WealthCharacteristicLabel.LabelStatus.IGNORE
 
 
+def get_wealth_characteristic_attributes(
+    label: str,
+    label_map: dict[str, dict],
+    wealthcharacteristiclookup: WealthCharacteristicLookup,
+) -> dict:
+    """
+    Return attributes from a configured label or a direct WealthCharacteristic match.
+
+    Configured labels take precedence because they may override a direct match with
+    product or unit metadata, or explicitly mark the row to be ignored.
+    """
+    attributes = label_map.get(label)
+    if attributes is not None:
+        return attributes.copy()
+
+    wealth_characteristic = wealthcharacteristiclookup.get_instance(label)
+    if not wealth_characteristic:
+        return {}
+
+    return {
+        "wealth_characteristic_id": wealth_characteristic.code,
+        "product_id": None,
+        "unit_of_measure_id": None,
+        "wealth_characteristic__has_product": wealth_characteristic.has_product,
+    }
+
+
 @asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
 def wealth_characteristic_instances(
     context: AssetExecutionContext,
@@ -273,6 +303,7 @@ def wealth_characteristic_instances(
 
     # Prepare the lookups, so they cache the individual results
     wealthgroupcategorylookup = WealthGroupCategoryLookup()
+    wealthcharacteristiclookup = WealthCharacteristicLookup()
     label_map = get_wealth_characteristic_label_map()
     context.log.info("Loaded %d Wealth Characteristic Labels", len(label_map))
 
@@ -284,11 +315,22 @@ def wealth_characteristic_instances(
     # Prepare the label column for matching against the label_map
     prepared_labels = prepare_lookup(df["A"])
 
+    # Resolve each distinct label once. WealthCharacteristicLabel matches take precedence, with direct
+    # WealthCharacteristic matches providing a lightweight path for characteristics that need no extra metadata.
+    label_attributes = {}
+    for label in prepared_labels.iloc[num_header_rows:].unique():
+        if not label:
+            continue
+        attributes = get_wealth_characteristic_attributes(label, label_map, wealthcharacteristiclookup)
+        if attributes:
+            label_attributes[label] = attributes
+
     # Check that we recognize all of the wealth characteristic labels
     allow_unrecognized_labels = True
     unrecognized_labels = (
         df.iloc[num_header_rows:][
-            ~prepared_labels.iloc[num_header_rows:].isin(label_map) & (prepared_labels.iloc[num_header_rows:] != "")
+            ~prepared_labels.iloc[num_header_rows:].isin(label_attributes)
+            & (prepared_labels.iloc[num_header_rows:] != "")
         ]
         .groupby("A")
         .apply(lambda x: ", ".join(x.index.astype(str)), include_groups=False)
@@ -322,13 +364,13 @@ def wealth_characteristic_instances(
         if not label:
             # Ignore blank rows
             continue
-        # Get the attributes, taking a copy so that we can pop() some of the attributes without altering the original
-        attributes = label_map.get(label, {}).copy()
+        # Get the attributes, taking a copy because product inheritance may alter them for this row.
+        attributes = label_attributes.get(label, {}).copy()
         if is_ignored_wealth_characteristic_label(attributes):
             # Ignore any row explicitly recognized only so that it can be skipped.
             continue
         if not attributes:
-            # Ignore rows that don't contain any relevant data (or which aren't in the label_map)
+            # Ignore rows that don't contain any relevant data (or whose labels weren't recognized)
             continue
         # Apply product inheritance
         if attributes.get("product_id"):
