@@ -86,7 +86,21 @@ from metadata.viewsets import (
     WealthGroupCategoryViewSet,
 )
 
+
+class APIHomeView(routers.APIRootView):
+    """
+    Root view for the REST API, listing the available endpoints.
+    """
+
+    name = "API Home"
+    description = (
+        "This REST API can be used to access data stored in the Livelihoods Explorer, "
+        "according to the user’s permissions."
+    )
+
+
 router = routers.DefaultRouter()
+router.APIRootView = APIHomeView
 
 # Common
 router.register(r"country", CountryViewSet)
