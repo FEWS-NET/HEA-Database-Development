@@ -5979,6 +5979,88 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
         self.assertNotIn("expenditure_sum_slice_percentage_of_row", row)
         self.assertNotIn("kcals_consumed_sum_slice_percentage_of_row", row)
 
+    def test_weighted_average_for_wealth_group_specific_activities(self):
+        """
+        Verify group-specific activities are totalled correctly.
+        """
+        baseline = LivelihoodZoneBaselineFactory()
+        vp_wealth_group = BaselineWealthGroupFactory(
+            livelihood_zone_baseline=baseline,
+            wealth_group_category__code="VP",
+            wealth_group_category__name_en="Very poor",
+            percentage_of_households=0.2,
+            average_household_size=5,
+        )
+        p_wealth_group = BaselineWealthGroupFactory(
+            livelihood_zone_baseline=baseline,
+            wealth_group_category__code="P",
+            wealth_group_category__name_en="Poor",
+            percentage_of_households=0.4,
+            average_household_size=5,
+        )
+        m_wealth_group = BaselineWealthGroupFactory(
+            livelihood_zone_baseline=baseline,
+            wealth_group_category__code="M",
+            wealth_group_category__name_en="Middle",
+            percentage_of_households=0.2,
+            average_household_size=5,
+        )
+        for wealth_group, identifier in (
+            (vp_wealth_group, "VP crop activity"),
+            (p_wealth_group, "P crop activity"),
+            (m_wealth_group, "M crop activity"),
+        ):
+            CropProductionFactory(
+                livelihood_zone_baseline=baseline,
+                wealth_group=wealth_group,
+                scenario=LivelihoodActivityScenario.BASELINE,
+                quantity_sold=10,
+                price=10,
+                livelihood_strategy__additional_identifier=identifier,
+            )
+        LivestockSaleFactory(
+            livelihood_zone_baseline=baseline,
+            wealth_group=m_wealth_group,
+            scenario=LivelihoodActivityScenario.BASELINE,
+            quantity_sold=1,
+            price=150,
+            livelihood_strategy__additional_identifier="M livestock sale activity",
+        )
+
+        fields = ["livelihood_zone_baseline", "scenario"]
+        expected = self._get_expected(
+            self._get_activity_df(LivelihoodActivity.objects.filter(livelihood_zone_baseline=baseline)), fields
+        )
+        # (100 * 0.2 + 100 * 0.4 + (100 + 150) * 0.2) / (0.2 + 0.4 + 0.2)
+        self.assertAlmostEqual(expected.iloc[0]["income"], 137.5)
+        response = self.client.get(
+            self.url,
+            {
+                "fields": ",".join(fields),
+                "livelihood_zone_baseline": baseline.pk,
+                "scenario": LivelihoodActivityScenario.BASELINE,
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 1)
+        row = response.json()[0]
+        expected_row = expected.iloc[0]
+        self.assertAlmostEqual(row["income_sum_row"], expected_row["income"])
+        self.assertAlmostEqual(row["expenditure_sum_row"], expected_row["expenditure"])
+        self.assertAlmostEqual(row["kcals_consumed_sum_row"], expected_row["kcals_consumed"])
+        self.assertAlmostEqual(row["percentage_kcals_sum_row"], expected_row["percentage_kcals"])
+        self.assertAlmostEqual(
+            row["total_income_as_percentage_kcals_row"], expected_row["total_income_as_percentage_kcals"]
+        )
+        self.assertAlmostEqual(row["total_income_as_cash_row"], expected_row["total_income_as_cash"])
+        self.assertNotIn("income_sum_slice", row)
+        self.assertNotIn("expenditure_sum_slice", row)
+        self.assertNotIn("kcals_consumed_sum_slice", row)
+        self.assertNotIn("income_sum_slice_percentage_of_row", row)
+        self.assertNotIn("expenditure_sum_slice_percentage_of_row", row)
+        self.assertNotIn("kcals_consumed_sum_slice_percentage_of_row", row)
+
     def test_summary_excludes_p_fhh(self):
         baseline = LivelihoodZoneBaselineFactory()
         vp_wealth_group = BaselineWealthGroupFactory(
