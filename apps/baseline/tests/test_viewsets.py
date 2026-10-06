@@ -5666,7 +5666,16 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
         return activity_df
 
     @classmethod
-    def _get_expected(cls, df: pd.DataFrame, fields: list) -> pd.DataFrame:
+    def _get_expected(
+        cls,
+        full_df: pd.DataFrame,
+        fields: list,
+        slice_condition: pd.Series | None = None,
+    ) -> pd.DataFrame:
+        """
+        Calculate expected aggregates using all wealth groups as the weighting basis.
+        """
+        df = full_df.copy() if slice_condition is None else full_df.loc[slice_condition].copy()
         # If the response is summarizing across multiple wealth groups then simply summing the indicators is not
         # correct because it doesn't account for differences in the `percentage_of_households` in each wealth group.
         # For example, the BO Wealth Group may receive income from Livestock Production while other Wealth Groups do
@@ -5674,10 +5683,11 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
         # accurate if the BO wealth group only make up a small percentage of the total households.
         if (
             "wealth_group_category" not in fields
-            and df.groupby(fields + ["wealth_group_category"]).ngroups > df.groupby(fields).ngroups
+            and full_df.groupby(fields + ["wealth_group_category"]).ngroups > full_df.groupby(fields).ngroups
         ):
             # Exclude P-FHH households from the baseline-level summary because their data is a subset of the data for
             # the P wealth group and we don't want to double-count.
+            full_df = full_df[full_df["wealth_group_category"] != "P-FHH"].copy()
             df = df[df["wealth_group_category"] != "P-FHH"].copy()
             wealth_group_fields = fields + ["wealth_group_category"]
             df = (
@@ -5694,12 +5704,30 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
                 )
                 .reset_index()
             )
-            percentage_of_households = df.groupby(fields)["percentage_of_households"].transform("sum")
-            percentage_of_population = df.groupby(fields)["percentage_of_population"].transform("sum")
+            weights = (
+                full_df.groupby(wealth_group_fields)
+                .agg(
+                    percentage_of_households=("percentage_of_households", "first"),
+                    percentage_of_population=("percentage_of_population", "first"),
+                )
+                .reset_index()
+            )
+            weights["household_weight"] = weights["percentage_of_households"] / weights.groupby(fields)[
+                "percentage_of_households"
+            ].transform("sum")
+            weights["population_weight"] = weights["percentage_of_population"] / weights.groupby(fields)[
+                "percentage_of_population"
+            ].transform("sum")
+            df = df.merge(
+                weights[wealth_group_fields + ["household_weight", "population_weight"]],
+                on=wealth_group_fields,
+                how="left",
+                validate="one_to_one",
+            )
             for indicator in ("kcals_consumed", "income", "expenditure", "total_income_as_cash"):
-                df[indicator] = df[indicator] * df["percentage_of_households"] / percentage_of_households
+                df[indicator] = df[indicator] * df["household_weight"]
             for indicator in ("percentage_kcals", "total_income_as_percentage_kcals"):
-                df[indicator] = df[indicator] * df["percentage_of_population"] / percentage_of_population
+                df[indicator] = df[indicator] * df["population_weight"]
 
         expected = df.groupby(fields).agg(
             kcals_consumed=("kcals_consumed", "sum"),
@@ -5945,9 +5973,8 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
             )
 
         fields = ["livelihood_zone_baseline", "scenario"]
-        expected = self._get_expected(
-            self._get_activity_df(LivelihoodActivity.objects.filter(livelihood_zone_baseline=baseline)), fields
-        )
+        activity_df = self._get_activity_df(LivelihoodActivity.objects.filter(livelihood_zone_baseline=baseline))
+        expected = self._get_expected(activity_df, fields)
         # Confirm that _get_expected accounts for the different activity counts correctly
         # (100 * 0.25) + (100 * 0.25 + 100 * 0.25) / (0.25 + 0.25)
         self.assertEqual(expected.iloc[0]["income"], 150)
@@ -6028,9 +6055,8 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
         )
 
         fields = ["livelihood_zone_baseline", "scenario"]
-        expected = self._get_expected(
-            self._get_activity_df(LivelihoodActivity.objects.filter(livelihood_zone_baseline=baseline)), fields
-        )
+        activity_df = self._get_activity_df(LivelihoodActivity.objects.filter(livelihood_zone_baseline=baseline))
+        expected = self._get_expected(activity_df, fields)
         # (100 * 0.2 + 100 * 0.4 + (100 + 150) * 0.2) / (0.2 + 0.4 + 0.2)
         self.assertAlmostEqual(expected.iloc[0]["income"], 137.5)
         response = self.client.get(
@@ -6060,6 +6086,28 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
         self.assertNotIn("income_sum_slice_percentage_of_row", row)
         self.assertNotIn("expenditure_sum_slice_percentage_of_row", row)
         self.assertNotIn("kcals_consumed_sum_slice_percentage_of_row", row)
+
+        response = self.client.get(
+            self.url,
+            {
+                "fields": ",".join(fields),
+                "livelihood_zone_baseline": baseline.pk,
+                "scenario": LivelihoodActivityScenario.BASELINE,
+                "slice_by_strategy_type": ["LivestockSale"],
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 1)
+        expected_slice = self._get_expected(
+            activity_df,
+            fields,
+            activity_df["strategy_type"] == LivelihoodStrategyType.LIVESTOCK_SALE,
+        )
+        # 150 * 0.2 / (0.2 + 0.4 + 0.2)
+        self.assertAlmostEqual(expected_slice.iloc[0]["income"], 37.5)
+        row = response.json()[0]
+        self._check_row_against_expected_slices(row, fields, expected, expected_slice)
 
     def test_summary_excludes_p_fhh(self):
         baseline = LivelihoodZoneBaselineFactory()
@@ -6263,7 +6311,7 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
     def test_summary_supports_product_slices(self):
         fields = ["livelihood_zone_baseline", "scenario"]
         expected = self._get_expected(self.activity_df, fields)
-        expected_slice = self._get_expected(self.activity_df[self.activity_df["product"] == "R01122"], fields)
+        expected_slice = self._get_expected(self.activity_df, fields, self.activity_df["product"] == "R01122")
         response = self.client.get(self.url, {"fields": ",".join(fields), "slice_by_product": "R01122"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), len(expected))
@@ -6275,7 +6323,9 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
         fields = ["livelihood_zone_baseline", "scenario"]
         expected = self._get_expected(self.activity_df, fields)
         expected_slice = self._get_expected(
-            self.activity_df[self.activity_df["product"].isin(["R01122", "R01520"])], fields
+            self.activity_df,
+            fields,
+            self.activity_df["product"].isin(["R01122", "R01520"]),
         )
         response = self.client.get(self.url, {"fields": ",".join(fields), "slice_by_product": ["R01122", "R01520"]})
         self.assertEqual(response.status_code, 200)
@@ -6288,7 +6338,9 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
         fields = ["livelihood_zone_baseline", "scenario"]
         expected = self._get_expected(self.activity_df, fields)
         expected_slice = self._get_expected(
-            self.activity_df[self.activity_df["strategy_type"] == "CropProduction"], fields
+            self.activity_df,
+            fields,
+            self.activity_df["strategy_type"] == "CropProduction",
         )
         response = self.client.get(self.url, {"fields": ",".join(fields), "slice_by_strategy_type": "CropProduction"})
         self.assertEqual(response.status_code, 200)
@@ -6301,7 +6353,9 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
         fields = ["livelihood_zone_baseline", "scenario"]
         expected = self._get_expected(self.activity_df, fields)
         expected_slice = self._get_expected(
-            self.activity_df[self.activity_df["strategy_type"].isin(["CropProduction", "OtherCashIncome"])], fields
+            self.activity_df,
+            fields,
+            self.activity_df["strategy_type"].isin(["CropProduction", "OtherCashIncome"]),
         )
         response = self.client.get(
             self.url, {"fields": ",".join(fields), "slice_by_strategy_type": ["CropProduction", "OtherCashIncome"]}
@@ -6339,10 +6393,9 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
         fields = ["livelihood_zone_baseline", "scenario"]
         expected = self._get_expected(self.activity_df, fields)
         expected_slice = self._get_expected(
-            self.activity_df[
-                (self.activity_df["product"] == "R01122") & (self.activity_df["strategy_type"] == "CropProduction")
-            ],
+            self.activity_df,
             fields,
+            (self.activity_df["product"] == "R01122") & (self.activity_df["strategy_type"] == "CropProduction"),
         )
         response = self.client.get(
             self.url,
@@ -6358,11 +6411,10 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
         fields = ["livelihood_zone_baseline", "scenario"]
         expected = self._get_expected(self.activity_df, fields)
         expected_slice = self._get_expected(
-            self.activity_df[
-                (self.activity_df["product"].isin(["R01122", "L02111"]))
-                & (self.activity_df["strategy_type"].isin(["CropProduction", "LivestockSale"]))
-            ],
+            self.activity_df,
             fields,
+            (self.activity_df["product"].isin(["R01122", "L02111"]))
+            & (self.activity_df["strategy_type"].isin(["CropProduction", "LivestockSale"])),
         )
         response = self.client.get(
             self.url,
@@ -6405,10 +6457,9 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
     def test_min_max_slice_filter(self):
         fields = ["livelihood_zone_baseline", "scenario", "wealth_group_category"]
         expected_slice = self._get_expected(
-            self.activity_df[
-                (self.activity_df["product"] == "R01122") & (self.activity_df["strategy_type"] == "CropProduction")
-            ],
+            self.activity_df,
             fields,
+            (self.activity_df["product"] == "R01122") & (self.activity_df["strategy_type"] == "CropProduction"),
         )
         target_row = expected_slice[expected_slice["income"] > 0].sample(n=1).iloc[0]
         min_value = target_row["income"] - 1
@@ -6436,10 +6487,9 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
     def test_min_only_slice_filter(self):
         fields = ["livelihood_zone_baseline", "scenario", "wealth_group_category"]
         expected_slice = self._get_expected(
-            self.activity_df[
-                (self.activity_df["product"] == "R01122") & (self.activity_df["strategy_type"] == "CropProduction")
-            ],
+            self.activity_df,
             fields,
+            (self.activity_df["product"] == "R01122") & (self.activity_df["strategy_type"] == "CropProduction"),
         )
         target_row = expected_slice[expected_slice["income"] > 0].sample(n=1).iloc[0]
         min_value = target_row["income"] - 1
@@ -6464,10 +6514,9 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
         fields = ["livelihood_zone_baseline", "scenario", "wealth_group_category"]
         expected = self._get_expected(self.activity_df, fields)
         expected_slice = self._get_expected(
-            self.activity_df[
-                (self.activity_df["product"] == "R01122") & (self.activity_df["strategy_type"] == "CropProduction")
-            ],
+            self.activity_df,
             fields,
+            (self.activity_df["product"] == "R01122") & (self.activity_df["strategy_type"] == "CropProduction"),
         )
         expected_slice["total_income"] = expected.loc[expected_slice.index]["income"]
         expected_slice["percentage_income"] = (

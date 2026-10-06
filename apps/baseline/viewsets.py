@@ -7,7 +7,6 @@ from django.conf import settings
 from django.db import models
 from django.db.models import (
     CharField,
-    Count,
     Expression,
     ExpressionWrapper,
     F,
@@ -2255,10 +2254,6 @@ class LivelihoodActivitySummaryViewSet(AggregatingViewSet):
             **row_aggregates,
             **slice_aggregates,
         }
-        if slice_aggregates:
-            # A slice denominator includes only wealth groups that contributed an activity to that slice. This keeps
-            # a no-match slice at zero rather than diluting it with unrelated wealth-group shares.
-            inner_annotations["_slice_activity_count"] = Count("pk", filter=self.get_slice_filters())
 
         # Clear the endpoint's default ordering: PostgreSQL otherwise includes order columns in GROUP BY and can split
         # a wealth group's activities into multiple CTE rows.
@@ -2273,11 +2268,6 @@ class LivelihoodActivitySummaryViewSet(AggregatingViewSet):
             queryset.order_by(),
             pk=wealth_group_totals.col._activity_id,
         )
-        if slice_aggregates:
-            # Promote the CTE-only count so it can be used as an aggregate filter in the outer query.
-            weighted_queryset = weighted_queryset.annotate(
-                _slice_activity_count=wealth_group_totals.col._slice_activity_count
-            )
         weighted_queryset = weighted_queryset.values(*group_by_fields)
         weighted_aggregates = {}
         for field_name, aggregate in serializer.aggregates.items():
@@ -2300,12 +2290,11 @@ class LivelihoodActivitySummaryViewSet(AggregatingViewSet):
             )
             if slice_aggregates:
                 slice_field_name = serializer.get_aggregate_field_name(field_name, aggregate, AggregationScope.SLICE)
-                # Weight the per-group slice totals only where that group has a matching activity. The same filter on
-                # the denominator normalizes the slice result by the shares represented in the slice.
+                # Slice totals are zero for nonmatching wealth groups, but every wealth group's share contributes to
+                # the denominator so the slice remains comparable with the total row aggregate.
                 weighted_aggregates[slice_field_name] = self._get_weighted_average(
                     getattr(wealth_group_totals.col, slice_field_name),
                     getattr(wealth_group_totals.col, weight_name),
-                    Q(_slice_activity_count__gt=0),
                 )
 
         weighted_queryset = weighted_queryset.annotate(**weighted_aggregates)
@@ -2315,10 +2304,10 @@ class LivelihoodActivitySummaryViewSet(AggregatingViewSet):
         return with_cte(wealth_group_totals, select=weighted_queryset), slice_aggregates
 
     @staticmethod
-    def _get_weighted_average(value: Expression, weight: Expression, filter_expression: Q | None = None) -> Expression:
+    def _get_weighted_average(value: Expression, weight: Expression) -> Expression:
         """Return a zero-safe average of wealth-group totals weighted by a group-level share."""
         numerator = Sum(value * weight, default=0.0, output_field=FloatField())
-        denominator = Sum(weight, filter=filter_expression, default=0.0, output_field=FloatField())
+        denominator = Sum(weight, default=0.0, output_field=FloatField())
         return Coalesce(
             ExpressionWrapper(numerator / NullIf(denominator, 0.0), output_field=FloatField()),
             0.0,
