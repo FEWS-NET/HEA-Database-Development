@@ -150,6 +150,10 @@ class AggregatingSerializer(serializers.ModelSerializer):
     # For example: (product=R0 OR product=L0) AND (strategy_type=MilkProd OR strategy_type=CropProd)
     slice_fields = {}
 
+    def get_aggregates(self):
+        """Return the aggregate expressions."""
+        return self.aggregates
+
     def get_fields(self):
         """
         User can specify a ?fields= URL parameter to specify a field list, comma-delimited. This also

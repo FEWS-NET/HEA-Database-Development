@@ -255,6 +255,7 @@ class LivelihoodZoneBaselineAdminTestCase(TestCase):
         self.assertIsNotNone(additional.select_one(".field-bss_content_hash"))
         self.assertIsNotNone(additional.select_one(".field-bss_uploaded_datetime"))
         self.assertIsNotNone(additional.select_one(".field-bss_size"))
+        self.assertIsNotNone(additional.select_one(".field-baseline_average_household_size"))
         self.assertEqual(
             additional.select_one(".field-bss_content_hash label").get_text(strip=True),
             "BSS SHA-512 Hash:",
@@ -367,11 +368,11 @@ class LivelihoodZoneBaselineAdminTestCase(TestCase):
             str(self.baseline_with_poor_main_staple.poor_main_staple),
         )
 
-        poor_household_size = soup.select_one(".field-poor_household_size .readonly")
-        self.assertIsNotNone(poor_household_size)
+        poor_average_household_size = soup.select_one(".field-poor_average_household_size .readonly")
+        self.assertIsNotNone(poor_average_household_size)
         self.assertEqual(
-            float(poor_household_size.get_text(strip=True)),
-            self.baseline_with_poor_main_staple.poor_household_size,
+            float(poor_average_household_size.get_text(strip=True)),
+            self.baseline_with_poor_main_staple.poor_average_household_size,
         )
 
         poor_survival_non_food_expenditure = soup.select_one(".field-poor_survival_non_food_expenditure .readonly")
