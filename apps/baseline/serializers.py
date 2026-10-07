@@ -83,6 +83,7 @@ class LivelihoodZoneSerializer(serializers.ModelSerializer):
 
 class LivelihoodZoneBaselineSerializer(serializers.ModelSerializer):
     annual_kcals_cost = serializers.FloatField(read_only=True)
+    baseline_average_household_size = serializers.FloatField(read_only=True)
     livelihood_zone_name = serializers.CharField(source="livelihood_zone.name", read_only=True)
     source_organization_name = serializers.CharField(source="source_organization.full_name", read_only=True)
     livelihood_zone_country = serializers.CharField(source="livelihood_zone.country.pk", read_only=True)
@@ -116,12 +117,14 @@ class LivelihoodZoneBaselineSerializer(serializers.ModelSerializer):
             "valid_to_date",
             "population_source",
             "population_estimate",
+            "baseline_average_household_size",
             "annual_kcals_cost",
         )
 
 
 class LivelihoodZoneBaselineGeoSerializer(GeoFeatureModelSerializer):
     annual_kcals_cost = serializers.FloatField(read_only=True)
+    baseline_average_household_size = serializers.FloatField(read_only=True)
     livelihood_zone_name = serializers.CharField(source="livelihood_zone.name", read_only=True)
     source_organization_name = serializers.CharField(source="source_organization.full_name", read_only=True)
     livelihood_zone_country = serializers.CharField(source="livelihood_zone.country.pk", read_only=True)
@@ -156,6 +159,7 @@ class LivelihoodZoneBaselineGeoSerializer(GeoFeatureModelSerializer):
             "valid_to_date",
             "population_source",
             "population_estimate",
+            "baseline_average_household_size",
             "annual_kcals_cost",
         )
         geo_field = "geography"
@@ -1935,6 +1939,7 @@ class LivelihoodActivitySummarySerializer(AggregatingSerializer):
             "wealth_group_category_short_name",
             "wealth_group_category_ordering",
             "percentage_of_households",
+            "percentage_of_population",
             "average_household_size",
             "currency",
             "population_source",
@@ -1960,10 +1965,6 @@ class LivelihoodActivitySummarySerializer(AggregatingSerializer):
         "income": Sum,
         "expenditure": Sum,
         "percentage_kcals": Sum,
-        "kcal_income_sum": Sum(
-            (F("quantity_purchased") + F("quantity_produced")) * F("livelihood_strategy__product__kcals_per_unit"),
-            output_field=FloatField(),
-        ),
         "total_income_as_percentage_kcals": Sum(
             (
                 # Calories from Food Purchase aren't included in total income.
