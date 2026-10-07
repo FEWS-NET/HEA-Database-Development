@@ -5739,19 +5739,10 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
         )
         return expected
 
-    def _check_row_against_expected_slices(self, row, fields, expected, expected_slice):
-        expected_row = expected.loc[*[row[field] for field in fields]]
-        try:
-            expected_slice_row = expected_slice.loc[*[row[field] for field in fields]]
-        except KeyError:
-            expected_slice_row = {
-                "kcals_consumed": 0,
-                "income": 0,
-                "expenditure": 0,
-                "percentage_kcals": 0,
-                "total_income_as_percentage_kcals": 0,
-                "total_income_as_cash": 0,
-            }
+    def _check_row_totals(self, row, expected_row, expect_slices: bool):
+        """
+        Check row-level aggregates and whether slice aggregates are present.
+        """
         self.assertAlmostEqual(
             row["kcals_consumed_sum_row"], expected_row["kcals_consumed"], msg="Mismatch in kcals_consumed_sum_row"
         )
@@ -5778,6 +5769,31 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
                 expected_row["total_income_as_cash"],
                 msg="Mismatch in total_income_as_cash_row",
             )
+        for field_name in (
+            "kcals_consumed_sum_slice",
+            "income_sum_slice",
+            "expenditure_sum_slice",
+            "kcals_consumed_sum_slice_percentage_of_row",
+            "income_sum_slice_percentage_of_row",
+            "expenditure_sum_slice_percentage_of_row",
+        ):
+            assertion = self.assertIn if expect_slices else self.assertNotIn
+            assertion(field_name, row)
+
+    def _check_row_against_expected_slices(self, row, fields, expected, expected_slice):
+        expected_row = expected.loc[*[row[field] for field in fields]]
+        try:
+            expected_slice_row = expected_slice.loc[*[row[field] for field in fields]]
+        except KeyError:
+            expected_slice_row = {
+                "kcals_consumed": 0,
+                "income": 0,
+                "expenditure": 0,
+                "percentage_kcals": 0,
+                "total_income_as_percentage_kcals": 0,
+                "total_income_as_cash": 0,
+            }
+        self._check_row_totals(row, expected_row, expect_slices=True)
         self.assertAlmostEqual(
             row["kcals_consumed_sum_slice"],
             expected_slice_row["kcals_consumed"],
@@ -5899,20 +5915,7 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), len(expected))
         for row in response.json():
             expected_row = expected.loc[*[row[field] for field in fields]]
-            self.assertAlmostEqual(row["kcals_consumed_sum_row"], expected_row["kcals_consumed"])
-            self.assertAlmostEqual(row["income_sum_row"], expected_row["income"])
-            self.assertAlmostEqual(row["expenditure_sum_row"], expected_row["expenditure"])
-            self.assertAlmostEqual(row["percentage_kcals_sum_row"], expected_row["percentage_kcals"])
-            self.assertAlmostEqual(
-                row["total_income_as_percentage_kcals_row"], expected_row["total_income_as_percentage_kcals"]
-            )
-            self.assertAlmostEqual(row["total_income_as_cash_row"], expected_row["total_income_as_cash"])
-            self.assertNotIn("kcals_consumed_sum_slice", row)
-            self.assertNotIn("income_sum_slice", row)
-            self.assertNotIn("expenditure_sum_slice", row)
-            self.assertNotIn("kcals_consumed_sum_slice_percentage_of_row", row)
-            self.assertNotIn("income_sum_slice_percentage_of_row", row)
-            self.assertNotIn("expenditure_sum_slice_percentage_of_row", row)
+            self._check_row_totals(row, expected_row, expect_slices=False)
 
     def test_summary_returns_row_aggregates_per_baseline_and_scenario(self):
         fields = ["livelihood_zone", "reference_year_end_date", "scenario"]
@@ -5922,20 +5925,7 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), len(expected))
         for row in response.json():
             expected_row = expected.loc[*[row[field] for field in fields]]
-            self.assertAlmostEqual(row["kcals_consumed_sum_row"], expected_row["kcals_consumed"])
-            self.assertAlmostEqual(row["income_sum_row"], expected_row["income"])
-            self.assertAlmostEqual(row["expenditure_sum_row"], expected_row["expenditure"])
-            self.assertAlmostEqual(row["percentage_kcals_sum_row"], expected_row["percentage_kcals"])
-            self.assertAlmostEqual(
-                row["total_income_as_percentage_kcals_row"], expected_row["total_income_as_percentage_kcals"]
-            )
-            self.assertAlmostEqual(row["total_income_as_cash_row"], expected_row["total_income_as_cash"])
-            self.assertNotIn("kcals_consumed_sum_slice", row)
-            self.assertNotIn("income_sum_slice", row)
-            self.assertNotIn("expenditure_sum_slice", row)
-            self.assertNotIn("kcals_consumed_sum_slice_percentage_of_row", row)
-            self.assertNotIn("income_sum_slice_percentage_of_row", row)
-            self.assertNotIn("expenditure_sum_slice_percentage_of_row", row)
+            self._check_row_totals(row, expected_row, expect_slices=False)
 
     def test_weighted_average_for_different_activity_counts(self):
         fields = ["livelihood_zone", "reference_year_end_date", "scenario"]
@@ -5991,20 +5981,7 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 1)
         row = response.json()[0]
         expected_row = expected.iloc[0]
-        self.assertAlmostEqual(row["income_sum_row"], expected_row["income"])
-        self.assertAlmostEqual(row["expenditure_sum_row"], expected_row["expenditure"])
-        self.assertAlmostEqual(row["kcals_consumed_sum_row"], expected_row["kcals_consumed"])
-        self.assertAlmostEqual(row["percentage_kcals_sum_row"], expected_row["percentage_kcals"])
-        self.assertAlmostEqual(
-            row["total_income_as_percentage_kcals_row"], expected_row["total_income_as_percentage_kcals"]
-        )
-        self.assertAlmostEqual(row["total_income_as_cash_row"], expected_row["total_income_as_cash"])
-        self.assertNotIn("income_sum_slice", row)
-        self.assertNotIn("expenditure_sum_slice", row)
-        self.assertNotIn("kcals_consumed_sum_slice", row)
-        self.assertNotIn("income_sum_slice_percentage_of_row", row)
-        self.assertNotIn("expenditure_sum_slice_percentage_of_row", row)
-        self.assertNotIn("kcals_consumed_sum_slice_percentage_of_row", row)
+        self._check_row_totals(row, expected_row, expect_slices=False)
 
     def test_weighted_average_for_wealth_group_specific_activities(self):
         """
@@ -6072,20 +6049,7 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 1)
         row = response.json()[0]
         expected_row = expected.iloc[0]
-        self.assertAlmostEqual(row["income_sum_row"], expected_row["income"])
-        self.assertAlmostEqual(row["expenditure_sum_row"], expected_row["expenditure"])
-        self.assertAlmostEqual(row["kcals_consumed_sum_row"], expected_row["kcals_consumed"])
-        self.assertAlmostEqual(row["percentage_kcals_sum_row"], expected_row["percentage_kcals"])
-        self.assertAlmostEqual(
-            row["total_income_as_percentage_kcals_row"], expected_row["total_income_as_percentage_kcals"]
-        )
-        self.assertAlmostEqual(row["total_income_as_cash_row"], expected_row["total_income_as_cash"])
-        self.assertNotIn("income_sum_slice", row)
-        self.assertNotIn("expenditure_sum_slice", row)
-        self.assertNotIn("kcals_consumed_sum_slice", row)
-        self.assertNotIn("income_sum_slice_percentage_of_row", row)
-        self.assertNotIn("expenditure_sum_slice_percentage_of_row", row)
-        self.assertNotIn("kcals_consumed_sum_slice_percentage_of_row", row)
+        self._check_row_totals(row, expected_row, expect_slices=False)
 
         response = self.client.get(
             self.url,
