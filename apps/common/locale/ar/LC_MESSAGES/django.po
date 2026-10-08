@@ -25,9 +25,9 @@ msgstr "شفرة"
 msgid "Name"
 msgstr "اسم"
 
-#: apps/common/fields.py:93 apps/common/viewsets.py:326
-#: apps/common/viewsets.py:329 apps/common/viewsets.py:332
-#: apps/common/viewsets.py:335 apps/common/viewsets.py:338
+#: apps/common/fields.py:93 apps/common/viewsets.py:325
+#: apps/common/viewsets.py:328 apps/common/viewsets.py:331
+#: apps/common/viewsets.py:334 apps/common/viewsets.py:337
 msgid "Description"
 msgstr "وصف"
 
@@ -607,29 +607,29 @@ msgstr "اظهار الاعداد"
 msgid "Clear all filters"
 msgstr "مسح جميع عوامل التصفية"
 
-#: apps/common/viewsets.py:326 apps/common/viewsets.py:341
+#: apps/common/viewsets.py:325 apps/common/viewsets.py:340
 msgid "English"
 msgstr "الإنجليزيّة"
 
-#: apps/common/viewsets.py:329 apps/common/viewsets.py:344
+#: apps/common/viewsets.py:328 apps/common/viewsets.py:343
 msgid "French"
 msgstr "الفرنسيّة"
 
-#: apps/common/viewsets.py:332 apps/common/viewsets.py:347
+#: apps/common/viewsets.py:331 apps/common/viewsets.py:346
 msgid "Spanish"
 msgstr "الإسبانيّة"
 
-#: apps/common/viewsets.py:335 apps/common/viewsets.py:350
+#: apps/common/viewsets.py:334 apps/common/viewsets.py:349
 msgid "Arabic"
 msgstr "العربيّة"
 
-#: apps/common/viewsets.py:338 apps/common/viewsets.py:353
+#: apps/common/viewsets.py:337 apps/common/viewsets.py:352
 msgid "Portuguese"
 msgstr "البرتغاليّة"
 
-#: apps/common/viewsets.py:341 apps/common/viewsets.py:344
-#: apps/common/viewsets.py:347 apps/common/viewsets.py:350
-#: apps/common/viewsets.py:353
+#: apps/common/viewsets.py:340 apps/common/viewsets.py:343
+#: apps/common/viewsets.py:346 apps/common/viewsets.py:349
+#: apps/common/viewsets.py:352
 msgid "Common Name"
 msgstr "اسم شائع"
 

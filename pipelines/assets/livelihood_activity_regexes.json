@@ -686,7 +686,7 @@
         "quantity_other_uses"
     ],
     [
-        "beurre/beurre clarifié vendus: {unit_of_measure_pattern} vendus",
+        "beurre/beurre clarifié vendus?: {unit_of_measure_pattern} vendus?",
         "ButterProduction",
         false,
         "quantity_sold"

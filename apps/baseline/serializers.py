@@ -83,6 +83,15 @@ class LivelihoodZoneSerializer(serializers.ModelSerializer):
 
 class LivelihoodZoneBaselineSerializer(serializers.ModelSerializer):
     annual_kcals_cost = serializers.FloatField(read_only=True)
+    baseline_average_household_size = serializers.FloatField(read_only=True)
+    livelihood_zone_name = serializers.CharField(source="livelihood_zone.name", read_only=True)
+    source_organization_name = serializers.CharField(source="source_organization.full_name", read_only=True)
+    livelihood_zone_country = serializers.CharField(source="livelihood_zone.country.pk", read_only=True)
+    livelihood_zone_country_name = serializers.CharField(source="livelihood_zone.country.name", read_only=True)
+    bss_language = serializers.SerializerMethodField()
+
+    def get_bss_language(self, obj):
+        return obj.get_bss_language_display()
 
     class Meta:
         model = LivelihoodZoneBaseline
@@ -98,6 +107,8 @@ class LivelihoodZoneBaselineSerializer(serializers.ModelSerializer):
             "livelihood_zone_country_name",
             "primary_livelihood_system",
             "bss_language",
+            "bss_content_hash",
+            "bss_uploaded_datetime",
             "currency",
             *translation_fields("profile_report"),
             "reference_year_start_date",
@@ -106,9 +117,14 @@ class LivelihoodZoneBaselineSerializer(serializers.ModelSerializer):
             "valid_to_date",
             "population_source",
             "population_estimate",
+            "baseline_average_household_size",
             "annual_kcals_cost",
         )
 
+
+class LivelihoodZoneBaselineGeoSerializer(GeoFeatureModelSerializer):
+    annual_kcals_cost = serializers.FloatField(read_only=True)
+    baseline_average_household_size = serializers.FloatField(read_only=True)
     livelihood_zone_name = serializers.CharField(source="livelihood_zone.name", read_only=True)
     source_organization_name = serializers.CharField(source="source_organization.full_name", read_only=True)
     livelihood_zone_country = serializers.CharField(source="livelihood_zone.country.pk", read_only=True)
@@ -117,10 +133,6 @@ class LivelihoodZoneBaselineSerializer(serializers.ModelSerializer):
 
     def get_bss_language(self, obj):
         return obj.get_bss_language_display()
-
-
-class LivelihoodZoneBaselineGeoSerializer(GeoFeatureModelSerializer):
-    annual_kcals_cost = serializers.FloatField(read_only=True)
 
     class Meta:
         model = LivelihoodZoneBaseline
@@ -137,6 +149,8 @@ class LivelihoodZoneBaselineGeoSerializer(GeoFeatureModelSerializer):
             "geography",
             "primary_livelihood_system",
             "bss_language",
+            "bss_content_hash",
+            "bss_uploaded_datetime",
             "currency",
             *translation_fields("profile_report"),
             "reference_year_start_date",
@@ -145,19 +159,11 @@ class LivelihoodZoneBaselineGeoSerializer(GeoFeatureModelSerializer):
             "valid_to_date",
             "population_source",
             "population_estimate",
+            "baseline_average_household_size",
             "annual_kcals_cost",
         )
         geo_field = "geography"
         auto_bbox = True
-
-    livelihood_zone_name = serializers.CharField(source="livelihood_zone.name", read_only=True)
-    source_organization_name = serializers.CharField(source="source_organization.full_name", read_only=True)
-    livelihood_zone_country = serializers.CharField(source="livelihood_zone.country.pk", read_only=True)
-    livelihood_zone_country_name = serializers.CharField(source="livelihood_zone.country.name", read_only=True)
-    bss_language = serializers.SerializerMethodField()
-
-    def get_bss_language(self, obj):
-        return obj.get_bss_language_display()
 
 
 class LivelihoodProductCategorySerializer(serializers.ModelSerializer):
@@ -303,6 +309,7 @@ class WealthGroupSerializer(serializers.ModelSerializer):
             "community_full_name",
             "wealth_group_category",
             "wealth_group_category_name",
+            "wealth_group_category_short_name",
             "percentage_of_households",
             "average_household_size",
             "household_annual_kcals_cost",
@@ -336,6 +343,7 @@ class WealthGroupSerializer(serializers.ModelSerializer):
         source="livelihood_zone_baseline.source_organization.name", read_only=True
     )
     wealth_group_category_name = serializers.CharField(source="wealth_group_category.name", read_only=True)
+    wealth_group_category_short_name = serializers.CharField(source="wealth_group_category.short_name", read_only=True)
 
 
 class BaselineWealthGroupSerializer(WealthGroupSerializer):
@@ -406,6 +414,7 @@ class WealthGroupCharacteristicValueSerializer(serializers.ModelSerializer):
             "community_full_name",
             "wealth_group_category",
             "wealth_group_category_name",
+            "wealth_group_category_short_name",
             "wealth_group_category_description",
             "wealth_group_category_ordering",
             "wealth_characteristic",
@@ -441,6 +450,9 @@ class WealthGroupCharacteristicValueSerializer(serializers.ModelSerializer):
     wealth_group_category = serializers.CharField(source="wealth_group.wealth_group_category.pk", read_only=True)
     wealth_group_category_name = serializers.CharField(
         source="wealth_group.wealth_group_category.name", read_only=True
+    )
+    wealth_group_category_short_name = serializers.CharField(
+        source="wealth_group.wealth_group_category.short_name", read_only=True
     )
     wealth_group_category_description = serializers.CharField(
         source="wealth_group.wealth_group_category.description", read_only=True
@@ -521,6 +533,7 @@ class BaselineWealthGroupCharacteristicValueSerializer(serializers.ModelSerializ
             "livelihood_zone_country_name",
             "wealth_group_category",
             "wealth_group_category_name",
+            "wealth_group_category_short_name",
             "wealth_group_category_description",
             "wealth_group_category_ordering",
             "wealth_characteristic",
@@ -556,6 +569,9 @@ class BaselineWealthGroupCharacteristicValueSerializer(serializers.ModelSerializ
     wealth_group_category = serializers.CharField(source="wealth_group.wealth_group_category.pk", read_only=True)
     wealth_group_category_name = serializers.CharField(
         source="wealth_group.wealth_group_category.name", read_only=True
+    )
+    wealth_group_category_short_name = serializers.CharField(
+        source="wealth_group.wealth_group_category.short_name", read_only=True
     )
     wealth_group_category_description = serializers.CharField(
         source="wealth_group.wealth_group_category.description", read_only=True
@@ -818,6 +834,7 @@ class LivelihoodActivitySerializer(serializers.ModelSerializer):
             "community_full_name",
             "wealth_group_category",
             "wealth_group_category_name",
+            "wealth_group_category_short_name",
             "wealth_group_category_description",
             "wealth_group_percentage_of_households",
             "wealth_group_average_household_size",
@@ -882,6 +899,9 @@ class LivelihoodActivitySerializer(serializers.ModelSerializer):
     wealth_group_category = serializers.CharField(source="wealth_group.wealth_group_category.pk", read_only=True)
     wealth_group_category_name = serializers.CharField(
         source="wealth_group.wealth_group_category.name", read_only=True
+    )
+    wealth_group_category_short_name = serializers.CharField(
+        source="wealth_group.wealth_group_category.short_name", read_only=True
     )
     wealth_group_category_description = serializers.CharField(
         source="wealth_group.wealth_group_category.description", read_only=True
@@ -1683,6 +1703,7 @@ class ExpandabilityFactorSerializer(serializers.ModelSerializer):
             "wealth_group_label",
             "wealth_group_category",
             "wealth_group_category_name",
+            "wealth_group_category_short_name",
             "wealth_group_category_description",
             "wealth_group_percentage_of_households",
             "wealth_group_average_household_size",
@@ -1749,6 +1770,9 @@ class ExpandabilityFactorSerializer(serializers.ModelSerializer):
     wealth_group_category_name = serializers.CharField(
         source="wealth_group.wealth_group_category.name", read_only=True
     )
+    wealth_group_category_short_name = serializers.CharField(
+        source="wealth_group.wealth_group_category.short_name", read_only=True
+    )
     wealth_group_category_description = serializers.CharField(
         source="wealth_group.wealth_group_category.description", read_only=True
     )
@@ -1781,6 +1805,7 @@ class CopingStrategySerializer(serializers.ModelSerializer):
             "wealth_group_label",
             "wealth_group_category",
             "wealth_group_category_name",
+            "wealth_group_category_short_name",
             "wealth_group_category_description",
             "wealth_group_percentage_of_households",
             "wealth_group_average_household_size",
@@ -1863,6 +1888,9 @@ class CopingStrategySerializer(serializers.ModelSerializer):
     wealth_group_category_name = serializers.CharField(
         source="wealth_group.wealth_group_category.name", read_only=True
     )
+    wealth_group_category_short_name = serializers.CharField(
+        source="wealth_group.wealth_group_category.short_name", read_only=True
+    )
     wealth_group_category_description = serializers.CharField(
         source="wealth_group.wealth_group_category.description", read_only=True
     )
@@ -1908,8 +1936,10 @@ class LivelihoodActivitySummarySerializer(AggregatingSerializer):
             "livelihood_zone_baseline_description",
             "wealth_group_category",  # E.g. VP, P, M, B/O
             "wealth_group_category_name",
+            "wealth_group_category_short_name",
             "wealth_group_category_ordering",
             "percentage_of_households",
+            "percentage_of_population",
             "average_household_size",
             "currency",
             "population_source",
@@ -1935,10 +1965,6 @@ class LivelihoodActivitySummarySerializer(AggregatingSerializer):
         "income": Sum,
         "expenditure": Sum,
         "percentage_kcals": Sum,
-        "kcal_income_sum": Sum(
-            (F("quantity_purchased") + F("quantity_produced")) * F("livelihood_strategy__product__kcals_per_unit"),
-            output_field=FloatField(),
-        ),
         "total_income_as_percentage_kcals": Sum(
             (
                 # Calories from Food Purchase aren't included in total income.

@@ -521,6 +521,11 @@
         "unit_of_measure_id": "kg",
         "attribute": "quantity_sold"
     },
+    "beurre/beurre clarifié vendu: kg vendu": {
+        "strategy_type": "ButterProduction",
+        "unit_of_measure_id": "kg",
+        "attribute": "quantity_sold"
+    },
     "beurre/beurre clarifié prix (espèces)": {
         "strategy_type": "ButterProduction",
         "attribute": "price"
