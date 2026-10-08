@@ -9,6 +9,7 @@ from .assets.base import (
     original_files,
 )
 from .assets.baseline import baseline_instances, community_instances
+from .assets.error_report import error_report
 from .assets.fixtures import (
     consolidated_fixture,
     imported_baseline,
@@ -172,6 +173,7 @@ defs = Definitions(
         uploaded_baselines,
         imported_communities,
         imported_baseline,
+        error_report,
     ],
     jobs=[
         update_metadata,
