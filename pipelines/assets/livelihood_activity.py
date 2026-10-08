@@ -1722,8 +1722,8 @@ def get_instances_from_dataframe(
                     strategy_type = LivelihoodStrategyType.OTHER_PURCHASE
                 else:
                     errors.append(
-                        "Invalid strategy_type %s for attribute %s from label '%s'"
-                        % (strategy_type, activity_attribute, label)
+                        "Invalid strategy_type %s for attribute %s from label '%s' on row %s"
+                        % (strategy_type, activity_attribute, label, row)
                     )
                     activity_attribute = None
             elif strategy_type == "CashIncome_or_Purchase":
@@ -1733,8 +1733,8 @@ def get_instances_from_dataframe(
                     strategy_type = LivelihoodStrategyType.OTHER_PURCHASE
                 else:
                     errors.append(
-                        "Invalid strategy_type %s for attribute %s from label '%s'"
-                        % (strategy_type, activity_attribute, label)
+                        "Invalid strategy_type %s for attribute %s from label '%s' on row %s"
+                        % (strategy_type, activity_attribute, label, row)
                     )
                     activity_attribute = None
 
@@ -1970,8 +1970,8 @@ def get_instances_from_dataframe(
                         activity_attribute = "payment_per_time"
                     else:
                         errors.append(
-                            "Invalid strategy_type %s for attribute %s from label '%s'"
-                            % (strategy_type, activity_attribute, label)
+                            "Invalid strategy_type %s for attribute %s from label '%s' on row %s"
+                            % (strategy_type, activity_attribute, label, row)
                         )
                         activity_attribute = None
                 elif activity_attribute == "income_or_expenditure":
@@ -1983,8 +1983,8 @@ def get_instances_from_dataframe(
                         activity_attribute = "income"
                     else:
                         errors.append(
-                            "Invalid strategy_type %s for attribute %s from label '%s'"
-                            % (strategy_type, activity_attribute, label)
+                            "Invalid strategy_type %s for attribute %s from label '%s' on row %s"
+                            % (strategy_type, activity_attribute, label, row)
                         )
                         activity_attribute = None
 
