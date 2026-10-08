@@ -5671,11 +5671,14 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
         full_df: pd.DataFrame,
         fields: list,
         slice_condition: pd.Series | None = None,
+        filter_condition: pd.Series | None = None,
     ) -> pd.DataFrame:
         """
         Calculate expected aggregates using all wealth groups as the weighting basis.
         """
-        df = full_df.copy() if slice_condition is None else full_df.loc[slice_condition].copy()
+        df = full_df.copy() if filter_condition is None else full_df.loc[filter_condition].copy()
+        if slice_condition is not None:
+            df = df.loc[slice_condition].copy()
         # If the response is summarizing across multiple wealth groups then simply summing the indicators is not
         # correct because it doesn't account for differences in the `percentage_of_households` in each wealth group.
         # For example, the BO Wealth Group may receive income from Livestock Production while other Wealth Groups do
@@ -5689,7 +5692,8 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
             # the P wealth group and we don't want to double-count.
             full_df = full_df[full_df["wealth_group_category"] != "P-FHH"].copy()
             df = df[df["wealth_group_category"] != "P-FHH"].copy()
-            wealth_group_fields = fields + ["wealth_group_category"]
+            # Make sure baseline and wealth group are included in the groups, preserving the existin order.
+            wealth_group_fields = list(dict.fromkeys([*fields, "livelihood_zone_baseline", "wealth_group_category"]))
             df = (
                 df.groupby(wealth_group_fields)
                 .agg(
@@ -5705,24 +5709,31 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
                 .reset_index()
             )
             weights = (
-                full_df.groupby(wealth_group_fields)
+                full_df.groupby(["livelihood_zone_baseline", "wealth_group_category"])
                 .agg(
                     percentage_of_households=("percentage_of_households", "first"),
                     percentage_of_population=("percentage_of_population", "first"),
                 )
                 .reset_index()
             )
-            weights["household_weight"] = weights["percentage_of_households"] / weights.groupby(fields)[
-                "percentage_of_households"
-            ].transform("sum")
-            weights["population_weight"] = weights["percentage_of_population"] / weights.groupby(fields)[
-                "percentage_of_population"
-            ].transform("sum")
+            weights["household_weight"] = weights["percentage_of_households"] / weights.groupby(
+                "livelihood_zone_baseline"
+            )["percentage_of_households"].transform("sum")
+            weights["population_weight"] = weights["percentage_of_population"] / weights.groupby(
+                "livelihood_zone_baseline"
+            )["percentage_of_population"].transform("sum")
             df = df.merge(
-                weights[wealth_group_fields + ["household_weight", "population_weight"]],
-                on=wealth_group_fields,
+                weights[
+                    [
+                        "livelihood_zone_baseline",
+                        "wealth_group_category",
+                        "household_weight",
+                        "population_weight",
+                    ]
+                ],
+                on=["livelihood_zone_baseline", "wealth_group_category"],
                 how="left",
-                validate="one_to_one",
+                validate="many_to_one",
             )
             for indicator in ("kcals_consumed", "income", "expenditure", "total_income_as_cash"):
                 df[indicator] = df[indicator] * df["household_weight"]
@@ -6051,6 +6062,15 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
         expected_row = expected.iloc[0]
         self._check_row_totals(row, expected_row, expect_slices=False)
 
+        # Slices should still use the baseline denominator, not the denominator
+        # of the wealth groups with activities that match the slice.
+        expected_slice = self._get_expected(
+            activity_df,
+            fields,
+            activity_df["strategy_type"] == LivelihoodStrategyType.LIVESTOCK_SALE,
+        )
+        # 150 * 0.2 / (0.2 + 0.4 + 0.2)
+        self.assertAlmostEqual(expected_slice.iloc[0]["income"], 37.5)
         response = self.client.get(
             self.url,
             {
@@ -6063,15 +6083,53 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), 1)
-        expected_slice = self._get_expected(
-            activity_df,
-            fields,
-            activity_df["strategy_type"] == LivelihoodStrategyType.LIVESTOCK_SALE,
-        )
-        # 150 * 0.2 / (0.2 + 0.4 + 0.2)
-        self.assertAlmostEqual(expected_slice.iloc[0]["income"], 37.5)
         row = response.json()[0]
         self._check_row_against_expected_slices(row, fields, expected, expected_slice)
+
+        # Filtering by strategy_type should still use the baseline denominator, not the denominator
+        # of the wealth groups with activities that match the strategy type.
+        expected = self._get_expected(
+            activity_df,
+            fields,
+            filter_condition=activity_df["strategy_type"] == LivelihoodStrategyType.LIVESTOCK_SALE,
+        )
+        # (150 * 0.2) / (0.2 + 0.4 + 0.2)
+        self.assertAlmostEqual(expected.iloc[0]["income"], 37.5)
+        response = self.client.get(
+            self.url,
+            {
+                "fields": ",".join(fields),
+                "livelihood_zone_baseline": baseline.pk,
+                "scenario": LivelihoodActivityScenario.BASELINE,
+                "strategy_type": ["LivestockSale"],
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        for row in response.json():
+            expected_row = expected.loc[*[row[field] for field in fields]]
+            self._check_row_totals(row, expected_row, expect_slices=False)
+
+        # Grouping by strategy_type should still use the baseline denominator, not the denominator
+        # of the wealth groups with activities that match the strategy type.
+        fields = ["livelihood_zone_baseline", "scenario", "strategy_type"]
+        expected = self._get_expected(activity_df, fields)
+        # M is the only group selling livestock, but VP and P remain in the baseline denominator.
+        # 150 * 0.2 / (0.2 + 0.4 + 0.2)
+        self.assertAlmostEqual(
+            expected.xs(LivelihoodStrategyType.LIVESTOCK_SALE, level="strategy_type").iloc[0]["income"], 37.5
+        )
+        response = self.client.get(
+            self.url,
+            {
+                "fields": ",".join(fields),
+                "livelihood_zone_baseline": baseline.pk,
+                "scenario": LivelihoodActivityScenario.BASELINE,
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        for row in response.json():
+            expected_row = expected.loc[*[row[field] for field in fields]]
+            self._check_row_totals(row, expected_row, expect_slices=False)
 
     def test_summary_excludes_p_fhh(self):
         baseline = LivelihoodZoneBaselineFactory()
