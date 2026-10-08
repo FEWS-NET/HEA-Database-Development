@@ -68,6 +68,7 @@ from baseline.models import LivelihoodZoneBaseline  # NOQA: E402
 from metadata.models import ActivityLabel  # NOQA: E402
 from pipelines.utils import (  # NOQA: E402
     get_cell_formula,
+    get_errors_metadata,
     get_formula_references,
 )
 
@@ -203,7 +204,7 @@ def livelihood_activity_groups(
         context.log.warning(
             "Unable to map livelihood activity groups in BSS %s:\n%s" % (partition_key, "\n".join(errors))
         )
-        metadata["errors"] = MetadataValue.md(f'```text\n{"\n".join(errors)}\n```')
+        metadata["errors"] = get_errors_metadata(errors)
 
     return Output(groups, metadata=metadata)
 
@@ -380,7 +381,7 @@ def key_parameter_instances(
         if config.strict:
             raise RuntimeError("Unable to match key parameters in BSS %s:\n%s" % (partition_key, "\n".join(errors)))
         context.log.warning("Unable to match key parameters in BSS %s:\n%s" % (partition_key, "\n".join(errors)))
-        metadata["errors"] = MetadataValue.md(f'```text\n{"\n".join(errors)}\n```')
+        metadata["errors"] = get_errors_metadata(errors)
 
     return Output({"KeyParameter": key_parameters}, metadata=metadata)
 

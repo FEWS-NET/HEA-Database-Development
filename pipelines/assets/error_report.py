@@ -8,6 +8,7 @@ spreadsheet so that they can be reviewed and corrected together.
 
 import datetime
 import re
+import textwrap
 from collections.abc import Iterable
 
 import pandas as pd
@@ -29,6 +30,9 @@ ERRORS_METADATA_KEY = "errors"
 
 # Maximum number of storage ids to fetch in a single event log query.
 FETCH_BATCH_SIZE = 500
+
+# Values starting with these characters can be interpreted as a formula when opened in Excel.
+FORMULA_PREFIXES = ("=", "+", "-", "@")
 
 # Excel cannot store more than 32,767 characters in a single cell.
 MAX_EXCEL_CELL_LENGTH = 32_767
@@ -121,11 +125,15 @@ def get_error_location(error: str, asset_name: str = "") -> dict[str, str | int 
             location["row"] = int(attributes["row"])
 
     if not location["row"] and not location["column"]:
+        # A label containing a newline can push the row reference onto the next line.
         summary = error.split("\n", 1)[0]
-        if match := ROW_RE.search(summary):
-            location["row"] = int(match["row"])
-        if match := COLUMN_RE.search(summary):
-            location["column"] = match["column"]
+        for text in (summary, error):
+            if match := ROW_RE.search(text):
+                location["row"] = int(match["row"])
+            if match := COLUMN_RE.search(text):
+                location["column"] = match["column"]
+            if location["row"] or location["column"]:
+                break
 
     if not location["worksheet"] and (location["row"] or location["column"]):
         location["worksheet"] = DEFAULT_WORKSHEETS.get(asset_name)
@@ -137,6 +145,9 @@ def clean_excel_value(value: str) -> str:
     Make a string safe to store in an Excel cell.
     """
     value = ILLEGAL_CHARACTERS_RE.sub("", value)
+    # Error messages include text from the BSS, so prevent it from being written as an active formula.
+    if value.startswith(FORMULA_PREFIXES):
+        value = f"'{value}"
     if len(value) > MAX_EXCEL_CELL_LENGTH:
         suffix = "\n... [truncated]"
         value = value[: MAX_EXCEL_CELL_LENGTH - len(suffix)] + suffix
@@ -163,14 +174,18 @@ def get_error_rows(
     rows = []
     for error in split_errors(errors_text):
         summary, _, details = error.partition("\n")
+        location = get_error_location(error, asset_name)
+        if location["worksheet"]:
+            location["worksheet"] = clean_excel_value(location["worksheet"])
         rows.append(
             {
                 **get_partition_attributes(partition_key),
                 "asset_name": asset_name,
                 "partition_key": partition_key or "",
-                **get_error_location(error, asset_name),
+                **location,
                 "error": clean_excel_value(summary),
-                "details": clean_excel_value(details),
+                # Remove the indentation added to continuation lines by `get_errors_metadata`
+                "details": clean_excel_value(textwrap.dedent(details)),
                 "run_id": run_id,
                 # Excel doesn't support timezone-aware datetimes
                 "materialized_at": materialized_at.replace(tzinfo=None),

@@ -67,6 +67,7 @@ from dagster import AssetExecutionContext, MetadataValue, Output, asset
 
 from ..configs import BSSMetadataConfig
 from ..partitions import bss_instances_partitions_def
+from ..utils import get_errors_metadata
 from .base import (
     get_bss_dataframe,
 )
@@ -325,7 +326,7 @@ def livelihood_product_category_instances(
         context.log.warning(
             "Ignoring missing or inconsistent metadata in BSS %s:\n%s" % (partition_key, "\n".join(errors))
         )
-        metadata["errors"] = MetadataValue.md(f'```text\n{"\n".join(errors)}\n```')
+        metadata["errors"] = get_errors_metadata(errors)
         # Move the preview metadata item to the end of the dict
         metadata["preview"] = metadata.pop("preview")
     return Output(

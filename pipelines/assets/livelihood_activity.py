@@ -63,7 +63,12 @@ from django.db.models.functions import Lower
 
 from ..configs import BSSMetadataConfig
 from ..partitions import bss_instances_partitions_def
-from ..utils import class_from_name, get_sample_data, prepare_lookup
+from ..utils import (
+    class_from_name,
+    get_errors_metadata,
+    get_sample_data,
+    prepare_lookup,
+)
 from .base import (
     get_all_bss_labels_dataframe,
     get_bss_dataframe,
@@ -2260,7 +2265,7 @@ def get_instances_from_dataframe(
                 "Missing or inconsistent metadata in BSS %s worksheet '%s':\n%s"
                 % (partition_key, worksheet_name, "\n".join(errors))
             )
-            metadata["errors"] = MetadataValue.md(f'```text\n{"\n".join(errors)}\n```')
+            metadata["errors"] = get_errors_metadata(errors)
 
     return Output(
         result,

@@ -72,6 +72,7 @@ from googletrans import Translator
 
 from ..configs import BSSMetadataConfig
 from ..partitions import bss_instances_partitions_def
+from ..utils import get_errors_metadata
 from .base import (
     get_all_bss_labels_dataframe,
     get_bss_dataframe,
@@ -524,7 +525,7 @@ def seasonal_activity_instances(
                 "Missing or inconsistent metadata in BSS %s worksheet '%s':\n%s"
                 % (partition_key, "Seas Cal", "\n".join(errors))
             )
-            metadata["errors"] = MetadataValue.md(f'```text\n{"\n".join(errors)}\n```')
+            metadata["errors"] = get_errors_metadata(errors)
 
     return Output(instances, metadata=metadata)
 

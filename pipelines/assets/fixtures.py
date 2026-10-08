@@ -16,7 +16,7 @@ from jsondiff import JsonDiffer
 
 from ..configs import BSSMetadataConfig
 from ..partitions import bss_files_partitions_def, bss_instances_partitions_def
-from ..utils import class_from_name
+from ..utils import class_from_name, get_errors_metadata
 
 # set the default Django settings module
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hea.settings.production")
@@ -301,7 +301,7 @@ def validate_instances(
             context.log.warning(
                 "Ignoring missing or inconsistent metadata in BSS %s:\n%s" % (partition_key, "\n".join(errors))
             )
-            metadata["errors"] = MetadataValue.md(f'```text\n{"\n".join(errors)}\n```')
+            metadata["errors"] = get_errors_metadata(errors)
             # Move the preview metadata item to the end of the dict
             metadata["preview"] = metadata.pop("preview")
 
