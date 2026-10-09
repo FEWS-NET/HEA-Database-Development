@@ -11,6 +11,7 @@ from baseline.models import (
     FoodPurchase,
     LivelihoodActivity,
     LivelihoodProductCategory,
+    LivelihoodZoneBaseline,
     OtherCashIncome,
     OtherPurchase,
     PaymentInKind,
@@ -149,6 +150,31 @@ class LivelihoodZoneBaselineTestCase(TestCase):
             self.non_food_activity.expenditure * self.non_food_category.percentage_allocation_to_basket
         )
         self.assertAlmostEqual(self.baseline.poor_survival_non_food_expenditure, expected_expenditure)
+
+    def test_poor_average_household_size(self):
+        baseline = LivelihoodZoneBaseline.objects.get(pk=self.baseline.pk)
+        self.assertEqual(baseline.poor_average_household_size, 5)
+
+    def test_poor_average_household_size_without_main_staple(self):
+        baseline = LivelihoodZoneBaselineFactory()
+        BaselineWealthGroupFactory(
+            livelihood_zone_baseline=baseline,
+            wealth_group_category__code=WealthGroupCategory.POOR,
+            average_household_size=7,
+        )
+        self.assertIsNone(baseline.poor_main_staple)
+        self.assertEqual(baseline.poor_average_household_size, 7)
+
+    def test_poor_average_household_size_without_poor_wealth_group(self):
+        baseline = LivelihoodZoneBaselineFactory()
+        self.assertIsNone(baseline.poor_average_household_size)
+        annotated_baseline = LivelihoodZoneBaseline.objects.with_poor_average_household_size().get(pk=baseline.pk)
+        self.assertIsNone(annotated_baseline.poor_average_household_size)
+
+    def test_poor_average_household_size_uses_annotation(self):
+        baseline = LivelihoodZoneBaseline.objects.with_poor_average_household_size().get(pk=self.baseline.pk)
+        with self.assertNumQueries(0):
+            self.assertEqual(baseline.poor_average_household_size, 5)
 
     def test_product_category_change_resaves_baseline_on_commit(self):
         with self.captureOnCommitCallbacks(execute=True):

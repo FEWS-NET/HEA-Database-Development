@@ -288,6 +288,7 @@ class LivelihoodZoneBaselineAdmin(GISModelAdminReadOnly):
             )
             .with_bss_file_metadata()
             .with_baseline_average_household_size()
+            .with_poor_average_household_size()
         )
 
     @admin.display(description=_("Livelihood Zone Alternate Code"))

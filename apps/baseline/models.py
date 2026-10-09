@@ -244,6 +244,24 @@ class LivelihoodZoneBaselineQuerySet(models.QuerySet):
             )
         )
 
+    def with_poor_average_household_size(self):
+        """
+        Annotate the average household size for the Poor Baseline Wealth Group.
+
+        Used by `LivelihoodZoneBaseline.poor_average_household_size` to avoid an
+        additional query per instance when fetching multiple Baselines.
+        """
+        poor_wealth_groups = BaselineWealthGroup.objects.filter(
+            livelihood_zone_baseline=OuterRef("pk"),
+            wealth_group_category__code=WealthGroupCategory.POOR,
+        )
+        return self.annotate(
+            _poor_average_household_size=Subquery(
+                poor_wealth_groups.values("average_household_size")[:1],
+                output_field=models.FloatField(),
+            )
+        )
+
     def with_bss_file_metadata(self):
         """
         Annotate BSS metadata from the corresponding database file.
@@ -544,10 +562,24 @@ class LivelihoodZoneBaseline(common_models.Model):
 
     @cached_property
     def poor_average_household_size(self):
-        poor_main_staple_category = self._get_poor_main_staple_category()
-        if poor_main_staple_category is None:
+        """
+        Return the average household size for the Poor Baseline Wealth Group.
+
+        Uses the value annotated by `with_poor_average_household_size()` if
+        present, otherwise queries the Poor Baseline Wealth Group directly.
+        """
+        if hasattr(self, "_poor_average_household_size"):
+            return self._poor_average_household_size
+        if not self.pk:
             return None
-        return poor_main_staple_category.baseline_livelihood_activity.wealth_group.average_household_size
+        return (
+            BaselineWealthGroup.objects.filter(
+                livelihood_zone_baseline=self,
+                wealth_group_category__code=WealthGroupCategory.POOR,
+            )
+            .values_list("average_household_size", flat=True)
+            .first()
+        )
 
     def _get_annual_kcals_cost(self):
         """

@@ -308,6 +308,7 @@ class LivelihoodZoneBaselineViewSet(BaseModelViewSet):
     queryset = (
         LivelihoodZoneBaseline.objects.with_bss_file_metadata()
         .with_baseline_average_household_size()
+        .with_poor_average_household_size()
         .select_related(
             "livelihood_zone__country",
             "source_organization",

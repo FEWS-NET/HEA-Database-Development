@@ -397,6 +397,7 @@ class LivelihoodZoneBaselineViewSetTestCase(APITestCase):
             "population_source",
             "population_estimate",
             "baseline_average_household_size",
+            "poor_average_household_size",
             "currency",
             "annual_kcals_cost",
         )
