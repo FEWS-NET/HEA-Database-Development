@@ -2192,46 +2192,24 @@ class LivelihoodActivitySummaryViewSet(AggregatingViewSet):
     serializer_class = LivelihoodActivitySummarySerializer
     filterset_class = LivelihoodActivityFilterSet
 
-    is_aggregating_wealth_groups: bool = False
-
-    def get_queryset(self):
-        """
-        Annotate each activity with its wealth group's percentage of the baseline population.
-        """
-        percentage_of_population = WealthGroupQuerySet.with_percentage_of_population(
-            WealthGroup.objects.filter(pk=OuterRef("wealth_group_id"))
-        ).values("percentage_of_population")
-        queryset = (
-            super()
-            .get_queryset()
-            .annotate(percentage_of_population=Subquery(percentage_of_population, output_field=models.FloatField()))
-        )
-        return queryset
+    wealth_group_group_by_fields = {
+        "wealth_group",
+        "wealth_group_category",
+        "wealth_group_category_name",
+        "wealth_group_category_ordering",
+        "percentage_of_households",
+        "percentage_of_population",
+        "average_household_size",
+    }
 
     def get_aggregated_queryset(self, queryset: QuerySet) -> tuple[QuerySet, dict[str, Expression]]:
         """Use a CTE to weight per-wealth-group totals when a request rolls up wealth groups."""
         group_by_fields = super().get_group_by_fields(queryset)
-        self.is_aggregating_wealth_groups = False
-        if "wealth_group_category" in group_by_fields:
+        if self.wealth_group_group_by_fields.intersection(group_by_fields):
             return super().get_aggregated_queryset(queryset)
-
-        row_count = queryset.order_by().values(*group_by_fields).distinct().count()
-        wealth_group_count = queryset.order_by().values(*group_by_fields, "wealth_group_category").distinct().count()
-        if row_count == wealth_group_count:
-            return super().get_aggregated_queryset(queryset)
-
-        # We are aggregating wealth groups, and have more than one wealth group category in the queryset.
 
         # P-FHH is a subset of P, so it must not be included in rolled-up baseline summaries.
         queryset = queryset.exclude(wealth_group__wealth_group_category__code="P-FHH")
-        row_count = queryset.values(*group_by_fields).distinct().count()
-        wealth_group_count = queryset.values(*group_by_fields, "wealth_group_category").distinct().count()
-        if row_count == wealth_group_count:
-            # After excluding P-FHH, only one wealth group category remains, so unweighted aggregation is sufficient.
-            return super().get_aggregated_queryset(queryset)
-
-        # There are multiple wealth group categories remaining, so we need to perform weighted aggregation.
-        self.is_aggregating_wealth_groups = True
         return self._get_weighted_aggregated_queryset(queryset, group_by_fields)
 
     def _get_weighted_aggregated_queryset(
@@ -2239,6 +2217,28 @@ class LivelihoodActivitySummaryViewSet(AggregatingViewSet):
     ) -> tuple[QuerySet, dict[str, Expression]]:
         """Aggregate activities per wealth group, then weight those totals in an outer CTE query."""
         serializer = self.get_serializer()
+
+        # Activity filters can remove a wealth group's activities from an
+        # individual strategy/product row. They must not remove that group
+        # from the baseline population used as the weighting denominator.
+        baseline_ids = queryset.order_by().values("livelihood_zone_baseline").distinct()
+        baseline_wealth_groups = WealthGroup.objects.filter(
+            livelihood_zone_baseline__in=Subquery(baseline_ids),
+            community__isnull=True,
+        ).exclude(wealth_group_category__code="P-FHH")
+        if wealth_group_ids := self.request.query_params.getlist("wealth_group"):
+            baseline_wealth_groups = baseline_wealth_groups.filter(pk__in=wealth_group_ids)
+        elif wealth_group_category_ids := self.request.query_params.getlist("wealth_group_category"):
+            baseline_wealth_groups = baseline_wealth_groups.filter(wealth_group_category__in=wealth_group_category_ids)
+        baseline_weights = CTE(
+            WealthGroupQuerySet.with_percentage_of_population(baseline_wealth_groups)
+            .values("livelihood_zone_baseline")
+            .annotate(
+                _household_weight_total=Sum("percentage_of_households"),
+                _population_weight_total=Sum("percentage_of_population"),
+            ),
+            name="baseline_weights",
+        )
 
         # Create an inner aggregation by wealth group.
         inner_group_by_fields = list(dict.fromkeys([*group_by_fields, "wealth_group"]))
@@ -2268,6 +2268,10 @@ class LivelihoodActivitySummaryViewSet(AggregatingViewSet):
             queryset.order_by(),
             pk=wealth_group_totals.col._activity_id,
         )
+        weighted_queryset = baseline_weights.join(
+            weighted_queryset,
+            livelihood_zone_baseline=baseline_weights.col.livelihood_zone_baseline,
+        )
         weighted_queryset = weighted_queryset.values(*group_by_fields)
         weighted_aggregates = {}
         for field_name, aggregate in serializer.aggregates.items():
@@ -2284,9 +2288,11 @@ class LivelihoodActivitySummaryViewSet(AggregatingViewSet):
                 }
                 else "_household_weight"
             )
+            weight_total_name = f"{weight_name}_total"
             weighted_aggregates[row_field_name] = self._get_weighted_average(
                 getattr(wealth_group_totals.col, row_field_name),
                 getattr(wealth_group_totals.col, weight_name),
+                getattr(baseline_weights.col, weight_total_name),
             )
             if slice_aggregates:
                 slice_field_name = serializer.get_aggregate_field_name(field_name, aggregate, AggregationScope.SLICE)
@@ -2295,19 +2301,23 @@ class LivelihoodActivitySummaryViewSet(AggregatingViewSet):
                 weighted_aggregates[slice_field_name] = self._get_weighted_average(
                     getattr(wealth_group_totals.col, slice_field_name),
                     getattr(wealth_group_totals.col, weight_name),
+                    getattr(baseline_weights.col, weight_total_name),
                 )
 
         weighted_queryset = weighted_queryset.annotate(**weighted_aggregates)
         if slice_aggregates:
             # Reuse the generic percentage calculation after the weighted row and slice totals have been produced.
             weighted_queryset = weighted_queryset.annotate(**self.get_percentage_expressions())
-        return with_cte(wealth_group_totals, select=weighted_queryset), slice_aggregates
+        return (
+            with_cte(baseline_weights, wealth_group_totals, select=weighted_queryset),
+            slice_aggregates,
+        )
 
     @staticmethod
-    def _get_weighted_average(value: Expression, weight: Expression) -> Expression:
+    def _get_weighted_average(value: Expression, weight: Expression, weight_total: Expression) -> Expression:
         """Return a zero-safe average of wealth-group totals weighted by a group-level share."""
         numerator = Sum(value * weight, default=0.0, output_field=FloatField())
-        denominator = Sum(weight, default=0.0, output_field=FloatField())
+        denominator = Max(weight_total, default=0.0, output_field=FloatField())
         return Coalesce(
             ExpressionWrapper(numerator / NullIf(denominator, 0.0), output_field=FloatField()),
             0.0,
@@ -2319,6 +2329,9 @@ class LivelihoodActivitySummaryViewSet(AggregatingViewSet):
         AggregatingViewSet requires an annotation for every field in the Serializer that isn't a direct model field.
         """
         language_code = translation.get_language()
+        percentage_of_population = WealthGroupQuerySet.with_percentage_of_population(
+            WealthGroup.objects.filter(pk=OuterRef("wealth_group_id"))
+        ).values("percentage_of_population")
 
         def translated_field(path):
             """Return a Coalesce expression for a translated field so that we return the English value
@@ -2370,6 +2383,7 @@ class LivelihoodActivitySummaryViewSet(AggregatingViewSet):
             ),
             "wealth_group_category_ordering": F("wealth_group__wealth_group_category__ordering"),
             "percentage_of_households": F("wealth_group__percentage_of_households"),
+            "percentage_of_population": Subquery(percentage_of_population, output_field=models.FloatField()),
             "average_household_size": F("wealth_group__average_household_size"),
             "currency": F("livelihood_zone_baseline__currency__pk"),
             "population_source": F("livelihood_zone_baseline__population_source"),

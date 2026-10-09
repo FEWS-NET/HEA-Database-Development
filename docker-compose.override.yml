@@ -5,7 +5,11 @@ services:
     volumes:
       - ./:/usr/src/app
 
-  minio:
+  redis:
+    ports:
+      - "6379:6379"
+      
+  objectstore:
     ports:
       - "9000:9000"
       - "9010:9010"
