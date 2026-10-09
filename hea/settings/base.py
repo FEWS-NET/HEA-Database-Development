@@ -396,6 +396,9 @@ SERIALIZATION_MODULES = {
     "verbose_json": "common.pipelines.serializers.verbose_json",
 }
 
+# this is important for being able to fetch OSM tiles in Django admin maps
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+
 # Don't report missing HSTS preload, because we don't run SSL in local or CI environments.
 # See: https://docs.djangoproject.com/en/3.0/ref/settings/#std:setting-SILENCED_SYSTEM_CHECKS
 SILENCED_SYSTEM_CHECKS = [
