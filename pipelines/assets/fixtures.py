@@ -50,6 +50,22 @@ def _get_instance_reference(instance: dict) -> dict[str, object]:
     }
 
 
+def _get_related_model_name(field: models.ForeignKey, instances: dict[str, list[dict]]) -> str:
+    """
+    Return the name of the model that holds the valid keys for a foreign key field.
+
+    A foreign key to a proxy model, such as `LivelihoodProductCategory.baseline_livelihood_activity`
+    which points to `BaselineLivelihoodActivity`, is satisfied by instances of the concrete model,
+    `LivelihoodActivity`. If the concrete model is part of the fixture then use it, so that the
+    foreign key is validated against the instances in the fixture rather than the saved instances
+    of the proxy model in the database.
+    """
+    related_model = field.related_model
+    if related_model._meta.proxy and related_model._meta.concrete_model.__name__ in instances:
+        return related_model._meta.concrete_model.__name__
+    return related_model.__name__
+
+
 def validate_instances(
     context: AssetExecutionContext, config: BSSMetadataConfig, instances: dict[str, list[dict]], partition_key: str
 ) -> Output[dict[str, list[dict]]]:
@@ -160,17 +176,15 @@ def validate_instances(
                         error = f"Missing mandatory foreign key {column} for {record_reference}"
                         model_errors.append(error)
                     else:
+                        related_model_name = _get_related_model_name(field, instances)
                         # Validate foreign key values
                         # If related model is part of the fixture, then it should have already been validated
-                        if (
-                            field.related_model.__name__ in instances
-                            and field.related_model.__name__ not in validated_models
-                        ):
+                        if related_model_name in instances and related_model_name not in validated_models:
                             raise RuntimeError(
                                 "Related model %s not validated yet but needed for %s"
-                                % (field.related_model.__name__, model_name)
+                                % (related_model_name, model_name)
                             )
-                        elif field.related_model.__name__ not in valid_keys:
+                        elif related_model_name not in valid_keys:
                             # The model is not in the fixture, and hasn't been checked already, so use the primary and
                             # natural keys for already saved instances. Save the keys as a dict mapping to the
                             # instance, so that we can resolve natural keys later when validating model.clean()
@@ -179,7 +193,7 @@ def validate_instances(
                                 remote_keys[related_instance.pk] = related_instance
                                 if hasattr(field.related_model, "natural_key"):
                                     remote_keys[related_instance.natural_key()] = related_instance
-                            valid_keys[field.related_model.__name__] = remote_keys
+                            valid_keys[related_model_name] = remote_keys
 
                         if not field.null and not instance[column]:
                             error = f"Missing mandatory foreign key {column} for {record_reference}"
@@ -188,7 +202,7 @@ def validate_instances(
                             # Check the non-null foreign key values are in the remote keys
                             # Convert natural keys from lists to tuples for lookup (because lists can't be dict keys)
                             value = tuple(instance[column]) if isinstance(instance[column], list) else instance[column]
-                            if value not in valid_keys[field.related_model.__name__]:
+                            if value not in valid_keys[related_model_name]:
                                 error = f"Unrecognized '{column}' foreign key {value} for {record_reference}."
                                 model_errors.append(error)
 
@@ -217,7 +231,7 @@ def validate_instances(
                         if isinstance(field, models.ForeignKey):
                             # Natural keys need to be converted to tuples for looking up in valid_keys
                             lookup_value = tuple(value) if isinstance(value, list) else value
-                            related_instance = valid_keys[field.related_model.__name__].get(lookup_value)
+                            related_instance = valid_keys[_get_related_model_name(field, instances)].get(lookup_value)
                             if related_instance:
                                 # Assign the resolved model instance to the relationship attribute (e.g. `product`),
                                 setattr(model_instance, field.name, related_instance)

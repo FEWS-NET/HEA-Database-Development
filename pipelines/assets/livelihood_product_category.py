@@ -60,6 +60,7 @@ An example of relevant rows from the worksheet:
 
 import json
 import os
+from collections import Counter
 
 import django
 import pandas as pd
@@ -78,10 +79,26 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hea.settings.production")
 # Configure Django with our custom settings before importing any Django classes
 django.setup()
 
+from baseline.models import LivelihoodProductCategory  # NOQA: E402
 from metadata.lookups import WealthGroupCategoryLookup  # NOQA: E402
 
 HEADER_ROWS = [4]
 WORKSHEET_NAME = "Exp factors"
+
+
+def get_basket_counts(livelihood_product_categories: list[dict]) -> dict[str, int]:
+    """
+    Return the number of Livelihood Product Category instances for each Product Basket.
+
+    The keys are suitable for use as Dagster metadata, e.g. `num_main_staple`, and
+    every basket is included, even if it has no instances.
+    """
+    basket_counts = Counter(
+        livelihood_product_category["basket"] for livelihood_product_category in livelihood_product_categories
+    )
+    return {
+        f"num_{basket.name.lower()}": basket_counts[basket.value] for basket in LivelihoodProductCategory.ProductBasket
+    }
 
 
 @asset(partitions_def=bss_instances_partitions_def)
@@ -319,6 +336,7 @@ def livelihood_product_category_instances(
     }
     metadata = {
         "num_product_categories": len(livelihood_product_categories),
+        **get_basket_counts(livelihood_product_categories),
         "preview": MetadataValue.md(f"```json\n{json.dumps(result, indent=4, ensure_ascii=False)}\n```"),
     }
     if errors:
@@ -382,7 +400,13 @@ def livelihood_product_category_valid_instances(
             ],
             "LivelihoodProductCategory": livelihood_product_category_instances["LivelihoodProductCategory"],
         }
-    return validate_instances(context, config, livelihood_product_category_instances, partition_key)
+    output = validate_instances(context, config, livelihood_product_category_instances, partition_key)
+    # Add the basket counts before the preview and errors, so that they appear with the other counts
+    metadata = dict(output.metadata)
+    trailing_metadata = {key: metadata.pop(key) for key in ["errors", "preview"] if key in metadata}
+    metadata.update(get_basket_counts(output.value.get("LivelihoodProductCategory", [])))
+    metadata.update(trailing_metadata)
+    return Output(output.value, metadata=metadata)
 
 
 @asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
