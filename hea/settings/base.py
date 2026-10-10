@@ -135,6 +135,7 @@ PROJECT_APPS = (
     "common",
     "metadata",
     "baseline",
+    "viz",
 )
 INSTALLED_APPS = EXTERNAL_APPS + PROJECT_APPS
 

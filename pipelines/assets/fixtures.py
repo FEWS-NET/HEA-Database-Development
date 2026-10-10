@@ -542,7 +542,11 @@ def imported_communities(
     return import_fixture(output.value)
 
 
-@asset(partitions_def=bss_instances_partitions_def, pool="django_loaddata")
+@asset(
+    partitions_def=bss_instances_partitions_def,
+    pool="django_loaddata",
+    metadata={"pipeline_status": {"label": "BSS import", "group_label": "Country", "group_separator": "~"}},
+)
 def imported_baseline(
     context: AssetExecutionContext,
     consolidated_fixture,

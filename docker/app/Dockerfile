@@ -12,6 +12,7 @@ RUN curl -s https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor |
         gdal-bin \
         gettext \
         gosu \
+        graphviz \
         iproute2 \
         iputils-ping \
         less \

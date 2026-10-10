@@ -257,6 +257,7 @@ if not settings.DEBUG:
 
 urlpatterns += i18n_patterns(
     ########## LOCALE DEPENDENT PATHS go here. ##########
+    path("viz/", include("viz.urls")),
     path(
         "jsi18n/",
         javascript_catalog_view,
