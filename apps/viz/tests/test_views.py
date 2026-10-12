@@ -64,7 +64,7 @@ class PipelineStatusViewTestCase(TestCase):
             reverse("viz:pipeline_status", args=[self.pipeline]),
             reverse("viz:pipeline_status_partition", args=[self.pipeline, self.complete_partition]),
         ]:
-            with self.subTest(url=url):
+            with self.subTest(url=url), self.assertLogs("django.request", level="WARNING"):
                 self.assertEqual(self.client.get(url).status_code, 403)
 
     def test_pipeline_status_index(self):
@@ -112,7 +112,8 @@ class PipelineStatusViewTestCase(TestCase):
         Assets that aren't monitored return a 404.
         """
         self.client.force_login(self.user)
-        response = self.client.get(reverse("viz:pipeline_status", args=["consolidated_fixture"]))
+        with self.assertLogs("django.request", level="WARNING"):
+            response = self.client.get(reverse("viz:pipeline_status", args=["consolidated_fixture"]))
         self.assertEqual(response.status_code, 404)
 
     def test_pipeline_status_partition(self):
@@ -138,7 +139,8 @@ class PipelineStatusViewTestCase(TestCase):
         Partitions that don't exist return a 404.
         """
         self.client.force_login(self.user)
-        response = self.client.get(
-            reverse("viz:pipeline_status_partition", args=[self.pipeline, "Mali~XX99~2020-01-01"])
-        )
+        with self.assertLogs("django.request", level="WARNING"):
+            response = self.client.get(
+                reverse("viz:pipeline_status_partition", args=[self.pipeline, "Mali~XX99~2020-01-01"])
+            )
         self.assertEqual(response.status_code, 404)
