@@ -30,6 +30,12 @@ RUN curl -s https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor |
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
     rm -f /var/cache/apt/archives/*.deb
 
+# Rebuild the system font cache so that Graphviz `dot`, used to draw the pipeline asset graphs, can use it
+# without writing a per-user cache. The django user has no home directory, and therefore no writable cache
+# directory, so otherwise every `dot` call prints "Fontconfig error: No writable cache directories" to stderr,
+# which pollutes the test output and the Gunicorn logs, and makes fontconfig rescan the fonts on every call.
+RUN fc-cache -f
+
 # Set up mostly static layers that don't change often
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 ENV PIP_ROOT_USER_ACTION=ignore
