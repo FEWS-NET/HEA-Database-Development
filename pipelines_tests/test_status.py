@@ -251,9 +251,18 @@ class AssetStatusDataFrameTestCase(SimpleTestCase):
         super().setUpClass()
         cls.instance = dg.DagsterInstance.ephemeral()
         cls.instance.add_dynamic_partitions(partitions_def.name, cls.partition_keys)
+        # Prevent unwanted text from the Dagster console logger appearing in the test output.
+        run_config = {"loggers": {"console": {"config": {"log_level": "CRITICAL"}}}}
         for partition_key in cls.partition_keys[:2]:
-            dg.materialize(test_assets, partition_key=partition_key, instance=cls.instance, raise_on_error=False)
-        dg.materialize([extracted, loaded], partition_key="2024-01-02", instance=cls.instance)
+            dg.materialize(
+                test_assets,
+                partition_key=partition_key,
+                instance=cls.instance,
+                # Suppress logging to avoid unwanted text from the failed runs appearing in the test output.
+                run_config=run_config,
+                raise_on_error=False,
+            )
+        dg.materialize([extracted, loaded], partition_key="2024-01-02", instance=cls.instance, run_config=run_config)
         cls.pipeline = get_monitored_pipeline(test_asset_graph, dg.AssetKey("end"))
         cls.status_df = get_asset_status_dataframe(cls.instance, cls.pipeline)
 
