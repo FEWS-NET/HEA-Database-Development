@@ -176,12 +176,22 @@ def livelihood_product_category_instances(
     # Set the column headers from the first row so that we capture the Wealth Group Categories
     df = livelihood_product_category_dataframe
     wealthgroupcategorylookup = WealthGroupCategoryLookup()
-    wealth_group_categories = []
-    for x in df.iloc[0, 2:6]:
+    headers = list(df.iloc[0, 2:6])
+    # A blank header means that the BSS doesn't contain that Wealth Group, so we ignore the whole column.
+    # For example, SO08 has a correction that removes the 'VP' header because there is no meangful
+    #  Very Poor data in the WB or Data worksheets.
+    column_categories = []
+    for x in headers:
+        if pd.isna(x) or not str(x).strip():
+            column_categories.append(None)
+            continue
         wealth_group_category = wealthgroupcategorylookup.get(x)
         if not wealth_group_category:
             raise ValueError(f"Unrecognized wealth_group_category '{x}'")
-        wealth_group_categories.append(wealth_group_category)
+        column_categories.append(wealth_group_category)
+    wealth_group_categories = [category for category in column_categories if category]
+    if not wealth_group_categories:
+        raise ValueError(f"'{WORKSHEET_NAME}' worksheet row {df.index[0]} has no Wealth Group column headers")
 
     # A header can be a recognized alias for a Wealth Group Category that isn't used anywhere else in this BSS. For
     # example, NG04 has 'LM' and 'UM' (M-L and M-U) in 'Exp factors', but 'M' and 'B/O' in the 'WB' and 'Data'
@@ -194,8 +204,8 @@ def livelihood_product_category_instances(
     if bss_wealth_group_categories:
         unused_wealth_group_categories = [
             f"'{header}' (Wealth Group Category '{wealth_group_category}')"
-            for header, wealth_group_category in zip(df.iloc[0, 2:6], wealth_group_categories)
-            if wealth_group_category not in bss_wealth_group_categories
+            for header, wealth_group_category in zip(headers, column_categories)
+            if wealth_group_category and wealth_group_category not in bss_wealth_group_categories
         ]
         if unused_wealth_group_categories:
             raise ValueError(
@@ -204,7 +214,14 @@ def livelihood_product_category_instances(
                 f"of this BSS, which use Wealth Group Categories {sorted(bss_wealth_group_categories)}. "
                 f"Correct the '{WORKSHEET_NAME}' headers so they match the Wealth Groups used in the rest of the BSS."
             )
-    df.columns = ["label", "description"] + wealth_group_categories + ["basket"]
+    # Give the ignored columns a placeholder name so that we can drop them
+    blank_columns = [f"blank_{i}" for i, category in enumerate(column_categories) if not category]
+    df.columns = (
+        ["label", "description"]
+        + [category or f"blank_{i}" for i, category in enumerate(column_categories)]
+        + ["basket"]
+    )
+    df = df.drop(columns=blank_columns)
 
     # Drop the old header row and the start row used to identify the range
     df = df.drop(df.index[0:2])
