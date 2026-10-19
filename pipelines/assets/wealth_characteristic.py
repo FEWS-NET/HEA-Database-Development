@@ -607,7 +607,10 @@ def wealth_characteristic_instances(
 
     # Create a dataframe of the Wealth Group Characteristic Values so that we can extract the
     # percentage of households and average household size, and run additional validation.
+    # Zero values for numeric Wealth Characteristics aren't saved, so there might not be any values at all.
     value_df = pd.DataFrame.from_records(wealth_group_characteristic_values)
+    if value_df.empty:
+        value_df = pd.DataFrame(columns=["wealth_group", "wealth_characteristic_id", "reference_type", "value"])
     value_df["wealth_group_category"] = value_df["wealth_group"].apply(lambda wealth_group: wealth_group[2])
     value_df["full_name"] = value_df["wealth_group"].apply(lambda wealth_group: wealth_group[3])
 
@@ -635,6 +638,10 @@ def wealth_characteristic_instances(
             "household size": "average_household_size",
         }
     )
+    # The pivot only contains columns for attributes that have at least one value, so add any that are missing.
+    for column in ["percentage_of_households", "average_household_size"]:
+        if column not in extra_attributes_df.columns:
+            extra_attributes_df[column] = None
 
     # Add the extra attributes to the Wealth Groups
     wealth_group_df = pd.merge(
