@@ -60,7 +60,7 @@ An example of relevant rows from the worksheet:
 
 import json
 import os
-from collections import Counter
+from collections import Counter, defaultdict
 
 import django
 import pandas as pd
@@ -68,9 +68,7 @@ from dagster import AssetExecutionContext, MetadataValue, Output, asset
 
 from ..configs import BSSMetadataConfig
 from ..partitions import bss_instances_partitions_def
-from .base import (
-    get_bss_dataframe,
-)
+from .base import get_bss_dataframe
 from .fixtures import get_fixture_from_instances, import_fixture, validate_instances
 
 # set the default Django settings module
@@ -80,7 +78,9 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hea.settings.production")
 django.setup()
 
 from baseline.models import LivelihoodProductCategory  # NOQA: E402
+from common.lookups import ClassifiedProductLookup  # NOQA: E402
 from metadata.lookups import WealthGroupCategoryLookup  # NOQA: E402
+from metadata.models import LivelihoodStrategyType  # NOQA: E402
 
 HEADER_ROWS = [4]
 WORKSHEET_NAME = "Exp factors"
@@ -99,6 +99,47 @@ def get_basket_counts(livelihood_product_categories: list[dict]) -> dict[str, in
     return {
         f"num_{basket.name.lower()}": basket_counts[basket.value] for basket in LivelihoodProductCategory.ProductBasket
     }
+
+
+def match_labels_by_product(df: pd.DataFrame, livelihood_strategies: list[dict], errors: list[str]) -> pd.DataFrame:
+    """
+    Replace 'Exp factors' labels that don't match a Livelihood Strategy with the label of the strategy for the product.
+
+    Old BSSs contain short free-text labels, such as 'sugar' or 'clothes', instead of 'Sugar purchase: kg' or 'Clothing'.
+    For these labels, we look up the product, including the ClassifiedProduct aliases, and use the label of the only
+    Food Purchase or Other Purchase strategy for that product.
+    """
+    strategy_labels = {livelihood_strategy["activity_label"] for livelihood_strategy in livelihood_strategies}
+    purchase_labels_by_product = defaultdict(set)
+    for livelihood_strategy in livelihood_strategies:
+        if livelihood_strategy["strategy_type"] in [
+            LivelihoodStrategyType.FOOD_PURCHASE,
+            LivelihoodStrategyType.OTHER_PURCHASE,
+        ] and livelihood_strategy.get("product_id"):
+            purchase_labels_by_product[livelihood_strategy["product_id"]].add(livelihood_strategy["activity_label"])
+
+    classifiedproductlookup = ClassifiedProductLookup()
+    df = df.copy()
+    df["matched_label"] = df["label"]
+    for i in df.index:
+        label = df.loc[i, "label"]
+        if label in strategy_labels:
+            continue
+        product_id = classifiedproductlookup.get(label)
+        matching_labels = purchase_labels_by_product.get(product_id, set()) if product_id else set()
+        if len(matching_labels) == 1:
+            df.loc[i, "matched_label"] = next(iter(matching_labels))
+
+    product_matches = df["matched_label"] != df["label"]
+    duplicate_matches = product_matches & df["matched_label"].duplicated(keep=False)
+    for i in df[duplicate_matches].index:
+        errors.append(
+            f"Label '{df.loc[i, 'label']}' from row {df.loc[i, 'row']} matches Livelihood Strategy "
+            f"'{df.loc[i, 'matched_label']}' by product, but another row also matches that Livelihood Strategy"
+        )
+    df.loc[duplicate_matches, "matched_label"] = df.loc[duplicate_matches, "label"]
+    df["label"] = df["matched_label"]
+    return df.drop(columns="matched_label")
 
 
 @asset(partitions_def=bss_instances_partitions_def)
@@ -176,12 +217,21 @@ def livelihood_product_category_instances(
     # Set the column headers from the first row so that we capture the Wealth Group Categories
     df = livelihood_product_category_dataframe
     wealthgroupcategorylookup = WealthGroupCategoryLookup()
-    wealth_group_categories = []
-    for x in df.iloc[0, 2:6]:
+    headers = list(df.iloc[0, 2:6])
+    # A blank header means that the BSS doesn't contain that Wealth Group, so we ignore the whole column.
+    # For example, SO08 has a correction that removes the 'VP' header because there is no Very Poor data in the WB or Data worksheets.
+    column_categories = []
+    for x in headers:
+        if pd.isna(x) or not str(x).strip():
+            column_categories.append(None)
+            continue
         wealth_group_category = wealthgroupcategorylookup.get(x)
         if not wealth_group_category:
             raise ValueError(f"Unrecognized wealth_group_category '{x}'")
-        wealth_group_categories.append(wealth_group_category)
+        column_categories.append(wealth_group_category)
+    wealth_group_categories = [category for category in column_categories if category]
+    if not wealth_group_categories:
+        raise ValueError(f"'{WORKSHEET_NAME}' worksheet row {df.index[0]} has no Wealth Group column headers")
 
     # A header can be a recognized alias for a Wealth Group Category that isn't used anywhere else in this BSS. For
     # example, NG04 has 'LM' and 'UM' (M-L and M-U) in 'Exp factors', but 'M' and 'B/O' in the 'WB' and 'Data'
@@ -194,8 +244,8 @@ def livelihood_product_category_instances(
     if bss_wealth_group_categories:
         unused_wealth_group_categories = [
             f"'{header}' (Wealth Group Category '{wealth_group_category}')"
-            for header, wealth_group_category in zip(df.iloc[0, 2:6], wealth_group_categories)
-            if wealth_group_category not in bss_wealth_group_categories
+            for header, wealth_group_category in zip(headers, column_categories)
+            if wealth_group_category and wealth_group_category not in bss_wealth_group_categories
         ]
         if unused_wealth_group_categories:
             raise ValueError(
@@ -204,7 +254,14 @@ def livelihood_product_category_instances(
                 f"of this BSS, which use Wealth Group Categories {sorted(bss_wealth_group_categories)}. "
                 f"Correct the '{WORKSHEET_NAME}' headers so they match the Wealth Groups used in the rest of the BSS."
             )
-    df.columns = ["label", "description"] + wealth_group_categories + ["basket"]
+    # Give the ignored columns a placeholder name so that we can drop them
+    blank_columns = [f"blank_{i}" for i, category in enumerate(column_categories) if not category]
+    df.columns = (
+        ["label", "description"]
+        + [category or f"blank_{i}" for i, category in enumerate(column_categories)]
+        + ["basket"]
+    )
+    df = df.drop(columns=blank_columns)
 
     # Drop the old header row and the start row used to identify the range
     df = df.drop(df.index[0:2])
@@ -213,11 +270,14 @@ def livelihood_product_category_instances(
     # we can alter the dataframe without losing the row number when troubleshooting.
     df = df.reset_index(names="row")
 
-    # Replace old text basket names with the expected codes
+    # Replace old text basket names with the expected codes. Old BSSs always answer 'yes' to 'purchase main staple
+    # only?' and cost the staple separately, so neither code is the Main Staple. The Summ worksheet calculates the
+    # 'survival non-food' threshold from the 'mns' rows (salt, soap, kerosene, firewood, water for humans) and the
+    # 'l/hood. protection' threshold from the 'ess' rows (school, medicine, tax, inputs, sugar, etc.).
     df["basket"] = df["basket"].replace(
         {
-            "ess": 1,
-            "mns": 2,
+            "ess": LivelihoodProductCategory.ProductBasket.LIVELIHOODS_PROTECTION,
+            "mns": LivelihoodProductCategory.ProductBasket.SURVIVAL_NON_FOOD,
         },
     )
 
@@ -273,8 +333,10 @@ def livelihood_product_category_instances(
             )
             df = df[df["label"] != label]
 
-    livelihood_product_categories = []
     errors = []
+    df = match_labels_by_product(df, livelihood_activity_instances["LivelihoodStrategy"], errors)
+
+    livelihood_product_categories = []
     for i in df.index:
         try:
             label = df.loc[i, "label"]
