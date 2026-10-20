@@ -57,14 +57,10 @@ msgstr ""
 "Code de valeur hexadécimale de couleur pour le système de moyens d'existence"
 
 #: apps/metadata/models.py:142
-#, fuzzy
-#| msgid "Livelihood Summary"
 msgid "Livelihood System"
 msgstr "Système de moyens d'existence"
 
 #: apps/metadata/models.py:143
-#, fuzzy
-#| msgid "Livelihood Summary"
 msgid "Livelihood Systems"
 msgstr "Systèmes de moyens d'existence"
 
@@ -233,10 +229,6 @@ msgid "Activity Category"
 msgstr "Catégorie d'activité"
 
 #: apps/metadata/models.py:274
-#, fuzzy
-#| msgid ""
-#| "Does a value for this characteristic also require a product? If True, "
-#| "then aliases may contain a <product> placeholder."
 msgid ""
 "Does a Seasonal Activity of this type require a product? If True, then "
 "aliases may contain a <product> placeholder."
@@ -245,8 +237,6 @@ msgstr ""
 "les alias peuvent inclure un paramètre générique <product>."
 
 #: apps/metadata/models.py:280
-#, fuzzy
-#| msgid "Seasonal Activity Type"
 msgid "Key Seasonal Activity?"
 msgstr "Activité saisonnière clé ?"
 

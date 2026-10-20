@@ -552,8 +552,6 @@ msgid "Livelihood Protection Threshold"
 msgstr "Limiar de Proteção dos Meios de Subsistência"
 
 #: src/Views/Layouts/Compare/Compare.jsx:1576
-#, fuzzy
-#| msgid "Livelihoods protection threshold (% kcals)"
 msgid "Livelihood Protection Threshold (% kcals)"
 msgstr "Limiar de proteção dos meios de subsistência (% kcals)"
 

@@ -53,8 +53,6 @@ msgid "Livelihood Zones"
 msgstr "Zonas de medios de vida"
 
 #: apps/common/menu_config.py:32 apps/common/menu_config.py:299
-#, fuzzy
-#| msgid "from unit"
 msgid "Communities"
 msgstr "Comunidades"
 
@@ -87,8 +85,6 @@ msgid "Livelihood Zone Baseline Corrections"
 msgstr "Correcciones de líneas de base de zonas de medios de vida"
 
 #: apps/common/menu_config.py:86
-#, fuzzy
-#| msgid "Country Classified Product Alias"
 msgid "Community Crop Productions"
 msgstr "Producciones de cultivos comunitarios"
 
@@ -258,8 +254,6 @@ msgid "BSS Production Data"
 msgstr "Datos de produccion de BSS"
 
 #: apps/common/menu_config.py:388
-#, fuzzy
-#| msgid "Product"
 msgid "Crop Production"
 msgstr "Producción de cultivos"
 

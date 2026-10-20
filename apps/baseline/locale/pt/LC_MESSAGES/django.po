@@ -72,8 +72,6 @@ msgid "Poor Survival Non-Food Expenditure"
 msgstr "Despesa nao alimentar de sobrevivencia do grupo pobre"
 
 #: apps/baseline/admin.py:1374
-#, fuzzy
-#| msgid "Population Source"
 msgid "Population source"
 msgstr "Fonte populacional"
 
@@ -84,8 +82,6 @@ msgid "Percentage of population"
 msgstr "Porcentagem de famílias"
 
 #: apps/baseline/admin.py:1382
-#, fuzzy
-#| msgid "Population Estimate"
 msgid "Population estimate"
 msgstr "Estimativa populacional"
 

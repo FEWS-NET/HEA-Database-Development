@@ -172,8 +172,6 @@ msgid "View %(name)s"
 msgstr "عرض %(name)s"
 
 #: templates/admin/app_index.html:95
-#, fuzzy
-#| msgid "You don’t have permission to view or edit anything."
 msgid "You don't have permission to view or edit anything."
 msgstr "ليس لديك إذن لعرض أو تحرير أي شيء."
 

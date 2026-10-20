@@ -72,8 +72,6 @@ msgid "Poor Survival Non-Food Expenditure"
 msgstr "Gasto no alimentario de supervivencia del grupo pobre"
 
 #: apps/baseline/admin.py:1374
-#, fuzzy
-#| msgid "Population Source"
 msgid "Population source"
 msgstr "Fuente de población"
 
@@ -84,8 +82,6 @@ msgid "Percentage of population"
 msgstr "Porcentaje de hogares"
 
 #: apps/baseline/admin.py:1382
-#, fuzzy
-#| msgid "Population Estimate"
 msgid "Population estimate"
 msgstr "Estimación de la población"
 
@@ -403,8 +399,6 @@ msgid "Livelihood Zone Baseline Correction"
 msgstr "Línea de base de la zona de medios de vida"
 
 #: apps/baseline/models.py:768
-#, fuzzy
-#| msgid "Livelihood Zone Baselines"
 msgid "Livelihood Zone Baseline Corrections"
 msgstr "Correcciones de líneas de base de zonas de medios de vida"
 
@@ -1211,8 +1205,6 @@ msgid "Food Purchases"
 msgstr "Compras de alimentos"
 
 #: apps/baseline/models.py:2865
-#, fuzzy
-#| msgid "Payment per time"
 msgid "Payment Product"
 msgstr "Producto de pago"
 
@@ -1357,8 +1349,6 @@ msgid "Additional text identifying the seasonal activity"
 msgstr "Texto adicional que identifica la estrategia de medios de vida"
 
 #: apps/baseline/models.py:3307
-#, fuzzy
-#| msgid "Seasonal Activity"
 msgid "Key Seasonal Activity?"
 msgstr "¿Actividad estacional clave?"
 

@@ -172,8 +172,6 @@ msgid "View %(name)s"
 msgstr "Ver %(name)s"
 
 #: templates/admin/app_index.html:95
-#, fuzzy
-#| msgid "You don’t have permission to view or edit anything."
 msgid "You don't have permission to view or edit anything."
 msgstr "No tiene permiso para ver ni editar nada."
 
@@ -243,8 +241,6 @@ msgid "Baselines"
 msgstr "Líneas de base"
 
 #: templates/admin/index.html:36
-#, fuzzy
-#| msgid "Wealth Group Characteristic Value"
 msgid "Wealth Characteristic Values"
 msgstr "Valores característicos de riqueza"
 

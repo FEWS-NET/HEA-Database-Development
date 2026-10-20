@@ -22,14 +22,10 @@ msgid "Summary only"
 msgstr "Résumé uniquement"
 
 #: apps/baseline/admin.py:82
-#, fuzzy
-#| msgid "Community"
 msgid "Community only"
 msgstr "Communauté uniquement"
 
 #: apps/baseline/admin.py:294 apps/baseline/admin.py:396
-#, fuzzy
-#| msgid "Livelihood Zone Baseline"
 msgid "Livelihood Zone Alternate Code"
 msgstr "Code alternatif de la zone de moyens d'existence"
 
@@ -62,8 +58,6 @@ msgid "Poor Average Household Size"
 msgstr "Taille des ménages Pauvres"
 
 #: apps/baseline/admin.py:341
-#, fuzzy
-#| msgid "Main Staple"
 msgid "Poor Main Staple"
 msgstr "Aliment de base des Pauvres"
 
@@ -72,20 +66,14 @@ msgid "Poor Survival Non-Food Expenditure"
 msgstr "Dépenses de survie non alimentaires du groupe Pauvre"
 
 #: apps/baseline/admin.py:1374
-#, fuzzy
-#| msgid "Population Source"
 msgid "Population source"
 msgstr "Source de population"
 
 #: apps/baseline/admin.py:1378
-#, fuzzy
-#| msgid "Percentage of households"
 msgid "Percentage of population"
 msgstr "Pourcentage de population"
 
 #: apps/baseline/admin.py:1382
-#, fuzzy
-#| msgid "Population Estimate"
 msgid "Population estimate"
 msgstr "Estimation de la population"
 
@@ -194,8 +182,6 @@ msgid "geography"
 msgstr "géographie"
 
 #: apps/baseline/models.py:342
-#, fuzzy
-#| msgid "Livelihood Strategy"
 msgid "Primary Livelihood System"
 msgstr "Système principal de moyens d'existence"
 
@@ -296,16 +282,12 @@ msgid "Currency"
 msgstr "Devise"
 
 #: apps/baseline/models.py:467
-#, fuzzy
-#| msgid "Currency of income or expenditure from this Livelihood Strategy"
 msgid ""
 "Default currency for income or expenditure from Livelihood Activities within "
 "this Baseline."
 msgstr "Devise par défaut de revenu ou de dépenses de cette Ligne de base"
 
 #: apps/baseline/models.py:473
-#, fuzzy
-#| msgid "Total kcals consumed"
 msgid "Annual kcals cost"
 msgstr "Coût des kcals annuels"
 
@@ -349,8 +331,6 @@ msgid "Summ"
 msgstr "Summ"
 
 #: apps/baseline/models.py:733
-#, fuzzy
-#| msgid "baseline"
 msgid "Timeline"
 msgstr "Chronologie"
 
@@ -379,8 +359,6 @@ msgid "Corrected value"
 msgstr "Valeur corrigée"
 
 #: apps/baseline/models.py:749
-#, fuzzy
-#| msgid "Data Collection End Date"
 msgid "Correction date"
 msgstr "Date de correction"
 
@@ -397,14 +375,10 @@ msgid "Required comment about the correction suggested"
 msgstr "Commentaire obligatoire sur la correction proposée"
 
 #: apps/baseline/models.py:767
-#, fuzzy
-#| msgid "Livelihood Zone Baseline"
 msgid "Livelihood Zone Baseline Correction"
 msgstr "Correction de Ligne de base de zone de moyens d'existence"
 
 #: apps/baseline/models.py:768
-#, fuzzy
-#| msgid "Livelihood Zone Baselines"
 msgid "Livelihood Zone Baseline Corrections"
 msgstr "Corrections des Lignes de base des zones de moyens d'existence"
 
@@ -672,10 +646,6 @@ msgid "Wealth Characteristic Values"
 msgstr "Valeurs de caractéristiques de richesse"
 
 #: apps/baseline/models.py:1572
-#, fuzzy
-#| msgid ""
-#| "A Wealth Group Characteristic Value from a %(ref)s must be for a "
-#| "Community Wealth Group"
 msgid ""
 "A Baseline Wealth Group Characteristic Value cannot be for a Community "
 "Wealth Group"
@@ -684,22 +654,14 @@ msgstr ""
 "Groupe de richesse communautaire"
 
 #: apps/baseline/models.py:1577
-#, fuzzy
-#| msgid "Wealth Characteristic Value"
 msgid "Baseline Wealth Group Characteristic Value"
 msgstr "Valeur de caractéristique de groupe de richesse de référence"
 
 #: apps/baseline/models.py:1578
-#, fuzzy
-#| msgid "Wealth Characteristic Values"
 msgid "Baseline Wealth Group Characteristic Values"
 msgstr "Valeurs des caractéristiques des groupes de richesse de référence"
 
 #: apps/baseline/models.py:1597
-#, fuzzy
-#| msgid ""
-#| "A Wealth Group Characteristic Value from a %(ref)s must be for a "
-#| "Community Wealth Group"
 msgid ""
 "A Community Wealth Group Characteristic Value must be for a Community Wealth "
 "Group"
@@ -708,14 +670,10 @@ msgstr ""
 "de richesse Communautaire."
 
 #: apps/baseline/models.py:1602
-#, fuzzy
-#| msgid "Wealth Characteristic Value"
 msgid "Community Wealth Group Characteristic Value"
 msgstr "Valeur de caractéristique de richesse communautaire"
 
 #: apps/baseline/models.py:1603
-#, fuzzy
-#| msgid "Wealth Characteristic Values"
 msgid "Community Wealth Group Characteristic Values"
 msgstr "Valeurs de caractéristiques de richesse communautaires"
 
@@ -761,20 +719,16 @@ msgid "Additional text identifying the livelihood strategy"
 msgstr "Texte supplémentaire identificateur la Stratégie de moyens d'existence"
 
 #: apps/baseline/models.py:1725
-#, fuzzy, python-format
-#| msgid "A %s Livelihood Strategy must have a Product"
+#, python-format
 msgid "A %s Livelihood Strategy must have a Product"
 msgstr "Une %s Stratégie de moyens d'existence doit avoir un Produit"
 
 #: apps/baseline/models.py:1727
-#, fuzzy, python-format
-#| msgid "A %s Livelihood Strategy must have a Season"
+#, python-format
 msgid "A %s Livelihood Strategy must have a Season"
 msgstr "Une %s Stratégie de moyens d'existence doit avoir une Saison"
 
 #: apps/baseline/models.py:1730
-#, fuzzy
-#| msgid "A %s Livelihood Strategy must have a Product"
 msgid ""
 "A Livelihood Strategy must have either a Product or an Additional Identifier"
 msgstr ""
@@ -796,8 +750,6 @@ msgid "Monitor Quantity"
 msgstr "Suivre Quantité"
 
 #: apps/baseline/models.py:1833
-#, fuzzy
-#| msgid "Market Price"
 msgid "Monitor Price"
 msgstr "Suivre prix"
 
@@ -899,20 +851,14 @@ msgid "Mainly Children"
 msgstr "Principalement les enfants"
 
 #: apps/baseline/models.py:2005
-#, fuzzy
-#| msgid "Mainly Women"
 msgid "Mainly Boys"
 msgstr "Principalement les garçons"
 
 #: apps/baseline/models.py:2006
-#, fuzzy
-#| msgid "Mainly Children"
 msgid "Mainly Girls"
 msgstr "Principalement les filles"
 
 #: apps/baseline/models.py:2007
-#, fuzzy
-#| msgid "Mainly Men"
 msgid "Mainly Adults"
 msgstr "Principalement les adultes"
 
@@ -945,10 +891,6 @@ msgstr ""
 "vendue multipliée par le prix."
 
 #: apps/baseline/models.py:2228
-#, fuzzy
-#| msgid ""
-#| "Expenditure for a Livelihood Activity must be quantity produced "
-#| "multiplied by price"
 msgid ""
 "Expenditure for a Livelihood Activity must be quantity produced or quantity "
 "purchased multiplied by price"
@@ -1025,8 +967,6 @@ msgid "Main Staple"
 msgstr "Aliment de base"
 
 #: apps/baseline/models.py:2492
-#, fuzzy
-#| msgid "Non-food survival"
 msgid "Other food survival"
 msgstr "Autre aliment de survie"
 
@@ -1059,8 +999,6 @@ msgstr ""
 "du panier 'Autre'"
 
 #: apps/baseline/models.py:2536
-#, fuzzy
-#| msgid "A %s Livelihood Strategy must have a Product"
 msgid "Livelihood Product Categories must be for a Strategy with a Product"
 msgstr ""
 "Les Catégories des produits de moyens d'existence doivent être pour une "
@@ -1127,8 +1065,6 @@ msgid "Carcass weight per animal"
 msgstr "Poids de carcasse par animal"
 
 #: apps/baseline/models.py:2711
-#, fuzzy
-#| msgid "Carcass weight per animal"
 msgid "Carcass weight is required when animals slaughtered"
 msgstr ""
 "Le poids de carcasse par animal doit être indiqué en présence d'animaux "
@@ -1191,10 +1127,6 @@ msgstr ""
 "nombre de mois par an. Attendu : %(expected)s, trouvé : %(found)s"
 
 #: apps/baseline/models.py:2825
-#, fuzzy
-#| msgid ""
-#| "Quantity produced for a Food Purchase must be purchase amount * purchases "
-#| "per month * months per year"
 msgid ""
 "Quantity purchased for a Food Purchase must be purchase amount * purchases "
 "per year"
@@ -1203,10 +1135,6 @@ msgstr ""
 "l'achat * achats par an."
 
 #: apps/baseline/models.py:2834
-#, fuzzy
-#| msgid ""
-#| "Expenditure for a Livelihood Activity must be quantity produced "
-#| "multiplied by price"
 msgid ""
 "Expenditure for a Food Purchase must be quantity purchased multiplied by "
 "price"
@@ -1219,8 +1147,6 @@ msgid "Food Purchases"
 msgstr "Achats de nourriture"
 
 #: apps/baseline/models.py:2865
-#, fuzzy
-#| msgid "Payment per time"
 msgid "Payment Product"
 msgstr "Produit de paiement"
 
@@ -1269,10 +1195,6 @@ msgstr ""
 "le nombre de fois par mois sont renseignés"
 
 #: apps/baseline/models.py:2943
-#, fuzzy
-#| msgid ""
-#| "Quantity produced for Payment In Kind must be payment per time * number "
-#| "of people * labor per month * months per year"
 msgid ""
 "Quantity produced for Payment In Kind must be payment per time * number of "
 "people * times per year"
@@ -1321,10 +1243,6 @@ msgid "Number of times in a year that the income is received"
 msgstr "Nombre de fois dans une année où le revenu est reçu"
 
 #: apps/baseline/models.py:3129
-#, fuzzy
-#| msgid ""
-#| "Quantity produced for Other Cash Income must be payment per time * times "
-#| "per year"
 msgid ""
 "Income for 'Other Cash Income' must be payment per time * people per "
 "household * times per year"
@@ -1337,10 +1255,7 @@ msgid "Number of times in a year that the product is purchased"
 msgstr "Nombre de fois dans une année où le produit est acheté"
 
 #: apps/baseline/models.py:3217
-#, fuzzy, python-format
-#| msgid ""
-#| "Expenditure for Other Purchases must be price * unit multiple * purchases "
-#| "per month * months per year"
+#, python-format
 msgid ""
 "Expenditure for Other Purchases must be price * unit multiple * purchases "
 "per year. Expected: %(expected)s, Found: %(found)s"
@@ -1365,16 +1280,10 @@ msgid "Additional text identifying the seasonal activity"
 msgstr "Texte supplémentaire identifiant l'activité saisonnière"
 
 #: apps/baseline/models.py:3307
-#, fuzzy
-#| msgid "Seasonal Activity"
 msgid "Key Seasonal Activity?"
 msgstr "Activité saisonnière clé ?"
 
 #: apps/baseline/models.py:3308
-#, fuzzy
-#| msgid ""
-#| "Community and Seasonal Activity for a Seasonal Activity Occurrence must "
-#| "belong to the same Livelihood Zone Baseline"
 msgid ""
 "Whether this seasonal activity is a key seasonal activity for the livelihood "
 "zone baseline"
@@ -1423,22 +1332,16 @@ msgid "Seasonal Activity Occurrences"
 msgstr "Occurrences d'activités saisonnières"
 
 #: apps/baseline/models.py:3513
-#, fuzzy
-#| msgid "A Baseline Wealth Group cannot have a Community"
 msgid "A Baseline Seasonal Activity Occurrence cannot be for a Community"
 msgstr ""
 "Une Occurrence d'activité saisonnière de référence ne peut pas s'appliquer à "
 "une communauté."
 
 #: apps/baseline/models.py:3517
-#, fuzzy
-#| msgid "Seasonal Activity Occurrence"
 msgid "Baseline Seasonal Activity Occurrence"
 msgstr "Occurrence d'activité saisonnière de référence"
 
 #: apps/baseline/models.py:3518
-#, fuzzy
-#| msgid "Seasonal Activity Occurrences"
 msgid "Baseline Seasonal Activity Occurrences"
 msgstr "Occurrences des activités saisonnières de référence"
 
@@ -1780,8 +1683,6 @@ msgid "Clear all filters"
 msgstr "Effacer tous les filtres"
 
 #: apps/baseline/templates/admin/baseline/wealthgroup/change_form.html:33
-#, fuzzy
-#| msgid "Livelihood Product Categories"
 msgid "No Livelihood Product Categories."
 msgstr "Pas de Catégories des produits de moyens d'existence"
 

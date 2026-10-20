@@ -544,8 +544,6 @@ msgid "Livelihood Protection Threshold"
 msgstr "عتبة حماية سبل العيش"
 
 #: src/Views/Layouts/Compare/Compare.jsx:1576
-#, fuzzy
-#| msgid "Livelihoods protection threshold (% kcals)"
 msgid "Livelihood Protection Threshold (% kcals)"
 msgstr "عتبة حماية سبل العيش (% kcals)"
 

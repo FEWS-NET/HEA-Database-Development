@@ -61,8 +61,6 @@ msgid "Livelihood System"
 msgstr "Categoría de medios de vida"
 
 #: apps/metadata/models.py:143
-#, fuzzy
-#| msgid "Livelihood Category"
 msgid "Livelihood Systems"
 msgstr "Sistemas de medios de vida"
 
@@ -73,8 +71,6 @@ msgid "Characteristic Group"
 msgstr "Riqueza característica"
 
 #: apps/metadata/models.py:156
-#, fuzzy
-#| msgid "Wealth Characteristics"
 msgid "Characteristic Groups"
 msgstr "Grupos de características"
 
@@ -240,8 +236,6 @@ msgid ""
 msgstr "¿Un valor para esta característica también requiere un producto?"
 
 #: apps/metadata/models.py:280
-#, fuzzy
-#| msgid "Seasonal Activity Type"
 msgid "Key Seasonal Activity?"
 msgstr "¿Actividad estacional clave?"
 
@@ -466,8 +460,6 @@ msgid "Ignore this label and associated data in the row"
 msgstr "Ignorar esta etiqueta y los datos asociados en la fila"
 
 #: apps/metadata/models.py:490
-#, fuzzy
-#| msgid "Livelihood Category"
 msgid "Livelihood Activity"
 msgstr "Actividad de medios de vida"
 
@@ -484,8 +476,6 @@ msgid "Livelihood Summary"
 msgstr "Categoría de medios de vida"
 
 #: apps/metadata/models.py:497 apps/metadata/models.py:569
-#, fuzzy
-#| msgid "Activity Category"
 msgid "Activity Label"
 msgstr "Etiqueta de actividad"
 
@@ -526,14 +516,10 @@ msgstr ""
 "de medios de vida"
 
 #: apps/metadata/models.py:521
-#, fuzzy
-#| msgid "Milk Production"
 msgid "Livestock Production"
 msgstr "Producción pecuaria"
 
 #: apps/metadata/models.py:522
-#, fuzzy
-#| msgid "Variable Type"
 msgid "Strategy Type"
 msgstr "Tipo de estrategia"
 
@@ -546,20 +532,14 @@ msgstr ""
 "recoleccion de alimentos silvestres."
 
 #: apps/metadata/models.py:532 apps/metadata/models.py:612
-#, fuzzy
-#| msgid "Has Product?"
 msgid "Product"
 msgstr "Producto"
 
 #: apps/metadata/models.py:541
-#, fuzzy
-#| msgid "Meat Production"
 msgid "Payment Product"
 msgstr "Producto de pago"
 
 #: apps/metadata/models.py:549 apps/metadata/models.py:620
-#, fuzzy
-#| msgid "Has Unit Of Measure?"
 msgid "Unit of Measure"
 msgstr "Unidad de medida"
 
@@ -580,8 +560,6 @@ msgid "Notes"
 msgstr "Notas"
 
 #: apps/metadata/models.py:570
-#, fuzzy
-#| msgid "Activity Category"
 msgid "Activity Labels"
 msgstr "Etiquetas de actividad"
 
@@ -590,8 +568,6 @@ msgid "Complete"
 msgstr "Completo"
 
 #: apps/metadata/models.py:592 apps/metadata/models.py:629
-#, fuzzy
-#| msgid "Wealth Characteristic"
 msgid "Wealth Characteristic Label"
 msgstr "Etiqueta de característica de riqueza"
 

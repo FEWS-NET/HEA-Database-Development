@@ -171,8 +171,6 @@ msgid "View %(name)s"
 msgstr "Voir %(name)s"
 
 #: templates/admin/app_index.html:95
-#, fuzzy
-#| msgid "You don’t have permission to view or edit anything."
 msgid "You don't have permission to view or edit anything."
 msgstr "Vous n'êtes pas autorisé à afficher ou modifier quoi que ce soit."
 
@@ -241,20 +239,14 @@ msgid "Baselines"
 msgstr "Lignes de base"
 
 #: templates/admin/index.html:36
-#, fuzzy
-#| msgid "Wealth Group Characteristic Value"
 msgid "Wealth Characteristic Values"
 msgstr "Valeurs de caractéristiques de richesse"
 
 #: templates/admin/index.html:40
-#, fuzzy
-#| msgid "Communities"
 msgid "Community Activities"
 msgstr "Activités communautaires"
 
 #: templates/admin/index.html:44
-#, fuzzy
-#| msgid "Seasonal Activities"
 msgid "Baseline Activities"
 msgstr "Activités de référence"
 
@@ -267,14 +259,10 @@ msgid "Documentation"
 msgstr "Documentation"
 
 #: templates/admin/index.html:95
-#, fuzzy
-#| msgid "Livelihood Zones"
 msgid "Livelihood Explorer"
 msgstr "Livelihood Explorer"
 
 #: templates/admin/index.html:106
-#, fuzzy
-#| msgid "Recent actions"
 msgid "My Recent Actions"
 msgstr "Mes actions récentes"
 
@@ -291,8 +279,6 @@ msgid "Sidebar"
 msgstr "Barre latérale"
 
 #: templates/admin/nav_sidebar.html:8
-#, fuzzy
-#| msgid "Toggle navigation"
 msgid "Navigation"
 msgstr "Navigation"
 
@@ -305,8 +291,6 @@ msgid "Filter sidebar menu"
 msgstr "Filtrer le menu latéral"
 
 #: templates/admin/nav_sidebar.html:60
-#, fuzzy
-#| msgid "None available"
 msgid "No sections available"
 msgstr "Pas de sections disponibles"
 
@@ -343,8 +327,6 @@ msgid "navbar"
 msgstr "barre de navigation"
 
 #: templates/rest_framework/api.html:91
-#, fuzzy
-#| msgid "Unknown content"
 msgid "content"
 msgstr "contenu"
 
@@ -353,8 +335,6 @@ msgid "request form"
 msgstr "formulaire de demande"
 
 #: templates/rest_framework/api.html:174
-#, fuzzy
-#| msgid "My actions"
 msgid "Extra Actions"
 msgstr "Actions additionnelles"
 
@@ -363,8 +343,6 @@ msgid "Filters"
 msgstr "Filtres"
 
 #: templates/rest_framework/api.html:197
-#, fuzzy
-#| msgid "Skip to main content"
 msgid "main content"
 msgstr "contenu principal"
 
