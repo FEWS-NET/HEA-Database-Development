@@ -6,7 +6,7 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-02 15:43+0000\n"
+"POT-Creation-Date: 2026-10-20 20:35+0000\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -17,20 +17,17 @@ msgstr ""
 msgid "common"
 msgstr "común"
 
-#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/fields.py:67
 msgid "Code"
 msgstr "Código"
 
-#. Shared msgid. Also in apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/fields.py:79
 msgid "Name"
 msgstr "Nombre"
 
-#. Shared msgid. Also in apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
-#: apps/common/fields.py:93 apps/common/viewsets.py:325
-#: apps/common/viewsets.py:328 apps/common/viewsets.py:331
-#: apps/common/viewsets.py:334 apps/common/viewsets.py:337
+#: apps/common/fields.py:93 apps/common/viewsets.py:327
+#: apps/common/viewsets.py:330 apps/common/viewsets.py:333
+#: apps/common/viewsets.py:336 apps/common/viewsets.py:339
 msgid "Description"
 msgstr "Descripción"
 
@@ -39,7 +36,6 @@ msgid "Any extra information or detail that is relevant to the object."
 msgstr ""
 "Cualquier información o detalle adicional que sea relevante para el objeto."
 
-#. Shared msgid. Also in locale/es/LC_MESSAGES/djangojs.po; keep translations synchronized across files.
 #: apps/common/fields.py:109
 msgid "Location"
 msgstr "Ubicación"
@@ -48,29 +44,24 @@ msgstr "Ubicación"
 msgid "Boundary"
 msgstr "Perímetro"
 
-#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/menu_config.py:20 apps/common/menu_config.py:279
 msgid "Source Organizations"
 msgstr "Organizaciones de origen"
 
-#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/menu_config.py:26 apps/common/menu_config.py:284
 msgid "Livelihood Zones"
 msgstr "Zonas de medios de vida"
 
-#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/menu_config.py:32 apps/common/menu_config.py:299
 #, fuzzy
 #| msgid "from unit"
 msgid "Communities"
 msgstr "Comunidades"
 
-#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/menu_config.py:38 apps/common/menu_config.py:289
 msgid "Livelihood Zone Baselines"
 msgstr "Líneas de base de zonas de medios de vida"
 
-#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/menu_config.py:44
 msgid "Wealth Groups"
 msgstr "Grupos de riqueza"
@@ -79,44 +70,36 @@ msgstr "Grupos de riqueza"
 msgid "Wealth Group Characteristic Values"
 msgstr "Valores de caracteristicas de grupos de riqueza"
 
-#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po, locale/es/LC_MESSAGES/djangojs.po; keep translations synchronized across files.
 #: apps/common/menu_config.py:56
 msgid "Livelihood Activities"
 msgstr "Actividades de medios de vida"
 
-#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/menu_config.py:62
 msgid "Livelihood Strategies"
 msgstr "Estrategias de medios de vida"
 
-#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/menu_config.py:68
 msgid "Livelihood Product Categories"
 msgstr "Categorias de productos de medios de vida"
 
-#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/menu_config.py:77
 msgid "Livelihood Zone Baseline Corrections"
 msgstr "Correcciones de líneas de base de zonas de medios de vida"
 
-#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/menu_config.py:86
 #, fuzzy
 #| msgid "Country Classified Product Alias"
 msgid "Community Crop Productions"
 msgstr "Producciones de cultivos comunitarios"
 
-#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/menu_config.py:92
 msgid "Community Livestock"
 msgstr "Ganado comunitario"
 
-#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/menu_config.py:98 apps/common/menu_config.py:483
 msgid "Coping Strategies"
 msgstr "Estrategias de afrontamiento"
 
-#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/menu_config.py:104 apps/common/menu_config.py:462
 msgid "Events"
 msgstr "Eventos"
@@ -125,28 +108,23 @@ msgstr "Eventos"
 msgid "Expandability Factors"
 msgstr "Factores de expandibilidad"
 
-#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/menu_config.py:116 apps/common/menu_config.py:457
 msgid "Hazards"
 msgstr "Peligros"
 
-#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/menu_config.py:122 apps/common/menu_config.py:401
 #: apps/common/menu_config.py:414
 msgid "Market Prices"
 msgstr "Precios de mercado"
 
-#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/menu_config.py:128 apps/common/menu_config.py:430
 msgid "Seasonal Activities"
 msgstr "Actividades estacionales"
 
-#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/menu_config.py:134
 msgid "Seasonal Activity Occurrences"
 msgstr "Ocurrencias de actividades estacionales"
 
-#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/menu_config.py:140
 msgid "Seasonal Production Performance"
 msgstr "Desempeno estacional de la produccion"
@@ -171,47 +149,38 @@ msgstr "Productos"
 msgid "Units of Measure"
 msgstr "Unidades de medida"
 
-#. Shared msgid. Also in apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/menu_config.py:179 apps/common/menu_config.py:548
 msgid "Livelihood Systems"
 msgstr "Sistemas de medios de vida"
 
-#. Shared msgid. Also in apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/menu_config.py:185
 msgid "Wealth Group Categories"
 msgstr "Categorías de grupos de riqueza"
 
-#. Shared msgid. Also in apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/menu_config.py:191
 msgid "Characteristic Groups"
 msgstr "Grupos de características"
 
-#. Shared msgid. Also in apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/menu_config.py:197
 msgid "Wealth Characteristics"
 msgstr "Caracteristicas de riqueza"
 
-#. Shared msgid. Also in apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/menu_config.py:203 apps/common/menu_config.py:543
 msgid "Hazard Categories"
 msgstr "Categorias de peligros"
 
-#. Shared msgid. Also in apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/menu_config.py:209 apps/common/menu_config.py:553
 msgid "Seasons"
 msgstr "Estaciones"
 
-#. Shared msgid. Also in apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/menu_config.py:215 apps/common/menu_config.py:558
 msgid "Seasonal Activity Types"
 msgstr "Tipos de actividades estacionales"
 
-#. Shared msgid. Also in apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/menu_config.py:221 apps/common/menu_config.py:409
 msgid "Markets"
 msgstr "Mercados"
 
-#. Shared msgid. Also in apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/menu_config.py:230
 msgid "Activity Labels"
 msgstr "Etiquetas de actividad"
@@ -256,22 +225,18 @@ msgstr "Riqueza, actividad y estrategia"
 msgid "Wealth Group Characteristic Value"
 msgstr "Valor de caracteristica de grupo de riqueza"
 
-#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/menu_config.py:336
 msgid "Livelihood Strategy"
 msgstr "Estrategia de medios de vida"
 
-#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/menu_config.py:341
 msgid "Livelihood Activity"
 msgstr "Actividad de medios de vida"
 
-#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/menu_config.py:346
 msgid "Livelihood Product Category"
 msgstr "Categoria de producto de medios de vida"
 
-#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/menu_config.py:351
 msgid "Key Parameter"
 msgstr "Parametro clave"
@@ -280,12 +245,10 @@ msgstr "Parametro clave"
 msgid "Labels"
 msgstr "Etiquetas"
 
-#. Shared msgid. Also in apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/menu_config.py:367
 msgid "Wealth Characteristic Label"
 msgstr "Etiqueta de característica de riqueza"
 
-#. Shared msgid. Also in apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/menu_config.py:372
 msgid "Activity Label"
 msgstr "Etiqueta de actividad"
@@ -294,14 +257,12 @@ msgstr "Etiqueta de actividad"
 msgid "BSS Production Data"
 msgstr "Datos de produccion de BSS"
 
-#. Shared msgid. Also in apps/metadata/locale/es/LC_MESSAGES/django.po, locale/es/LC_MESSAGES/djangojs.po; keep translations synchronized across files.
 #: apps/common/menu_config.py:388
 #, fuzzy
 #| msgid "Product"
 msgid "Crop Production"
 msgstr "Producción de cultivos"
 
-#. Shared msgid. Also in apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/menu_config.py:393
 msgid "Livestock Production"
 msgstr "Producción pecuaria"
@@ -359,6 +320,14 @@ msgstr "Sistema"
 #: apps/common/menu_config.py:587
 msgid "User Management"
 msgstr "Gestion de usuarios"
+
+#: apps/common/menu_config.py:605
+msgid "Pipelines"
+msgstr ""
+
+#: apps/common/menu_config.py:610
+msgid "Pipeline Status"
+msgstr ""
 
 #: apps/common/middleware/language.py:31
 msgid ""
@@ -456,7 +425,9 @@ msgstr "ISO Nombre francés"
 #: apps/common/models.py:557
 msgid ""
 "The name in French of the Country approved by the ISO 3166 Maintenance Agency"
-msgstr "El nombre en frances del pais aprobado por la Agencia de Mantenimiento ISO 3166"
+msgstr ""
+"El nombre en frances del pais aprobado por la Agencia de Mantenimiento ISO "
+"3166"
 
 #: apps/common/models.py:561
 msgid "ISO French full name"
@@ -482,7 +453,6 @@ msgstr ""
 "El nombre en español del país aprobado por la Agencia de Mantenimiento ISO "
 "3166"
 
-#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/models.py:575
 msgid "Country"
 msgstr "País"
@@ -491,7 +461,6 @@ msgstr "País"
 msgid "name"
 msgstr "nombre"
 
-#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po, locale/es/LC_MESSAGES/djangojs.po; keep translations synchronized across files.
 #: apps/common/models.py:592
 msgid "Currency"
 msgstr "Moneda"
@@ -504,7 +473,6 @@ msgstr "Peso"
 msgid "Volume"
 msgstr "Volumen"
 
-#. Shared msgid. Also in locale/es/LC_MESSAGES/djangojs.po; keep translations synchronized across files.
 #: apps/common/models.py:680
 msgid "Item"
 msgstr "Artículo"
@@ -517,7 +485,6 @@ msgstr "Superficie"
 msgid "Yield"
 msgstr "Rendimiento"
 
-#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/models.py:683
 msgid "Percentage"
 msgstr "Porcentaje"
@@ -534,7 +501,6 @@ msgstr "abreviatura"
 msgid "unit type"
 msgstr "tipo de unidad"
 
-#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/models.py:692 apps/common/models.py:888
 #: apps/common/models.py:977
 msgid "aliases"
@@ -545,7 +511,6 @@ msgstr "alias"
 msgid "A list of alternate names for the product."
 msgstr "Una lista de nombres alternativos para el producto."
 
-#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/models.py:708 apps/common/models.py:919
 msgid "Unit of Measure"
 msgstr "Unidad de medida"
@@ -618,12 +583,10 @@ msgstr "Nombre científico"
 msgid "Kcals per Unit"
 msgstr "Kcals por unidad"
 
-#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po, locale/es/LC_MESSAGES/djangojs.po; keep translations synchronized across files.
 #: apps/common/models.py:955 apps/common/models.py:972
 msgid "Product"
 msgstr "Producto"
 
-#. Shared msgid. Also in apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/models.py:968
 msgid "country"
 msgstr "país"
@@ -644,59 +607,49 @@ msgstr "perfil de usuario"
 msgid "user profiles"
 msgstr "perfiles de usuario"
 
-#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/templates/admin/common/change_list.html:7
 msgid "Filter"
 msgstr "Filtro"
 
-#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/templates/admin/common/change_list.html:9
 msgid "Start typing to narrow filter..."
 msgstr "Empiece a escribir para acotar el filtro..."
 
-#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/templates/admin/common/change_list.html:12
 msgid "Hide counts"
 msgstr "Ocultar conteos"
 
-#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/templates/admin/common/change_list.html:13
 msgid "Show counts"
 msgstr "Mostrar conteos"
 
-#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: apps/common/templates/admin/common/change_list.html:16
 msgid "Clear all filters"
 msgstr "Borrar todos los filtros"
 
-#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po, locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
-#: apps/common/viewsets.py:325 apps/common/viewsets.py:340
+#: apps/common/viewsets.py:327 apps/common/viewsets.py:342
 msgid "English"
 msgstr "Inglés"
 
-#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po, locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
-#: apps/common/viewsets.py:328 apps/common/viewsets.py:343
+#: apps/common/viewsets.py:330 apps/common/viewsets.py:345
 msgid "French"
 msgstr "Francés"
 
-#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po, locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
-#: apps/common/viewsets.py:331 apps/common/viewsets.py:346
+#: apps/common/viewsets.py:333 apps/common/viewsets.py:348
 msgid "Spanish"
 msgstr "Español"
 
-#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po, locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
-#: apps/common/viewsets.py:334 apps/common/viewsets.py:349
+#: apps/common/viewsets.py:336 apps/common/viewsets.py:351
 msgid "Arabic"
 msgstr "Árabe"
 
-#. Shared msgid. Also in apps/baseline/locale/es/LC_MESSAGES/django.po, apps/metadata/locale/es/LC_MESSAGES/django.po, locale/es/LC_MESSAGES/django.po; keep translations synchronized across files.
-#: apps/common/viewsets.py:337 apps/common/viewsets.py:352
+#: apps/common/viewsets.py:339 apps/common/viewsets.py:354
 msgid "Portuguese"
 msgstr "Portugués"
 
-#: apps/common/viewsets.py:340 apps/common/viewsets.py:343
-#: apps/common/viewsets.py:346 apps/common/viewsets.py:349
-#: apps/common/viewsets.py:352
+#: apps/common/viewsets.py:342 apps/common/viewsets.py:345
+#: apps/common/viewsets.py:348 apps/common/viewsets.py:351
+#: apps/common/viewsets.py:354
 msgid "Common Name"
 msgstr "nombre común"
 

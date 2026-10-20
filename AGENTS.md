@@ -72,6 +72,12 @@ These commands are expected during normal development and usually do not require
 - Work should be carried out in feature branches with a branch name that begins with the ticket, for example `HEA-999/Improved_admin_screens`.
 - Commit messages should end with `- see <Jira ticket reference>`, e.g. `Better KPI stat for home page - see HEA-999`.
 
+## Translations
+
+- To update translations, follow `docs/translations.md`. The update has two stages: `makemessages` for the `django` catalogs from this repository's `main`, then an npm extraction in the adjacent LEX repository, merged into `locale/*/LC_MESSAGES/djangojs.po` with `msgmerge`.
+- Never run `makemessages -d djangojs` in this repository. The `djangojs` catalogs come from LEX, because `makemessages` cannot reliably extract strings from `.tsx` files.
+- Stage the refreshed `.po` files for review, but do not commit them unless asked. Get confirmation before stashing work, before switching branches in either repository, and before running `npm ci`.
+
 ## Coding Standards
 
 - Code should use modern best practices for the Python version specified in docker/app/Dockerfile.
