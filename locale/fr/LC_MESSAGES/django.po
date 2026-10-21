@@ -382,7 +382,7 @@ msgstr "informations sur la réponse"
 #~ msgstr "Fiche de production BSS"
 
 #~ msgid "Crop Production"
-#~ msgstr "Production végétales"
+#~ msgstr "Production végétale"
 
 #~ msgid "Livestock Production"
 #~ msgstr "Production d'élevage"

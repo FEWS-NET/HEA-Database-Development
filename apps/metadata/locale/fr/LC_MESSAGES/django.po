@@ -136,7 +136,7 @@ msgstr "Caractéristiques de richesse"
 
 #: apps/metadata/models.py:221
 msgid "Milk Production"
-msgstr "Production de lait"
+msgstr "Production laitière"
 
 #: apps/metadata/models.py:222
 msgid "Butter Production"

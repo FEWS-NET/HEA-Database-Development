@@ -24,11 +24,11 @@ msgstr ""
 
 #: src/Views/Layouts/Compare/Compare.jsx:1606
 msgid "(% 2100 kcal/person/day)"
-msgstr ""
+msgstr "(% de 2100 kcal/personne/jour)"
 
 #: src/Views/Layouts/Compare/Compare.jsx:1590
 msgid "(annual)"
-msgstr ""
+msgstr "(annuelles)"
 
 #: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:75
 msgid "(Latest)"
@@ -39,7 +39,7 @@ msgstr "(Plus récent)"
 #: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:267
 #: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:182
 msgid "% of 2100 kcal/person/day"
-msgstr ""
+msgstr "% de 2100 kcal/personne/jour"
 
 #: src/Views/Layouts/BrowseViews/BrowseViews.jsx:66
 msgid "+ Create new view"
@@ -171,7 +171,7 @@ msgstr "lignes de base disponibles"
 
 #: src/Views/Layouts/GlobalMap/Components/WealthGroup/WealthGroup.jsx:42
 msgid "Better off (BO)"
-msgstr "Aisé (BO)"
+msgstr "Aisé (A)"
 
 #: src/Views/Layouts/BrowseViews/BrowseViews.jsx:62
 msgid "Browse views"
@@ -653,7 +653,7 @@ msgstr "Moyen (M)"
 #: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:95
 #: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:28
 msgid "Milk production"
-msgstr "Production de lait"
+msgstr "Production laitière"
 
 #: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:700
 msgid "Min contribution (%)"
@@ -772,7 +772,7 @@ msgstr "de la nourriture issue de propres cultures"
 
 #: src/Views/Layouts/GlobalMap/GlobalMap.jsx:705
 msgid "of food from purchase"
-msgstr "des revenus issus d'achat"
+msgstr "de consommation provenant d'achat"
 
 #: src/Views/Layouts/GlobalMap/GlobalMap.jsx:679
 msgid "of food from<br />own crops"
@@ -849,7 +849,7 @@ msgstr "Pourcentage des revenus en espèces provenant de la main d'oeuvre"
 #: src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:98
 #: src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:99
 msgid "Percentage of cash income from labor, trade, and self-employment"
-msgstr ""
+msgstr "Pourcentage du revenu en espèces provenant de la main-d'œuvre, du commerce, et de l'auto-emploi"
 
 #: src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:88
 #: src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:89
@@ -950,7 +950,7 @@ msgstr "Aide, don ou autre nourriture "
 
 #: src/Views/Layouts/Compare/Compare.jsx:693
 msgid "Relief, gifts, other"
-msgstr ""
+msgstr "Aide, dons, autre"
 
 #: src/Views/Layouts/Compare/Compare.jsx:1501
 #: src/Views/Layouts/Compare/Compare.jsx:1506
@@ -979,7 +979,7 @@ msgstr "Réinitialiser le graphique"
 
 #: src/Views/Layouts/Header/Header.tsx:32
 msgid "Review the basics of using the platform"
-msgstr ""
+msgstr "Visite guidée en vidéo Passez en revue les bases de l'utilisation de la plateforme."
 
 #: src/Views/Layouts/GlobalMap/Components/Filters/Components/BasicFilter/BasicFilter.jsx:482
 #: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:605
@@ -1068,7 +1068,7 @@ msgstr "Seuil de survie"
 
 #: src/Views/Layouts/Compare/Compare.jsx:1569
 msgid "Survival Threshold (%kcals)"
-msgstr ""
+msgstr "Seuil de survie (% kcals)"
 
 #: src/App.tsx:47
 msgid ""
@@ -1189,7 +1189,7 @@ msgstr "Nom d’utilisateur"
 
 #: src/Views/Layouts/GlobalMap/Components/WealthGroup/WealthGroup.jsx:39
 msgid "Very poor (VP)"
-msgstr "Très pauvre (VP)"
+msgstr "Très pauvre (TP)"
 
 #: src/Views/Layouts/Header/Header.tsx:133
 #: src/Views/Layouts/Header/Header.tsx:31
@@ -1202,7 +1202,7 @@ msgstr "Voir sur la carte"
 
 #: src/Views/Layouts/Header/Header.tsx:44
 msgid "Visit our user-friendly help center"
-msgstr ""
+msgstr "Base de connaissances Consultez notre centre d'aide convivial."
 
 #: src/Views/Layouts/Compare/Compare.jsx:1409
 #: src/Views/Layouts/Compare/Compare.jsx:1519
@@ -1224,10 +1224,10 @@ msgstr ""
 #~ msgstr "Moyen (M)"
 
 #~ msgid "Very Poor (VP)"
-#~ msgstr "Très pauvre (VP)"
+#~ msgstr "Très pauvre (TP)"
 
 #~ msgid "Better Off (BO)"
-#~ msgstr "Aisé (BO)"
+#~ msgstr "Aisé (A)"
 
 #~ msgid "Wealth group"
 #~ msgstr "Groupe de richesse"
@@ -1272,7 +1272,7 @@ msgstr ""
 #~ msgstr "Ajouter filtre"
 
 #~ msgid "Milk Production"
-#~ msgstr "Production de lait"
+#~ msgstr "Production laitière"
 
 #~ msgid "Butter Production"
 #~ msgstr "Production de beurre"

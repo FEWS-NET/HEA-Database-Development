@@ -63,7 +63,7 @@ git commit -m "Add new Django translation strings - see HEA-999"
 ## Stage 2: LEX (JavaScript) messages
 
 Django's `makemessages` cannot reliably extract strings from TypeScript and TSX files,
-so LEX strings are extracted with an npm command based on
+so Livelihood Explorer front end strings are extracted with an npm command based on
 [`gettext-extractor`](https://www.npmjs.com/package/gettext-extractor). The script
 (`scripts/extract-translations.cjs` in LEX) scans `src/**/*.{js,jsx,ts,tsx}` for
 `gettext('…')` calls and writes `locale/explorer.pot`. That file is gitignored in LEX.
@@ -80,8 +80,7 @@ npm run extract-translations    # writes locale/explorer.pot
 cd ../../hea
 ```
 
-The `extract-translations` npm script was added in HEA-1439. LEX's own
-`docs/i18n.md` documents the extraction from the frontend side.
+The Livelihood Explorer's own `docs/i18n.md` documents the extraction from the frontend side.
 
 Merge the template into each language's `djangojs.po`, back in this repository. The
 `msgmerge` options are the same ones that `makemessages` uses: they keep existing
@@ -110,6 +109,20 @@ git commit -m "Update djangojs.po files - see HEA-999"
 
 - Fill in the empty `msgstr` entries and resolve the `#, fuzzy` entries. Translators
   can do this in the `.po` files directly or with a tool such as Poedit.
+- **Translators: clear the fuzzy flag after reviewing an entry.** Django ignores fuzzy
+  entries, so users keep seeing the English text even when the translation is correct.
+  Once the `msgstr` correctly translates the current `msgid`:
+  - remove `fuzzy` from the `#,` line, keeping any other flags such as `python-format`;
+  - delete the `#| msgid` lines, which only record the old text;
+  - in Poedit, do this by turning off "Needs work".
+
+  Leave the flag in place for any entry that is still wrong, so that it gets reviewed
+  later. Several entries in the past were corrected without the flag being cleared, so
+  their translations were never used.
+- Make sure that a translation keeps every placeholder from the `msgid`, such as `%s`
+  or `%(name)s`, spelled exactly as in the `msgid`. Also make sure that it starts and
+  ends with a newline only when the `msgid` does. Otherwise `compilemessages` fails once
+  the fuzzy flag is removed.
 - Run `./manage.py compilemessages` to check that the catalogs compile. To check the LEX
   strings, load `/{language}/jsi18n/` in a browser.
 - Return to the previous work: `git checkout <previous-branch> && git stash pop`, and
