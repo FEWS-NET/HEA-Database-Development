@@ -6,7 +6,7 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-02 15:43+0000\n"
+"POT-Creation-Date: 2026-10-20 20:35+0000\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -19,6 +19,12 @@ msgstr "É meta"
 #: apps/metadata/models.py:71
 msgid "Code"
 msgstr "Código"
+
+#: apps/metadata/models.py:74 apps/metadata/viewsets.py:54
+#: apps/metadata/viewsets.py:57 apps/metadata/viewsets.py:60
+#: apps/metadata/viewsets.py:63 apps/metadata/viewsets.py:66
+msgid "Short Name"
+msgstr ""
 
 #: apps/metadata/models.py:81
 msgid "Ordering"
@@ -116,7 +122,9 @@ msgstr "Se o campo é numérico, caráter, booleano etc."
 msgid ""
 "Optional grouping for characteristics, such as 'Population', 'Income', "
 "'Land', 'Livestock', 'Other assets'"
-msgstr "Agrupamento opcional para caracteristicas, como 'Population', 'Income', 'Land', 'Livestock' e 'Other assets'"
+msgstr ""
+"Agrupamento opcional para caracteristicas, como 'Population', 'Income', "
+"'Land', 'Livestock' e 'Other assets'"
 
 #: apps/metadata/models.py:213 apps/metadata/models.py:603
 msgid "Wealth Characteristic"
@@ -168,7 +176,7 @@ msgstr "Alívio, presente ou outra comida"
 msgid "Hunting"
 msgstr "Caçando"
 
-#: apps/metadata/models.py:231 apps/metadata/models.py:263
+#: apps/metadata/models.py:231 apps/metadata/models.py:262
 msgid "Fishing"
 msgstr "pescaria"
 
@@ -197,20 +205,20 @@ msgid "Climatology"
 msgstr "Climatologia"
 
 #: apps/metadata/models.py:260
-msgid "Stress Periods"
-msgstr "Periodos de estresse"
-
-#: apps/metadata/models.py:261
 msgid "Crops"
 msgstr "Plantações"
 
-#: apps/metadata/models.py:262
+#: apps/metadata/models.py:261
 msgid "Livestock"
 msgstr "Gado"
 
-#: apps/metadata/models.py:264
+#: apps/metadata/models.py:263
 msgid "Employment and Other Income"
 msgstr "Emprego e outros rendimentos"
+
+#: apps/metadata/models.py:264
+msgid "Stress Periods"
+msgstr "Periodos de estresse"
 
 #: apps/metadata/models.py:265
 msgid "Other"
@@ -238,7 +246,8 @@ msgstr "Tipo de atividade sazonal"
 
 #: apps/metadata/models.py:281
 msgid "Are SeasonalActivity instances of this type key seasonal activities?"
-msgstr "As instancias de SeasonalActivity deste tipo sao atividades sazonais-chave?"
+msgstr ""
+"As instancias de SeasonalActivity deste tipo sao atividades sazonais-chave?"
 
 #: apps/metadata/models.py:287
 msgid "Color hex value code for the Seasonal Activity Type."
@@ -390,7 +399,8 @@ msgstr "Finalidade"
 
 #: apps/metadata/models.py:430
 msgid "The Livelihood Strategy Type that this Season is relevant for."
-msgstr "O tipo de estrategia de subsistencia para o qual esta estacao e relevante."
+msgstr ""
+"O tipo de estrategia de subsistencia para o qual esta estacao e relevante."
 
 #: apps/metadata/models.py:437
 msgid "Start Day"
@@ -488,7 +498,11 @@ msgid ""
 "Livelihood Activity, or an Other Cash Income activity from the 'Data2' "
 "worksheet, or a Wild Foods, Fishing or Hunting activity from the 'Data3' "
 "worksheet, or a label from the 'Summary' section of the 'Data' worksheet."
-msgstr "O tipo de atividade de subsistencia ao qual o rotulo se refere: uma atividade geral de subsistencia, ou uma atividade de Other Cash Income da planilha 'Data2', ou uma atividade de Wild Foods, Fishing or Hunting da planilha 'Data3', ou um rotulo da secao 'Summary' da planilha 'Data'."
+msgstr ""
+"O tipo de atividade de subsistencia ao qual o rotulo se refere: uma "
+"atividade geral de subsistencia, ou uma atividade de Other Cash Income da "
+"planilha 'Data2', ou uma atividade de Wild Foods, Fishing or Hunting da "
+"planilha 'Data3', ou um rotulo da secao 'Summary' da planilha 'Data'."
 
 #: apps/metadata/models.py:509 apps/metadata/models.py:594
 msgid "Status"
@@ -504,7 +518,9 @@ msgstr "Começar"
 msgid ""
 "Indicates whether this Activity Label marks the start of a new Livelihood "
 "Strategy"
-msgstr "Indica se este rotulo de atividade marca o inicio de uma nova estrategia de subsistencia"
+msgstr ""
+"Indica se este rotulo de atividade marca o inicio de uma nova estrategia de "
+"subsistencia"
 
 #: apps/metadata/models.py:521
 #, fuzzy
@@ -522,7 +538,9 @@ msgstr "Tipo variável"
 msgid ""
 "The type of livelihood strategy, such as crop production, or wild food "
 "gathering."
-msgstr "O tipo de estrategia de subsistencia, como producao agricola ou coleta de alimentos silvestres."
+msgstr ""
+"O tipo de estrategia de subsistencia, como producao agricola ou coleta de "
+"alimentos silvestres."
 
 #: apps/metadata/models.py:532 apps/metadata/models.py:612
 #, fuzzy
