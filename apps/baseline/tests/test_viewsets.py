@@ -955,7 +955,7 @@ class LivelihoodZoneBaselineFacetedSearchViewTestCase(APITestCase):
         strategy_type_results = data["livelihood_strategy_types"]
         milk_results = [r for r in strategy_type_results if r["value"] == "MilkProduction"]
         self.assertEqual(len(milk_results), 1)
-        self.assertEqual(milk_results[0]["value_label"], "Production de lait")
+        self.assertEqual(milk_results[0]["value_label"], "Production laitière")
         self.assertEqual(milk_results[0]["count"], 1)
 
         # test taht strategy_type filter to baseline list endpoint
