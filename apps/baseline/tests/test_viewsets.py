@@ -1,3 +1,4 @@
+import csv
 import datetime
 import json
 import logging
@@ -2976,6 +2977,34 @@ class BaselineLivelihoodActivityViewSetTestCase(APITestCase):
             content = response.content.decode("utf-8")
         df = pd.read_csv(StringIO(content)).fillna("")
         self.assertEqual(len(df), self.num_records)
+
+    def test_csv_columns_align_when_season_is_missing(self):
+        """
+        Test that CSV columns line up when only some activities have a Season.
+
+        The season fields are omitted from the serialized data for activities
+        without a Season, e.g. FoodPurchase, so the CSV must still contain empty
+        values for those fields.
+        """
+        crop_production = BaselineLivelihoodActivityFactory(strategy_type=LivelihoodStrategyType.CROP_PRODUCTION)
+        food_purchase = BaselineLivelihoodActivityFactory(
+            strategy_type=LivelihoodStrategyType.FOOD_PURCHASE,
+            livelihood_strategy__season=None,
+        )
+        response = self.client.get(self.url, {"format": "csv"})
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode("utf-8-sig")
+        rows = list(csv.reader(StringIO(content)))
+        self.assertIn("season", rows[0])
+        for row in rows[1:]:
+            self.assertEqual(len(row), len(rows[0]))
+        rows = {row["id"]: row for row in csv.DictReader(StringIO(content))}
+        self.assertEqual(rows[str(crop_production.pk)]["strategy_type"], LivelihoodStrategyType.CROP_PRODUCTION)
+        self.assertEqual(rows[str(crop_production.pk)]["season"], str(crop_production.livelihood_strategy.season.pk))
+        self.assertEqual(rows[str(food_purchase.pk)]["strategy_type"], LivelihoodStrategyType.FOOD_PURCHASE)
+        self.assertEqual(rows[str(food_purchase.pk)]["season"], "")
+        self.assertEqual(rows[str(food_purchase.pk)]["season_name"], "")
+        self.assertEqual(rows[str(food_purchase.pk)]["product"], food_purchase.livelihood_strategy.product.pk)
 
     def test_html(self):
         response = self.client.get(self.url, {"format": "html"})
