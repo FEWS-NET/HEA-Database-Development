@@ -20,7 +20,7 @@ msgstr ""
 
 #: src/Views/Layouts/Compare/Compare.jsx:30
 msgid "-"
-msgstr ""
+msgstr "-"
 
 #: src/Views/Layouts/Compare/Compare.jsx:1606
 msgid "(% 2100 kcal/person/day)"
@@ -52,7 +52,7 @@ msgid ""
 "least two wealth groups or over 10% for one group. A livelihood activity may "
 "also be considered key if it is the only food or income source during the "
 "lean season."
-msgstr ""
+msgstr "Un paramètre clé correspond à une source importante de nourriture ou de revenus au sein d’une zone de moyens d’existence ; cela signifie que l’activité en question contribue à plus de 5 % à l’apport de 2 100 kcal / personne / jour pour au moins deux groupes de richesse, ou à plus de 10 % pour un seul groupe. Une activité de moyens d'existence peut également être considérée comme clé si elle constitue l’unique source de nourriture ou de revenus durant la période de soudure."
 
 #: src/App.tsx:16
 msgid "About the Livelihoods Explorer"
@@ -69,7 +69,7 @@ msgstr "Activités"
 #: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Calendar/Calendar.jsx:265
 #: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Calendar/Calendar.jsx:610
 msgid "Activity"
-msgstr ""
+msgstr "Activité"
 
 #: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:634
 msgid "Add baseline to Compare view"
@@ -82,7 +82,7 @@ msgstr "Ajouter filtre"
 #: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:662
 #: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1154
 msgid "Add this Baseline to Compare view"
-msgstr ""
+msgstr "Ajouter cette Ligne de base à la vue Comparer"
 
 #: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:633
 #: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:661
@@ -189,11 +189,11 @@ msgstr "Calendrier"
 
 #: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Calendar/Calendar.jsx:628
 msgid "Calendar data could not be loaded for this baseline."
-msgstr ""
+msgstr "Les données de calendrier n’ont pas pu être chargées pour cette référence."
 
 #: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Characteristics/Characteristics.jsx:23
 msgid "Capital"
-msgstr ""
+msgstr "Capital"
 
 #: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:155
 msgid "Cash"
@@ -209,7 +209,7 @@ msgstr "Revenu en espèces"
 
 #: src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:743
 msgid "Change"
-msgstr ""
+msgstr "Modifier"
 
 #: src/Views/Layouts/Compare/Compare.jsx:1694
 #: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1515
@@ -266,7 +266,7 @@ msgstr "Comparer"
 
 #: src/App.tsx:49
 msgid "Continue anyway"
-msgstr ""
+msgstr "Continuer quand même"
 
 #: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:662
 msgid "contributes"
@@ -321,11 +321,11 @@ msgstr "stratégies personnalisées"
 
 #: src/Views/Layouts/BrowseViews/BrowseViews.jsx:18
 msgid "Demo: West Africa own-produced staple crop consumption"
-msgstr ""
+msgstr "Démonstration : Consommation de cultures vivrières de base produites localement en Afrique de l’Ouest"
 
 #: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Characteristics/Characteristics.jsx:24
 msgid "Demographics"
-msgstr ""
+msgstr "Données démographiques"
 
 #: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1172
 #: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1201
@@ -370,11 +370,11 @@ msgstr "Dépenses"
 
 #: src/Views/Layouts/Header/Header.tsx:120
 msgid "External link"
-msgstr ""
+msgstr "Lien externe"
 
 #: src/Views/Layouts/Header/Header.tsx:118
 msgid "FEWS NET"
-msgstr ""
+msgstr "FEWS NET"
 
 #: src/Views/Layouts/Header/Header.tsx:117
 msgid "FEWS NET Website"
@@ -417,16 +417,16 @@ msgstr "Filtrer Lignes de base par Système principal de moyens d’existence"
 #: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:433
 #: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:455
 msgid "Filter zones by a strategy’s contribution to livelihoods"
-msgstr ""
+msgstr "Filtrer zones par la contribution d’une stratégie aux moyens d'existence"
 
 #: src/Views/Layouts/GlobalMap/Components/Filters/Components/BasicFilter/BasicFilter.jsx:296
 #: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:416
 msgid "Filter zones by country or region"
-msgstr ""
+msgstr "Filtrer zones par pays ou par région"
 
 #: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:484
 msgid "Filter zones by type"
-msgstr ""
+msgstr "Filtrer zones par type"
 
 #: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:695
 #: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:705
@@ -460,7 +460,7 @@ msgstr "Achat de nourriture"
 
 #: src/App.tsx:46
 msgid "For the best experience, use a larger screen"
-msgstr ""
+msgstr "Pour une expérience optimale, utilisez un écran plus grand."
 
 #: src/Views/Layouts/GlobalMap/GlobalMap.jsx:675
 msgid "from"
@@ -509,15 +509,15 @@ msgstr "Parametres clés"
 
 #: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/KeyParameters/KeyParameters.jsx:148
 msgid "Key parameters could not be loaded right now."
-msgstr ""
+msgstr "Les paramètres clés n’ont pas pu être chargés pour le moment."
 
 #: src/Views/Layouts/Header/Header.tsx:43
 msgid "Knowledge Base"
-msgstr ""
+msgstr "Base de connaissances"
 
 #: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:421
 msgid "Latest"
-msgstr ""
+msgstr "Dernière"
 
 #: src/Views/Layouts/GlobalMap/Components/ExportMapModal/ExportMapModal.jsx:135
 msgid "Latest Reference Year"
@@ -574,15 +574,15 @@ msgstr "Libellés des codes de Zone de moyens d’existence"
 
 #: src/Views/Layouts/Header/Header.tsx:60
 msgid "Livelihoods Explorer"
-msgstr ""
+msgstr "Livelihoods Explorer"
 
 #: src/Views/Layouts/Header/Header.tsx:143
 msgid "Livelihoods Explorer video tour"
-msgstr ""
+msgstr "Visite vidéo Livelihoods Explorer"
 
 #: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Characteristics/Characteristics.jsx:22
 msgid "Livestock"
-msgstr ""
+msgstr "Bétail"
 
 #: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Calendar/Calendar.jsx:543
 msgid "Livestock Activities"
@@ -614,7 +614,7 @@ msgstr "Chargement des données du calendrier…"
 #: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:770
 #: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1436
 msgid "Loading total income chart..."
-msgstr ""
+msgstr "Chargement du graphique des revenus totaux..."
 
 #: src/Views/Layouts/Compare/Compare.jsx:1704
 #: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Characteristics/Characteristics.jsx:142
@@ -661,7 +661,7 @@ msgstr "Contribution minimale (%)"
 
 #: src/Views/Layouts/BrowseViews/BrowseViews.jsx:40
 msgid "ML01 Wealth Group comparison"
-msgstr ""
+msgstr "Comparaison de Groupe de richesse ML01"
 
 #: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1330
 msgid "More"
@@ -675,11 +675,11 @@ msgstr "N/D"
 
 #: src/Views/Layouts/BrowseViews/BrowseViews.jsx:33
 msgid "Nigeria all livelihood zones comparison"
-msgstr ""
+msgstr "Comparaison de toutes les zones de moyens d’existence au Nigeria"
 
 #: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1072
 msgid "No active Baseline"
-msgstr ""
+msgstr "Aucune Ligne de base active"
 
 #: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:676
 #: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1272
@@ -688,7 +688,7 @@ msgstr "Aucune Ligne de base"
 
 #: src/Views/Layouts/Compare/Compare.jsx:1457
 msgid "No Baselines selected. Use Search to add Baselines to Compare."
-msgstr ""
+msgstr "Aucune ligne de base sélectionnée. Utilisez la fonction de Recherche pour ajouter des Lignes de base à Comparer."
 
 #: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Calendar/Calendar.jsx:728
 msgid "No calendar data for this baseline."
@@ -788,11 +788,11 @@ msgstr "De produits"
 
 #: src/Views/Layouts/Compare/Compare.jsx:1424
 msgid "One wealth group must be selected"
-msgstr ""
+msgstr "Un Groupe de richesse doit être sélectionné."
 
 #: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1507
 msgid "Opens in a new tab"
-msgstr ""
+msgstr "S'ouvre dans un nouvel onglet"
 
 #: src/auth/Components/Auth/Login.jsx:62
 msgid "or"
@@ -808,7 +808,7 @@ msgstr "Organisation"
 #: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:435
 #: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:482
 msgid "Other"
-msgstr ""
+msgstr "Autre"
 
 #: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:106
 #: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:85
@@ -824,7 +824,7 @@ msgstr "Autre achat"
 
 #: src/Views/Layouts/BrowseViews/BrowseViews.jsx:26
 msgid "Own crop consumption in Sahel map"
-msgstr ""
+msgstr "Carte de l'autoconsommation des récoltes au Sahel"
 
 #: src/auth/Components/Auth/Login.jsx:73
 msgid "Password"
@@ -936,7 +936,7 @@ msgstr "Mois de début de l’année de référence"
 
 #: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:548
 msgid "Reference year ending"
-msgstr ""
+msgstr "Année de référence se terminant le"
 
 #: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Calendar/Calendar.jsx:537
 msgid "Reference Year start month"
@@ -956,12 +956,12 @@ msgstr "Aide, dons, autre"
 #: src/Views/Layouts/Compare/Compare.jsx:1506
 #: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:631
 msgid "Remove Baseline from Compare view."
-msgstr ""
+msgstr "Supprimer Ligne de base de la vue Comparer."
 
 #: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:659
 #: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1151
 msgid "Remove this Baseline from Compare view"
-msgstr ""
+msgstr "Supprimer cette Ligne de base de la vue Comparer."
 
 #: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:629
 #: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:657
@@ -988,11 +988,11 @@ msgstr "Enregistrer"
 
 #: src/Views/Layouts/Header/Header.tsx:126
 msgid "Save the Children"
-msgstr ""
+msgstr "Save the Children"
 
 #: src/Views/Layouts/Header/Header.tsx:124
 msgid "Save the Children Website"
-msgstr ""
+msgstr "Site web de Save the Children"
 
 #: src/Views/Layouts/BrowseViews/BrowseViews.jsx:73
 #: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:547
@@ -1011,12 +1011,12 @@ msgstr "Sélectionner"
 
 #: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1073
 msgid "Select a Baseline from View all to add it to Compare."
-msgstr ""
+msgstr "Sélectionnez une Ligne de base de « Tout afficher » pour l’ajouter à Comparer."
 
 #: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:655
 #: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1147
 msgid "Select a Baseline to add to Compare view"
-msgstr ""
+msgstr "Sélectionnez une Ligne de base pour l’ajouter à la vue Comparer."
 
 #: src/Views/Layouts/GlobalMap/Components/Filters/Components/BasicFilter/BasicFilter.jsx:82
 msgid "Select a location"
@@ -1074,13 +1074,13 @@ msgstr "Seuil de survie (% kcals)"
 msgid ""
 "This application is optimized for screens at least 850 pixels wide. You can "
 "continue at this size if needed."
-msgstr ""
+msgstr "Cette application est optimisée pour des écrans d’une largeur minimale de 850 pixels. Vous pouvez toutefois continuer avec la taille actuelle si nécessaire."
 
 #: src/Views/Layouts/BrowseViews/BrowseViews.jsx:22
 msgid ""
 "This demo view includes filters for each type of staple crop produced in "
 "Livelihood Zones in West Africa. Open each filter to see a map of..."
-msgstr ""
+msgstr "Cette vue de démonstration inclut des filtres pour chaque type de culture vivrière produite dans les zones de moyens d'existence en Afrique de l'Ouest. Ouvrez chaque filtre pour afficher une carte de..."
 
 #: src/App.tsx:17
 msgid ""
@@ -1121,23 +1121,23 @@ msgstr ""
 
 #: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:253
 msgid "Unable to load activity summary data."
-msgstr ""
+msgstr "Impossible de charger les données du résumé d'activité."
 
 #: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:221
 msgid "Unable to load baseline data."
-msgstr ""
+msgstr "Impossible de charger les données de Ligne de base."
 
 #: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Characteristics/Characteristics.jsx:109
 msgid "Unable to load characteristics."
-msgstr ""
+msgstr "Impossible de charger les caractéristiques."
 
 #: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:572
 msgid "Unable to load livelihood data."
-msgstr ""
+msgstr "Impossible de charger les données sur les moyens d'existence."
 
 #: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:256
 msgid "Unable to load wealth group data."
-msgstr ""
+msgstr "Impossible de charger les données sur les Groupes de richesse."
 
 #: src/auth/Components/Auth/Login.jsx:22
 msgid ""
@@ -1153,7 +1153,7 @@ msgstr ""
 #: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:470
 #: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:60
 msgid "Unknown Product"
-msgstr ""
+msgstr "Produit inconnu"
 
 #: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/KeyParameters/KeyParameters.jsx:19
 msgid "Unspecified activity"
@@ -1161,7 +1161,7 @@ msgstr "Activité non spécifiée"
 
 #: src/Views/Layouts/Compare/Compare.jsx:813
 msgid "Unspecified product"
-msgstr ""
+msgstr "Produit non spécifié"
 
 #: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:658
 msgid "up to"
@@ -1175,13 +1175,13 @@ msgstr "Mise à jour"
 
 #: src/Views/Layouts/BrowseViews/BrowseViews.jsx:36
 msgid "Use this to check Mali data when preparing reports"
-msgstr ""
+msgstr "À utiliser pour consulter les données du Mali lors de la rédaction des rapports."
 
 #: src/Views/Layouts/BrowseViews/BrowseViews.jsx:29
 #: src/Views/Layouts/BrowseViews/BrowseViews.jsx:43
 #: src/Views/Layouts/BrowseViews/BrowseViews.jsx:50
 msgid "Used for presentations to stakeholders August 2025"
-msgstr ""
+msgstr "Utilisé pour les présentations aux parties prenantes – Août 2025"
 
 #: src/auth/Components/Auth/Login.jsx:66
 msgid "Username"
@@ -1194,7 +1194,7 @@ msgstr "Très pauvre (TP)"
 #: src/Views/Layouts/Header/Header.tsx:133
 #: src/Views/Layouts/Header/Header.tsx:31
 msgid "Video tour"
-msgstr ""
+msgstr "Visite vidéo"
 
 #: src/Views/Layouts/Compare/Compare.jsx:1473
 msgid "View on map"
@@ -1218,7 +1218,7 @@ msgstr "Cueillette des aliments sauvages"
 
 #: src/Views/Layouts/BrowseViews/BrowseViews.jsx:47
 msgid "Zones with high livestock contrib. to total income"
-msgstr ""
+msgstr "Zones à forte contribution de l'élevage au revenu total"
 
 #~ msgid "Medium (M)"
 #~ msgstr "Moyen (M)"
