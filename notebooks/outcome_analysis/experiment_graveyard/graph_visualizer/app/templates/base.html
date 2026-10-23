@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>{% block title %}Excel Dependency Viewer{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Cytoscape.js (CDN) -->
+  <script src="https://unpkg.com/cytoscape@3.28.1/dist/cytoscape.min.js"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <div class="container">
+    {% block body %}{% endblock %}
+  </div>
+  {% block scripts %}
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  {% endblock %}
+</body>
+</html>

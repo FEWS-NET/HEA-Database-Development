@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Excel Dependency Viewer - Viewer{% endblock %}
+
+{% block body %}
+<h1>Excel Dependency Viewer</h1>
+
+<div class="controls">
+  <div class="row">
+    <label>Workbook:</label>
+    <code id="wb-path">{{ file_path }}</code>
+  </div>
+  <div class="row">
+    <label for="sheet-dd">Sheet:</label>
+    <select id="sheet-dd" style="min-width: 220px;"></select>
+
+    <label for="cell-input" style="margin-left: 12px;">Cell:</label>
+    <input id="cell-input" type="text" value="A1" placeholder="e.g., D5 or $A$1" />
+
+    <button id="gen-btn" class="btn">Generate Graph</button>
+    <span id="status-text" class="status"></span>
+  </div>
+</div>
+
+<div id="formula-panel" class="formula-panel">
+  Click a node to see its formula here.
+</div>
+
+<div id="cy"></div>
+
+<script>
+  window.__INITIAL_WORKBOOK_PATH__ = "{{ file_path | safe }}";
+</script>
+{% endblock %}
