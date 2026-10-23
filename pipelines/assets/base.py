@@ -5,6 +5,7 @@ Base functions for performing operations on BSS spreadsheets.
 import datetime
 import numbers
 import os
+from collections import Counter
 from io import BytesIO
 
 import django
@@ -182,6 +183,109 @@ def completed_bss_metadata(config: BSSMetadataConfig, bss_metadata) -> Output[pd
     )
 
 
+# Worksheets that are expected by the pipelines
+PIPELINE_WORKSHEETS = ["Methods", "WB", "Data", "Data2", "Data3", "Summ", "Exp factors", "Graphs", "Seas Cal"]
+
+
+# Error values from Excel and Google Sheets, in display order for the worksheet_errors metadata.
+# The worksheet_errors table always has a column for each of these, even if the error doesn't occur, and has
+# additional columns for any other error types that are found, listed alphabetically after these ones.
+# Workbooks exported from Google Sheets store the cached error values of formulas as strings rather than errors,
+# so string cells that exactly match one of these values are also counted as errors.
+ERROR_TYPES = ["#N/A", "#REF!", "#VALUE!", "#DIV/0!", "#NAME?", "#NULL!", "#ERROR!"]
+
+# Error values that are not counted, because they are expected in a normal BSS. For example, the ranking formulas
+# such as `=LARGE($M9:$V9,CD$8)` in the WB and Data worksheets return #NUM! when a row has fewer values than the rank.
+IGNORED_ERROR_TYPES = ["#NUM!"]
+
+
+def get_worksheet_errors(content: bytes) -> tuple[list[str], dict[str, Counter]]:
+    """
+    Return the worksheet names and the count of each type of error value in each worksheet of a BSS.
+
+    The worksheet names are in workbook order, and the counts only include worksheets that contain errors.
+    The errors are the cached values of formulas, as saved by the application that last calculated the workbook.
+    """
+    worksheet_errors = {}
+    try:
+        try:
+            xlrd_wb = xlrd.open_workbook(file_contents=content, on_demand=True)
+        except xlrd.biffh.XLRDError as e:
+            if str(e) != "Workbook is encrypted":
+                raise
+            # Excel encrypts .xls files that contain locked worksheets using a hard-coded password
+            wb_msoffcrypto_file = msoffcrypto.OfficeFile(BytesIO(content))
+            wb_msoffcrypto_file.load_key(password="VelvetSweatshop")
+            buffer = BytesIO()
+            wb_msoffcrypto_file.decrypt(buffer)
+            xlrd_wb = xlrd.open_workbook(file_contents=buffer.getvalue(), on_demand=True)
+    except xlrd.biffh.XLRDError:
+        # We assume that the file is an xlsx file that can be read by openpyxl
+        wb = openpyxl.load_workbook(BytesIO(content), read_only=True, data_only=True)
+        try:
+            for ws in wb.worksheets:
+                errors = Counter(
+                    cell.value
+                    for row in ws.iter_rows()
+                    for cell in row
+                    if (cell.data_type == "e" and cell.value not in IGNORED_ERROR_TYPES)
+                    or (cell.data_type == "s" and cell.value in ERROR_TYPES)
+                )
+                if errors:
+                    worksheet_errors[ws.title] = errors
+            return wb.sheetnames, worksheet_errors
+        finally:
+            wb.close()
+
+    try:
+        for sheet_name in xlrd_wb.sheet_names():
+            sheet = xlrd_wb.sheet_by_name(sheet_name)
+            errors = Counter()
+            for row in range(sheet.nrows):
+                for col in range(sheet.ncols):
+                    cell = sheet.cell(row, col)
+                    if cell.ctype == xlrd.XL_CELL_ERROR:
+                        error = xlrd.error_text_from_code.get(cell.value, "#UNKNOWN!")
+                        if error not in IGNORED_ERROR_TYPES:
+                            errors[error] += 1
+                    elif cell.ctype == xlrd.XL_CELL_TEXT and cell.value in ERROR_TYPES:
+                        errors[cell.value] += 1
+            if errors:
+                worksheet_errors[sheet_name] = errors
+        return xlrd_wb.sheet_names(), worksheet_errors
+    finally:
+        xlrd_wb.release_resources()
+
+
+def get_workbook_metadata(content: bytes) -> dict:
+    """
+    Return Dagster metadata describing the missing worksheets and the error values in a BSS.
+
+    `missing_worksheets` lists the worksheets used by the pipelines that are not present in the workbook.
+    `worksheet_errors` is a Markdown table of the number of each type of error in each worksheet that contains errors,
+    with the worksheets in workbook order, followed by a Total row. There is a column for every error type in
+    ERROR_TYPES, so that the tables for different BSSs are consistent.
+    """
+    sheet_names, worksheet_errors = get_worksheet_errors(content)
+    missing_worksheets = [sheet_name for sheet_name in PIPELINE_WORKSHEETS if sheet_name not in sheet_names]
+
+    found_error_types = set().union(*worksheet_errors.values())
+    error_types = ERROR_TYPES + sorted(found_error_types.difference(ERROR_TYPES))
+    # Build the DataFrame from a list, because from_dict(orient="index") sorts the worksheet names
+    df = (
+        pd.DataFrame(list(worksheet_errors.values()), index=list(worksheet_errors.keys()), columns=error_types)
+        .fillna(0)
+        .astype(int)
+    )
+    df.loc["Total"] = df.sum()
+    worksheet_errors_md = df.rename_axis("Worksheet").reset_index().to_markdown(index=False)
+
+    return {
+        "missing_worksheets": missing_worksheets,
+        "worksheet_errors": MetadataValue.md(worksheet_errors_md),
+    }
+
+
 @asset(partitions_def=bss_files_partitions_def)
 def original_files(context: AssetExecutionContext, config: BSSMetadataConfig, bss_metadata) -> Output[BytesIO]:
     """
@@ -198,7 +302,9 @@ def original_files(context: AssetExecutionContext, config: BSSMetadataConfig, bs
     output_metadata = {"bss_path": p.path}
 
     with p.fs.open(p.path, mode="rb") as f:
-        return Output(BytesIO(f.read()), metadata=output_metadata)
+        content = f.read()
+    output_metadata.update(get_workbook_metadata(content))
+    return Output(BytesIO(content), metadata=output_metadata)
 
 
 @asset(partitions_def=bss_instances_partitions_def)
@@ -297,7 +403,9 @@ def corrected_files(context: AssetExecutionContext, config: BSSMetadataConfig) -
 
         if corrections_df.empty and not wb_msoffcrypto_file:
             # No corrections and file not encrypted, so just leave the file unaltered
-            return Output(BytesIO(original_file.open().read()), metadata=output_metadata)
+            content = original_file.open().read()
+            output_metadata.update(get_workbook_metadata(content))
+            return Output(BytesIO(content), metadata=output_metadata)
 
     # Apply the corrections
     for correction in corrections_df.itertuples():
@@ -338,6 +446,7 @@ def corrected_files(context: AssetExecutionContext, config: BSSMetadataConfig) -
 
     buffer = BytesIO()
     wb.save(buffer)
+    output_metadata.update(get_workbook_metadata(buffer.getvalue()))
     return Output(buffer, metadata=output_metadata)
 
 
