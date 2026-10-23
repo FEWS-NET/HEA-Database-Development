@@ -3045,7 +3045,8 @@ class BaselineLivelihoodActivityViewSetTestCase(APITestCase):
         """
         Test that a CSV error response contains the error, rather than the serializer fields.
         """
-        response = self.client.get(reverse("baselinelivelihoodactivity-detail", args=(0,)), {"format": "csv"})
+        with self.assertLogs("django.request", level="WARNING"):
+            response = self.client.get(reverse("baselinelivelihoodactivity-detail", args=(0,)), {"format": "csv"})
         self.assertEqual(response.status_code, 404)
         rows = list(csv.reader(StringIO(response.content.decode("utf-8-sig"))))
         self.assertEqual(rows[0], ["detail"])

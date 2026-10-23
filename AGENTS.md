@@ -110,6 +110,7 @@ These commands are expected during normal development and usually do not require
 - When writing new TestCase classes use the `setUpTestData` class method to create reusable test data.
 - Use the existing FactoryBoy factories to create test data. Prefer simple factory calls that let the factories create parent objects, rather than creating each object in the hierarchy and then setting the foreign keys on child objects directly.
 - Prefer creating actual test data using FactoryBoy factories to using `unittest.mock`.
+- Tests must not emit any additional text - see the `check_test_output` management command.
 
 ## Review Conventions
 
