@@ -33,6 +33,7 @@ from baseline.models import (
     LivelihoodZoneBaseline,
     WealthGroup,
 )
+from baseline.serializers import BaselineLivelihoodActivitySerializer
 from common.fields import translation_fields
 from common.tests.factories import ClassifiedProductFactory, CountryFactory
 from metadata.models import LivelihoodActivityScenario, LivelihoodStrategyType
@@ -3005,6 +3006,49 @@ class BaselineLivelihoodActivityViewSetTestCase(APITestCase):
         self.assertEqual(rows[str(food_purchase.pk)]["season"], "")
         self.assertEqual(rows[str(food_purchase.pk)]["season_name"], "")
         self.assertEqual(rows[str(food_purchase.pk)]["product"], food_purchase.livelihood_strategy.product.pk)
+
+    def test_csv_columns_are_serializer_fields(self):
+        """
+        Test that the CSV columns are the serializer fields, even if no row has a value for some of them.
+
+        An extract that only contains activities without a Season, e.g. FoodPurchase,
+        must still contain the season columns, so that all extracts have the same layout.
+        """
+        food_purchase = BaselineLivelihoodActivityFactory(
+            strategy_type=LivelihoodStrategyType.FOOD_PURCHASE,
+            livelihood_strategy__season=None,
+        )
+        response = self.client.get(
+            self.url, {"format": "csv", "livelihood_zone_baseline": food_purchase.livelihood_zone_baseline.pk}
+        )
+        self.assertEqual(response.status_code, 200)
+        rows = list(csv.reader(StringIO(response.content.decode("utf-8-sig"))))
+        self.assertEqual(rows[0], BaselineLivelihoodActivitySerializer.Meta.fields)
+        self.assertEqual(len(rows), 2)
+        row = dict(zip(rows[0], rows[1]))
+        self.assertEqual(row["id"], str(food_purchase.pk))
+        self.assertEqual(row["season"], "")
+
+    def test_csv_empty_has_header(self):
+        """
+        Test that a CSV extract with no rows still contains the header row.
+        """
+        livelihood_zone_baseline = LivelihoodZoneBaselineFactory()
+        response = self.client.get(
+            self.url, {"format": "csv", "livelihood_zone_baseline": livelihood_zone_baseline.pk}
+        )
+        self.assertEqual(response.status_code, 200)
+        rows = list(csv.reader(StringIO(response.content.decode("utf-8-sig"))))
+        self.assertEqual(rows, [BaselineLivelihoodActivitySerializer.Meta.fields])
+
+    def test_csv_error(self):
+        """
+        Test that a CSV error response contains the error, rather than the serializer fields.
+        """
+        response = self.client.get(reverse("baselinelivelihoodactivity-detail", args=(0,)), {"format": "csv"})
+        self.assertEqual(response.status_code, 404)
+        rows = list(csv.reader(StringIO(response.content.decode("utf-8-sig"))))
+        self.assertEqual(rows[0], ["detail"])
 
     def test_html(self):
         response = self.client.get(self.url, {"format": "html"})

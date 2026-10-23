@@ -3,11 +3,14 @@ from io import StringIO
 import pandas as pd
 from django.http import HttpResponse
 from django.test import SimpleTestCase
+from rest_framework import serializers
+from rest_framework.generics import GenericAPIView
+from rest_framework.request import Request
 from rest_framework.reverse import reverse
-from rest_framework.test import APITestCase
+from rest_framework.test import APIRequestFactory, APITestCase
 
 from common.models import Country
-from common.renderers import FormattedCSVRenderer, HtmlTableRenderer
+from common.renderers import FormattedCSVRenderer, HtmlTableRenderer, get_fieldnames
 
 from .factories import CountryFactory
 
@@ -106,3 +109,63 @@ class MismatchedKeysRendererTestCase(SimpleTestCase):
         df = pd.read_html(StringIO(content), keep_default_na=False)[0].astype(str)
         self.assertEqual(df.iloc[0].tolist(), self.expected.columns.tolist())
         self.assertEqual(df.iloc[1:].values.tolist(), self.expected.astype(str).values.tolist())
+
+
+class ExampleSerializer(serializers.Serializer):
+    """
+    Serializer with a write-only field, used to test the column order from a view's serializer.
+    """
+
+    id = serializers.IntegerField()
+    season = serializers.IntegerField(read_only=True)
+    password = serializers.CharField(write_only=True)
+    quantity = serializers.IntegerField()
+
+
+class GetFieldnamesTestCase(SimpleTestCase):
+    """
+    Test that get_fieldnames uses the serializer fields, and falls back to the keys in the data.
+    """
+
+    def get_renderer_context(self, status_code: int = 200) -> dict:
+        """
+        Return a renderer_context for a view that uses ExampleSerializer.
+        """
+        view = GenericAPIView(serializer_class=ExampleSerializer, format_kwarg=None)
+        view.request = Request(APIRequestFactory().get("/"))
+        return {"view": view, "response": HttpResponse(status=status_code)}
+
+    def test_serializer_fields(self):
+        """
+        Test that the columns are the readable serializer fields, followed by any other keys in the data.
+        """
+        data = [{"quantity": 1, "id": 1}, {"id": 2, "quantity": 2, "aggregate": 3}]
+        self.assertEqual(get_fieldnames(data, self.get_renderer_context()), ["id", "season", "quantity", "aggregate"])
+
+    def test_serializer_fields_without_data(self):
+        """
+        Test that the columns are the serializer fields when there are no rows.
+        """
+        self.assertEqual(get_fieldnames([], self.get_renderer_context()), ["id", "season", "quantity"])
+
+    def test_error_response(self):
+        """
+        Test that the columns are the keys in the data for an error response.
+        """
+        data = [{"detail": "Not found."}]
+        self.assertEqual(get_fieldnames(data, self.get_renderer_context(404)), ["detail"])
+
+    def test_data_not_from_serializer(self):
+        """
+        Test that the columns are the keys in the data if they don't match the serializer, e.g. for a paginated response.
+        """
+        data = [{"count": 1, "next": None, "previous": None, "results": []}]
+        self.assertEqual(get_fieldnames(data, self.get_renderer_context()), ["count", "next", "previous", "results"])
+
+    def test_no_view(self):
+        """
+        Test that the columns are the keys from all the rows if there is no view.
+        """
+        data = [{"id": 1}, {"id": 2, "quantity": 2}]
+        self.assertEqual(get_fieldnames(data, {}), ["id", "quantity"])
+        self.assertEqual(get_fieldnames(data), ["id", "quantity"])
