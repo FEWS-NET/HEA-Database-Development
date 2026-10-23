@@ -42,7 +42,7 @@
         null
     ],
     [
-        ".*(?:data ?[23]|prochaine feuille)",
+        ".*(?:data ?[23]|prochaine feuille)\\)?(?: *\\(.*\\))?",
         null,
         true,
         {

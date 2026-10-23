@@ -116,7 +116,17 @@ SUBTOTAL_PREFIXES = ("total", "sub-total", "subtotal", "sous-total", "revenu tot
 # Livelihood Activities are discarded in finalize_strategy(), and the summary rows that follow the
 # heading in the Data worksheet (e.g. 'quantity (kg)', 'kcals (%)') must be ignored rather than
 # matched to attributes, because the real data is ingested from the Data2/Data3 worksheet.
-SEE_OTHER_WORKSHEET_LABEL_PATTERN = re.compile(r"^.*(?:data ?[23]|prochaine feuille)$", re.IGNORECASE)
+# The pattern also recognizes:
+#   * French labels, e.g. "Main d'oeuvre (récolte) -- voir Data2"
+#   * Labels enclosed in parentheses, e.g. 'Petit commerce (see Data 2)'
+#   * Labels with a trailing note, e.g. 'Auto-emploi -- voir Data2 (fish farming)'
+#   * Older Burkina Faso labels that refer to the next worksheet, which is always Data2,
+#     e.g. 'Travaux des champs - voir prochaine feuille'. These don't have a `detail_sheet`.
+SEE_OTHER_WORKSHEET_LABEL_PATTERN = re.compile(
+    r"^(?P<summary_label>.+?)[ -]*\(?(?:see|voir) (?:worksheet )?+(?:(?P<detail_sheet>data ?[23])|prochaine feuille)"
+    r"\)?(?: *\(.*\))?$",
+    re.IGNORECASE,
+)
 
 
 def _is_see_other_worksheet_label(label: str | None) -> bool:

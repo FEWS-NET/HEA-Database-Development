@@ -1190,6 +1190,18 @@
     "Ag.lab (harvest) -- see Data2": {
         "is_start": true
     },
+    "Main d'oeuvre (récolte) -- voir Data2": {
+        "is_start": true
+    },
+    "WILD FOODS -- see worksheet Data 3": {
+        "is_start": true
+    },
+    "Petit commerce (see Data 2)": {
+        "is_start": true
+    },
+    "Auto-emploi -- voir Data2 (vente de nourriture, vente de bière)": {
+        "is_start": true
+    },
     "paiement en kg par fois (huile)": {
         "attribute": "payment_per_time",
         "payment_product_id": "huile",
