@@ -81,6 +81,9 @@ def _get_livelihood_activity_groups(
     """
     Create a map of labels from the 'Data' worksheet ending in `see Data2` or `see Data3` to the subtotal rows in those worksheets.
 
+    French BSSs use labels ending in `voir Data2` or `voir Data3`, e.g. `Main d'oeuvre (récolte) -- voir Data2`. Labels
+    may also have a trailing note, e.g. `Auto-emploi -- voir Data2 (fish farming)`.
+
     Returns a dictionary of groups and a list of errors encountered during processing.
 
     This map is created by reading the formulae from column B in the 'Data' worksheet to identify the source rows in
@@ -114,7 +117,8 @@ def _get_livelihood_activity_groups(
     groups = {}
     errors = []
     pattern = re.compile(
-        r"^(?P<summary_label>.+?)[ -]*\(?see (?:worksheet )?+(?P<detail_sheet>Data ?[23])\)?$", re.IGNORECASE
+        r"^(?P<summary_label>.+?)[ -]*\(?(?:see|voir) (?:worksheet )?+(?P<detail_sheet>Data ?[23])\)?(?: *\(.*\))?$",
+        re.IGNORECASE,
     )
     for row in livelihood_activity_dataframe.index:
         label = (
