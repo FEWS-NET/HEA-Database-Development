@@ -33,6 +33,7 @@ from django_filters import rest_framework as filters
 from django_filters.filters import CharFilter
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
+from rest_framework import mixins, viewsets
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
@@ -44,7 +45,7 @@ from common.fields import translation_fields
 from common.filters import DefaultingDateFilter, MultiFieldFilter, UpperCaseFilter
 from common.models import ClassifiedProduct
 from common.utils import make_condition_funcs
-from common.viewsets import AggregatingViewSet, BaseModelViewSet
+from common.viewsets import AggregatingViewSet, ApiOnlyPagination, BaseModelViewSet
 from metadata.models import LivelihoodStrategyType, WealthGroupCategory
 
 from .models import (
@@ -132,6 +133,7 @@ from .serializers import (
     SeasonalActivitySerializer,
     SeasonalProductionPerformanceSerializer,
     SourceOrganizationSerializer,
+    ThresholdComponentSerializer,
     WealthGroupCharacteristicValueSerializer,
     WealthGroupSerializer,
     WildFoodGatheringSerializer,
@@ -417,17 +419,166 @@ class LivelihoodProductCategoryFilterSet(filters.FilterSet):
 class LivelihoodProductCategoryViewSet(BaseModelViewSet):
     """
     API endpoint that allows livelihood product categories to be viewed or edited.
+
+    Each Livelihood Product Category includes the amounts from the Baseline Livelihood Activity,
+    the amounts allocated to the Basket, and the contribution to the Threshold for the Basket as a
+    percentage of the kcals required by the household.
+
+    Use the `thresholdcomponent` endpoint to get the components of the Thresholds for each Wealth Group,
+    including the Livelihood Product Categories that are inherited from the Poor Wealth Group.
     """
 
     queryset = LivelihoodProductCategory.objects.select_related(
         "baseline_livelihood_activity__livelihood_zone_baseline__livelihood_zone__country",
         "baseline_livelihood_activity__livelihood_zone_baseline__source_organization",
         "baseline_livelihood_activity__livelihood_strategy__product",
-    )
+        "baseline_livelihood_activity__livelihood_strategy__season",
+        "baseline_livelihood_activity__wealth_group__wealth_group_category",
+    ).with_basket_contribution()
     serializer_class = LivelihoodProductCategorySerializer
     filterset_class = LivelihoodProductCategoryFilterSet
     ordering_fields = ["baseline_livelihood_activity"]
     ordering = ["baseline_livelihood_activity", "basket"]
+
+    def _refresh_instance(self, serializer):
+        """
+        Reload the saved instance from the queryset so that the response includes the recalculated annotations.
+
+        The annotations are calculated by the database when the queryset is evaluated, so they aren't updated by
+        saving the instance, and a newly created instance doesn't have them at all.
+        """
+        serializer.instance = self.get_queryset().get(pk=serializer.instance.pk)
+
+    def perform_create(self, serializer):
+        """
+        Create the Livelihood Product Category and reload it with the annotations.
+        """
+        super().perform_create(serializer)
+        self._refresh_instance(serializer)
+
+    def perform_update(self, serializer):
+        """
+        Update the Livelihood Product Category and reload it with the recalculated annotations.
+        """
+        super().perform_update(serializer)
+        self._refresh_instance(serializer)
+
+
+class ThresholdComponentFilterSet(filters.FilterSet):
+    """
+    FilterSet for the components of the Survival and Livelihoods Protection Thresholds for each Wealth Group.
+
+    The `wealth_group` and `wealth_group_category` filters select the Wealth Group for the Threshold, which is
+    different from the Wealth Group that the Livelihood Product Category is defined for when the Livelihood
+    Product Category is inherited from the Poor Wealth Group.
+    """
+
+    livelihood_zone_baseline = django_filters.ModelChoiceFilter(
+        field_name="baseline_livelihood_activity__livelihood_zone_baseline",
+        queryset=LivelihoodZoneBaseline.objects.select_related("livelihood_zone"),
+        widget=autocomplete.ModelSelect2(url="livelihoodzonebaseline-autocomplete"),
+        label="Livelihood Zone Baseline",
+    )
+    livelihood_zone = django_filters.ModelChoiceFilter(
+        field_name="baseline_livelihood_activity__livelihood_zone_baseline__livelihood_zone",
+        queryset=LivelihoodZone.objects.select_related("country"),
+        widget=autocomplete.ModelSelect2(url="livelihoodzone-autocomplete"),
+        label="Livelihood Zone",
+    )
+    wealth_group = django_filters.ModelChoiceFilter(
+        method="filter_wealth_group",
+        queryset=BaselineWealthGroup.objects.select_related(
+            "livelihood_zone_baseline__livelihood_zone",
+            "wealth_group_category",
+        ),
+        widget=autocomplete.ModelSelect2(url="wealthgroup-autocomplete"),
+        label="Wealth Group",
+    )
+    wealth_group_category = django_filters.ModelChoiceFilter(
+        method="filter_wealth_group_category",
+        queryset=WealthGroupCategory.objects.all(),
+        label="Wealth Group Category",
+    )
+    basket = filters.MultipleChoiceFilter(
+        choices=LivelihoodProductCategory.ProductBasket.choices,
+        label="Basket",
+    )
+    is_inherited = filters.BooleanFilter(label="Inherited from the Poor Wealth Group")
+    livelihood_strategy = django_filters.ModelChoiceFilter(
+        field_name="baseline_livelihood_activity__livelihood_strategy",
+        queryset=LivelihoodStrategy.objects.select_related(
+            "livelihood_zone_baseline__livelihood_zone",
+            "season",
+            "product",
+        ),
+        widget=autocomplete.ModelSelect2(url="livelihoodstrategy-autocomplete"),
+        label="Livelihood Strategy",
+    )
+
+    def filter_wealth_group(self, queryset, name, value):
+        """
+        Return the components of the Thresholds for the specified Wealth Group.
+        """
+        if value:
+            return queryset.filter(threshold_wealth_group=value.pk)
+        return queryset
+
+    def filter_wealth_group_category(self, queryset, name, value):
+        """
+        Return the components of the Thresholds for the Wealth Groups with the specified Wealth Group Category.
+        """
+        if value:
+            return queryset.filter(threshold_wealth_group_category=value.pk)
+        return queryset
+
+    class Meta:
+        model = LivelihoodProductCategory
+        fields = [
+            "livelihood_zone_baseline",
+            "livelihood_zone",
+            "wealth_group",
+            "wealth_group_category",
+            "basket",
+            "is_inherited",
+            "livelihood_strategy",
+        ]
+
+
+class ThresholdComponentViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+    """
+    API endpoint that returns the components of the Survival and Livelihoods Protection Thresholds.
+
+    Each component is a Livelihood Product Category and the Baseline Wealth Group whose Thresholds it contributes
+    to. Livelihood Product Categories for Baskets 1, 2 and 3 are defined for the Poor Wealth Group and apply to every
+    Wealth Group. Livelihood Product Categories for Basket 4 can be defined for each Wealth Group, and a Wealth Group
+    inherits the Livelihood Product Category from the Poor Wealth Group if it doesn't have its own. Therefore, the
+    same `livelihood_product_category` can appear in the components for more than one Wealth Group.
+
+    The `wealth_group` fields describe the Wealth Group for the Threshold, and the `source_wealth_group` fields
+    describe the Wealth Group that the Livelihood Product Category is defined for.
+
+    For example, `?livelihood_zone_baseline=123` returns the components for all the Wealth Groups in a Baseline.
+    The `basket_percentage_kcals` for each `wealth_group` sum to its
+    `livelihoods_protection_threshold_as_percentage_kcals`, and adding `&basket=1&basket=2&basket=3` returns the
+    components that sum to its `survival_threshold_as_percentage_kcals`.
+    """
+
+    queryset = (
+        LivelihoodProductCategory.objects.select_related(
+            "baseline_livelihood_activity__livelihood_zone_baseline__livelihood_zone__country",
+            "baseline_livelihood_activity__livelihood_zone_baseline__source_organization",
+            "baseline_livelihood_activity__livelihood_strategy__product",
+            "baseline_livelihood_activity__livelihood_strategy__season",
+            "baseline_livelihood_activity__wealth_group__wealth_group_category",
+        )
+        .for_threshold_wealth_groups()
+        .with_basket_contribution()
+    )
+    serializer_class = ThresholdComponentSerializer
+    filterset_class = ThresholdComponentFilterSet
+    pagination_class = ApiOnlyPagination
+    ordering_fields = ["basket", "basket_percentage_kcals"]
+    ordering = ["threshold_wealth_group", "basket", "baseline_livelihood_activity"]
 
 
 class CommunityFilterSet(filters.FilterSet):

@@ -64,6 +64,7 @@ from baseline.viewsets import (
     SeasonalActivityViewSet,
     SeasonalProductionPerformanceViewSet,
     SourceOrganizationViewSet,
+    ThresholdComponentViewSet,
     WealthGroupCharacteristicValueViewSet,
     WealthGroupViewSet,
     WildFoodGatheringViewSet,
@@ -124,6 +125,7 @@ router.register(r"livelihoodzone", LivelihoodZoneViewSet)
 router.register(r"livelihoodzonebaseline", LivelihoodZoneBaselineViewSet)
 router.register(r"livelihoodactivitysummary", LivelihoodActivitySummaryViewSet, "livelihoodactivitysummary")
 router.register(r"livelihoodproductcategory", LivelihoodProductCategoryViewSet)
+router.register(r"thresholdcomponent", ThresholdComponentViewSet, "thresholdcomponent")
 router.register(r"community", CommunityViewSet)
 router.register(r"wealthgroup", WealthGroupViewSet)
 router.register(r"baselinewealthgroup", BaselineWealthGroupViewSet)
