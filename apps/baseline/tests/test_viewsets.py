@@ -22,7 +22,7 @@ from django.db.models import (
     When,
 )
 from django.db.models.functions import Coalesce
-from django.urls import reverse
+from django.urls import NoReverseMatch, reverse
 from django.utils.http import http_date
 from django.utils.timezone import now
 from rest_framework.test import APITestCase
@@ -30,6 +30,7 @@ from rest_framework.test import APITestCase
 from baseline.models import (
     KeyParameter,
     LivelihoodActivity,
+    LivelihoodProductCategory,
     LivelihoodZoneBaseline,
     WealthGroup,
 )
@@ -1071,6 +1072,8 @@ class LivelihoodProductCategoryViewSetTestCase(APITestCase):
             "livelihood_zone_country",
             "livelihood_zone_country_name",
             "wealth_group_category",
+            "wealth_group_category_name",
+            "wealth_group_category_short_name",
             "strategy_type",
             "basket",
             "basket_name",
@@ -1080,7 +1083,14 @@ class LivelihoodProductCategoryViewSetTestCase(APITestCase):
             "season",
             "season_name",
             "additional_identifier",
+            "livelihood_strategy",
             "percentage_allocation_to_basket",
+            "activity_percentage_kcals",
+            "activity_expenditure",
+            "allocated_percentage_kcals",
+            "allocated_expenditure",
+            "allocated_expenditure_as_percentage_kcals",
+            "basket_percentage_kcals",
         )
         self.assertCountEqual(
             response.json().keys(),
@@ -1114,6 +1124,45 @@ class LivelihoodProductCategoryViewSetTestCase(APITestCase):
         self.assertIsInstance(response.json(), dict)
         self.assertIn("basket", response.json())
         self.assertEqual(response.json()["basket"], new_value)
+
+    def test_patch_returns_recalculated_amounts(self):
+        self.client.force_login(self.user)
+        original = self.client.get(self.url_get(0)).json()
+        new_percentage_allocation_to_basket = original["percentage_allocation_to_basket"] / 2
+        response = self.client.patch(
+            self.url_get(0), {"percentage_allocation_to_basket": new_percentage_allocation_to_basket}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertAlmostEqual(
+            response.json()["allocated_percentage_kcals"],
+            original["activity_percentage_kcals"] * new_percentage_allocation_to_basket,
+        )
+        self.assertAlmostEqual(
+            response.json()["allocated_expenditure"],
+            original["activity_expenditure"] * new_percentage_allocation_to_basket,
+        )
+        # The response matches the next GET
+        self.assertEqual(response.json(), self.client.get(self.url_get(0)).json())
+
+    def test_create_returns_calculated_amounts(self):
+        self.client.force_login(self.user)
+        activity = FoodPurchaseFactory(scenario=LivelihoodActivityScenario.BASELINE, wealth_group__community=None)
+        response = self.client.post(
+            self.url,
+            {
+                "baseline_livelihood_activity": activity.pk,
+                "basket": LivelihoodProductCategory.ProductBasket.SURVIVAL_OTHER_FOOD,
+                "percentage_allocation_to_basket": 0.5,
+            },
+        )
+        self.assertEqual(response.status_code, 201, response.json())
+        self.assertAlmostEqual(response.json()["activity_percentage_kcals"], activity.percentage_kcals)
+        self.assertAlmostEqual(response.json()["allocated_percentage_kcals"], activity.percentage_kcals * 0.5)
+        self.assertIsNotNone(response.json()["basket_percentage_kcals"])
+        self.assertEqual(
+            response.json(),
+            self.client.get(reverse("livelihoodproductcategory-detail", args=(response.json()["id"],))).json(),
+        )
 
     def test_list_returns_all_records(self):
         response = self.client.get(self.url)
@@ -1156,6 +1205,190 @@ class LivelihoodProductCategoryViewSetTestCase(APITestCase):
             content = response.content
         df = pd.read_html(content)[0].fillna("")
         self.assertEqual(len(df), self.num_records + 1)
+
+
+class ThresholdComponentViewSetTestCase(APITestCase):
+    """
+    Tests for the ThresholdComponentViewSet, which returns the components of the Thresholds for each Wealth Group.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        """
+        Create a Baseline with Poor and Middle Wealth Groups and a Livelihood Product Category for each Basket.
+
+        All the Livelihood Product Categories are for the Poor Wealth Group, so the Middle Wealth Group inherits them.
+        """
+        cls.baseline = LivelihoodZoneBaselineFactory()
+        cls.poor_wealth_group = BaselineWealthGroupFactory(
+            livelihood_zone_baseline=cls.baseline,
+            wealth_group_category__code="P",
+            average_household_size=5,
+        )
+        cls.middle_wealth_group = BaselineWealthGroupFactory(
+            livelihood_zone_baseline=cls.baseline,
+            wealth_group_category__code="M",
+            average_household_size=8,
+        )
+        for basket, activity_factory, extra in [
+            (1, FoodPurchaseFactory, {"product__kcals_per_unit": 3500}),
+            (2, FoodPurchaseFactory, {}),
+            (3, OtherPurchaseFactory, {}),
+            (4, OtherPurchaseFactory, {}),
+        ]:
+            LivelihoodProductCategoryFactory(
+                baseline_livelihood_activity=activity_factory(
+                    livelihood_zone_baseline=cls.baseline,
+                    wealth_group=cls.poor_wealth_group,
+                    scenario=LivelihoodActivityScenario.BASELINE,
+                    extra=extra,
+                ),
+                basket=basket,
+                percentage_allocation_to_basket=0.5 if basket > 1 else 1,
+            )
+        # Another Baseline that should not be returned
+        LivelihoodProductCategoryFactory()
+        # Save the Baseline to force the calculation of annual_kcals_cost.
+        cls.baseline.save()
+
+    def setUp(self):
+        self.url = reverse("thresholdcomponent-list")
+
+    def test_fields(self):
+        response = self.client.get(self.url, {"livelihood_zone_baseline": self.baseline.pk})
+        self.assertEqual(response.status_code, 200)
+        expected_fields = (
+            "livelihood_product_category",
+            "source_organization",
+            "source_organization_name",
+            "livelihood_zone_baseline",
+            "livelihood_zone_baseline_label",
+            "livelihood_zone",
+            "livelihood_zone_name",
+            "livelihood_zone_country",
+            "livelihood_zone_country_name",
+            "wealth_group",
+            "wealth_group_category",
+            "wealth_group_category_name",
+            "wealth_group_category_short_name",
+            "source_wealth_group",
+            "source_wealth_group_category",
+            "source_wealth_group_category_name",
+            "source_wealth_group_category_short_name",
+            "is_inherited",
+            "baseline_livelihood_activity",
+            "livelihood_strategy",
+            "strategy_type",
+            "product",
+            "product_common_name",
+            "product_description",
+            "season",
+            "season_name",
+            "additional_identifier",
+            "basket",
+            "basket_name",
+            "percentage_allocation_to_basket",
+            "activity_percentage_kcals",
+            "activity_expenditure",
+            "allocated_percentage_kcals",
+            "allocated_expenditure",
+            "allocated_expenditure_as_percentage_kcals",
+            "basket_percentage_kcals",
+        )
+        self.assertCountEqual(response.json()[0].keys(), expected_fields)
+
+    def test_list(self):
+        response = self.client.get(self.url, {"livelihood_zone_baseline": self.baseline.pk})
+        self.assertEqual(response.status_code, 200)
+        df = pd.DataFrame(response.json())
+        # Each of the 4 Livelihood Product Categories contributes to the Thresholds for both Wealth Groups
+        self.assertEqual(len(df), 8)
+        self.assertEqual(df["livelihood_product_category"].nunique(), 4)
+        self.assertEqual(
+            df.groupby("wealth_group_category_name")["is_inherited"].all().to_dict(),
+            {
+                self.poor_wealth_group.wealth_group_category.name: False,
+                self.middle_wealth_group.wealth_group_category.name: True,
+            },
+        )
+        self.assertEqual(set(df["source_wealth_group"]), {self.poor_wealth_group.pk})
+        totals = df.groupby("wealth_group")["basket_percentage_kcals"].sum()
+        for wealth_group in [self.poor_wealth_group, self.middle_wealth_group]:
+            with self.subTest(wealth_group=wealth_group.wealth_group_category_id):
+                self.assertAlmostEqual(
+                    totals[wealth_group.pk],
+                    wealth_group._get_livelihoods_protection_threshold_as_percentage_kcals(),
+                )
+
+    def test_wealth_group_category(self):
+        response = self.client.get(
+            self.url, {"livelihood_zone_baseline": self.baseline.pk, "wealth_group_category": "M"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 4)
+        for record in response.json():
+            self.assertEqual(record["wealth_group"], self.middle_wealth_group.pk)
+            self.assertEqual(record["wealth_group_category"], "M")
+            self.assertEqual(record["wealth_group_category_name"], self.middle_wealth_group.wealth_group_category.name)
+            self.assertEqual(
+                record["wealth_group_category_short_name"], self.middle_wealth_group.wealth_group_category.short_name
+            )
+            self.assertEqual(record["source_wealth_group"], self.poor_wealth_group.pk)
+            self.assertEqual(record["source_wealth_group_category"], "P")
+            self.assertEqual(
+                record["source_wealth_group_category_name"], self.poor_wealth_group.wealth_group_category.name
+            )
+            self.assertEqual(
+                record["source_wealth_group_category_short_name"],
+                self.poor_wealth_group.wealth_group_category.short_name,
+            )
+            self.assertTrue(record["is_inherited"])
+
+    def test_wealth_group(self):
+        response = self.client.get(self.url, {"wealth_group": self.poor_wealth_group.pk})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 4)
+        for record in response.json():
+            self.assertEqual(record["wealth_group"], self.poor_wealth_group.pk)
+            self.assertFalse(record["is_inherited"])
+
+    def test_is_inherited(self):
+        response = self.client.get(self.url, {"livelihood_zone_baseline": self.baseline.pk, "is_inherited": "true"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual({record["wealth_group"] for record in response.json()}, {self.middle_wealth_group.pk})
+
+    def test_basket(self):
+        response = self.client.get(self.url, {"livelihood_zone_baseline": self.baseline.pk, "basket": 4})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 2)
+        self.assertEqual({record["basket"] for record in response.json()}, {4})
+
+    def test_survival_baskets(self):
+        response = self.client.get(self.url, {"livelihood_zone_baseline": self.baseline.pk, "basket": [1, 2, 3]})
+        self.assertEqual(response.status_code, 200)
+        df = pd.DataFrame(response.json())
+        self.assertEqual(len(df), 6)
+        totals = df.groupby("wealth_group")["basket_percentage_kcals"].sum()
+        for wealth_group in [self.poor_wealth_group, self.middle_wealth_group]:
+            with self.subTest(wealth_group=wealth_group.wealth_group_category_id):
+                self.assertAlmostEqual(
+                    totals[wealth_group.pk],
+                    wealth_group._get_survival_threshold_as_percentage_kcals(),
+                )
+
+    def test_retrieve_not_available(self):
+        with self.assertRaises(NoReverseMatch):
+            reverse("thresholdcomponent-detail", args=[1])
+
+    def test_csv(self):
+        response = self.client.get(self.url, {"livelihood_zone_baseline": self.baseline.pk, "format": "csv"})
+        self.assertEqual(response.status_code, 200)
+        try:
+            content = "".join([s.decode("utf-8") for s in response.streaming_content])
+        except AttributeError:
+            content = response.content.decode("utf-8")
+        df = pd.read_csv(StringIO(content))
+        self.assertEqual(len(df), 8)
 
 
 class CommunityViewSetTestCase(APITestCase):

@@ -6,7 +6,6 @@ import datetime
 import math
 import numbers
 
-import pandas as pd
 from binary_database_files.models import File
 from django.conf import settings
 from django.contrib.gis.db import models
@@ -15,6 +14,9 @@ from django.core.exceptions import ValidationError
 from django.core.serializers.json import DjangoJSONEncoder
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db.models import (
+    Case,
+    Count,
+    Exists,
     ExpressionWrapper,
     F,
     Func,
@@ -23,8 +25,9 @@ from django.db.models import (
     Subquery,
     Sum,
     Value,
+    When,
 )
-from django.db.models.functions import Lower
+from django.db.models.functions import Coalesce, Lower, NullIf
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 from model_utils.managers import InheritanceManager
@@ -537,15 +540,12 @@ class LivelihoodZoneBaseline(common_models.Model):
                 baseline_livelihood_activity__wealth_group__livelihood_zone_baseline=self,
                 baseline_livelihood_activity__wealth_group__wealth_group_category__code=WealthGroupCategory.POOR,
             )
+            .with_allocation()
             .values(
                 "baseline_livelihood_activity__wealth_group__id",
                 "baseline_livelihood_activity__wealth_group__average_household_size",
             )
-            .annotate(
-                total_expenditure=Sum(
-                    F("baseline_livelihood_activity__expenditure") * F("percentage_allocation_to_basket")
-                ),
-            )
+            .annotate(total_expenditure=Sum("allocated_expenditure"))
         )
         if not poor_survival_non_food:
             return None
@@ -609,23 +609,23 @@ class LivelihoodZoneBaseline(common_models.Model):
             # Cannot calculate without household size
             return None
 
-        poor_other_food = LivelihoodProductCategory.objects.filter(
-            basket=LivelihoodProductCategory.ProductBasket.SURVIVAL_OTHER_FOOD,
-            baseline_livelihood_activity__wealth_group__livelihood_zone_baseline=self,
-            baseline_livelihood_activity__wealth_group__wealth_group_category__code=WealthGroupCategory.POOR,
-        ).aggregate(
-            total_percentage_kcals=Sum(
-                F("baseline_livelihood_activity__percentage_kcals") * F("percentage_allocation_to_basket")
-            ),
-            total_expenditure=Sum(
-                F("baseline_livelihood_activity__expenditure") * F("percentage_allocation_to_basket")
-            ),
+        poor_survival_other_food = (
+            LivelihoodProductCategory.objects.filter(
+                basket=LivelihoodProductCategory.ProductBasket.SURVIVAL_OTHER_FOOD,
+                baseline_livelihood_activity__wealth_group__livelihood_zone_baseline=self,
+                baseline_livelihood_activity__wealth_group__wealth_group_category__code=WealthGroupCategory.POOR,
+            )
+            .with_allocation()
+            .aggregate(
+                total_percentage_kcals=Sum("allocated_percentage_kcals"),
+                total_expenditure=Sum("allocated_expenditure"),
+            )
         )
         main_staple_kcals_per_unit = poor_main_staple_category.baseline_livelihood_activity.extra.get(
             "product__kcals_per_unit",
             poor_main_staple_category.baseline_livelihood_activity.livelihood_strategy.product.kcals_per_unit,
         )
-        main_staple_percentage_kcals_required = 1 - (poor_other_food["total_percentage_kcals"] or 0)
+        main_staple_percentage_kcals_required = 1 - (poor_survival_other_food["total_percentage_kcals"] or 0)
         main_staple_cost = (
             2100  # kcals per person per day
             * 365  # days per year
@@ -634,7 +634,7 @@ class LivelihoodZoneBaseline(common_models.Model):
             / main_staple_kcals_per_unit
             * poor_main_staple_category.baseline_livelihood_activity.price
         )
-        total_cost = main_staple_cost + (poor_other_food["total_expenditure"] or 0)
+        total_cost = main_staple_cost + (poor_survival_other_food["total_expenditure"] or 0)
         total_food_cost_per_person = total_cost / poor_average_household_size
         return total_food_cost_per_person
 
@@ -657,6 +657,22 @@ class LivelihoodZoneBaseline(common_models.Model):
         if update_fields is not None:
             kwargs["update_fields"] = set(update_fields) | {"_annual_kcals_cost"}
         super().save(*args, **kwargs)
+        self.clear_threshold_cache()
+
+    def clear_threshold_cache(self):
+        """
+        Clear the cached Thresholds for the Wealth Groups in this Baseline.
+
+        The Thresholds depend on the `annual_kcals_cost` and the Livelihood Product Categories
+        for the Baseline, so they must be recalculated whenever the `annual_kcals_cost` is.
+        """
+        cache.delete_many(
+            [
+                key
+                for wealth_group_id in self.wealth_groups.values_list("pk", flat=True)
+                for key in WealthGroup.get_threshold_cache_keys(wealth_group_id)
+            ]
+        )
 
     def natural_key(self):
         try:
@@ -994,6 +1010,16 @@ class WealthGroup(common_models.Model):
         if annual_kcals_cost and self.average_household_size:
             return annual_kcals_cost * self.average_household_size
 
+    @staticmethod
+    def get_threshold_cache_keys(wealth_group_id: int) -> tuple[str, str]:
+        """
+        Return the cache keys for the Survival and Livelihoods Protection Thresholds for a Wealth Group.
+        """
+        return (
+            f"wealth_group~{wealth_group_id}~survival_kcals",
+            f"wealth_group~{wealth_group_id}~livelihoods_protection_kcals",
+        )
+
     def _get_survival_threshold_as_percentage_kcals(self):
         """
         Calculate the Survival Threshold for the Wealth Group as a percentage of required household kcals.
@@ -1014,21 +1040,39 @@ class WealthGroup(common_models.Model):
 
         This basket is defined for the Poor Wealth Group, and other values use
         the same expenditure, scaled according to average household size.
+
+        The Threshold is the sum of the `basket_percentage_kcals` for Baskets 1, 2 and 3, i.e. the Main Staple and
+        Other food survival make up 100% of kcals, plus the Non-food survival expenditure converted to kcals. See
+        `LivelihoodProductCategoryQuerySet.with_basket_contribution()`.
         """
-        annual_kcals_cost = self.livelihood_zone_baseline.annual_kcals_cost
-        poor_non_food_expenditure = self.livelihood_zone_baseline.poor_survival_non_food_expenditure
-        if poor_non_food_expenditure is None:
+        if (
+            not self.livelihood_zone_baseline.annual_kcals_cost
+            or not self.livelihood_zone_baseline.poor_average_household_size
+        ):
             return None
-        poor_average_household_size = self.livelihood_zone_baseline.poor_average_household_size
-        # Survival threshold is 1 (i.e. 100% kcals) + non-food needs scaled according to average household size
-        # Because the non-food expenditures are scaled according to the household size, they always
-        # return the same percentage as for the Poor wealth group.
-        if annual_kcals_cost and poor_average_household_size:
-            return 1 + poor_non_food_expenditure / (poor_average_household_size * annual_kcals_cost)
+        survival = (
+            LivelihoodProductCategory.objects.for_wealth_group(self)
+            .filter(
+                basket__in=[
+                    LivelihoodProductCategory.ProductBasket.MAIN_STAPLE,
+                    LivelihoodProductCategory.ProductBasket.SURVIVAL_OTHER_FOOD,
+                    LivelihoodProductCategory.ProductBasket.SURVIVAL_NON_FOOD,
+                ]
+            )
+            .with_basket_contribution()
+            .aggregate(
+                total=Sum("basket_percentage_kcals"),
+                non_food_count=Count("pk", filter=Q(basket=LivelihoodProductCategory.ProductBasket.SURVIVAL_NON_FOOD)),
+            )
+        )
+        # The Survival Threshold can't be calculated if the Non-food survival basket hasn't been defined
+        if not survival["non_food_count"]:
+            return None
+        return survival["total"]
 
     @cached_property
     def survival_threshold_as_percentage_kcals(self):
-        key = f"wealth_group~{self.pk}~survival_kcals"
+        key = self.get_threshold_cache_keys(self.pk)[0]
         # `None` is a valid result, so use a sentinel to distinguish "not cached" from "cached as None/0",
         # otherwise those results are never actually cached and get recalculated on every access.
         survival_threshold_as_percentage_kcals = cache.get(key, _CACHE_MISS)
@@ -1081,131 +1125,27 @@ class WealthGroup(common_models.Model):
         is inherited for other Wealth Groups. For example, if Tea/Coffee/Cola is in the
         Livelihoods Protection Basket then the amount is inherited from the Poor wealth group,
         rather than based on typical consumption for the Wealth Group in the Reference Year.
+
+        The Threshold is the Survival Threshold plus the sum of the `basket_percentage_kcals` for Basket 4. See
+        `LivelihoodProductCategoryQuerySet.with_basket_contribution()` and `for_wealth_group()`.
         """
-        annual_kcals_cost = self.livelihood_zone_baseline.annual_kcals_cost
-
-        livelihood_protection_qs = LivelihoodProductCategory.objects.filter(
-            basket=LivelihoodProductCategory.ProductBasket.LIVELIHOODS_PROTECTION,
-            baseline_livelihood_activity__wealth_group__livelihood_zone_baseline=self.livelihood_zone_baseline,
-            baseline_livelihood_activity__wealth_group__wealth_group_category__code__in=[
-                WealthGroupCategory.POOR,
-                self.wealth_group_category_id,
-            ],
-        ).values(
-            "baseline_livelihood_activity_id",
-            "percentage_allocation_to_basket",
-            livelihood_strategy_id=F("baseline_livelihood_activity__livelihood_strategy__id"),
-            strategy_type=F("baseline_livelihood_activity__livelihood_strategy__strategy_type"),
-            product_name=F("baseline_livelihood_activity__livelihood_strategy__product__common_name_en"),
-            wealth_group_id=F("baseline_livelihood_activity__wealth_group_id"),
-            wealth_group_category=F("baseline_livelihood_activity__wealth_group__wealth_group_category__code"),
-            household_size=F("baseline_livelihood_activity__wealth_group__average_household_size"),
-            expenditure=F("baseline_livelihood_activity__expenditure"),
-            percentage_kcals=F("baseline_livelihood_activity__percentage_kcals"),
+        if (
+            not self.livelihood_zone_baseline.annual_kcals_cost
+            or not self.survival_threshold_as_percentage_kcals
+            or not self.average_household_size
+        ):
+            return None
+        livelihoods_protection = (
+            LivelihoodProductCategory.objects.for_wealth_group(self)
+            .filter(basket=LivelihoodProductCategory.ProductBasket.LIVELIHOODS_PROTECTION)
+            .with_basket_contribution()
+            .aggregate(total=Sum("basket_percentage_kcals"))
         )
-
-        df = pd.DataFrame.from_records(livelihood_protection_qs)
-        if not df.empty:
-            for col in ["expenditure", "percentage_allocation_to_basket", "household_size", "percentage_kcals"]:
-                df[col] = pd.to_numeric(df[col], errors="coerce")
-        if df.empty:
-            livelihoods_protection_expenditure = 0
-            livelihoods_protection_percentage_kcals = 0
-        else:
-
-            try:
-                # Split the Livelihood Product Categories into POOR defaults and
-                # Current Wealth Group Category overrides
-                poor_df = df[df["wealth_group_category"] == WealthGroupCategory.POOR].drop(
-                    columns=["wealth_group_category"]
-                )
-
-                wealth_group_df = df[df["wealth_group_category"] == self.wealth_group_category_id].drop(
-                    columns=["wealth_group_category"]
-                )
-
-                # Sanity check: POOR rows must be unique by livelihood_strategy
-                if poor_df["livelihood_strategy_id"].duplicated().any():
-                    duplicates = poor_df.loc[
-                        poor_df["livelihood_strategy_id"].duplicated(keep=False),
-                        "livelihood_strategy_id",
-                    ].tolist()
-                    raise ValueError(
-                        "Livelihoods Protection Threshold didn't identify distinct POOR Livelihood Strategies: "
-                        f"{duplicates}"
-                    )
-
-                # Sanity check: Current rows must also be unique by livelihood_strategy
-                if not wealth_group_df.empty and wealth_group_df["livelihood_strategy_id"].duplicated().any():
-                    duplicates = wealth_group_df.loc[
-                        wealth_group_df["livelihood_strategy_id"].duplicated(keep=False),
-                        "livelihood_strategy_id",
-                    ].tolist()
-                    raise ValueError(
-                        "Livelihoods Protection Threshold didn't identify distinct current Livelihood Strategies: "
-                        f"{duplicates}"
-                    )
-
-                # Merge Livelihood Product Categories for the current Wealth Group
-                # onto the POOR defaults by livelihood_strategy
-                merged = poor_df.merge(
-                    wealth_group_df,
-                    on="livelihood_strategy_id",
-                    how="outer",
-                    suffixes=("_poor", "_wealth_group"),
-                )
-
-                # Build effective values: use Livelihood Product Category for the current Wealth Group
-                # when present, falling back to the POOR record for strategies that aren't defined for
-                # the current Wealth Group
-                for column in poor_df.columns:
-                    if column != "livelihood_strategy_id":
-                        wealth_group_values = merged[f"{column}_wealth_group"]
-                        poor_values = merged[f"{column}_poor"]
-                        merged[f"effective_{column}"] = wealth_group_values.where(
-                            wealth_group_values.notna(), poor_values
-                        )
-
-                # Calculate the expenditure for the Basket by applying the
-                # effective_percentage_allocation_to_basket and scaling by
-                # household_size, to ensure that if the LivelihoodProductCategory
-                # was for the Poor Wealth Group the expenditure reflects the
-                # different household sizes.
-                merged["basket_expenditure"] = (
-                    (
-                        merged["effective_expenditure"]
-                        * merged["effective_percentage_allocation_to_basket"]
-                        / merged["effective_household_size"]
-                        * self.average_household_size
-                    )
-                    if self.average_household_size
-                    else None
-                )
-
-                # For the percentage_kcals we can apply the effective_percentage_allocation_to_basket
-                # directly because the value is already a percentage of required household kcals.
-                merged["basket_percentage_kcals"] = (
-                    merged["effective_percentage_kcals"] * merged["effective_percentage_allocation_to_basket"]
-                )
-
-                livelihoods_protection_expenditure = merged["basket_expenditure"].sum(skipna=True)
-                livelihoods_protection_percentage_kcals = merged["basket_percentage_kcals"].sum(skipna=True)
-
-            except Exception as e:
-                raise ValueError("Error calculating livelihoods protection threshold") from e
-
-        if annual_kcals_cost and self.survival_threshold_as_percentage_kcals and self.average_household_size:
-            return (
-                self.survival_threshold_as_percentage_kcals
-                - livelihoods_protection_percentage_kcals
-                + livelihoods_protection_expenditure / (self.average_household_size * annual_kcals_cost)
-            )
-
-        return None
+        return self.survival_threshold_as_percentage_kcals + (livelihoods_protection["total"] or 0)
 
     @cached_property
     def livelihoods_protection_threshold_as_percentage_kcals(self):
-        key = f"wealth_group~{self.pk}~livelihoods_protection_kcals"
+        key = self.get_threshold_cache_keys(self.pk)[1]
         # `None` is a valid result, so use a sentinel to distinguish "not cached" from "cached as None/0",
         # otherwise those results are never actually cached and get recalculated on every access.
         livelihoods_protection_threshold_as_percentage_kcals = cache.get(key, _CACHE_MISS)
@@ -2417,7 +2357,210 @@ class ResponseLivelihoodActivity(LivelihoodActivity):
         proxy = True
 
 
-class LivelihoodProductCategoryManager(common_models.IdentifierManager):
+class LivelihoodProductCategoryQuerySet(models.QuerySet):
+    """
+    Livelihood Product Categories with the calculations for the contribution to each Basket.
+
+    These calculations are the single source for the Survival and Livelihoods Protection
+    Thresholds calculated by the Wealth Group, and for the Threshold components returned
+    by the API.
+    """
+
+    def with_allocation(self):
+        """
+        Annotate the amounts from the Baseline Livelihood Activity, and the amounts allocated to the Basket.
+
+        The allocated amounts treat a missing `percentage_kcals` or `expenditure` as zero.
+        """
+        return self.annotate(
+            activity_percentage_kcals=F("baseline_livelihood_activity__percentage_kcals"),
+            activity_expenditure=F("baseline_livelihood_activity__expenditure"),
+        ).annotate(
+            allocated_percentage_kcals=ExpressionWrapper(
+                Coalesce(F("activity_percentage_kcals"), Value(0.0)) * F("percentage_allocation_to_basket"),
+                output_field=models.FloatField(),
+            ),
+            allocated_expenditure=ExpressionWrapper(
+                Coalesce(F("activity_expenditure"), Value(0.0)) * F("percentage_allocation_to_basket"),
+                output_field=models.FloatField(),
+            ),
+        )
+
+    def with_basket_contribution(self):
+        """
+        Annotate the contribution of each Livelihood Product Category to the Threshold for its Basket.
+
+        The `basket_percentage_kcals` is the contribution as a percentage of the kcals required by the household:
+
+          * Basket 1 (Main Staple): the remainder of the 100% kcals requirement after Basket 2 (Other food survival)
+            for the Poor Wealth Group.
+          * Basket 2 (Other food survival): the allocated `percentage_kcals`.
+          * Basket 3 (Non-food survival): the allocated `expenditure`, converted to kcals.
+          * Basket 4 (Livelihoods Protection): the allocated `expenditure`, converted to kcals, less the allocated
+            `percentage_kcals`, because those kcals are already included in the 100% kcals requirement for Survival.
+
+        Expenditure is converted to kcals using the `annual_kcals_cost` for the Baseline and the average household
+        size of the Wealth Group for the Livelihood Product Category. When that is the Poor Wealth Group, the
+        result also applies to other Wealth Groups, because their expenditure is scaled according to their
+        average household size, which gives the same percentage of kcals.
+        """
+        poor_survival_other_food_percentage_kcals = (
+            LivelihoodProductCategory.objects.filter(
+                basket=LivelihoodProductCategory.ProductBasket.SURVIVAL_OTHER_FOOD,
+                baseline_livelihood_activity__livelihood_zone_baseline=OuterRef(
+                    "baseline_livelihood_activity__livelihood_zone_baseline"
+                ),
+                baseline_livelihood_activity__wealth_group__wealth_group_category=WealthGroupCategory.POOR,
+                baseline_livelihood_activity__wealth_group__community__isnull=True,
+            )
+            .with_allocation()
+            .values("baseline_livelihood_activity__livelihood_zone_baseline")
+            .annotate(total=Sum("allocated_percentage_kcals"))
+            .values("total")
+        )
+        return (
+            self.with_allocation()
+            .annotate(
+                allocated_expenditure_as_percentage_kcals=ExpressionWrapper(
+                    F("allocated_expenditure")
+                    / NullIf(
+                        F("baseline_livelihood_activity__wealth_group__average_household_size")
+                        * F("baseline_livelihood_activity__livelihood_zone_baseline___annual_kcals_cost"),
+                        Value(0.0),
+                    ),
+                    output_field=models.FloatField(),
+                ),
+            )
+            .annotate(
+                basket_percentage_kcals=Case(
+                    When(
+                        basket=LivelihoodProductCategory.ProductBasket.MAIN_STAPLE,
+                        then=Value(1.0)
+                        - Coalesce(
+                            Subquery(poor_survival_other_food_percentage_kcals),
+                            Value(0.0),
+                            output_field=models.FloatField(),
+                        ),
+                    ),
+                    When(
+                        basket=LivelihoodProductCategory.ProductBasket.SURVIVAL_OTHER_FOOD,
+                        then=F("allocated_percentage_kcals"),
+                    ),
+                    When(
+                        basket=LivelihoodProductCategory.ProductBasket.SURVIVAL_NON_FOOD,
+                        then=F("allocated_expenditure_as_percentage_kcals"),
+                    ),
+                    When(
+                        basket=LivelihoodProductCategory.ProductBasket.LIVELIHOODS_PROTECTION,
+                        then=F("allocated_expenditure_as_percentage_kcals") - F("allocated_percentage_kcals"),
+                    ),
+                    output_field=models.FloatField(),
+                ),
+            )
+        )
+
+    def _applies_to_wealth_group_category(self, wealth_group_category, inner_wealth_group_category):
+        """
+        Return a filter for the Livelihood Product Categories that apply to the Thresholds for a Wealth Group Category.
+
+        Baskets 1, 2 and 3 are defined for the Poor Wealth Group and apply to all Wealth Groups.
+
+        Basket 4 can be defined for each Wealth Group. A Wealth Group uses its own Livelihood Product Category
+        where it has one, and inherits the Poor Livelihood Product Category for the same Livelihood Strategy where
+        it doesn't.
+
+        `wealth_group_category` is the Wealth Group Category to filter on, and `inner_wealth_group_category` is
+        the same value expressed so that it can be used inside a subquery, i.e. a constant or an `OuterRef`.
+        """
+        source_wealth_group_category = "baseline_livelihood_activity__wealth_group__wealth_group_category"
+        own_livelihoods_protection = LivelihoodProductCategory.objects.filter(
+            basket=LivelihoodProductCategory.ProductBasket.LIVELIHOODS_PROTECTION,
+            baseline_livelihood_activity__livelihood_strategy=OuterRef(
+                "baseline_livelihood_activity__livelihood_strategy"
+            ),
+            baseline_livelihood_activity__wealth_group__wealth_group_category=inner_wealth_group_category,
+            baseline_livelihood_activity__wealth_group__community__isnull=True,
+        )
+        return Q(baseline_livelihood_activity__wealth_group__community__isnull=True) & (
+            Q(
+                basket__in=[
+                    LivelihoodProductCategory.ProductBasket.MAIN_STAPLE,
+                    LivelihoodProductCategory.ProductBasket.SURVIVAL_OTHER_FOOD,
+                    LivelihoodProductCategory.ProductBasket.SURVIVAL_NON_FOOD,
+                ],
+                **{source_wealth_group_category: WealthGroupCategory.POOR},
+            )
+            | Q(
+                basket=LivelihoodProductCategory.ProductBasket.LIVELIHOODS_PROTECTION,
+                **{source_wealth_group_category: wealth_group_category},
+            )
+            | (
+                Q(
+                    basket=LivelihoodProductCategory.ProductBasket.LIVELIHOODS_PROTECTION,
+                    **{source_wealth_group_category: WealthGroupCategory.POOR},
+                )
+                & ~Exists(own_livelihoods_protection)
+            )
+        )
+
+    def for_wealth_group(self, wealth_group):
+        """
+        Return the Livelihood Product Categories that make up the Thresholds for a Wealth Group.
+
+        This works for both Baseline and Community Wealth Groups, because the Thresholds
+        for a Community Wealth Group use the Baseline Livelihood Product Categories
+        for the same Wealth Group Category.
+        """
+        return self.filter(
+            self._applies_to_wealth_group_category(
+                wealth_group.wealth_group_category_id, wealth_group.wealth_group_category_id
+            ),
+            baseline_livelihood_activity__livelihood_zone_baseline=wealth_group.livelihood_zone_baseline_id,
+        )
+
+    def for_threshold_wealth_groups(self):
+        """
+        Return one row for each Baseline Wealth Group that each Livelihood Product Category applies to.
+
+        A Livelihood Product Category defined for the Poor Wealth Group can apply to the Thresholds of every
+        Wealth Group in the Baseline, so this returns the components of the Thresholds for all the Wealth Groups
+        in a Baseline in a single query.
+
+        The rows are annotated with the `threshold_wealth_group` and `threshold_wealth_group_category` they apply
+        to, and with `is_inherited`, which is True when the Livelihood Product Category is for a different Wealth
+        Group, i.e. it is inherited from the Poor Wealth Group.
+        """
+        # Annotating with a reverse relation returns one row for each Wealth Group in the Baseline.
+        # All the annotations that use the relation must be in the same call so that they share the join.
+        threshold_wealth_groups = "baseline_livelihood_activity__livelihood_zone_baseline__wealth_groups"
+        return (
+            self.annotate(
+                threshold_wealth_group=F(f"{threshold_wealth_groups}__id"),
+                threshold_wealth_group_category=F(f"{threshold_wealth_groups}__wealth_group_category"),
+                threshold_wealth_group_community=F(f"{threshold_wealth_groups}__community"),
+            )
+            .filter(threshold_wealth_group__isnull=False, threshold_wealth_group_community__isnull=True)
+            .filter(
+                self._applies_to_wealth_group_category(
+                    F("threshold_wealth_group_category"), OuterRef("threshold_wealth_group_category")
+                )
+            )
+            .annotate(
+                is_inherited=Case(
+                    When(
+                        baseline_livelihood_activity__wealth_group=F("threshold_wealth_group"),
+                        then=Value(False),
+                    ),
+                    default=Value(True),
+                    output_field=models.BooleanField(),
+                )
+            )
+        )
+
+
+class LivelihoodProductCategoryManager(
+    common_models.IdentifierManager.from_queryset(LivelihoodProductCategoryQuerySet)
+):
     def get_by_natural_key(
         self,
         code: str,

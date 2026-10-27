@@ -8,7 +8,7 @@ from rest_framework_gis.serializers import GeoFeatureModelSerializer
 
 from common.fields import translation_fields
 from common.serializers import AggregatingSerializer
-from metadata.models import LivelihoodStrategyType
+from metadata.models import LivelihoodStrategyType, WealthGroupCategory
 
 from .models import (
     BaselineLivelihoodActivity,
@@ -184,6 +184,8 @@ class LivelihoodProductCategorySerializer(serializers.ModelSerializer):
             "livelihood_zone_country",
             "livelihood_zone_country_name",
             "wealth_group_category",
+            "wealth_group_category_name",
+            "wealth_group_category_short_name",
             "strategy_type",
             "basket",
             "basket_name",
@@ -193,12 +195,30 @@ class LivelihoodProductCategorySerializer(serializers.ModelSerializer):
             "season",
             "season_name",
             "additional_identifier",
+            "livelihood_strategy",
             "percentage_allocation_to_basket",
+            "activity_percentage_kcals",
+            "activity_expenditure",
+            "allocated_percentage_kcals",
+            "allocated_expenditure",
+            "allocated_expenditure_as_percentage_kcals",
+            "basket_percentage_kcals",
         ]
 
     source_organization = serializers.CharField(
         source="baseline_livelihood_activity.livelihood_zone_baseline.source_organization.pk", read_only=True
     )
+    livelihood_strategy = serializers.IntegerField(
+        source="baseline_livelihood_activity.livelihood_strategy_id", read_only=True
+    )
+    # Annotations from LivelihoodProductCategoryQuerySet.with_basket_contribution()
+    activity_percentage_kcals = serializers.FloatField(read_only=True, allow_null=True)
+    activity_expenditure = serializers.FloatField(read_only=True, allow_null=True)
+    allocated_percentage_kcals = serializers.FloatField(read_only=True, allow_null=True)
+    allocated_expenditure = serializers.FloatField(read_only=True, allow_null=True)
+    allocated_expenditure_as_percentage_kcals = serializers.FloatField(read_only=True, allow_null=True)
+    basket_percentage_kcals = serializers.FloatField(read_only=True, allow_null=True)
+
     source_organization_name = serializers.CharField(
         source="baseline_livelihood_activity.livelihood_zone_baseline.source_organization.name", read_only=True
     )
@@ -236,6 +256,12 @@ class LivelihoodProductCategorySerializer(serializers.ModelSerializer):
     wealth_group_category = serializers.CharField(
         source="baseline_livelihood_activity.wealth_group.wealth_group_category.pk", read_only=True
     )
+    wealth_group_category_name = serializers.CharField(
+        source="baseline_livelihood_activity.wealth_group.wealth_group_category.name", read_only=True
+    )
+    wealth_group_category_short_name = serializers.CharField(
+        source="baseline_livelihood_activity.wealth_group.wealth_group_category.short_name", read_only=True
+    )
     strategy_type = serializers.CharField(
         source="baseline_livelihood_activity.livelihood_strategy.strategy_type", read_only=True
     )
@@ -250,6 +276,109 @@ class LivelihoodProductCategorySerializer(serializers.ModelSerializer):
 
     def get_basket_name(self, obj):
         return obj.get_basket_display()
+
+
+class ThresholdComponentSerializer(LivelihoodProductCategorySerializer):
+    """
+    Serializer for the components of the Survival and Livelihoods Protection Thresholds for a Wealth Group.
+
+    Each component is a Livelihood Product Category and the Baseline Wealth Group whose Thresholds it contributes
+    to. The `wealth_group` fields describe the Wealth Group for the Threshold, and the `source_wealth_group` fields
+    describe the Wealth Group that the Livelihood Product Category is defined for. They are different when
+    `is_inherited` is True, because the Wealth Group inherits the Livelihood Product Category from the Poor
+    Wealth Group.
+
+    Requires a queryset from `LivelihoodProductCategoryQuerySet.for_threshold_wealth_groups()`.
+    """
+
+    class Meta:
+        model = LivelihoodProductCategory
+        fields = [
+            "livelihood_product_category",
+            "source_organization",
+            "source_organization_name",
+            "livelihood_zone_baseline",
+            "livelihood_zone_baseline_label",
+            "livelihood_zone",
+            "livelihood_zone_name",
+            "livelihood_zone_country",
+            "livelihood_zone_country_name",
+            "wealth_group",
+            "wealth_group_category",
+            "wealth_group_category_name",
+            "wealth_group_category_short_name",
+            "source_wealth_group",
+            "source_wealth_group_category",
+            "source_wealth_group_category_name",
+            "source_wealth_group_category_short_name",
+            "is_inherited",
+            "baseline_livelihood_activity",
+            "livelihood_strategy",
+            "strategy_type",
+            "product",
+            "product_common_name",
+            "product_description",
+            "season",
+            "season_name",
+            "additional_identifier",
+            "basket",
+            "basket_name",
+            "percentage_allocation_to_basket",
+            "activity_percentage_kcals",
+            "activity_expenditure",
+            "allocated_percentage_kcals",
+            "allocated_expenditure",
+            "allocated_expenditure_as_percentage_kcals",
+            "basket_percentage_kcals",
+        ]
+
+    livelihood_product_category = serializers.IntegerField(source="pk", read_only=True)
+    livelihood_zone_baseline = serializers.IntegerField(
+        source="baseline_livelihood_activity.livelihood_zone_baseline_id", read_only=True
+    )
+    # The Wealth Group for the Threshold, from LivelihoodProductCategoryQuerySet.for_threshold_wealth_groups()
+    wealth_group = serializers.IntegerField(source="threshold_wealth_group", read_only=True)
+    wealth_group_category = serializers.CharField(source="threshold_wealth_group_category", read_only=True)
+    wealth_group_category_name = serializers.SerializerMethodField()
+    wealth_group_category_short_name = serializers.SerializerMethodField()
+    # The Wealth Group that the Livelihood Product Category is defined for
+    source_wealth_group = serializers.IntegerField(
+        source="baseline_livelihood_activity.wealth_group_id", read_only=True
+    )
+    source_wealth_group_category = serializers.CharField(
+        source="baseline_livelihood_activity.wealth_group.wealth_group_category.pk", read_only=True
+    )
+    source_wealth_group_category_name = serializers.CharField(
+        source="baseline_livelihood_activity.wealth_group.wealth_group_category.name", read_only=True
+    )
+    source_wealth_group_category_short_name = serializers.CharField(
+        source="baseline_livelihood_activity.wealth_group.wealth_group_category.short_name", read_only=True
+    )
+    is_inherited = serializers.BooleanField(read_only=True)
+
+    def _get_wealth_group_category(self, obj) -> WealthGroupCategory | None:
+        """
+        Return the Wealth Group Category for the Threshold.
+
+        The categories are cached on the serializer so that they are only fetched once for a list of objects.
+        """
+        if not hasattr(self, "_wealth_group_categories"):
+            self._wealth_group_categories = {category.pk: category for category in WealthGroupCategory.objects.all()}
+        return self._wealth_group_categories.get(obj.threshold_wealth_group_category)
+
+    def get_wealth_group_category_name(self, obj) -> str | None:
+        """
+        Return the translated name of the Wealth Group Category for the Threshold.
+        """
+        wealth_group_category = self._get_wealth_group_category(obj)
+        return wealth_group_category.name if wealth_group_category else None
+
+    def get_wealth_group_category_short_name(self, obj) -> str | None:
+        """
+        Return the translated short name of the Wealth Group Category for the Threshold.
+        """
+        wealth_group_category = self._get_wealth_group_category(obj)
+        return wealth_group_category.short_name if wealth_group_category else None
 
 
 class CommunitySerializer(serializers.ModelSerializer):
