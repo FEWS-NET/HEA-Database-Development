@@ -6,40 +6,159 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-02 15:43+0000\n"
+"POT-Creation-Date: 2026-10-20 20:35+0000\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#. Shared msgid. Also in apps/baseline/locale/fr/LC_MESSAGES/django.po, apps/common/locale/fr/LC_MESSAGES/django.po, apps/metadata/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
-#: hea/settings/base.py:244
-msgid "English"
-msgstr "Anglais"
+#: apps/viz/apps.py:12
+msgid "visualizations"
+msgstr ""
 
-#. Shared msgid. Also in apps/baseline/locale/fr/LC_MESSAGES/django.po, apps/common/locale/fr/LC_MESSAGES/django.po, apps/metadata/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
-#: hea/settings/base.py:245
-msgid "French"
-msgstr "Français"
-
-#. Shared msgid. Also in apps/baseline/locale/fr/LC_MESSAGES/django.po, apps/common/locale/fr/LC_MESSAGES/django.po, apps/metadata/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
-#: hea/settings/base.py:246
-msgid "Spanish"
-msgstr "Espagnol"
-
-#. Shared msgid. Also in apps/baseline/locale/fr/LC_MESSAGES/django.po, apps/common/locale/fr/LC_MESSAGES/django.po, apps/metadata/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
-#: hea/settings/base.py:247
-msgid "Portuguese"
-msgstr "Portugais"
-
-#. Shared msgid. Also in apps/baseline/locale/fr/LC_MESSAGES/django.po, apps/common/locale/fr/LC_MESSAGES/django.po, apps/metadata/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
-#: hea/settings/base.py:248
-msgid "Arabic"
-msgstr "Arabe"
-
+#: apps/viz/templates/viz/pipeline_status.html:12
+#: apps/viz/templates/viz/pipeline_status_index.html:12
+#: apps/viz/templates/viz/pipeline_status_partition.html:12
 #: templates/admin/app_index.html:11 templates/admin/base.html:100
 msgid "Home"
 msgstr "Maison"
+
+#: apps/viz/templates/viz/pipeline_status.html:13
+#: apps/viz/templates/viz/pipeline_status_partition.html:13
+msgid "Pipeline Status"
+msgstr ""
+
+#: apps/viz/templates/viz/pipeline_status.html:21
+#, python-format
+msgid ""
+"Status of the %(asset_count)s assets in the pipeline for %(terminal_asset)s, "
+"as at %(updated)s."
+msgstr ""
+
+#: apps/viz/templates/viz/pipeline_status.html:29
+msgid "All"
+msgstr ""
+
+#: apps/viz/templates/viz/pipeline_status.html:37
+msgid "Partition status"
+msgstr ""
+
+#: apps/viz/templates/viz/pipeline_status.html:39
+msgid "All statuses"
+msgstr ""
+
+#: apps/viz/templates/viz/pipeline_status.html:46
+#, fuzzy
+#| msgid "Filters"
+msgid "Filter"
+msgstr "Filtres"
+
+#: apps/viz/templates/viz/pipeline_status.html:50
+msgid "Partition status summary"
+msgstr ""
+
+#: apps/viz/templates/viz/pipeline_status.html:52
+#: apps/viz/templates/viz/pipeline_status_index.html:26
+#, fuzzy
+#| msgid "Toggle navigation"
+msgid "Partitions"
+msgstr "Navigation"
+
+#: apps/viz/templates/viz/pipeline_status.html:61
+msgid "Failing partitions"
+msgstr ""
+
+#: apps/viz/templates/viz/pipeline_status.html:66
+#, fuzzy
+#| msgid "Toggle navigation"
+msgid "Partition"
+msgstr "Navigation"
+
+#: apps/viz/templates/viz/pipeline_status.html:67
+#: apps/viz/templates/viz/pipeline_status_partition.html:24
+msgid "Failed at"
+msgstr ""
+
+#: apps/viz/templates/viz/pipeline_status.html:84
+#, fuzzy
+#| msgid "None available"
+msgid "No partitions have failed."
+msgstr "Pas de sections disponibles"
+
+#: apps/viz/templates/viz/pipeline_status.html:87
+msgid "Asset status by partition"
+msgstr ""
+
+#: apps/viz/templates/viz/pipeline_status.html:89
+msgid "Click a partition to see the status of each asset for that partition."
+msgstr ""
+
+#: apps/viz/templates/viz/pipeline_status.html:112
+msgid "No partitions match the selected filters."
+msgstr ""
+
+#: apps/viz/templates/viz/pipeline_status_index.html:23
+msgid "Pipeline"
+msgstr ""
+
+#: apps/viz/templates/viz/pipeline_status_index.html:24
+msgid "Terminal asset"
+msgstr ""
+
+#: apps/viz/templates/viz/pipeline_status_index.html:25
+msgid "Assets"
+msgstr ""
+
+#: apps/viz/templates/viz/pipeline_status_index.html:47
+msgid ""
+"No pipelines are monitored. Add pipeline_status metadata to the terminal "
+"asset of a partitioned pipeline to monitor it."
+msgstr ""
+
+#: apps/viz/templates/viz/pipeline_status_partition.html:22
+#: apps/viz/templates/viz/pipeline_status_partition.html:40
+msgid "Status"
+msgstr ""
+
+#: apps/viz/templates/viz/pipeline_status_partition.html:33
+msgid "The asset graph is not available because Graphviz is not installed."
+msgstr ""
+
+#: apps/viz/templates/viz/pipeline_status_partition.html:39
+msgid "Asset"
+msgstr ""
+
+#: apps/viz/templates/viz/pipeline_status_partition.html:41
+msgid "Last materialized"
+msgstr ""
+
+#: apps/viz/templates/viz/pipeline_status_partition.html:42
+msgid "Latest run"
+msgstr ""
+
+#: apps/viz/templates/viz/pipeline_status_partition.html:60
+msgid "View run"
+msgstr ""
+
+#: hea/settings/base.py:259
+msgid "English"
+msgstr "Anglais"
+
+#: hea/settings/base.py:260
+msgid "French"
+msgstr "Français"
+
+#: hea/settings/base.py:261
+msgid "Spanish"
+msgstr "Espagnol"
+
+#: hea/settings/base.py:262
+msgid "Portuguese"
+msgstr "Portugais"
+
+#: hea/settings/base.py:263
+msgid "Arabic"
+msgstr "Arabe"
 
 #: templates/admin/app_index.html:42 templates/admin/app_index.html:73
 #, python-format
@@ -52,8 +171,6 @@ msgid "View %(name)s"
 msgstr "Voir %(name)s"
 
 #: templates/admin/app_index.html:95
-#, fuzzy
-#| msgid "You don’t have permission to view or edit anything."
 msgid "You don't have permission to view or edit anything."
 msgstr "Vous n'êtes pas autorisé à afficher ou modifier quoi que ce soit."
 
@@ -111,33 +228,25 @@ msgid ""
 "        "
 msgstr ""
 "\n"
-"Une ligne de base HEA (HEA baseline) est un exercice de collecte de données mené pour "
-"un pays pour une année de référence spécifiée. Une ligne de base "
-"comprend des données collectées auprès de ménages typiques, servant de représentation d'un groupe de richesse au sein d'une communauté "
-"dans une zone de moyens d'existence donnée."
-"\n"
+"Une ligne de base HEA (HEA baseline) est un exercice de collecte de données "
+"mené pour un pays pour une année de référence spécifiée. Une ligne de base "
+"comprend des données collectées auprès de ménages typiques, servant de "
+"représentation d'un groupe de richesse au sein d'une communauté dans une "
+"zone de moyens d'existence donnée.\n"
 
-#. Shared msgid. Also in locale/fr/LC_MESSAGES/djangojs.po; keep translations synchronized across files.
 #: templates/admin/index.html:32
 msgid "Baselines"
 msgstr "Lignes de base"
 
-#. Shared msgid. Also in apps/baseline/locale/fr/LC_MESSAGES/django.po; keep translations synchronized across files.
 #: templates/admin/index.html:36
-#, fuzzy
-#| msgid "Wealth Group Characteristic Value"
 msgid "Wealth Characteristic Values"
 msgstr "Valeurs de caractéristiques de richesse"
 
 #: templates/admin/index.html:40
-#, fuzzy
-#| msgid "Communities"
 msgid "Community Activities"
 msgstr "Activités communautaires"
 
 #: templates/admin/index.html:44
-#, fuzzy
-#| msgid "Seasonal Activities"
 msgid "Baseline Activities"
 msgstr "Activités de référence"
 
@@ -150,14 +259,10 @@ msgid "Documentation"
 msgstr "Documentation"
 
 #: templates/admin/index.html:95
-#, fuzzy
-#| msgid "Livelihood Zones"
 msgid "Livelihood Explorer"
 msgstr "Livelihood Explorer"
 
 #: templates/admin/index.html:106
-#, fuzzy
-#| msgid "Recent actions"
 msgid "My Recent Actions"
 msgstr "Mes actions récentes"
 
@@ -174,8 +279,6 @@ msgid "Sidebar"
 msgstr "Barre latérale"
 
 #: templates/admin/nav_sidebar.html:8
-#, fuzzy
-#| msgid "Toggle navigation"
 msgid "Navigation"
 msgstr "Navigation"
 
@@ -188,8 +291,6 @@ msgid "Filter sidebar menu"
 msgstr "Filtrer le menu latéral"
 
 #: templates/admin/nav_sidebar.html:60
-#, fuzzy
-#| msgid "None available"
 msgid "No sections available"
 msgstr "Pas de sections disponibles"
 
@@ -226,8 +327,6 @@ msgid "navbar"
 msgstr "barre de navigation"
 
 #: templates/rest_framework/api.html:91
-#, fuzzy
-#| msgid "Unknown content"
 msgid "content"
 msgstr "contenu"
 
@@ -236,19 +335,14 @@ msgid "request form"
 msgstr "formulaire de demande"
 
 #: templates/rest_framework/api.html:174
-#, fuzzy
-#| msgid "My actions"
 msgid "Extra Actions"
 msgstr "Actions additionnelles"
 
-#. Shared msgid. Also in locale/fr/LC_MESSAGES/djangojs.po; keep translations synchronized across files.
 #: templates/rest_framework/api.html:189
 msgid "Filters"
 msgstr "Filtres"
 
 #: templates/rest_framework/api.html:197
-#, fuzzy
-#| msgid "Skip to main content"
 msgid "main content"
 msgstr "contenu principal"
 
@@ -288,7 +382,7 @@ msgstr "informations sur la réponse"
 #~ msgstr "Fiche de production BSS"
 
 #~ msgid "Crop Production"
-#~ msgstr "Production végétales"
+#~ msgstr "Production végétale"
 
 #~ msgid "Livestock Production"
 #~ msgstr "Production d'élevage"

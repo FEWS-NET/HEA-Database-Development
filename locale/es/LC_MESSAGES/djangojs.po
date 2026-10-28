@@ -16,24 +16,29 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;\n"
+"Plural-Forms: nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? "
+"1 : 2;\n"
 
-#: src/Views/Layouts/Compare/Compare.jsx:1467
+#: src/Views/Layouts/Compare/Compare.jsx:30
+msgid "-"
+msgstr ""
+
+#: src/Views/Layouts/Compare/Compare.jsx:1606
 msgid "(% 2100 kcal/person/day)"
 msgstr ""
 
-#: src/Views/Layouts/Compare/Compare.jsx:1451
+#: src/Views/Layouts/Compare/Compare.jsx:1590
 msgid "(annual)"
 msgstr ""
 
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:68
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:75
 msgid "(Latest)"
 msgstr "(Más reciente)"
 
-#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:480
-#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:497
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:255
-#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:174
+#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:482
+#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:501
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:267
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:182
 msgid "% of 2100 kcal/person/day"
 msgstr ""
 
@@ -42,10 +47,15 @@ msgid "+ Create new view"
 msgstr "+ Crear nueva vista"
 
 #: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/KeyParameters/KeyParameters.jsx:217
-msgid "A key parameter is a major food or income source in a livelihood zone, meaning the activity contributes over 5% of 2,100 kcal/person/day for at least two wealth groups or over 10% for one group. A livelihood activity may also be considered key if it is the only food or income source during the lean season."
+msgid ""
+"A key parameter is a major food or income source in a livelihood zone, "
+"meaning the activity contributes over 5% of 2,100 kcal/person/day for at "
+"least two wealth groups or over 10% for one group. A livelihood activity may "
+"also be considered key if it is the only food or income source during the "
+"lean season."
 msgstr ""
 
-#: src/App.tsx:15
+#: src/App.tsx:16
 msgid "About the Livelihoods Explorer"
 msgstr "Acerca del Explorador de Medios de Vida"
 
@@ -53,7 +63,7 @@ msgstr "Acerca del Explorador de Medios de Vida"
 msgid "accounts."
 msgstr "cuentas."
 
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1317
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1375
 msgid "Activities"
 msgstr "Actividades"
 
@@ -62,7 +72,7 @@ msgstr "Actividades"
 msgid "Activity"
 msgstr ""
 
-#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:590
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:634
 msgid "Add baseline to Compare view"
 msgstr "Agregar la Línea de Base a la vista Comparar"
 
@@ -70,21 +80,23 @@ msgstr "Agregar la Línea de Base a la vista Comparar"
 msgid "Add filter"
 msgstr "Agregar filtro"
 
-#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:656
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1103
+#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:662
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1154
 msgid "Add this Baseline to Compare view"
 msgstr ""
 
-#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:589
-#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:655
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1102
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:633
+#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:661
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1153
 msgid "Added to Compare view"
 msgstr "Se agregó a la vista Comparar"
 
+#: src/Views/Layouts/Compare/Compare.jsx:1315
+#: src/Views/Layouts/Compare/Compare.jsx:608
 #: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:172
 #: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:179
-#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:622
-#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:645
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:627
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:651
 #: src/Views/Layouts/GlobalMap/Components/WealthGroup/WealthGroup.jsx:38
 msgid "All"
 msgstr "Todos"
@@ -93,25 +105,25 @@ msgstr "Todos"
 msgid "Already added. Edit or delete it from the main filter list."
 msgstr "Ya se agregó. Edítelo o elimínelo de la lista principal de filtros."
 
-#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:492
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:534
 msgid "Annual cash expenditures ([currency]/household)"
 msgstr "Gastos anuales en efectivo ([currency]/household)"
 
-#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:499
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:541
 msgid "Annual sources"
 msgstr "Fuentes anuales"
 
-#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:491
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:533
 msgid "Annual sources of cash income ([currency]/household)"
 msgstr "Fuentes anuales de ingresos en efectivo ([currency]/household)"
 
-#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:490
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:532
 msgid "Annual sources of food (% of 2100 kcal/person/day)"
 msgstr "Fuentes anuales de alimentos (% de 2100 kcal/person/day)"
 
-#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:577
-#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:579
-#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:682
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:582
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:584
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:688
 msgid "Any"
 msgstr "Cualquiera"
 
@@ -123,22 +135,22 @@ msgstr "cualquier cantidad"
 msgid "at least"
 msgstr "al menos"
 
-#: src/Views/Layouts/Compare/Compare.jsx:1033
-#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:115
-#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:240
+#: src/Views/Layouts/Compare/Compare.jsx:1123
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:117
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:235
 #: src/Views/Layouts/GlobalMap/Components/LHZLabel/LHZLabel.tsx:47
 #: src/Views/Layouts/GlobalMap/Components/LHZLabel/LHZLabel.tsx:69
-#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:669
+#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:675
 #: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/AllBaselines/AllBaselines.jsx:18
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1216
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:276
-#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:1091
-#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:1094
-#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:507
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1271
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:319
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:1187
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:1190
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:549
 msgid "Baseline"
 msgstr "Base"
 
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1425
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1503
 msgid "Baseline completed by %(organization)s."
 msgstr "Línea de Base completada por %(organization)s."
 
@@ -146,9 +158,10 @@ msgstr "Línea de Base completada por %(organization)s."
 msgid "Baseline name"
 msgstr "Nombre de la Línea de Base"
 
-#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:554
-#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:669
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1216
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:564
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:598
+#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:675
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1271
 msgid "Baselines"
 msgstr "Líneas de base"
 
@@ -157,10 +170,6 @@ msgid "baselines available"
 msgstr "Líneas de Base disponibles"
 
 #: src/Views/Layouts/GlobalMap/Components/WealthGroup/WealthGroup.jsx:42
-msgid "Better off (B/O)"
-msgstr "Mejor acomodado (B/O)"
-
-#: src/Views/Layouts/Compare/Compare.jsx:35
 msgid "Better off (BO)"
 msgstr "Mejor acomodado (BO)"
 
@@ -174,7 +183,7 @@ msgstr "Explorar vistas"
 msgid "Butter production"
 msgstr "Producción de mantequilla"
 
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1444
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1522
 msgid "Calendar"
 msgstr "Calendario"
 
@@ -186,74 +195,88 @@ msgstr ""
 msgid "Capital"
 msgstr ""
 
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:148
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:155
 msgid "Cash"
 msgstr "Efectivo"
 
-#: src/Views/Layouts/Compare/Compare.jsx:1524
+#: src/Views/Layouts/Compare/Compare.jsx:1663
 msgid "Cash expenditures"
 msgstr "Gastos en efectivo"
 
-#: src/Views/Layouts/Compare/Compare.jsx:1495
+#: src/Views/Layouts/Compare/Compare.jsx:1634
 msgid "Cash income"
 msgstr "Ingresos en efectivo"
 
-#: src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:738
+#: src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:743
 msgid "Change"
 msgstr ""
 
-#: src/Views/Layouts/Compare/Compare.jsx:1555
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1437
+#: src/Views/Layouts/Compare/Compare.jsx:1694
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1515
 msgid "Characteristics"
 msgstr "Características"
 
-#: src/Views/Layouts/Compare/Compare.jsx:1304
+#: src/Views/Layouts/Compare/Compare.jsx:1441
 msgid "Click to learn more about comparing Baselines (opens in new tab)"
-msgstr "Haga clic para obtener más información sobre la comparación de Líneas de Base (se abre en una pestaña nueva)"
+msgstr ""
+"Haga clic para obtener más información sobre la comparación de Líneas de "
+"Base (se abre en una pestaña nueva)"
 
 #: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:675
 msgid "Click to learn more about filter options (opens in new tab)"
-msgstr "Haga clic para obtener más información sobre las opciones de filtro (se abre en una pestaña nueva)"
+msgstr ""
+"Haga clic para obtener más información sobre las opciones de filtro (se abre "
+"en una pestaña nueva)"
 
-#: src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:679
+#: src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:684
 msgid "Click to learn more about map views (opens in new tab)"
-msgstr "Haga clic para obtener más información sobre las vistas de mapa (se abre en una pestaña nueva)"
+msgstr ""
+"Haga clic para obtener más información sobre las vistas de mapa (se abre en "
+"una pestaña nueva)"
 
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1123
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1174
 msgid "Click to learn more about the Detail view (opens in new tab)"
-msgstr "Haga clic para obtener más información sobre la Vista detallada (se abre en una pestaña nueva)"
+msgstr ""
+"Haga clic para obtener más información sobre la Vista detallada (se abre en "
+"una pestaña nueva)"
 
 #: src/Views/Layouts/GlobalMap/Components/WealthGroup/WealthGroup.jsx:23
 msgid "Click to learn more about wealth groups (opens in new tab)"
-msgstr "Haga clic para obtener más información sobre los grupos de riqueza (se abre en una pestaña nueva)"
+msgstr ""
+"Haga clic para obtener más información sobre los grupos de riqueza (se abre "
+"en una pestaña nueva)"
 
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1156
-#: src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:703
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1209
+#: src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:708
 msgid "Close"
 msgstr "Cerrar"
 
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1161
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1216
 msgid "Close Detail view"
 msgstr "Cerrar vista detallada"
 
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1113
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1164
 msgid "Collapse"
 msgstr "Contraer"
 
-#: src/Views/Layouts/Header/Header.tsx:108
+#: src/Views/Layouts/Header/Header.tsx:109
 #: src/Views/Layouts/SelectedView/SelectedView.tsx:38
 msgid "Compare"
 msgstr "Comparar"
+
+#: src/App.tsx:49
+msgid "Continue anyway"
+msgstr ""
 
 #: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:662
 msgid "contributes"
 msgstr "contribuye"
 
-#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:650
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:656
 msgid "Contributes to"
 msgstr "Contribuye a"
 
-#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:673
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:679
 msgid "Contribution amount"
 msgstr "Monto de la contribución"
 
@@ -263,16 +286,17 @@ msgstr "Actividades agrícolas"
 
 #: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:57
 #: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:99
-#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:93
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:95
 #: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:32
 msgid "Crop production"
 msgstr "Producción de cultivos"
 
-#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:498
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:1162
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:540
 msgid "currency"
 msgstr "moneda"
 
-#: src/Views/Layouts/Compare/Compare.jsx:1357
+#: src/Views/Layouts/Compare/Compare.jsx:1494
 msgid "Currency"
 msgstr "Moneda"
 
@@ -282,16 +306,16 @@ msgstr "Mes actual"
 
 #: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:605
 #: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:606
-#: src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:668
-#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:665
+#: src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:673
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:642
 msgid "Custom filter overlay"
 msgstr "Superposición de filtro personalizado"
 
-#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:688
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:694
 msgid "Custom range"
 msgstr "Rango personalizado"
 
-#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:699
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:675
 msgid "custom strategies"
 msgstr "estrategias personalizadas"
 
@@ -303,8 +327,8 @@ msgstr ""
 msgid "Demographics"
 msgstr ""
 
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1121
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1150
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1172
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1201
 msgid "Detail view"
 msgstr "Vista detallada"
 
@@ -336,19 +360,23 @@ msgstr "Introduzca su contraseña"
 msgid "Error"
 msgstr "Error"
 
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1113
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1164
 msgid "Expand"
 msgstr "Expandir"
 
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:149
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:156
 msgid "Expenditures"
 msgstr "Gastos"
 
-#: src/Views/Layouts/Header/Header.tsx:117
+#: src/Views/Layouts/Header/Header.tsx:120
+msgid "External link"
+msgstr ""
+
+#: src/Views/Layouts/Header/Header.tsx:118
 msgid "FEWS NET"
 msgstr ""
 
-#: src/Views/Layouts/Header/Header.tsx:116
+#: src/Views/Layouts/Header/Header.tsx:117
 msgid "FEWS NET Website"
 msgstr "Sitio web de FEWS NET"
 
@@ -363,7 +391,9 @@ msgstr ""
 #: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:141
 #: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:95
 msgid "Filter Baselines by a Strategy’s contribution to livelihoods"
-msgstr "Filtrar Líneas de Base por la contribución de una estrategia a los medios de vida"
+msgstr ""
+"Filtrar Líneas de Base por la contribución de una estrategia a los medios de "
+"vida"
 
 #: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:117
 #: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:147
@@ -375,7 +405,8 @@ msgstr "Filtrar Líneas de Base por país"
 #: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:145
 #: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:665
 msgid "Filter Baselines by population for one or all Wealth Groups"
-msgstr "Filtrar Líneas de Base por población para uno o todos los grupos de riqueza"
+msgstr ""
+"Filtrar Líneas de Base por población para uno o todos los grupos de riqueza"
 
 #: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:103
 #: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:143
@@ -383,23 +414,24 @@ msgid "Filter Baselines by Primary Livelihood System"
 msgstr "Filtrar Líneas de Base por Sistema Principal de Medios de Vida"
 
 #: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:444
-#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:401
-#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:423
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:433
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:455
 msgid "Filter zones by a strategy’s contribution to livelihoods"
 msgstr ""
 
 #: src/Views/Layouts/GlobalMap/Components/Filters/Components/BasicFilter/BasicFilter.jsx:296
-#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:384
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:416
 msgid "Filter zones by country or region"
 msgstr ""
 
-#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:452
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:484
 msgid "Filter zones by type"
 msgstr ""
 
 #: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:695
 #: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:705
-#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:531
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:564
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:575
 msgid "Filters"
 msgstr "Filtros"
 
@@ -407,26 +439,30 @@ msgstr "Filtros"
 msgid "Fishing"
 msgstr "Pesca"
 
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:147
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:154
 msgid "Food"
 msgstr "Alimentos"
 
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:146
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:153
 msgid "Food + Cash"
 msgstr "Alimentos + Efectivo"
 
-#: src/Views/Layouts/Compare/Compare.jsx:1466
+#: src/Views/Layouts/Compare/Compare.jsx:1605
 msgid "Food consumption"
 msgstr "Consumo de alimentos"
 
 #: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:100
 #: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:61
-#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:99
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:101
 #: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:33
 msgid "Food purchase"
 msgstr "Compra de alimentos"
 
-#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:699
+#: src/App.tsx:46
+msgid "For the best experience, use a larger screen"
+msgstr ""
+
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:675
 msgid "from"
 msgstr "de"
 
@@ -434,17 +470,23 @@ msgstr "de"
 msgid "Global"
 msgstr "Global"
 
-#: src/Views/Layouts/Compare/Compare.jsx:1313
-#: src/Views/Layouts/Header/Header.tsx:72
-#: src/Views/Layouts/Header/Header.tsx:74
+#: src/Views/Layouts/Compare/Compare.jsx:1450
+#: src/Views/Layouts/Header/Header.tsx:73
+#: src/Views/Layouts/Header/Header.tsx:75
 msgid "Help"
 msgstr "Ayuda"
 
-#: src/Views/Layouts/Compare/Compare.jsx:1424
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:1182
+#, fuzzy
+#| msgid "Household size"
+msgid "household"
+msgstr "Tamaño del hogar"
+
+#: src/Views/Layouts/Compare/Compare.jsx:1563
 msgid "Household annual kcals cost"
 msgstr "Costo anual de kcals del hogar"
 
-#: src/Views/Layouts/Compare/Compare.jsx:1412
+#: src/Views/Layouts/Compare/Compare.jsx:1551
 msgid "Household size"
 msgstr "Tamaño del hogar"
 
@@ -456,12 +498,12 @@ msgstr "Caza"
 msgid "Includes"
 msgstr "Incluye"
 
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:625
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:930
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:670
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:977
 msgid "Item"
 msgstr "Artículo"
 
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1447
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1525
 msgid "Key parameters"
 msgstr "Parametros clave"
 
@@ -469,11 +511,11 @@ msgstr "Parametros clave"
 msgid "Key parameters could not be loaded right now."
 msgstr ""
 
-#: src/Views/Layouts/Header/Header.tsx:42
+#: src/Views/Layouts/Header/Header.tsx:43
 msgid "Knowledge Base"
 msgstr ""
 
-#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:420
+#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:421
 msgid "Latest"
 msgstr ""
 
@@ -481,7 +523,7 @@ msgstr ""
 msgid "Latest Reference Year"
 msgstr "Último año de referencia"
 
-#: src/Views/Layouts/Compare/Compare.jsx:1310
+#: src/Views/Layouts/Compare/Compare.jsx:1447
 msgid "Learn more about comparing Baselines"
 msgstr "Más información sobre la comparación de Líneas de Base"
 
@@ -489,36 +531,41 @@ msgstr "Más información sobre la comparación de Líneas de Base"
 msgid "Learn more about filter options"
 msgstr "Más información sobre las opciones de filtro"
 
-#: src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:685
+#: src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:690
 msgid "Learn more about map views"
 msgstr "Más información sobre las vistas de mapa"
 
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1132
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1183
 msgid "Learn more about the Detail view (opens in new tab)"
-msgstr "Más información sobre la Vista detallada (se abre en una pestaña nueva)"
+msgstr ""
+"Más información sobre la Vista detallada (se abre en una pestaña nueva)"
 
 #: src/Views/Layouts/GlobalMap/Components/WealthGroup/WealthGroup.jsx:29
 msgid "Learn more about wealth groups"
 msgstr "Más información sobre los grupos de riqueza"
 
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1273
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1330
 msgid "Less"
 msgstr "Menos"
 
-#: src/Views/Layouts/Compare/Compare.jsx:1450
+#: src/Views/Layouts/Compare/Compare.jsx:1589
 msgid "Livelihood Activities"
 msgstr "Actividades de medios de vida"
 
-#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:809
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1406
+#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:815
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1473
 msgid "Livelihood Protection Threshold"
 msgstr "Umbral de Protección de Medios de Vida"
 
-#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:591
+#: src/Views/Layouts/Compare/Compare.jsx:1576
+msgid "Livelihood Protection Threshold (% kcals)"
+msgstr "Umbral de protección de medios de vida (% kcals)"
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:596
 msgid "Livelihood Strategy filter"
 msgstr "Filtro de estrategia de medios de vida"
 
-#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:572
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:616
 msgid "Livelihood Zone"
 msgstr "Zona de Medios de Vida"
 
@@ -526,16 +573,12 @@ msgstr "Zona de Medios de Vida"
 msgid "Livelihood Zone code labels"
 msgstr "Etiquetas de códigos de Zona de Medios de Vida"
 
-#: src/Views/Layouts/Header/Header.tsx:59
+#: src/Views/Layouts/Header/Header.tsx:60
 msgid "Livelihoods Explorer"
 msgstr ""
 
-#: src/Views/Layouts/Header/Header.tsx:133
+#: src/Views/Layouts/Header/Header.tsx:143
 msgid "Livelihoods Explorer video tour"
-msgstr ""
-
-#: src/Views/Layouts/Compare/Compare.jsx:1437
-msgid "Livelihoods Protection Threshold (%kcals)"
 msgstr ""
 
 #: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Characteristics/Characteristics.jsx:22
@@ -548,21 +591,33 @@ msgstr "Actividades pecuarias"
 
 #: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:53
 #: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:98
-#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:105
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:107
 #: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:31
 msgid "Livestock sale"
 msgstr "Venta de ganado"
+
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:567
+#, fuzzy
+#| msgid "Loading…"
+msgid "Loading"
+msgstr "Cargando…"
 
 #: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Calendar/Calendar.jsx:726
 msgid "Loading calendar data…"
 msgstr "Cargando datos del calendario…"
 
-#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:764
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1373
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1495
+#, fuzzy
+#| msgid "Loading calendar data…"
+msgid "Loading chart"
+msgstr "Cargando datos del calendario…"
+
+#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:770
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1436
 msgid "Loading total income chart..."
 msgstr ""
 
-#: src/Views/Layouts/Compare/Compare.jsx:1565
+#: src/Views/Layouts/Compare/Compare.jsx:1704
 #: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Characteristics/Characteristics.jsx:142
 msgid "Loading…"
 msgstr "Cargando…"
@@ -576,12 +631,12 @@ msgstr "Ubicación"
 msgid "Map export preview"
 msgstr "Vista previa de exportación del mapa"
 
-#: src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:675
-#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:667
+#: src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:680
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:644
 msgid "Map overlay"
 msgstr "Superposición del mapa"
 
-#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:705
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:711
 msgid "Max contribution (%)"
 msgstr "Contribución máxima (%)"
 
@@ -590,10 +645,6 @@ msgstr "Contribución máxima (%)"
 #: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:30
 msgid "Meat production"
 msgstr "Producción de carne"
-
-#: src/Views/Layouts/Compare/Compare.jsx:34
-msgid "Medium (M)"
-msgstr "Medio (M)"
 
 #: src/Views/Layouts/GlobalMap/Components/WealthGroup/WealthGroup.jsx:41
 msgid "Middle (M)"
@@ -605,7 +656,7 @@ msgstr "Medio (M)"
 msgid "Milk production"
 msgstr "Producción de leche"
 
-#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:694
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:700
 msgid "Min contribution (%)"
 msgstr "Contribución mínima (%)"
 
@@ -613,41 +664,11 @@ msgstr "Contribución mínima (%)"
 msgid "ML01 Wealth Group comparison"
 msgstr ""
 
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1273
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1330
 msgid "More"
 msgstr "Más"
 
-#: src/Views/Layouts/Compare/Compare.jsx:1020
-#: src/Views/Layouts/Compare/Compare.jsx:1021
-#: src/Views/Layouts/Compare/Compare.jsx:1022
-#: src/Views/Layouts/Compare/Compare.jsx:1053
-#: src/Views/Layouts/Compare/Compare.jsx:1054
-#: src/Views/Layouts/Compare/Compare.jsx:1064
-#: src/Views/Layouts/Compare/Compare.jsx:1066
-#: src/Views/Layouts/Compare/Compare.jsx:1075
-#: src/Views/Layouts/Compare/Compare.jsx:1076
-#: src/Views/Layouts/Compare/Compare.jsx:1091
-#: src/Views/Layouts/Compare/Compare.jsx:1092
-#: src/Views/Layouts/Compare/Compare.jsx:1093
-#: src/Views/Layouts/Compare/Compare.jsx:242
-#: src/Views/Layouts/Compare/Compare.jsx:331
-#: src/Views/Layouts/Compare/Compare.jsx:39
-#: src/Views/Layouts/Compare/Compare.jsx:474
-#: src/Views/Layouts/Compare/Compare.jsx:480
-#: src/Views/Layouts/Compare/Compare.jsx:486
-#: src/Views/Layouts/Compare/Compare.jsx:494
-#: src/Views/Layouts/Compare/Compare.jsx:522
-#: src/Views/Layouts/Compare/Compare.jsx:524
-#: src/Views/Layouts/Compare/Compare.jsx:527
-#: src/Views/Layouts/Compare/Compare.jsx:530
-#: src/Views/Layouts/Compare/Compare.jsx:560
-#: src/Views/Layouts/Compare/Compare.jsx:562
-#: src/Views/Layouts/Compare/Compare.jsx:563
-#: src/Views/Layouts/Compare/Compare.jsx:637
-#: src/Views/Layouts/Compare/Compare.jsx:650
-#: src/Views/Layouts/Compare/Compare.jsx:866
-#: src/Views/Layouts/Compare/Compare.jsx:894
-#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:109
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:111
 #: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/AllBaselines/AllBaselines.jsx:31
 #: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Calendar/Calendar.jsx:538
 msgid "N/A"
@@ -657,45 +678,47 @@ msgstr "N/D"
 msgid "Nigeria all livelihood zones comparison"
 msgstr ""
 
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1021
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1072
 msgid "No active Baseline"
 msgstr ""
 
-#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:670
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1217
+#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:676
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1272
 msgid "No Baselines"
 msgstr "No hay Líneas de Base"
 
-#: src/Views/Layouts/Compare/Compare.jsx:1320
+#: src/Views/Layouts/Compare/Compare.jsx:1457
 msgid "No Baselines selected. Use Search to add Baselines to Compare."
-msgstr "No hay Líneas de Base seleccionadas. Use Buscar para agregar Líneas de Base para comparar."
+msgstr ""
+"No hay Líneas de Base seleccionadas. Use Buscar para agregar Líneas de Base "
+"para comparar."
 
 #: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Calendar/Calendar.jsx:728
 msgid "No calendar data for this baseline."
 msgstr "No hay datos de calendario para esta Línea de Base."
 
-#: src/Views/Layouts/Compare/Compare.jsx:1512
+#: src/Views/Layouts/Compare/Compare.jsx:1651
 msgid "No cash income data"
 msgstr "No hay datos de ingresos en efectivo"
 
-#: src/Views/Layouts/Compare/Compare.jsx:1613
+#: src/Views/Layouts/Compare/Compare.jsx:1752
 msgid "No Characteristics data"
 msgstr "No hay datos de características"
 
-#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:669
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:675
 msgid "No contribution indicators with data for this selection."
 msgstr "No hay indicadores de contribución con datos para esta selección."
 
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1079
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1083
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1130
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1134
 msgid "No description available"
 msgstr "No hay descripción disponible"
 
-#: src/Views/Layouts/Compare/Compare.jsx:1541
+#: src/Views/Layouts/Compare/Compare.jsx:1680
 msgid "No expenditure data"
 msgstr "No hay datos de gastos"
 
-#: src/Views/Layouts/Compare/Compare.jsx:1484
+#: src/Views/Layouts/Compare/Compare.jsx:1623
 msgid "No food data"
 msgstr "No hay datos de alimentos"
 
@@ -711,55 +734,65 @@ msgstr "Ninguno"
 msgid "NOTE: This is separate from your email address."
 msgstr "NOTA: Esto es independiente de su dirección de correo electrónico."
 
-#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:699
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:675
 msgid "of"
 msgstr "de"
 
-#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:730
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:1179
+#, fuzzy
+#| msgid "Annual sources of food (% of 2100 kcal/person/day)"
+msgid "of 2100 kcal/person/day"
+msgstr "Fuentes anuales de alimentos (% de 2100 kcal/person/day)"
+
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:706
 msgid "of cash from crop sales"
 msgstr "de efectivo de ventas de cultivos"
 
-#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:732
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:708
 msgid "of cash from labor"
 msgstr "de efectivo de trabajo"
 
-#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:731
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:707
 msgid "of cash from livestock sales"
 msgstr "de efectivo de ventas pecuarias"
 
-#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:705
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:681
 msgid "of cash from<br />crop sales"
 msgstr "de efectivo de<br />ventas de cultivos"
 
-#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:707
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:683
 msgid "of cash from<br />labor"
 msgstr "de efectivo de<br />trabajo"
 
-#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:706
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:682
 msgid "of cash from<br />livestock sales"
 msgstr "de efectivo de<br />ventas pecuarias"
 
-#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:728
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:704
 msgid "of food from own crops"
 msgstr "de alimentos de cultivos propios"
 
-#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:729
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:705
 msgid "of food from purchase"
 msgstr "de alimentos de compras"
 
-#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:703
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:679
 msgid "of food from<br />own crops"
 msgstr "de alimentos de<br />cultivos propios"
 
-#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:704
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:680
 msgid "of food from<br />purchase"
 msgstr "de alimentos de<br />compras"
 
-#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:627
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:632
 msgid "Of products"
 msgstr "De productos"
 
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1429
+#: src/Views/Layouts/Compare/Compare.jsx:1424
+msgid "One wealth group must be selected"
+msgstr ""
+
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1507
 msgid "Opens in a new tab"
 msgstr ""
 
@@ -771,11 +804,11 @@ msgstr "o"
 msgid "Organization"
 msgstr "Organización"
 
-#: src/Views/Layouts/Compare/Compare.jsx:570
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:95
-#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:318
-#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:395
-#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:442
+#: src/Views/Layouts/Compare/Compare.jsx:692
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:102
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:358
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:435
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:482
 msgid "Other"
 msgstr ""
 
@@ -807,11 +840,12 @@ msgstr "Pago en especie"
 
 #: src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:78
 #: src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:79
-#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:662
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:639
 msgid "Percentage of cash income from crop sales"
-msgstr "Porcentaje de los ingresos en efectivo procedentes de ventas de cultivos"
+msgstr ""
+"Porcentaje de los ingresos en efectivo procedentes de ventas de cultivos"
 
-#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:664
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:641
 msgid "Percentage of cash income from labor"
 msgstr "Porcentaje de los ingresos en efectivo procedentes del trabajo"
 
@@ -822,51 +856,52 @@ msgstr ""
 
 #: src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:88
 #: src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:89
-#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:663
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:640
 msgid "Percentage of cash income from livestock sales"
 msgstr "Porcentaje de los ingresos en efectivo procedentes de ventas pecuarias"
 
 #: src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:58
 #: src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:59
-#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:660
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:637
 msgid "Percentage of food consumption from own crops"
 msgstr "Porcentaje del consumo de alimentos procedente de cultivos propios"
 
 #: src/Views/Layouts/GlobalMap/Components/ExportMapModal/ExportMapModal.jsx:120
 msgid "Percentage of food consumption from own crops for very poor households"
-msgstr "Porcentaje del consumo de alimentos procedente de cultivos propios para los hogares muy pobres"
+msgstr ""
+"Porcentaje del consumo de alimentos procedente de cultivos propios para los "
+"hogares muy pobres"
 
 #: src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:68
 #: src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:69
-#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:661
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:638
 msgid "Percentage of food consumption from purchase"
 msgstr "Porcentaje del consumo de alimentos procedente de compras"
 
-#: src/Views/Layouts/Compare/Compare.jsx:1418
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1318
+#: src/Views/Layouts/Compare/Compare.jsx:1557
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1376
 msgid "Percentage of households"
 msgstr "Porcentaje de hogares"
 
-#: src/Views/Layouts/Compare/Compare.jsx:1406
+#: src/Views/Layouts/Compare/Compare.jsx:1545
 msgid "Percentage of total population"
 msgstr "Porcentaje de la población total"
 
-#: src/Views/Layouts/Compare/Compare.jsx:33
 #: src/Views/Layouts/GlobalMap/Components/WealthGroup/WealthGroup.jsx:40
 msgid "Poor (P)"
 msgstr "Pobre (P)"
 
-#: src/Views/Layouts/Compare/Compare.jsx:1347
-#: src/Views/Layouts/Compare/Compare.jsx:1400
+#: src/Views/Layouts/Compare/Compare.jsx:1484
+#: src/Views/Layouts/Compare/Compare.jsx:1539
 #: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:109
 #: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:130
-#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:735
+#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:741
 #: src/Views/Layouts/GlobalMap/Components/LHZSummary/Components/Characteristics/Characteristics.jsx:25
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1241
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1296
 msgid "Population"
 msgstr "Población"
 
-#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:755
+#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:761
 msgid "Population by wealth group"
 msgstr "Población por grupo de riqueza"
 
@@ -874,20 +909,20 @@ msgstr "Población por grupo de riqueza"
 msgid "Price"
 msgstr "Precio"
 
-#: src/Views/Layouts/Compare/Compare.jsx:1352
+#: src/Views/Layouts/Compare/Compare.jsx:1489
 #: src/Views/Layouts/GlobalMap/Components/Filters/Components/BasicFilter/BasicFilter.jsx:335
 #: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:128
-#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:741
-#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:749
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1247
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1255
+#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:747
+#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:755
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1302
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1311
 #: src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:147
 #: src/Views/Layouts/GlobalMap/Components/MapLegend/MapLegend.jsx:148
-#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:659
+#: src/Views/Layouts/GlobalMap/GlobalMap.jsx:636
 msgid "Primary Livelihood System"
 msgstr "Estrategia de medios de vida"
 
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:913
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:959
 msgid "Product"
 msgstr "Producto"
 
@@ -895,7 +930,13 @@ msgstr "Producto"
 msgid "Quantity"
 msgstr "Cantidad"
 
-#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:506
+#: src/Views/Layouts/Compare/Compare.jsx:1529
+#, fuzzy
+#| msgid "Reference Year start month"
+msgid "Reference Stats"
+msgstr "Mes de inicio del año de referencia"
+
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:548
 msgid "Reference year ending"
 msgstr ""
 
@@ -909,52 +950,60 @@ msgstr "Mes de inicio del año de referencia"
 msgid "Relief, gift, or other food"
 msgstr ""
 
-#: src/Views/Layouts/Compare/Compare.jsx:571
+#: src/Views/Layouts/Compare/Compare.jsx:693
 msgid "Relief, gifts, other"
 msgstr ""
 
-#: src/Views/Layouts/Compare/Compare.jsx:1364
-#: src/Views/Layouts/Compare/Compare.jsx:1369
-#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:587
+#: src/Views/Layouts/Compare/Compare.jsx:1501
+#: src/Views/Layouts/Compare/Compare.jsx:1506
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:631
 msgid "Remove Baseline from Compare view."
 msgstr ""
 
-#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:653
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1100
+#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:659
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1151
 msgid "Remove this Baseline from Compare view"
 msgstr ""
 
-#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:585
-#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:651
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1098
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:629
+#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:657
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1149
 msgid "Removed from Compare view"
 msgstr "Se quitó de la vista Comparar"
 
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1431
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1509
 msgid "Request file"
 msgstr "Solicitar archivo"
 
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1360
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1424
 msgid "Reset chart"
 msgstr "Restablecer gráfico"
 
-#: src/Views/Layouts/Header/Header.tsx:31
+#: src/Views/Layouts/Header/Header.tsx:32
 msgid "Review the basics of using the platform"
 msgstr ""
 
 #: src/Views/Layouts/GlobalMap/Components/Filters/Components/BasicFilter/BasicFilter.jsx:482
-#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:600
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:605
 msgid "Save"
 msgstr "Guardar"
 
+#: src/Views/Layouts/Header/Header.tsx:126
+msgid "Save the Children"
+msgstr ""
+
+#: src/Views/Layouts/Header/Header.tsx:124
+msgid "Save the Children Website"
+msgstr ""
+
 #: src/Views/Layouts/BrowseViews/BrowseViews.jsx:73
-#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:514
-#: src/Views/Layouts/Header/Header.tsx:99
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:547
+#: src/Views/Layouts/Header/Header.tsx:100
 #: src/Views/Layouts/SelectedView/SelectedView.tsx:29
 msgid "Search"
 msgstr "Buscar"
 
-#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:516
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:552
 msgid "Search by product or Baseline"
 msgstr "Buscar por producto o Línea de Base"
 
@@ -962,12 +1011,12 @@ msgstr "Buscar por producto o Línea de Base"
 msgid "Select"
 msgstr "Seleccionar"
 
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1022
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1073
 msgid "Select a Baseline from View all to add it to Compare."
 msgstr ""
 
-#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:649
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1096
+#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:655
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1147
 msgid "Select a Baseline to add to Compare view"
 msgstr ""
 
@@ -975,12 +1024,12 @@ msgstr ""
 msgid "Select a location"
 msgstr "Seleccione una ubicación"
 
-#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:678
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1224
+#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:684
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1279
 msgid "Select Baseline"
 msgstr "Seleccione Línea de Base"
 
-#: src/Views/Layouts/Header/Header.tsx:83
+#: src/Views/Layouts/Header/Header.tsx:84
 msgid "Select language"
 msgstr "Seleccionar idioma"
 
@@ -998,15 +1047,15 @@ msgstr "Algún descargo de responsabilidad"
 
 #: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:126
 #: src/Views/Layouts/GlobalMap/Components/Filters/Components/FiltersDiscover/FiltersDiscover.jsx:94
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:934
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:938
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:982
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:986
 msgid "Strategy"
 msgstr "Estrategia"
 
-#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:605
-#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:103
-#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:91
-#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:97
+#: src/Views/Layouts/GlobalMap/Components/Filters/Components/StrategyFilter/StrategyFilter.jsx:610
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:105
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:93
+#: src/Views/Layouts/GlobalMap/Components/Filters/Filters.jsx:99
 msgid "Strategy Type"
 msgstr "Tipo de estrategia"
 
@@ -1014,22 +1063,33 @@ msgstr "Tipo de estrategia"
 msgid "Subtitle (optional)"
 msgstr "Subtítulo (opcional)"
 
-#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:820
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1415
+#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:826
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1482
 msgid "Survival Threshold"
 msgstr "Umbral de supervivencia"
 
-#: src/Views/Layouts/Compare/Compare.jsx:1430
+#: src/Views/Layouts/Compare/Compare.jsx:1569
 msgid "Survival Threshold (%kcals)"
 msgstr ""
 
-#: src/Views/Layouts/BrowseViews/BrowseViews.jsx:22
-msgid "This demo view includes filters for each type of staple crop produced in Livelihood Zones in West Africa. Open each filter to see a map of..."
+#: src/App.tsx:47
+msgid ""
+"This application is optimized for screens at least 850 pixels wide. You can "
+"continue at this size if needed."
 msgstr ""
 
-#: src/App.tsx:16
-msgid "This page will hold the Livelihoods Explorer help and documentation content."
-msgstr "Esta página contendrá el contenido de ayuda y documentación del Explorador de Medios de Vida."
+#: src/Views/Layouts/BrowseViews/BrowseViews.jsx:22
+msgid ""
+"This demo view includes filters for each type of staple crop produced in "
+"Livelihood Zones in West Africa. Open each filter to see a map of..."
+msgstr ""
+
+#: src/App.tsx:17
+msgid ""
+"This page will hold the Livelihoods Explorer help and documentation content."
+msgstr ""
+"Esta página contendrá el contenido de ayuda y documentación del Explorador "
+"de Medios de Vida."
 
 #: src/Views/Layouts/GlobalMap/Components/ExportMapModal/ExportMapModal.jsx:117
 msgid "Title"
@@ -1040,29 +1100,31 @@ msgid "to"
 msgstr "a"
 
 #: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:183
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:628
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:913
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:936
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:942
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:674
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:959
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:984
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:990
 msgid "Total"
 msgstr "Total"
 
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1357
-#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:493
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1421
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:535
 msgid "Total annual food and cash income (% of 2100 kcal/person/day)"
-msgstr "Ingreso anual total de alimentos y efectivo (% de 2100 kcal/person/day)"
+msgstr ""
+"Ingreso anual total de alimentos y efectivo (% de 2100 kcal/person/day)"
 
-#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:768
-#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:780
-#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1385
+#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:774
+#: src/Views/Layouts/GlobalMap/Components/LHZLightSummary/LHZLightSummary.jsx:786
+#: src/Views/Layouts/GlobalMap/Components/LHZSummary/LHZSummary.jsx:1450
 msgid "Total income chart is not available for this Baseline."
-msgstr "El gráfico de ingreso total no está disponible para esta Línea de Base."
+msgstr ""
+"El gráfico de ingreso total no está disponible para esta Línea de Base."
 
-#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:234
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:253
 msgid "Unable to load activity summary data."
 msgstr ""
 
-#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:205
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:221
 msgid "Unable to load baseline data."
 msgstr ""
 
@@ -1070,20 +1132,26 @@ msgstr ""
 msgid "Unable to load characteristics."
 msgstr ""
 
-#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:530
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:572
 msgid "Unable to load livelihood data."
 msgstr ""
 
-#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:237
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:256
 msgid "Unable to load wealth group data."
 msgstr ""
 
 #: src/auth/Components/Auth/Login.jsx:22
-msgid "Unable to login. Username or Password are either not correct or the account does not exist. Please try again. If issues persist, please contact our help desk."
-msgstr "No se pudo iniciar sesión. El nombre de usuario o la contraseña no son correctos, o la cuenta no existe. Inténtelo de nuevo. Si los problemas persisten, comuníquese con nuestra mesa de ayuda."
+msgid ""
+"Unable to login. Username or Password are either not correct or the account "
+"does not exist. Please try again. If issues persist, please contact our help "
+"desk."
+msgstr ""
+"No se pudo iniciar sesión. El nombre de usuario o la contraseña no son "
+"correctos, o la cuenta no existe. Inténtelo de nuevo. Si los problemas "
+"persisten, comuníquese con nuestra mesa de ayuda."
 
-#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:369
-#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:430
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:409
+#: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:470
 #: src/Views/Layouts/GlobalMap/hooks/useLhzBaselineData.js:60
 msgid "Unknown Product"
 msgstr ""
@@ -1092,7 +1160,7 @@ msgstr ""
 msgid "Unspecified activity"
 msgstr "Actividad no especificada"
 
-#: src/Views/Layouts/Compare/Compare.jsx:694
+#: src/Views/Layouts/Compare/Compare.jsx:813
 msgid "Unspecified product"
 msgstr ""
 
@@ -1100,7 +1168,7 @@ msgstr ""
 msgid "up to"
 msgstr "hasta"
 
-#: src/Views/Layouts/Header/Header.tsx:108
+#: src/Views/Layouts/Header/Header.tsx:109
 #: src/Views/Layouts/SelectedView/SelectedView.tsx:29
 #: src/Views/Layouts/SelectedView/SelectedView.tsx:38
 msgid "Updating"
@@ -1120,26 +1188,25 @@ msgstr ""
 msgid "Username"
 msgstr "Nombre de usuario"
 
-#: src/Views/Layouts/Compare/Compare.jsx:32
 #: src/Views/Layouts/GlobalMap/Components/WealthGroup/WealthGroup.jsx:39
 msgid "Very poor (VP)"
 msgstr "Muy pobre (VP)"
 
-#: src/Views/Layouts/Header/Header.tsx:123
-#: src/Views/Layouts/Header/Header.tsx:30
+#: src/Views/Layouts/Header/Header.tsx:133
+#: src/Views/Layouts/Header/Header.tsx:31
 msgid "Video tour"
 msgstr ""
 
-#: src/Views/Layouts/Compare/Compare.jsx:1336
+#: src/Views/Layouts/Compare/Compare.jsx:1473
 msgid "View on map"
 msgstr "Ver en el mapa"
 
-#: src/Views/Layouts/Header/Header.tsx:43
+#: src/Views/Layouts/Header/Header.tsx:44
 msgid "Visit our user-friendly help center"
 msgstr ""
 
-#: src/Views/Layouts/Compare/Compare.jsx:1295
-#: src/Views/Layouts/Compare/Compare.jsx:1386
+#: src/Views/Layouts/Compare/Compare.jsx:1409
+#: src/Views/Layouts/Compare/Compare.jsx:1519
 #: src/Views/Layouts/GlobalMap/Components/WealthGroup/WealthGroup.jsx:20
 msgid "Wealth Group"
 msgstr "Grupo de riqueza"
@@ -1154,6 +1221,12 @@ msgstr "Recolección de alimentos salvajes"
 msgid "Zones with high livestock contrib. to total income"
 msgstr ""
 
+#~ msgid "Better off (B/O)"
+#~ msgstr "Mejor acomodado (B/O)"
+
+#~ msgid "Medium (M)"
+#~ msgstr "Medio (M)"
+
 #~ msgid "Very Poor (VP)"
 #~ msgstr "Muy pobre (VP)"
 
@@ -1164,7 +1237,9 @@ msgstr ""
 #~ msgstr "Grupo de riqueza"
 
 #~ msgid "No baselines selected. Use Search to add baselines to compare."
-#~ msgstr "No hay Líneas de Base seleccionadas. Use Buscar para agregar Líneas de Base para comparar."
+#~ msgstr ""
+#~ "No hay Líneas de Base seleccionadas. Use Buscar para agregar Líneas de "
+#~ "Base para comparar."
 
 #~ msgid "Remove baseline from compare view"
 #~ msgstr "Quitar la Línea de Base de la vista de comparación"
@@ -1172,17 +1247,18 @@ msgstr ""
 #~ msgid "Survival threshold (% kcals)"
 #~ msgstr "Umbral de supervivencia (% kcals)"
 
-#~ msgid "Livelihoods protection threshold (% kcals)"
-#~ msgstr "Umbral de protección de medios de vida (% kcals)"
-
 #~ msgid "No characteristics data"
 #~ msgstr "No hay datos de características"
 
 #~ msgid "Filter baselines by population for one or all wealth groups"
-#~ msgstr "Filtrar Líneas de Base por población para uno o todos los grupos de riqueza"
+#~ msgstr ""
+#~ "Filtrar Líneas de Base por población para uno o todos los grupos de "
+#~ "riqueza"
 
 #~ msgid "Filter baselines by a strategy’s contribution to livelihoods"
-#~ msgstr "Filtrar Líneas de Base por la contribución de una estrategia a los medios de vida"
+#~ msgstr ""
+#~ "Filtrar Líneas de Base por la contribución de una estrategia a los medios "
+#~ "de vida"
 
 #~ msgid "Filter baselines by Primary Livelihood System"
 #~ msgstr "Filtrar Líneas de Base por Sistema Principal de Medios de Vida"
@@ -1257,10 +1333,13 @@ msgstr ""
 #~ msgstr "Vista detallada"
 
 #~ msgid "Click to learn more about the Detail View (opens in new tab)"
-#~ msgstr "Haga clic para obtener más información sobre la Vista detallada (se abre en una pestaña nueva)"
+#~ msgstr ""
+#~ "Haga clic para obtener más información sobre la Vista detallada (se abre "
+#~ "en una pestaña nueva)"
 
 #~ msgid "Learn more about the Detail View (opens in new tab)"
-#~ msgstr "Más información sobre la Vista detallada (se abre en una pestaña nueva)"
+#~ msgstr ""
+#~ "Más información sobre la Vista detallada (se abre en una pestaña nueva)"
 
 #~ msgid "Close Detail View"
 #~ msgstr "Cerrar vista detallada"

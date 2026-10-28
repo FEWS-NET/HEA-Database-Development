@@ -1,3 +1,4 @@
+import csv
 import datetime
 import json
 import logging
@@ -32,6 +33,7 @@ from baseline.models import (
     LivelihoodZoneBaseline,
     WealthGroup,
 )
+from baseline.serializers import BaselineLivelihoodActivitySerializer
 from common.fields import translation_fields
 from common.tests.factories import ClassifiedProductFactory, CountryFactory
 from metadata.models import LivelihoodActivityScenario, LivelihoodStrategyType
@@ -955,7 +957,7 @@ class LivelihoodZoneBaselineFacetedSearchViewTestCase(APITestCase):
         strategy_type_results = data["livelihood_strategy_types"]
         milk_results = [r for r in strategy_type_results if r["value"] == "MilkProduction"]
         self.assertEqual(len(milk_results), 1)
-        self.assertEqual(milk_results[0]["value_label"], "Production de lait")
+        self.assertEqual(milk_results[0]["value_label"], "Production laitière")
         self.assertEqual(milk_results[0]["count"], 1)
 
         # test taht strategy_type filter to baseline list endpoint
@@ -3005,6 +3007,78 @@ class BaselineLivelihoodActivityViewSetTestCase(APITestCase):
             content = response.content.decode("utf-8")
         df = pd.read_csv(StringIO(content)).fillna("")
         self.assertEqual(len(df), self.num_records)
+
+    def test_csv_columns_align_when_season_is_missing(self):
+        """
+        Test that CSV columns line up when only some activities have a Season.
+
+        The season fields are omitted from the serialized data for activities
+        without a Season, e.g. FoodPurchase, so the CSV must still contain empty
+        values for those fields.
+        """
+        crop_production = BaselineLivelihoodActivityFactory(strategy_type=LivelihoodStrategyType.CROP_PRODUCTION)
+        food_purchase = BaselineLivelihoodActivityFactory(
+            strategy_type=LivelihoodStrategyType.FOOD_PURCHASE,
+            livelihood_strategy__season=None,
+        )
+        response = self.client.get(self.url, {"format": "csv"})
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode("utf-8-sig")
+        rows = list(csv.reader(StringIO(content)))
+        self.assertIn("season", rows[0])
+        for row in rows[1:]:
+            self.assertEqual(len(row), len(rows[0]))
+        rows = {row["id"]: row for row in csv.DictReader(StringIO(content))}
+        self.assertEqual(rows[str(crop_production.pk)]["strategy_type"], LivelihoodStrategyType.CROP_PRODUCTION)
+        self.assertEqual(rows[str(crop_production.pk)]["season"], str(crop_production.livelihood_strategy.season.pk))
+        self.assertEqual(rows[str(food_purchase.pk)]["strategy_type"], LivelihoodStrategyType.FOOD_PURCHASE)
+        self.assertEqual(rows[str(food_purchase.pk)]["season"], "")
+        self.assertEqual(rows[str(food_purchase.pk)]["season_name"], "")
+        self.assertEqual(rows[str(food_purchase.pk)]["product"], food_purchase.livelihood_strategy.product.pk)
+
+    def test_csv_columns_are_serializer_fields(self):
+        """
+        Test that the CSV columns are the serializer fields, even if no row has a value for some of them.
+
+        An extract that only contains activities without a Season, e.g. FoodPurchase,
+        must still contain the season columns, so that all extracts have the same layout.
+        """
+        food_purchase = BaselineLivelihoodActivityFactory(
+            strategy_type=LivelihoodStrategyType.FOOD_PURCHASE,
+            livelihood_strategy__season=None,
+        )
+        response = self.client.get(
+            self.url, {"format": "csv", "livelihood_zone_baseline": food_purchase.livelihood_zone_baseline.pk}
+        )
+        self.assertEqual(response.status_code, 200)
+        rows = list(csv.reader(StringIO(response.content.decode("utf-8-sig"))))
+        self.assertEqual(rows[0], BaselineLivelihoodActivitySerializer.Meta.fields)
+        self.assertEqual(len(rows), 2)
+        row = dict(zip(rows[0], rows[1]))
+        self.assertEqual(row["id"], str(food_purchase.pk))
+        self.assertEqual(row["season"], "")
+
+    def test_csv_empty_has_header(self):
+        """
+        Test that a CSV extract with no rows still contains the header row.
+        """
+        livelihood_zone_baseline = LivelihoodZoneBaselineFactory()
+        response = self.client.get(
+            self.url, {"format": "csv", "livelihood_zone_baseline": livelihood_zone_baseline.pk}
+        )
+        self.assertEqual(response.status_code, 200)
+        rows = list(csv.reader(StringIO(response.content.decode("utf-8-sig"))))
+        self.assertEqual(rows, [BaselineLivelihoodActivitySerializer.Meta.fields])
+
+    def test_csv_error(self):
+        """
+        Test that a CSV error response contains the error, rather than the serializer fields.
+        """
+        with self.assertLogs("django.request", level="WARNING"):
+            response = self.client.get(reverse("baselinelivelihoodactivity-detail", args=(0,)), {"format": "csv"})
+        self.assertEqual(response.status_code, 404)
+        rows = list(csv.reader(StringIO(response.content.decode("utf-8-sig"))))
+        self.assertEqual(rows[0], ["detail"])
 
     def test_html(self):
         response = self.client.get(self.url, {"format": "html"})
