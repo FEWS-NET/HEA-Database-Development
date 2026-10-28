@@ -1059,9 +1059,22 @@ class LivelihoodZoneBaselineFacetedSearchViewTestCase(APITestCase):
                 baseline_ids = {b["id"] for zone in response.data["zones"] for b in zone["livelihood_zone_baselines"]}
                 self.assertEqual(baseline_ids, {baselines[code] for code in expected})
 
-        response = self.client.get(self.url, {"search": self.product1.cpc[:4].lower()})
+        # Factory text fields embed the CPC, so neutralize them to only match on the cpc itself
+        product = ClassifiedProductFactory(
+            cpc="P0222",
+            scientific_name="Neutral",
+            aliases=[],
+            **{field: "Neutral" for field in translation_fields("description")},
+            **{field: "Neutral" for field in translation_fields("common_name")},
+        )
+        LivelihoodStrategyFactory(
+            product=product,
+            livelihood_zone_baseline=self.baseline1,
+            strategy_type=LivelihoodStrategyType.FOOD_PURCHASE,
+        )
+        response = self.client.get(self.url, {"search": "p022"})
         self.assertEqual(response.status_code, 200)
-        self.assertIn(self.product1.cpc, {item["value"] for item in response.data["products"]})
+        self.assertIn(product.cpc, {item["value"] for item in response.data["products"]})
 
     def test_search_with_whitespace_only_term(self):
         response = self.client.get(self.url, {"search": "   "})
