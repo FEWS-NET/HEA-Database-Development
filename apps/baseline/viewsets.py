@@ -2634,7 +2634,7 @@ class LivelihoodZoneBaselineFacetedSearchView(APIView):
             q_object = Q()
             for field in [*translation_fields("description"), *translation_fields("common_name")]:
                 q_object |= Q(**{f"{field}__icontains": term})
-            q_object |= Q(cpc__startswith=term)
+            q_object |= Q(cpc__istartswith=term)
             q_object |= Q(aliases__contains=[term.lower()])
             q_object |= Q(scientific_name__icontains=term)
             qs = qs.filter(q_object)
@@ -2643,14 +2643,15 @@ class LivelihoodZoneBaselineFacetedSearchView(APIView):
     def _search_zones(self, search_term):
         # Multi-word AND search for LivelihoodZone, extended to include country name so that
         # a term like "mali ml01" finds zones where "mali" matches the country and "ml01"
+        # Zone codes are prefix-matched so that "ML05" also finds variants like "ML05-BAN"
         terms = (search_term or "").strip().split()
         if not terms:
             return LivelihoodZone.objects.none()
         qs = LivelihoodZone.objects.all()
         for term in terms:
             q_object = (
-                Q(code__iexact=term)
-                | Q(alternate_code__iexact=term)
+                Q(code__istartswith=term)
+                | Q(alternate_code__istartswith=term)
                 | Q(country__iso3166a2__iexact=term)
                 | Q(country__iso3166a3__iexact=term)
                 | Q(country__name__icontains=term)

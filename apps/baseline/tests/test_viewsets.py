@@ -1035,6 +1035,48 @@ class LivelihoodZoneBaselineFacetedSearchViewTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data.get("products", [])), 0)
 
+    def test_search_with_code_prefix(self):
+        mali = CountryFactory(iso3166a2="ML", iso_en_name="Mali")
+        codes = ["ML01", "ML03", "ML03-ABC", "ML05", "ML05-BAN", "ML05-BAL"]
+        baselines = {}
+        for i, code in enumerate(codes):
+            # Use neutral names/descriptions so matches can only come from the code
+            neutral_text = {field: f"Zone {i}" for field in translation_fields("name")}
+            neutral_text |= {field: f"Zone {i}" for field in translation_fields("description")}
+            zone = LivelihoodZoneFactory(code=code, alternate_code=f"ALT{i}", country=mali, **neutral_text)
+            baselines[code] = LivelihoodZoneBaselineFactory(livelihood_zone=zone).id
+
+        expected_codes = {
+            "ML": codes,
+            "ml05": ["ML05", "ML05-BAN", "ML05-BAL"],
+            "ML05-B": ["ML05-BAN", "ML05-BAL"],
+            "ML05-BA": ["ML05-BAN", "ML05-BAL"],
+            "ML03": ["ML03", "ML03-ABC"],
+        }
+        for search_term, expected in expected_codes.items():
+            with self.subTest(search_term=search_term):
+                response = self.client.get(self.url, {"search": search_term})
+                self.assertEqual(response.status_code, 200)
+                baseline_ids = {b["id"] for zone in response.data["zones"] for b in zone["livelihood_zone_baselines"]}
+                self.assertEqual(baseline_ids, {baselines[code] for code in expected})
+
+        # Factory text fields embed the CPC, so neutralize them to only match on the cpc itself
+        product = ClassifiedProductFactory(
+            cpc="P0222",
+            scientific_name="Neutral",
+            aliases=[],
+            **{field: "Neutral" for field in translation_fields("description")},
+            **{field: "Neutral" for field in translation_fields("common_name")},
+        )
+        LivelihoodStrategyFactory(
+            product=product,
+            livelihood_zone_baseline=self.baseline1,
+            strategy_type=LivelihoodStrategyType.FOOD_PURCHASE,
+        )
+        response = self.client.get(self.url, {"search": "p022"})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(product.cpc, {item["value"] for item in response.data["products"]})
+
     def test_search_with_whitespace_only_term(self):
         response = self.client.get(self.url, {"search": "   "})
         self.assertEqual(response.status_code, 200)
