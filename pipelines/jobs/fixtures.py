@@ -4,11 +4,17 @@ Load fixtures from corrected files
 
 from dagster import define_asset_job
 
-from ..assets.base import bss_metadata, completed_bss_metadata
-from ..assets.baseline import baseline_instances
+from ..assets.base import (
+    bss_metadata,
+    completed_bss_metadata,
+    corrected_files,
+    original_files,
+)
+from ..assets.baseline import baseline_instances, community_instances
 from ..assets.fixtures import (
     consolidated_fixture,
     imported_baseline,
+    imported_communities,
     uploaded_baselines,
 )
 from ..assets.key_parameter import (
@@ -101,6 +107,17 @@ import_baseline_from_fixture = define_asset_job(
     partitions_def=bss_instances_partitions_def,
 )
 
+# Apply the corrections to the original BSS and upload the Communities from it.
+import_communities_from_fixture = define_asset_job(
+    name="import_communities_from_fixture",
+    selection=(
+        corrected_files,
+        community_instances,
+        imported_communities,
+    ),
+    partitions_def=bss_instances_partitions_def,
+)
+
 import_seas_cal_from_fixture = define_asset_job(
     name="import_seas_cal_from_fixture",
     selection=(
@@ -124,6 +141,7 @@ update_external_assets = define_asset_job(
 upload_baselines = define_asset_job(
     name="upload_baselines",
     selection=(
+        original_files,
         baseline_instances,
         uploaded_baselines,
     ),
