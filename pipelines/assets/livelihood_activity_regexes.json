@@ -587,25 +587,19 @@
         "{product_pattern} purchase: quantity \\({unit_of_measure_pattern}\\)",
         null,
         true,
-        "quantity_purchased"
+        "unit_multiple"
     ],
     [
         "{product_pattern} purchase: {unit_of_measure_pattern}",
         null,
         true,
-        "quantity_purchased"
+        "unit_multiple"
     ],
     [
         "{product_pattern}: quantity \\({unit_of_measure_pattern}\\)",
         null,
         true,
         "quantity_produced_or_purchased"
-    ],
-    [
-        "{product_pattern} purchase: quantity \\({unit_of_measure_pattern}\\)",
-        null,
-        true,
-        "quantity_purchased"
     ],
     [
         "(?P<product_id>lait (?:du|de) {label_pattern})",
