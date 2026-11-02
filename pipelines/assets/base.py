@@ -24,7 +24,9 @@ from dagster import (
     asset,
 )
 from django.db.models import F
-from gdrivefs.core import GoogleDriveFile
+from gdrivefs.core import GoogleDriveFile, GoogleDriveFileSystem
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
 from googletrans import Translator
 from openpyxl.comments import Comment
 from openpyxl.utils import get_column_letter
@@ -85,6 +87,106 @@ SUMMARY_LABELS = [
     "Results",
     "Synthèse",
 ]
+
+
+BSS_FILE_EXTENSIONS = {".xls", ".xlsx", ".xlsm"}
+FOLDER_CONTENTS_COLUMNS = ["path", "modified_datetime", "sha512", "livelihood_zone_baseline"]
+# Look up the baseline for the path in column A from the BSS Metadata worksheet, as `<code>~<reference_year_end_date>`
+LIVELIHOOD_ZONE_BASELINE_FORMULA = (
+    '=if(isna(vlookup(A{row},Metadata!$A:$O,3,false)), "", '
+    'vlookup(A{row},Metadata!$A:$O,3,false)&"~"&text(vlookup(A{row},Metadata!$A:$O,15,false),"YYYY-MM-DD"))'
+)
+
+
+def get_bss_files_inventory(fs, root_path: str) -> pd.DataFrame:
+    """
+    Return the spreadsheet files below `root_path` with their Drive metadata.
+
+    The `livelihood_zone_baseline` column is empty, because the Folder Contents worksheet looks it up with a formula.
+    """
+    rows = []
+    root_path = root_path.rstrip("/")
+    for directory, _, filenames in fs.walk(root_path):
+        for filename in filenames:
+            if os.path.splitext(filename)[1].lower() not in BSS_FILE_EXTENSIONS:
+                continue
+            full_path = f"{directory.rstrip('/')}/{filename}"
+            path = full_path.removeprefix(f"{root_path}/")
+            with fs.open(full_path, mode="rb") as file:
+                content = file.read()
+            modified = fs.info(full_path).get("modifiedTime")
+            if modified:
+                modified = datetime.datetime.fromisoformat(modified.replace("Z", "+00:00")).strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                )
+            rows.append(
+                {
+                    "path": path,
+                    "modified_datetime": modified,
+                    "sha512": hashlib.sha512(content).hexdigest()[:8],
+                }
+            )
+    return pd.DataFrame(rows, columns=FOLDER_CONTENTS_COLUMNS).sort_values("path", ignore_index=True)
+
+
+def update_folder_contents_worksheet(config: BSSMetadataConfig, inventory: pd.DataFrame) -> None:
+    """
+    Replace the BSS Metadata workbook's Folder Contents worksheet with `inventory`.
+
+    Columns A:C contain the inventory values. Column D contains a formula that looks up the matching baseline from
+    the Metadata worksheet, so that it stays up to date as the Metadata worksheet changes.
+    """
+    workbook = UPath(config.bss_metadata_workbook, **config.bss_metadata_storage_options)
+    if not isinstance(workbook.fs, GoogleDriveFileSystem):
+        raise ValueError("BSS Metadata workbook must be a Google Sheet")
+    credentials = service_account.Credentials.from_service_account_info(
+        config.bss_metadata_storage_options["creds"],
+        scopes=["https://www.googleapis.com/auth/spreadsheets"],
+    )
+    sheets = build("sheets", "v4", credentials=credentials, cache_discovery=False)
+    spreadsheet_id = workbook.fs.path_to_file_id(workbook.path)
+    values = [
+        FOLDER_CONTENTS_COLUMNS,
+        *inventory[FOLDER_CONTENTS_COLUMNS[:3]].fillna("").astype(str).values.tolist(),
+    ]
+    sheets.spreadsheets().values().clear(
+        spreadsheetId=spreadsheet_id, range="'Folder Contents'!A:C", body={}
+    ).execute()
+    # Write the values as RAW, so that Sheets doesn't convert hashes like 12345678 or 1e234567 to numbers
+    sheets.spreadsheets().values().update(
+        spreadsheetId=spreadsheet_id,
+        range="'Folder Contents'!A1",
+        valueInputOption="RAW",
+        body={"values": values},
+    ).execute()
+    if not inventory.empty:
+        # Write the formulas as USER_ENTERED, so that Sheets evaluates them instead of storing them as text
+        last_row = len(inventory) + 1
+        sheets.spreadsheets().values().update(
+            spreadsheetId=spreadsheet_id,
+            range=f"'Folder Contents'!D2:D{last_row}",
+            valueInputOption="USER_ENTERED",
+            body={"values": [[LIVELIHOOD_ZONE_BASELINE_FORMULA.format(row=row)] for row in range(2, last_row + 1)]},
+        ).execute()
+
+
+@asset
+def bss_files_inventory(config: BSSMetadataConfig, bss_metadata) -> Output[pd.DataFrame]:
+    """
+    Inventory BSS files in Google Drive and refresh the BSS Metadata workbook's Folder Contents worksheet.
+    """
+    # Disable the listings cache, because gdrivefs.ls currently returns a subdirectory's own entry from its
+    # cached parent listing instead of listing the subdirectory, so walk() finds no files in it.
+    folder = UPath(config.bss_files_folder, **config.bss_files_storage_options, use_listings_cache=False)
+    inventory = get_bss_files_inventory(folder.fs, folder.path)
+    update_folder_contents_worksheet(config, inventory)
+    return Output(
+        inventory,
+        metadata={
+            "num_files": len(inventory),
+            "preview": MetadataValue.md(inventory.head(config.preview_rows).to_markdown(index=False)),
+        },
+    )
 
 
 @asset

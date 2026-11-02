@@ -150,3 +150,14 @@ only:
 | BSS Metadata worksheet or BSS file | Stage 1 `update_external_assets`                                 |
 | Corrections worksheet              | Stage 3                                                          |
 | Community Aliases worksheet        | Stage 5, then stage 6 `create_consolidated_fixture`              |
+
+## Restoring a BSS from its oldest version
+
+Some BSSs in Google Drive have been left in an uncalcluated state that leaves them with hundreds of `#REF!` errors as
+the saved cell value. These are reported in the `worksheet_errors` metadata on `original_files`.
+
+Use the `notebooks/restore_original_bss.ipynb` notebook in a local development environment to restore them. It
+downloads the oldest available Google Drive revision of each affected BSS, recalculates it in Excel through
+xlwings, or in LibreOffice if Excel isn't available, and uploads it as a new version of the file, unlocking and
+relocking the file in Google Drive. After it succeeds, rerun the import from Stage 2 `upload_baselines` onwards for
+the restored files.
