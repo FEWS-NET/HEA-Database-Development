@@ -86,7 +86,11 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hea.settings.production")
 django.setup()
 
 from baseline.lookups import CommunityLookup  # NOQA: E402
-from baseline.models import LivelihoodZoneBaseline  # NOQA: E402
+from baseline.models import (  # NOQA: E402
+    LivelihoodZoneBaseline,
+    SeasonalActivity,
+    SeasonalActivityOccurrence,
+)
 from common.lookups import ClassifiedProductLookup  # NOQA: E402
 from common.utils import get_start_end_day_ranges_from_months  # NOQA: E402
 from metadata.lookups import SeasonalActivityTypeLookup  # NOQA: E402
@@ -561,5 +565,8 @@ def imported_seasonal_activities(
 ) -> Output[None]:
     """
     Imported Django fixture of SeasonalActivity and SeasonalActivityOccurrence data for a BSS, added to the Django database.
+
+    The fixture is authoritative for the Seasonal Activities in the Baseline, so any existing Seasonal Activities or
+    Seasonal Activity Occurrences that are not in the fixture are deleted.
     """
-    return import_fixture(seasonal_activity_fixture)
+    return import_fixture(seasonal_activity_fixture, reconcile=(SeasonalActivity, SeasonalActivityOccurrence))
