@@ -531,6 +531,18 @@ def get_livelihood_activity_regular_expression_attributes(label: str) -> dict:
         if match:
             attributes.update(match.groupdict())
 
+            # Labels such as "Femmes - travail domestique" or "Construction - garçons/filles" contain a product and
+            # the household members who carry out the activity. A BSS often contains several rowsets for the same
+            # product that differ only by household members, so use the original text for the household members as
+            # the additional_identifier for the start of the Livelihood Strategy, so that the strategies are unique.
+            if (
+                is_start
+                and attributes["product_id"]
+                and attributes["household_labor_provider"]
+                and not attributes["additional_identifier"]
+            ):
+                attributes["additional_identifier"] = attributes["household_labor_provider"]
+
             # Map household_labor_provider to canonical values using TextChoices
             if "household_labor_provider" in attributes and attributes["household_labor_provider"]:
                 try:

@@ -359,6 +359,43 @@ class GetActivityLabelAttributesTestCase(TestCase):
         self.assertEqual(attributes_df.loc[0, "additional_identifier"], full_label)
         self.assertEqual(attributes_df.loc[0, "product_common_name_en"], product.common_name_en)
 
+    def test_get_all_label_attributes_uses_household_labor_provider_as_additional_identifier(self):
+        """
+        Labels containing a product and the household members doing the work use those members as the identifier.
+
+        A BSS often contains several rowsets for the same product that differ only by household members, e.g.
+        "Filles/garçons - construction" and "Femmes - construction" in BI02 Data2, so the household members must be
+        part of the additional_identifier to keep the Livelihood Strategies unique.
+        """
+        construction = ClassifiedProductFactory(cpc="S54HA", aliases=["construction"])
+        domestic_labor = ClassifiedProductFactory(cpc="S98HA", aliases=["travail domestique"])
+        labels = pd.Series(
+            [
+                "Filles/garçons - construction",
+                "Femmes - construction",
+                "Construction - garçons/filles",
+                "Femmes - travail domestique",
+            ]
+        )
+
+        attributes_df = get_all_label_attributes(
+            labels=labels,
+            activity_type=ActivityLabel.LivelihoodActivityType.OTHER_CASH_INCOME,
+            country_code=None,
+            livelihood_zone_id=None,
+        )
+
+        self.assertEqual(
+            list(attributes_df["product_id"]),
+            [construction.pk, construction.pk, construction.pk, domestic_labor.pk],
+        )
+        self.assertEqual(
+            list(attributes_df["additional_identifier"]),
+            ["filles/garçons", "femmes", "garçons/filles", "femmes"],
+        )
+        self.assertEqual(list(attributes_df["household_labor_provider"]), ["children", "women", "children", "women"])
+        self.assertTrue(attributes_df["is_start"].all())
+
     def test_get_completeness_dataframe_with_no_rows(self):
         column = "income"
         summary_df = pd.DataFrame(
