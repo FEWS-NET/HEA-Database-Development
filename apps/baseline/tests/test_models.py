@@ -9,6 +9,7 @@ from django.test.utils import CaptureQueriesContext
 
 from baseline.models import (
     BaselineLivelihoodActivity,
+    CropProduction,
     FoodPurchase,
     LivelihoodActivity,
     LivelihoodProductCategory,
@@ -823,6 +824,53 @@ class ReliefGiftOtherTestCase(TestCase):
         # Incorrect quantity_produced
         with self.assertRaises(ValidationError):
             self.reliefgift3.validate_quantity_produced()
+
+
+class CropProductionTestCase(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        # Missing data
+        cls.cropproduction1 = CropProduction(quantity_sold=None, price=None, income=None)
+        # Exact income
+        cls.cropproduction2 = CropProduction(quantity_sold=100, price=25, income=2500)
+        # Typed income with price rounded to 2 decimal places, from ML05 'Data'!AX287 and 'Data'!AW395
+        cls.cropproduction3 = CropProduction(quantity_sold=454, price=392.07, income=178000)
+        cls.cropproduction4 = CropProduction(quantity_sold=445, price=155.06, income=69000)
+        # Price just inside the half-cent rounding allowance: 100004.9 / 1000 = 100.0049
+        cls.cropproduction5 = CropProduction(quantity_sold=1000, price=100, income=100004.9)
+        # Price just outside the half-cent rounding allowance: 100005.1 / 1000 = 100.0051
+        cls.cropproduction6 = CropProduction(quantity_sold=1000, price=100, income=100005.1)
+        # Price rounded to an integer, from HT06 'Data'!AJ344: 270000 / 22464 = 12.019...
+        cls.cropproduction7 = CropProduction(quantity_sold=22464, price=12, income=270000)
+        # Incorrect income, from SN06 'Data'!AO205: 20 * 25000 = 500000
+        cls.cropproduction8 = CropProduction(quantity_sold=20, price=25000, income=400000)
+        # Very low price, inside the half-cent allowance but outside the 1% relative tolerance: 5 / 1000 = 0.005
+        cls.cropproduction9 = CropProduction(quantity_sold=1000, price=0.004, income=5)
+        # Income with no quantity sold
+        cls.cropproduction10 = CropProduction(quantity_sold=0, price=100, income=1000)
+
+    def test_validate_income(self):
+        """
+        Test validate_income method, including the allowance for prices rounded to 2 decimal places
+        """
+        # Missing data should not raise ValidationError
+        self.cropproduction1.validate_income()
+        # Correct data should not raise ValidationError
+        self.cropproduction2.validate_income()
+        # Price rounded to 2 decimal places should not raise ValidationError
+        self.cropproduction3.validate_income()
+        self.cropproduction4.validate_income()
+        self.cropproduction5.validate_income()
+        # Incorrect data should raise ValidationError
+        for instance in [
+            self.cropproduction6,
+            self.cropproduction7,
+            self.cropproduction8,
+            self.cropproduction9,
+            self.cropproduction10,
+        ]:
+            with self.subTest(instance=instance), self.assertRaises(ValidationError):
+                instance.validate_income()
 
 
 class OtherCashIncomeTestCase(TestCase):
