@@ -37,9 +37,6 @@ causes many confusing failures in later stages, so it is quicker to fix it first
   `BSS_METADATA_WORKBOOK`, `BSS_FILES_FOLDER`, `GOOGLE_APPLICATION_CREDENTIALS` and `DAGSTER_ASSET_BASE_PATH`.
 - Make sure that a Django user exists for every author named in the Corrections worksheet. Stage 3 uses these users
   as the authors of the corrections.
-- In the Dagster UI, open Deployment > Concurrency (`/deployment/concurrency`) and set a limit for the
-  `django_loaddata` pool, for example 1. The import assets run in this pool, which stops concurrent `loaddata` runs
-  from causing duplicate primary key errors.
 - Turn on the `bss_instance_sensor`, which is needed after stage 2.
 
 To run a partitioned job for every partition, open the job in the Dagster UI, click Materialize all, and launch a
