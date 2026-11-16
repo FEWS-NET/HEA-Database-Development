@@ -2142,9 +2142,26 @@ class LivelihoodActivity(common_models.Model):
             raise ValidationError(_(message))
 
     def validate_income(self):
+        """
+        Validate that the income is the quantity sold multiplied by the price.
+
+        Some BSSs contain a typed income and a typed price that was rounded to 2
+        decimal places from income / quantity sold, e.g. 178000 / 454 = 392.0705...
+        entered as 392.07. So we also accept the income if the price is within
+        rounding distance of income / quantity sold. The additional relative
+        tolerance prevents the rounding allowance from accepting large errors
+        for products with very low prices.
+        """
         if self.income and self.quantity_sold is not None and self.price is not None:
-            if not math.isclose(self.income, self.quantity_sold * self.price):
-                raise ValidationError(_("Income for a Livelihood Activity must be quantity sold multiplied by price"))
+            if math.isclose(self.income, self.quantity_sold * self.price):
+                return
+            if self.quantity_sold:
+                expected_price = self.income / self.quantity_sold
+                if math.isclose(self.price, expected_price, rel_tol=0, abs_tol=0.005) and math.isclose(
+                    self.price, expected_price, rel_tol=0.01
+                ):
+                    return
+            raise ValidationError(_("Income for a Livelihood Activity must be quantity sold multiplied by price"))
 
     def validate_expenditure(self):
         """
