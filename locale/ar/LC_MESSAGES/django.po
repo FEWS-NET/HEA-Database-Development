@@ -6,36 +6,160 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-02 15:43+0000\n"
+"POT-Creation-Date: 2026-10-20 20:35+0000\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 "
 "&& n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5;\n"
 
-#: hea/settings/base.py:244
-msgid "English"
-msgstr "إنجليزي"
+#: apps/viz/apps.py:12
+msgid "visualizations"
+msgstr ""
 
-#: hea/settings/base.py:245
-msgid "French"
-msgstr "فرنسي"
-
-#: hea/settings/base.py:246
-msgid "Spanish"
-msgstr "الأسبانية"
-
-#: hea/settings/base.py:247
-msgid "Portuguese"
-msgstr "البرتغالية"
-
-#: hea/settings/base.py:248
-msgid "Arabic"
-msgstr "عربي"
-
+#: apps/viz/templates/viz/pipeline_status.html:12
+#: apps/viz/templates/viz/pipeline_status_index.html:12
+#: apps/viz/templates/viz/pipeline_status_partition.html:12
 #: templates/admin/app_index.html:11 templates/admin/base.html:100
 msgid "Home"
 msgstr "بيت"
+
+#: apps/viz/templates/viz/pipeline_status.html:13
+#: apps/viz/templates/viz/pipeline_status_partition.html:13
+msgid "Pipeline Status"
+msgstr ""
+
+#: apps/viz/templates/viz/pipeline_status.html:21
+#, python-format
+msgid ""
+"Status of the %(asset_count)s assets in the pipeline for %(terminal_asset)s, "
+"as at %(updated)s."
+msgstr ""
+
+#: apps/viz/templates/viz/pipeline_status.html:29
+msgid "All"
+msgstr ""
+
+#: apps/viz/templates/viz/pipeline_status.html:37
+msgid "Partition status"
+msgstr ""
+
+#: apps/viz/templates/viz/pipeline_status.html:39
+msgid "All statuses"
+msgstr ""
+
+#: apps/viz/templates/viz/pipeline_status.html:46
+#, fuzzy
+#| msgid "Filters"
+msgid "Filter"
+msgstr "عوامل التصفية"
+
+#: apps/viz/templates/viz/pipeline_status.html:50
+msgid "Partition status summary"
+msgstr ""
+
+#: apps/viz/templates/viz/pipeline_status.html:52
+#: apps/viz/templates/viz/pipeline_status_index.html:26
+#, fuzzy
+#| msgid "Toggle navigation"
+msgid "Partitions"
+msgstr "تبديل الملاحة"
+
+#: apps/viz/templates/viz/pipeline_status.html:61
+msgid "Failing partitions"
+msgstr ""
+
+#: apps/viz/templates/viz/pipeline_status.html:66
+#, fuzzy
+#| msgid "Toggle navigation"
+msgid "Partition"
+msgstr "تبديل الملاحة"
+
+#: apps/viz/templates/viz/pipeline_status.html:67
+#: apps/viz/templates/viz/pipeline_status_partition.html:24
+msgid "Failed at"
+msgstr ""
+
+#: apps/viz/templates/viz/pipeline_status.html:84
+#, fuzzy
+#| msgid "None available"
+msgid "No partitions have failed."
+msgstr "لا شيء متاح"
+
+#: apps/viz/templates/viz/pipeline_status.html:87
+msgid "Asset status by partition"
+msgstr ""
+
+#: apps/viz/templates/viz/pipeline_status.html:89
+msgid "Click a partition to see the status of each asset for that partition."
+msgstr ""
+
+#: apps/viz/templates/viz/pipeline_status.html:112
+msgid "No partitions match the selected filters."
+msgstr ""
+
+#: apps/viz/templates/viz/pipeline_status_index.html:23
+msgid "Pipeline"
+msgstr ""
+
+#: apps/viz/templates/viz/pipeline_status_index.html:24
+msgid "Terminal asset"
+msgstr ""
+
+#: apps/viz/templates/viz/pipeline_status_index.html:25
+msgid "Assets"
+msgstr ""
+
+#: apps/viz/templates/viz/pipeline_status_index.html:47
+msgid ""
+"No pipelines are monitored. Add pipeline_status metadata to the terminal "
+"asset of a partitioned pipeline to monitor it."
+msgstr ""
+
+#: apps/viz/templates/viz/pipeline_status_partition.html:22
+#: apps/viz/templates/viz/pipeline_status_partition.html:40
+msgid "Status"
+msgstr ""
+
+#: apps/viz/templates/viz/pipeline_status_partition.html:33
+msgid "The asset graph is not available because Graphviz is not installed."
+msgstr ""
+
+#: apps/viz/templates/viz/pipeline_status_partition.html:39
+msgid "Asset"
+msgstr ""
+
+#: apps/viz/templates/viz/pipeline_status_partition.html:41
+msgid "Last materialized"
+msgstr ""
+
+#: apps/viz/templates/viz/pipeline_status_partition.html:42
+msgid "Latest run"
+msgstr ""
+
+#: apps/viz/templates/viz/pipeline_status_partition.html:60
+msgid "View run"
+msgstr ""
+
+#: hea/settings/base.py:259
+msgid "English"
+msgstr "إنجليزي"
+
+#: hea/settings/base.py:260
+msgid "French"
+msgstr "فرنسي"
+
+#: hea/settings/base.py:261
+msgid "Spanish"
+msgstr "الأسبانية"
+
+#: hea/settings/base.py:262
+msgid "Portuguese"
+msgstr "البرتغالية"
+
+#: hea/settings/base.py:263
+msgid "Arabic"
+msgstr "عربي"
 
 #: templates/admin/app_index.html:42 templates/admin/app_index.html:73
 #, python-format
@@ -48,8 +172,6 @@ msgid "View %(name)s"
 msgstr "عرض %(name)s"
 
 #: templates/admin/app_index.html:95
-#, fuzzy
-#| msgid "You don’t have permission to view or edit anything."
 msgid "You don't have permission to view or edit anything."
 msgstr "ليس لديك إذن لعرض أو تحرير أي شيء."
 

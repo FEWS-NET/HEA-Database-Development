@@ -1,0 +1,99 @@
+.pipeline-status {
+    max-width: 1480px;
+}
+
+.pipeline-status__updated {
+    color: var(--body-quiet-color);
+}
+
+.pipeline-status__filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 16px;
+    margin: 16px 0;
+}
+
+.pipeline-status__filters label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.pipeline-status__metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 16px 0;
+}
+
+.pipeline-status__metric {
+    min-width: 120px;
+    padding: 10px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+}
+
+.pipeline-status__metric strong {
+    display: block;
+    font-size: 24px;
+}
+
+.pipeline-status__legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin: 8px 0;
+}
+
+.pipeline-status__swatch {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin-right: 4px;
+    border-radius: 2px;
+    vertical-align: middle;
+}
+
+.pipeline-status__badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    color: #000000;
+}
+
+.pipeline-status__badge--materialized {
+    background-color: #2ecc81;
+}
+
+.pipeline-status__badge--failed {
+    background-color: #c72a1c;
+    color: #ffffff;
+}
+
+.pipeline-status__badge--in-progress {
+    background-color: #4f43dd;
+    color: #ffffff;
+}
+
+.pipeline-status__badge--missing {
+    background-color: #c2c7d0;
+}
+
+.pipeline-status__root-failure {
+    font-weight: 700;
+}
+
+.pipeline-status__graph {
+    overflow-x: auto;
+    margin: 16px 0;
+}
+
+.pipeline-status__graph svg {
+    max-width: 100%;
+    height: auto;
+}
+
+.pipeline-status__heatmap .nsewdrag {
+    cursor: pointer;
+}

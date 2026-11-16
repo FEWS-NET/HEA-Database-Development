@@ -54,21 +54,49 @@ services:
       - -c
       - random_page_cost=0.11
 
-  # MinIO is an Amazon S3 compatible object storage server.
-  minio:
+  # Amazon S3 compatible object storage for local use, provided by RustFS
+  objectstore:
     restart: unless-stopped
-    image: minio/minio:RELEASE.2025-07-18T21-56-31Z
+    image: rustfs/rustfs:1.0.0
     volumes:
-      - minio_data:/data
+      - objectstore_data:/data
     environment:
       # These credentials need to be provided by client's wishing to access the storage server
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      RUSTFS_ACCESS_KEY: ${OBJECTSTORE_ROOT_USER}
+      RUSTFS_SECRET_KEY: ${OBJECTSTORE_ROOT_PASSWORD}
     command:
       - server
       - --console-address
       - ":9010"
       - /data
+
+  # Redis is the shared Django cache
+  redis:
+    restart: unless-stopped
+    image: redis:8.2.2
+    volumes:
+      - redis_data:/data
+    command:
+      - redis-server
+      # Keep maxmemory at or below 75% of the container memory limit set in the environment override
+      - --maxmemory
+      - 600mb
+      - --maxmemory-policy
+      - allkeys-lru
+      - --tcp-backlog
+      - "128"
+      - --maxclients
+      - "150"
+      - --save
+      - "900"
+      - "1"
+      - --appendonly
+      - "no"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   app:
     restart: unless-stopped
@@ -81,6 +109,7 @@ services:
         - PIP_INDEX_URL
     depends_on:
       - db
+      - redis
     environment: &base_env
       CLIENT: ${CLIENT}
       APP: ${APP}
@@ -94,6 +123,9 @@ services:
       PGUSER: ${CLIENT}${APP}${ENV}
       PGDATABASE: ${CLIENT}${APP}${ENV}
       PGPASSWORD: ${PGPASSWORD}
+      REDIS_HOST: ${REDIS_HOST:-redis}
+      REDIS_PORT: 6379
+      CACHE_REDIS_DB: ${CACHE_REDIS_DB:-1}
       DATABASE_URL: postgis://${CLIENT}${APP}${ENV}:${PGPASSWORD}@db:5432/${CLIENT}${APP}${ENV}
       DAGSTER_PGUSER: ${CLIENT}hdg${ENV}
       DAGSTER_PGPASSWORD: ${PGPASSWORD}
@@ -104,12 +136,12 @@ services:
       DAGSTER_S3_BUCKET: ${DAGSTER_S3_BUCKET}
       DAGSTER_S3_PREFIX: ${DAGSTER_S3_PREFIX}
       DAGSTER_S3_LOG_PATH: ${DAGSTER_S3_LOG_PATH}
-      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
-      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
-      AWS_ENDPOINT_URL_S3: http://minio:9000
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-      MINIO_ENDPOINT_URL: http://minio:9000
+      AWS_ACCESS_KEY_ID: ${OBJECTSTORE_ROOT_USER}
+      AWS_SECRET_ACCESS_KEY: ${OBJECTSTORE_ROOT_PASSWORD}
+      AWS_ENDPOINT_URL_S3: http://objectstore:9000
+      OBJECTSTORE_ROOT_USER: ${OBJECTSTORE_ROOT_USER}
+      OBJECTSTORE_ROOT_PASSWORD: ${OBJECTSTORE_ROOT_PASSWORD}
+      OBJECTSTORE_ENDPOINT_URL: http://objectstore:9000
       EXPLORER_CLOUDFRONT_URL: ${EXPLORER_CLOUDFRONT_URL:-http://localhost:3000}
       SUPPORT_EMAIL_ADDRESS: ${SUPPORT_EMAIL_ADDRESS}
       DJANGO_MIGRATE: 1
@@ -187,5 +219,7 @@ services:
 volumes:
   db_data:
     external: false
-  minio_data:
+  objectstore_data:
+    external: false
+  redis_data:
     external: false

@@ -1,17 +1,21 @@
 import datetime
+import functools
 import json
 import os
 import tempfile
 from collections import defaultdict
+from collections.abc import Collection, Mapping
+from graphlib import TopologicalSorter
 from io import StringIO
 
 import django
 import pandas as pd
 from dagster import AssetExecutionContext, MetadataValue, Output, asset
+from django.apps import apps
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files import File
 from django.core.management import call_command
-from django.db import models
+from django.db import models, transaction
 from jsondiff import JsonDiffer
 
 from ..configs import BSSMetadataConfig
@@ -24,12 +28,160 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hea.settings.production")
 # Configure Django with our custom settings before importing any Django classes
 django.setup()
 
-from baseline.models import LivelihoodActivity, LivelihoodZoneBaseline  # NOQA: E402
+from baseline.models import (  # NOQA: E402
+    Community,
+    LivelihoodActivity,
+    LivelihoodZone,
+    LivelihoodZoneBaseline,
+    LivelihoodZoneBaselineCorrection,
+    SourceOrganization,
+)
 from common.management.commands import verbose_load_data  # NOQA: E402
 from common.models import ClassifiedProduct  # NOQA: E402
 
 # Create a differ to detect duplicate instances
 differ = JsonDiffer(marshal=True)  # marshal=True escapes the diff so that it can be printed as a JSON sting.
+
+# Models that are not reconciled when importing the consolidated fixture for a Livelihood Zone Baseline.
+# The Baseline itself, its Corrections and its Communities (including their aliases) are loaded by separate parts
+# of the import process. Source Organizations and Livelihood Zones are not specific to a single Baseline.
+BASELINE_RECONCILIATION_EXCLUDED_MODELS = frozenset(
+    {
+        Community,
+        LivelihoodZone,
+        LivelihoodZoneBaseline,
+        LivelihoodZoneBaselineCorrection,
+        SourceOrganization,
+    }
+)
+
+
+def get_root_model(model: type[models.Model]) -> type[models.Model]:
+    """
+    Return the root concrete model for a model.
+
+    Proxy models resolve to their concrete model, and multi-table inheritance children, such as MilkProduction,
+    resolve to their ultimate parent, such as LivelihoodActivity, which shares the same primary key.
+    """
+    model = model._meta.concrete_model
+    while model._meta.parents:
+        model = next(iter(model._meta.parents))._meta.concrete_model
+    return model
+
+
+@functools.cache
+def get_livelihood_zone_baseline_lookup(model: type[models.Model]) -> str | None:
+    """
+    Return the ORM lookup that filters a model by Livelihood Zone Baseline, or None if there isn't one.
+
+    The lookup is the shortest path of foreign keys from the model to LivelihoodZoneBaseline, preferring
+    non-nullable foreign keys, e.g. `wealth_group__livelihood_zone_baseline` for WealthGroupCharacteristicValue.
+    """
+    model = get_root_model(model)
+    visited = {model}
+    queue = [(model, [])]
+    while queue:
+        current_model, path = queue.pop(0)
+        relations = [field for field in current_model._meta.concrete_fields if field.many_to_one or field.one_to_one]
+        for field in sorted(relations, key=lambda field: field.null):
+            related_model = get_root_model(field.related_model)
+            if related_model is LivelihoodZoneBaseline:
+                return "__".join([*path, field.name])
+            if (
+                related_model._meta.app_label == LivelihoodZoneBaseline._meta.app_label
+                and related_model not in visited
+            ):
+                visited.add(related_model)
+                queue.append((related_model, [*path, field.name]))
+    return None
+
+
+def get_baseline_reconciliation_models() -> list[type[models.Model]]:
+    """
+    Return the root models that are reconciled when importing the consolidated fixture for a Baseline.
+
+    This is every root model in the `baseline` app except those in BASELINE_RECONCILIATION_EXCLUDED_MODELS,
+    so that new models are reconciled automatically once they are added to the consolidated fixture.
+    """
+    root_models = {get_root_model(model) for model in apps.get_app_config("baseline").get_models()}
+    return sorted(root_models - BASELINE_RECONCILIATION_EXCLUDED_MODELS, key=lambda model: model._meta.label)
+
+
+def get_deletion_order(reconcile_models: Collection[type[models.Model]]) -> list[type[models.Model]]:
+    """
+    Return the root models in an order that deletes referencing models before the models that they reference.
+
+    Deleting the leaves first avoids PROTECT and RESTRICT errors between the reconciled models, and means that the
+    deleted counts are reported against the model that was out of date, rather than as a cascade from its parent.
+    """
+    root_models = {get_root_model(model) for model in reconcile_models}
+    # Map each model to the models that must be deleted before it, i.e. the models that reference it.
+    graph = {model: set() for model in root_models}
+    for model in apps.get_models():
+        root_model = get_root_model(model)
+        if root_model not in graph:
+            continue
+        for field in model._meta.concrete_fields:
+            if field.many_to_one or field.one_to_one:
+                related_model = get_root_model(field.related_model)
+                if related_model in graph and related_model is not root_model:
+                    # The current model depends on the related model, so must be deleted before the related model.
+                    graph[related_model].add(root_model)
+    # The stdlib's graphlib module processes a graph represented as a dictionary mapping
+    # each node to the set of nodes it depends on.
+    # TopologicalSorter.static_order returns the nodes in an order such that
+    # each node comes after all nodes that reference it.
+    return list(TopologicalSorter(graph).static_order())
+
+
+def reconcile_fixture(
+    reconcile_models: Collection[type[models.Model]],
+    loaded_pks: Mapping[type[models.Model], set],
+) -> dict[str, int]:
+    """
+    Delete instances of the reconciled models that were not loaded from the fixture.
+
+    The fixture is authoritative for every Livelihood Zone Baseline that it contains instances for, so the Baselines
+    are found from the loaded instances of the reconciled models. This allows a single fixture to reconcile several
+    Baselines, e.g. all the Baselines for a Country.
+
+    `loaded_pks` contains the primary keys saved by the `verbose_load_data` command for each concrete model.
+    Instances that were loaded keep their existing primary keys.
+
+    Returns the number of deleted instances for each model, including cascaded deletions.
+    """
+    root_loaded_pks = defaultdict(set)
+    for model, pks in loaded_pks.items():
+        root_loaded_pks[get_root_model(model)].update(pks)
+
+    deletion_order = get_deletion_order(reconcile_models)
+    lookups = {}
+    for model in deletion_order:
+        lookups[model] = get_livelihood_zone_baseline_lookup(model)
+        if lookups[model] is None:
+            raise ValueError(f"Cannot reconcile {model._meta.label} because it is not related to a Baseline")
+
+    # Find the Baselines from the loaded instances, before deleting anything.
+    livelihood_zone_baseline_ids = set()
+    for model in deletion_order:
+        if root_loaded_pks[model]:
+            livelihood_zone_baseline_ids.update(
+                model._base_manager.filter(pk__in=root_loaded_pks[model])
+                .values_list(lookups[model], flat=True)
+                .distinct()
+            )
+
+    deleted = defaultdict(int)
+    for model in deletion_order:
+        # Use the base manager so that custom managers can't hide instances from the deletion.
+        _, counts = (
+            model._base_manager.filter(**{f"{lookups[model]}__in": livelihood_zone_baseline_ids})
+            .exclude(pk__in=root_loaded_pks[model])
+            .delete()
+        )
+        for label, count in counts.items():
+            deleted[label] += count
+    return dict(deleted)
 
 
 def _get_instance_reference(instance: dict) -> dict[str, object]:
@@ -48,6 +200,22 @@ def _get_instance_reference(instance: dict) -> dict[str, object]:
         "natural_key": instance.get("natural_key", []),
         "instance": instance,
     }
+
+
+def _get_related_model_name(field: models.ForeignKey, instances: dict[str, list[dict]]) -> str:
+    """
+    Return the name of the model that holds the valid keys for a foreign key field.
+
+    A foreign key to a proxy model, such as `LivelihoodProductCategory.baseline_livelihood_activity`
+    which points to `BaselineLivelihoodActivity`, is satisfied by instances of the concrete model,
+    `LivelihoodActivity`. If the concrete model is part of the fixture then use it, so that the
+    foreign key is validated against the instances in the fixture rather than the saved instances
+    of the proxy model in the database.
+    """
+    related_model = field.related_model
+    if related_model._meta.proxy and related_model._meta.concrete_model.__name__ in instances:
+        return related_model._meta.concrete_model.__name__
+    return related_model.__name__
 
 
 def validate_instances(
@@ -160,17 +328,15 @@ def validate_instances(
                         error = f"Missing mandatory foreign key {column} for {record_reference}"
                         model_errors.append(error)
                     else:
+                        related_model_name = _get_related_model_name(field, instances)
                         # Validate foreign key values
                         # If related model is part of the fixture, then it should have already been validated
-                        if (
-                            field.related_model.__name__ in instances
-                            and field.related_model.__name__ not in validated_models
-                        ):
+                        if related_model_name in instances and related_model_name not in validated_models:
                             raise RuntimeError(
                                 "Related model %s not validated yet but needed for %s"
-                                % (field.related_model.__name__, model_name)
+                                % (related_model_name, model_name)
                             )
-                        elif field.related_model.__name__ not in valid_keys:
+                        elif related_model_name not in valid_keys:
                             # The model is not in the fixture, and hasn't been checked already, so use the primary and
                             # natural keys for already saved instances. Save the keys as a dict mapping to the
                             # instance, so that we can resolve natural keys later when validating model.clean()
@@ -179,7 +345,7 @@ def validate_instances(
                                 remote_keys[related_instance.pk] = related_instance
                                 if hasattr(field.related_model, "natural_key"):
                                     remote_keys[related_instance.natural_key()] = related_instance
-                            valid_keys[field.related_model.__name__] = remote_keys
+                            valid_keys[related_model_name] = remote_keys
 
                         if not field.null and not instance[column]:
                             error = f"Missing mandatory foreign key {column} for {record_reference}"
@@ -188,7 +354,7 @@ def validate_instances(
                             # Check the non-null foreign key values are in the remote keys
                             # Convert natural keys from lists to tuples for lookup (because lists can't be dict keys)
                             value = tuple(instance[column]) if isinstance(instance[column], list) else instance[column]
-                            if value not in valid_keys[field.related_model.__name__]:
+                            if value not in valid_keys[related_model_name]:
                                 error = f"Unrecognized '{column}' foreign key {value} for {record_reference}."
                                 model_errors.append(error)
 
@@ -217,7 +383,7 @@ def validate_instances(
                         if isinstance(field, models.ForeignKey):
                             # Natural keys need to be converted to tuples for looking up in valid_keys
                             lookup_value = tuple(value) if isinstance(value, list) else value
-                            related_instance = valid_keys[field.related_model.__name__].get(lookup_value)
+                            related_instance = valid_keys[_get_related_model_name(field, instances)].get(lookup_value)
                             if related_instance:
                                 # Assign the resolved model instance to the relationship attribute (e.g. `product`),
                                 setattr(model_instance, field.name, related_instance)
@@ -375,24 +541,39 @@ def get_fixture_from_instances(instance_dict: dict[str, list[dict]]) -> Output[l
     return Output(fixture, metadata=metadata)
 
 
-def import_fixture(fixture: list[dict]) -> Output[None]:
+def import_fixture(fixture: list[dict], reconcile: Collection[type[models.Model]] = ()) -> Output[None]:
     """
     Import a Django fixture and return a metadata dictionary.
+
+    If `reconcile` contains models, then the fixture is authoritative for those models for every Livelihood Zone
+    Baseline that it contains instances of them for. Any existing instances of those models for those Baselines that
+    are not in the fixture are deleted in the same transaction as the import. Instances that are in the fixture are
+    updated in place and keep their primary keys.
     """
     output_buffer = StringIO()
+    command = verbose_load_data.Command()
 
-    # We need to use a .verbose_json file extension for Django to use the correct serializer.
-    with tempfile.NamedTemporaryFile(mode="w+", suffix=".verbose_json") as f:
-        # Write the fixture to a temporary file so that Django can access it
-        f.write(json.dumps(fixture, indent=4, ensure_ascii=False))
-        f.seek(0)
-        call_command(verbose_load_data.Command(), f.name, verbosity=2, format="verbose_json", stdout=output_buffer)
+    # loaddata uses its own atomic block, which becomes a savepoint within this transaction,
+    # so that the reconciliation is rolled back along with the import if either one fails.
+    with transaction.atomic():
+        # We need to use a .verbose_json file extension for Django to use the correct serializer.
+        with tempfile.NamedTemporaryFile(mode="w+", suffix=".verbose_json") as f:
+            # Write the fixture to a temporary file so that Django can access it
+            f.write(json.dumps(fixture, indent=4, ensure_ascii=False))
+            f.seek(0)
+            call_command(command, f.name, verbosity=2, format="verbose_json", stdout=output_buffer)
+
+        deleted = reconcile_fixture(reconcile, command.loaded_pks) if reconcile else {}
 
     # Create the metadata reporting the number of instances created for each model
     metadata = defaultdict(int)
     for instance in fixture:
         metadata[f'num_{instance["model"].split(".")[-1]}'] += 1
     metadata["total_instances"] = len(fixture)
+    if reconcile:
+        for label, count in deleted.items():
+            metadata[f'num_deleted_{label.split(".")[-1].lower()}'] = count
+        metadata["total_deleted_instances"] = sum(deleted.values())
     metadata["preview"] = MetadataValue.md(f"```json\n{json.dumps(fixture, indent=4, ensure_ascii=False)}\n```")
     metadata["output"] = MetadataValue.md(f"```\n{output_buffer.getvalue()}\n```")
     # No downstream assets, so we only need to return the metadata
@@ -528,12 +709,19 @@ def imported_communities(
     return import_fixture(output.value)
 
 
-@asset(partitions_def=bss_instances_partitions_def, pool="django_loaddata")
+@asset(
+    partitions_def=bss_instances_partitions_def,
+    pool="django_loaddata",
+    metadata={"pipeline_status": {"label": "BSS import", "group_label": "Country", "group_separator": "~"}},
+)
 def imported_baseline(
     context: AssetExecutionContext,
     consolidated_fixture,
 ) -> Output[None]:
     """
     Imported Django fixture for a BSS, added to the Django database.
+
+    The consolidated fixture is authoritative for the Baseline, so any existing Wealth Groups, Livelihood Activities,
+    etc. that are not in the fixture are deleted. The Baseline Corrections and Communities are retained.
     """
-    return import_fixture(consolidated_fixture)
+    return import_fixture(consolidated_fixture, reconcile=get_baseline_reconciliation_models())

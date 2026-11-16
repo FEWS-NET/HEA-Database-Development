@@ -10,6 +10,16 @@ services:
       options:
         tag: docker.hea.dev.db.{{.ID}}
 
+  redis:
+    deploy:
+      resources:
+        limits:
+          memory: 800M
+    logging:
+      driver: fluentd
+      options:
+        tag: docker.hea.dev.redis.{{.ID}}
+
   app:
     restart: "no"
     deploy:

@@ -347,6 +347,10 @@ def load_all_corrections(context: OpExecutionContext):
             df = df.set_index(["livelihood_zone_baseline_id", "worksheet_name", "cell_range"], drop=False)
 
             # Get the current set of corrections from the database, so we can see what has changed
+            # We only get corrections for the Baselines that are present in the current worksheet,
+            # so that we don't accidentally delete corrections for Baselines that are not maintained
+            # in the BSS Metadata workbook. Baselines can be added manually using the Admin screen
+            # and manual corrections can be then be added without risk of them being deleted here.
             existing_instances = LivelihoodZoneBaselineCorrection.objects.filter(
                 livelihood_zone_baseline_id__in=df["livelihood_zone_baseline_id"].unique()
             ).select_related("livelihood_zone_baseline")

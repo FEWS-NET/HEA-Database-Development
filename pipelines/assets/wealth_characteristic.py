@@ -114,7 +114,10 @@ from metadata.lookups import (  # NOQA: E402
     WealthCharacteristicLookup,
     WealthGroupCategoryLookup,
 )
-from metadata.models import WealthCharacteristicLabel  # NOQA: E402
+from metadata.models import (  # NOQA: E402
+    WealthCharacteristic,
+    WealthCharacteristicLabel,
+)
 
 # Indexes of header rows in the Data3 dataframe (wealth_group_category, district, village)
 HEADER_ROWS = [3, 4, 5]
@@ -246,6 +249,7 @@ def get_wealth_characteristic_label_map() -> dict[str, dict]:
             "product_id",
             "unit_of_measure_id",
             "wealth_characteristic__has_product",
+            "wealth_characteristic__variable_type",
         )
     }
 
@@ -281,7 +285,24 @@ def get_wealth_characteristic_attributes(
         "product_id": None,
         "unit_of_measure_id": None,
         "wealth_characteristic__has_product": wealth_characteristic.has_product,
+        "wealth_characteristic__variable_type": wealth_characteristic.variable_type,
     }
+
+
+def is_zero_value(value) -> bool:
+    """
+    Return True if a cell value is a numeric zero, including a zero stored as text, e.g. "0" or " 0.0 ".
+    """
+    if isinstance(value, bool):
+        return False
+    if isinstance(value, (int, float)):
+        return value == 0
+    if isinstance(value, str) and value.strip():
+        try:
+            return float(value) == 0
+        except ValueError:
+            return False
+    return False
 
 
 @asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
@@ -398,6 +419,9 @@ def wealth_characteristic_instances(
         # Create the WealthGroupCharacteristic records
         if any(value for value in df.loc[row, "C":]):
             is_percentage = "percentage" in (attributes.get("wealth_characteristic_id") or "").lower()
+            is_numeric = (
+                attributes.get("wealth_characteristic__variable_type") == WealthCharacteristic.VariableType.NUM
+            )
 
             # The Community and Wealth Group values and the Summary value/min_value/max_value
             # are checked as two independent groups.
@@ -448,7 +472,18 @@ def wealth_characteristic_instances(
                     else:
                         reference_type = None
 
-                    # Only store Wealth Group Characteristic Values that have a value (which might be zero).
+                    # Ignore zero values for numeric Wealth Characteristics. The Summary also has a min_value and
+                    # max_value, so only ignore it if they are also zero or blank, e.g. to keep a range of 0-3.
+                    if is_numeric:
+                        if reference_type == WealthGroupCharacteristicValue.CharacteristicReference.SUMMARY:
+                            summary_values = [value, df.loc[row, df.columns[-2]], df.loc[row, df.columns[-1]]]
+                            if all(is_zero_value(v) or not str(v).strip() for v in summary_values):
+                                continue
+                        elif is_zero_value(value):
+                            continue
+
+                    # Only store Wealth Group Characteristic Values that have a value (which is non-zero for numeric
+                    # Wealth Characteristics, but might be zero for other Wealth Characteristics).
                     # Ignore columns where we couldn't determine the reference_type. Even though these are
                     # supposed to be blank columns, they sometimes contain 0 values for some rows, particularly where
                     # the Wealth Characteristic Value for the adjacent columns is also 0.
@@ -572,7 +607,10 @@ def wealth_characteristic_instances(
 
     # Create a dataframe of the Wealth Group Characteristic Values so that we can extract the
     # percentage of households and average household size, and run additional validation.
+    # Zero values for numeric Wealth Characteristics aren't saved, so there might not be any values at all.
     value_df = pd.DataFrame.from_records(wealth_group_characteristic_values)
+    if value_df.empty:
+        value_df = pd.DataFrame(columns=["wealth_group", "wealth_characteristic_id", "reference_type", "value"])
     value_df["wealth_group_category"] = value_df["wealth_group"].apply(lambda wealth_group: wealth_group[2])
     value_df["full_name"] = value_df["wealth_group"].apply(lambda wealth_group: wealth_group[3])
 
@@ -600,6 +638,10 @@ def wealth_characteristic_instances(
             "household size": "average_household_size",
         }
     )
+    # The pivot only contains columns for attributes that have at least one value, so add any that are missing.
+    for column in ["percentage_of_households", "average_household_size"]:
+        if column not in extra_attributes_df.columns:
+            extra_attributes_df[column] = None
 
     # Add the extra attributes to the Wealth Groups
     wealth_group_df = pd.merge(

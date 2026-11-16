@@ -1,4 +1,5 @@
 from inspect import isclass
+from typing import List
 
 from django.apps import apps
 from django.contrib.auth.models import User
@@ -12,6 +13,7 @@ from django.db.models import (
     Q,
     QuerySet,
 )
+from django.db.models.aggregates import Aggregate
 from django.db.models.functions import Coalesce, NullIf
 from django.utils.text import format_lazy
 from django.utils.translation import gettext_lazy as _
@@ -587,26 +589,7 @@ class AggregatingViewSet(GenericViewSet):
         queryset = self.get_queryset()
         queryset = self.filter_queryset(queryset)
 
-        # Get the field list to group/disaggregate the results by:
-        # TODO: Should get_fields be on the viewset? This is prematurely instantiating it before we've a queryset.
-        group_by_fields = list(self.get_serializer().get_fields().keys())
-
-        # Get them from the query. The ORM converts this qs.values() call into a SQL `GROUP BY *field_paths` clause.
-        queryset = queryset.values(*group_by_fields)
-
-        # Add the row aggregations, eg, total consumption filtered by wealth group and row but not prd/strtgy slice:
-        row_aggregates = self.get_aggregates(AggregationScope.ROW)
-        queryset = queryset.annotate(**row_aggregates)
-
-        # Add the slice aggregates, eg, slice_sum_kcals_consumed for product/strategy slice:
-        slice_aggregates = self.get_aggregates(AggregationScope.SLICE)
-        if slice_aggregates:
-            queryset = queryset.annotate(**slice_aggregates)
-
-            # Add the calculations on aggregates, eg,
-            #   kcals_consumed_sum_slice_percentage_of_row = slice_sum_kcals_consumed * 100 / sum_kcals_consumed
-            percentage_expressions = self.get_percentage_expressions()
-            queryset = queryset.annotate(**percentage_expressions)
+        queryset, slice_aggregates = self.get_aggregated_queryset(queryset)
 
         # Add the filters on aggregates, eg, kcals_consumed_percent > 50%
         queryset = queryset.filter(self.get_filters_by_calculated_fields(slice_aggregates))
@@ -635,6 +618,33 @@ class AggregatingViewSet(GenericViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
+    def get_aggregated_queryset(self, queryset: QuerySet) -> tuple[QuerySet, dict[str, Expression]]:
+        """
+        Apply the row and slice aggregation stages to a filtered queryset.
+
+        Subclasses can override this hook when they need a different aggregation strategy, such as a CTE-backed
+        two-stage aggregation. The returned slice aggregate map controls the shared calculated-field filtering and
+        default ordering stages in ``list``.
+        """
+        # Add the GROUP BY
+        queryset = self.get_grouped_queryset(queryset)
+
+        # Add the row aggregations, eg, total consumption filtered by wealth group and row but not prd/strtgy slice:
+        row_aggregates = self.get_aggregates(AggregationScope.ROW)
+        queryset = queryset.annotate(**row_aggregates)
+
+        # Add the slice aggregates, eg, slice_sum_kcals_consumed for product/strategy slice:
+        slice_aggregates = self.get_aggregates(AggregationScope.SLICE)
+        if slice_aggregates:
+            queryset = queryset.annotate(**slice_aggregates)
+
+            # Add the calculations on aggregates, eg,
+            #   kcals_consumed_sum_slice_percentage_of_row = slice_sum_kcals_consumed * 100 / sum_kcals_consumed
+            percentage_expressions = self.get_percentage_expressions()
+            queryset = queryset.annotate(**percentage_expressions)
+
+        return queryset, slice_aggregates
+
     def get_queryset(self) -> QuerySet:
         """
         Returns the queryset for this viewset, with any necessary annotations applied.
@@ -652,6 +662,34 @@ class AggregatingViewSet(GenericViewSet):
         """
         return {}
 
+    def get_group_by_fields(self, queryset: QuerySet) -> List[str]:  # Avoid conflict with ViewSet.list
+        """Return the fields to group by for this request."""
+        # TODO: Should get_fields be on the viewset? This is prematurely instantiating it before we've a queryset.
+        return list(self.get_serializer().get_fields().keys())
+
+    def get_grouped_queryset(self, queryset: QuerySet) -> QuerySet:
+        """Return the queryset grouped by the appropriate fields."""
+        group_by_fields = self.get_group_by_fields(queryset)
+        # Get them from the query. The ORM converts this qs.values() call into a SQL `GROUP BY *field_paths` clause.
+        return queryset.values(*group_by_fields)
+
+    def get_scoped_aggregate(self, aggregate, slice_filters=None):
+        """Return an aggregate expression with defaults and optional slice filters on nested aggregates."""
+        aggregate = aggregate.copy()
+        if isinstance(aggregate, Aggregate):
+            aggregate.default = 0
+            if slice_filters is not None:
+                aggregate.filter = slice_filters
+            return aggregate
+
+        aggregate.set_source_expressions(
+            [
+                self.get_scoped_aggregate(expression, slice_filters) if expression is not None else None
+                for expression in aggregate.get_source_expressions()
+            ]
+        )
+        return aggregate
+
     def get_aggregates(self, scope):
         """
         Produces aggregate expressions for scopes row or slice.
@@ -665,10 +703,13 @@ class AggregatingViewSet(GenericViewSet):
                 return {}
 
         aggregates = {}
-        for field_name, aggregate in self.serializer_class.aggregates.items():
-            aggregate_field_name = self.serializer_class.get_aggregate_field_name(
+        serializer = self.get_serializer()
+        for field_name, aggregate in serializer.get_aggregates().items():
+            # Use the serializer's declared aggregate for the output name. Runtime expressions may replace an
+            # aggregate class (for example, a weighted Sum expression), but must not change the API field contract.
+            aggregate_field_name = serializer.get_aggregate_field_name(
                 field_name,
-                aggregate,
+                serializer.aggregates[field_name],
                 scope,
             )
 
@@ -679,10 +720,10 @@ class AggregatingViewSet(GenericViewSet):
                 scoped_aggregate = aggregate(field_name, **aggregate_args)
 
             else:
-                scoped_aggregate = aggregate.copy()
-                scoped_aggregate.default = 0
-                if scope == AggregationScope.SLICE:
-                    scoped_aggregate.filter = slice_filters
+                scoped_aggregate = self.get_scoped_aggregate(
+                    aggregate,
+                    slice_filters if scope == AggregationScope.SLICE else None,
+                )
 
             aggregates[aggregate_field_name] = scoped_aggregate
         return aggregates
