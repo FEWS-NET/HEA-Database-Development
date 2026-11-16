@@ -396,6 +396,20 @@ class GetActivityLabelAttributesTestCase(TestCase):
         self.assertEqual(list(attributes_df["household_labor_provider"]), ["children", "women", "children", "women"])
         self.assertTrue(attributes_df["is_start"].all())
 
+    def test_get_all_label_attributes_household_labor_provider_keeps_product_prefix_recovery(self):
+        construction = ClassifiedProductFactory(cpc="S54HA", aliases=["construction"])
+
+        attributes_df = get_all_label_attributes(
+            labels=pd.Series(["Femmes - construction - masonry"]),
+            activity_type=ActivityLabel.LivelihoodActivityType.OTHER_CASH_INCOME,
+            country_code=None,
+            livelihood_zone_id=None,
+        )
+
+        self.assertEqual(attributes_df.loc[0, "product_id"], construction.pk)
+        self.assertEqual(attributes_df.loc[0, "additional_identifier"], "femmes - masonry")
+        self.assertEqual(attributes_df.loc[0, "household_labor_provider"], "women")
+
     def test_get_completeness_dataframe_with_no_rows(self):
         column = "income"
         summary_df = pd.DataFrame(
