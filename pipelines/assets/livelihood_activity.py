@@ -128,12 +128,31 @@ SEE_OTHER_WORKSHEET_LABEL_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
+# Season aliases that can trail a product name in a label, e.g. 'soja saison a' or 'arachide saison a: nbr unités'.
+PRODUCT_SEASON_PATTERN = r"(?P<season>(?:saison|season) [123abc])"
+PRODUCT_SEASON_SUFFIX_PATTERN = re.compile(r"^(?P<product>.+?) *[:-]? +" + PRODUCT_SEASON_PATTERN + "$", re.IGNORECASE)
+
 
 def _is_see_other_worksheet_label(label: str | None) -> bool:
     """
     Return True if a Data-worksheet label points to detail that is captured on the Data2 or Data3 worksheet.
     """
     return bool(label) and bool(SEE_OTHER_WORKSHEET_LABEL_PATTERN.match(prepare_lookup(label)))
+
+
+def _split_product_season(
+    product_label: str, classifiedproductlookup: ClassifiedProductLookup
+) -> tuple[str | None, str | None, str | None]:
+    """
+    Split a trailing season from an unrecognized product label and look up the remaining product.
+    """
+    match = PRODUCT_SEASON_SUFFIX_PATTERN.fullmatch(str(product_label).strip())
+    if not match:
+        return None, None, None
+    product_id, additional_identifier = classifiedproductlookup.get_prefix(match.group("product").strip())
+    if not product_id:
+        return None, None, None
+    return product_id, additional_identifier, match.group("season")
 
 
 def _is_section_header_label(label: str, row_values: pd.Series) -> bool:
@@ -486,6 +505,7 @@ def get_livelihood_activity_regexes() -> list:
         "payment_product_pattern": r"(?P<payment_product_id>[a-zà-ÿ][a-zà-ÿ1-9',/ \.\>\-\(\)]+?)",
         "labor_pattern": r"(?P<product_id>(?:labou?r|travail|main-d'œuvre|pre-harvest labou?r|labour:? pre-harvest|harvest labou?r|labour:? harvest|post-harvest labou?r|labour:? post-harvest|travail:? pre-r[eéè]colte) *[:-]? *[a-zà-ÿ][a-zà-ÿ1-9',/ \.\>\-\(\)]+?)",
         "season_pattern": r"(?P<season>season [123abc]|saison [123abc]|[123][a-z] season|[123][a-zà-ÿ] saison|r[eé]colte principale|principale r[eé]colte|gu|deyr+?)",
+        "product_season_pattern": PRODUCT_SEASON_PATTERN,
         "age_gender_pattern": age_gender_pattern,
         "unit_of_measure_pattern": unit_of_measure_pattern,
         "nbr_pattern": r"(?:n[bo]?r?e?|no)\.?",
@@ -659,6 +679,23 @@ def get_all_label_attributes(
     all_label_attributes = labels.apply(lambda x: get_label_attributes(x, activity_type)).fillna("")
     all_label_attributes = classifiedproductlookup.do_lookup(all_label_attributes, "product_id", "product_id")
     all_label_attributes["product_id"] = all_label_attributes["product_id"].replace(pd.NA, None)
+
+    # If the product_id wasn't recognized, then it may be a product followed by a season, e.g. the regex for
+    # "arachide saison a: nbr unités" captures "arachide saison a" as the product. Rather than maintaining a
+    # season variant of every attribute regex, split a trailing season from any unrecognized product and accept
+    # the match if the remaining text is a recognized product (optionally followed by an additional identifier).
+    unrecognized_product_mask = (
+        all_label_attributes["product_id"].isna()
+        & all_label_attributes["product_id_original"].fillna("").astype(str).str.strip().ne("")
+        & all_label_attributes["season"].fillna("").astype(str).str.strip().eq("")
+    )
+    for row, product_label in all_label_attributes.loc[unrecognized_product_mask, "product_id_original"].items():
+        product_id, additional_identifier, season = _split_product_season(product_label, classifiedproductlookup)
+        if product_id:
+            all_label_attributes.at[row, "product_id"] = product_id
+            all_label_attributes.at[row, "season"] = season
+            if additional_identifier and not str(all_label_attributes.at[row, "additional_identifier"]).strip():
+                all_label_attributes.at[row, "additional_identifier"] = additional_identifier
 
     # If the product_id wasn't recognized, then it may be a product followed by an additional identifier,
     # e.g. "fruits - orange/mandarine".  For any failing product_id lookups, attempt to split the label into a product

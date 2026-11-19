@@ -359,6 +359,64 @@ class GetActivityLabelAttributesTestCase(TestCase):
         self.assertEqual(attributes_df.loc[0, "additional_identifier"], full_label)
         self.assertEqual(attributes_df.loc[0, "product_common_name_en"], product.common_name_en)
 
+    def test_get_all_label_attributes_splits_trailing_season_from_product(self):
+        """
+        A season trailing the product in a label is split off, so both the product and the season are recognized.
+        """
+        # Use a CPC code that isn't in the reference data loaded by the migrations, so that the factory creates it
+        # with the aliases we need, rather than returning the existing instance.
+        product = ClassifiedProductFactory(
+            cpc="R09999AR",
+            common_name_en="Test groundnuts",
+            description_en="Test groundnuts",
+            aliases=["arachide"],
+        )
+        country = CountryFactory()
+        season_a = SeasonFactory(
+            country=country, name_en=f"{country.iso_en_ro_name}, Harvest A", aliases=["saison a"], purpose=""
+        )
+        season_b = SeasonFactory(
+            country=country, name_en=f"{country.iso_en_ro_name}, Harvest B", aliases=["saison b"], purpose=""
+        )
+
+        attributes_df = get_all_label_attributes(
+            labels=pd.Series(
+                ["Arachide saison A", "Arachide saison B: nbr unités", "Arachide - saison A: kg produits"]
+            ),
+            activity_type=LIVELIHOOD_ACTIVITY,
+            country_code=country.iso3166a2,
+            livelihood_zone_id=None,
+        )
+
+        self.assertEqual(list(attributes_df["product_id"]), [product.pk, product.pk, product.pk])
+        self.assertEqual(list(attributes_df["season"]), [season_a.name_en, season_b.name_en, season_a.name_en])
+        self.assertEqual(
+            list(attributes_df["attribute"]), ["activity_notes", "number_of_local_measures", "quantity_produced"]
+        )
+        self.assertEqual(list(attributes_df["additional_identifier"]), ["", "", ""])
+
+    def test_get_all_label_attributes_does_not_split_unknown_product_or_other_seasons(self):
+        """
+        The trailing season is only split off when the remaining text is a recognized product, and only for the
+        Season/Saison 1/2/3/A/B/C aliases, so that labels such as 'arachide gu: nbr unités' are left unchanged.
+        """
+        ClassifiedProductFactory(
+            cpc="R09999AR",
+            common_name_en="Test groundnuts",
+            description_en="Test groundnuts",
+            aliases=["arachide"],
+        )
+
+        attributes_df = get_all_label_attributes(
+            labels=pd.Series(["Produit inconnu saison A: nbr unités", "Arachide gu: nbr unités"]),
+            activity_type=LIVELIHOOD_ACTIVITY,
+            country_code=None,
+            livelihood_zone_id=None,
+        )
+
+        self.assertEqual(list(attributes_df["product_id"]), [None, None])
+        self.assertEqual(list(attributes_df["season"]), ["", ""])
+
     def test_get_completeness_dataframe_with_no_rows(self):
         column = "income"
         summary_df = pd.DataFrame(

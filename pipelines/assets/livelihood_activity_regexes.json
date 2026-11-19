@@ -956,6 +956,15 @@
         "quantity_produced_or_purchased"
     ],
     [
+        "{product_pattern}{separator_pattern} {product_season_pattern}",
+        null,
+        true,
+        {
+            "attribute": "activity_notes",
+            "notes": "Recognize a product followed by a season with no other attributes, e.g. 'soja saison a' or 'recolte saison b'. The strategy_type is inherited from the section header."
+        }
+    ],
+    [
         "{labor_pattern}",
         null,
         true,
