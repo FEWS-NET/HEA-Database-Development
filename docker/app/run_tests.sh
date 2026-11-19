@@ -122,8 +122,23 @@ fi
 #  the latest release.
 #  Will ignore this and update once we got a fix
 
+# Vulnerability found in nltk version 3.10.3
+   Vulnerability ID: SFTY-20260902-58666
+   Affected spec: <=3.10.3
+   ADVISORY: Affected versions of the NLTK package are vulnerable to
+   Path Traversal due to the use of built-in `open()` on caller-controlled
+   paths instead of pathsec-aware helpers. The `TransitionParser.train`,
+   `TransitionParser.parse`, `AveragedPerceptron.save`,
+   `AveragedPerceptron.load`, `PerceptronTagger.save_to_json`, and
+   `save_maxent_params` methods bypass path security checks, allowing file
+   operations on paths outside the allowed roots. An attacker can exploit
+   this vulnerability by providing paths that escape the designated sandbox,
+   potentially leading to unauthorized file reads or writes on the host
+   system.
+# NOTE: nltk is a dependency of Safety only - it isn't part of the main image.
+
 echo Package Vulnerabilities:
-pip freeze | safety check --stdin --full-report -i 62283 -i 70612 -i 74054 -i 82915 -i 83150 -i SFTY-20260510-89962 -i 98069 -i 98070 -i SFTY-20260527-29918
+pip freeze | safety check --stdin --full-report -i 62283 -i 70612 -i 74054 -i 82915 -i 83150 -i SFTY-20260510-89962 -i 98069 -i 98070 -i SFTY-20260527-29918 -i SFTY-20260902-58666
 SAFETY_RESULT=$?
 
 # Suppress SAFETY_RESULT unless CHECK_SAFETY is set

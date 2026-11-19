@@ -1,9 +1,9 @@
 {% load i18n static %}
 {% if cl.search_fields %}
 <div id="toolbar"><form id="changelist-search" method="get">
-<div style="display: inline-block"><!-- DIV needed for valid HTML -->
+<div class="searchbar_wrap"><!-- DIV needed for valid HTML -->
 <label class="searchbar_label" for="searchbar"> {% translate 'SEARCH:  ' %} </label>
-<div style="display: inline-flex">
+<div class="searchbar_input_group">
     <input type="text"  name="{{ search_var }}" value="{{ cl.query }}" id="searchbar" autofocus placeholder="Search">
     <input class="search_btn" type="submit" value="">
 </div>

@@ -600,6 +600,19 @@ ADMIN_MENU_CONFIG = [
                     },
                 ],
             },
+            {
+                "id": "pipelines",
+                "label": _("Pipelines"),
+                "icon": "bi-diagram-3",
+                "perms_any": ["common.access_dagster_ui"],
+                "items": [
+                    {
+                        "label": _("Pipeline Status"),
+                        "url_name": "viz:pipeline_status_index",
+                        "perm": "common.access_dagster_ui",
+                    },
+                ],
+            },
         ],
     },
 ]

@@ -50,9 +50,10 @@
                                 {% if user.is_authenticated %}
                                     {% translate 'Welcome,' %}
                                     <strong>{% firstof user.get_short_name user.get_username %}</strong>.&nbsp;&nbsp;
-                                    <a href="#"
-                                       target="_blank"> HELP </a> &nbsp;&nbsp;
-                                    <a href="#" target="_blank">
+                                    <a href="https://help.fews.net/lex"
+                                       target="_blank" rel="noopener noreferrer"> HELP </a> &nbsp;&nbsp;
+                                    <a href="https://help.fews.net/lex/livelihoods-explorer-api"
+                                       target="_blank" rel="noopener noreferrer">
                                         DOCUMENTATION </a> &nbsp;&nbsp;
                                     <a href="{% url 'rest_framework:logout' %}?next=/api/">Log out</a>
 
@@ -214,7 +215,7 @@
                             </div>
                             <div class="response-info" aria-label="{% trans "response info" %}">
 <pre class=""><p class=""><b>HTTP {{ response.status_code }} {{ response.status_text }}</b></p>{% for key, val in response_headers|items %}<p class="lit"><b>{{ key }}:</b> <span
-                class="lit-val"> {{ val|break_long_headers|urlize }}</span></p>{% endfor %}
+                class="lit-val"> {{ val|urlize }}</span></p>{% endfor %}
     {% if request.path|slice:"-5:" == "/api/" and request.method == "GET" %}
          {% include "rest_framework/drf-table.html" %}
     {% else %}<pre class="content-holder" style="color: #2B6CB0; border: none;">{{ content|urlize }} </pre></pre>

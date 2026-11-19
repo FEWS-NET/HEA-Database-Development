@@ -110,6 +110,31 @@ WORKSHEET_MAP = {
 
 SUBTOTAL_PREFIXES = ("total", "sub-total", "subtotal", "sous-total", "revenu total", "kcal total")
 
+# Labels in the 'Data' worksheet that mark the start of a Livelihood Strategy whose detail is actually
+# captured on the 'Data2' or 'Data3' worksheet, e.g. 'WILD FOODS -- see worksheet Data 3'.
+# A placeholder strategy is started for the heading, but its
+# Livelihood Activities are discarded in finalize_strategy(), and the summary rows that follow the
+# heading in the Data worksheet (e.g. 'quantity (kg)', 'kcals (%)') must be ignored rather than
+# matched to attributes, because the real data is ingested from the Data2/Data3 worksheet.
+# The pattern also recognizes:
+#   * French labels, e.g. "Main d'oeuvre (récolte) -- voir Data2"
+#   * Labels enclosed in parentheses, e.g. 'Petit commerce (see Data 2)'
+#   * Labels with a trailing note, e.g. 'Auto-emploi -- voir Data2 (fish farming)'
+#   * Older Burkina Faso labels that refer to the next worksheet, which is always Data2,
+#     e.g. 'Travaux des champs - voir prochaine feuille'. These don't have a `detail_sheet`.
+SEE_OTHER_WORKSHEET_LABEL_PATTERN = re.compile(
+    r"^(?P<summary_label>.+?)[ -]*\(?(?:see|voir) (?:worksheet )?+(?:(?P<detail_sheet>data ?[23])|prochaine feuille)"
+    r"\)?(?: *\(.*\))?$",
+    re.IGNORECASE,
+)
+
+
+def _is_see_other_worksheet_label(label: str | None) -> bool:
+    """
+    Return True if a Data-worksheet label points to detail that is captured on the Data2 or Data3 worksheet.
+    """
+    return bool(label) and bool(SEE_OTHER_WORKSHEET_LABEL_PATTERN.match(prepare_lookup(label)))
+
 
 def _is_section_header_label(label: str, row_values: pd.Series) -> bool:
     """
@@ -1203,12 +1228,7 @@ def get_instances_from_dataframe(
                 assert livelihood_strategy is not None, (
                     "Found Livelihood Activities from row %s, but there is no Livelihood Strategy defined." % row
                 )
-                if re.match(
-                    # The optional trailing handles e.g. "Main d'ouvre -- voir Data2 (pre-récolte)".
-                    r"^.*(?:data ?[23]|prochaine feuille)(?: *\(.*\))?$",
-                    prepare_lookup(livelihood_strategy["activity_label"]),
-                    re.IGNORECASE,
-                ):
+                if _is_see_other_worksheet_label(livelihood_strategy["activity_label"]):
                     non_empty_livelihood_activities = []
 
             if non_empty_livelihood_activities:
@@ -1487,11 +1507,29 @@ def get_instances_from_dataframe(
                             # Labor Migration (see the `payment_per_time` handling below): the migrant obtains
                             # their full daily kcals (2100) elsewhere for the whole time that they are away, so
                             # dividing kcals_consumed by kcals_per_unit gives the number of days away, not the
-                            # number of times per year that the household is paid. Migrants are paid/remit once
-                            # per month that they are away, so times_per_year is months_per_year, not a kcal-based
-                            # calculation. This also keeps times_per_year consistent with the `income` field,
-                            # because income = payment_per_time * people_per_household * times_per_year.
-                            livelihood_activity["times_per_year"] = livelihood_activity.get("months_per_year") or 0
+                            # number of times per year that the household is paid.
+                            # The BSS doesn't record the number of times that the migrant is paid/remits. It only
+                            # records the `payment_per_time` (e.g. "savings/remittance each time (per person)") and
+                            # the total `income`, which are both entered directly. Therefore, for
+                            # OtherCashIncome we derive times_per_year from those values, so that
+                            # income = payment_per_time * people_per_household * times_per_year always holds.
+                            # For example, NG04 'Data'!Q632 has 1 person away for 1 month, with 15000 each time
+                            # and 30000 income, i.e. 2 payments; and 'Data'!H632 has 1 person away for 2 months,
+                            # with 7000 each time and 7000 income, i.e. 1 payment.
+                            # If the income or payment_per_time are not available (e.g. for PaymentInKind), then
+                            # assume that migrants are paid/remit once per month that they are away, so
+                            # times_per_year is months_per_year, not a kcal-based calculation.
+                            income = livelihood_activity.get("income")
+                            payment_per_time = livelihood_activity.get("payment_per_time")
+                            if (
+                                livelihood_strategy["strategy_type"] == "OtherCashIncome"
+                                and income
+                                and payment_per_time
+                                and number_of_units
+                            ):
+                                livelihood_activity["times_per_year"] = income / (payment_per_time * number_of_units)
+                            else:
+                                livelihood_activity["times_per_year"] = livelihood_activity.get("months_per_year") or 0
                         else:
                             livelihood_activity["times_per_year"] = (
                                 round(livelihood_activity["kcals_consumed"] / kcals_per_unit / number_of_units)
@@ -1839,6 +1877,14 @@ def get_instances_from_dataframe(
                 initialize_strategy()
 
             else:
+
+                # Ignore the summary rows that follow a '-- see Data2'/'-- see Data3' heading in the
+                # Data worksheet (e.g. 'quantity (kg)', 'kcals per kg', 'kcals (%)'). The placeholder
+                # strategy is discarded in finalize_strategy() and the real data is ingested from the
+                # Data2/Data3 worksheet, so matching these rows to attributes here only produces
+                # spurious "Invalid strategy_type" / "values without an identified attribute" errors.
+                if livelihood_strategy and _is_see_other_worksheet_label(livelihood_strategy["activity_label"]):
+                    continue
 
                 # We are not starting a new Livelihood Strategy, but there may be
                 # additional attributes that need to be added to the current one.

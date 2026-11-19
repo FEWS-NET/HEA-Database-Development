@@ -6,247 +6,382 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-03-27 10:51+0000\n"
+"POT-Creation-Date: 2026-10-20 20:35+0000\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 "
-"&& n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5;\n"
+"Plural-Forms: nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? "
+"1 : 2;\n"
 
+#: apps/metadata/apps.py:8
 msgid "metadata"
 msgstr "es meta"
 
+#: apps/metadata/models.py:71
 msgid "Code"
 msgstr "Código"
 
+#: apps/metadata/models.py:74 apps/metadata/viewsets.py:54
+#: apps/metadata/viewsets.py:57 apps/metadata/viewsets.py:60
+#: apps/metadata/viewsets.py:63 apps/metadata/viewsets.py:66
+msgid "Short Name"
+msgstr ""
+
+#: apps/metadata/models.py:81
 msgid "Ordering"
 msgstr "Pedido"
 
+#: apps/metadata/models.py:82
 msgid ""
 "The order to display the items in when sorting by this field, if not obvious."
 msgstr ""
 "La orden de mostrar los elementos en el orden de este campo, si no es obvio."
 
+#: apps/metadata/models.py:87 apps/metadata/models.py:343
+#: apps/metadata/models.py:460
 msgid "aliases"
 msgstr "alias"
 
+#: apps/metadata/models.py:88
 msgid "A list of alternate names for the object."
 msgstr "Una lista de nombres alternativos para el objeto."
 
+#: apps/metadata/models.py:135 apps/metadata/models.py:286
 msgid "Color"
-msgstr ""
+msgstr "Color"
 
-msgid "Color hex value code for the Livelihood Category."
-msgstr ""
+#: apps/metadata/models.py:137
+msgid "Color hex value code for the Livelihood System."
+msgstr "Codigo hexadecimal de color para el sistema de medios de vida."
 
-msgid "Livelihood Category"
+#: apps/metadata/models.py:142
+#, fuzzy
+#| msgid "Livelihood Category"
+msgid "Livelihood System"
 msgstr "Categoría de medios de vida"
 
-msgid "Livelihood Categories"
-msgstr "Categorías de medios de vida"
+#: apps/metadata/models.py:143
+msgid "Livelihood Systems"
+msgstr "Sistemas de medios de vida"
 
+#: apps/metadata/models.py:155 apps/metadata/models.py:204
 #, fuzzy
 #| msgid "Wealth Characteristic"
 msgid "Characteristic Group"
 msgstr "Riqueza característica"
 
-#, fuzzy
-#| msgid "Wealth Characteristics"
+#: apps/metadata/models.py:156
 msgid "Characteristic Groups"
-msgstr "Características de la riqueza"
+msgstr "Grupos de características"
 
+#: apps/metadata/models.py:168
 msgid "Numeric"
 msgstr "Numérico"
 
+#: apps/metadata/models.py:169
 msgid "String"
 msgstr "Cadena"
 
+#: apps/metadata/models.py:170
 msgid "Boolean"
 msgstr "Booleano"
 
+#: apps/metadata/models.py:175 apps/metadata/models.py:272
 msgid "Has Product?"
 msgstr "¿Tiene producto?"
 
+#: apps/metadata/models.py:177
 msgid ""
 "Does a value for this characteristic also require a product? If True, then "
 "aliases may contain a <product> placeholder."
 msgstr "¿Un valor para esta característica también requiere un producto?"
 
+#: apps/metadata/models.py:183
 msgid "Has Unit Of Measure?"
 msgstr "¿Tiene la unidad de medida?"
 
+#: apps/metadata/models.py:185
 msgid ""
 "Does a value for this characteristic also require a unit_of_measure? If "
 "True, then aliases may contain a <unit_of_measure> placeholder."
 msgstr ""
 "¿Un valor para esta característica también requiere una unidad_OF_MeASure?"
 
+#: apps/metadata/models.py:192
 msgid "Variable Type"
 msgstr "Tipo de variable"
 
+#: apps/metadata/models.py:196
 msgid "Whether the field is numeric, character, boolean, etc."
 msgstr "Si el campo es numérico, carácter, booleano, etc."
 
+#: apps/metadata/models.py:206
 msgid ""
 "Optional grouping for characteristics, such as 'Population', 'Income', "
 "'Land', 'Livestock', 'Other assets'"
 msgstr ""
+"Agrupacion opcional para caracteristicas, como 'Population', 'Income', "
+"'Land', 'Livestock' y 'Other assets'"
 
+#: apps/metadata/models.py:213 apps/metadata/models.py:603
 msgid "Wealth Characteristic"
 msgstr "Riqueza característica"
 
+#: apps/metadata/models.py:214
 msgid "Wealth Characteristics"
 msgstr "Características de la riqueza"
 
+#: apps/metadata/models.py:221
 msgid "Milk Production"
 msgstr "Producción de leche"
 
+#: apps/metadata/models.py:222
 msgid "Butter Production"
 msgstr "Producción de mantequilla"
 
+#: apps/metadata/models.py:223
 msgid "Meat Production"
 msgstr "Producción de carne"
 
+#: apps/metadata/models.py:224
 msgid "Livestock Sale"
 msgstr "Venta de ganado"
 
-msgid "Crop Production"
-msgstr "La producción de cultivos"
+#: apps/metadata/models.py:225
+#, fuzzy
+#| msgid "Milk Production"
+msgid "Other Livestock Production"
+msgstr "Producción de leche"
 
+#: apps/metadata/models.py:226
+msgid "Crop Production"
+msgstr "Producción de cultivos"
+
+#: apps/metadata/models.py:227
 msgid "Food Purchase"
 msgstr "Compra de alimentos"
 
+#: apps/metadata/models.py:228
 msgid "Payment in Kind"
 msgstr "Pago en especie"
 
+#: apps/metadata/models.py:229
 msgid "Relief, Gift or Other Food"
 msgstr "Alivio, regalo u otra comida"
 
+#: apps/metadata/models.py:230
 msgid "Hunting"
 msgstr "Caza"
 
+#: apps/metadata/models.py:231 apps/metadata/models.py:262
 msgid "Fishing"
 msgstr "Pesca"
 
+#: apps/metadata/models.py:232
 msgid "Wild Food Gathering"
 msgstr "Recolección de alimentos salvajes"
 
+#: apps/metadata/models.py:233 apps/metadata/models.py:491
 msgid "Other Cash Income"
 msgstr "Otros ingresos en efectivo"
 
+#: apps/metadata/models.py:234
 msgid "Other Purchase"
 msgstr "Otra compra"
 
+#: apps/metadata/models.py:239
 msgid "Baseline"
 msgstr "Base"
 
+#: apps/metadata/models.py:240
 msgid "Response"
 msgstr "Respuesta"
 
+#: apps/metadata/models.py:259
+msgid "Climatology"
+msgstr "Climatologia"
+
+#: apps/metadata/models.py:260
 msgid "Crops"
 msgstr "Cultivos"
 
+#: apps/metadata/models.py:261
 msgid "Livestock"
 msgstr "Ganado"
 
-msgid "Gardening"
-msgstr "Jardinería"
+#: apps/metadata/models.py:263
+msgid "Employment and Other Income"
+msgstr "Empleo y otros ingresos"
 
+#: apps/metadata/models.py:264
+msgid "Stress Periods"
+msgstr "Periodos de estres"
+
+#: apps/metadata/models.py:265
+msgid "Other"
+msgstr "Otro"
+
+#: apps/metadata/models.py:268
 msgid "Activity Category"
 msgstr "Categoría de actividad"
 
+#: apps/metadata/models.py:274
+#, fuzzy
+#| msgid ""
+#| "Does a value for this characteristic also require a product? If True, "
+#| "then aliases may contain a <product> placeholder."
+msgid ""
+"Does a Seasonal Activity of this type require a product? If True, then "
+"aliases may contain a <product> placeholder."
+msgstr "¿Un valor para esta característica también requiere un producto?"
+
+#: apps/metadata/models.py:280
+msgid "Key Seasonal Activity?"
+msgstr "¿Actividad estacional clave?"
+
+#: apps/metadata/models.py:281
+msgid "Are SeasonalActivity instances of this type key seasonal activities?"
+msgstr ""
+"Las instancias de SeasonalActivity de este tipo son actividades estacionales "
+"clave?"
+
+#: apps/metadata/models.py:287
+msgid "Color hex value code for the Seasonal Activity Type."
+msgstr "Codigo hexadecimal de color para el tipo de actividad estacional."
+
+#: apps/metadata/models.py:295
 msgid "Seasonal Activity Type"
 msgstr "Tipo de actividad estacional"
 
+#: apps/metadata/models.py:296
 msgid "Seasonal Activity Types"
-msgstr "Tipos de actividad estacional"
+msgstr "Tipos de actividades estacionales"
 
+#: apps/metadata/models.py:310
 msgid "Wealth Group Category"
 msgstr "Categoría de grupo de patrimonio"
 
+#: apps/metadata/models.py:311
 msgid "Wealth Group Categories"
-msgstr "Categorías grupales de patrimonio"
+msgstr "Categorías de grupos de riqueza"
 
+#: apps/metadata/models.py:327
 msgid "country"
 msgstr "país"
 
+#: apps/metadata/models.py:335
 msgid "code"
 msgstr "código"
 
+#: apps/metadata/models.py:336
 msgid "An identifier for the Unit, such as the FNID"
 msgstr "Un identificador para la unidad, como el FNID"
 
+#: apps/metadata/models.py:338
 msgid "full name"
 msgstr "nombre completo"
 
+#: apps/metadata/models.py:344
 msgid "A list of alternate names for the Market."
 msgstr "Una lista de nombres alternativos para el mercado."
 
+#: apps/metadata/models.py:346
 msgid "geography"
 msgstr "geografía"
 
+#: apps/metadata/models.py:368
 msgid "Market"
 msgstr "Mercado"
 
+#: apps/metadata/models.py:369
 msgid "Markets"
 msgstr "Mercados"
 
+#: apps/metadata/models.py:382
 msgid "Hazard Category"
 msgstr "Categoría de peligro"
 
+#: apps/metadata/models.py:383
 msgid "Hazard Categories"
 msgstr "Categorías de peligro"
 
+#: apps/metadata/models.py:398
 msgid "Harvest"
 msgstr "Cosecha"
 
+#: apps/metadata/models.py:399
 msgid "Lean"
 msgstr "Inclinarse"
 
+#: apps/metadata/models.py:400
 msgid "Wet"
 msgstr "Húmedo"
 
+#: apps/metadata/models.py:401
 msgid "Dry"
 msgstr "Seco"
 
+#: apps/metadata/models.py:402
 msgid "Mild"
 msgstr "Leve"
 
+#: apps/metadata/models.py:403
 msgctxt "season"
 msgid "Spring"
 msgstr "Primavera"
 
+#: apps/metadata/models.py:404
 msgid "Summer"
 msgstr "Verano"
 
+#: apps/metadata/models.py:405
 msgctxt "season"
 msgid "Fall"
-msgstr "Caer"
+msgstr "Otoño"
 
+#: apps/metadata/models.py:406
 msgid "Winter"
 msgstr "Invierno"
 
+#: apps/metadata/models.py:407
 msgid "Monsoon"
 msgstr "Monzón"
 
+#: apps/metadata/models.py:410
 msgid "Start"
 msgstr "Comenzar"
 
+#: apps/metadata/models.py:411
 msgid "End"
 msgstr "Fin"
 
+#: apps/metadata/models.py:413
 msgid "Country"
 msgstr "País"
 
+#: apps/metadata/models.py:414 apps/metadata/tests/test_admin.py:87
+#: apps/metadata/viewsets.py:33 apps/metadata/viewsets.py:34
+#: apps/metadata/viewsets.py:35 apps/metadata/viewsets.py:36
+#: apps/metadata/viewsets.py:37 apps/metadata/viewsets.py:231
+#: apps/metadata/viewsets.py:232 apps/metadata/viewsets.py:233
+#: apps/metadata/viewsets.py:234 apps/metadata/viewsets.py:235
 msgid "Name"
 msgstr "Nombre"
 
+#: apps/metadata/models.py:415 apps/metadata/viewsets.py:39
+#: apps/metadata/viewsets.py:42 apps/metadata/viewsets.py:45
+#: apps/metadata/viewsets.py:48 apps/metadata/viewsets.py:51
+#: apps/metadata/viewsets.py:237 apps/metadata/viewsets.py:240
+#: apps/metadata/viewsets.py:243 apps/metadata/viewsets.py:246
+#: apps/metadata/viewsets.py:249
 msgid "Description"
 msgstr "Descripción"
 
+#: apps/metadata/models.py:419
 msgid "Season Type"
 msgstr "Tipo de temporada"
 
+#: apps/metadata/models.py:421
 msgid ""
 "Refers to the classification of a specific time of year based on weather "
 "patterns, temperature, and other factors"
@@ -254,21 +389,29 @@ msgstr ""
 "Se refiere a la clasificación de una época específica del año basada en "
 "patrones climáticos, temperatura y otros factores"
 
+#: apps/metadata/models.py:429
 msgid "Purpose"
-msgstr ""
+msgstr "Proposito"
 
+#: apps/metadata/models.py:430
 msgid "The Livelihood Strategy Type that this Season is relevant for."
 msgstr ""
+"El tipo de estrategia de medios de vida para el que esta estacion es "
+"relevante."
 
+#: apps/metadata/models.py:437
 msgid "Start Day"
 msgstr "Inicio Día"
 
+#: apps/metadata/models.py:440
 msgid "End Day"
 msgstr "Día final"
 
+#: apps/metadata/models.py:446
 msgid "Year alignment"
 msgstr "Alineación anual"
 
+#: apps/metadata/models.py:448
 msgid ""
 "Whether a label for a season that contains a single year refers to the start "
 "year or the end year for that Season."
@@ -276,167 +419,219 @@ msgstr ""
 "Si una etiqueta para una temporada que contiene un solo año se refiere al "
 "año de inicio o al año final para esa temporada."
 
+#: apps/metadata/models.py:454
 msgid "Order"
 msgstr "Orden"
 
+#: apps/metadata/models.py:455
 msgid "The order of the Season within the Season Year"
 msgstr "El orden de la temporada dentro del año de la temporada"
 
+#: apps/metadata/models.py:461
 msgid "A list of alternate names for the Season."
 msgstr "Una lista de nombres alternativos para el objeto."
 
+#: apps/metadata/models.py:470 apps/metadata/models.py:560
 msgid "Season"
 msgstr "Estación"
 
+#: apps/metadata/models.py:471
 msgid "Seasons"
 msgstr "Estaciones"
 
+#: apps/metadata/models.py:483
 msgid "Processed by Regular Expression"
-msgstr ""
+msgstr "Procesado por expresion regular"
 
+#: apps/metadata/models.py:484
 msgid "Override automatically recognized metadata"
-msgstr ""
+msgstr "Anular los metadatos reconocidos automaticamente"
 
+#: apps/metadata/models.py:485 apps/metadata/models.py:587
 msgid "Under Discussion"
-msgstr ""
+msgstr "En discusion"
 
+#: apps/metadata/models.py:486 apps/metadata/models.py:588
 msgid "Correct the BSS"
-msgstr ""
+msgstr "Corregir el BSS"
 
+#: apps/metadata/models.py:487 apps/metadata/models.py:589
 msgid "Ignore this label and associated data in the row"
-msgstr ""
+msgstr "Ignorar esta etiqueta y los datos asociados en la fila"
 
-#, fuzzy
-#| msgid "Livelihood Category"
+#: apps/metadata/models.py:490
 msgid "Livelihood Activity"
-msgstr "Categoría de medios de vida"
+msgstr "Actividad de medios de vida"
 
+#: apps/metadata/models.py:492
 #, fuzzy
 #| msgid "Wild Food Gathering"
 msgid "Wild Foods, Fishing or Hunting"
 msgstr "Recolección de alimentos salvajes"
 
+#: apps/metadata/models.py:494
 #, fuzzy
 #| msgid "Livelihood Category"
 msgid "Livelihood Summary"
 msgstr "Categoría de medios de vida"
 
-#, fuzzy
-#| msgid "Activity Category"
+#: apps/metadata/models.py:497 apps/metadata/models.py:569
 msgid "Activity Label"
-msgstr "Categoría de actividad"
+msgstr "Etiqueta de actividad"
 
+#: apps/metadata/models.py:500
 #, fuzzy
 #| msgid "Seasonal Activity Type"
 msgid "Activity Type"
 msgstr "Tipo de actividad estacional"
 
+#: apps/metadata/models.py:504
 msgid ""
 "The type of Livelihood Activity the label is for: either a general "
 "Livelihood Activity, or an Other Cash Income activity from the 'Data2' "
 "worksheet, or a Wild Foods, Fishing or Hunting activity from the 'Data3' "
 "worksheet, or a label from the 'Summary' section of the 'Data' worksheet."
 msgstr ""
+"El tipo de actividad de medios de vida al que corresponde la etiqueta: una "
+"actividad general de medios de vida, o una actividad de Other Cash Income de "
+"la hoja 'Data2', o una actividad de Wild Foods, Fishing or Hunting de la "
+"hoja 'Data3', o una etiqueta de la seccion 'Summary' de la hoja 'Data'."
 
+#: apps/metadata/models.py:509 apps/metadata/models.py:594
 msgid "Status"
-msgstr ""
+msgstr "Estado"
 
+#: apps/metadata/models.py:512
 #, fuzzy
 #| msgid "Start"
 msgid "Is Start?"
 msgstr "Comenzar"
 
+#: apps/metadata/models.py:513
 msgid ""
 "Indicates whether this Activity Label marks the start of a new Livelihood "
 "Strategy"
 msgstr ""
+"Indica si esta etiqueta de actividad marca el inicio de una nueva estrategia "
+"de medios de vida"
 
-#, fuzzy
-#| msgid "Milk Production"
+#: apps/metadata/models.py:521
 msgid "Livestock Production"
-msgstr "Producción de leche"
+msgstr "Producción pecuaria"
 
-#, fuzzy
-#| msgid "Variable Type"
+#: apps/metadata/models.py:522
 msgid "Strategy Type"
-msgstr "Tipo de variable"
+msgstr "Tipo de estrategia"
 
+#: apps/metadata/models.py:523
 msgid ""
 "The type of livelihood strategy, such as crop production, or wild food "
 "gathering."
 msgstr ""
+"El tipo de estrategia de medios de vida, como la produccion de cultivos o la "
+"recoleccion de alimentos silvestres."
 
-#, fuzzy
-#| msgid "Has Product?"
+#: apps/metadata/models.py:532 apps/metadata/models.py:612
 msgid "Product"
-msgstr "¿Tiene producto?"
+msgstr "Producto"
 
-#, fuzzy
-#| msgid "Meat Production"
+#: apps/metadata/models.py:541
 msgid "Payment Product"
-msgstr "Producción de carne"
+msgstr "Producto de pago"
 
-#, fuzzy
-#| msgid "Has Unit Of Measure?"
+#: apps/metadata/models.py:549 apps/metadata/models.py:620
 msgid "Unit of Measure"
-msgstr "¿Tiene la unidad de medida?"
+msgstr "Unidad de medida"
 
+#: apps/metadata/models.py:558
 msgid "Currency"
-msgstr ""
+msgstr "Moneda"
 
+#: apps/metadata/models.py:561
 msgid "Additional Identifier"
-msgstr ""
+msgstr "Identificador adicional"
 
+#: apps/metadata/models.py:562
 msgid "Attribute"
-msgstr ""
+msgstr "Atributo"
 
+#: apps/metadata/models.py:563 apps/metadata/models.py:623
 msgid "Notes"
-msgstr ""
+msgstr "Notas"
 
-#, fuzzy
-#| msgid "Activity Category"
+#: apps/metadata/models.py:570
 msgid "Activity Labels"
-msgstr "Categoría de actividad"
+msgstr "Etiquetas de actividad"
 
+#: apps/metadata/models.py:586
 msgid "Complete"
-msgstr ""
+msgstr "Completo"
 
-#, fuzzy
-#| msgid "Wealth Characteristic"
+#: apps/metadata/models.py:592 apps/metadata/models.py:629
 msgid "Wealth Characteristic Label"
-msgstr "Riqueza característica"
+msgstr "Etiqueta de característica de riqueza"
 
+#: apps/metadata/models.py:630
 #, fuzzy
 #| msgid "Wealth Characteristics"
 msgid "Wealth Characteristics Labels"
 msgstr "Características de la riqueza"
 
+#: apps/metadata/templates/admin/metadata/change_list.html:7
 msgid "Filter"
-msgstr ""
+msgstr "Filtro"
 
+#: apps/metadata/templates/admin/metadata/change_list.html:9
 msgid "Start typing to narrow filter..."
-msgstr ""
+msgstr "Empiece a escribir para acotar el filtro..."
 
+#: apps/metadata/templates/admin/metadata/change_list.html:12
 msgid "Hide counts"
-msgstr ""
+msgstr "Ocultar conteos"
 
+#: apps/metadata/templates/admin/metadata/change_list.html:13
 msgid "Show counts"
-msgstr ""
+msgstr "Mostrar conteos"
 
+#: apps/metadata/templates/admin/metadata/change_list.html:16
 msgid "Clear all filters"
-msgstr ""
+msgstr "Borrar todos los filtros"
 
+#: apps/metadata/viewsets.py:33 apps/metadata/viewsets.py:39
+#: apps/metadata/viewsets.py:54 apps/metadata/viewsets.py:231
+#: apps/metadata/viewsets.py:237
 msgid "English"
 msgstr "Inglés"
 
+#: apps/metadata/viewsets.py:34 apps/metadata/viewsets.py:42
+#: apps/metadata/viewsets.py:57 apps/metadata/viewsets.py:232
+#: apps/metadata/viewsets.py:240
 msgid "French"
 msgstr "Francés"
 
+#: apps/metadata/viewsets.py:35 apps/metadata/viewsets.py:45
+#: apps/metadata/viewsets.py:60 apps/metadata/viewsets.py:233
+#: apps/metadata/viewsets.py:243
 msgid "Spanish"
 msgstr "Español"
 
+#: apps/metadata/viewsets.py:36 apps/metadata/viewsets.py:48
+#: apps/metadata/viewsets.py:63 apps/metadata/viewsets.py:234
+#: apps/metadata/viewsets.py:246
 msgid "Arabic"
-msgstr "Arábica"
+msgstr "Árabe"
 
+#: apps/metadata/viewsets.py:37 apps/metadata/viewsets.py:51
+#: apps/metadata/viewsets.py:66 apps/metadata/viewsets.py:235
+#: apps/metadata/viewsets.py:249
 msgid "Portuguese"
-msgstr ""
+msgstr "Portugués"
+
+#~ msgid "Livelihood Category"
+#~ msgstr "Categoría de medios de vida"
+
+#~ msgid "Livelihood Categories"
+#~ msgstr "Categorías de medios de vida"
+
+#~ msgid "Gardening"
+#~ msgstr "Jardinería"

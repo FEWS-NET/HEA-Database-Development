@@ -194,6 +194,97 @@ class GetActivityLabelAttributesTestCase(TestCase):
         self.assertEqual(output.metadata["num_unrecognized_labels"].value, 0)
         self.assertEqual(output.metadata["pct_rows_recognized"].value, 100.0)
 
+    @patch("pipelines.assets.livelihood_activity.get_wealth_group_dataframe")
+    def test_labor_migration_times_per_year_derived_from_income(self, mock_get_wealth_group_dataframe):
+        livelihood_zone_baseline = LivelihoodZoneBaselineFactory()
+        country = livelihood_zone_baseline.livelihood_zone.country
+        for purpose in ["MilkProduction", "ButterProduction"]:
+            SeasonFactory(country=country, purpose=purpose, aliases=["season 2"])
+        ClassifiedProductFactory(cpc="S8512HA", kcals_per_unit=2100, aliases=["labour migration"])
+        # The payment_per_time label is only recognized via an Override, as it is in the BSS Labels workbook.
+        ActivityLabel.objects.create(
+            activity_label="savings/remittance each time (per person)",
+            activity_type=LIVELIHOOD_ACTIVITY,
+            status=ActivityLabel.LabelStatus.OVERRIDE,
+            is_start=False,
+            attribute="payment_per_time",
+        )
+        get_label_attributes.cache_clear()
+        get_livelihood_activity_label_map.cache_clear()
+
+        baseline_key = list(livelihood_zone_baseline.natural_key())
+        mock_get_wealth_group_dataframe.return_value = pd.DataFrame(
+            [
+                {
+                    "bss_column": bss_column,
+                    "wealth_group_category": wealth_group_category,
+                    "community": community or None,  # Summary columns have no Community
+                    "natural_key": baseline_key + [wealth_group_category, community],
+                }
+                for bss_column, wealth_group_category, community in [
+                    ("B", "VP", "Community 1"),
+                    ("C", "P-F", "Community 2"),
+                    ("D", "P", "Community 3"),
+                    ("E", "VP", ""),
+                ]
+            ]
+        )
+
+        # Mirrors NG04 'Data' rows 632-638: the fourth header row is the household size (row 40 in the BSS).
+        dataframe = pd.DataFrame(
+            {
+                "A": [
+                    "",
+                    "",
+                    "",
+                    "HH size",
+                    "Other cash income:",
+                    "Labour migration: no. people per HH",
+                    "no. months",
+                    "kcals (%)",
+                    "savings/remittance each time (per person)",
+                    "income",
+                ],
+                # 'Data'!H632: paid once in 2 months away
+                "B": ["", "", "", 7, "", 1, 2, 0.02380952381, 7000, 7000],
+                # 'Data'!Q632: paid twice in 1 month away
+                "C": ["", "", "", 6, "", 1, 1, 0.01388888889, 15000, 30000],
+                # No income recorded, so fall back to once per month away
+                "D": ["", "", "", 6, "", 1, 2, 0.02380952381, 5000, ""],
+                # 'Data'!BE632: summary column, paid once per month away
+                "E": ["", "", "", 7, "", 1, 3, 0.03571428571, 36000, 108000],
+            }
+        )
+
+        output = get_instances_from_dataframe(
+            context=Mock(),
+            config=Mock(strict=False),
+            df=dataframe,
+            livelihood_zone_baseline=livelihood_zone_baseline,
+            activity_type=LIVELIHOOD_ACTIVITY,
+            num_header_rows=4,
+            partition_key="TEST001",
+        )
+
+        strategies = output.value["LivelihoodStrategy"]
+        self.assertEqual(len(strategies), 1)
+        self.assertEqual(strategies[0]["strategy_type"], "OtherCashIncome")
+        self.assertEqual(strategies[0]["product_id"], "S8512HA")
+
+        activities = {activity["bss_column"]: activity for activity in output.value["LivelihoodActivity"]}
+        self.assertEqual(sorted(activities), ["B", "C", "D", "E"])
+        expected_times_per_year = {"B": 1, "C": 2, "D": 2, "E": 3}
+        for column, expected in expected_times_per_year.items():
+            self.assertAlmostEqual(activities[column]["times_per_year"], expected, msg=f"Column {column}")
+        # The derived times_per_year must satisfy the OtherCashIncome income validation
+        for column in ["B", "C", "E"]:
+            activity = activities[column]
+            self.assertAlmostEqual(
+                activity["income"],
+                activity["payment_per_time"] * activity["people_per_household"] * activity["times_per_year"],
+                msg=f"Column {column}",
+            )
+
     def test_zone_specific_season_alias(self):
         country = CountryFactory()
         livelihood_zone_id = f"{country.iso3166a2}04"

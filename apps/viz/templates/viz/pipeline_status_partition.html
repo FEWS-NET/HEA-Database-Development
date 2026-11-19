@@ -1,0 +1,67 @@
+{% extends "admin/base_site.html" %}
+
+{% load i18n static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'viz/css/pipeline_status.css' %}">
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
+    &rsaquo; <a href="{% url 'viz:pipeline_status_index' %}">{% translate 'Pipeline Status' %}</a>
+    &rsaquo; <a href="{% url 'viz:pipeline_status' pipeline.slug %}">{{ pipeline.label }}</a>
+    &rsaquo; {{ partition_key }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="pipeline-status">
+    <p>
+        {% translate 'Status' %}: <strong>{{ partition_status }}</strong>
+        {% if root_failures %}
+        &mdash; {% translate 'Failed at' %}: <strong>{{ root_failures|join:", " }}</strong>
+        {% endif %}
+    </p>
+
+    {% if graph_svg %}
+    <div class="pipeline-status__graph">
+        {{ graph_svg|safe }}
+    </div>
+    {% else %}
+    <p>{% translate 'The asset graph is not available because Graphviz is not installed.' %}</p>
+    {% endif %}
+
+    <table>
+        <thead>
+            <tr>
+                <th>{% translate 'Asset' %}</th>
+                <th>{% translate 'Status' %}</th>
+                <th>{% translate 'Last materialized' %}</th>
+                <th>{% translate 'Latest run' %}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for asset in assets %}
+            <tr>
+                <td{% if asset.is_root_failure %} class="pipeline-status__root-failure"{% endif %}>
+                    <a href="{{ asset.url }}">{{ asset.asset_key }}</a>
+                </td>
+                <td><span class="pipeline-status__badge pipeline-status__badge--{{ asset.status|slugify }}">{{ asset.status }}</span></td>
+                <td>
+                    {% if asset.last_materialized_run_url %}
+                    <a href="{{ asset.last_materialized_run_url }}">{{ asset.last_materialized|date:"Y-m-d H:i:s T" }}</a>
+                    {% else %}
+                    &mdash;
+                    {% endif %}
+                </td>
+                <td>
+                    {% if asset.latest_run_url %}<a href="{{ asset.latest_run_url }}">{% translate 'View run' %}</a>{% else %}&mdash;{% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

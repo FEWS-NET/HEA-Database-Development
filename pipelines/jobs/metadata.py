@@ -33,7 +33,7 @@ from baseline.models import (  # NOQA: E402
     LivelihoodZoneBaselineCorrection,
 )
 from common.lookups import ClassifiedProductLookup, UserLookup  # NOQA: E402
-from metadata.models import ActivityLabel  # NOQA: E402
+from metadata.models import ActivityLabel, shorten_to_short_name  # NOQA: E402
 
 
 def load_metadata_for_model(context: OpExecutionContext, sheet_name: str, model: models.Model, df: pd.DataFrame):
@@ -86,6 +86,20 @@ def load_metadata_for_model(context: OpExecutionContext, sheet_name: str, model:
         df["activity_type"] = df["activity_type"].replace("", ActivityLabel.LivelihoodActivityType.LIVELIHOOD_ACTIVITY)
     if "characteristic_group_id" in df:
         df["characteristic_group_id"] = df["characteristic_group_id"].astype(object).replace("", None)
+
+    # ReferenceData models have a required, translated `short_name` that currently defaults to `name`.
+    # bulk_create bypasses Model.save(), so populate missing/blank short_name from name column
+    for field_name in valid_field_names:
+        if field_name.startswith("short_name_"):
+            name_field = "name_" + field_name[len("short_name_") :]
+            if name_field in df:
+                if field_name in df:
+                    # Treat NaN/None and whitespace-only cells as blank (astype(bool) would keep NaN)
+                    short_name_values = df[field_name].astype(object)
+                    is_blank = short_name_values.isna() | (short_name_values.astype(str).str.strip() == "")
+                    df[field_name] = short_name_values.where(~is_blank, df[name_field])
+                else:
+                    df[field_name] = df[name_field].apply(shorten_to_short_name)
 
     if model_name == "ClassifiedProduct":
         existing_instances = {instance.pk: instance for instance in model.objects.filter(pk__in=df["cpc"])}
@@ -333,6 +347,10 @@ def load_all_corrections(context: OpExecutionContext):
             df = df.set_index(["livelihood_zone_baseline_id", "worksheet_name", "cell_range"], drop=False)
 
             # Get the current set of corrections from the database, so we can see what has changed
+            # We only get corrections for the Baselines that are present in the current worksheet,
+            # so that we don't accidentally delete corrections for Baselines that are not maintained
+            # in the BSS Metadata workbook. Baselines can be added manually using the Admin screen
+            # and manual corrections can be then be added without risk of them being deleted here.
             existing_instances = LivelihoodZoneBaselineCorrection.objects.filter(
                 livelihood_zone_baseline_id__in=df["livelihood_zone_baseline_id"].unique()
             ).select_related("livelihood_zone_baseline")

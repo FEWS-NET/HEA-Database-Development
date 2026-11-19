@@ -933,11 +933,29 @@ table#change-history tbody th {
     padding: 30px 60px;
 }
 
+/*
+ * The gray frame is drawn as an inset shadow, so it must never be thicker than the surrounding padding.
+ */
 .content_with_background {
-    box-shadow: inset 0 0 0 30px #F4F5F5;
+    --content-frame: 30px;
+    box-shadow: inset 0 0 0 var(--content-frame) #F4F5F5;
     border-width: 1px;
     border-style: solid;
     border-color: #D1D3D4;
+}
+
+@media (max-width: 1024px) {
+    #content.content_with_background {
+        --content-frame: 20px;
+        padding: 20px;
+    }
+}
+
+@media (max-width: 767px) {
+    #content.content_with_background {
+        --content-frame: 15px;
+        padding: 15px;
+    }
 }
 
 #content-main {
@@ -1343,15 +1361,50 @@ input, textarea, select, .form-row p, form .button {
     border-radius: 0;
 }
 
+/*
+ * Keep the changelist search box usable on narrow windows.
+ */
+#changelist #toolbar form {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+#toolbar .searchbar_wrap {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
+    width: 100%;
+}
+
+#toolbar .searchbar_input_group {
+    display: flex;
+    align-items: stretch;
+    flex: 1 1 240px;
+    min-width: 200px;
+    max-width: 420px;
+}
+
+#changelist #toolbar form #searchbar {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    box-sizing: border-box;
+    height: 28px;
+    line-height: 1.2;
+}
+
 #toolbar form input[type="submit"] {
-    border: 1px solid var(--border-color);
+    box-sizing: border-box;
+    border: 1px solid var(--secondary);
     font-size: 13px;
     padding: 4px 8px;
     margin: 0;
     background: var(--secondary);
     cursor: pointer;
-    height: 25px;
-    width: 30px;
+    height: 28px;
+    width: 32px;
     background-image: url(../img/search_white.svg);
     background-position: center;
     background-repeat: no-repeat;
