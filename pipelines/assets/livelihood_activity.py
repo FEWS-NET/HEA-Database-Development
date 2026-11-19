@@ -2053,6 +2053,16 @@ def get_instances_from_dataframe(
                             % (strategy_type, activity_attribute, label)
                         )
                         activity_attribute = None
+                elif activity_attribute == "income_expenditure_or_activity_notes":
+                    if livelihood_strategy["strategy_type"] in (
+                        LivelihoodStrategyType.FOOD_PURCHASE,
+                        LivelihoodStrategyType.OTHER_PURCHASE,
+                    ):
+                        activity_attribute = "expenditure"
+                    elif livelihood_strategy["strategy_type"] == LivelihoodStrategyType.OTHER_CASH_INCOME:
+                        activity_attribute = "income"
+                    else:
+                        activity_attribute = "activity_notes"
 
                 # For Payment In Kind and Other Cash Income the attribute for payment_per_time sometimes uses a label
                 # that normally matches the price attribute.

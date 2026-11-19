@@ -1596,36 +1596,36 @@
         "is_start": true,
         "product_id": "soja",
         "season": "saison a",
-        "attribute": "activity_notes"
+        "attribute": "income_expenditure_or_activity_notes"
     },
     "Soya saison B": {
         "is_start": true,
         "product_id": "soya",
         "season": "saison b",
-        "attribute": "activity_notes"
+        "attribute": "income_expenditure_or_activity_notes"
     },
     "Recolte Saison A": {
         "is_start": true,
         "product_id": "recolte",
         "season": "saison a",
-        "attribute": "activity_notes"
+        "attribute": "income_expenditure_or_activity_notes"
     },
     "Battage/Vannage saison B": {
         "is_start": true,
         "product_id": "battage/vannage",
         "season": "saison b",
-        "attribute": "activity_notes"
+        "attribute": "income_expenditure_or_activity_notes"
     },
     "Preparation de la terre - saison a": {
         "is_start": true,
         "product_id": "preparation de la terre",
         "season": "saison a",
-        "attribute": "activity_notes"
+        "attribute": "income_expenditure_or_activity_notes"
     },
     "Maize season 1": {
         "is_start": true,
         "product_id": "maize",
         "season": "season 1",
-        "attribute": "activity_notes"
+        "attribute": "income_expenditure_or_activity_notes"
     }
 }

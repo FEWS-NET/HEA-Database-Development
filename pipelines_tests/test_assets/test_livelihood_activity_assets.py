@@ -391,7 +391,8 @@ class GetActivityLabelAttributesTestCase(TestCase):
         self.assertEqual(list(attributes_df["product_id"]), [product.pk, product.pk, product.pk])
         self.assertEqual(list(attributes_df["season"]), [season_a.name_en, season_b.name_en, season_a.name_en])
         self.assertEqual(
-            list(attributes_df["attribute"]), ["activity_notes", "number_of_local_measures", "quantity_produced"]
+            list(attributes_df["attribute"]),
+            ["income_expenditure_or_activity_notes", "number_of_local_measures", "quantity_produced"],
         )
         self.assertEqual(list(attributes_df["additional_identifier"]), ["", "", ""])
 

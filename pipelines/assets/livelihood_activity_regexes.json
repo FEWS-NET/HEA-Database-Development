@@ -960,8 +960,8 @@
         null,
         true,
         {
-            "attribute": "activity_notes",
-            "notes": "Recognize a product followed by a season with no other attributes, e.g. 'soja saison a' or 'recolte saison b'. The strategy_type is inherited from the section header."
+            "attribute": "income_expenditure_or_activity_notes",
+            "notes": "Recognize a product followed by a season with no other attributes, e.g. 'soja saison a' or 'recolte saison b'. The strategy_type is inherited from the section header, and determines whether any values in the row are income, expenditure or notes."
         }
     ],
     [
