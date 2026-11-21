@@ -538,6 +538,18 @@ def get_livelihood_activity_regular_expression_attributes(label: str) -> dict:
         if match:
             attributes.update(match.groupdict())
 
+            # Labels such as "Femmes - travail domestique" or "Construction - garçons/filles" contain a product and
+            # the household members who carry out the activity. A BSS often contains several rowsets for the same
+            # product that differ only by household members, so use the original text for the household members as
+            # the additional_identifier for the start of the Livelihood Strategy, so that the strategies are unique.
+            if (
+                is_start
+                and attributes["product_id"]
+                and attributes["household_labor_provider"]
+                and not attributes["additional_identifier"]
+            ):
+                attributes["additional_identifier"] = attributes["household_labor_provider"]
+
             # Map household_labor_provider to canonical values using TextChoices
             if "household_labor_provider" in attributes and attributes["household_labor_provider"]:
                 try:
@@ -671,16 +683,32 @@ def get_all_label_attributes(
     # e.g. "fruits - orange/mandarine".  For any failing product_id lookups, attempt to split the label into a product
     # and an additional identifier and if we get a matching product and a non-null additional identifier, then accept
     # the match and update the additional_identifier attribute.
+    # Labels containing household members, e.g. "Femmes - construction - masonry", already have the household members
+    # as the additional_identifier, so for those labels we also attempt the match and keep both parts of the identifier,
+    # e.g. "femmes - masonry".
+    has_household_labor_provider = (
+        all_label_attributes.get("household_labor_provider", pd.Series("", index=all_label_attributes.index))
+        .fillna("")
+        .astype(str)
+        .str.strip()
+        .ne("")
+    )
     unrecognized_product_mask = (
         all_label_attributes["product_id"].isna()
         & all_label_attributes["product_id_original"].fillna("").astype(str).str.strip().ne("")
-        & all_label_attributes["additional_identifier"].fillna("").astype(str).str.strip().eq("")
+        & (
+            all_label_attributes["additional_identifier"].fillna("").astype(str).str.strip().eq("")
+            | has_household_labor_provider
+        )
     )
     for row, product_label in all_label_attributes.loc[unrecognized_product_mask, "product_id_original"].items():
         product_id, additional_identifier = classifiedproductlookup.get_prefix(product_label)
         if product_id and additional_identifier:
+            existing_identifier = str(all_label_attributes.at[row, "additional_identifier"] or "").strip()
             all_label_attributes.at[row, "product_id"] = product_id
-            all_label_attributes.at[row, "additional_identifier"] = additional_identifier
+            all_label_attributes.at[row, "additional_identifier"] = (
+                f"{existing_identifier} - {additional_identifier}" if existing_identifier else additional_identifier
+            )
 
     # Note that we don't support additional identifiers in the payment_product_id.
     all_label_attributes = classifiedproductlookup.do_lookup(

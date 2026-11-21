@@ -1336,17 +1336,20 @@
     "hommes - preparation terre/labour": {
         "is_start": true,
         "product_id": "preparation terre/labour",
-        "household_labor_provider": "men"
+        "household_labor_provider": "men",
+        "additional_identifier": "hommes"
     },
     "women- threshing, harvesting": {
         "is_start": true,
         "product_id": "threshing, harvesting",
-        "household_labor_provider": "women"
+        "household_labor_provider": "women",
+        "additional_identifier": "women"
     },
     "poisson : peche homme (kg collectés)": {
         "is_start": true,
         "product_id": "peche",
         "household_labor_provider": "men",
+        "additional_identifier": "homme",
         "unit_of_measure_id": "kg",
         "attribute": "quantity_produced"
     },
@@ -1354,34 +1357,40 @@
         "is_start": true,
         "product_id": "petty trade",
         "household_labor_provider": "men",
+        "additional_identifier": "men",
         "attribute": "people_per_household"
     },
     "pousse pousseur : garçon": {
         "is_start": true,
         "product_id": "pousse pousseur",
-        "household_labor_provider": "boys"
+        "household_labor_provider": "boys",
+        "additional_identifier": "garçon"
     },
     "femme vente de légumes": {
         "is_start": true,
         "product_id": "vente de légumes",
-        "household_labor_provider": "women"
+        "household_labor_provider": "women",
+        "additional_identifier": "femme"
     },
     "petty trade - men: no. people per hh": {
         "is_start": true,
         "product_id": "petty trade",
         "household_labor_provider": "men",
+        "additional_identifier": "men",
         "attribute": "people_per_household"
     },
     "petit commerce femme": {
         "is_start": true,
         "product_id": "petit commerce",
-        "household_labor_provider": "women"
+        "household_labor_provider": "women",
+        "additional_identifier": "femme"
     },
     "autre auto-emploi: women - petty trade": {
         "strategy_type": "OtherCashIncome",
         "is_start": true,
         "product_id": "petty trade",
-        "household_labor_provider": "women"
+        "household_labor_provider": "women",
+        "additional_identifier": "women"
     },
     "adults": {
         "household_labor_provider": "adults"
@@ -1417,32 +1426,38 @@
         "strategy_type": "OtherCashIncome",
         "is_start": true,
         "product_id": "petty trade",
-        "household_labor_provider": "boys"
+        "household_labor_provider": "boys",
+        "additional_identifier": "boys"
     },
     "boys/girls - agriculture work": {
         "is_start": true,
         "product_id": "agriculture work",
-        "household_labor_provider": "children"
+        "household_labor_provider": "children",
+        "additional_identifier": "boys/girls"
     },
     "garçons/filles collection d'eau": {
         "is_start": true,
         "product_id": "collection d'eau",
-        "household_labor_provider": "children"
+        "household_labor_provider": "children",
+        "additional_identifier": "garçons/filles"
     },
     "girls charcoal selling": {
         "is_start": true,
         "product_id": "charcoal selling",
-        "household_labor_provider": "girls"
+        "household_labor_provider": "girls",
+        "additional_identifier": "girls"
     },
     "boys fishing": {
         "is_start": true,
         "product_id": "fishing",
-        "household_labor_provider": "boys"
+        "household_labor_provider": "boys",
+        "additional_identifier": "boys"
     },
     "filles vente de légumes": {
         "is_start": true,
         "product_id": "vente de légumes",
-        "household_labor_provider": "girls"
+        "household_labor_provider": "girls",
+        "additional_identifier": "filles"
     },
     "huile: nom du mesure": {
         "is_start": true,
