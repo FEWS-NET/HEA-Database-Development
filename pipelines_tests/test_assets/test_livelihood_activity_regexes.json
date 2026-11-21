@@ -1627,5 +1627,25 @@
         "product_id": "maize",
         "season": "season 1",
         "attribute": "income_expenditure_or_activity_notes"
+    },
+    "Arachide saison B: nbr unités": {
+        "is_start": true,
+        "product_id": "arachide",
+        "season": "saison b",
+        "attribute": "number_of_local_measures"
+    },
+    "Maize season 1: kg sold": {
+        "is_start": true,
+        "product_id": "maize",
+        "unit_of_measure_id": "kg",
+        "season": "season 1",
+        "attribute": "quantity_sold"
+    },
+    "Sorghum gu: kg produced": {
+        "is_start": true,
+        "product_id": "sorghum",
+        "unit_of_measure_id": "kg",
+        "season": "gu",
+        "attribute": "quantity_produced"
     }
 }

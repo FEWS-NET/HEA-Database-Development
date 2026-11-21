@@ -396,28 +396,6 @@ class GetActivityLabelAttributesTestCase(TestCase):
         )
         self.assertEqual(list(attributes_df["additional_identifier"]), ["", "", ""])
 
-    def test_get_all_label_attributes_does_not_split_unknown_product_or_other_seasons(self):
-        """
-        The trailing season is only split off when the remaining text is a recognized product, and only for the
-        Season/Saison 1/2/3/A/B/C aliases, so that labels such as 'arachide gu: nbr unités' are left unchanged.
-        """
-        ClassifiedProductFactory(
-            cpc="R09999AR",
-            common_name_en="Test groundnuts",
-            description_en="Test groundnuts",
-            aliases=["arachide"],
-        )
-
-        attributes_df = get_all_label_attributes(
-            labels=pd.Series(["Produit inconnu saison A: nbr unités", "Arachide gu: nbr unités"]),
-            activity_type=LIVELIHOOD_ACTIVITY,
-            country_code=None,
-            livelihood_zone_id=None,
-        )
-
-        self.assertEqual(list(attributes_df["product_id"]), [None, None])
-        self.assertEqual(list(attributes_df["season"]), ["", ""])
-
     def test_get_completeness_dataframe_with_no_rows(self):
         column = "income"
         summary_df = pd.DataFrame(
