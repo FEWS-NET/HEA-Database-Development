@@ -480,17 +480,24 @@ def get_livelihood_activity_regexes() -> list:
     unit_of_measure_labels = UnitOfMeasureLookup().prepare_lookup_df()["lookup_key"]
     unit_of_measure_pattern = r"(?P<unit_of_measure_id>" + "|".join(unit_of_measure_labels.map(re.escape)) + ")"
 
+    product_pattern = r"(?P<product_id>[a-zà-ÿ][a-zà-ÿ1-9',/ \.\>\-\(\)]+?)"
+    season_pattern = r"(?P<season>season [123abc]|saison [123abc]|[123][a-z] season|[123][a-zà-ÿ] saison|r[eé]colte principale|principale r[eé]colte|gu|deyr+?)"
+    separator_pattern = r" *[:-]? *"
+
     placeholder_patterns = {
         "label_pattern": r"[a-zà-ÿ][a-zà-ÿ1-9',/ \.\>\-\(\)]+?",
-        "product_pattern": r"(?P<product_id>[a-zà-ÿ][a-zà-ÿ1-9',/ \.\>\-\(\)]+?)",
+        "product_pattern": product_pattern,
+        # A product optionally followed by a season, e.g. 'arachide saison a' in 'arachide saison a: nbr unités'.
+        # Use product_pattern instead in regexes that capture the season separately, to avoid a duplicate group name.
+        "product_season_pattern": rf"{product_pattern}(?:{separator_pattern} {season_pattern})?",
         "payment_product_pattern": r"(?P<payment_product_id>[a-zà-ÿ][a-zà-ÿ1-9',/ \.\>\-\(\)]+?)",
         "labor_pattern": r"(?P<product_id>(?:labou?r|travail|main-d'œuvre|pre-harvest labou?r|labour:? pre-harvest|harvest labou?r|labour:? harvest|post-harvest labou?r|labour:? post-harvest|travail:? pre-r[eéè]colte) *[:-]? *[a-zà-ÿ][a-zà-ÿ1-9',/ \.\>\-\(\)]+?)",
-        "season_pattern": r"(?P<season>season [123abc]|saison [123abc]|[123][a-z] season|[123][a-zà-ÿ] saison|r[eé]colte principale|principale r[eé]colte|gu|deyr+?)",
+        "season_pattern": season_pattern,
         "age_gender_pattern": age_gender_pattern,
         "unit_of_measure_pattern": unit_of_measure_pattern,
         "nbr_pattern": r"(?:n[bo]?r?e?|no)\.?",
         "quantity_sold_pattern": r"(?:(?:quantité )?vendu(?:e|s|ss|es|ses)?|sold)",
-        "separator_pattern": r" *[:-]? *",
+        "separator_pattern": separator_pattern,
         "name_of_local_measure_pattern": r"(?:name of (?:local )?(?:meas(?:ure)?\.?)|nom(?: (?:de la mesure(?: locale?)?|de mesure locale?|du mesure|d'unité|mesure(?: locale?)?|unité de mesure))?)",
     }
     # Compile the regexes
@@ -2016,6 +2023,16 @@ def get_instances_from_dataframe(
                             % (strategy_type, activity_attribute, label)
                         )
                         activity_attribute = None
+                elif activity_attribute == "income_expenditure_or_activity_notes":
+                    if livelihood_strategy["strategy_type"] in (
+                        LivelihoodStrategyType.FOOD_PURCHASE,
+                        LivelihoodStrategyType.OTHER_PURCHASE,
+                    ):
+                        activity_attribute = "expenditure"
+                    elif livelihood_strategy["strategy_type"] == LivelihoodStrategyType.OTHER_CASH_INCOME:
+                        activity_attribute = "income"
+                    else:
+                        activity_attribute = "activity_notes"
 
                 # For Payment In Kind and Other Cash Income the attribute for payment_per_time sometimes uses a label
                 # that normally matches the price attribute.
