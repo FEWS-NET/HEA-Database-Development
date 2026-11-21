@@ -217,6 +217,21 @@
         "unit_of_measure_id": "kg",
         "attribute": "quantity_sold"
     },
+    "Vente cultures vertes: nbr vendus": {
+        "is_start": true,
+        "product_id": "cultures vertes",
+        "attribute": "quantity_sold"
+    },
+    "Cultures vertes : quantity sold": {
+        "is_start": true,
+        "product_id": "cultures vertes",
+        "attribute": "quantity_sold"
+    },
+    "vente cultures vertes: quantity sold": {
+        "is_start": true,
+        "product_id": "cultures vertes",
+        "attribute": "quantity_sold"
+    },
     "Vente de bois de chauffage": {
         "is_start": true,
         "product_id": "bois de chauffage"
@@ -1188,6 +1203,12 @@
         "is_start": true
     },
     "Ag.lab (harvest) -- see Data2": {
+        "is_start": true
+    },
+    "Main d'ouvre -- voir Data2 (pre-récolte)": {
+        "is_start": true
+    },
+    "Main d'ouvre -- voir Data2 (récolte)": {
         "is_start": true
     },
     "Main d'oeuvre (récolte) -- voir Data2": {
