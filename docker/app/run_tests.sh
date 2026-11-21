@@ -143,13 +143,22 @@ fi
 #   CVE-2026-112910: FileLock ignores `mode` on Windows - our containers run Linux.
 #   CVE-2026-112908, CVE-2026-112938: StrictSoftFileLock claim directory permissions and
 #   symlink race - dagster only uses plain FileLock.
+#   Vulnerability IDs: SFTY-20261020-34461, SFTY-20261020-18367, SFTY-20261020-13394,
+#   SFTY-20261020-91319, SFTY-20261020-25530, SFTY-20261020-11422
+#   CVE-2026-112912, CVE-2026-112915, CVE-2026-112935, CVE-2026-112939, CVE-2026-112911,
+#   CVE-2026-112936: SoftFileLock, MarkerSoftFileLock, SoftFileLease, StrictSoftFileLock and
+#   (Async)ReadWriteLock - dagster and Safety only use plain FileLock.
+#   Vulnerability ID: SFTY-20261020-81101
+#   CVE-2026-112909: UnixFileLock, the backend of FileLock, truncates a file renamed or
+#   hard-linked onto the lock path - needs another local user in the container, which runs
+#   only our own processes.
 # NOTE: filelock 3.x is forced by Safety itself (safety<=3.8.1 requires filelock<4.0), so no
 #  patched version can be installed alongside it. The prod image doesn't install Safety and
 #  gets the latest filelock through dagster. Remove these ignores once a Safety release
 #  allows filelock>=4.2.1.
 
 echo Package Vulnerabilities:
-pip freeze | safety check --stdin --full-report -i 62283 -i 70612 -i 74054 -i 82915 -i 83150 -i SFTY-20260510-89962 -i 98069 -i 98070 -i SFTY-20260527-29918 -i SFTY-20260902-58666 -i SFTY-20261017-72390 -i SFTY-20261017-54654 -i SFTY-20261017-57659
+pip freeze | safety check --stdin --full-report -i 62283 -i 70612 -i 74054 -i 82915 -i 83150 -i SFTY-20260510-89962 -i 98069 -i 98070 -i SFTY-20260527-29918 -i SFTY-20260902-58666 -i SFTY-20261017-72390 -i SFTY-20261017-54654 -i SFTY-20261017-57659 -i SFTY-20261020-34461 -i SFTY-20261020-18367 -i SFTY-20261020-13394 -i SFTY-20261020-91319 -i SFTY-20261020-81101 -i SFTY-20261020-25530 -i SFTY-20261020-11422
 SAFETY_RESULT=$?
 
 # Suppress SAFETY_RESULT unless CHECK_SAFETY is set
