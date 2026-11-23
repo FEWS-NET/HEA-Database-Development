@@ -55,6 +55,23 @@ the Graphviz `dot` executable, which is installed in the application Docker imag
 The status for all partitions is cached for 60 seconds. The status logic is in `pipelines/status.py` and
 the views are in the `viz` app.
 
+## BSS Viewer
+
+The BSS Viewer (`/<lang>/viz/bss-viewer/`, linked from the Pipelines section of the admin sidebar and from
+each BSS import partition page) shows a worksheet from a baseline's BSS as a grid with Excel row numbers and
+column letters, to help diagnose pipeline failures. It requires the `common.access_dagster_ui` permission.
+
+Select a baseline by its `bss_instances` partition key, then switch between:
+
+- the *Original* file, i.e. the BSS uploaded to the Livelihood Zone Baseline, and the *Corrected* file, i.e.
+  the latest materialization of the `corrected_files` asset;
+- the *Values* saved in the file and the *Formulas*, which shows the formula instead of the value for cells
+  that have one.
+
+The URL contains the selected baseline, file, worksheet and display, so it can be shared. The corrected file
+only contains formulas if the BSS has no corrections, because `corrected_files` saves the calculated values
+when it applies corrections. Only `.xlsx` and `.xlsm` files can be displayed.
+
 ## Debugging inside Docker Containers
 
 The `LAUNCHER` environment sets a wrapper program around the Python process

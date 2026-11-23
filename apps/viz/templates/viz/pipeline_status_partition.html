@@ -23,6 +23,9 @@
         {% if root_failures %}
         &mdash; {% translate 'Failed at' %}: <strong>{{ root_failures|join:", " }}</strong>
         {% endif %}
+        {% if bss_viewer_url %}
+        &mdash; <a href="{{ bss_viewer_url }}">{% translate 'View the BSS' %}</a>
+        {% endif %}
     </p>
 
     {% if graph_svg %}

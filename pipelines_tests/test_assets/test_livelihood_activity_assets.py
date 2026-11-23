@@ -6,12 +6,13 @@ import pandas as pd
 from django.test import TestCase
 
 from baseline.tests.factories import LivelihoodZoneBaselineFactory
-from common.models import UnitOfMeasure
+from common.models import ClassifiedProduct, UnitOfMeasure
 from common.tests.factories import ClassifiedProductFactory, CountryFactory
 from metadata.models import ActivityLabel
 from metadata.tests.factories import SeasonFactory
 from pipelines.assets.livelihood_activity import (
     _get_completeness_dataframe,
+    _get_preview,
     get_all_label_attributes,
     get_instances_from_dataframe,
     get_label_attributes,
@@ -270,6 +271,12 @@ class GetActivityLabelAttributesTestCase(TestCase):
         self.assertEqual(len(strategies), 1)
         self.assertEqual(strategies[0]["strategy_type"], "OtherCashIncome")
         self.assertEqual(strategies[0]["product_id"], "S8512HA")
+        # Each row records how its label was recognized: the short regex template, or the ActivityLabel status.
+        row_sources = strategies[0]["row_sources"]
+        self.assertEqual(sorted(row_sources), [5, 6, 7, 8, 9])
+        self.assertTrue(row_sources[5].startswith("Regular Expression - "))
+        self.assertIn("{product_season_pattern}", row_sources[5])
+        self.assertEqual(row_sources[8], "Override")
 
         activities = {activity["bss_column"]: activity for activity in output.value["LivelihoodActivity"]}
         self.assertEqual(sorted(activities), ["B", "C", "D", "E"])
@@ -284,6 +291,91 @@ class GetActivityLabelAttributesTestCase(TestCase):
                 activity["payment_per_time"] * activity["people_per_household"] * activity["times_per_year"],
                 msg=f"Column {column}",
             )
+
+    @patch("pipelines.assets.livelihood_activity.get_wealth_group_dataframe")
+    def test_butter_kcals_moved_to_milk(self, mock_get_wealth_group_dataframe):
+        """
+        Test that the ButterProduction kcals move to the matching MilkProduction strategy, with their row sources.
+
+        Mirrors ML05 'Data' rows 86-111, where kcals_consumed is calculated rather than read from a row, so its
+        attribute row is the start of the next strategy and has no row source.
+        """
+        livelihood_zone_baseline = LivelihoodZoneBaselineFactory()
+        country = livelihood_zone_baseline.livelihood_zone.country
+        for purpose in ["MilkProduction", "ButterProduction"]:
+            SeasonFactory(country=country, purpose=purpose, aliases=["season 1", "1st season"])
+            SeasonFactory(country=country, purpose=purpose, aliases=["season 2", "2nd season"])
+        # The migrations load P02211 (cow's milk) and P22241 (butter) without the aliases from the real database
+        ClassifiedProduct.objects.filter(cpc="P02211").update(aliases=["cows' milk"])
+        # The start of ButterProduction is only recognized via an Override, as it is in the BSS Labels workbook.
+        ActivityLabel.objects.create(
+            activity_label="% cows' milk sold",
+            activity_type=LIVELIHOOD_ACTIVITY,
+            status=ActivityLabel.LabelStatus.OVERRIDE,
+            strategy_type="ButterProduction",
+            is_start=True,
+            product_id="P22241",
+            season="season 1",
+            attribute="percentage_milk_sold",
+        )
+        get_label_attributes.cache_clear()
+        get_livelihood_activity_label_map.cache_clear()
+
+        mock_get_wealth_group_dataframe.return_value = pd.DataFrame(
+            [
+                {
+                    "bss_column": "B",
+                    "wealth_group_category": "VP",
+                    "community": "Community 1",
+                    "natural_key": list(livelihood_zone_baseline.natural_key()) + ["VP", "Community 1"],
+                }
+            ]
+        )
+        dataframe = pd.DataFrame(
+            {
+                "A": [
+                    "",
+                    "",
+                    "",
+                    "HH size",
+                    "Cows' milk",
+                    "no. milking animals",
+                    "season 1: lactation period (days)",
+                    "total production (litres)",
+                    "% cows' milk sold",
+                    "milk+ghee/butter kcals (%) - 1st season",
+                    "milk+ghee/butter kcals (%) - 2nd season",
+                ],
+                "B": ["", "", "", 6, "", 2, 120, 240, 0.5, 0.01, ""],
+            }
+        )
+
+        output = get_instances_from_dataframe(
+            context=Mock(),
+            config=Mock(strict=False),
+            df=dataframe,
+            livelihood_zone_baseline=livelihood_zone_baseline,
+            activity_type=LIVELIHOOD_ACTIVITY,
+            num_header_rows=4,
+            partition_key="TEST001",
+        )
+
+        milk_strategy = next(
+            strategy
+            for strategy in output.value["LivelihoodStrategy"]
+            if strategy["strategy_type"] == "MilkProduction"
+        )
+        self.assertEqual(milk_strategy["attribute_rows"]["percentage_kcals"], 9)
+        self.assertEqual(milk_strategy["attribute_rows"]["kcals_consumed"], 10)
+        self.assertTrue(milk_strategy["row_sources"][9].startswith("Regular Expression - "))
+        self.assertNotIn(10, milk_strategy["row_sources"])
+        milk_activity = next(
+            activity
+            for activity in output.value["LivelihoodActivity"]
+            if activity["strategy_type"] == "MilkProduction"
+        )
+        self.assertEqual(milk_activity["percentage_kcals"], 0.01)
+        self.assertAlmostEqual(milk_activity["kcals_consumed"], 0.01 * 2100 * 365 * 6)
 
     def test_zone_specific_season_alias(self):
         country = CountryFactory()
@@ -458,3 +550,26 @@ class GetActivityLabelAttributesTestCase(TestCase):
         self.assertTrue(result.empty)
         self.assertEqual(result.index.names, ["strategy_type", "wealth_group_category"])
         self.assertEqual(list(result.columns), ["recognized", "summary", "unrecognized", "income_completeness"])
+
+
+class GetPreviewTestCase(TestCase):
+    """
+    Tests for _get_preview, which limits the preview to the Baseline and first Community Livelihood Activities.
+    """
+
+    def test_preview_excludes_later_communities(self):
+        """
+        Instances for the Baseline and the first Community are kept, later Communities are dropped from every model.
+        """
+        activities = [
+            {"wealth_group": ["ML03", "2020-09-30", "VP", full_name]} for full_name in ["", "Village A", "Village B"]
+        ]
+        instances = {
+            "LivelihoodStrategy": [{"strategy_type": "MilkProduction"}],
+            "LivelihoodActivity": activities,
+            "MilkProduction": activities,
+        }
+        preview = json.loads(_get_preview(instances).value.removeprefix("```json\n").removesuffix("\n```"))
+        self.assertEqual(preview["LivelihoodStrategy"], instances["LivelihoodStrategy"])
+        for model_name in ["LivelihoodActivity", "MilkProduction"]:
+            self.assertEqual([a["wealth_group"][3] for a in preview[model_name]], ["", "Village A"])

@@ -129,11 +129,41 @@ SEE_OTHER_WORKSHEET_LABEL_PATTERN = re.compile(
 )
 
 
+def _get_preview(instances: dict[str, list[dict]]) -> MetadataValue:
+    """
+    Return a JSON preview of the instances, limited to the Baseline and first Community Livelihood Activities.
+
+    The full output is too large for the browser to render, but it can be downloaded. Instances without a
+    wealth_group, such as LivelihoodStrategy, are always included. Baseline-level instances have an empty full_name.
+    """
+    full_names = {
+        "",
+        next(
+            (a["wealth_group"][3] for a in instances.get("LivelihoodActivity", []) if a["wealth_group"][3]),
+            "",
+        ),
+    }
+    preview = {
+        model_name: [i for i in model_instances if "wealth_group" not in i or i["wealth_group"][3] in full_names]
+        for model_name, model_instances in instances.items()
+    }
+    return MetadataValue.md(f"```json\n{json.dumps(preview, indent=4, ensure_ascii=False)}\n```")
+
+
 def _is_see_other_worksheet_label(label: str | None) -> bool:
     """
     Return True if a Data-worksheet label points to detail that is captured on the Data2 or Data3 worksheet.
     """
     return bool(label) and bool(SEE_OTHER_WORKSHEET_LABEL_PATTERN.match(prepare_lookup(label)))
+
+
+def _get_label_source(label_attributes: pd.Series) -> str:
+    """
+    Return how a label was recognized, e.g. the ActivityLabel status and notes, or the matching regex template.
+
+    Labels recognized by neither an ActivityLabel nor a regex, but which are a Product name, have no status.
+    """
+    return " - ".join(filter(None, [label_attributes["status"] or "Product name", label_attributes["notes"]]))
 
 
 def _is_section_header_label(label: str, row_values: pd.Series) -> bool:
@@ -456,7 +486,7 @@ def get_livelihood_activity_regexes() -> list:
     """
     Return a list of regex strings that the attributes associated with an activity label.
 
-    Each entry in the list is a tuple of the compiled regex, the strategy_type, a True/False value
+    Each entry in the list is a tuple of the compiled regex, the template it was built from, the strategy_type, a True/False value
     that indicates whether the regex marks the start of a new Livelihood Activity, and the attribute
     that the data in the row represents.
 
@@ -502,12 +532,12 @@ def get_livelihood_activity_regexes() -> list:
     }
     # Compile the regexes
     compiled_regexes = []
-    for pattern, strategy_type, is_start, attribute in livelihood_activity_regexes:
+    for template, strategy_type, is_start, attribute in livelihood_activity_regexes:
         try:
-            pattern = re.compile(pattern.format(**placeholder_patterns), flags=re.IGNORECASE)
-            compiled_regexes.append((pattern, strategy_type, is_start, attribute))
+            pattern = re.compile(template.format(**placeholder_patterns), flags=re.IGNORECASE)
+            compiled_regexes.append((pattern, template, strategy_type, is_start, attribute))
         except Exception as e:
-            raise ValueError(f"Invalid livelihood_activity_regexes entry: {pattern}") from e
+            raise ValueError(f"Invalid livelihood_activity_regexes entry: {template}") from e
 
     return compiled_regexes
 
@@ -533,7 +563,7 @@ def get_livelihood_activity_regular_expression_attributes(label: str) -> dict:
         "attribute": None,
         "notes": None,
     }
-    for pattern, strategy_type, is_start, attribute in get_livelihood_activity_regexes():
+    for pattern, template, strategy_type, is_start, attribute in get_livelihood_activity_regexes():
         match = pattern.fullmatch(label)
         if match:
             attributes.update(match.groupdict())
@@ -573,11 +603,9 @@ def get_livelihood_activity_regular_expression_attributes(label: str) -> dict:
             else:
                 # Attribute is a string containing the attribute name
                 attributes["attribute"] = attribute
-            # Save the matched pattern to aid trouble-shooting
+            # Save the matched template, which is much shorter than the expanded pattern, to aid trouble-shooting
             attributes["notes"] = (
-                attributes["notes"] + " " + f' r"{pattern.pattern}"'
-                if attributes["notes"]
-                else f'r"{pattern.pattern}"'
+                attributes["notes"] + " " + f' r"{template}"' if attributes["notes"] else f'r"{template}"'
             )
             # Return the first matching pattern
             return attributes
@@ -1476,6 +1504,12 @@ def get_instances_from_dataframe(
                                 and field in livelihood_strategy["attribute_rows"]
                             ):
                                 milk_strategy["attribute_rows"][field] = livelihood_strategy["attribute_rows"][field]
+                                field_row = livelihood_strategy["attribute_rows"][field]
+                                # A calculated kcals_consumed points at the next strategy's row and has no source
+                                if field_row in livelihood_strategy["row_sources"]:
+                                    milk_strategy["row_sources"][field_row] = livelihood_strategy["row_sources"][
+                                        field_row
+                                    ]
                         # If we have moved all of the percentage_kcals and kcals_consumed from the ButterProduction
                         # livelihood activities, then remove these attributes from the ButterProduction strategy.
                         for field in ["percentage_kcals", "kcals_consumed"]:
@@ -1835,6 +1869,9 @@ def get_instances_from_dataframe(
             "product_id_original": label_attributes.get("product_id_original", None),
             "unit_of_measure_original": label_attributes.get("unit_of_measure_id_original", None),
         }
+        # Keep track of how the label in each row was recognized, to aid trouble-shooting. Attributes inferred by
+        # the rules in this function record the current row in attribute_rows, but the row source describes the label.
+        livelihood_strategy["row_sources"] = {row: _get_label_source(label_attributes)}
         # Keep track of which row each attribute came from, to aid trouble-shooting
         livelihood_strategy["attribute_rows"] = {
             attribute: row
@@ -2202,6 +2239,7 @@ def get_instances_from_dataframe(
                 # Livelihood Summary section.
                 elif strategy_type:
                     livelihood_strategy["attribute_rows"][activity_attribute] = row
+                    livelihood_strategy["row_sources"][row] = _get_label_source(label_attributes)
                     # Assertion to prevent linting from complaining about possible None values
                     assert activity_field_names is not None, (
                         "Found activity_attribute %s from row %s, but there is no Livelihood Strategy and therefore no activity_field_names defined."
@@ -2321,7 +2359,7 @@ def get_instances_from_dataframe(
         * 100,
         1,
     )
-    metadata["preview"] = MetadataValue.md(f"```json\n{json.dumps(result, indent=4, ensure_ascii=False)}\n```")
+    metadata["preview"] = _get_preview(result)
 
     if errors:
         if config.strict:
@@ -2554,7 +2592,9 @@ def livelihood_activity_valid_instances(
             **{"WealthGroup": wealth_characteristic_instances["WealthGroup"]},
             **livelihood_activity_instances,
         }
-    return validate_instances(context, config, livelihood_activity_instances, partition_key)
+    output = validate_instances(context, config, livelihood_activity_instances, partition_key)
+    output.metadata["preview"] = _get_preview(output.value)
+    return output
 
 
 @asset(partitions_def=bss_instances_partitions_def, io_manager_key="json_io_manager")
