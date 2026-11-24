@@ -293,6 +293,114 @@ class GetActivityLabelAttributesTestCase(TestCase):
             )
 
     @patch("pipelines.assets.livelihood_activity.get_wealth_group_dataframe")
+    def test_payment_in_kind_payment_product_from_start_label(self, mock_get_wealth_group_dataframe):
+        """
+        Test that a payment_product on the label that starts a PaymentInKind strategy is used for the activities.
+
+        Mirrors ML02-TAR 'Data' rows 541-555, where 'Repas pris en exode: nbr. pers par Mènage' is followed only by
+        'nbr. mois' and 'kcals (%)', so the start label is the only source of the payment_product. A subsequent
+        payment_per_time row must still take precedence over the start label's payment_product.
+        """
+        livelihood_zone_baseline = LivelihoodZoneBaselineFactory()
+        country = livelihood_zone_baseline.livelihood_zone.country
+        for purpose in ["MilkProduction", "ButterProduction"]:
+            SeasonFactory(country=country, purpose=purpose, aliases=["season 2"])
+        labor_migration = ClassifiedProductFactory(cpc="S8512HA", kcals_per_unit=2100)
+        casual_labor = ClassifiedProductFactory(cpc="S85HA")
+        prepared_meals = ClassifiedProductFactory(cpc="P23997")
+        # The test database may already contain R011, so make sure it has the alias used in the payment row.
+        cereals = ClassifiedProductFactory(cpc="R011")
+        cereals.aliases = ["céréale"]
+        cereals.save()
+        maize = ClassifiedProductFactory(cpc="R01122")
+        for activity_label, product, payment_product, attribute in [
+            ("travail: type", casual_labor, maize, "activity_notes"),
+            ("repas pris en exode: nbr. pers par mènage", labor_migration, prepared_meals, "people_per_household"),
+        ]:
+            ActivityLabel.objects.create(
+                activity_label=activity_label,
+                activity_type=LIVELIHOOD_ACTIVITY,
+                status=ActivityLabel.LabelStatus.OVERRIDE,
+                is_start=True,
+                product=product,
+                payment_product=payment_product,
+                attribute=attribute,
+            )
+        get_label_attributes.cache_clear()
+        get_livelihood_activity_label_map.cache_clear()
+
+        baseline_key = list(livelihood_zone_baseline.natural_key())
+        mock_get_wealth_group_dataframe.return_value = pd.DataFrame(
+            [
+                {
+                    "bss_column": bss_column,
+                    "wealth_group_category": wealth_group_category,
+                    "community": community or None,  # Summary columns have no Community
+                    "natural_key": baseline_key + [wealth_group_category, community],
+                }
+                for bss_column, wealth_group_category, community in [
+                    ("B", "VP", "Community 1"),
+                    ("C", "VP", ""),
+                ]
+            ]
+        )
+
+        # The fourth header row is the household size (row 40 in the BSS).
+        dataframe = pd.DataFrame(
+            {
+                "A": [
+                    "",
+                    "",
+                    "",
+                    "Taille du mènage",
+                    "PAIEMENT EN NATURE:",
+                    "Travail: type",
+                    "no. personnes par ménage",
+                    "nbr fois par mois",
+                    "nbr. mois",
+                    "paiement en kg par fois (céréale)",
+                    "kcals (%)",
+                    "Repas pris en exode: nbr. pers par Mènage",
+                    "nbr. mois",
+                    "kcals (%)",
+                ],
+                "B": ["", "", "", 6, "", "FFW", 2, 1, 1, 30, 0.047358, 0.5, 4, 0.027778],
+                "C": ["", "", "", 6, "", "FFW", 2, 1, 1, 30, 0.035519, 1, 3, 0.041667],
+            }
+        )
+
+        output = get_instances_from_dataframe(
+            context=Mock(),
+            config=Mock(strict=False),
+            df=dataframe,
+            livelihood_zone_baseline=livelihood_zone_baseline,
+            activity_type=LIVELIHOOD_ACTIVITY,
+            num_header_rows=4,
+            partition_key="TEST001",
+        )
+
+        strategies = {strategy["product_id"]: strategy for strategy in output.value["LivelihoodStrategy"]}
+        self.assertEqual(sorted(strategies), ["S8512HA", "S85HA"])
+        for strategy in strategies.values():
+            self.assertEqual(strategy["strategy_type"], "PaymentInKind")
+
+        payment_products = {
+            (activity["livelihood_strategy"][3], activity["bss_column"]): activity["payment_product_id"]
+            for activity in output.value["LivelihoodActivity"]
+        }
+        self.assertEqual(
+            payment_products,
+            {
+                # The subsequent payment_per_time row overrides the payment_product from the start label
+                ("S85HA", "B"): "R011",
+                ("S85HA", "C"): "R011",
+                # There is no payment_per_time row, so the payment_product comes from the start label
+                ("S8512HA", "B"): "P23997",
+                ("S8512HA", "C"): "P23997",
+            },
+        )
+
+    @patch("pipelines.assets.livelihood_activity.get_wealth_group_dataframe")
     def test_butter_kcals_moved_to_milk(self, mock_get_wealth_group_dataframe):
         """
         Test that the ButterProduction kcals move to the matching MilkProduction strategy, with their row sources.

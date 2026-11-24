@@ -1926,6 +1926,15 @@ def get_instances_from_dataframe(
             for i in range(len(value_columns))
         ]
 
+        # The label that starts a PaymentInKind Livelihood Strategy may also specify the payment_product, for
+        # example the 'Exode: nbr. pers par Mènage' Override for Labor Migration. Some of these strategies don't
+        # have a subsequent 'paiement en kg par fois (céréale)' row that specifies the payment_product, so use the
+        # value from the start label as the default for the Livelihood Activities. Don't record it in the
+        # attribute_rows, so that a subsequent payment_per_time row can still override it without raising an error.
+        if label_attributes["payment_product_id"] and "payment_product_id" in activity_field_names:
+            for livelihood_activity in livelihood_activities_for_strategy:
+                livelihood_activity["payment_product_id"] = label_attributes["payment_product_id"]
+
     # Iterate over the rows
     for row in df.iloc[num_header_rows:].index:  # Ignore the Wealth Group header rows
         column = None
