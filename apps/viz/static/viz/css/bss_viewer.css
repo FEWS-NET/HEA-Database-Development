@@ -1,0 +1,68 @@
+.bss-viewer__controls,
+.bss-viewer__toggles,
+.bss-viewer__sheets {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 12px 0;
+}
+
+.bss-viewer__toggles a,
+.bss-viewer__sheets a {
+    padding: 2px 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+}
+
+.bss-viewer__toggles a[aria-current],
+.bss-viewer__sheets a[aria-current] {
+    background-color: var(--selected-bg);
+    font-weight: 700;
+}
+
+.bss-viewer__toggles span:not(:first-child) {
+    margin-left: 16px;
+}
+
+.bss-viewer__grid {
+    max-height: 75vh;
+    overflow: auto;
+    border: 1px solid var(--border-color);
+}
+
+.bss-viewer__grid table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.bss-viewer__grid th,
+.bss-viewer__grid td {
+    padding: 2px 6px;
+    border-right: 1px solid var(--hairline-color);
+    border-bottom: 1px solid var(--hairline-color);
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+/* Keep the column letters and row numbers visible while scrolling, like a spreadsheet */
+.bss-viewer__grid thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    text-align: center;
+    background: var(--darkened-bg);
+}
+
+.bss-viewer__grid tbody th {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    text-align: right;
+    background: var(--darkened-bg);
+}
+
+.bss-viewer__grid thead th:first-child {
+    left: 0;
+    z-index: 3;
+}
