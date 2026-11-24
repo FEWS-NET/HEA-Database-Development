@@ -64,6 +64,7 @@ from baseline.viewsets import (
     SeasonalActivityViewSet,
     SeasonalProductionPerformanceViewSet,
     SourceOrganizationViewSet,
+    ThresholdComponentViewSet,
     WealthGroupCharacteristicValueViewSet,
     WealthGroupViewSet,
     WildFoodGatheringViewSet,
@@ -94,7 +95,7 @@ class APIHomeView(routers.APIRootView):
 
     name = "API Home"
     description = (
-        "This REST API can be used to access data stored in the Livelihoods Database, "
+        "This REST API can be used to access data stored in the Livelihoods Explorer Database, "
         "according to the user’s permissions."
     )
 
@@ -124,6 +125,7 @@ router.register(r"livelihoodzone", LivelihoodZoneViewSet)
 router.register(r"livelihoodzonebaseline", LivelihoodZoneBaselineViewSet)
 router.register(r"livelihoodactivitysummary", LivelihoodActivitySummaryViewSet, "livelihoodactivitysummary")
 router.register(r"livelihoodproductcategory", LivelihoodProductCategoryViewSet)
+router.register(r"thresholdcomponent", ThresholdComponentViewSet, "thresholdcomponent")
 router.register(r"community", CommunityViewSet)
 router.register(r"wealthgroup", WealthGroupViewSet)
 router.register(r"baselinewealthgroup", BaselineWealthGroupViewSet)
@@ -257,6 +259,7 @@ if not settings.DEBUG:
 
 urlpatterns += i18n_patterns(
     ########## LOCALE DEPENDENT PATHS go here. ##########
+    path("viz/", include("viz.urls")),
     path(
         "jsi18n/",
         javascript_catalog_view,

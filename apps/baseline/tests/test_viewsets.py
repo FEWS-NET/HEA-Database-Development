@@ -1,3 +1,4 @@
+import csv
 import datetime
 import json
 import logging
@@ -21,7 +22,7 @@ from django.db.models import (
     When,
 )
 from django.db.models.functions import Coalesce
-from django.urls import reverse
+from django.urls import NoReverseMatch, reverse
 from django.utils.http import http_date
 from django.utils.timezone import now
 from rest_framework.test import APITestCase
@@ -29,9 +30,11 @@ from rest_framework.test import APITestCase
 from baseline.models import (
     KeyParameter,
     LivelihoodActivity,
+    LivelihoodProductCategory,
     LivelihoodZoneBaseline,
     WealthGroup,
 )
+from baseline.serializers import BaselineLivelihoodActivitySerializer
 from common.fields import translation_fields
 from common.tests.factories import ClassifiedProductFactory, CountryFactory
 from metadata.models import LivelihoodActivityScenario, LivelihoodStrategyType
@@ -397,6 +400,7 @@ class LivelihoodZoneBaselineViewSetTestCase(APITestCase):
             "population_source",
             "population_estimate",
             "baseline_average_household_size",
+            "poor_average_household_size",
             "currency",
             "annual_kcals_cost",
         )
@@ -954,7 +958,7 @@ class LivelihoodZoneBaselineFacetedSearchViewTestCase(APITestCase):
         strategy_type_results = data["livelihood_strategy_types"]
         milk_results = [r for r in strategy_type_results if r["value"] == "MilkProduction"]
         self.assertEqual(len(milk_results), 1)
-        self.assertEqual(milk_results[0]["value_label"], "Production de lait")
+        self.assertEqual(milk_results[0]["value_label"], "Production laitière")
         self.assertEqual(milk_results[0]["count"], 1)
 
         # test taht strategy_type filter to baseline list endpoint
@@ -1031,6 +1035,48 @@ class LivelihoodZoneBaselineFacetedSearchViewTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data.get("products", [])), 0)
 
+    def test_search_with_code_prefix(self):
+        mali = CountryFactory(iso3166a2="ML", iso_en_name="Mali")
+        codes = ["ML01", "ML03", "ML03-ABC", "ML05", "ML05-BAN", "ML05-BAL"]
+        baselines = {}
+        for i, code in enumerate(codes):
+            # Use neutral names/descriptions so matches can only come from the code
+            neutral_text = {field: f"Zone {i}" for field in translation_fields("name")}
+            neutral_text |= {field: f"Zone {i}" for field in translation_fields("description")}
+            zone = LivelihoodZoneFactory(code=code, alternate_code=f"ALT{i}", country=mali, **neutral_text)
+            baselines[code] = LivelihoodZoneBaselineFactory(livelihood_zone=zone).id
+
+        expected_codes = {
+            "ML": codes,
+            "ml05": ["ML05", "ML05-BAN", "ML05-BAL"],
+            "ML05-B": ["ML05-BAN", "ML05-BAL"],
+            "ML05-BA": ["ML05-BAN", "ML05-BAL"],
+            "ML03": ["ML03", "ML03-ABC"],
+        }
+        for search_term, expected in expected_codes.items():
+            with self.subTest(search_term=search_term):
+                response = self.client.get(self.url, {"search": search_term})
+                self.assertEqual(response.status_code, 200)
+                baseline_ids = {b["id"] for zone in response.data["zones"] for b in zone["livelihood_zone_baselines"]}
+                self.assertEqual(baseline_ids, {baselines[code] for code in expected})
+
+        # Factory text fields embed the CPC, so neutralize them to only match on the cpc itself
+        product = ClassifiedProductFactory(
+            cpc="P0222",
+            scientific_name="Neutral",
+            aliases=[],
+            **{field: "Neutral" for field in translation_fields("description")},
+            **{field: "Neutral" for field in translation_fields("common_name")},
+        )
+        LivelihoodStrategyFactory(
+            product=product,
+            livelihood_zone_baseline=self.baseline1,
+            strategy_type=LivelihoodStrategyType.FOOD_PURCHASE,
+        )
+        response = self.client.get(self.url, {"search": "p022"})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(product.cpc, {item["value"] for item in response.data["products"]})
+
     def test_search_with_whitespace_only_term(self):
         response = self.client.get(self.url, {"search": "   "})
         self.assertEqual(response.status_code, 200)
@@ -1068,6 +1114,8 @@ class LivelihoodProductCategoryViewSetTestCase(APITestCase):
             "livelihood_zone_country",
             "livelihood_zone_country_name",
             "wealth_group_category",
+            "wealth_group_category_name",
+            "wealth_group_category_short_name",
             "strategy_type",
             "basket",
             "basket_name",
@@ -1077,7 +1125,14 @@ class LivelihoodProductCategoryViewSetTestCase(APITestCase):
             "season",
             "season_name",
             "additional_identifier",
+            "livelihood_strategy",
             "percentage_allocation_to_basket",
+            "activity_percentage_kcals",
+            "activity_expenditure",
+            "allocated_percentage_kcals",
+            "allocated_expenditure",
+            "allocated_expenditure_as_percentage_kcals",
+            "basket_percentage_kcals",
         )
         self.assertCountEqual(
             response.json().keys(),
@@ -1111,6 +1166,45 @@ class LivelihoodProductCategoryViewSetTestCase(APITestCase):
         self.assertIsInstance(response.json(), dict)
         self.assertIn("basket", response.json())
         self.assertEqual(response.json()["basket"], new_value)
+
+    def test_patch_returns_recalculated_amounts(self):
+        self.client.force_login(self.user)
+        original = self.client.get(self.url_get(0)).json()
+        new_percentage_allocation_to_basket = original["percentage_allocation_to_basket"] / 2
+        response = self.client.patch(
+            self.url_get(0), {"percentage_allocation_to_basket": new_percentage_allocation_to_basket}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertAlmostEqual(
+            response.json()["allocated_percentage_kcals"],
+            original["activity_percentage_kcals"] * new_percentage_allocation_to_basket,
+        )
+        self.assertAlmostEqual(
+            response.json()["allocated_expenditure"],
+            original["activity_expenditure"] * new_percentage_allocation_to_basket,
+        )
+        # The response matches the next GET
+        self.assertEqual(response.json(), self.client.get(self.url_get(0)).json())
+
+    def test_create_returns_calculated_amounts(self):
+        self.client.force_login(self.user)
+        activity = FoodPurchaseFactory(scenario=LivelihoodActivityScenario.BASELINE, wealth_group__community=None)
+        response = self.client.post(
+            self.url,
+            {
+                "baseline_livelihood_activity": activity.pk,
+                "basket": LivelihoodProductCategory.ProductBasket.SURVIVAL_OTHER_FOOD,
+                "percentage_allocation_to_basket": 0.5,
+            },
+        )
+        self.assertEqual(response.status_code, 201, response.json())
+        self.assertAlmostEqual(response.json()["activity_percentage_kcals"], activity.percentage_kcals)
+        self.assertAlmostEqual(response.json()["allocated_percentage_kcals"], activity.percentage_kcals * 0.5)
+        self.assertIsNotNone(response.json()["basket_percentage_kcals"])
+        self.assertEqual(
+            response.json(),
+            self.client.get(reverse("livelihoodproductcategory-detail", args=(response.json()["id"],))).json(),
+        )
 
     def test_list_returns_all_records(self):
         response = self.client.get(self.url)
@@ -1153,6 +1247,190 @@ class LivelihoodProductCategoryViewSetTestCase(APITestCase):
             content = response.content
         df = pd.read_html(content)[0].fillna("")
         self.assertEqual(len(df), self.num_records + 1)
+
+
+class ThresholdComponentViewSetTestCase(APITestCase):
+    """
+    Tests for the ThresholdComponentViewSet, which returns the components of the Thresholds for each Wealth Group.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        """
+        Create a Baseline with Poor and Middle Wealth Groups and a Livelihood Product Category for each Basket.
+
+        All the Livelihood Product Categories are for the Poor Wealth Group, so the Middle Wealth Group inherits them.
+        """
+        cls.baseline = LivelihoodZoneBaselineFactory()
+        cls.poor_wealth_group = BaselineWealthGroupFactory(
+            livelihood_zone_baseline=cls.baseline,
+            wealth_group_category__code="P",
+            average_household_size=5,
+        )
+        cls.middle_wealth_group = BaselineWealthGroupFactory(
+            livelihood_zone_baseline=cls.baseline,
+            wealth_group_category__code="M",
+            average_household_size=8,
+        )
+        for basket, activity_factory, extra in [
+            (1, FoodPurchaseFactory, {"product__kcals_per_unit": 3500}),
+            (2, FoodPurchaseFactory, {}),
+            (3, OtherPurchaseFactory, {}),
+            (4, OtherPurchaseFactory, {}),
+        ]:
+            LivelihoodProductCategoryFactory(
+                baseline_livelihood_activity=activity_factory(
+                    livelihood_zone_baseline=cls.baseline,
+                    wealth_group=cls.poor_wealth_group,
+                    scenario=LivelihoodActivityScenario.BASELINE,
+                    extra=extra,
+                ),
+                basket=basket,
+                percentage_allocation_to_basket=0.5 if basket > 1 else 1,
+            )
+        # Another Baseline that should not be returned
+        LivelihoodProductCategoryFactory()
+        # Save the Baseline to force the calculation of annual_kcals_cost.
+        cls.baseline.save()
+
+    def setUp(self):
+        self.url = reverse("thresholdcomponent-list")
+
+    def test_fields(self):
+        response = self.client.get(self.url, {"livelihood_zone_baseline": self.baseline.pk})
+        self.assertEqual(response.status_code, 200)
+        expected_fields = (
+            "livelihood_product_category",
+            "source_organization",
+            "source_organization_name",
+            "livelihood_zone_baseline",
+            "livelihood_zone_baseline_label",
+            "livelihood_zone",
+            "livelihood_zone_name",
+            "livelihood_zone_country",
+            "livelihood_zone_country_name",
+            "wealth_group",
+            "wealth_group_category",
+            "wealth_group_category_name",
+            "wealth_group_category_short_name",
+            "source_wealth_group",
+            "source_wealth_group_category",
+            "source_wealth_group_category_name",
+            "source_wealth_group_category_short_name",
+            "is_inherited",
+            "baseline_livelihood_activity",
+            "livelihood_strategy",
+            "strategy_type",
+            "product",
+            "product_common_name",
+            "product_description",
+            "season",
+            "season_name",
+            "additional_identifier",
+            "basket",
+            "basket_name",
+            "percentage_allocation_to_basket",
+            "activity_percentage_kcals",
+            "activity_expenditure",
+            "allocated_percentage_kcals",
+            "allocated_expenditure",
+            "allocated_expenditure_as_percentage_kcals",
+            "basket_percentage_kcals",
+        )
+        self.assertCountEqual(response.json()[0].keys(), expected_fields)
+
+    def test_list(self):
+        response = self.client.get(self.url, {"livelihood_zone_baseline": self.baseline.pk})
+        self.assertEqual(response.status_code, 200)
+        df = pd.DataFrame(response.json())
+        # Each of the 4 Livelihood Product Categories contributes to the Thresholds for both Wealth Groups
+        self.assertEqual(len(df), 8)
+        self.assertEqual(df["livelihood_product_category"].nunique(), 4)
+        self.assertEqual(
+            df.groupby("wealth_group_category_name")["is_inherited"].all().to_dict(),
+            {
+                self.poor_wealth_group.wealth_group_category.name: False,
+                self.middle_wealth_group.wealth_group_category.name: True,
+            },
+        )
+        self.assertEqual(set(df["source_wealth_group"]), {self.poor_wealth_group.pk})
+        totals = df.groupby("wealth_group")["basket_percentage_kcals"].sum()
+        for wealth_group in [self.poor_wealth_group, self.middle_wealth_group]:
+            with self.subTest(wealth_group=wealth_group.wealth_group_category_id):
+                self.assertAlmostEqual(
+                    totals[wealth_group.pk],
+                    wealth_group._get_livelihoods_protection_threshold_as_percentage_kcals(),
+                )
+
+    def test_wealth_group_category(self):
+        response = self.client.get(
+            self.url, {"livelihood_zone_baseline": self.baseline.pk, "wealth_group_category": "M"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 4)
+        for record in response.json():
+            self.assertEqual(record["wealth_group"], self.middle_wealth_group.pk)
+            self.assertEqual(record["wealth_group_category"], "M")
+            self.assertEqual(record["wealth_group_category_name"], self.middle_wealth_group.wealth_group_category.name)
+            self.assertEqual(
+                record["wealth_group_category_short_name"], self.middle_wealth_group.wealth_group_category.short_name
+            )
+            self.assertEqual(record["source_wealth_group"], self.poor_wealth_group.pk)
+            self.assertEqual(record["source_wealth_group_category"], "P")
+            self.assertEqual(
+                record["source_wealth_group_category_name"], self.poor_wealth_group.wealth_group_category.name
+            )
+            self.assertEqual(
+                record["source_wealth_group_category_short_name"],
+                self.poor_wealth_group.wealth_group_category.short_name,
+            )
+            self.assertTrue(record["is_inherited"])
+
+    def test_wealth_group(self):
+        response = self.client.get(self.url, {"wealth_group": self.poor_wealth_group.pk})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 4)
+        for record in response.json():
+            self.assertEqual(record["wealth_group"], self.poor_wealth_group.pk)
+            self.assertFalse(record["is_inherited"])
+
+    def test_is_inherited(self):
+        response = self.client.get(self.url, {"livelihood_zone_baseline": self.baseline.pk, "is_inherited": "true"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual({record["wealth_group"] for record in response.json()}, {self.middle_wealth_group.pk})
+
+    def test_basket(self):
+        response = self.client.get(self.url, {"livelihood_zone_baseline": self.baseline.pk, "basket": 4})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 2)
+        self.assertEqual({record["basket"] for record in response.json()}, {4})
+
+    def test_survival_baskets(self):
+        response = self.client.get(self.url, {"livelihood_zone_baseline": self.baseline.pk, "basket": [1, 2, 3]})
+        self.assertEqual(response.status_code, 200)
+        df = pd.DataFrame(response.json())
+        self.assertEqual(len(df), 6)
+        totals = df.groupby("wealth_group")["basket_percentage_kcals"].sum()
+        for wealth_group in [self.poor_wealth_group, self.middle_wealth_group]:
+            with self.subTest(wealth_group=wealth_group.wealth_group_category_id):
+                self.assertAlmostEqual(
+                    totals[wealth_group.pk],
+                    wealth_group._get_survival_threshold_as_percentage_kcals(),
+                )
+
+    def test_retrieve_not_available(self):
+        with self.assertRaises(NoReverseMatch):
+            reverse("thresholdcomponent-detail", args=[1])
+
+    def test_csv(self):
+        response = self.client.get(self.url, {"livelihood_zone_baseline": self.baseline.pk, "format": "csv"})
+        self.assertEqual(response.status_code, 200)
+        try:
+            content = "".join([s.decode("utf-8") for s in response.streaming_content])
+        except AttributeError:
+            content = response.content.decode("utf-8")
+        df = pd.read_csv(StringIO(content))
+        self.assertEqual(len(df), 8)
 
 
 class CommunityViewSetTestCase(APITestCase):
@@ -2975,6 +3253,78 @@ class BaselineLivelihoodActivityViewSetTestCase(APITestCase):
             content = response.content.decode("utf-8")
         df = pd.read_csv(StringIO(content)).fillna("")
         self.assertEqual(len(df), self.num_records)
+
+    def test_csv_columns_align_when_season_is_missing(self):
+        """
+        Test that CSV columns line up when only some activities have a Season.
+
+        The season fields are omitted from the serialized data for activities
+        without a Season, e.g. FoodPurchase, so the CSV must still contain empty
+        values for those fields.
+        """
+        crop_production = BaselineLivelihoodActivityFactory(strategy_type=LivelihoodStrategyType.CROP_PRODUCTION)
+        food_purchase = BaselineLivelihoodActivityFactory(
+            strategy_type=LivelihoodStrategyType.FOOD_PURCHASE,
+            livelihood_strategy__season=None,
+        )
+        response = self.client.get(self.url, {"format": "csv"})
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode("utf-8-sig")
+        rows = list(csv.reader(StringIO(content)))
+        self.assertIn("season", rows[0])
+        for row in rows[1:]:
+            self.assertEqual(len(row), len(rows[0]))
+        rows = {row["id"]: row for row in csv.DictReader(StringIO(content))}
+        self.assertEqual(rows[str(crop_production.pk)]["strategy_type"], LivelihoodStrategyType.CROP_PRODUCTION)
+        self.assertEqual(rows[str(crop_production.pk)]["season"], str(crop_production.livelihood_strategy.season.pk))
+        self.assertEqual(rows[str(food_purchase.pk)]["strategy_type"], LivelihoodStrategyType.FOOD_PURCHASE)
+        self.assertEqual(rows[str(food_purchase.pk)]["season"], "")
+        self.assertEqual(rows[str(food_purchase.pk)]["season_name"], "")
+        self.assertEqual(rows[str(food_purchase.pk)]["product"], food_purchase.livelihood_strategy.product.pk)
+
+    def test_csv_columns_are_serializer_fields(self):
+        """
+        Test that the CSV columns are the serializer fields, even if no row has a value for some of them.
+
+        An extract that only contains activities without a Season, e.g. FoodPurchase,
+        must still contain the season columns, so that all extracts have the same layout.
+        """
+        food_purchase = BaselineLivelihoodActivityFactory(
+            strategy_type=LivelihoodStrategyType.FOOD_PURCHASE,
+            livelihood_strategy__season=None,
+        )
+        response = self.client.get(
+            self.url, {"format": "csv", "livelihood_zone_baseline": food_purchase.livelihood_zone_baseline.pk}
+        )
+        self.assertEqual(response.status_code, 200)
+        rows = list(csv.reader(StringIO(response.content.decode("utf-8-sig"))))
+        self.assertEqual(rows[0], BaselineLivelihoodActivitySerializer.Meta.fields)
+        self.assertEqual(len(rows), 2)
+        row = dict(zip(rows[0], rows[1]))
+        self.assertEqual(row["id"], str(food_purchase.pk))
+        self.assertEqual(row["season"], "")
+
+    def test_csv_empty_has_header(self):
+        """
+        Test that a CSV extract with no rows still contains the header row.
+        """
+        livelihood_zone_baseline = LivelihoodZoneBaselineFactory()
+        response = self.client.get(
+            self.url, {"format": "csv", "livelihood_zone_baseline": livelihood_zone_baseline.pk}
+        )
+        self.assertEqual(response.status_code, 200)
+        rows = list(csv.reader(StringIO(response.content.decode("utf-8-sig"))))
+        self.assertEqual(rows, [BaselineLivelihoodActivitySerializer.Meta.fields])
+
+    def test_csv_error(self):
+        """
+        Test that a CSV error response contains the error, rather than the serializer fields.
+        """
+        with self.assertLogs("django.request", level="WARNING"):
+            response = self.client.get(reverse("baselinelivelihoodactivity-detail", args=(0,)), {"format": "csv"})
+        self.assertEqual(response.status_code, 404)
+        rows = list(csv.reader(StringIO(response.content.decode("utf-8-sig"))))
+        self.assertEqual(rows[0], ["detail"])
 
     def test_html(self):
         response = self.client.get(self.url, {"format": "html"})
@@ -5692,11 +6042,14 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
         full_df: pd.DataFrame,
         fields: list,
         slice_condition: pd.Series | None = None,
+        filter_condition: pd.Series | None = None,
     ) -> pd.DataFrame:
         """
         Calculate expected aggregates using all wealth groups as the weighting basis.
         """
-        df = full_df.copy() if slice_condition is None else full_df.loc[slice_condition].copy()
+        df = full_df.copy() if filter_condition is None else full_df.loc[filter_condition].copy()
+        if slice_condition is not None:
+            df = df.loc[slice_condition].copy()
         # If the response is summarizing across multiple wealth groups then simply summing the indicators is not
         # correct because it doesn't account for differences in the `percentage_of_households` in each wealth group.
         # For example, the BO Wealth Group may receive income from Livestock Production while other Wealth Groups do
@@ -5710,7 +6063,8 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
             # the P wealth group and we don't want to double-count.
             full_df = full_df[full_df["wealth_group_category"] != "P-FHH"].copy()
             df = df[df["wealth_group_category"] != "P-FHH"].copy()
-            wealth_group_fields = fields + ["wealth_group_category"]
+            # Make sure baseline and wealth group are included in the groups, preserving the existin order.
+            wealth_group_fields = list(dict.fromkeys([*fields, "livelihood_zone_baseline", "wealth_group_category"]))
             df = (
                 df.groupby(wealth_group_fields)
                 .agg(
@@ -5726,24 +6080,31 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
                 .reset_index()
             )
             weights = (
-                full_df.groupby(wealth_group_fields)
+                full_df.groupby(["livelihood_zone_baseline", "wealth_group_category"])
                 .agg(
                     percentage_of_households=("percentage_of_households", "first"),
                     percentage_of_population=("percentage_of_population", "first"),
                 )
                 .reset_index()
             )
-            weights["household_weight"] = weights["percentage_of_households"] / weights.groupby(fields)[
-                "percentage_of_households"
-            ].transform("sum")
-            weights["population_weight"] = weights["percentage_of_population"] / weights.groupby(fields)[
-                "percentage_of_population"
-            ].transform("sum")
+            weights["household_weight"] = weights["percentage_of_households"] / weights.groupby(
+                "livelihood_zone_baseline"
+            )["percentage_of_households"].transform("sum")
+            weights["population_weight"] = weights["percentage_of_population"] / weights.groupby(
+                "livelihood_zone_baseline"
+            )["percentage_of_population"].transform("sum")
             df = df.merge(
-                weights[wealth_group_fields + ["household_weight", "population_weight"]],
-                on=wealth_group_fields,
+                weights[
+                    [
+                        "livelihood_zone_baseline",
+                        "wealth_group_category",
+                        "household_weight",
+                        "population_weight",
+                    ]
+                ],
+                on=["livelihood_zone_baseline", "wealth_group_category"],
                 how="left",
-                validate="one_to_one",
+                validate="many_to_one",
             )
             for indicator in ("kcals_consumed", "income", "expenditure", "total_income_as_cash"):
                 df[indicator] = df[indicator] * df["household_weight"]
@@ -5760,19 +6121,10 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
         )
         return expected
 
-    def _check_row_against_expected_slices(self, row, fields, expected, expected_slice):
-        expected_row = expected.loc[*[row[field] for field in fields]]
-        try:
-            expected_slice_row = expected_slice.loc[*[row[field] for field in fields]]
-        except KeyError:
-            expected_slice_row = {
-                "kcals_consumed": 0,
-                "income": 0,
-                "expenditure": 0,
-                "percentage_kcals": 0,
-                "total_income_as_percentage_kcals": 0,
-                "total_income_as_cash": 0,
-            }
+    def _check_row_totals(self, row, expected_row, expect_slices: bool):
+        """
+        Check row-level aggregates and whether slice aggregates are present.
+        """
         self.assertAlmostEqual(
             row["kcals_consumed_sum_row"], expected_row["kcals_consumed"], msg="Mismatch in kcals_consumed_sum_row"
         )
@@ -5799,6 +6151,31 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
                 expected_row["total_income_as_cash"],
                 msg="Mismatch in total_income_as_cash_row",
             )
+        for field_name in (
+            "kcals_consumed_sum_slice",
+            "income_sum_slice",
+            "expenditure_sum_slice",
+            "kcals_consumed_sum_slice_percentage_of_row",
+            "income_sum_slice_percentage_of_row",
+            "expenditure_sum_slice_percentage_of_row",
+        ):
+            assertion = self.assertIn if expect_slices else self.assertNotIn
+            assertion(field_name, row)
+
+    def _check_row_against_expected_slices(self, row, fields, expected, expected_slice):
+        expected_row = expected.loc[*[row[field] for field in fields]]
+        try:
+            expected_slice_row = expected_slice.loc[*[row[field] for field in fields]]
+        except KeyError:
+            expected_slice_row = {
+                "kcals_consumed": 0,
+                "income": 0,
+                "expenditure": 0,
+                "percentage_kcals": 0,
+                "total_income_as_percentage_kcals": 0,
+                "total_income_as_cash": 0,
+            }
+        self._check_row_totals(row, expected_row, expect_slices=True)
         self.assertAlmostEqual(
             row["kcals_consumed_sum_slice"],
             expected_slice_row["kcals_consumed"],
@@ -5921,20 +6298,7 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), len(expected))
         for row in response.json():
             expected_row = expected.loc[*[row[field] for field in fields]]
-            self.assertAlmostEqual(row["kcals_consumed_sum_row"], expected_row["kcals_consumed"])
-            self.assertAlmostEqual(row["income_sum_row"], expected_row["income"])
-            self.assertAlmostEqual(row["expenditure_sum_row"], expected_row["expenditure"])
-            self.assertAlmostEqual(row["percentage_kcals_sum_row"], expected_row["percentage_kcals"])
-            self.assertAlmostEqual(
-                row["total_income_as_percentage_kcals_row"], expected_row["total_income_as_percentage_kcals"]
-            )
-            self.assertAlmostEqual(row["total_income_as_cash_row"], expected_row["total_income_as_cash"])
-            self.assertNotIn("kcals_consumed_sum_slice", row)
-            self.assertNotIn("income_sum_slice", row)
-            self.assertNotIn("expenditure_sum_slice", row)
-            self.assertNotIn("kcals_consumed_sum_slice_percentage_of_row", row)
-            self.assertNotIn("income_sum_slice_percentage_of_row", row)
-            self.assertNotIn("expenditure_sum_slice_percentage_of_row", row)
+            self._check_row_totals(row, expected_row, expect_slices=False)
 
     def test_summary_returns_row_aggregates_per_baseline_and_scenario(self):
         fields = ["livelihood_zone", "reference_year_end_date", "scenario"]
@@ -5944,20 +6308,7 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), len(expected))
         for row in response.json():
             expected_row = expected.loc[*[row[field] for field in fields]]
-            self.assertAlmostEqual(row["kcals_consumed_sum_row"], expected_row["kcals_consumed"])
-            self.assertAlmostEqual(row["income_sum_row"], expected_row["income"])
-            self.assertAlmostEqual(row["expenditure_sum_row"], expected_row["expenditure"])
-            self.assertAlmostEqual(row["percentage_kcals_sum_row"], expected_row["percentage_kcals"])
-            self.assertAlmostEqual(
-                row["total_income_as_percentage_kcals_row"], expected_row["total_income_as_percentage_kcals"]
-            )
-            self.assertAlmostEqual(row["total_income_as_cash_row"], expected_row["total_income_as_cash"])
-            self.assertNotIn("kcals_consumed_sum_slice", row)
-            self.assertNotIn("income_sum_slice", row)
-            self.assertNotIn("expenditure_sum_slice", row)
-            self.assertNotIn("kcals_consumed_sum_slice_percentage_of_row", row)
-            self.assertNotIn("income_sum_slice_percentage_of_row", row)
-            self.assertNotIn("expenditure_sum_slice_percentage_of_row", row)
+            self._check_row_totals(row, expected_row, expect_slices=False)
 
     def test_weighted_average_for_different_activity_counts(self):
         fields = ["livelihood_zone", "reference_year_end_date", "scenario"]
@@ -6013,20 +6364,7 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 1)
         row = response.json()[0]
         expected_row = expected.iloc[0]
-        self.assertAlmostEqual(row["income_sum_row"], expected_row["income"])
-        self.assertAlmostEqual(row["expenditure_sum_row"], expected_row["expenditure"])
-        self.assertAlmostEqual(row["kcals_consumed_sum_row"], expected_row["kcals_consumed"])
-        self.assertAlmostEqual(row["percentage_kcals_sum_row"], expected_row["percentage_kcals"])
-        self.assertAlmostEqual(
-            row["total_income_as_percentage_kcals_row"], expected_row["total_income_as_percentage_kcals"]
-        )
-        self.assertAlmostEqual(row["total_income_as_cash_row"], expected_row["total_income_as_cash"])
-        self.assertNotIn("income_sum_slice", row)
-        self.assertNotIn("expenditure_sum_slice", row)
-        self.assertNotIn("kcals_consumed_sum_slice", row)
-        self.assertNotIn("income_sum_slice_percentage_of_row", row)
-        self.assertNotIn("expenditure_sum_slice_percentage_of_row", row)
-        self.assertNotIn("kcals_consumed_sum_slice_percentage_of_row", row)
+        self._check_row_totals(row, expected_row, expect_slices=False)
 
     def test_weighted_average_for_wealth_group_specific_activities(self):
         """
@@ -6094,21 +6432,17 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
         self.assertEqual(len(response.json()), 1)
         row = response.json()[0]
         expected_row = expected.iloc[0]
-        self.assertAlmostEqual(row["income_sum_row"], expected_row["income"])
-        self.assertAlmostEqual(row["expenditure_sum_row"], expected_row["expenditure"])
-        self.assertAlmostEqual(row["kcals_consumed_sum_row"], expected_row["kcals_consumed"])
-        self.assertAlmostEqual(row["percentage_kcals_sum_row"], expected_row["percentage_kcals"])
-        self.assertAlmostEqual(
-            row["total_income_as_percentage_kcals_row"], expected_row["total_income_as_percentage_kcals"]
-        )
-        self.assertAlmostEqual(row["total_income_as_cash_row"], expected_row["total_income_as_cash"])
-        self.assertNotIn("income_sum_slice", row)
-        self.assertNotIn("expenditure_sum_slice", row)
-        self.assertNotIn("kcals_consumed_sum_slice", row)
-        self.assertNotIn("income_sum_slice_percentage_of_row", row)
-        self.assertNotIn("expenditure_sum_slice_percentage_of_row", row)
-        self.assertNotIn("kcals_consumed_sum_slice_percentage_of_row", row)
+        self._check_row_totals(row, expected_row, expect_slices=False)
 
+        # Slices should still use the baseline denominator, not the denominator
+        # of the wealth groups with activities that match the slice.
+        expected_slice = self._get_expected(
+            activity_df,
+            fields,
+            activity_df["strategy_type"] == LivelihoodStrategyType.LIVESTOCK_SALE,
+        )
+        # 150 * 0.2 / (0.2 + 0.4 + 0.2)
+        self.assertAlmostEqual(expected_slice.iloc[0]["income"], 37.5)
         response = self.client.get(
             self.url,
             {
@@ -6121,15 +6455,53 @@ class LivelihoodActivitySummaryViewSetTestCase(APITestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), 1)
-        expected_slice = self._get_expected(
-            activity_df,
-            fields,
-            activity_df["strategy_type"] == LivelihoodStrategyType.LIVESTOCK_SALE,
-        )
-        # 150 * 0.2 / (0.2 + 0.4 + 0.2)
-        self.assertAlmostEqual(expected_slice.iloc[0]["income"], 37.5)
         row = response.json()[0]
         self._check_row_against_expected_slices(row, fields, expected, expected_slice)
+
+        # Filtering by strategy_type should still use the baseline denominator, not the denominator
+        # of the wealth groups with activities that match the strategy type.
+        expected = self._get_expected(
+            activity_df,
+            fields,
+            filter_condition=activity_df["strategy_type"] == LivelihoodStrategyType.LIVESTOCK_SALE,
+        )
+        # (150 * 0.2) / (0.2 + 0.4 + 0.2)
+        self.assertAlmostEqual(expected.iloc[0]["income"], 37.5)
+        response = self.client.get(
+            self.url,
+            {
+                "fields": ",".join(fields),
+                "livelihood_zone_baseline": baseline.pk,
+                "scenario": LivelihoodActivityScenario.BASELINE,
+                "strategy_type": ["LivestockSale"],
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        for row in response.json():
+            expected_row = expected.loc[*[row[field] for field in fields]]
+            self._check_row_totals(row, expected_row, expect_slices=False)
+
+        # Grouping by strategy_type should still use the baseline denominator, not the denominator
+        # of the wealth groups with activities that match the strategy type.
+        fields = ["livelihood_zone_baseline", "scenario", "strategy_type"]
+        expected = self._get_expected(activity_df, fields)
+        # M is the only group selling livestock, but VP and P remain in the baseline denominator.
+        # 150 * 0.2 / (0.2 + 0.4 + 0.2)
+        self.assertAlmostEqual(
+            expected.xs(LivelihoodStrategyType.LIVESTOCK_SALE, level="strategy_type").iloc[0]["income"], 37.5
+        )
+        response = self.client.get(
+            self.url,
+            {
+                "fields": ",".join(fields),
+                "livelihood_zone_baseline": baseline.pk,
+                "scenario": LivelihoodActivityScenario.BASELINE,
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        for row in response.json():
+            expected_row = expected.loc[*[row[field] for field in fields]]
+            self._check_row_totals(row, expected_row, expect_slices=False)
 
     def test_summary_excludes_p_fhh(self):
         baseline = LivelihoodZoneBaselineFactory()

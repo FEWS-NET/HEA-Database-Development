@@ -1,6 +1,8 @@
 import warnings
 
+import fsspec
 from dagster import Definitions, EnvVar
+from gdrivefs.core import GoogleDriveFileSystem
 
 from .assets.base import (
     bss_metadata,
@@ -89,6 +91,7 @@ from .jobs.fixtures import (
     create_consolidated_fixture,
     extract_dataframes,
     import_baseline_from_fixture,
+    import_communities_from_fixture,
     import_seas_cal_from_fixture,
     summarize_dataframes,
     update_external_assets,
@@ -102,6 +105,11 @@ from .resources import (
     PickleIOManager,
 )
 from .sensors import bss_instance_sensor
+
+# Register our gdrivefs fork as the handler for gdrive:// paths. Newer fsspec releases (including the 2026.9.0
+# required by HEA-1491) map gdrive:// to the `gdrive_fsspec` module, which the fork does not provide, so without
+# this explicit registration UPath("gdrive://...") fails with "ImportError: Please install gdrive_fs".
+fsspec.register_implementation("gdrive", GoogleDriveFileSystem, clobber=True)
 
 # Ignore ExperimentalWarning: Function `DagsterInstance.report_runless_asset_event`
 warnings.filterwarnings("ignore", r"Function `DagsterInstance.report_runless_asset_event` is experimental")
@@ -179,6 +187,7 @@ defs = Definitions(
         update_metadata,
         update_external_assets,
         upload_baselines,
+        import_communities_from_fixture,
         extract_dataframes,
         summarize_dataframes,
         create_consolidated_fixture,

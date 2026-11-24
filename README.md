@@ -24,6 +24,54 @@ baseline
 This produces a .puml file that can be rendered using a PlantUML
 server, either within your IDE or using a service like http://www.plantuml.com/.
 
+## Pipeline Status
+
+The Pipeline Status pages (`/<lang>/viz/pipeline-status/`, linked from the Pipelines section of the
+admin sidebar) show the Dagster status of every asset in each monitored pipeline, for every partition.
+They require the `common.access_dagster_ui` permission.
+
+A pipeline is monitored by adding `pipeline_status` metadata to its terminal asset, e.g.:
+
+```python
+@asset(
+    partitions_def=bss_instances_partitions_def,
+    metadata={"pipeline_status": {"label": "BSS import", "group_label": "Country", "group_separator": "~"}},
+)
+def imported_baseline(...):
+```
+
+The pipeline is the terminal asset plus all its upstream assets that share the same partitions
+definition, so for `imported_baseline` it runs from `corrected_files`. All the keys are optional:
+`label` defaults to the asset key, and if `group_separator` is set then the partitions can be filtered
+by the part of the partition key before the first separator, e.g. the country. Both dynamic and time
+window partitions are supported.
+
+Dagster marks every asset downstream of a failed step as failed too, so the page reports the
+*root failures* for each partition: the failed assets that do not have a failed parent. Click a
+partition in the heatmap, or in the Failing partitions table, to see an asset graph for that
+partition with links to the corresponding assets and runs in the Dagster UI. The asset graph requires
+the Graphviz `dot` executable, which is installed in the application Docker image.
+
+The status for all partitions is cached for 60 seconds. The status logic is in `pipelines/status.py` and
+the views are in the `viz` app.
+
+## BSS Viewer
+
+The BSS Viewer (`/<lang>/viz/bss-viewer/`, linked from the Pipelines section of the admin sidebar and from
+each BSS import partition page) shows a worksheet from a baseline's BSS as a grid with Excel row numbers and
+column letters, to help diagnose pipeline failures. It requires the `common.access_dagster_ui` permission.
+
+Select a baseline by its `bss_instances` partition key, then switch between:
+
+- the *Original* file, i.e. the BSS uploaded to the Livelihood Zone Baseline, and the *Corrected* file, i.e.
+  the latest materialization of the `corrected_files` asset;
+- the *Values* saved in the file and the *Formulas*, which shows the formula instead of the value for cells
+  that have one.
+
+The URL contains the selected baseline, file, worksheet and display, so it can be shared. The corrected file
+only contains formulas if the BSS has no corrections, because `corrected_files` saves the calculated values
+when it applies corrections. Only `.xlsx` and `.xlsm` files can be displayed.
+
 ## Debugging inside Docker Containers
 
 The `LAUNCHER` environment sets a wrapper program around the Python process

@@ -217,6 +217,21 @@
         "unit_of_measure_id": "kg",
         "attribute": "quantity_sold"
     },
+    "Vente cultures vertes: nbr vendus": {
+        "is_start": true,
+        "product_id": "cultures vertes",
+        "attribute": "quantity_sold"
+    },
+    "Cultures vertes : quantity sold": {
+        "is_start": true,
+        "product_id": "cultures vertes",
+        "attribute": "quantity_sold"
+    },
+    "vente cultures vertes: quantity sold": {
+        "is_start": true,
+        "product_id": "cultures vertes",
+        "attribute": "quantity_sold"
+    },
     "Vente de bois de chauffage": {
         "is_start": true,
         "product_id": "bois de chauffage"
@@ -921,7 +936,13 @@
         "is_start": true,
         "product_id": "dried fish",
         "unit_of_measure_id": "kg",
-        "attribute": "quantity_purchased"
+        "attribute": "unit_multiple"
+    },
+    "Sugar purchase: kg": {
+        "is_start": true,
+        "product_id": "sugar",
+        "unit_of_measure_id": "kg",
+        "attribute": "unit_multiple"
     },
     "Viande achetée: quantité (kg)": {
         "is_start": true,
@@ -1190,6 +1211,24 @@
     "Ag.lab (harvest) -- see Data2": {
         "is_start": true
     },
+    "Main d'ouvre -- voir Data2 (pre-récolte)": {
+        "is_start": true
+    },
+    "Main d'ouvre -- voir Data2 (récolte)": {
+        "is_start": true
+    },
+    "Main d'oeuvre (récolte) -- voir Data2": {
+        "is_start": true
+    },
+    "WILD FOODS -- see worksheet Data 3": {
+        "is_start": true
+    },
+    "Petit commerce (see Data 2)": {
+        "is_start": true
+    },
+    "Auto-emploi -- voir Data2 (vente de nourriture, vente de bière)": {
+        "is_start": true
+    },
     "paiement en kg par fois (huile)": {
         "attribute": "payment_per_time",
         "payment_product_id": "huile",
@@ -1303,17 +1342,20 @@
     "hommes - preparation terre/labour": {
         "is_start": true,
         "product_id": "preparation terre/labour",
-        "household_labor_provider": "men"
+        "household_labor_provider": "men",
+        "additional_identifier": "hommes"
     },
     "women- threshing, harvesting": {
         "is_start": true,
         "product_id": "threshing, harvesting",
-        "household_labor_provider": "women"
+        "household_labor_provider": "women",
+        "additional_identifier": "women"
     },
     "poisson : peche homme (kg collectés)": {
         "is_start": true,
         "product_id": "peche",
         "household_labor_provider": "men",
+        "additional_identifier": "homme",
         "unit_of_measure_id": "kg",
         "attribute": "quantity_produced"
     },
@@ -1321,34 +1363,40 @@
         "is_start": true,
         "product_id": "petty trade",
         "household_labor_provider": "men",
+        "additional_identifier": "men",
         "attribute": "people_per_household"
     },
     "pousse pousseur : garçon": {
         "is_start": true,
         "product_id": "pousse pousseur",
-        "household_labor_provider": "boys"
+        "household_labor_provider": "boys",
+        "additional_identifier": "garçon"
     },
     "femme vente de légumes": {
         "is_start": true,
         "product_id": "vente de légumes",
-        "household_labor_provider": "women"
+        "household_labor_provider": "women",
+        "additional_identifier": "femme"
     },
     "petty trade - men: no. people per hh": {
         "is_start": true,
         "product_id": "petty trade",
         "household_labor_provider": "men",
+        "additional_identifier": "men",
         "attribute": "people_per_household"
     },
     "petit commerce femme": {
         "is_start": true,
         "product_id": "petit commerce",
-        "household_labor_provider": "women"
+        "household_labor_provider": "women",
+        "additional_identifier": "femme"
     },
     "autre auto-emploi: women - petty trade": {
         "strategy_type": "OtherCashIncome",
         "is_start": true,
         "product_id": "petty trade",
-        "household_labor_provider": "women"
+        "household_labor_provider": "women",
+        "additional_identifier": "women"
     },
     "adults": {
         "household_labor_provider": "adults"
@@ -1384,32 +1432,38 @@
         "strategy_type": "OtherCashIncome",
         "is_start": true,
         "product_id": "petty trade",
-        "household_labor_provider": "boys"
+        "household_labor_provider": "boys",
+        "additional_identifier": "boys"
     },
     "boys/girls - agriculture work": {
         "is_start": true,
         "product_id": "agriculture work",
-        "household_labor_provider": "children"
+        "household_labor_provider": "children",
+        "additional_identifier": "boys/girls"
     },
     "garçons/filles collection d'eau": {
         "is_start": true,
         "product_id": "collection d'eau",
-        "household_labor_provider": "children"
+        "household_labor_provider": "children",
+        "additional_identifier": "garçons/filles"
     },
     "girls charcoal selling": {
         "is_start": true,
         "product_id": "charcoal selling",
-        "household_labor_provider": "girls"
+        "household_labor_provider": "girls",
+        "additional_identifier": "girls"
     },
     "boys fishing": {
         "is_start": true,
         "product_id": "fishing",
-        "household_labor_provider": "boys"
+        "household_labor_provider": "boys",
+        "additional_identifier": "boys"
     },
     "filles vente de légumes": {
         "is_start": true,
         "product_id": "vente de légumes",
-        "household_labor_provider": "girls"
+        "household_labor_provider": "girls",
+        "additional_identifier": "filles"
     },
     "huile: nom du mesure": {
         "is_start": true,
@@ -1579,5 +1633,61 @@
     },
     "total kcal pêche (%)": {
         "attribute": "percentage_kcals"
+    },
+    "Soja saison A": {
+        "is_start": true,
+        "product_id": "soja",
+        "season": "saison a",
+        "attribute": "income_expenditure_or_activity_notes"
+    },
+    "Soya saison B": {
+        "is_start": true,
+        "product_id": "soya",
+        "season": "saison b",
+        "attribute": "income_expenditure_or_activity_notes"
+    },
+    "Recolte Saison A": {
+        "is_start": true,
+        "product_id": "recolte",
+        "season": "saison a",
+        "attribute": "income_expenditure_or_activity_notes"
+    },
+    "Battage/Vannage saison B": {
+        "is_start": true,
+        "product_id": "battage/vannage",
+        "season": "saison b",
+        "attribute": "income_expenditure_or_activity_notes"
+    },
+    "Preparation de la terre - saison a": {
+        "is_start": true,
+        "product_id": "preparation de la terre",
+        "season": "saison a",
+        "attribute": "income_expenditure_or_activity_notes"
+    },
+    "Maize season 1": {
+        "is_start": true,
+        "product_id": "maize",
+        "season": "season 1",
+        "attribute": "income_expenditure_or_activity_notes"
+    },
+    "Arachide saison B: nbr unités": {
+        "is_start": true,
+        "product_id": "arachide",
+        "season": "saison b",
+        "attribute": "number_of_local_measures"
+    },
+    "Maize season 1: kg sold": {
+        "is_start": true,
+        "product_id": "maize",
+        "unit_of_measure_id": "kg",
+        "season": "season 1",
+        "attribute": "quantity_sold"
+    },
+    "Sorghum gu: kg produced": {
+        "is_start": true,
+        "product_id": "sorghum",
+        "unit_of_measure_id": "kg",
+        "season": "gu",
+        "attribute": "quantity_produced"
     }
 }

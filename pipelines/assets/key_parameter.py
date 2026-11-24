@@ -44,7 +44,6 @@ An example of relevant rows from the worksheet:
 
 import json
 import os
-import re
 from collections import defaultdict
 
 import django
@@ -56,7 +55,10 @@ from ..configs import BSSMetadataConfig
 from ..partitions import bss_instances_partitions_def
 from .base import get_bss_dataframe
 from .fixtures import validate_instances
-from .livelihood_activity import get_all_label_attributes
+from .livelihood_activity import (
+    SEE_OTHER_WORKSHEET_LABEL_PATTERN,
+    get_all_label_attributes,
+)
 
 # set the default Django settings module
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hea.settings.production")
@@ -73,6 +75,23 @@ from pipelines.utils import (  # NOQA: E402
 )
 
 
+def _get_group_livelihood_strategies(group: dict, livelihood_strategies: list[dict]) -> list[dict]:
+    """
+    Return the Livelihood Strategies from a detail worksheet that belong to a `see Data2` or `see Data3` group.
+
+    The strategies are matched using the subtotal row rather than the subtotal label,
+    because many BSSs reuse the same subtotal label for several sections, e.g. `SUB-TOTAL` for every section in
+    'Data2', or `TOTAL KCALS (%)` for both the wild foods and the fishing sections in 'Data3'. Matching on the
+    label would link the group to the strategies from all of those sections.
+    """
+    subtotal_row_keys = ("income_subtotal_row", "percentage_kcals_subtotal_row")
+    return [
+        strategy
+        for strategy in livelihood_strategies
+        if any(group.get(key) is not None and strategy.get(key) == group.get(key) for key in subtotal_row_keys)
+    ]
+
+
 def _get_livelihood_activity_groups(
     livelihood_zone_baseline: LivelihoodZoneBaseline,
     livelihood_activity_dataframe: pd.DataFrame,
@@ -81,6 +100,10 @@ def _get_livelihood_activity_groups(
 ) -> tuple[dict[str, dict], list[str]]:
     """
     Create a map of labels from the 'Data' worksheet ending in `see Data2` or `see Data3` to the subtotal rows in those worksheets.
+
+    The labels are recognized using SEE_OTHER_WORKSHEET_LABEL_PATTERN, which also supports French labels, e.g.
+    `Main d'oeuvre (récolte) -- voir Data2`, and labels with a trailing note, e.g. `Auto-emploi -- voir Data2 (fish
+    farming)`.
 
     Returns a dictionary of groups and a list of errors encountered during processing.
 
@@ -114,15 +137,12 @@ def _get_livelihood_activity_groups(
     group_errors = []
     groups = {}
     errors = []
-    pattern = re.compile(
-        r"^(?P<summary_label>.+?)[ -]*\(?see (?:worksheet )?+(?P<detail_sheet>Data ?[23])\)?$", re.IGNORECASE
-    )
     for row in livelihood_activity_dataframe.index:
         label = (
             livelihood_activity_dataframe.loc[row, "A"].strip() if livelihood_activity_dataframe.loc[row, "A"] else ""
         )
         label_attributes = all_label_attributes.loc[row]
-        match = pattern.match(label)
+        match = SEE_OTHER_WORKSHEET_LABEL_PATTERN.match(label)
         if group and (label_attributes["is_start"] or match):
             # Finalize the previous group before starting a new one
             finalize_group(group, group_errors)
@@ -131,7 +151,9 @@ def _get_livelihood_activity_groups(
         if match:
             # This is the start of a summary group that references a detail sheet.
             summary_label = label
-            detail_sheet = match.group("detail_sheet").replace(" ", "")
+            # Labels that refer to the 'prochaine feuille' (next worksheet) don't specify the detail sheet, but the
+            # worksheet following Data is always Data2. Normalize the case and spacing, e.g. 'data 3' to 'Data3'.
+            detail_sheet = (match.group("detail_sheet") or "Data2").replace(" ", "").capitalize()
             detail_dataframe = other_cash_income_dataframe if detail_sheet == "Data2" else wild_foods_dataframe
             group = {
                 "summary_label": summary_label,
@@ -247,22 +269,14 @@ def key_parameter_instances(
     livelihood_strategy_map = defaultdict(list)
     for strategy in livelihood_activity_instances.get("LivelihoodStrategy", []):
         livelihood_strategy_map[strategy["activity_label"]].append(strategy)
+    detail_sheet_strategies = {
+        "Data2": other_cash_income_instances.get("LivelihoodStrategy", []),
+        "Data3": wild_foods_instances.get("LivelihoodStrategy", []),
+    }
     for group_label, group in livelihood_activity_groups.items():
-        if group["detail_sheet"] == "Data2":
-            livelihood_strategy_map[group_label] = [
-                strategy
-                for strategy in other_cash_income_instances.get("LivelihoodStrategy", [])
-                if strategy.get("income_subtotal_label") == group.get("income_subtotal_label")
-            ]
-        elif group["detail_sheet"] == "Data3":
-            livelihood_strategy_map[group_label] = [
-                strategy
-                for strategy in wild_foods_instances.get("LivelihoodStrategy", [])
-                if (
-                    (strategy.get("income_subtotal_label") == group.get("income_subtotal_label"))
-                    or strategy.get("percentage_kcals_subtotal_label") == group.get("percentage_kcals_subtotal_label")
-                )
-            ]
+        livelihood_strategy_map[group_label] = _get_group_livelihood_strategies(
+            group, detail_sheet_strategies.get(group["detail_sheet"], [])
+        )
 
     # Find the columns that contain monitor_quantity and monitor_price
     quantity_column = None

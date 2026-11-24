@@ -1,0 +1,50 @@
+{% extends "admin/base_site.html" %}
+
+{% load i18n static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'viz/css/pipeline_status.css' %}">
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
+    &rsaquo; {{ title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="pipeline-status">
+    {% if pipelines %}
+    <table>
+        <thead>
+            <tr>
+                <th>{% translate 'Pipeline' %}</th>
+                <th>{% translate 'Terminal asset' %}</th>
+                <th>{% translate 'Assets' %}</th>
+                <th>{% translate 'Partitions' %}</th>
+                {% for status in partition_statuses %}
+                <th>{{ status }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for pipeline in pipelines %}
+            <tr>
+                <td><a href="{{ pipeline.url }}">{{ pipeline.label }}</a></td>
+                <td>{{ pipeline.terminal_asset }}</td>
+                <td>{{ pipeline.asset_count }}</td>
+                <td>{{ pipeline.partition_count }}</td>
+                {% for count in pipeline.status_counts %}
+                <td>{{ count }}</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>{% translate 'No pipelines are monitored. Add pipeline_status metadata to the terminal asset of a partitioned pipeline to monitor it.' %}</p>
+    {% endif %}
+</div>
+{% endblock %}

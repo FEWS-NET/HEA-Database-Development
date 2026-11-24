@@ -347,6 +347,10 @@ def load_all_corrections(context: OpExecutionContext):
             df = df.set_index(["livelihood_zone_baseline_id", "worksheet_name", "cell_range"], drop=False)
 
             # Get the current set of corrections from the database, so we can see what has changed
+            # We only get corrections for the Baselines that are present in the current worksheet,
+            # so that we don't accidentally delete corrections for Baselines that are not maintained
+            # in the BSS Metadata workbook. Baselines can be added manually using the Admin screen
+            # and manual corrections can be then be added without risk of them being deleted here.
             existing_instances = LivelihoodZoneBaselineCorrection.objects.filter(
                 livelihood_zone_baseline_id__in=df["livelihood_zone_baseline_id"].unique()
             ).select_related("livelihood_zone_baseline")
@@ -467,7 +471,7 @@ def load_all_community_aliases(context: OpExecutionContext):
         # Use a 1-based index to match the Excel Row Number
         df.index += 1
 
-        # Add two new columnds to df, livelihood_zone_id and reference_year_end_date, by splitting the livelihood_zone_baseline on the ~
+        # Add two new columns to df, livelihood_zone_id and reference_year_end_date, by splitting the livelihood_zone_baseline on the ~
         df[["livelihood_zone_id", "reference_year_end_date"]] = df["livelihood_zone_baseline"].str.split(
             "~", expand=True
         )
@@ -495,7 +499,9 @@ def load_all_community_aliases(context: OpExecutionContext):
         df["livelihood_zone_baseline"] = df["livelihood_zone_baseline_id"]
         df = CommunityLookup().do_lookup(df, "full_name", "id")
 
-        df["aliases"] = df["aliases"].apply(lambda x: tuple(sorted(x.lower().split("~"))) if x else None)
+        df["aliases"] = df["aliases"].apply(
+            lambda x: tuple(sorted(alias for alias in x.lower().split("~") if alias)) or None if x else None
+        )
         df["modified"] = datetime.datetime.now(tz=datetime.timezone.utc)
         df = df.dropna()
 

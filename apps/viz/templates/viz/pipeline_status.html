@@ -1,0 +1,115 @@
+{% extends "admin/base_site.html" %}
+
+{% load i18n static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'viz/css/pipeline_status.css' %}">
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
+    &rsaquo; <a href="{% url 'viz:pipeline_status_index' %}">{% translate 'Pipeline Status' %}</a>
+    &rsaquo; {{ title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="pipeline-status">
+    <p class="pipeline-status__updated">
+        {% blocktranslate with terminal_asset=pipeline.terminal_asset asset_count=pipeline.asset_keys|length updated=updated|date:"Y-m-d H:i:s T" %}Status of the {{ asset_count }} assets in the pipeline for {{ terminal_asset }}, as at {{ updated }}.{% endblocktranslate %}
+    </p>
+
+    <form class="pipeline-status__filters" method="get">
+        {% if pipeline.group_label and groups %}
+        <div>
+            <label for="id_group">{{ pipeline.group_label }}</label>
+            <select id="id_group" name="group">
+                <option value="">{% translate 'All' %}</option>
+                {% for group in groups %}
+                <option value="{{ group }}"{% if group == selected_group %} selected{% endif %}>{{ group }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+        <div>
+            <label for="id_status">{% translate 'Partition status' %}</label>
+            <select id="id_status" name="status">
+                <option value="">{% translate 'All statuses' %}</option>
+                {% for status in partition_statuses %}
+                <option value="{{ status }}"{% if status == selected_status %} selected{% endif %}>{{ status }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <input type="submit" value="{% translate 'Filter' %}">
+        </div>
+    </form>
+
+    <section class="pipeline-status__metrics" aria-label="{% translate 'Partition status summary' %}">
+        <div class="pipeline-status__metric">
+            {% translate 'Partitions' %}<strong>{{ partition_count }}</strong>
+        </div>
+        {% for status_count in status_counts %}
+        <div class="pipeline-status__metric">
+            {{ status_count.status }}<strong>{{ status_count.count }}</strong>
+        </div>
+        {% endfor %}
+    </section>
+
+    <h2>{% translate 'Failing partitions' %}</h2>
+    {% if failures %}
+    <table>
+        <thead>
+            <tr>
+                <th>{% translate 'Partition' %}</th>
+                <th>{% translate 'Failed at' %}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for failure in failures %}
+            <tr>
+                <td><a href="{{ failure.url }}">{{ failure.partition_key }}</a></td>
+                <td>
+                    {% for root_failure in failure.root_failures %}
+                    <a href="{{ root_failure.url }}">{{ root_failure.asset_key }}</a>{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>{% translate 'No partitions have failed.' %}</p>
+    {% endif %}
+
+    <h2>{% translate 'Asset status by partition' %}</h2>
+    {% if heatmap %}
+    <p>{% translate 'Click a partition to see the status of each asset for that partition.' %}</p>
+    <div class="pipeline-status__legend">
+        {% for item in legend %}
+        <span><span class="pipeline-status__swatch" style="background-color: {{ item.color }}"></span>{{ item.status }}</span>
+        {% endfor %}
+    </div>
+    <div id="pipeline-status-heatmap" class="pipeline-status__heatmap"></div>
+    {{ heatmap|json_script:"pipeline-status-heatmap-data" }}
+    {{ partition_url|json_script:"pipeline-status-partition-url" }}
+    <script src="https://cdn.plot.ly/plotly-3.1.0.min.js"></script>
+    <script>
+        (function () {
+            const target = document.getElementById("pipeline-status-heatmap");
+            const data = JSON.parse(document.getElementById("pipeline-status-heatmap-data").textContent);
+            const partitionUrl = JSON.parse(document.getElementById("pipeline-status-partition-url").textContent);
+            Plotly.newPlot(target, data.data, data.layout, {displayModeBar: false, responsive: true});
+            target.on("plotly_click", function (event) {
+                const partitionKey = event.points[0].y;
+                window.location.href = partitionUrl.replace("PARTITION_KEY", encodeURIComponent(partitionKey));
+            });
+        }());
+    </script>
+    {% else %}
+    <p>{% translate 'No partitions match the selected filters.' %}</p>
+    {% endif %}
+</div>
+{% endblock %}

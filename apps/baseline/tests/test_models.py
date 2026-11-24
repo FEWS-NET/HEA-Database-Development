@@ -1,32 +1,38 @@
 import datetime
 
 from binary_database_files.models import File
+from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.db import connection
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.test.utils import CaptureQueriesContext
 
 from baseline.models import (
     BaselineLivelihoodActivity,
+    CropProduction,
     FoodPurchase,
     LivelihoodActivity,
     LivelihoodProductCategory,
+    LivelihoodZoneBaseline,
     OtherCashIncome,
     OtherPurchase,
     PaymentInKind,
     ReliefGiftOther,
+    WealthGroup,
     WealthGroupCharacteristicValue,
 )
 from common.tests.factories import ClassifiedProductFactory
 from common.utils import conditional_logging
-from metadata.models import WealthGroupCategory
+from metadata.models import LivelihoodActivityScenario, WealthGroupCategory
 
 from .factories import (
     BaselineWealthGroupFactory,
     CommunityFactory,
+    CommunityWealthGroupFactory,
     FoodPurchaseFactory,
     LivelihoodProductCategoryFactory,
     LivelihoodZoneBaselineFactory,
+    OtherPurchaseFactory,
     SeasonalActivityFactory,
     WealthGroupCharacteristicValueFactory,
 )
@@ -44,11 +50,13 @@ class LivelihoodZoneBaselineTestCase(TestCase):
         cls.main_staple_activity = FoodPurchaseFactory(
             livelihood_zone_baseline=cls.baseline,
             wealth_group=cls.poor_wealth_group,
+            scenario=LivelihoodActivityScenario.BASELINE,
             extra={"product__kcals_per_unit": 100},
         )
         cls.other_food_activity = FoodPurchaseFactory(
             livelihood_zone_baseline=cls.baseline,
             wealth_group=cls.poor_wealth_group,
+            scenario=LivelihoodActivityScenario.BASELINE,
         )
         cls.main_staple_category = LivelihoodProductCategoryFactory(
             baseline_livelihood_activity=cls.main_staple_activity,
@@ -63,6 +71,7 @@ class LivelihoodZoneBaselineTestCase(TestCase):
         cls.non_food_activity = FoodPurchaseFactory(
             livelihood_zone_baseline=cls.baseline,
             wealth_group=cls.poor_wealth_group,
+            scenario=LivelihoodActivityScenario.BASELINE,
         )
         cls.non_food_category = LivelihoodProductCategoryFactory(
             baseline_livelihood_activity=cls.non_food_activity,
@@ -150,6 +159,31 @@ class LivelihoodZoneBaselineTestCase(TestCase):
         )
         self.assertAlmostEqual(self.baseline.poor_survival_non_food_expenditure, expected_expenditure)
 
+    def test_poor_average_household_size(self):
+        baseline = LivelihoodZoneBaseline.objects.get(pk=self.baseline.pk)
+        self.assertEqual(baseline.poor_average_household_size, 5)
+
+    def test_poor_average_household_size_without_main_staple(self):
+        baseline = LivelihoodZoneBaselineFactory()
+        BaselineWealthGroupFactory(
+            livelihood_zone_baseline=baseline,
+            wealth_group_category__code=WealthGroupCategory.POOR,
+            average_household_size=7,
+        )
+        self.assertIsNone(baseline.poor_main_staple)
+        self.assertEqual(baseline.poor_average_household_size, 7)
+
+    def test_poor_average_household_size_without_poor_wealth_group(self):
+        baseline = LivelihoodZoneBaselineFactory()
+        self.assertIsNone(baseline.poor_average_household_size)
+        annotated_baseline = LivelihoodZoneBaseline.objects.with_poor_average_household_size().get(pk=baseline.pk)
+        self.assertIsNone(annotated_baseline.poor_average_household_size)
+
+    def test_poor_average_household_size_uses_annotation(self):
+        baseline = LivelihoodZoneBaseline.objects.with_poor_average_household_size().get(pk=self.baseline.pk)
+        with self.assertNumQueries(0):
+            self.assertEqual(baseline.poor_average_household_size, 5)
+
     def test_product_category_change_resaves_baseline_on_commit(self):
         with self.captureOnCommitCallbacks(execute=True):
             self.other_food_category.percentage_allocation_to_basket = 0.5
@@ -206,6 +240,302 @@ class LivelihoodZoneBaselineTestCase(TestCase):
         self.baseline.refresh_from_db()
         self.poor_wealth_group.refresh_from_db()
         self.assertAlmostEqual(self.baseline.annual_kcals_cost, self.get_expected_annual_kcals_cost())
+
+
+class LivelihoodProductCategoryBasketTestCase(TestCase):
+    """
+    Tests for the Basket contributions and the Thresholds calculated from them.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        """
+        Create a Baseline with a Poor and a Middle Wealth Group and Livelihood Product Categories for each Basket.
+
+        The Poor Wealth Group has a Livelihoods Protection item that the Middle Wealth Group inherits, and a
+        Livelihoods Protection food item that the Middle Wealth Group overrides with its own allocation.
+        """
+        cls.baseline = LivelihoodZoneBaselineFactory()
+        cls.poor_wealth_group = BaselineWealthGroupFactory(
+            livelihood_zone_baseline=cls.baseline,
+            wealth_group_category__code=WealthGroupCategory.POOR,
+            average_household_size=5,
+        )
+        cls.middle_wealth_group = BaselineWealthGroupFactory(
+            livelihood_zone_baseline=cls.baseline,
+            wealth_group_category__code="M",
+            average_household_size=8,
+        )
+        cls.main_staple = LivelihoodProductCategoryFactory(
+            baseline_livelihood_activity=FoodPurchaseFactory(
+                livelihood_zone_baseline=cls.baseline,
+                wealth_group=cls.poor_wealth_group,
+                scenario=LivelihoodActivityScenario.BASELINE,
+                extra={"product__kcals_per_unit": 3500},
+            ),
+            basket=LivelihoodProductCategory.ProductBasket.MAIN_STAPLE,
+            percentage_allocation_to_basket=1,
+        )
+        cls.other_food = LivelihoodProductCategoryFactory(
+            baseline_livelihood_activity=FoodPurchaseFactory(
+                livelihood_zone_baseline=cls.baseline,
+                wealth_group=cls.poor_wealth_group,
+                scenario=LivelihoodActivityScenario.BASELINE,
+            ),
+            basket=LivelihoodProductCategory.ProductBasket.SURVIVAL_OTHER_FOOD,
+            percentage_allocation_to_basket=0.5,
+        )
+        cls.non_food = LivelihoodProductCategoryFactory(
+            baseline_livelihood_activity=OtherPurchaseFactory(
+                livelihood_zone_baseline=cls.baseline,
+                wealth_group=cls.poor_wealth_group,
+                scenario=LivelihoodActivityScenario.BASELINE,
+            ),
+            basket=LivelihoodProductCategory.ProductBasket.SURVIVAL_NON_FOOD,
+            percentage_allocation_to_basket=0.25,
+        )
+        cls.inherited_livelihoods_protection = LivelihoodProductCategoryFactory(
+            baseline_livelihood_activity=OtherPurchaseFactory(
+                livelihood_zone_baseline=cls.baseline,
+                wealth_group=cls.poor_wealth_group,
+                scenario=LivelihoodActivityScenario.BASELINE,
+            ),
+            basket=LivelihoodProductCategory.ProductBasket.LIVELIHOODS_PROTECTION,
+            percentage_allocation_to_basket=0.5,
+        )
+        cls.poor_livelihoods_protection_food = LivelihoodProductCategoryFactory(
+            baseline_livelihood_activity=FoodPurchaseFactory(
+                livelihood_zone_baseline=cls.baseline,
+                wealth_group=cls.poor_wealth_group,
+                scenario=LivelihoodActivityScenario.BASELINE,
+            ),
+            basket=LivelihoodProductCategory.ProductBasket.LIVELIHOODS_PROTECTION,
+            percentage_allocation_to_basket=0.2,
+        )
+        cls.middle_livelihoods_protection_food = LivelihoodProductCategoryFactory(
+            baseline_livelihood_activity=FoodPurchaseFactory(
+                livelihood_zone_baseline=cls.baseline,
+                livelihood_strategy=cls.poor_livelihoods_protection_food.baseline_livelihood_activity.livelihood_strategy,
+                wealth_group=cls.middle_wealth_group,
+                scenario=LivelihoodActivityScenario.BASELINE,
+            ),
+            basket=LivelihoodProductCategory.ProductBasket.LIVELIHOODS_PROTECTION,
+            percentage_allocation_to_basket=0.6,
+        )
+        # Save the Baseline to force the calculation of annual_kcals_cost.
+        cls.baseline.save()
+
+    def get_expected_contribution(self, category):
+        """
+        Return the expected contribution to the Threshold for a Livelihood Product Category.
+        """
+        activity = category.baseline_livelihood_activity
+        allocation = category.percentage_allocation_to_basket
+        percentage_kcals = (activity.percentage_kcals or 0) * allocation
+        expenditure_as_percentage_kcals = (activity.expenditure * allocation) / (
+            activity.wealth_group.average_household_size * self.baseline.annual_kcals_cost
+        )
+        if category.basket == LivelihoodProductCategory.ProductBasket.MAIN_STAPLE:
+            return 1 - self.get_expected_contribution(self.other_food)
+        if category.basket == LivelihoodProductCategory.ProductBasket.SURVIVAL_OTHER_FOOD:
+            return percentage_kcals
+        if category.basket == LivelihoodProductCategory.ProductBasket.SURVIVAL_NON_FOOD:
+            return expenditure_as_percentage_kcals
+        return expenditure_as_percentage_kcals - percentage_kcals
+
+    def get_expected_survival_threshold(self):
+        """
+        Return the expected Survival Threshold, using the original definition of 100% kcals plus non-food items.
+        """
+        return 1 + (
+            self.non_food.baseline_livelihood_activity.expenditure * self.non_food.percentage_allocation_to_basket
+        ) / (self.poor_wealth_group.average_household_size * self.baseline.annual_kcals_cost)
+
+    def test_with_allocation(self):
+        category = LivelihoodProductCategory.objects.with_allocation().get(pk=self.other_food.pk)
+        activity = self.other_food.baseline_livelihood_activity
+        self.assertAlmostEqual(category.activity_percentage_kcals, activity.percentage_kcals)
+        self.assertAlmostEqual(category.activity_expenditure, activity.expenditure)
+        self.assertAlmostEqual(category.allocated_percentage_kcals, activity.percentage_kcals * 0.5)
+        self.assertAlmostEqual(category.allocated_expenditure, activity.expenditure * 0.5)
+
+    def test_with_allocation_treats_missing_percentage_kcals_as_zero(self):
+        category = LivelihoodProductCategory.objects.with_allocation().get(pk=self.non_food.pk)
+        self.assertIsNone(category.activity_percentage_kcals)
+        self.assertEqual(category.allocated_percentage_kcals, 0)
+
+    def test_with_basket_contribution(self):
+        categories = LivelihoodProductCategory.objects.filter(
+            baseline_livelihood_activity__livelihood_zone_baseline=self.baseline
+        ).with_basket_contribution()
+        self.assertEqual(len(categories), 6)
+        for category in categories:
+            with self.subTest(basket=category.basket, pk=category.pk):
+                self.assertAlmostEqual(category.basket_percentage_kcals, self.get_expected_contribution(category))
+
+    def test_for_wealth_group(self):
+        self.assertCountEqual(
+            LivelihoodProductCategory.objects.for_wealth_group(self.poor_wealth_group),
+            [
+                self.main_staple,
+                self.other_food,
+                self.non_food,
+                self.inherited_livelihoods_protection,
+                self.poor_livelihoods_protection_food,
+            ],
+        )
+        self.assertCountEqual(
+            LivelihoodProductCategory.objects.for_wealth_group(self.middle_wealth_group),
+            [
+                self.main_staple,
+                self.other_food,
+                self.non_food,
+                self.inherited_livelihoods_protection,
+                self.middle_livelihoods_protection_food,
+            ],
+        )
+
+    def test_for_wealth_group_with_community_wealth_group(self):
+        community_wealth_group = CommunityWealthGroupFactory(
+            livelihood_zone_baseline=self.baseline,
+            community__livelihood_zone_baseline=self.baseline,
+            wealth_group_category=self.middle_wealth_group.wealth_group_category,
+        )
+        self.assertCountEqual(
+            LivelihoodProductCategory.objects.for_wealth_group(community_wealth_group),
+            LivelihoodProductCategory.objects.for_wealth_group(self.middle_wealth_group),
+        )
+
+    def test_for_threshold_wealth_groups(self):
+        components = LivelihoodProductCategory.objects.filter(
+            baseline_livelihood_activity__livelihood_zone_baseline=self.baseline
+        ).for_threshold_wealth_groups()
+        poor = self.poor_wealth_group
+        middle = self.middle_wealth_group
+        self.assertCountEqual(
+            [
+                (component.pk, component.threshold_wealth_group, component.threshold_wealth_group_category)
+                + (component.is_inherited,)
+                for component in components
+            ],
+            [
+                (self.main_staple.pk, poor.pk, poor.wealth_group_category_id, False),
+                (self.other_food.pk, poor.pk, poor.wealth_group_category_id, False),
+                (self.non_food.pk, poor.pk, poor.wealth_group_category_id, False),
+                (self.inherited_livelihoods_protection.pk, poor.pk, poor.wealth_group_category_id, False),
+                (self.poor_livelihoods_protection_food.pk, poor.pk, poor.wealth_group_category_id, False),
+                (self.main_staple.pk, middle.pk, middle.wealth_group_category_id, True),
+                (self.other_food.pk, middle.pk, middle.wealth_group_category_id, True),
+                (self.non_food.pk, middle.pk, middle.wealth_group_category_id, True),
+                (self.inherited_livelihoods_protection.pk, middle.pk, middle.wealth_group_category_id, True),
+                (self.middle_livelihoods_protection_food.pk, middle.pk, middle.wealth_group_category_id, False),
+            ],
+        )
+
+    def test_for_threshold_wealth_groups_excludes_community_wealth_groups(self):
+        CommunityWealthGroupFactory(
+            livelihood_zone_baseline=self.baseline,
+            community__livelihood_zone_baseline=self.baseline,
+            wealth_group_category=self.middle_wealth_group.wealth_group_category,
+        )
+        components = LivelihoodProductCategory.objects.filter(
+            baseline_livelihood_activity__livelihood_zone_baseline=self.baseline
+        ).for_threshold_wealth_groups()
+        self.assertCountEqual(
+            {component.threshold_wealth_group for component in components},
+            [self.poor_wealth_group.pk, self.middle_wealth_group.pk],
+        )
+
+    def test_survival_threshold(self):
+        expected = self.get_expected_survival_threshold()
+        for wealth_group in [self.poor_wealth_group, self.middle_wealth_group]:
+            with self.subTest(wealth_group=wealth_group.wealth_group_category_id):
+                self.assertAlmostEqual(wealth_group._get_survival_threshold_as_percentage_kcals(), expected)
+
+    def test_survival_threshold_requires_non_food_basket(self):
+        self.non_food.delete()
+        self.assertIsNone(self.poor_wealth_group._get_survival_threshold_as_percentage_kcals())
+
+    def test_livelihoods_protection_threshold(self):
+        for wealth_group, livelihoods_protection_food in [
+            (self.poor_wealth_group, self.poor_livelihoods_protection_food),
+            (self.middle_wealth_group, self.middle_livelihoods_protection_food),
+        ]:
+            with self.subTest(wealth_group=wealth_group.wealth_group_category_id):
+                # The Poor expenditure inherited by the Middle Wealth Group is scaled by household size,
+                # so it is the same percentage of kcals.
+                expected = (
+                    self.get_expected_survival_threshold()
+                    + self.get_expected_contribution(self.inherited_livelihoods_protection)
+                    + self.get_expected_contribution(livelihoods_protection_food)
+                )
+                self.assertAlmostEqual(
+                    wealth_group._get_livelihoods_protection_threshold_as_percentage_kcals(), expected
+                )
+
+    def test_livelihoods_protection_threshold_with_community_wealth_group(self):
+        community_wealth_group = CommunityWealthGroupFactory(
+            livelihood_zone_baseline=self.baseline,
+            community__livelihood_zone_baseline=self.baseline,
+            wealth_group_category=self.middle_wealth_group.wealth_group_category,
+            average_household_size=3,
+        )
+        self.assertAlmostEqual(
+            community_wealth_group._get_livelihoods_protection_threshold_as_percentage_kcals(),
+            self.middle_wealth_group._get_livelihoods_protection_threshold_as_percentage_kcals(),
+        )
+
+    def test_threshold_components_sum_to_livelihoods_protection_threshold(self):
+        components = (
+            LivelihoodProductCategory.objects.filter(
+                baseline_livelihood_activity__livelihood_zone_baseline=self.baseline
+            )
+            .with_basket_contribution()
+            .for_threshold_wealth_groups()
+        )
+        for wealth_group in [self.poor_wealth_group, self.middle_wealth_group]:
+            with self.subTest(wealth_group=wealth_group.wealth_group_category_id):
+                self.assertAlmostEqual(
+                    sum(
+                        component.basket_percentage_kcals
+                        for component in components
+                        if component.threshold_wealth_group == wealth_group.pk
+                    ),
+                    wealth_group._get_livelihoods_protection_threshold_as_percentage_kcals(),
+                )
+
+    @override_settings(CACHES={"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}})
+    def test_baseline_save_clears_threshold_cache(self):
+        keys = [
+            key
+            for wealth_group in [self.poor_wealth_group, self.middle_wealth_group]
+            for key in WealthGroup.get_threshold_cache_keys(wealth_group.pk)
+        ]
+        cache.set_many({key: 99 for key in keys})
+        self.baseline.save()
+        self.assertEqual(cache.get_many(keys), {})
+
+    def assert_change_clears_threshold_cache_on_commit(self, change):
+        """
+        Assert that the change clears the cached Thresholds for the Middle Wealth Group when the transaction commits.
+        """
+        keys = WealthGroup.get_threshold_cache_keys(self.middle_wealth_group.pk)
+        cache.set_many({key: 99 for key in keys})
+        with self.captureOnCommitCallbacks(execute=True):
+            change()
+        self.assertEqual(cache.get_many(keys), {})
+
+    @override_settings(CACHES={"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}})
+    def test_livelihoods_protection_category_change_clears_threshold_cache_on_commit(self):
+        self.assert_change_clears_threshold_cache_on_commit(self.inherited_livelihoods_protection.save)
+
+    @override_settings(CACHES={"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}})
+    def test_other_purchase_change_clears_threshold_cache_on_commit(self):
+        self.assert_change_clears_threshold_cache_on_commit(self.non_food.baseline_livelihood_activity.save)
+
+    @override_settings(CACHES={"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}})
+    def test_baseline_wealth_group_change_clears_threshold_cache_on_commit(self):
+        self.assert_change_clears_threshold_cache_on_commit(self.middle_wealth_group.save)
 
 
 class SeasonalActivityTestCase(TestCase):
@@ -494,6 +824,53 @@ class ReliefGiftOtherTestCase(TestCase):
         # Incorrect quantity_produced
         with self.assertRaises(ValidationError):
             self.reliefgift3.validate_quantity_produced()
+
+
+class CropProductionTestCase(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        # Missing data
+        cls.cropproduction1 = CropProduction(quantity_sold=None, price=None, income=None)
+        # Exact income
+        cls.cropproduction2 = CropProduction(quantity_sold=100, price=25, income=2500)
+        # Typed income with price rounded to 2 decimal places, from ML05 'Data'!AX287 and 'Data'!AW395
+        cls.cropproduction3 = CropProduction(quantity_sold=454, price=392.07, income=178000)
+        cls.cropproduction4 = CropProduction(quantity_sold=445, price=155.06, income=69000)
+        # Price just inside the half-cent rounding allowance: 100004.9 / 1000 = 100.0049
+        cls.cropproduction5 = CropProduction(quantity_sold=1000, price=100, income=100004.9)
+        # Price just outside the half-cent rounding allowance: 100005.1 / 1000 = 100.0051
+        cls.cropproduction6 = CropProduction(quantity_sold=1000, price=100, income=100005.1)
+        # Price rounded to an integer, from HT06 'Data'!AJ344: 270000 / 22464 = 12.019...
+        cls.cropproduction7 = CropProduction(quantity_sold=22464, price=12, income=270000)
+        # Incorrect income, from SN06 'Data'!AO205: 20 * 25000 = 500000
+        cls.cropproduction8 = CropProduction(quantity_sold=20, price=25000, income=400000)
+        # Very low price, inside the half-cent allowance but outside the 1% relative tolerance: 5 / 1000 = 0.005
+        cls.cropproduction9 = CropProduction(quantity_sold=1000, price=0.004, income=5)
+        # Income with no quantity sold
+        cls.cropproduction10 = CropProduction(quantity_sold=0, price=100, income=1000)
+
+    def test_validate_income(self):
+        """
+        Test validate_income method, including the allowance for prices rounded to 2 decimal places
+        """
+        # Missing data should not raise ValidationError
+        self.cropproduction1.validate_income()
+        # Correct data should not raise ValidationError
+        self.cropproduction2.validate_income()
+        # Price rounded to 2 decimal places should not raise ValidationError
+        self.cropproduction3.validate_income()
+        self.cropproduction4.validate_income()
+        self.cropproduction5.validate_income()
+        # Incorrect data should raise ValidationError
+        for instance in [
+            self.cropproduction6,
+            self.cropproduction7,
+            self.cropproduction8,
+            self.cropproduction9,
+            self.cropproduction10,
+        ]:
+            with self.subTest(instance=instance), self.assertRaises(ValidationError):
+                instance.validate_income()
 
 
 class OtherCashIncomeTestCase(TestCase):

@@ -5,7 +5,6 @@ from django.dispatch import receiver
 from metadata.models import (
     LivelihoodActivityScenario,
     LivelihoodStrategyType,
-    WealthGroupCategory,
 )
 
 from .models import (
@@ -15,6 +14,7 @@ from .models import (
     LivelihoodActivity,
     LivelihoodProductCategory,
     LivelihoodZoneBaseline,
+    OtherPurchase,
     WealthGroup,
 )
 
@@ -54,15 +54,12 @@ def _schedule_baseline_refresh(livelihood_zone_baseline_id):
 @receiver(pre_delete, sender=LivelihoodProductCategory)
 def refresh_baseline_after_livelihood_product_category_change(sender, instance, **kwargs):
     """
-    Refresh the LivelihoodZoneBaseline when a LivelihoodProductCategory for Basket 1 or Basket 2 is changed.
+    Refresh the LivelihoodZoneBaseline when a LivelihoodProductCategory is changed.
 
-    This forces the recalculation of the annual_kcals_cost for the Baseline.
+    This forces the recalculation of the annual_kcals_cost for the Baseline, which depends on Basket 1 and Basket 2,
+    and clears the cached Thresholds for the Wealth Groups, which depend on all the Baskets.
     """
-    if instance.basket in [
-        LivelihoodProductCategory.ProductBasket.MAIN_STAPLE,
-        LivelihoodProductCategory.ProductBasket.SURVIVAL_OTHER_FOOD,
-    ]:
-        _schedule_baseline_refresh(instance.baseline_livelihood_activity.livelihood_zone_baseline_id)
+    _schedule_baseline_refresh(instance.baseline_livelihood_activity.livelihood_zone_baseline_id)
 
 
 @receiver(post_save, sender=LivelihoodActivity)
@@ -71,12 +68,15 @@ def refresh_baseline_after_livelihood_product_category_change(sender, instance, 
 @receiver(pre_delete, sender=BaselineLivelihoodActivity)
 @receiver(post_save, sender=FoodPurchase)
 @receiver(pre_delete, sender=FoodPurchase)
+@receiver(post_save, sender=OtherPurchase)
+@receiver(pre_delete, sender=OtherPurchase)
 def refresh_baseline_after_livelihood_activity_change(sender, instance, **kwargs):
     """
-    Refresh the LivelihoodZoneBaseline when a FoodPurchase BaselineLivelihoodActivity is changed.
+    Refresh the LivelihoodZoneBaseline when a FoodPurchase or OtherPurchase BaselineLivelihoodActivity is changed.
 
-    This forces the recalculation of the annual_kcals_cost for the Baseline. The calculation depends on Baseline
-    FoodPurchase activities so we only need to trigger the refresh for Activities that meet those criteria.
+    This forces the recalculation of the annual_kcals_cost for the Baseline, and clears the cached Thresholds for the
+    Wealth Groups. The calculations depend on the Baseline FoodPurchase and OtherPurchase activities that have
+    Livelihood Product Categories, so we only need to trigger the refresh for Activities that meet those criteria.
 
     Django doesn't fire signals for subclasses of a model, so we need to listen to LivelihoodActivity and
     BaselineLivelihoodActivity as well as FoodPurchase, because we can't be sure exactly which model class is
@@ -84,7 +84,7 @@ def refresh_baseline_after_livelihood_activity_change(sender, instance, **kwargs
     """
     if (
         instance.scenario == LivelihoodActivityScenario.BASELINE
-        and instance.strategy_type == LivelihoodStrategyType.FOOD_PURCHASE
+        and instance.strategy_type in [LivelihoodStrategyType.FOOD_PURCHASE, LivelihoodStrategyType.OTHER_PURCHASE]
         and instance.wealth_group_id
         and instance.wealth_group.community_id is None
     ):
@@ -95,11 +95,13 @@ def refresh_baseline_after_livelihood_activity_change(sender, instance, **kwargs
 @receiver(post_delete, sender=WealthGroup)
 @receiver(post_save, sender=BaselineWealthGroup)
 @receiver(post_delete, sender=BaselineWealthGroup)
-def refresh_baseline_after_poor_baseline_wealth_group_change(sender, instance, **kwargs):
+def refresh_baseline_after_baseline_wealth_group_change(sender, instance, **kwargs):
     """
-    Refresh the LivelihoodZoneBaseline when the Poor baseline Wealth Group changes.
+    Refresh the LivelihoodZoneBaseline when a baseline Wealth Group changes.
 
-    This forces the recalculation of the annual_kcals_cost for the Baseline.
+    This forces the recalculation of the annual_kcals_cost for the Baseline, which depends on the Poor
+    Wealth Group, and clears the cached Thresholds for the Wealth Groups, which depend on the average
+    household size of the Wealth Group that each Livelihood Product Category is defined for.
     """
-    if instance.community_id is None and instance.wealth_group_category_id == WealthGroupCategory.POOR:
+    if instance.community_id is None:
         _schedule_baseline_refresh(instance.livelihood_zone_baseline_id)

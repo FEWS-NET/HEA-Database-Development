@@ -33,6 +33,7 @@ from django_filters import rest_framework as filters
 from django_filters.filters import CharFilter
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
+from rest_framework import mixins, viewsets
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
@@ -44,7 +45,7 @@ from common.fields import translation_fields
 from common.filters import DefaultingDateFilter, MultiFieldFilter, UpperCaseFilter
 from common.models import ClassifiedProduct
 from common.utils import make_condition_funcs
-from common.viewsets import AggregatingViewSet, BaseModelViewSet
+from common.viewsets import AggregatingViewSet, ApiOnlyPagination, BaseModelViewSet
 from metadata.models import LivelihoodStrategyType, WealthGroupCategory
 
 from .models import (
@@ -132,6 +133,7 @@ from .serializers import (
     SeasonalActivitySerializer,
     SeasonalProductionPerformanceSerializer,
     SourceOrganizationSerializer,
+    ThresholdComponentSerializer,
     WealthGroupCharacteristicValueSerializer,
     WealthGroupSerializer,
     WildFoodGatheringSerializer,
@@ -308,6 +310,7 @@ class LivelihoodZoneBaselineViewSet(BaseModelViewSet):
     queryset = (
         LivelihoodZoneBaseline.objects.with_bss_file_metadata()
         .with_baseline_average_household_size()
+        .with_poor_average_household_size()
         .select_related(
             "livelihood_zone__country",
             "source_organization",
@@ -416,17 +419,166 @@ class LivelihoodProductCategoryFilterSet(filters.FilterSet):
 class LivelihoodProductCategoryViewSet(BaseModelViewSet):
     """
     API endpoint that allows livelihood product categories to be viewed or edited.
+
+    Each Livelihood Product Category includes the amounts from the Baseline Livelihood Activity,
+    the amounts allocated to the Basket, and the contribution to the Threshold for the Basket as a
+    percentage of the kcals required by the household.
+
+    Use the `thresholdcomponent` endpoint to get the components of the Thresholds for each Wealth Group,
+    including the Livelihood Product Categories that are inherited from the Poor Wealth Group.
     """
 
     queryset = LivelihoodProductCategory.objects.select_related(
         "baseline_livelihood_activity__livelihood_zone_baseline__livelihood_zone__country",
         "baseline_livelihood_activity__livelihood_zone_baseline__source_organization",
         "baseline_livelihood_activity__livelihood_strategy__product",
-    )
+        "baseline_livelihood_activity__livelihood_strategy__season",
+        "baseline_livelihood_activity__wealth_group__wealth_group_category",
+    ).with_basket_contribution()
     serializer_class = LivelihoodProductCategorySerializer
     filterset_class = LivelihoodProductCategoryFilterSet
     ordering_fields = ["baseline_livelihood_activity"]
     ordering = ["baseline_livelihood_activity", "basket"]
+
+    def _refresh_instance(self, serializer):
+        """
+        Reload the saved instance from the queryset so that the response includes the recalculated annotations.
+
+        The annotations are calculated by the database when the queryset is evaluated, so they aren't updated by
+        saving the instance, and a newly created instance doesn't have them at all.
+        """
+        serializer.instance = self.get_queryset().get(pk=serializer.instance.pk)
+
+    def perform_create(self, serializer):
+        """
+        Create the Livelihood Product Category and reload it with the annotations.
+        """
+        super().perform_create(serializer)
+        self._refresh_instance(serializer)
+
+    def perform_update(self, serializer):
+        """
+        Update the Livelihood Product Category and reload it with the recalculated annotations.
+        """
+        super().perform_update(serializer)
+        self._refresh_instance(serializer)
+
+
+class ThresholdComponentFilterSet(filters.FilterSet):
+    """
+    FilterSet for the components of the Survival and Livelihoods Protection Thresholds for each Wealth Group.
+
+    The `wealth_group` and `wealth_group_category` filters select the Wealth Group for the Threshold, which is
+    different from the Wealth Group that the Livelihood Product Category is defined for when the Livelihood
+    Product Category is inherited from the Poor Wealth Group.
+    """
+
+    livelihood_zone_baseline = django_filters.ModelChoiceFilter(
+        field_name="baseline_livelihood_activity__livelihood_zone_baseline",
+        queryset=LivelihoodZoneBaseline.objects.select_related("livelihood_zone"),
+        widget=autocomplete.ModelSelect2(url="livelihoodzonebaseline-autocomplete"),
+        label="Livelihood Zone Baseline",
+    )
+    livelihood_zone = django_filters.ModelChoiceFilter(
+        field_name="baseline_livelihood_activity__livelihood_zone_baseline__livelihood_zone",
+        queryset=LivelihoodZone.objects.select_related("country"),
+        widget=autocomplete.ModelSelect2(url="livelihoodzone-autocomplete"),
+        label="Livelihood Zone",
+    )
+    wealth_group = django_filters.ModelChoiceFilter(
+        method="filter_wealth_group",
+        queryset=BaselineWealthGroup.objects.select_related(
+            "livelihood_zone_baseline__livelihood_zone",
+            "wealth_group_category",
+        ),
+        widget=autocomplete.ModelSelect2(url="wealthgroup-autocomplete"),
+        label="Wealth Group",
+    )
+    wealth_group_category = django_filters.ModelChoiceFilter(
+        method="filter_wealth_group_category",
+        queryset=WealthGroupCategory.objects.all(),
+        label="Wealth Group Category",
+    )
+    basket = filters.MultipleChoiceFilter(
+        choices=LivelihoodProductCategory.ProductBasket.choices,
+        label="Basket",
+    )
+    is_inherited = filters.BooleanFilter(label="Inherited from the Poor Wealth Group")
+    livelihood_strategy = django_filters.ModelChoiceFilter(
+        field_name="baseline_livelihood_activity__livelihood_strategy",
+        queryset=LivelihoodStrategy.objects.select_related(
+            "livelihood_zone_baseline__livelihood_zone",
+            "season",
+            "product",
+        ),
+        widget=autocomplete.ModelSelect2(url="livelihoodstrategy-autocomplete"),
+        label="Livelihood Strategy",
+    )
+
+    def filter_wealth_group(self, queryset, name, value):
+        """
+        Return the components of the Thresholds for the specified Wealth Group.
+        """
+        if value:
+            return queryset.filter(threshold_wealth_group=value.pk)
+        return queryset
+
+    def filter_wealth_group_category(self, queryset, name, value):
+        """
+        Return the components of the Thresholds for the Wealth Groups with the specified Wealth Group Category.
+        """
+        if value:
+            return queryset.filter(threshold_wealth_group_category=value.pk)
+        return queryset
+
+    class Meta:
+        model = LivelihoodProductCategory
+        fields = [
+            "livelihood_zone_baseline",
+            "livelihood_zone",
+            "wealth_group",
+            "wealth_group_category",
+            "basket",
+            "is_inherited",
+            "livelihood_strategy",
+        ]
+
+
+class ThresholdComponentViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+    """
+    API endpoint that returns the components of the Survival and Livelihoods Protection Thresholds.
+
+    Each component is a Livelihood Product Category and the Baseline Wealth Group whose Thresholds it contributes
+    to. Livelihood Product Categories for Baskets 1, 2 and 3 are defined for the Poor Wealth Group and apply to every
+    Wealth Group. Livelihood Product Categories for Basket 4 can be defined for each Wealth Group, and a Wealth Group
+    inherits the Livelihood Product Category from the Poor Wealth Group if it doesn't have its own. Therefore, the
+    same `livelihood_product_category` can appear in the components for more than one Wealth Group.
+
+    The `wealth_group` fields describe the Wealth Group for the Threshold, and the `source_wealth_group` fields
+    describe the Wealth Group that the Livelihood Product Category is defined for.
+
+    For example, `?livelihood_zone_baseline=123` returns the components for all the Wealth Groups in a Baseline.
+    The `basket_percentage_kcals` for each `wealth_group` sum to its
+    `livelihoods_protection_threshold_as_percentage_kcals`, and adding `&basket=1&basket=2&basket=3` returns the
+    components that sum to its `survival_threshold_as_percentage_kcals`.
+    """
+
+    queryset = (
+        LivelihoodProductCategory.objects.select_related(
+            "baseline_livelihood_activity__livelihood_zone_baseline__livelihood_zone__country",
+            "baseline_livelihood_activity__livelihood_zone_baseline__source_organization",
+            "baseline_livelihood_activity__livelihood_strategy__product",
+            "baseline_livelihood_activity__livelihood_strategy__season",
+            "baseline_livelihood_activity__wealth_group__wealth_group_category",
+        )
+        .for_threshold_wealth_groups()
+        .with_basket_contribution()
+    )
+    serializer_class = ThresholdComponentSerializer
+    filterset_class = ThresholdComponentFilterSet
+    pagination_class = ApiOnlyPagination
+    ordering_fields = ["basket", "basket_percentage_kcals"]
+    ordering = ["threshold_wealth_group", "basket", "baseline_livelihood_activity"]
 
 
 class CommunityFilterSet(filters.FilterSet):
@@ -2192,46 +2344,24 @@ class LivelihoodActivitySummaryViewSet(AggregatingViewSet):
     serializer_class = LivelihoodActivitySummarySerializer
     filterset_class = LivelihoodActivityFilterSet
 
-    is_aggregating_wealth_groups: bool = False
-
-    def get_queryset(self):
-        """
-        Annotate each activity with its wealth group's percentage of the baseline population.
-        """
-        percentage_of_population = WealthGroupQuerySet.with_percentage_of_population(
-            WealthGroup.objects.filter(pk=OuterRef("wealth_group_id"))
-        ).values("percentage_of_population")
-        queryset = (
-            super()
-            .get_queryset()
-            .annotate(percentage_of_population=Subquery(percentage_of_population, output_field=models.FloatField()))
-        )
-        return queryset
+    wealth_group_group_by_fields = {
+        "wealth_group",
+        "wealth_group_category",
+        "wealth_group_category_name",
+        "wealth_group_category_ordering",
+        "percentage_of_households",
+        "percentage_of_population",
+        "average_household_size",
+    }
 
     def get_aggregated_queryset(self, queryset: QuerySet) -> tuple[QuerySet, dict[str, Expression]]:
         """Use a CTE to weight per-wealth-group totals when a request rolls up wealth groups."""
         group_by_fields = super().get_group_by_fields(queryset)
-        self.is_aggregating_wealth_groups = False
-        if "wealth_group_category" in group_by_fields:
+        if self.wealth_group_group_by_fields.intersection(group_by_fields):
             return super().get_aggregated_queryset(queryset)
-
-        row_count = queryset.order_by().values(*group_by_fields).distinct().count()
-        wealth_group_count = queryset.order_by().values(*group_by_fields, "wealth_group_category").distinct().count()
-        if row_count == wealth_group_count:
-            return super().get_aggregated_queryset(queryset)
-
-        # We are aggregating wealth groups, and have more than one wealth group category in the queryset.
 
         # P-FHH is a subset of P, so it must not be included in rolled-up baseline summaries.
         queryset = queryset.exclude(wealth_group__wealth_group_category__code="P-FHH")
-        row_count = queryset.values(*group_by_fields).distinct().count()
-        wealth_group_count = queryset.values(*group_by_fields, "wealth_group_category").distinct().count()
-        if row_count == wealth_group_count:
-            # After excluding P-FHH, only one wealth group category remains, so unweighted aggregation is sufficient.
-            return super().get_aggregated_queryset(queryset)
-
-        # There are multiple wealth group categories remaining, so we need to perform weighted aggregation.
-        self.is_aggregating_wealth_groups = True
         return self._get_weighted_aggregated_queryset(queryset, group_by_fields)
 
     def _get_weighted_aggregated_queryset(
@@ -2239,6 +2369,28 @@ class LivelihoodActivitySummaryViewSet(AggregatingViewSet):
     ) -> tuple[QuerySet, dict[str, Expression]]:
         """Aggregate activities per wealth group, then weight those totals in an outer CTE query."""
         serializer = self.get_serializer()
+
+        # Activity filters can remove a wealth group's activities from an
+        # individual strategy/product row. They must not remove that group
+        # from the baseline population used as the weighting denominator.
+        baseline_ids = queryset.order_by().values("livelihood_zone_baseline").distinct()
+        baseline_wealth_groups = WealthGroup.objects.filter(
+            livelihood_zone_baseline__in=Subquery(baseline_ids),
+            community__isnull=True,
+        ).exclude(wealth_group_category__code="P-FHH")
+        if wealth_group_ids := self.request.query_params.getlist("wealth_group"):
+            baseline_wealth_groups = baseline_wealth_groups.filter(pk__in=wealth_group_ids)
+        elif wealth_group_category_ids := self.request.query_params.getlist("wealth_group_category"):
+            baseline_wealth_groups = baseline_wealth_groups.filter(wealth_group_category__in=wealth_group_category_ids)
+        baseline_weights = CTE(
+            WealthGroupQuerySet.with_percentage_of_population(baseline_wealth_groups)
+            .values("livelihood_zone_baseline")
+            .annotate(
+                _household_weight_total=Sum("percentage_of_households"),
+                _population_weight_total=Sum("percentage_of_population"),
+            ),
+            name="baseline_weights",
+        )
 
         # Create an inner aggregation by wealth group.
         inner_group_by_fields = list(dict.fromkeys([*group_by_fields, "wealth_group"]))
@@ -2268,6 +2420,10 @@ class LivelihoodActivitySummaryViewSet(AggregatingViewSet):
             queryset.order_by(),
             pk=wealth_group_totals.col._activity_id,
         )
+        weighted_queryset = baseline_weights.join(
+            weighted_queryset,
+            livelihood_zone_baseline=baseline_weights.col.livelihood_zone_baseline,
+        )
         weighted_queryset = weighted_queryset.values(*group_by_fields)
         weighted_aggregates = {}
         for field_name, aggregate in serializer.aggregates.items():
@@ -2284,9 +2440,11 @@ class LivelihoodActivitySummaryViewSet(AggregatingViewSet):
                 }
                 else "_household_weight"
             )
+            weight_total_name = f"{weight_name}_total"
             weighted_aggregates[row_field_name] = self._get_weighted_average(
                 getattr(wealth_group_totals.col, row_field_name),
                 getattr(wealth_group_totals.col, weight_name),
+                getattr(baseline_weights.col, weight_total_name),
             )
             if slice_aggregates:
                 slice_field_name = serializer.get_aggregate_field_name(field_name, aggregate, AggregationScope.SLICE)
@@ -2295,19 +2453,23 @@ class LivelihoodActivitySummaryViewSet(AggregatingViewSet):
                 weighted_aggregates[slice_field_name] = self._get_weighted_average(
                     getattr(wealth_group_totals.col, slice_field_name),
                     getattr(wealth_group_totals.col, weight_name),
+                    getattr(baseline_weights.col, weight_total_name),
                 )
 
         weighted_queryset = weighted_queryset.annotate(**weighted_aggregates)
         if slice_aggregates:
             # Reuse the generic percentage calculation after the weighted row and slice totals have been produced.
             weighted_queryset = weighted_queryset.annotate(**self.get_percentage_expressions())
-        return with_cte(wealth_group_totals, select=weighted_queryset), slice_aggregates
+        return (
+            with_cte(baseline_weights, wealth_group_totals, select=weighted_queryset),
+            slice_aggregates,
+        )
 
     @staticmethod
-    def _get_weighted_average(value: Expression, weight: Expression) -> Expression:
+    def _get_weighted_average(value: Expression, weight: Expression, weight_total: Expression) -> Expression:
         """Return a zero-safe average of wealth-group totals weighted by a group-level share."""
         numerator = Sum(value * weight, default=0.0, output_field=FloatField())
-        denominator = Sum(weight, default=0.0, output_field=FloatField())
+        denominator = Max(weight_total, default=0.0, output_field=FloatField())
         return Coalesce(
             ExpressionWrapper(numerator / NullIf(denominator, 0.0), output_field=FloatField()),
             0.0,
@@ -2319,6 +2481,9 @@ class LivelihoodActivitySummaryViewSet(AggregatingViewSet):
         AggregatingViewSet requires an annotation for every field in the Serializer that isn't a direct model field.
         """
         language_code = translation.get_language()
+        percentage_of_population = WealthGroupQuerySet.with_percentage_of_population(
+            WealthGroup.objects.filter(pk=OuterRef("wealth_group_id"))
+        ).values("percentage_of_population")
 
         def translated_field(path):
             """Return a Coalesce expression for a translated field so that we return the English value
@@ -2370,6 +2535,7 @@ class LivelihoodActivitySummaryViewSet(AggregatingViewSet):
             ),
             "wealth_group_category_ordering": F("wealth_group__wealth_group_category__ordering"),
             "percentage_of_households": F("wealth_group__percentage_of_households"),
+            "percentage_of_population": Subquery(percentage_of_population, output_field=models.FloatField()),
             "average_household_size": F("wealth_group__average_household_size"),
             "currency": F("livelihood_zone_baseline__currency__pk"),
             "population_source": F("livelihood_zone_baseline__population_source"),
@@ -2468,7 +2634,7 @@ class LivelihoodZoneBaselineFacetedSearchView(APIView):
             q_object = Q()
             for field in [*translation_fields("description"), *translation_fields("common_name")]:
                 q_object |= Q(**{f"{field}__icontains": term})
-            q_object |= Q(cpc__startswith=term)
+            q_object |= Q(cpc__istartswith=term)
             q_object |= Q(aliases__contains=[term.lower()])
             q_object |= Q(scientific_name__icontains=term)
             qs = qs.filter(q_object)
@@ -2477,14 +2643,15 @@ class LivelihoodZoneBaselineFacetedSearchView(APIView):
     def _search_zones(self, search_term):
         # Multi-word AND search for LivelihoodZone, extended to include country name so that
         # a term like "mali ml01" finds zones where "mali" matches the country and "ml01"
+        # Zone codes are prefix-matched so that "ML05" also finds variants like "ML05-BAN"
         terms = (search_term or "").strip().split()
         if not terms:
             return LivelihoodZone.objects.none()
         qs = LivelihoodZone.objects.all()
         for term in terms:
             q_object = (
-                Q(code__iexact=term)
-                | Q(alternate_code__iexact=term)
+                Q(code__istartswith=term)
+                | Q(alternate_code__istartswith=term)
                 | Q(country__iso3166a2__iexact=term)
                 | Q(country__iso3166a3__iexact=term)
                 | Q(country__name__icontains=term)

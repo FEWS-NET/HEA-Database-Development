@@ -6,7 +6,7 @@
 msgid ""
 msgstr ""
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-02 15:43+0000\n"
+"POT-Creation-Date: 2026-10-20 20:35+0000\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -25,9 +25,9 @@ msgstr "شفرة"
 msgid "Name"
 msgstr "اسم"
 
-#: apps/common/fields.py:93 apps/common/viewsets.py:325
-#: apps/common/viewsets.py:328 apps/common/viewsets.py:331
-#: apps/common/viewsets.py:334 apps/common/viewsets.py:337
+#: apps/common/fields.py:93 apps/common/viewsets.py:327
+#: apps/common/viewsets.py:330 apps/common/viewsets.py:333
+#: apps/common/viewsets.py:336 apps/common/viewsets.py:339
 msgid "Description"
 msgstr "وصف"
 
@@ -320,6 +320,14 @@ msgstr "النظام"
 msgid "User Management"
 msgstr "ادارة المستخدمين"
 
+#: apps/common/menu_config.py:605
+msgid "Pipelines"
+msgstr ""
+
+#: apps/common/menu_config.py:610
+msgid "Pipeline Status"
+msgstr ""
+
 #: apps/common/middleware/language.py:31
 msgid ""
 "Remove the language URL parameter. It is not supported for language-specific "
@@ -607,29 +615,29 @@ msgstr "اظهار الاعداد"
 msgid "Clear all filters"
 msgstr "مسح جميع عوامل التصفية"
 
-#: apps/common/viewsets.py:325 apps/common/viewsets.py:340
+#: apps/common/viewsets.py:327 apps/common/viewsets.py:342
 msgid "English"
 msgstr "الإنجليزيّة"
 
-#: apps/common/viewsets.py:328 apps/common/viewsets.py:343
+#: apps/common/viewsets.py:330 apps/common/viewsets.py:345
 msgid "French"
 msgstr "الفرنسيّة"
 
-#: apps/common/viewsets.py:331 apps/common/viewsets.py:346
+#: apps/common/viewsets.py:333 apps/common/viewsets.py:348
 msgid "Spanish"
 msgstr "الإسبانيّة"
 
-#: apps/common/viewsets.py:334 apps/common/viewsets.py:349
+#: apps/common/viewsets.py:336 apps/common/viewsets.py:351
 msgid "Arabic"
 msgstr "العربيّة"
 
-#: apps/common/viewsets.py:337 apps/common/viewsets.py:352
+#: apps/common/viewsets.py:339 apps/common/viewsets.py:354
 msgid "Portuguese"
 msgstr "البرتغاليّة"
 
-#: apps/common/viewsets.py:340 apps/common/viewsets.py:343
-#: apps/common/viewsets.py:346 apps/common/viewsets.py:349
-#: apps/common/viewsets.py:352
+#: apps/common/viewsets.py:342 apps/common/viewsets.py:345
+#: apps/common/viewsets.py:348 apps/common/viewsets.py:351
+#: apps/common/viewsets.py:354
 msgid "Common Name"
 msgstr "اسم شائع"
 

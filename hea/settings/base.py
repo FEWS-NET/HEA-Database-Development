@@ -84,15 +84,29 @@ DATABASES = {
     }
 }
 
+# Redis is the default cache so that all gunicorn workers share one cache.
+REDIS_HOST = env.str("REDIS_HOST", default="localhost")
+REDIS_PORT = env.int("REDIS_PORT", default=6379)
+CACHE_REDIS_DB = env.int("CACHE_REDIS_DB", default=1)
+
 CACHES = {
     "default": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-        "OPTIONS": {
-            # 1000 is small for thousands of Wealth Group threshold calculations cache one entry per Wealth Group per metric.
-            "MAX_ENTRIES": 100000,
-        },
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": f"redis://{REDIS_HOST}:{REDIS_PORT}/{CACHE_REDIS_DB}",
     },
 }
+
+# Alternative: per-process in-memory cache, for environments without Redis.
+# To use it, comment out the Redis CACHES above and uncomment this block.
+# CACHES = {
+#     "default": {
+#         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+#         "OPTIONS": {
+#             # 1000 is small for thousands of Wealth Group threshold calculations cache one entry per Wealth Group per metric.
+#             "MAX_ENTRIES": 100000,
+#         },
+#     },
+# }
 
 EXTERNAL_APPS = (
     "dal",
@@ -121,6 +135,7 @@ PROJECT_APPS = (
     "common",
     "metadata",
     "baseline",
+    "viz",
 )
 INSTALLED_APPS = EXTERNAL_APPS + PROJECT_APPS
 
@@ -381,6 +396,9 @@ DATABASE_FILES_URL_METHOD = "URL_METHOD_2"
 SERIALIZATION_MODULES = {
     "verbose_json": "common.pipelines.serializers.verbose_json",
 }
+
+# this is important for being able to fetch OSM tiles in Django admin maps
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 
 # Don't report missing HSTS preload, because we don't run SSL in local or CI environments.
 # See: https://docs.djangoproject.com/en/3.0/ref/settings/#std:setting-SILENCED_SYSTEM_CHECKS

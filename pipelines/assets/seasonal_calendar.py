@@ -79,6 +79,7 @@ from .base import (
     get_bss_label_dataframe,
 )
 from .fixtures import get_fixture_from_instances, import_fixture, validate_instances
+from .wealth_characteristic import is_zero_value
 
 # set the default Django settings module
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hea.settings.production")
@@ -87,7 +88,11 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "hea.settings.production")
 django.setup()
 
 from baseline.lookups import CommunityLookup  # NOQA: E402
-from baseline.models import LivelihoodZoneBaseline  # NOQA: E402
+from baseline.models import (  # NOQA: E402
+    LivelihoodZoneBaseline,
+    SeasonalActivity,
+    SeasonalActivityOccurrence,
+)
 from common.lookups import ClassifiedProductLookup  # NOQA: E402
 from common.utils import get_start_end_day_ranges_from_months  # NOQA: E402
 from metadata.lookups import SeasonalActivityTypeLookup  # NOQA: E402
@@ -99,6 +104,17 @@ HEADER_ROWS = [3, 4]
 # Baseline Seasonal Activity Occurrence when >= this fraction of communities report occurrence
 # of the Seasonal Activity in a given month.
 COMMUNITY_OCCURRENCE_THRESHOLD = 0.6
+
+
+def is_empty_value(value) -> bool:
+    """
+    Return True if a Seas Cal cell doesn't record an occurrence, i.e. it is blank, None, NaN or a numeric zero.
+    """
+    if value is None or (isinstance(value, str) and not value.strip()):
+        return True
+    if not isinstance(value, str) and pd.isna(value):
+        return True
+    return is_zero_value(value)
 
 
 @asset(partitions_def=bss_instances_partitions_def)
@@ -274,7 +290,7 @@ def seasonal_activity_instances(
     communities = []
     unrecognized_communities = []
     for column in df.loc[3, first_data_column:last_community_col].index:
-        if ((df.loc[5:, column].isin([0, "0", "", None])) | pd.isna(df.loc[5:, column])).all():
+        if df.loc[5:, column].map(is_empty_value).all():
             communities.append(None)  # This column has no data, so we can ignore it in the community lookup.
         else:
             community = communitylookup.get_instance(
@@ -330,7 +346,8 @@ def seasonal_activity_instances(
             if not label:
                 # Ignore blank rows
                 continue
-            has_row_data = df.loc[row, first_data_column:].dropna().astype(str).str.strip().any()
+            # Zeros don't count as data.
+            has_row_data = not df.loc[row, first_data_column:].map(is_empty_value).all()
             # Attempt to match the label to a Seasonal Activity Type.
             try:
                 seasonal_activity_type = seasonalactivitytypelookup.get_instance(
@@ -423,7 +440,7 @@ def seasonal_activity_instances(
                 community = None
                 months = []
                 for column in df.loc[row, first_data_column:last_community_col].index:
-                    if df.loc[row, column] in [0, "0", "", None] or pd.isna(df.loc[row, column]):
+                    if is_empty_value(df.loc[row, column]):
                         # Skip columns without data
                         continue
                     if communities.get(column) != community:
@@ -562,5 +579,8 @@ def imported_seasonal_activities(
 ) -> Output[None]:
     """
     Imported Django fixture of SeasonalActivity and SeasonalActivityOccurrence data for a BSS, added to the Django database.
+
+    The fixture is authoritative for the Seasonal Activities in the Baseline, so any existing Seasonal Activities or
+    Seasonal Activity Occurrences that are not in the fixture are deleted.
     """
-    return import_fixture(seasonal_activity_fixture)
+    return import_fixture(seasonal_activity_fixture, reconcile=(SeasonalActivity, SeasonalActivityOccurrence))
