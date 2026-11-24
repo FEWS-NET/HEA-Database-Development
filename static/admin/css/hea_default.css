@@ -2204,3 +2204,8 @@ input[type=search]::-webkit-search-cancel-button{
   white-space: nowrap;
   overflow: hidden;
 }
+
+/* --primary is light green in this theme, so autocomplete options highlighted with it need dark text, not white */
+.select2-container--admin-autocomplete {
+    --primary-fg: var(--body-fg);
+}

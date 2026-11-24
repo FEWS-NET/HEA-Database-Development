@@ -611,6 +611,11 @@ ADMIN_MENU_CONFIG = [
                         "url_name": "viz:pipeline_status_index",
                         "perm": "common.access_dagster_ui",
                     },
+                    {
+                        "label": _("BSS Viewer"),
+                        "url_name": "viz:bss_viewer",
+                        "perm": "common.access_dagster_ui",
+                    },
                 ],
             },
         ],

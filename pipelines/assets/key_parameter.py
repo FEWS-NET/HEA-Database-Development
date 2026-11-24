@@ -74,6 +74,23 @@ from pipelines.utils import (  # NOQA: E402
 )
 
 
+def _get_group_livelihood_strategies(group: dict, livelihood_strategies: list[dict]) -> list[dict]:
+    """
+    Return the Livelihood Strategies from a detail worksheet that belong to a `see Data2` or `see Data3` group.
+
+    The strategies are matched using the subtotal row rather than the subtotal label,
+    because many BSSs reuse the same subtotal label for several sections, e.g. `SUB-TOTAL` for every section in
+    'Data2', or `TOTAL KCALS (%)` for both the wild foods and the fishing sections in 'Data3'. Matching on the
+    label would link the group to the strategies from all of those sections.
+    """
+    subtotal_row_keys = ("income_subtotal_row", "percentage_kcals_subtotal_row")
+    return [
+        strategy
+        for strategy in livelihood_strategies
+        if any(group.get(key) is not None and strategy.get(key) == group.get(key) for key in subtotal_row_keys)
+    ]
+
+
 def _get_livelihood_activity_groups(
     livelihood_zone_baseline: LivelihoodZoneBaseline,
     livelihood_activity_dataframe: pd.DataFrame,
@@ -251,22 +268,14 @@ def key_parameter_instances(
     livelihood_strategy_map = defaultdict(list)
     for strategy in livelihood_activity_instances.get("LivelihoodStrategy", []):
         livelihood_strategy_map[strategy["activity_label"]].append(strategy)
+    detail_sheet_strategies = {
+        "Data2": other_cash_income_instances.get("LivelihoodStrategy", []),
+        "Data3": wild_foods_instances.get("LivelihoodStrategy", []),
+    }
     for group_label, group in livelihood_activity_groups.items():
-        if group["detail_sheet"] == "Data2":
-            livelihood_strategy_map[group_label] = [
-                strategy
-                for strategy in other_cash_income_instances.get("LivelihoodStrategy", [])
-                if strategy.get("income_subtotal_label") == group.get("income_subtotal_label")
-            ]
-        elif group["detail_sheet"] == "Data3":
-            livelihood_strategy_map[group_label] = [
-                strategy
-                for strategy in wild_foods_instances.get("LivelihoodStrategy", [])
-                if (
-                    (strategy.get("income_subtotal_label") == group.get("income_subtotal_label"))
-                    or strategy.get("percentage_kcals_subtotal_label") == group.get("percentage_kcals_subtotal_label")
-                )
-            ]
+        livelihood_strategy_map[group_label] = _get_group_livelihood_strategies(
+            group, detail_sheet_strategies.get(group["detail_sheet"], [])
+        )
 
     # Find the columns that contain monitor_quantity and monitor_price
     quantity_column = None
