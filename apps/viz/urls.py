@@ -5,6 +5,7 @@ URL routes for visualizations of the HEA data and pipelines.
 from django.urls import path
 
 from .views import (
+    BSSViewerView,
     PipelineStatusIndexView,
     PipelineStatusPartitionView,
     PipelineStatusView,
@@ -13,6 +14,7 @@ from .views import (
 app_name = "viz"
 
 urlpatterns = [
+    path("bss-viewer/", BSSViewerView.as_view(), name="bss_viewer"),
     path("pipeline-status/", PipelineStatusIndexView.as_view(), name="pipeline_status_index"),
     path("pipeline-status/<str:pipeline>/", PipelineStatusView.as_view(), name="pipeline_status"),
     path(

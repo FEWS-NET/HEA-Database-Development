@@ -5,19 +5,27 @@ Views for visualizing the status and quality of the HEA data and pipelines.
 import datetime
 import json
 import logging
+import pickle
+import zipfile
+from io import BytesIO
 from typing import TYPE_CHECKING
-from urllib.parse import quote
+from urllib.parse import quote, urlencode
 
 import graphviz
+import openpyxl
 import pandas as pd
 import plotly.graph_objects as go
-from dagster import DagsterInstance
+from dagster import AssetKey, AssetRecordsFilter, DagsterInstance
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.cache import cache
 from django.http import Http404
 from django.urls import reverse
 from django.views.generic import TemplateView
+from openpyxl.utils import get_column_letter
 from plotly.utils import PlotlyJSONEncoder
+from upath import UPath
+
+from baseline.models import LivelihoodZoneBaseline
 
 if TYPE_CHECKING:
     from pipelines.status import MonitoredPipeline
@@ -295,6 +303,7 @@ class PipelineStatusPartitionView(PipelineStatusMixin, TemplateView):
         """
         Fetch the current status and latest runs for each asset in the pipeline for the requested partition.
         """
+        from pipelines.partitions import bss_instances_partitions_def
         from pipelines.status import (
             get_asset_partition_details,
             get_asset_status_dataframe,
@@ -345,6 +354,119 @@ class PipelineStatusPartitionView(PipelineStatusMixin, TemplateView):
                 "root_failures": root_failures,
                 "assets": assets,
                 "graph_svg": get_asset_graph_svg(partition_key, statuses, pipeline.dependencies, root_failures),
+                "bss_viewer_url": (
+                    f"{reverse('viz:bss_viewer')}?{urlencode({'partition_key': partition_key})}"
+                    if getattr(pipeline.partitions_def, "name", None) == bss_instances_partitions_def.name
+                    else None
+                ),
+            }
+        )
+        return context
+
+
+def get_bss_content(partition_key: str, corrected: bool) -> bytes | None:
+    """
+    Return the content of the original or corrected BSS for a `bss_instances` partition.
+
+    The original BSS is the file uploaded to the Livelihood Zone Baseline, and the corrected BSS is the latest
+    materialization of the `corrected_files` asset. Returns None if the corrected BSS has not been materialized.
+    """
+    if not corrected:
+        livelihood_zone_baseline = LivelihoodZoneBaseline.objects.get_by_natural_key(*partition_key.split("~")[1:])
+        with livelihood_zone_baseline.bss.open() as file:
+            return file.read()
+    with DagsterInstance.get() as instance:
+        records = instance.fetch_materializations(
+            AssetRecordsFilter(asset_key=AssetKey("corrected_files"), asset_partitions=[partition_key]), limit=1
+        ).records
+    if not records:
+        return None
+    # The PickleIOManager stores the BytesIO returned by the corrected_files asset as a pickle
+    with UPath(records[0].asset_materialization.metadata["path"].value).open("rb") as file:
+        return pickle.load(file).getvalue()
+
+
+def read_worksheet(content: bytes, sheet_name: str, formulas: bool) -> tuple[list[str], str, list[list[str]]]:
+    """
+    Return the worksheet names, the selected worksheet name and the cells of the selected worksheet as strings.
+
+    Selects `sheet_name` if the workbook contains it, otherwise the Data worksheet, otherwise the first worksheet.
+    The cells contain the values saved in the file, or, if `formulas` is True, the formulas of cells that have one.
+    Trailing empty rows and columns are removed, and the remaining rows are padded to the same length.
+    """
+    # openpyxl returns either the saved values or the formulas, depending on data_only, but not both at once
+    workbook = openpyxl.load_workbook(BytesIO(content), read_only=True, data_only=not formulas)
+    try:
+        sheet_names = workbook.sheetnames
+        if sheet_name not in sheet_names:
+            sheet_name = "Data" if "Data" in sheet_names else sheet_names[0]
+        worksheet = workbook[sheet_name]
+        # Read every cell, like pandas.read_excel does, in case the dimensions saved in the worksheet are wrong
+        worksheet.reset_dimensions()
+        # Array formulas are returned as ArrayFormula objects with the formula in the text attribute
+        rows = [
+            ["" if value is None else str(getattr(value, "text", value)) for value in row]
+            for row in worksheet.iter_rows(values_only=True)
+        ]
+    finally:
+        workbook.close()
+    last_row = max((number for number, row in enumerate(rows, start=1) if any(row)), default=0)
+    last_col = max((number for row in rows for number, value in enumerate(row, start=1) if value), default=0)
+    return sheet_names, sheet_name, [row[:last_col] + [""] * (last_col - len(row)) for row in rows[:last_row]]
+
+
+class BSSViewerView(PipelineStatusMixin, TemplateView):
+    """
+    Show a worksheet from the original or corrected BSS for a Livelihood Zone Baseline as a spreadsheet grid.
+
+    The baseline is identified by its `bss_instances` partition key, to match the pipeline status views, and the
+    `file`, `sheet` and `formulas` query parameters select the file, the worksheet and whether to show formulas.
+    """
+
+    template_name = "viz/bss_viewer.html"
+
+    def get_context_data(self, **kwargs) -> dict:
+        """
+        Read the selected worksheet from the selected BSS.
+        """
+        from pipelines.partitions import bss_instances_partitions_def
+
+        context = super().get_context_data(**kwargs)
+        partition_key = self.request.GET.get("partition_key", "")
+        corrected = self.request.GET.get("file") == "corrected"
+        formulas = bool(self.request.GET.get("formulas"))
+        with DagsterInstance.get() as instance:
+            partition_keys = sorted(instance.get_dynamic_partitions(bss_instances_partitions_def.name))
+        context.update(
+            {
+                "title": "BSS Viewer",
+                "partition_keys": partition_keys,
+                "partition_key": partition_key,
+                "corrected": corrected,
+                "formulas": formulas,
+            }
+        )
+        if not partition_key:
+            return context
+        if partition_key not in partition_keys:
+            raise Http404(f"Partition '{partition_key}' does not exist")
+
+        content = get_bss_content(partition_key, corrected)
+        if content is None:
+            context["error"] = "The corrected file has not been materialized for this baseline."
+            return context
+        try:
+            sheet_names, sheet_name, rows = read_worksheet(content, self.request.GET.get("sheet", ""), formulas)
+        except zipfile.BadZipFile:
+            # shortcut: openpyxl can't read .xls files and no current BSS is one, use xlrd if .xls BSSs are loaded
+            context["error"] = "Only .xlsx and .xlsm files can be displayed."
+            return context
+        context.update(
+            {
+                "sheet_names": sheet_names,
+                "sheet_name": sheet_name,
+                "columns": [get_column_letter(number) for number in range(1, len(rows[0]) + 1)] if rows else [],
+                "rows": rows,
             }
         )
         return context

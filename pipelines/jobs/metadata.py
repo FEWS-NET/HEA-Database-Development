@@ -471,7 +471,7 @@ def load_all_community_aliases(context: OpExecutionContext):
         # Use a 1-based index to match the Excel Row Number
         df.index += 1
 
-        # Add two new columnds to df, livelihood_zone_id and reference_year_end_date, by splitting the livelihood_zone_baseline on the ~
+        # Add two new columns to df, livelihood_zone_id and reference_year_end_date, by splitting the livelihood_zone_baseline on the ~
         df[["livelihood_zone_id", "reference_year_end_date"]] = df["livelihood_zone_baseline"].str.split(
             "~", expand=True
         )
@@ -499,7 +499,9 @@ def load_all_community_aliases(context: OpExecutionContext):
         df["livelihood_zone_baseline"] = df["livelihood_zone_baseline_id"]
         df = CommunityLookup().do_lookup(df, "full_name", "id")
 
-        df["aliases"] = df["aliases"].apply(lambda x: tuple(sorted(x.lower().split("~"))) if x else None)
+        df["aliases"] = df["aliases"].apply(
+            lambda x: tuple(sorted(alias for alias in x.lower().split("~") if alias)) or None if x else None
+        )
         df["modified"] = datetime.datetime.now(tz=datetime.timezone.utc)
         df = df.dropna()
 

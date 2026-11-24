@@ -50,9 +50,10 @@
                                 {% if user.is_authenticated %}
                                     {% translate 'Welcome,' %}
                                     <strong>{% firstof user.get_short_name user.get_username %}</strong>.&nbsp;&nbsp;
-                                    <a href="#"
-                                       target="_blank"> HELP </a> &nbsp;&nbsp;
-                                    <a href="#" target="_blank">
+                                    <a href="https://help.fews.net/lex"
+                                       target="_blank" rel="noopener noreferrer"> HELP </a> &nbsp;&nbsp;
+                                    <a href="https://help.fews.net/lex/livelihoods-explorer-api"
+                                       target="_blank" rel="noopener noreferrer">
                                         DOCUMENTATION </a> &nbsp;&nbsp;
                                     <a href="{% url 'rest_framework:logout' %}?next=/api/">Log out</a>
 

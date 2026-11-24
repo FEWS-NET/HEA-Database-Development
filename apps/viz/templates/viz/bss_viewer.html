@@ -1,0 +1,97 @@
+{% extends "admin/base_site.html" %}
+
+{% load i18n static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'admin/css/vendor/select2/select2.min.css' %}">
+<link rel="stylesheet" href="{% static 'admin/css/autocomplete.css' %}">
+<link rel="stylesheet" href="{% static 'viz/css/bss_viewer.css' %}">
+{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+{# The same jQuery and Select2 that the admin uses for autocomplete fields #}
+<script src="{% static 'admin/js/vendor/jquery/jquery.min.js' %}"></script>
+<script src="{% static 'admin/js/vendor/select2/select2.full.min.js' %}"></script>
+<script src="{% static 'admin/js/jquery.init.js' %}"></script>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
+    &rsaquo; {{ title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="bss-viewer">
+    <form class="bss-viewer__controls" method="get">
+        <label for="id_partition_key">{% translate 'Baseline' %}</label>
+        <select id="id_partition_key" name="partition_key">
+            <option value="">---------</option>
+            {% for key in partition_keys %}
+            <option value="{{ key }}"{% if key == partition_key %} selected{% endif %}>{{ key }}</option>
+            {% endfor %}
+        </select>
+        {# Keep the selected file, worksheet and display when changing baseline #}
+        {% if corrected %}<input type="hidden" name="file" value="corrected">{% endif %}
+        {% if formulas %}<input type="hidden" name="formulas" value="1">{% endif %}
+        {% if sheet_name %}<input type="hidden" name="sheet" value="{{ sheet_name }}">{% endif %}
+        <input type="submit" value="{% translate 'Show' %}">
+    </form>
+    <script>
+        // Select2 matches the typed text anywhere in the partition key, e.g. a livelihood zone code such as CD07
+        django.jQuery("#id_partition_key").select2({theme: "admin-autocomplete"});
+    </script>
+
+    {% if partition_key %}
+    <nav class="bss-viewer__toggles" aria-label="{% translate 'Display options' %}">
+        <span>{% translate 'File' %}:</span>
+        <a href="{% querystring file=None %}"{% if not corrected %} aria-current="true"{% endif %}>{% translate 'Original' %}</a>
+        <a href="{% querystring file='corrected' %}"{% if corrected %} aria-current="true"{% endif %}>{% translate 'Corrected' %}</a>
+        <span>{% translate 'Show' %}:</span>
+        <a href="{% querystring formulas=None %}"{% if not formulas %} aria-current="true"{% endif %}>{% translate 'Values' %}</a>
+        <a href="{% querystring formulas='1' %}"{% if formulas %} aria-current="true"{% endif %}>{% translate 'Formulas' %}</a>
+    </nav>
+    {% endif %}
+
+    {% if error %}
+    <p class="errornote">{{ error }}</p>
+    {% elif sheet_names %}
+    <nav class="bss-viewer__sheets" aria-label="{% translate 'Worksheets' %}">
+        {% for name in sheet_names %}
+        <a href="{% querystring sheet=name %}"{% if name == sheet_name %} aria-current="true"{% endif %}>{{ name }}</a>
+        {% endfor %}
+    </nav>
+
+    <div class="bss-viewer__grid" data-scroll-key="{{ partition_key }}~{{ sheet_name }}">
+        <table>
+            <thead>
+                <tr><th></th>{% for column in columns %}<th scope="col">{{ column }}</th>{% endfor %}</tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                <tr><th scope="row">{{ forloop.counter }}</th>{% for value in row %}<td>{{ value }}</td>{% endfor %}</tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <script>
+        // Keep the scroll position when switching file or display for the same worksheet, so cells can be compared
+        (function () {
+            const grid = document.querySelector(".bss-viewer__grid");
+            const saved = JSON.parse(sessionStorage.getItem("bss-viewer-scroll") || "{}");
+            if (saved.key === grid.dataset.scrollKey) {
+                grid.scrollTo(saved.left, saved.top);
+            }
+            window.addEventListener("pagehide", function () {
+                sessionStorage.setItem("bss-viewer-scroll", JSON.stringify(
+                    {key: grid.dataset.scrollKey, top: grid.scrollTop, left: grid.scrollLeft}
+                ));
+            });
+        }());
+    </script>
+    {% endif %}
+</div>
+{% endblock %}
