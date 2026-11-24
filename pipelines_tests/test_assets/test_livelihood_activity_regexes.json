@@ -936,7 +936,13 @@
         "is_start": true,
         "product_id": "dried fish",
         "unit_of_measure_id": "kg",
-        "attribute": "quantity_purchased"
+        "attribute": "unit_multiple"
+    },
+    "Sugar purchase: kg": {
+        "is_start": true,
+        "product_id": "sugar",
+        "unit_of_measure_id": "kg",
+        "attribute": "unit_multiple"
     },
     "Viande achetée: quantité (kg)": {
         "is_start": true,
