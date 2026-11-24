@@ -1234,8 +1234,32 @@ def get_instances_from_dataframe(
     livelihood_strategies = []
     livelihood_activities = []
     livelihood_activities_for_strategy = previous_livelihood_activities_for_strategy = []
+    # Rows containing attributes that appear before any LivelihoodStrategy has started, for example because the
+    # label that starts the strategy (such as 'lait de chamelle') has been deleted from the BSS. These rows are
+    # ignored and reported as a single error so that the remaining Livelihood Activities in the BSS still load.
+    orphan_rows: list[tuple[int, str, str]] = []
 
-    # Define inline functions
+    def report_orphan_rows():
+        """
+        Record an error for any rows with attributes that were found without an existing Livelihood Strategy.
+        """
+        if orphan_rows:
+            errors.append(
+                "Found attributes without an existing LivelihoodStrategy in rows %s-%s, so these rows have been "
+                "ignored. Check whether the label that starts the LivelihoodStrategy is missing from row %s or "
+                "earlier:\n%s"
+                % (
+                    orphan_rows[0][0],
+                    orphan_rows[-1][0],
+                    orphan_rows[0][0],
+                    "\n".join(
+                        f"  row {orphan_row}: '{orphan_label}': {orphan_attributes}"
+                        for orphan_row, orphan_label, orphan_attributes in orphan_rows
+                    ),
+                )
+            )
+            orphan_rows.clear()
+
     def finalize_strategy():
         """
         Finalize and save the current Livelihood Strategy if it has non-empty Livelihood Activities.
@@ -1945,6 +1969,7 @@ def get_instances_from_dataframe(
 
             if label_attributes["is_start"]:
 
+                report_orphan_rows()
                 finalize_strategy()
                 initialize_strategy()
 
@@ -1961,7 +1986,8 @@ def get_instances_from_dataframe(
                 # We are not starting a new Livelihood Strategy, but there may be
                 # additional attributes that need to be added to the current one.
 
-                # If we have attributes but haven't started a livelihood_strategy, then raise an error.
+                # If we have attributes but haven't started a livelihood_strategy, then record the row so that it
+                # can be reported as an error, and ignore it, so that the rest of the BSS can still be loaded.
                 if not livelihood_strategy:
                     additional_attributes = [label_attributes["attribute"]] if label_attributes["attribute"] else []
                     for attribute in [
@@ -1973,10 +1999,8 @@ def get_instances_from_dataframe(
                     ]:
                         if label_attributes[attribute] and not pd.isna(label_attributes[attribute]):
                             additional_attributes.append(f"{attribute}={label_attributes[attribute]}")
-                    raise ValueError(
-                        "Found attributes from label '%s' in row %s without an existing LivelihoodStrategy: %s"
-                        % (label_attributes["activity_label"], row, ", ".join(additional_attributes))
-                    )
+                    orphan_rows.append((row, label_attributes["activity_label"], ", ".join(additional_attributes)))
+                    continue
 
                 # Only update expected keys, and only if we found a value for that attribute that doesn't conflict with
                 # an existing value.
@@ -2266,7 +2290,8 @@ def get_instances_from_dataframe(
                     % (partition_key, worksheet_name, row, label)
                 ) from e
 
-    # Finalize the last strategy
+    # Report any orphaned rows that weren't followed by a new strategy, and finalize the last strategy
+    report_orphan_rows()
     finalize_strategy()
 
     # Augment the OtherCashIncome, WildFoodGathering, Fishing and Hunting strategies
