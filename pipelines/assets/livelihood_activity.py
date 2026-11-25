@@ -162,13 +162,25 @@ def _is_see_other_worksheet_label(label: str | None) -> bool:
     return bool(label) and bool(SEE_OTHER_WORKSHEET_LABEL_PATTERN.match(prepare_lookup(label)))
 
 
-def _get_label_source(label_attributes: pd.Series) -> str:
+def _get_row_source(label: str, label_attributes: pd.Series) -> dict:
     """
-    Return how a label was recognized, e.g. the ActivityLabel status and notes, or the matching regex template.
+    Return the BSS label for a row, how it was recognized, and the attributes recognized from it.
 
-    Labels recognized by neither an ActivityLabel nor a regex, but which are a Product name, have no status.
+    The source is the ActivityLabel status and notes, or the matching regex template. Labels recognized by neither
+    an ActivityLabel nor a regex, but which are a Product name, have no status.
     """
-    return " - ".join(filter(None, [label_attributes["status"] or "Product name", label_attributes["notes"]]))
+    return {
+        "label": label,
+        "source": " - ".join(filter(None, [label_attributes["status"] or "Product name", label_attributes["notes"]])),
+        "attributes": {
+            attribute: value
+            for attribute, value in label_attributes.items()
+            # status and notes are already in the source, and country_id and livelihood_zone_id are the same for every row
+            if attribute not in ["activity_label", "status", "notes", "country_id", "livelihood_zone_id"]
+            and pd.notna(value)
+            and value
+        },
+    }
 
 
 def _is_section_header_label(label: str, row_values: pd.Series) -> bool:
@@ -1409,7 +1421,6 @@ def get_instances_from_dataframe(
 
                 # Normalize the `type_of_milk_sold_or_other_uses`, e.g. from `type of milk sold/other use (skim=0, whole=1)`  # NOQA: E501
                 if "type_of_milk_sold_or_other_uses" in livelihood_strategy["attribute_rows"]:
-                    livelihood_strategy["attribute_rows"]["type_of_milk_sold_or_other_uses"] = row
                     for livelihood_activity in livelihood_activities_for_strategy:
                         livelihood_activity["type_of_milk_sold_or_other_uses"] = (
                             MilkProduction.MilkType.WHOLE
@@ -1900,7 +1911,7 @@ def get_instances_from_dataframe(
         }
         # Keep track of how the label in each row was recognized, to aid trouble-shooting. Attributes inferred by
         # the rules in this function record the current row in attribute_rows, but the row source describes the label.
-        livelihood_strategy["row_sources"] = {row: _get_label_source(label_attributes)}
+        livelihood_strategy["row_sources"] = {row: _get_row_source(label, label_attributes)}
         # Keep track of which row each attribute came from, to aid trouble-shooting
         livelihood_strategy["attribute_rows"] = {
             attribute: row
@@ -2277,7 +2288,7 @@ def get_instances_from_dataframe(
                 # Livelihood Summary section.
                 elif strategy_type:
                     livelihood_strategy["attribute_rows"][activity_attribute] = row
-                    livelihood_strategy["row_sources"][row] = _get_label_source(label_attributes)
+                    livelihood_strategy["row_sources"][row] = _get_row_source(label, label_attributes)
                     # Assertion to prevent linting from complaining about possible None values
                     assert activity_field_names is not None, (
                         "Found activity_attribute %s from row %s, but there is no Livelihood Strategy and therefore no activity_field_names defined."

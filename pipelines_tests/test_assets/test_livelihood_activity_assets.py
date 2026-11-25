@@ -271,12 +271,27 @@ class GetActivityLabelAttributesTestCase(TestCase):
         self.assertEqual(len(strategies), 1)
         self.assertEqual(strategies[0]["strategy_type"], "OtherCashIncome")
         self.assertEqual(strategies[0]["product_id"], "S8512HA")
-        # Each row records how its label was recognized: the short regex template, or the ActivityLabel status.
+        # Each row records its BSS label, how it was recognized (the short regex template, or the ActivityLabel
+        # status), and the attributes recognized from it.
         row_sources = strategies[0]["row_sources"]
         self.assertEqual(sorted(row_sources), [5, 6, 7, 8, 9])
-        self.assertTrue(row_sources[5].startswith("Regular Expression - "))
-        self.assertIn("{product_season_pattern}", row_sources[5])
-        self.assertEqual(row_sources[8], "Override")
+        self.assertEqual(row_sources[5]["label"], "Labour migration: no. people per HH")
+        self.assertTrue(row_sources[5]["source"].startswith("Regular Expression - "))
+        self.assertIn("{product_season_pattern}", row_sources[5]["source"])
+        self.assertEqual(row_sources[5]["attributes"]["product_id"], "S8512HA")
+        self.assertTrue(row_sources[5]["attributes"]["is_start"])
+        self.assertEqual(
+            row_sources[8],
+            {
+                "label": "savings/remittance each time (per person)",
+                "source": "Override",
+                "attributes": {"attribute": "payment_per_time"},
+            },
+        )
+        # The instances are saved by the json_io_manager
+        json.dumps(row_sources)
+        # times_per_year is calculated when the strategy is finished, which is the last row for the final strategy
+        self.assertEqual(strategies[0]["attribute_rows"]["times_per_year"], 9)
 
         activities = {activity["bss_column"]: activity for activity in output.value["LivelihoodActivity"]}
         self.assertEqual(sorted(activities), ["B", "C", "D", "E"])
@@ -450,11 +465,12 @@ class GetActivityLabelAttributesTestCase(TestCase):
                     "no. milking animals",
                     "season 1: lactation period (days)",
                     "total production (litres)",
+                    "type of milk sold/other use (skim=0, whole=1)",
                     "% cows' milk sold",
                     "milk+ghee/butter kcals (%) - 1st season",
                     "milk+ghee/butter kcals (%) - 2nd season",
                 ],
-                "B": ["", "", "", 6, "", 2, 120, 240, 0.5, 0.01, ""],
+                "B": ["", "", "", 6, "", 2, 120, 240, 1, 0.5, 0.01, ""],
             }
         )
 
@@ -473,10 +489,14 @@ class GetActivityLabelAttributesTestCase(TestCase):
             for strategy in output.value["LivelihoodStrategy"]
             if strategy["strategy_type"] == "MilkProduction"
         )
-        self.assertEqual(milk_strategy["attribute_rows"]["percentage_kcals"], 9)
-        self.assertEqual(milk_strategy["attribute_rows"]["kcals_consumed"], 10)
-        self.assertTrue(milk_strategy["row_sources"][9].startswith("Regular Expression - "))
-        self.assertNotIn(10, milk_strategy["row_sources"])
+        self.assertEqual(milk_strategy["attribute_rows"]["percentage_kcals"], 10)
+        self.assertEqual(milk_strategy["attribute_rows"]["kcals_consumed"], 11)
+        self.assertTrue(milk_strategy["row_sources"][10]["source"].startswith("Regular Expression - "))
+        self.assertNotIn(11, milk_strategy["row_sources"])
+        # Normalizing the type of milk keeps the row of its label
+        self.assertEqual(milk_strategy["attribute_rows"]["type_of_milk_sold_or_other_uses"], 8)
+        # type_of_milk_consumed is added when the MilkProduction strategy is finished, at the start of ButterProduction
+        self.assertEqual(milk_strategy["attribute_rows"]["type_of_milk_consumed"], 9)
         milk_activity = next(
             activity
             for activity in output.value["LivelihoodActivity"]
