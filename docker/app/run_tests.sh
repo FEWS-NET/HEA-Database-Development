@@ -138,6 +138,10 @@ fi
 # NOTE: nltk is a dependency of Safety only - it isn't part of the main image.
 
 # Vulnerabilities found in filelock version 3.32.7
+#   Vulnerability IDs: SFTY-20261023-16869, SFTY-20261023-24590
+#   CVE-2026-112940, CVE-2026-112913: ReadWriteLock path races; Safety and Dagster only use plain FileLock.
+#   Vulnerability ID: SFTY-20261023-10299
+#   CVE-2026-112907: Windows soft-lock oplock hang; our containers run Linux.
 #   Vulnerability IDs: SFTY-20261017-72390, SFTY-20261017-54654, SFTY-20261017-57659
 #   Affected spec: <=4.2.0
 #   CVE-2026-112910: FileLock ignores `mode` on Windows - our containers run Linux.
@@ -158,7 +162,7 @@ fi
 #  allows filelock>=4.2.1.
 
 echo Package Vulnerabilities:
-pip freeze | safety check --stdin --full-report -i 62283 -i 70612 -i 74054 -i 82915 -i 83150 -i SFTY-20260510-89962 -i 98069 -i 98070 -i SFTY-20260527-29918 -i SFTY-20260902-58666 -i SFTY-20261017-72390 -i SFTY-20261017-54654 -i SFTY-20261017-57659 -i SFTY-20261020-34461 -i SFTY-20261020-18367 -i SFTY-20261020-13394 -i SFTY-20261020-91319 -i SFTY-20261020-81101 -i SFTY-20261020-25530 -i SFTY-20261020-11422
+pip freeze | safety check --stdin --full-report -i 62283 -i 70612 -i 74054 -i 82915 -i 83150 -i SFTY-20260510-89962 -i 98069 -i 98070 -i SFTY-20260527-29918 -i SFTY-20260902-58666 -i SFTY-20261017-72390 -i SFTY-20261017-54654 -i SFTY-20261017-57659 -i SFTY-20261020-34461 -i SFTY-20261020-18367 -i SFTY-20261020-13394 -i SFTY-20261020-91319 -i SFTY-20261020-81101 -i SFTY-20261020-25530 -i SFTY-20261020-11422 -i SFTY-20261023-16869 -i SFTY-20261023-24590 -i SFTY-20261023-10299
 SAFETY_RESULT=$?
 
 # Suppress SAFETY_RESULT unless CHECK_SAFETY is set
