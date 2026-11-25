@@ -93,6 +93,14 @@ class ClassifiedProductLookupTestCase(TestCase):
         self.assertEqual(len(result_df), 1)
         self.assertEqual(result_df["cpc"][0], product.pk)
 
+    def test_prepare_lookup_df_is_cached(self):
+        """
+        The lookup dataframe is prepared once per Lookup instance, not on every do_lookup() or get() call.
+        """
+        lookup = ClassifiedProductLookup()
+        self.assertEqual(lookup.get(self.product.common_name_en), self.product.pk)
+        self.assertIs(lookup.prepare_lookup_df(), lookup.prepare_lookup_df())
+
     def test_get_prefix(self):
         fruit = ClassifiedProductFactory(
             cpc="R0132",

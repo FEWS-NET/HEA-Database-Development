@@ -99,6 +99,7 @@ class Lookup(ABC):
 
         # Create instance level caches for key methods
         self.get_lookup_df = functools.cache(self.get_lookup_df)
+        self.prepare_lookup_df = functools.cache(self.prepare_lookup_df)
         self.get = functools.cache(self.get)
         self.get_prefix = functools.cache(self.get_prefix)
         self.get_instance = functools.cache(self.get_instance)

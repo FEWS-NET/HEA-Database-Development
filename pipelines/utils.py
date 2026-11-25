@@ -3,6 +3,10 @@ import re
 from collections.abc import Iterable
 
 import pandas as pd
+from dagster import MetadataValue
+
+# Indentation for the continuation lines of a multi-line error message in an `errors` metadata entry
+ERROR_CONTINUATION_INDENT = "    "
 
 EXCEL_FORMULA_REFERENCE_RE = re.compile(
     r"(?:(?P<sheet>'(?:[^']|'')+'|[A-Za-z0-9_]+)!)?"
@@ -192,3 +196,11 @@ def get_formula_references(formula: str, default_sheet: str | None = None) -> li
             references.append(reference)
 
     return references
+
+
+def get_errors_metadata(errors: list[str]) -> MetadataValue:
+    """
+    Format a list of error messages as an `errors` metadata entry.
+    """
+    formatted_errors = [error.replace("\n", f"\n{ERROR_CONTINUATION_INDENT}") for error in errors]
+    return MetadataValue.md(f'```text\n{"\n".join(formatted_errors)}\n```')
