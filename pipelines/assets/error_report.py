@@ -16,20 +16,21 @@ from dagster import (
     AssetExecutionContext,
     AssetKey,
     AssetRecordsFilter,
+    DagsterEventType,
     DagsterInstance,
     DynamicPartitionsDefinition,
     MetadataValue,
     Output,
     asset,
 )
-from dagster._core.events import DagsterEventType
 from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
 
 # The metadata key that assets use to record errors when running in non-strict mode.
 ERRORS_METADATA_KEY = "errors"
 
-# Maximum number of storage ids to fetch in a single event log query.
-FETCH_BATCH_SIZE = 500
+# Maximum number of materializations to fetch in a single event log query. Each one includes all of its metadata,
+# which can be several MB, so keep this small to limit memory use.
+FETCH_BATCH_SIZE = 20
 
 # Values starting with these characters can be interpreted as a formula when opened in Excel.
 FORMULA_PREFIXES = ("=", "+", "-", "@")
@@ -64,6 +65,25 @@ ROW_RE = re.compile(r"\b(?:from|on|in|for|at) row (?P<row>\d+)\b")
 # Column references in plain text, e.g. "in summary column F"
 COLUMN_RE = re.compile(r"\bcolumn (?P<column>[A-Z]{1,3})\b")
 
+# A reference to a record in an error message from validate_instances(), e.g. "FoodPurchase 224"
+RECORD_RE = re.compile(r"\b(?P<model>[A-Z][a-z]+(?:[A-Z][a-z]+)+) \d+\b")
+
+# An unrecognized foreign key, e.g. "Unrecognized 'livelihood_strategy' foreign key ('BF01', ...) for"
+FOREIGN_KEY_RE = re.compile(r"^Unrecognized '(?P<field>\w+)' foreign key (?:\(.*\)|\S+) for ")
+
+# The model that each foreign key refers to, for foreign keys to records that can be validated by the same asset.
+# Foreign keys are validated against the records that passed validation, so if the referenced record has an error
+# too, the unrecognized foreign key is a knock-on error that goes away when that error is fixed.
+KNOCK_ON_FOREIGN_KEYS = {
+    "baseline_livelihood_activity": "LivelihoodActivity",
+    "livelihood_strategy": "LivelihoodStrategy",
+    "livelihoodactivity_ptr": "LivelihoodActivity",
+    "wealth_group": "WealthGroup",
+}
+
+# Columns that identify a BSS in the summaries
+BSS_COLUMNS = ["country", "livelihood_zone", "reference_year_end_date", "partition_key"]
+
 ERROR_REPORT_COLUMNS = [
     "country",
     "livelihood_zone",
@@ -73,6 +93,8 @@ ERROR_REPORT_COLUMNS = [
     "worksheet",
     "column",
     "row",
+    "error_type",
+    "is_knock_on",
     "error",
     "details",
     "run_id",
@@ -140,6 +162,21 @@ def get_error_location(error: str, asset_name: str = "") -> dict[str, str | int 
     return location
 
 
+def get_error_type(error: str) -> str:
+    """
+    Get the type of an error, by removing the parts of the message that are specific to one record.
+
+    This removes the record number, cell reference, natural key, foreign key value and any other numbers, so that the
+    same problem can be counted across BSSs. Quoted labels and field names are kept, because they are usually what
+    needs to be fixed, e.g. an ActivityLabel for 'revenu'.
+    """
+    error_type = error.split(" with natural key ")[0]
+    error_type = FOREIGN_KEY_RE.sub(r"Unrecognized '\g<field>' foreign key … for ", error_type)
+    error_type = CELL_REFERENCE_RE.sub("…", error_type)
+    error_type = RECORD_RE.sub(r"\g<model>", error_type)
+    return re.sub(r"\d+(?:\.\d+)?", "<n>", error_type)
+
+
 def clean_excel_value(value: str) -> str:
     """
     Make a string safe to store in an Excel cell.
@@ -183,6 +220,7 @@ def get_error_rows(
                 "asset_name": asset_name,
                 "partition_key": partition_key or "",
                 **location,
+                "error_type": clean_excel_value(get_error_type(summary)),
                 "error": clean_excel_value(summary),
                 # Remove the indentation added to continuation lines by `get_errors_metadata`
                 "details": clean_excel_value(textwrap.dedent(details)),
@@ -194,6 +232,88 @@ def get_error_rows(
     return rows
 
 
+def get_knock_on_errors(df: pd.DataFrame) -> pd.Series:
+    """
+    Return whether each error is an unrecognized foreign key to a record that has an error in the same asset and BSS.
+    """
+    failed_records = set(zip(df["partition_key"], df["asset_name"], df["error"].str.extract(RECORD_RE)["model"]))
+    referenced_models = df["error"].str.extract(FOREIGN_KEY_RE)["field"].map(KNOCK_ON_FOREIGN_KEYS)
+    return pd.Series(
+        [
+            isinstance(model, str) and (partition_key, asset_name, model) in failed_records
+            for partition_key, asset_name, model in zip(df["partition_key"], df["asset_name"], referenced_models)
+        ],
+        index=df.index,
+        dtype=bool,
+    )
+
+
+def get_error_report(rows: list[dict]) -> dict[str, pd.DataFrame]:
+    """
+    Return the worksheets for the error report, from the error rows for all the assets.
+
+    The summaries count BSS rows rather than errors, because one problem in a BSS row produces an error for each
+    Wealth Group column, and for each model in a multi-table inheritance hierarchy, such as LivelihoodActivity and
+    FoodPurchase. Knock-on errors aren't counted, because they go away when the error they depend on is fixed.
+    """
+    df = pd.DataFrame(rows, columns=ERROR_REPORT_COLUMNS).astype({"row": "Int64"})
+    df = df.sort_values(
+        ["country", "livelihood_zone", "reference_year_end_date", "asset_name"], kind="stable"
+    ).reset_index(drop=True)
+    df["is_knock_on"] = get_knock_on_errors(df)
+
+    counted = df[~df["is_knock_on"]].copy()
+    # Errors without a row are counted individually
+    counted["bss_row"] = (
+        counted["partition_key"] + "!" + counted["worksheet"].fillna("") + "!" + counted["row"].astype(str)
+    ).where(counted["row"].notna(), counted["partition_key"] + "!" + counted["error"])
+
+    # One row per type of error, starting with the ones that affect the most BSSs
+    error_type_df = (
+        counted.groupby("error_type")
+        .agg(
+            num_bss=("partition_key", "nunique"),
+            num_countries=("country", lambda countries: countries[countries != ""].nunique()),
+            num_bss_rows=("bss_row", "nunique"),
+            num_errors=("error", "size"),
+            assets=("asset_name", lambda asset_names: ", ".join(sorted(asset_names.unique()))),
+        )
+        .join(
+            counted.drop_duplicates("error_type")
+            .set_index("error_type")[["partition_key", "worksheet", "column", "row", "error"]]
+            .add_prefix("example_")
+        )
+        .sort_values(["num_bss", "num_bss_rows"], ascending=False)
+        .reset_index()
+    )
+
+    asset_summary_df = df.groupby("asset_name").agg(
+        num_partitions=("partition_key", "nunique"),
+        num_errors=("error", "size"),
+        num_knock_on_errors=("is_knock_on", "sum"),
+        # Errors from older materializations may already be fixed, so re-run the asset before relying on them
+        oldest_materialized_at=("materialized_at", "min"),
+    )
+    asset_summary_df.insert(
+        1,
+        "num_bss_rows",
+        counted.groupby("asset_name")["bss_row"].nunique().reindex(asset_summary_df.index, fill_value=0),
+    )
+
+    # One row per BSS, with the number of BSS rows with errors from each asset in a separate column
+    bss_summary_df = counted.pivot_table(
+        index=BSS_COLUMNS, columns="asset_name", values="bss_row", aggfunc="nunique", fill_value=0
+    )
+    bss_summary_df.insert(0, "num_bss_rows", counted.groupby(BSS_COLUMNS)["bss_row"].nunique())
+
+    return {
+        "Summary by Error Type": error_type_df,
+        "Summary by Asset": asset_summary_df.reset_index(),
+        "Summary by BSS": bss_summary_df.reset_index().rename_axis(columns=None),
+        "Errors": df,
+    }
+
+
 def get_latest_materialization_records(
     instance: DagsterInstance, asset_key: AssetKey, partition_keys: set[str] | None
 ) -> Iterable:
@@ -203,7 +323,7 @@ def get_latest_materialization_records(
     if partition_keys is not None and not partition_keys:
         # An empty set would be treated as "no filter" by the event log storage.
         return
-    latest_storage_ids = instance.event_log_storage.get_latest_storage_id_by_partition(
+    latest_storage_ids = instance.get_latest_storage_id_by_partition(
         asset_key, DagsterEventType.ASSET_MATERIALIZATION, partitions=partition_keys
     )
     storage_ids = sorted(latest_storage_ids.values())
@@ -239,10 +359,11 @@ def error_report(context: AssetExecutionContext) -> Output[dict[str, pd.DataFram
                 if isinstance(partitions_def, DynamicPartitionsDefinition)
                 else None
             )
-            records = [
+            # A generator, so that only one batch of materializations is held in memory at a time
+            records = (
                 (record.partition_key, record.run_id, record.timestamp, record.asset_materialization)
                 for record in get_latest_materialization_records(instance, asset_key, partition_keys)
-            ]
+            )
 
         for partition_key, run_id, timestamp, materialization in records:
             errors_metadata = materialization.metadata.get(ERRORS_METADATA_KEY) if materialization else None
@@ -250,36 +371,16 @@ def error_report(context: AssetExecutionContext) -> Output[dict[str, pd.DataFram
                 continue
             rows.extend(get_error_rows(asset_name, partition_key, run_id, timestamp, str(errors_metadata.value)))
 
-    df = pd.DataFrame(rows, columns=ERROR_REPORT_COLUMNS).astype({"row": "Int64"})
-    df = df.sort_values(
-        ["country", "livelihood_zone", "reference_year_end_date", "asset_name"], kind="stable"
-    ).reset_index(drop=True)
-
-    summary_df = (
-        df.groupby(["asset_name"])
-        .agg(num_partitions=("partition_key", "nunique"), num_errors=("error", "size"))
-        .reset_index()
-    )
-
-    # One row per BSS, with the number of errors from each asset in a separate column
-    bss_summary_df = df.pivot_table(
-        index=["country", "livelihood_zone", "reference_year_end_date", "partition_key"],
-        columns="asset_name",
-        values="error",
-        aggfunc="size",
-        fill_value=0,
-    )
-    bss_summary_df.insert(0, "num_errors", bss_summary_df.sum(axis="columns"))
-    bss_summary_df = bss_summary_df.reset_index().rename_axis(columns=None)
-
+    sheets = get_error_report(rows)
+    df = sheets["Errors"]
     metadata = {
         "num_errors": len(df),
+        "num_knock_on_errors": int(df["is_knock_on"].sum()),
+        "num_bss_rows_with_errors": int(sheets["Summary by BSS"]["num_bss_rows"].sum()),
+        "num_error_types": len(sheets["Summary by Error Type"]),
         "num_assets_with_errors": df["asset_name"].nunique(),
         "num_partitions_with_errors": df["partition_key"].nunique(),
         "num_countries_with_errors": df.loc[df["country"] != "", "country"].nunique(),
-        "summary": MetadataValue.md(summary_df.to_markdown(index=False)),
+        "summary": MetadataValue.md(sheets["Summary by Asset"].to_markdown(index=False)),
     }
-    return Output(
-        {"Errors": df, "Summary by Asset": summary_df, "Summary by BSS": bss_summary_df},
-        metadata=metadata,
-    )
+    return Output(sheets, metadata=metadata)
