@@ -72,6 +72,11 @@ The URL contains the selected baseline, file, worksheet and display, so it can b
 only contains formulas if the BSS has no corrections, because `corrected_files` saves the calculated values
 when it applies corrections. Only `.xlsx` and `.xlsm` files can be displayed.
 
+On the Data, Data2 and Data3 worksheets, hovering over a dotted-underlined label in column A shows how the
+pipeline recognized it: the ActivityLabel status or regular expression template, and the attributes it set.
+These row sources come from the latest materialization of the `livelihood_activity_instances`,
+`other_cash_income_instances` or `wild_foods_instances` asset, so rows that the pipeline didn't use have none.
+
 ## Debugging inside Docker Containers
 
 The `LAUNCHER` environment sets a wrapper program around the Python process

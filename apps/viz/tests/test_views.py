@@ -1,3 +1,4 @@
+import json
 import pickle
 import tempfile
 from io import BytesIO
@@ -237,6 +238,8 @@ class BSSViewerViewTestCase(TestCase):
         # openpyxl doesn't save calculated values, so the formula in C3 has no saved value
         self.assertEqual(response.context["columns"], ["A", "B"])
         self.assertEqual(response.context["rows"], [["Livelihood activity", ""], ["", ""], ["", "2"]])
+        # The livelihood_activity_instances asset hasn't been materialized, so there are no row sources
+        self.assertEqual(response.context["row_sources"], {})
 
     def test_bss_viewer_formulas(self):
         """
@@ -274,6 +277,54 @@ class BSSViewerViewTestCase(TestCase):
             response = self.client.get(self.url, {"partition_key": self.partition_key, "file": "corrected"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["rows"][2], ["", "3"])
+
+    def test_bss_viewer_row_sources(self):
+        """
+        The labels in Column A show the row sources from the latest materialization of the instances asset.
+        """
+        instances = {
+            "LivelihoodStrategy": [
+                {
+                    "bss_sheet": "Data",
+                    "row_sources": {
+                        "1": {
+                            "label": "Livelihood activity",
+                            "source": "Override",
+                            "attributes": {"strategy_type": "MilkProduction", "is_start": True},
+                        },
+                        # Instances materialized before the row sources included the attributes
+                        "3": 'Regular Expression - r"{product_pattern}"',
+                    },
+                },
+                # Row sources from other worksheets are ignored
+                {"bss_sheet": "Data2", "row_sources": {"2": {"label": "", "source": "Override", "attributes": {}}}},
+            ]
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "livelihood_activity_instances.json"
+            path.write_text(json.dumps(instances))
+            self.instance.report_runless_asset_event(
+                dg.AssetMaterialization(
+                    asset_key="livelihood_activity_instances",
+                    partition=self.partition_key,
+                    metadata={"path": dg.MetadataValue.path(str(path))},
+                )
+            )
+            response = self.client.get(self.url, {"partition_key": self.partition_key})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.context["row_sources"],
+            {
+                1: "Override\nstrategy_type: MilkProduction\nis_start: True",
+                3: 'Regular Expression - r"{product_pattern}"',
+            },
+        )
+        self.assertContains(
+            response,
+            '<td class="bss-viewer__row-source" title="Override\nstrategy_type: MilkProduction\nis_start: True">'
+            "Livelihood activity</td>",
+            html=True,
+        )
 
     def test_bss_viewer_corrected_not_materialized(self):
         """

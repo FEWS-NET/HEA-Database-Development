@@ -364,6 +364,19 @@ class PipelineStatusPartitionView(PipelineStatusMixin, TemplateView):
         return context
 
 
+def get_materialization_path(asset_key: str, partition_key: str) -> UPath | None:
+    """
+    Return the path of the latest materialization of an asset partition, or None if it has not been materialized.
+
+    The path is recorded in the materialization metadata by the IO manager.
+    """
+    with DagsterInstance.get() as instance:
+        records = instance.fetch_materializations(
+            AssetRecordsFilter(asset_key=AssetKey(asset_key), asset_partitions=[partition_key]), limit=1
+        ).records
+    return UPath(records[0].asset_materialization.metadata["path"].value) if records else None
+
+
 def get_bss_content(partition_key: str, corrected: bool) -> bytes | None:
     """
     Return the content of the original or corrected BSS for a `bss_instances` partition.
@@ -375,15 +388,47 @@ def get_bss_content(partition_key: str, corrected: bool) -> bytes | None:
         livelihood_zone_baseline = LivelihoodZoneBaseline.objects.get_by_natural_key(*partition_key.split("~")[1:])
         with livelihood_zone_baseline.bss.open() as file:
             return file.read()
-    with DagsterInstance.get() as instance:
-        records = instance.fetch_materializations(
-            AssetRecordsFilter(asset_key=AssetKey("corrected_files"), asset_partitions=[partition_key]), limit=1
-        ).records
-    if not records:
+    path = get_materialization_path("corrected_files", partition_key)
+    if not path:
         return None
     # The PickleIOManager stores the BytesIO returned by the corrected_files asset as a pickle
-    with UPath(records[0].asset_materialization.metadata["path"].value).open("rb") as file:
+    with path.open("rb") as file:
         return pickle.load(file).getvalue()
+
+
+# The instances asset that contains the Livelihood Strategies, and their row sources, for each worksheet
+INSTANCES_ASSETS = {
+    "Data": "livelihood_activity_instances",
+    "Data2": "other_cash_income_instances",
+    "Data3": "wild_foods_instances",
+}
+
+
+def get_row_sources(partition_key: str, sheet_name: str) -> dict[int, str]:
+    """
+    Return how the pipeline recognized the label in each row of a worksheet, formatted for display.
+
+    The row sources are read from the latest materialization of the instances asset for the worksheet. Returns an
+    empty dict if the worksheet doesn't contain Livelihood Activities or the asset has not been materialized.
+    """
+    if sheet_name not in INSTANCES_ASSETS:
+        return {}
+    path = get_materialization_path(INSTANCES_ASSETS[sheet_name], partition_key)
+    if not path:
+        return {}
+    with path.open() as file:
+        livelihood_strategies = json.load(file).get("LivelihoodStrategy", [])
+    row_sources = {}
+    for livelihood_strategy in livelihood_strategies:
+        if livelihood_strategy["bss_sheet"] == sheet_name:
+            for row, row_source in livelihood_strategy.get("row_sources", {}).items():
+                # Instances materialized before the row sources included the attributes only contain the source
+                if isinstance(row_source, str):
+                    row_source = {"source": row_source, "attributes": {}}
+                attributes = [f"{attribute}: {value}" for attribute, value in row_source["attributes"].items()]
+                # The JSON IO Manager saves the row numbers as strings
+                row_sources[int(row)] = "\n".join([row_source["source"], *attributes])
+    return row_sources
 
 
 def read_worksheet(content: bytes, sheet_name: str, formulas: bool) -> tuple[list[str], str, list[list[str]]]:
@@ -467,6 +512,7 @@ class BSSViewerView(PipelineStatusMixin, TemplateView):
                 "sheet_name": sheet_name,
                 "columns": [get_column_letter(number) for number in range(1, len(rows[0]) + 1)] if rows else [],
                 "rows": rows,
+                "row_sources": get_row_sources(partition_key, sheet_name),
             }
         )
         return context

@@ -1,6 +1,6 @@
 {% extends "admin/base_site.html" %}
 
-{% load i18n static %}
+{% load i18n static admin_extras %}
 
 {% block extrastyle %}
 {{ block.super }}
@@ -71,8 +71,11 @@
                 <tr><th></th>{% for column in columns %}<th scope="col">{{ column }}</th>{% endfor %}</tr>
             </thead>
             <tbody>
+                {# Hovering over the label in Column A shows how the pipeline recognized it #}
                 {% for row in rows %}
-                <tr><th scope="row">{{ forloop.counter }}</th>{% for value in row %}<td>{{ value }}</td>{% endfor %}</tr>
+                {% with row_source=row_sources|get_item:forloop.counter %}
+                <tr><th scope="row">{{ forloop.counter }}</th>{% for value in row %}<td{% if forloop.first and row_source %} class="bss-viewer__row-source" title="{{ row_source }}"{% endif %}>{{ value }}</td>{% endfor %}</tr>
+                {% endwith %}
                 {% endfor %}
             </tbody>
         </table>
