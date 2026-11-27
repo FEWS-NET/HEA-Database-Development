@@ -72,6 +72,11 @@ The URL contains the selected baseline, file, worksheet and display, so it can b
 only contains formulas if the BSS has no corrections, because `corrected_files` saves the calculated values
 when it applies corrections. Only `.xlsx` and `.xlsm` files can be displayed.
 
+On the WB, Data, Data2 and Data3 worksheets, column A and the wealth group rows 3:5 are frozen, and on the
+Summ and Exp factors worksheets column A and the wealth group row 4 are frozen, so the label and wealth group
+of each cell stay visible while scrolling. *Go to cell* scrolls to and outlines a cell reference such as
+`B12` or `$B$12` in the current worksheet; the browser's find in page searches the cells.
+
 On the Data, Data2 and Data3 worksheets, hovering over a dotted-underlined label in column A shows how the
 pipeline recognized it: the ActivityLabel status or regular expression template, and the attributes it set.
 These row sources come from the latest materialization of the `livelihood_activity_instances`,

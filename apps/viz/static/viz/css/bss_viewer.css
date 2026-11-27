@@ -1,6 +1,7 @@
 .bss-viewer__controls,
 .bss-viewer__toggles,
-.bss-viewer__sheets {
+.bss-viewer__sheets,
+.bss-viewer__goto {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -65,6 +66,40 @@
 .bss-viewer__grid thead th:first-child {
     left: 0;
     z-index: 3;
+}
+
+/* Freeze column A and the wealth group rows, like Excel's Freeze Panes. The template's script sets the offsets. */
+.bss-viewer__grid--frozen thead th:nth-child(2) {
+    left: var(--column-a-left);
+    z-index: 3;
+}
+
+.bss-viewer__grid--frozen td:first-of-type {
+    position: sticky;
+    left: var(--column-a-left);
+    z-index: 1;
+    background: var(--body-bg);
+}
+
+.bss-viewer__frozen-row > * {
+    position: sticky;
+    top: var(--frozen-top);
+    z-index: 2;
+}
+
+.bss-viewer__frozen-row > td {
+    background: var(--body-bg);
+}
+
+/* Cells that are frozen both ways stay on top of the cells that scroll under them in either direction */
+.bss-viewer__grid .bss-viewer__frozen-row > th,
+.bss-viewer__grid--frozen .bss-viewer__frozen-row > td:first-of-type {
+    z-index: 3;
+}
+
+.bss-viewer__current-cell {
+    outline: 2px solid var(--primary);
+    outline-offset: -2px;
 }
 
 /* Labels with a row source tooltip */

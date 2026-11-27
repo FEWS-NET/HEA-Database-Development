@@ -65,7 +65,13 @@
         {% endfor %}
     </nav>
 
-    <div class="bss-viewer__grid" data-scroll-key="{{ partition_key }}~{{ sheet_name }}">
+    <form class="bss-viewer__goto" data-invalid-message="{% translate 'Enter a cell in this worksheet, such as B12.' %}">
+        <label for="id_cell">{% translate 'Go to cell' %}</label>
+        <input id="id_cell" size="8" placeholder="B12" autocomplete="off" required>
+        <input type="submit" value="{% translate 'Go' %}">
+    </form>
+
+    <div class="bss-viewer__grid{% if frozen_rows %} bss-viewer__grid--frozen{% endif %}" data-scroll-key="{{ partition_key }}~{{ sheet_name }}">
         <table>
             <thead>
                 <tr><th></th>{% for column in columns %}<th scope="col">{{ column }}</th>{% endfor %}</tr>
@@ -74,16 +80,61 @@
                 {# Hovering over the label in Column A shows how the pipeline recognized it #}
                 {% for row in rows %}
                 {% with row_source=row_sources|get_item:forloop.counter %}
-                <tr><th scope="row">{{ forloop.counter }}</th>{% for value in row %}<td{% if forloop.first and row_source %} class="bss-viewer__row-source" title="{{ row_source }}"{% endif %}>{{ value }}</td>{% endfor %}</tr>
+                <tr{% if forloop.counter in frozen_rows %} class="bss-viewer__frozen-row"{% endif %}><th scope="row">{{ forloop.counter }}</th>{% for value in row %}<td{% if forloop.first and row_source %} class="bss-viewer__row-source" title="{{ row_source }}"{% endif %}>{{ value }}</td>{% endfor %}</tr>
                 {% endwith %}
                 {% endfor %}
             </tbody>
         </table>
     </div>
     <script>
-        // Keep the scroll position when switching file or display for the same worksheet, so cells can be compared
         (function () {
             const grid = document.querySelector(".bss-viewer__grid");
+            const table = grid.querySelector("table");
+            const [rowNumberHeader, columnAHeader] = table.tHead.rows[0].cells;
+
+            // Frozen rows stick below the column letters and the frozen rows above them
+            let top = table.tHead.getBoundingClientRect().height;
+            for (const row of table.querySelectorAll(".bss-viewer__frozen-row")) {
+                row.style.setProperty("--frozen-top", `${top}px`);
+                top += row.getBoundingClientRect().height;
+            }
+            let left = rowNumberHeader.getBoundingClientRect().width;
+            grid.style.setProperty("--column-a-left", `${left}px`);
+            if (columnAHeader && grid.classList.contains("bss-viewer__grid--frozen")) {
+                left += columnAHeader.getBoundingClientRect().width;
+            }
+            // Stop cells scrolled into view, e.g. by Go to cell, from ending up behind the sticky cells
+            grid.style.scrollPaddingTop = `${top}px`;
+            grid.style.scrollPaddingLeft = `${left}px`;
+
+            const goto = document.querySelector(".bss-viewer__goto");
+            const input = goto.querySelector("#id_cell");
+            input.addEventListener("input", function () {
+                input.setCustomValidity("");
+            });
+            goto.addEventListener("submit", function (event) {
+                event.preventDefault();
+                // Also accept absolute references copied from formulas, e.g. $B$12
+                const match = /^\$?([A-Z]+)\$?(\d+)$/i.exec(input.value.trim());
+                let cell = null;
+                if (match) {
+                    const column = [...match[1].toUpperCase()].reduce(
+                        (number, letter) => number * 26 + letter.charCodeAt(0) - 64, 0
+                    );
+                    // Cell 0 in each row is the row number, so column A is cell 1
+                    cell = table.tBodies[0].rows[match[2] - 1]?.cells[column];
+                }
+                if (!cell) {
+                    input.setCustomValidity(goto.dataset.invalidMessage);
+                    input.reportValidity();
+                    return;
+                }
+                grid.querySelector(".bss-viewer__current-cell")?.classList.remove("bss-viewer__current-cell");
+                cell.classList.add("bss-viewer__current-cell");
+                cell.scrollIntoView({block: "nearest", inline: "nearest"});
+            });
+
+            // Keep the scroll position when switching file or display for the same worksheet, so cells can be compared
             const saved = JSON.parse(sessionStorage.getItem("bss-viewer-scroll") || "{}");
             if (saved.key === grid.dataset.scrollKey) {
                 grid.scrollTo(saved.left, saved.top);

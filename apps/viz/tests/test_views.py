@@ -260,6 +260,16 @@ class BSSViewerViewTestCase(TestCase):
         self.assertEqual(response.context["sheet_name"], "WB")
         self.assertEqual(response.context["rows"], [["Wealth group"]])
 
+    def test_bss_viewer_frozen_rows(self):
+        """
+        The viewer freezes column A and the wealth group rows, 3:5, on the Data worksheet.
+        """
+        response = self.client.get(self.url, {"partition_key": self.partition_key})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "bss-viewer__grid--frozen")
+        # The Data worksheet in the test workbook only has 3 rows, so only row 3 is frozen
+        self.assertContains(response, '<tr class="bss-viewer__frozen-row">', count=1)
+
     def test_bss_viewer_corrected(self):
         """
         The viewer shows the corrected BSS from the latest materialization of the corrected_files asset.

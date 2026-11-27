@@ -404,6 +404,17 @@ INSTANCES_ASSETS = {
 }
 
 
+# The rows with the wealth groups in each worksheet, which the viewer keeps visible along with the labels in column A
+FROZEN_ROWS = {
+    "WB": range(3, 6),
+    "Data": range(3, 6),
+    "Data2": range(3, 6),
+    "Data3": range(3, 6),
+    "Summ": range(4, 5),
+    "Exp factors": range(4, 5),
+}
+
+
 def get_row_sources(partition_key: str, sheet_name: str) -> dict[int, str]:
     """
     Return how the pipeline recognized the label in each row of a worksheet, formatted for display.
@@ -513,6 +524,7 @@ class BSSViewerView(PipelineStatusMixin, TemplateView):
                 "columns": [get_column_letter(number) for number in range(1, len(rows[0]) + 1)] if rows else [],
                 "rows": rows,
                 "row_sources": get_row_sources(partition_key, sheet_name),
+                "frozen_rows": FROZEN_ROWS.get(sheet_name, range(0)),
             }
         )
         return context
